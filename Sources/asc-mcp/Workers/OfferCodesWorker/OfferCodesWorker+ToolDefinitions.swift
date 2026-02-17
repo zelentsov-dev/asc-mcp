@@ -72,7 +72,7 @@ extension OfferCodesWorker {
                     ]),
                     "price_point_ids": .object([
                         "type": .string("array"),
-                        "description": .string("Array of subscription price point IDs for offer code prices"),
+                        "description": .string("Array of subscription price point IDs (required for PAY_UP_FRONT/PAY_AS_YOU_GO, not needed for FREE_TRIAL)"),
                         "items": .object([
                             "type": .string("string")
                         ])
@@ -85,7 +85,7 @@ extension OfferCodesWorker {
                         ])
                     ])
                 ]),
-                "required": .array([.string("subscription_id"), .string("name"), .string("offer_eligibility"), .string("offer_mode"), .string("duration"), .string("number_of_periods"), .string("price_point_ids"), .string("territory_ids")])
+                "required": .array([.string("subscription_id"), .string("name"), .string("offer_eligibility"), .string("offer_mode"), .string("duration"), .string("number_of_periods"), .string("territory_ids")])
             ])
         )
     }

@@ -112,69 +112,74 @@ extension CustomProductPagesWorker {
         }
 
         do {
-            // Build request with included[] for version and localization (heterogeneous types)
-            // Version must link to its localizations so Apple API sees included[1] as "linked"
-            let versionRelationships: [String: Any] = [
-                "appCustomProductPageLocalizations": [
-                    "data": [
-                        ["type": "appCustomProductPageLocalizations", "id": "${loc-0}"]
-                    ]
-                ]
-            ]
+            // Step 1: Create custom product page
+            let pageRequest = CreateCustomProductPageRequest(
+                data: CreateCustomProductPageRequest.CreateData(
+                    attributes: CreateCustomProductPageRequest.Attributes(name: name),
+                    relationships: CreateCustomProductPageRequest.Relationships(
+                        app: CreateCustomProductPageRequest.AppRelationship(
+                            data: ASCResourceIdentifier(type: "apps", id: appId)
+                        )
+                    )
+                )
+            )
 
-            var localizationAttributes: [String: Any] = [
-                "locale": locale
-            ]
-            if let promotionalText = arguments["promotional_text"]?.stringValue {
-                localizationAttributes["promotionalText"] = promotionalText
-            }
+            let pageResponse: ASCCustomProductPageResponse = try await httpClient.post(
+                "/v1/appCustomProductPages",
+                body: pageRequest,
+                as: ASCCustomProductPageResponse.self
+            )
+            let pageId = pageResponse.data.id
 
-            let requestDict: [String: Any] = [
-                "data": [
-                    "type": "appCustomProductPages",
-                    "attributes": [
-                        "name": name
-                    ],
-                    "relationships": [
-                        "app": [
-                            "data": ["type": "apps", "id": appId]
-                        ],
-                        "appCustomProductPageVersions": [
-                            "data": [
-                                ["type": "appCustomProductPageVersions", "id": "${version-0}"]
-                            ]
-                        ]
-                    ]
-                ],
-                "included": [
-                    [
-                        "type": "appCustomProductPageVersions",
-                        "id": "${version-0}",
-                        "relationships": versionRelationships
-                    ],
-                    [
-                        "type": "appCustomProductPageLocalizations",
-                        "id": "${loc-0}",
-                        "attributes": localizationAttributes,
-                        "relationships": [
-                            "appCustomProductPageVersion": [
-                                "data": ["type": "appCustomProductPageVersions", "id": "${version-0}"]
-                            ]
-                        ]
-                    ]
-                ]
-            ]
+            // Step 2: Create version for the page
+            let versionRequest = CreateCustomProductPageVersionRequest(
+                data: CreateCustomProductPageVersionRequest.CreateData(
+                    relationships: CreateCustomProductPageVersionRequest.Relationships(
+                        appCustomProductPage: CreateCustomProductPageVersionRequest.PageRelationship(
+                            data: ASCResourceIdentifier(type: "appCustomProductPages", id: pageId)
+                        )
+                    )
+                )
+            )
 
-            let body = try JSONSerialization.data(withJSONObject: requestDict)
-            let data = try await httpClient.post("/v1/appCustomProductPages", body: body)
-            let response = try JSONDecoder().decode(ASCCustomProductPageResponse.self, from: data)
+            let versionResponse: ASCCustomProductPageVersionResponse = try await httpClient.post(
+                "/v1/appCustomProductPageVersions",
+                body: versionRequest,
+                as: ASCCustomProductPageVersionResponse.self
+            )
+            let versionId = versionResponse.data.id
 
-            let page = formatCustomPage(response.data)
+            // Step 3: Create localization for the version
+            let locRequest = CreateCustomProductPageLocalizationRequest(
+                data: CreateCustomProductPageLocalizationRequest.CreateData(
+                    attributes: CreateCustomProductPageLocalizationRequest.Attributes(
+                        locale: locale,
+                        promotionalText: arguments["promotional_text"]?.stringValue
+                    ),
+                    relationships: CreateCustomProductPageLocalizationRequest.Relationships(
+                        appCustomProductPageVersion: CreateCustomProductPageLocalizationRequest.VersionRelationship(
+                            data: ASCResourceIdentifier(type: "appCustomProductPageVersions", id: versionId)
+                        )
+                    )
+                )
+            )
 
-            let result = [
+            let locResponse: ASCCustomProductPageLocalizationResponse = try await httpClient.post(
+                "/v1/appCustomProductPageLocalizations",
+                body: locRequest,
+                as: ASCCustomProductPageLocalizationResponse.self
+            )
+
+            let page = formatCustomPage(pageResponse.data)
+            let version = formatVersion(versionResponse.data)
+            let localization = formatLocalization(locResponse.data)
+
+            let result: [String: Any] = [
                 "success": true,
-                "custom_product_page": page
-            ] as [String: Any]
+                "custom_product_page": page,
+                "version": version,
+                "localization": localization
+            ]
 
             return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
 

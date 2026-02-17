@@ -86,34 +86,25 @@ extension OfferCodesWorker {
             // Parse territory_ids
             let territoryIds = arguments["territory_ids"]?.arrayValue?.compactMap { $0.stringValue } ?? []
 
-            // Build prices relationship and included if price_point_ids provided
+            // Build prices relationship and included based on offerMode
             var pricesRelationship: CreateOfferCodeRequest.PricesRelationship?
             var included: [OfferCodePriceInlineCreate]?
 
-            if let pricePointIds = arguments["price_point_ids"]?.arrayValue {
-                let ids = pricePointIds.compactMap { $0.stringValue }
-                if !ids.isEmpty {
-                    guard ids.count == territoryIds.count else {
-                        return CallTool.Result(
-                            content: [.text("Error: price_point_ids and territory_ids must have the same count (got \(ids.count) vs \(territoryIds.count))")],
-                            isError: true
-                        )
-                    }
-
+            if offerMode == "FREE_TRIAL" {
+                // FREE_TRIAL: inline prices contain ONLY territory (no subscriptionPricePoint)
+                if !territoryIds.isEmpty {
                     var priceRefs: [ASCResourceIdentifier] = []
                     var priceInlines: [OfferCodePriceInlineCreate] = []
 
-                    for (index, pricePointId) in ids.enumerated() {
+                    for (index, territoryId) in territoryIds.enumerated() {
                         let tempId = "${price-\(index)}"
                         priceRefs.append(ASCResourceIdentifier(type: "subscriptionOfferCodePrices", id: tempId))
                         priceInlines.append(OfferCodePriceInlineCreate(
                             id: tempId,
                             relationships: OfferCodePriceInlineCreate.Relationships(
-                                subscriptionPricePoint: OfferCodePriceInlineCreate.PricePointRelationship(
-                                    data: ASCResourceIdentifier(type: "subscriptionPricePoints", id: pricePointId)
-                                ),
+                                subscriptionPricePoint: nil,
                                 territory: OfferCodePriceInlineCreate.TerritoryRelationship(
-                                    data: ASCResourceIdentifier(type: "territories", id: territoryIds[index])
+                                    data: ASCResourceIdentifier(type: "territories", id: territoryId)
                                 )
                             )
                         ))
@@ -121,6 +112,41 @@ extension OfferCodesWorker {
 
                     pricesRelationship = CreateOfferCodeRequest.PricesRelationship(data: priceRefs)
                     included = priceInlines
+                }
+            } else {
+                // PAY_UP_FRONT / PAY_AS_YOU_GO: inline prices need subscriptionPricePoint + territory
+                if let pricePointIds = arguments["price_point_ids"]?.arrayValue {
+                    let ids = pricePointIds.compactMap { $0.stringValue }
+                    if !ids.isEmpty {
+                        guard ids.count == territoryIds.count else {
+                            return CallTool.Result(
+                                content: [.text("Error: price_point_ids and territory_ids must have the same count (got \(ids.count) vs \(territoryIds.count))")],
+                                isError: true
+                            )
+                        }
+
+                        var priceRefs: [ASCResourceIdentifier] = []
+                        var priceInlines: [OfferCodePriceInlineCreate] = []
+
+                        for (index, pricePointId) in ids.enumerated() {
+                            let tempId = "${price-\(index)}"
+                            priceRefs.append(ASCResourceIdentifier(type: "subscriptionOfferCodePrices", id: tempId))
+                            priceInlines.append(OfferCodePriceInlineCreate(
+                                id: tempId,
+                                relationships: OfferCodePriceInlineCreate.Relationships(
+                                    subscriptionPricePoint: OfferCodePriceInlineCreate.PricePointRelationship(
+                                        data: ASCResourceIdentifier(type: "subscriptionPricePoints", id: pricePointId)
+                                    ),
+                                    territory: OfferCodePriceInlineCreate.TerritoryRelationship(
+                                        data: ASCResourceIdentifier(type: "territories", id: territoryIds[index])
+                                    )
+                                )
+                            ))
+                        }
+
+                        pricesRelationship = CreateOfferCodeRequest.PricesRelationship(data: priceRefs)
+                        included = priceInlines
+                    }
                 }
             }
 

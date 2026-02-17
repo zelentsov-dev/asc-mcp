@@ -370,6 +370,16 @@ extension MetricsWorker {
             }
         }
 
+        // If nothing was parsed, include raw callStackTree for debugging
+        if dict.isEmpty, let rawTree = log["callStackTree"] {
+            dict["raw_call_stack_tree"] = "\(rawTree)"
+        }
+
+        // Also include any other keys from the log besides callStackTree
+        for (key, value) in log where key != "callStackTree" {
+            dict[key] = value
+        }
+
         return dict
     }
 
@@ -421,8 +431,10 @@ extension MetricsWorker {
            let tree = try? JSONDecoder().decode(ASCCallStackTree.self, from: data) {
             dict["call_stack_per_thread"] = tree.callStackPerThread.jsonSafe
             dict["call_stacks"] = (tree.callStacks ?? []).map { formatCallStack($0) }
-        } else {
-            // Fallback: return raw string
+        }
+
+        // If nothing was parsed, include raw string for debugging
+        if dict.isEmpty {
             dict["raw_call_stack_tree"] = treeString
         }
         return dict

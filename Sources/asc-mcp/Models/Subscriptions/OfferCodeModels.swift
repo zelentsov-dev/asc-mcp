@@ -83,7 +83,7 @@ public struct OfferCodePriceInlineCreate: Codable, Sendable {
     public let relationships: Relationships?
 
     public struct Relationships: Codable, Sendable {
-        public let subscriptionPricePoint: PricePointRelationship
+        public let subscriptionPricePoint: PricePointRelationship?
         public let territory: TerritoryRelationship?
     }
 
