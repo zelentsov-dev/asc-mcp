@@ -77,7 +77,6 @@ public actor CompaniesManager {
         return [
             "\(homeDir)/.config/asc-mcp/companies.json",
             "\(homeDir)/Library/Application Support/asc-mcp/companies.json",
-            "companies.json",
         ]
     }
 
