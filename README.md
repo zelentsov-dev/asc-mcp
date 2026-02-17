@@ -17,7 +17,7 @@
 
 ## Overview
 
-**asc-mcp** is a Swift-based MCP server that bridges [Claude](https://claude.ai) (or any MCP-compatible host) with the [App Store Connect API](https://developer.apple.com/documentation/appstoreconnectapi). It exposes **~109 tools** across 17 workers, enabling you to automate your entire iOS/macOS release workflow through natural language.
+**asc-mcp** is a Swift-based MCP server that bridges [Claude](https://claude.ai) (or any MCP-compatible host) with the [App Store Connect API](https://developer.apple.com/documentation/appstoreconnectapi). It exposes **~186 tools** across 25 workers, enabling you to automate your entire iOS/macOS release workflow through natural language.
 
 ### Key capabilities
 
@@ -26,8 +26,11 @@
 - **TestFlight automation** — beta groups, testers, build distribution, localized What's New
 - **Build management** — track processing, encryption compliance, readiness checks
 - **Customer reviews** — list, respond, update, delete responses, aggregate statistics
-- **In-app purchases** — CRUD for IAPs, subscription groups, localizations
-- **Provisioning** — bundle IDs, devices, certificates, profiles
+- **In-app purchases** — CRUD for IAPs, localizations, price points, review screenshots
+- **Subscriptions** — subscription CRUD, groups, localizations, prices, offer codes, win-back offers
+- **Provisioning** — bundle IDs, devices, certificates, profiles, capabilities
+- **Marketing** — screenshots, app previews, custom product pages, A/B testing (PPO), promoted purchases
+- **Analytics & Metrics** — sales/financial reports, analytics reports, performance metrics, diagnostics
 - **Metadata management** — localized descriptions, keywords, What's New across all locales
 
 ## Quick Start
@@ -347,7 +350,7 @@ Add to `~/.codeium/windsurf/mcp_config.json`:
 
 ### Worker Filtering
 
-The server exposes **~109 tools** across 17 workers. Some MCP clients impose a tool limit (e.g., Windsurf caps at 100). Use `--workers` to enable only the workers you need:
+The server exposes **~186 tools** across 25 workers. Some MCP clients impose a tool limit (e.g., Windsurf caps at 100). Use `--workers` to enable only the workers you need:
 
 ```bash
 # Only load apps, builds, and version lifecycle tools
@@ -355,6 +358,9 @@ asc-mcp --workers apps,builds,versions
 
 # Full release workflow subset (~60 tools, fits within any client limit)
 asc-mcp --workers apps,builds,versions,reviews,beta_groups,iap
+
+# Monetization focus
+asc-mcp --workers apps,iap,subscriptions,offer_codes,winback,pricing,promoted
 ```
 
 `company` and `auth` workers are **always enabled** regardless of the filter (they provide core multi-account and authentication functionality).
@@ -367,19 +373,27 @@ When `builds` is enabled, it automatically includes `build_processing` and `buil
 |--------|--------|-------|-------------|
 | `apps` | `apps_` | 9 | App listing, metadata, localizations |
 | `builds` | `builds_` | 4 | Build management |
-| `build_processing` | `builds_*_processing_` | 5 | Build states, encryption |
-| `build_beta` | `builds_*_beta_` | 9 | TestFlight localizations, notifications |
+| `build_processing` | `builds_*_processing_` | 4 | Build states, encryption |
+| `build_beta` | `builds_*_beta_` | 8 | TestFlight localizations, notifications |
 | `versions` | `app_versions_` | 12 | Version lifecycle, submit, release |
-| `reviews` | `reviews_` | 8 | Customer reviews and responses |
+| `reviews` | `reviews_` | 7 | Customer reviews and responses |
 | `beta_groups` | `beta_groups_` | 9 | TestFlight groups |
 | `beta_testers` | `beta_testers_` | 6 | Tester management |
-| `iap` | `iap_` | 12 | In-app purchases, subscriptions |
+| `iap` | `iap_` | 17 | In-app purchases, prices, review screenshots |
+| `subscriptions` | `subscriptions_` | 15 | Subscription CRUD, groups, localizations, prices |
+| `offer_codes` | `offer_codes_` | 7 | Subscription offer codes, one-time codes |
+| `winback` | `winback_` | 5 | Win-back offers for subscriptions |
 | `provisioning` | `provisioning_` | 17 | Bundle IDs, devices, certificates |
 | `app_info` | `app_info_` | 6 | App info, categories |
 | `pricing` | `pricing_` | 6 | Territories, pricing |
-| `users` | `users_` | 6 | Team members, roles |
-| `app_events` | `app_events_` | 6 | In-app events |
-| `analytics` | `analytics_` | 4 | Sales/financial reports |
+| `users` | `users_` | 7 | Team members, roles |
+| `app_events` | `app_events_` | 9 | In-app events, localizations |
+| `analytics` | `analytics_` | 9 | Sales/financial reports, analytics |
+| `screenshots` | `screenshots_` | 12 | Screenshots, previews, sets |
+| `custom_pages` | `custom_pages_` | 10 | Custom product pages |
+| `ppo` | `ppo_` | 9 | Product page optimization (A/B tests) |
+| `promoted` | `promoted_` | 6 | Promoted in-app purchases |
+| `metrics` | `metrics_` | 5 | Performance metrics, diagnostics |
 
 ### Token Cost
 
@@ -387,19 +401,20 @@ When connected to an LLM client, tool definitions consume context tokens. Here's
 
 | Configuration | Tools | ~Tokens |
 |---|---:|---:|
-| All workers (default) | 123 | **~14,300** |
-| `--workers apps,builds,versions,reviews` | 52 | ~6,600 |
-| `--workers apps,builds,versions` | 44 | ~5,750 |
-| `--workers apps,builds` | 32 | ~3,500 |
+| All workers (default) | ~186 | **~22,000** |
+| Release workflow: `apps,builds,versions,reviews` | ~40 | ~5,500 |
+| Monetization: `apps,iap,subscriptions,pricing` | ~47 | ~6,000 |
+| TestFlight: `apps,builds,beta_groups,beta_testers` | ~34 | ~4,500 |
+| Marketing: `apps,screenshots,custom_pages,ppo,promoted` | ~46 | ~5,800 |
 | `--workers apps` | 16 | ~1,850 |
 
-**Heaviest workers:** AppLifecycle/versions (~2,300 tokens), Provisioning (~1,840), Apps (~1,330).
+**Heaviest workers:** Provisioning (17 tools), InAppPurchases (17 tools), Subscriptions (15 tools), AppLifecycle (12 tools), Screenshots (12 tools).
 
-For Claude (200K context) ~14K tokens is ~3–5% — negligible. For clients with smaller context windows, use `--workers` to reduce the footprint.
+For Claude (200K context) ~22K tokens is ~5–7% — negligible. For clients with smaller context windows, use `--workers` to reduce the footprint.
 
 ## Available Tools
 
-**~109 tools** organized across 17 workers (use `--workers` to filter — see [Worker Filtering](#worker-filtering)):
+**~186 tools** organized across 25 workers (use `--workers` to filter — see [Worker Filtering](#worker-filtering)):
 
 <details>
 <summary><strong>Company Management</strong> — 3 tools</summary>
@@ -425,7 +440,7 @@ For Claude (200K context) ~14K tokens is ~3–5% — negligible. For clients wit
 </details>
 
 <details>
-<summary><strong>Apps Management</strong> — 7 tools</summary>
+<summary><strong>Apps Management</strong> — 9 tools</summary>
 
 | Tool | Description |
 |------|-------------|
@@ -436,6 +451,8 @@ For Claude (200K context) ~14K tokens is ~3–5% — negligible. For clients wit
 | `apps_get_metadata` | Get localized metadata for a version |
 | `apps_update_metadata` | Update metadata (What's New, description, etc.) |
 | `apps_list_localizations` | List localizations with content status |
+| `apps_create_localization` | Create a new localization for a version |
+| `apps_delete_localization` | Delete a localization from a version |
 
 </details>
 
@@ -452,20 +469,19 @@ For Claude (200K context) ~14K tokens is ~3–5% — negligible. For clients wit
 </details>
 
 <details>
-<summary><strong>Build Processing</strong> — 5 tools</summary>
+<summary><strong>Build Processing</strong> — 4 tools</summary>
 
 | Tool | Description |
 |------|-------------|
 | `builds_get_processing_state` | Get current processing state |
 | `builds_update_encryption` | Set encryption compliance |
-| `builds_set_expiration` | Configure build expiration |
-| `builds_wait_for_processing` | Poll until build processing completes |
+| `builds_get_processing_status` | Get detailed processing status |
 | `builds_check_readiness` | Check if build is ready for submission |
 
 </details>
 
 <details>
-<summary><strong>TestFlight Beta Details</strong> — 7 tools</summary>
+<summary><strong>TestFlight Beta Details</strong> — 8 tools</summary>
 
 | Tool | Description |
 |------|-------------|
@@ -476,11 +492,12 @@ For Claude (200K context) ~14K tokens is ~3–5% — negligible. For clients wit
 | `builds_get_beta_groups` | Get beta groups for a build |
 | `builds_get_beta_testers` | Get individual testers for a build |
 | `builds_send_beta_notification` | Send notification to beta testers |
+| `builds_add_beta_group` | Add build to beta group |
 
 </details>
 
 <details>
-<summary><strong>TestFlight Beta Groups</strong> — 6 tools</summary>
+<summary><strong>TestFlight Beta Groups</strong> — 9 tools</summary>
 
 | Tool | Description |
 |------|-------------|
@@ -490,6 +507,9 @@ For Claude (200K context) ~14K tokens is ~3–5% — negligible. For clients wit
 | `beta_groups_delete` | Delete a beta group |
 | `beta_groups_add_testers` | Add testers to a beta group |
 | `beta_groups_remove_testers` | Remove testers from a beta group |
+| `beta_groups_list_testers` | List testers in a beta group |
+| `beta_groups_add_builds` | Add builds to a beta group |
+| `beta_groups_remove_builds` | Remove builds from a beta group |
 
 </details>
 
@@ -514,7 +534,7 @@ For Claude (200K context) ~14K tokens is ~3–5% — negligible. For clients wit
 </details>
 
 <details>
-<summary><strong>Customer Reviews</strong> — 8 tools</summary>
+<summary><strong>Customer Reviews</strong> — 7 tools</summary>
 
 | Tool | Description |
 |------|-------------|
@@ -523,14 +543,13 @@ For Claude (200K context) ~14K tokens is ~3–5% — negligible. For clients wit
 | `reviews_list_for_version` | Get reviews for a specific version |
 | `reviews_stats` | Aggregated review statistics |
 | `reviews_create_response` | Respond to a customer review |
-| `reviews_update_response` | Update an existing response |
 | `reviews_delete_response` | Delete a response |
 | `reviews_get_response` | Get response for a review |
 
 </details>
 
 <details>
-<summary><strong>In-App Purchases</strong> — 8 tools</summary>
+<summary><strong>In-App Purchases</strong> — 17 tools</summary>
 
 | Tool | Description |
 |------|-------------|
@@ -540,13 +559,73 @@ For Claude (200K context) ~14K tokens is ~3–5% — negligible. For clients wit
 | `iap_update` | Update IAP attributes |
 | `iap_delete` | Delete an in-app purchase |
 | `iap_list_localizations` | List IAP localizations |
+| `iap_create_localization` | Create IAP localization |
+| `iap_update_localization` | Update IAP localization |
+| `iap_delete_localization` | Delete IAP localization |
+| `iap_submit_for_review` | Submit IAP for review |
 | `iap_list_subscriptions` | List subscription groups |
 | `iap_get_subscription_group` | Get subscription group details |
+| `iap_list_price_points` | List available price points |
+| `iap_get_price_schedule` | Get price schedule |
+| `iap_set_price_schedule` | Set price schedule |
+| `iap_get_review_screenshot` | Get review screenshot |
+| `iap_create_review_screenshot` | Create review screenshot |
 
 </details>
 
 <details>
-<summary><strong>Provisioning</strong> — 9 tools</summary>
+<summary><strong>Subscriptions</strong> — 15 tools</summary>
+
+| Tool | Description |
+|------|-------------|
+| `subscriptions_list` | List subscriptions in a group |
+| `subscriptions_get` | Get subscription details |
+| `subscriptions_create` | Create a new subscription |
+| `subscriptions_update` | Update subscription |
+| `subscriptions_delete` | Delete subscription |
+| `subscriptions_list_localizations` | List subscription localizations |
+| `subscriptions_create_localization` | Create localization |
+| `subscriptions_update_localization` | Update localization |
+| `subscriptions_delete_localization` | Delete localization |
+| `subscriptions_list_prices` | List subscription prices |
+| `subscriptions_list_price_points` | List available price points |
+| `subscriptions_create_group` | Create subscription group |
+| `subscriptions_update_group` | Update subscription group |
+| `subscriptions_delete_group` | Delete subscription group |
+| `subscriptions_submit` | Submit subscription for review |
+
+</details>
+
+<details>
+<summary><strong>Offer Codes</strong> — 7 tools</summary>
+
+| Tool | Description |
+|------|-------------|
+| `offer_codes_list` | List offer code configurations |
+| `offer_codes_create` | Create offer code configuration |
+| `offer_codes_update` | Update offer code (enable/disable) |
+| `offer_codes_deactivate` | Deactivate all codes |
+| `offer_codes_list_prices` | List prices for an offer code |
+| `offer_codes_generate_one_time` | Generate one-time use codes (up to 10K) |
+| `offer_codes_list_one_time` | List generated one-time codes |
+
+</details>
+
+<details>
+<summary><strong>Win-Back Offers</strong> — 5 tools</summary>
+
+| Tool | Description |
+|------|-------------|
+| `winback_list` | List win-back offers |
+| `winback_create` | Create a win-back offer |
+| `winback_update` | Update a win-back offer |
+| `winback_delete` | Delete a win-back offer |
+| `winback_list_prices` | List win-back offer prices |
+
+</details>
+
+<details>
+<summary><strong>Provisioning</strong> — 17 tools</summary>
 
 | Tool | Description |
 |------|-------------|
@@ -558,7 +637,97 @@ For Claude (200K context) ~14K tokens is ~3–5% — negligible. For clients wit
 | `provisioning_register_device` | Register a new device (UDID) |
 | `provisioning_update_device` | Update device name or status |
 | `provisioning_list_certificates` | List signing certificates |
+| `provisioning_get_certificate` | Get certificate details |
+| `provisioning_revoke_certificate` | Revoke a certificate |
 | `provisioning_list_profiles` | List provisioning profiles |
+| `provisioning_get_profile` | Get profile details |
+| `provisioning_delete_profile` | Delete a profile |
+| `provisioning_create_profile` | Create a provisioning profile |
+| `provisioning_list_capabilities` | List bundle ID capabilities |
+| `provisioning_enable_capability` | Enable a capability |
+| `provisioning_disable_capability` | Disable a capability |
+
+</details>
+
+<details>
+<summary><strong>Screenshots & Previews</strong> — 12 tools</summary>
+
+| Tool | Description |
+|------|-------------|
+| `screenshots_list_sets` | List screenshot sets |
+| `screenshots_create_set` | Create a screenshot set |
+| `screenshots_delete_set` | Delete a screenshot set |
+| `screenshots_list` | List screenshots in a set |
+| `screenshots_create` | Reserve a screenshot upload |
+| `screenshots_delete` | Delete a screenshot |
+| `screenshots_reorder` | Reorder screenshots in a set |
+| `screenshots_list_preview_sets` | List app preview sets |
+| `screenshots_create_preview_set` | Create a preview set |
+| `screenshots_delete_preview_set` | Delete a preview set |
+| `screenshots_create_preview` | Reserve a preview upload |
+| `screenshots_delete_preview` | Delete a preview |
+
+</details>
+
+<details>
+<summary><strong>Custom Product Pages</strong> — 10 tools</summary>
+
+| Tool | Description |
+|------|-------------|
+| `custom_pages_list` | List custom product pages |
+| `custom_pages_get` | Get page details |
+| `custom_pages_create` | Create a custom page |
+| `custom_pages_update` | Update a custom page |
+| `custom_pages_delete` | Delete a custom page |
+| `custom_pages_list_versions` | List page versions |
+| `custom_pages_create_version` | Create a page version |
+| `custom_pages_list_localizations` | List version localizations |
+| `custom_pages_create_localization` | Create a localization |
+| `custom_pages_update_localization` | Update a localization |
+
+</details>
+
+<details>
+<summary><strong>Product Page Optimization (A/B Tests)</strong> — 9 tools</summary>
+
+| Tool | Description |
+|------|-------------|
+| `ppo_list_experiments` | List A/B test experiments |
+| `ppo_get_experiment` | Get experiment details |
+| `ppo_create_experiment` | Create an experiment |
+| `ppo_update_experiment` | Update/start/stop experiment |
+| `ppo_delete_experiment` | Delete an experiment |
+| `ppo_list_treatments` | List experiment treatments |
+| `ppo_create_treatment` | Create a treatment variant |
+| `ppo_list_treatment_localizations` | List treatment localizations |
+| `ppo_create_treatment_localization` | Create treatment localization |
+
+</details>
+
+<details>
+<summary><strong>Promoted Purchases</strong> — 6 tools</summary>
+
+| Tool | Description |
+|------|-------------|
+| `promoted_list` | List promoted purchases for an app |
+| `promoted_get` | Get promotion details |
+| `promoted_create` | Create a promotion |
+| `promoted_update` | Update promotion (visibility/order) |
+| `promoted_delete` | Delete a promotion |
+| `promoted_list_images` | List promotion images |
+
+</details>
+
+<details>
+<summary><strong>Performance Metrics</strong> — 5 tools</summary>
+
+| Tool | Description |
+|------|-------------|
+| `metrics_app_perf` | Get app performance/power metrics |
+| `metrics_build_perf` | Get build performance metrics |
+| `metrics_list_diagnostics` | List diagnostic signatures for app |
+| `metrics_build_diagnostics` | List diagnostics for a build |
+| `metrics_get_diagnostic_logs` | Get diagnostic logs |
 
 </details>
 
@@ -625,32 +794,54 @@ Claude will:
 
 ```
 Sources/asc-mcp/
-├── main.swift                      # Entry point, MCP server setup
-├── Core/                           # Error types, configuration
-├── Helpers/                        # JSON formatting, safe helpers
+├── EntryPoint.swift                # Entry point, --workers filtering
+├── Core/
+│   ├── Application.swift           #   MCP server setup & initialization
+│   └── ASCError.swift              #   Custom error types
+├── Helpers/                        # JSON formatting, pagination, safe helpers
 ├── Models/                         # API request/response models
 │   ├── AppStoreConnect/            #   Apps, versions, localizations
 │   ├── Builds/                     #   Builds, beta details, beta groups
-│   ├── InAppPurchases/             #   IAP, subscriptions
-│   └── Provisioning/              #   Bundle IDs, devices, certificates
-├── Services/                       # Infrastructure
+│   ├── AppLifecycle/               #   Version lifecycle models
+│   ├── InAppPurchases/             #   IAP models
+│   ├── Subscriptions/              #   Subscriptions, offer codes, win-back
+│   ├── Marketing/                  #   Screenshots, custom pages, PPO, promoted
+│   ├── Metrics/                    #   Performance metrics, diagnostics
+│   ├── Analytics/                  #   Sales/financial reports
+│   ├── Provisioning/               #   Bundle IDs, devices, certificates
+│   ├── Shared/                     #   Shared upload/image types
+│   └── ...                         #   AppEvents, AppInfo, Pricing, Users
+├── Services/
 │   ├── HTTPClient.swift            #   Actor-based HTTP with retry logic
 │   ├── JWTService.swift            #   ES256 JWT token generation
 │   └── CompaniesManager.swift      #   Multi-account management
-└── Workers/                        # MCP tool implementations (11 workers)
-    ├── MainWorker/
-    │   └── WorkerManager.swift     #   Central tool registry & routing
+└── Workers/                        # MCP tool implementations (25 workers)
+    ├── MainWorker/WorkerManager    #   Central tool registry & routing
     ├── CompaniesWorker/            #   company_* tools
     ├── AuthWorker/                 #   auth_* tools
     ├── AppsWorker/                 #   apps_* tools
-    ├── BuildsWorker/               #   builds_list/get/find tools
-    ├── BuildProcessingWorker/      #   builds_*_processing/encryption tools
+    ├── BuildsWorker/               #   builds_* tools
+    ├── BuildProcessingWorker/      #   builds_*_processing tools
     ├── BuildBetaDetailsWorker/     #   builds_*_beta_* tools
     ├── AppLifecycleWorker/         #   app_versions_* tools
     ├── ReviewsWorker/              #   reviews_* tools
     ├── BetaGroupsWorker/           #   beta_groups_* tools
+    ├── BetaTestersWorker/          #   beta_testers_* tools
     ├── InAppPurchasesWorker/       #   iap_* tools
-    └── ProvisioningWorker/         #   provisioning_* tools
+    ├── SubscriptionsWorker/        #   subscriptions_* tools
+    ├── OfferCodesWorker/           #   offer_codes_* tools
+    ├── WinBackOffersWorker/        #   winback_* tools
+    ├── ProvisioningWorker/         #   provisioning_* tools
+    ├── AppInfoWorker/              #   app_info_* tools
+    ├── PricingWorker/              #   pricing_* tools
+    ├── UsersWorker/                #   users_* tools
+    ├── AppEventsWorker/            #   app_events_* tools
+    ├── AnalyticsWorker/            #   analytics_* tools
+    ├── ScreenshotsWorker/          #   screenshots_* tools
+    ├── CustomProductPagesWorker/   #   custom_pages_* tools
+    ├── ProductPageOptimizationWorker/ # ppo_* tools
+    ├── PromotedPurchasesWorker/    #   promoted_* tools
+    └── MetricsWorker/              #   metrics_* tools
 ```
 
 ### Design Principles
