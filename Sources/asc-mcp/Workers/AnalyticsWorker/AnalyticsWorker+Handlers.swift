@@ -25,7 +25,7 @@ extension AnalyticsWorker {
     }
 
     /// Gets a sales/download report from App Store Connect
-    /// - Returns: CSV data with sales metrics or base64-encoded gzip data
+    /// - Returns: Structured JSON with parsed TSV data, summary, and row limit
     /// - Throws: Error if required parameters are missing or API call fails
     func getSalesReport(_ params: CallTool.Parameters) async throws -> CallTool.Result {
         guard let arguments = params.arguments,
@@ -46,6 +46,8 @@ extension AnalyticsWorker {
             )
         }
 
+        let limit = arguments["limit"]?.intValue ?? 100
+
         do {
             let queryParams: [String: String] = [
                 "filter[vendorNumber]": vendorNumber,
@@ -56,25 +58,34 @@ extension AnalyticsWorker {
             ]
 
             let data = try await httpClient.getRaw("/v1/salesReports", parameters: queryParams, accept: "application/a-gzip")
+            let tsvString = decompressReportData(data)
 
-            // Reports return gzip-compressed CSV; URLSession may auto-decompress
-            if let csvString = String(data: data, encoding: .utf8) {
-                let result: [String: Any] = [
-                    "success": true,
-                    "format": "csv",
-                    "data": csvString
-                ]
-                return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
-            } else {
-                // If not decompressed, return base64 for manual processing
-                let result: [String: Any] = [
-                    "success": true,
-                    "format": "gzip_base64",
-                    "data": data.base64EncodedString(),
-                    "note": "Data is gzip-compressed. Decode base64 then decompress gzip to get CSV."
-                ]
-                return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            guard let tsvString else {
+                return CallTool.Result(
+                    content: [.text("Failed to decode report data: not valid UTF-8 or gzip")],
+                    isError: true
+                )
             }
+
+            // Parse all rows for summary, then limit for response
+            let allParsed = TSVParser.parse(data: tsvString)
+            let limitedParsed = TSVParser.parse(data: tsvString, limit: limit)
+            let summary = ReportSummary.salesSummary(from: allParsed.rows)
+
+            let result: [String: Any] = [
+                "success": true,
+                "report_type": reportType,
+                "report_sub_type": reportSubType,
+                "frequency": frequency,
+                "report_date": reportDate,
+                "total_rows": allParsed.totalRowCount,
+                "showing_rows": limitedParsed.rows.count,
+                "summary": summary,
+                "columns": limitedParsed.headers,
+                "rows": limitedParsed.rows
+            ]
+
+            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
         } catch {
             return CallTool.Result(
                 content: [.text("Failed to get sales report: \(error.localizedDescription)")],
@@ -84,7 +95,7 @@ extension AnalyticsWorker {
     }
 
     /// Gets a financial report from App Store Connect
-    /// - Returns: CSV data with financial metrics or base64-encoded gzip data
+    /// - Returns: Structured JSON with parsed TSV data, summary, and row limit
     /// - Throws: Error if required parameters are missing or API call fails
     func getFinancialReport(_ params: CallTool.Parameters) async throws -> CallTool.Result {
         guard let arguments = params.arguments,
@@ -104,6 +115,8 @@ extension AnalyticsWorker {
             )
         }
 
+        let limit = arguments["limit"]?.intValue ?? 100
+
         do {
             let queryParams: [String: String] = [
                 "filter[vendorNumber]": vendorNumber,
@@ -113,25 +126,33 @@ extension AnalyticsWorker {
             ]
 
             let data = try await httpClient.getRaw("/v1/financeReports", parameters: queryParams, accept: "application/a-gzip")
+            let tsvString = decompressReportData(data)
 
-            // Reports return gzip-compressed CSV; URLSession may auto-decompress
-            if let csvString = String(data: data, encoding: .utf8) {
-                let result: [String: Any] = [
-                    "success": true,
-                    "format": "csv",
-                    "data": csvString
-                ]
-                return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
-            } else {
-                // If not decompressed, return base64 for manual processing
-                let result: [String: Any] = [
-                    "success": true,
-                    "format": "gzip_base64",
-                    "data": data.base64EncodedString(),
-                    "note": "Data is gzip-compressed. Decode base64 then decompress gzip to get CSV."
-                ]
-                return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            guard let tsvString else {
+                return CallTool.Result(
+                    content: [.text("Failed to decode report data: not valid UTF-8 or gzip")],
+                    isError: true
+                )
             }
+
+            // Parse all rows for summary, then limit for response
+            let allParsed = TSVParser.parse(data: tsvString)
+            let limitedParsed = TSVParser.parse(data: tsvString, limit: limit)
+            let summary = ReportSummary.financialSummary(from: allParsed.rows)
+
+            let result: [String: Any] = [
+                "success": true,
+                "report_type": reportType,
+                "region_code": regionCode,
+                "report_date": reportDate,
+                "total_rows": allParsed.totalRowCount,
+                "showing_rows": limitedParsed.rows.count,
+                "summary": summary,
+                "columns": limitedParsed.headers,
+                "rows": limitedParsed.rows
+            ]
+
+            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
         } catch {
             return CallTool.Result(
                 content: [.text("Failed to get financial report: \(error.localizedDescription)")],
@@ -591,6 +612,24 @@ extension AnalyticsWorker {
                 isError: true
             )
         }
+    }
+
+    // MARK: - Report Data Decompression
+
+    /// Attempts to get UTF-8 string from report data, decompressing gzip if needed
+    /// - Returns: UTF-8 TSV string or nil if data cannot be decoded
+    private func decompressReportData(_ data: Data) -> String? {
+        // Try direct UTF-8 first (URLSession may have auto-decompressed)
+        if let string = String(data: data, encoding: .utf8),
+           !string.isEmpty {
+            return string
+        }
+        // Try gzip decompression
+        if let decompressed = data.gunzipped(),
+           let string = String(data: decompressed, encoding: .utf8) {
+            return string
+        }
+        return nil
     }
 
     // MARK: - Formatting

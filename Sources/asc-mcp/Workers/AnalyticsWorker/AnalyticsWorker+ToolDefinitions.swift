@@ -13,7 +13,7 @@ extension AnalyticsWorker {
     func getSalesReportTool() -> Tool {
         return Tool(
             name: "analytics_sales_report",
-            description: "Get sales and download reports from App Store Connect. Returns CSV data with sales metrics including units, proceeds, and download statistics.",
+            description: "Get sales and download reports from App Store Connect. Returns structured JSON with parsed TSV data, summary statistics (total units, proceeds by currency, top countries), and individual rows.",
             inputSchema: .object([
                 "type": .string("object"),
                 "properties": .object([
@@ -56,6 +56,10 @@ extension AnalyticsWorker {
                     "report_date": .object([
                         "type": .string("string"),
                         "description": .string("Report date in YYYY-MM-DD format (e.g., 2025-01-15)")
+                    ]),
+                    "limit": .object([
+                        "type": .string("integer"),
+                        "description": .string("Max rows to return (default: 100). Summary is always computed from all rows.")
                     ])
                 ]),
                 "required": .array([
@@ -72,7 +76,7 @@ extension AnalyticsWorker {
     func getFinancialReportTool() -> Tool {
         return Tool(
             name: "analytics_financial_report",
-            description: "Get financial reports from App Store Connect. Returns CSV data with financial metrics including earnings, taxes, and currency details.",
+            description: "Get financial reports from App Store Connect. Returns structured JSON with parsed TSV data, summary statistics (total quantity, partner share by currency, top countries), and individual rows.",
             inputSchema: .object([
                 "type": .string("object"),
                 "properties": .object([
@@ -95,6 +99,10 @@ extension AnalyticsWorker {
                             .string("FINANCIAL"),
                             .string("FINANCE_DETAIL")
                         ])
+                    ]),
+                    "limit": .object([
+                        "type": .string("integer"),
+                        "description": .string("Max rows to return (default: 100). Summary is always computed from all rows.")
                     ])
                 ]),
                 "required": .array([
