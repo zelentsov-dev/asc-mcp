@@ -62,6 +62,7 @@ extension AnalyticsWorker {
             ?? "1_0"
         let summaryOnly = arguments["summary_only"]?.boolValue ?? true
         let limit = arguments["limit"]?.intValue ?? 25
+        let appIdFilter = arguments["app_id"]?.stringValue
 
         do {
             let queryParams: [String: String] = [
@@ -84,7 +85,18 @@ extension AnalyticsWorker {
             }
 
             let allParsed = TSVParser.parse(data: tsvString)
-            let summary = ReportSummary.summary(for: reportType, from: allParsed.rows)
+
+            // Filter by app if requested (column: "Apple Identifier" or "App Apple ID")
+            let filteredRows: [[String: String]]
+            if let appId = appIdFilter {
+                filteredRows = allParsed.rows.filter { row in
+                    row["Apple Identifier"] == appId || row["App Apple ID"] == appId
+                }
+            } else {
+                filteredRows = allParsed.rows
+            }
+
+            let summary = ReportSummary.summary(for: reportType, from: filteredRows)
 
             var result: [String: Any] = [
                 "success": true,
@@ -94,14 +106,19 @@ extension AnalyticsWorker {
                 "report_date": reportDate,
                 "version": version,
                 "total_rows": allParsed.totalRowCount,
+                "filtered_rows": filteredRows.count,
                 "summary": summary
             ]
 
+            if let appId = appIdFilter {
+                result["app_id_filter"] = appId
+            }
+
             if !summaryOnly {
-                let limitedParsed = TSVParser.parse(data: tsvString, limit: limit)
-                result["showing_rows"] = limitedParsed.rows.count
-                result["columns"] = limitedParsed.headers
-                result["rows"] = limitedParsed.rows
+                let rows = Array(filteredRows.prefix(limit))
+                result["showing_rows"] = rows.count
+                result["columns"] = allParsed.headers
+                result["rows"] = rows
             }
 
             return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])

@@ -38,6 +38,10 @@ extension AnalyticsWorker {
                         "type": .string("string"),
                         "description": .string("Vendor number from App Store Connect (found in Sales and Trends > Reports). If not provided, uses vendor_number from company config.")
                     ]),
+                    "app_id": .object([
+                        "type": .string("string"),
+                        "description": .string("Apple ID of the app to filter by (numeric, e.g., '1234567890'). If omitted, returns data for all apps. Use apps_list to find app IDs.")
+                    ]),
                     "report_type": .object([
                         "type": .string("string"),
                         "description": .string("Type of report: SALES (downloads/revenue), SUBSCRIPTION (active subs), SUBSCRIPTION_EVENT (renewals/cancellations/trials), SUBSCRIBER (per-user transactions), PRE_ORDER, SUBSCRIPTION_OFFER_CODE_REDEMPTION"),
