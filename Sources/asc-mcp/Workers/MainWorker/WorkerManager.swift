@@ -92,7 +92,10 @@ public actor WorkerManager {
         self.pricingWorker = await PricingWorker(httpClient: dependencies.httpClient)
         self.usersWorker = await UsersWorker(httpClient: dependencies.httpClient)
         self.appEventsWorker = await AppEventsWorker(httpClient: dependencies.httpClient)
-        self.analyticsWorker = await AnalyticsWorker(httpClient: dependencies.httpClient)
+        self.analyticsWorker = await AnalyticsWorker(
+            httpClient: dependencies.httpClient,
+            companiesManager: dependencies.companiesWorker.manager
+        )
         self.subscriptionsWorker = await SubscriptionsWorker(httpClient: dependencies.httpClient)
         self.offerCodesWorker = await OfferCodesWorker(httpClient: dependencies.httpClient)
         self.winBackOffersWorker = await WinBackOffersWorker(httpClient: dependencies.httpClient)
@@ -394,7 +397,10 @@ public actor WorkerManager {
         self.pricingWorker = await PricingWorker(httpClient: dependencies.httpClient)
         self.usersWorker = await UsersWorker(httpClient: dependencies.httpClient)
         self.appEventsWorker = await AppEventsWorker(httpClient: dependencies.httpClient)
-        self.analyticsWorker = await AnalyticsWorker(httpClient: dependencies.httpClient)
+        self.analyticsWorker = await AnalyticsWorker(
+            httpClient: dependencies.httpClient,
+            companiesManager: dependencies.companiesWorker.manager
+        )
         self.subscriptionsWorker = await SubscriptionsWorker(httpClient: dependencies.httpClient)
         self.offerCodesWorker = await OfferCodesWorker(httpClient: dependencies.httpClient)
         self.winBackOffersWorker = await WinBackOffersWorker(httpClient: dependencies.httpClient)

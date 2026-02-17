@@ -10,18 +10,38 @@ import MCP
 
 extension AnalyticsWorker {
 
+    /// Resolves vendor number from explicit parameter or company config
+    /// - Returns: Vendor number string or nil if not available
+    private func resolveVendorNumber(from arguments: [String: Value]?) async -> String? {
+        if let explicit = arguments?["vendor_number"]?.stringValue {
+            return explicit
+        }
+        if let manager = companiesManager,
+           let company = try? await manager.getCurrentCompany(),
+           let vendorNumber = company.vendorNumber {
+            return vendorNumber
+        }
+        return nil
+    }
+
     /// Gets a sales/download report from App Store Connect
     /// - Returns: CSV data with sales metrics or base64-encoded gzip data
     /// - Throws: Error if required parameters are missing or API call fails
     func getSalesReport(_ params: CallTool.Parameters) async throws -> CallTool.Result {
         guard let arguments = params.arguments,
-              let vendorNumber = arguments["vendor_number"]?.stringValue,
               let reportType = arguments["report_type"]?.stringValue,
               let reportSubType = arguments["report_sub_type"]?.stringValue,
               let frequency = arguments["frequency"]?.stringValue,
               let reportDate = arguments["report_date"]?.stringValue else {
             return CallTool.Result(
-                content: [.text("Missing required parameters: vendor_number, report_type, report_sub_type, frequency, report_date")],
+                content: [.text("Missing required parameters: report_type, report_sub_type, frequency, report_date")],
+                isError: true
+            )
+        }
+
+        guard let vendorNumber = await resolveVendorNumber(from: arguments) else {
+            return CallTool.Result(
+                content: [.text("Missing vendor_number: provide it as parameter or set vendor_number in company config")],
                 isError: true
             )
         }
@@ -68,12 +88,18 @@ extension AnalyticsWorker {
     /// - Throws: Error if required parameters are missing or API call fails
     func getFinancialReport(_ params: CallTool.Parameters) async throws -> CallTool.Result {
         guard let arguments = params.arguments,
-              let vendorNumber = arguments["vendor_number"]?.stringValue,
               let regionCode = arguments["region_code"]?.stringValue,
               let reportDate = arguments["report_date"]?.stringValue,
               let reportType = arguments["report_type"]?.stringValue else {
             return CallTool.Result(
-                content: [.text("Missing required parameters: vendor_number, region_code, report_date, report_type")],
+                content: [.text("Missing required parameters: region_code, report_date, report_type")],
+                isError: true
+            )
+        }
+
+        guard let vendorNumber = await resolveVendorNumber(from: arguments) else {
+            return CallTool.Result(
+                content: [.text("Missing vendor_number: provide it as parameter or set vendor_number in company config")],
                 isError: true
             )
         }
@@ -457,6 +483,111 @@ extension AnalyticsWorker {
         } catch {
             return CallTool.Result(
                 content: [.text("Failed to list analytics report segments: \(error.localizedDescription)")],
+                isError: true
+            )
+        }
+    }
+
+    // MARK: - Snapshot Status
+
+    /// Checks readiness of all reports in an analytics snapshot
+    /// - Returns: JSON summary with ready/pending counts and per-report details
+    /// - Throws: Error if required parameters are missing or API call fails
+    func checkSnapshotStatus(_ params: CallTool.Parameters) async throws -> CallTool.Result {
+        guard let arguments = params.arguments,
+              let requestId = arguments["request_id"]?.stringValue else {
+            return CallTool.Result(
+                content: [.text("Required parameter 'request_id' is missing")],
+                isError: true
+            )
+        }
+
+        let categoryFilter = arguments["category"]?.stringValue
+
+        do {
+            // Fetch all reports for this request (paginated)
+            var allReports: [ASCAnalyticsReport] = []
+            var nextPath: String? = "/v1/analyticsReportRequests/\(requestId)/reports"
+            var nextParams: [String: String] = ["limit": "200"]
+
+            while let path = nextPath {
+                let response: ASCAnalyticsReportsResponse = try await httpClient.get(
+                    path, parameters: nextParams, as: ASCAnalyticsReportsResponse.self
+                )
+                allReports.append(contentsOf: response.data)
+
+                if let nextUrl = response.links?.next, let parsed = parsePaginationUrl(nextUrl) {
+                    nextPath = parsed.path
+                    nextParams = parsed.parameters
+                } else {
+                    nextPath = nil
+                }
+            }
+
+            // Filter by category if specified
+            let filteredReports: [ASCAnalyticsReport]
+            if let category = categoryFilter {
+                filteredReports = allReports.filter { $0.attributes?.category == category }
+            } else {
+                filteredReports = allReports
+            }
+
+            // Check instances for each report
+            var readyCount = 0
+            var pendingCount = 0
+            var reportDetails: [[String: Any]] = []
+
+            for report in filteredReports {
+                let instancesResponse: ASCAnalyticsReportInstancesResponse = try await httpClient.get(
+                    "/v1/analyticsReports/\(report.id)/instances",
+                    parameters: ["limit": "1"],
+                    as: ASCAnalyticsReportInstancesResponse.self
+                )
+
+                let instancesCount = instancesResponse.data.count
+                let status = instancesCount > 0 ? "ready" : "pending"
+
+                if instancesCount > 0 {
+                    readyCount += 1
+                } else {
+                    pendingCount += 1
+                }
+
+                var detail: [String: Any] = [
+                    "id": report.id,
+                    "name": report.attributes?.name ?? "unknown",
+                    "category": report.attributes?.category ?? "unknown",
+                    "status": status,
+                    "instances_count": instancesCount
+                ]
+
+                // Include first instance processing date if available
+                if let firstInstance = instancesResponse.data.first,
+                   let processingDate = firstInstance.attributes?.processingDate {
+                    detail["latest_processing_date"] = processingDate
+                }
+
+                reportDetails.append(detail)
+            }
+
+            var result: [String: Any] = [
+                "success": true,
+                "request_id": requestId,
+                "total_reports": filteredReports.count,
+                "ready": readyCount,
+                "pending": pendingCount,
+                "reports": reportDetails
+            ]
+
+            if let category = categoryFilter {
+                result["category_filter"] = category
+            }
+
+            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+
+        } catch {
+            return CallTool.Result(
+                content: [.text("Failed to check snapshot status: \(error.localizedDescription)")],
                 isError: true
             )
         }

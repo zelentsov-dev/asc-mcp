@@ -11,9 +11,11 @@ import MCP
 /// Worker for managing sales reports, financial reports, and analytics in App Store Connect
 public final class AnalyticsWorker: Sendable {
     let httpClient: HTTPClient
+    let companiesManager: CompaniesManager?
 
-    public init(httpClient: HTTPClient) {
+    public init(httpClient: HTTPClient, companiesManager: CompaniesManager? = nil) {
         self.httpClient = httpClient
+        self.companiesManager = companiesManager
     }
 
     /// Get all available tools for analytics and reports management
@@ -27,7 +29,8 @@ public final class AnalyticsWorker: Sendable {
             getAnalyticsReportTool(),
             listAnalyticsReportInstancesTool(),
             getAnalyticsReportInstanceTool(),
-            listAnalyticsReportSegmentsTool()
+            listAnalyticsReportSegmentsTool(),
+            checkSnapshotStatusTool()
         ]
     }
 
@@ -52,6 +55,8 @@ public final class AnalyticsWorker: Sendable {
             return try await getAnalyticsReportInstance(params)
         case "analytics_list_segments":
             return try await listAnalyticsReportSegments(params)
+        case "analytics_check_snapshot_status":
+            return try await checkSnapshotStatus(params)
         default:
             throw MCPError.methodNotFound("Unknown tool: \(params.name)")
         }

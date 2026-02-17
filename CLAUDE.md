@@ -49,7 +49,7 @@ Each company needs: `keyID`, `issuerID`, `privateKeyPath` (path to `.p8` file).
 
 **WorkerManager** (`Workers/MainWorker/WorkerManager.swift`) — central registry, routes tool calls by prefix.
 
-**Workers** (25 workers, ~186 tools):
+**Workers** (25 workers, ~187 tools):
 
 | Worker | Prefix | Tools | Domain |
 |--------|--------|-------|--------|
@@ -69,7 +69,7 @@ Each company needs: `keyID`, `issuerID`, `privateKeyPath` (path to `.p8` file).
 | PricingWorker | `pricing_` | 6 | Territories, availability, price points/schedule |
 | UsersWorker | `users_` | 7 | Team members, roles, invitations |
 | AppEventsWorker | `app_events_` | 9 | In-app events CRUD, localizations |
-| AnalyticsWorker | `analytics_` | 9 | Sales/financial reports, analytics reports/instances/segments |
+| AnalyticsWorker | `analytics_` | 10 | Sales/financial reports, analytics reports/instances/segments, snapshot status |
 | SubscriptionsWorker | `subscriptions_` | 15 | Subscription CRUD, groups, localizations, prices, submit |
 | OfferCodesWorker | `offer_codes_` | 7 | Subscription offer codes, one-time codes |
 | WinBackOffersWorker | `winback_` | 5 | Win-back offers for subscriptions |

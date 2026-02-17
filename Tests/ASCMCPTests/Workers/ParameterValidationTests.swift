@@ -513,6 +513,29 @@ struct ParameterValidationTests {
         #expect(result.isError == true)
     }
 
+    @Test("analytics_check_snapshot_status without request_id returns isError")
+    func analyticsCheckSnapshotStatusMissing() async throws {
+        let client = try await TestFactory.makeHTTPClient()
+        let worker = AnalyticsWorker(httpClient: client)
+        let params = CallTool.Parameters(name: "analytics_check_snapshot_status", arguments: nil)
+        let result = try await worker.handleTool(params)
+        #expect(result.isError == true)
+    }
+
+    @Test("analytics_sales_report without vendor_number and without config returns isError")
+    func analyticsSalesReportMissingVendorNumber() async throws {
+        let client = try await TestFactory.makeHTTPClient()
+        let worker = AnalyticsWorker(httpClient: client)
+        let params = CallTool.Parameters(name: "analytics_sales_report", arguments: [
+            "report_type": .string("SALES"),
+            "report_sub_type": .string("SUMMARY"),
+            "frequency": .string("DAILY"),
+            "report_date": .string("2025-01-15")
+        ])
+        let result = try await worker.handleTool(params)
+        #expect(result.isError == true)
+    }
+
     // MARK: - InAppPurchasesWorker (extensions)
 
     @Test("iap_list_price_points without iap_id returns isError")

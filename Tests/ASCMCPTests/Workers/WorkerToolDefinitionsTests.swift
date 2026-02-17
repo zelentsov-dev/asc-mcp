@@ -274,14 +274,14 @@ struct WorkerToolDefinitionsTests {
         #expect(names.contains("app_events_delete_localization"))
     }
 
-    // MARK: - AnalyticsWorker (9 tools)
+    // MARK: - AnalyticsWorker (10 tools)
 
-    @Test("AnalyticsWorker returns 9 tools with correct names")
+    @Test("AnalyticsWorker returns 10 tools with correct names")
     func analyticsWorkerTools() async throws {
         let client = try await TestFactory.makeHTTPClient()
         let worker = AnalyticsWorker(httpClient: client)
         let tools = await worker.getTools()
-        #expect(tools.count == 9)
+        #expect(tools.count == 10)
         let names = Set(tools.map(\.name))
         #expect(names.contains("analytics_sales_report"))
         #expect(names.contains("analytics_financial_report"))
@@ -292,6 +292,7 @@ struct WorkerToolDefinitionsTests {
         #expect(names.contains("analytics_list_instances"))
         #expect(names.contains("analytics_get_instance"))
         #expect(names.contains("analytics_list_segments"))
+        #expect(names.contains("analytics_check_snapshot_status"))
     }
 
     // MARK: - SubscriptionsWorker (15 tools)

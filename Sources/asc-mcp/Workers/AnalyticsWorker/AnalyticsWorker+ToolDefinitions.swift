@@ -19,7 +19,7 @@ extension AnalyticsWorker {
                 "properties": .object([
                     "vendor_number": .object([
                         "type": .string("string"),
-                        "description": .string("Vendor number from App Store Connect (found in Sales and Trends > Reports)")
+                        "description": .string("Vendor number from App Store Connect (found in Sales and Trends > Reports). If not provided, uses vendor_number from company config.")
                     ]),
                     "report_type": .object([
                         "type": .string("string"),
@@ -59,7 +59,6 @@ extension AnalyticsWorker {
                     ])
                 ]),
                 "required": .array([
-                    .string("vendor_number"),
                     .string("report_type"),
                     .string("report_sub_type"),
                     .string("frequency"),
@@ -79,7 +78,7 @@ extension AnalyticsWorker {
                 "properties": .object([
                     "vendor_number": .object([
                         "type": .string("string"),
-                        "description": .string("Vendor number from App Store Connect")
+                        "description": .string("Vendor number from App Store Connect. If not provided, uses vendor_number from company config.")
                     ]),
                     "region_code": .object([
                         "type": .string("string"),
@@ -99,7 +98,6 @@ extension AnalyticsWorker {
                     ])
                 ]),
                 "required": .array([
-                    .string("vendor_number"),
                     .string("region_code"),
                     .string("report_date"),
                     .string("report_type")
@@ -244,6 +242,35 @@ extension AnalyticsWorker {
                     ])
                 ]),
                 "required": .array([.string("instance_id")])
+            ])
+        )
+    }
+
+    /// Creates tool definition for checking snapshot readiness status
+    func checkSnapshotStatusTool() -> Tool {
+        return Tool(
+            name: "analytics_check_snapshot_status",
+            description: "Check readiness of all reports in an analytics snapshot. Returns summary with ready/pending counts and report details. Useful after creating a ONE_TIME_SNAPSHOT to monitor when reports become available.",
+            inputSchema: .object([
+                "type": .string("object"),
+                "properties": .object([
+                    "request_id": .object([
+                        "type": .string("string"),
+                        "description": .string("Analytics report request ID (from analytics_create_report_request or analytics_list_report_requests)")
+                    ]),
+                    "category": .object([
+                        "type": .string("string"),
+                        "description": .string("Optional filter by report category"),
+                        "enum": .array([
+                            .string("APP_USAGE"),
+                            .string("APP_STORE_ENGAGEMENT"),
+                            .string("COMMERCE"),
+                            .string("FRAMEWORK_USAGE"),
+                            .string("PERFORMANCE")
+                        ])
+                    ])
+                ]),
+                "required": .array([.string("request_id")])
             ])
         )
     }
