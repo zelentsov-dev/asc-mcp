@@ -112,10 +112,10 @@ extension CustomProductPagesWorker {
         }
 
         do {
-            // Apple API requires inline includes with client-generated UUIDs
-            // Page must reference version, version must reference localization
-            let versionId = UUID().uuidString
-            let localizationId = UUID().uuidString
+            // Apple API requires inline includes with ${local-id} format IDs
+            // Chain: data → version (included) → localization (included)
+            let versionId = "${version-0}"
+            let localizationId = "${localization-0}"
 
             var localizationAttributes: [String: Any] = [
                 "locale": locale
