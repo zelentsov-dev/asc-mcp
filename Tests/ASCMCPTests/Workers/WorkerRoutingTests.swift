@@ -197,4 +197,100 @@ struct WorkerRoutingTests {
             _ = try await worker.handleTool(params)
         }
     }
+
+    // MARK: - SubscriptionsWorker
+
+    @Test("SubscriptionsWorker throws MCPError.methodNotFound for unknown tool")
+    func subscriptionsWorkerUnknownTool() async throws {
+        let client = try await TestFactory.makeHTTPClient()
+        let worker = SubscriptionsWorker(httpClient: client)
+        let params = CallTool.Parameters(name: "subscriptions_nonexistent", arguments: nil)
+        await #expect(throws: MCPError.self) {
+            _ = try await worker.handleTool(params)
+        }
+    }
+
+    // MARK: - OfferCodesWorker
+
+    @Test("OfferCodesWorker throws MCPError.methodNotFound for unknown tool")
+    func offerCodesWorkerUnknownTool() async throws {
+        let client = try await TestFactory.makeHTTPClient()
+        let worker = OfferCodesWorker(httpClient: client)
+        let params = CallTool.Parameters(name: "offer_codes_nonexistent", arguments: nil)
+        await #expect(throws: MCPError.self) {
+            _ = try await worker.handleTool(params)
+        }
+    }
+
+    // MARK: - WinBackOffersWorker
+
+    @Test("WinBackOffersWorker throws MCPError.methodNotFound for unknown tool")
+    func winBackOffersWorkerUnknownTool() async throws {
+        let client = try await TestFactory.makeHTTPClient()
+        let worker = WinBackOffersWorker(httpClient: client)
+        let params = CallTool.Parameters(name: "winback_nonexistent", arguments: nil)
+        await #expect(throws: MCPError.self) {
+            _ = try await worker.handleTool(params)
+        }
+    }
+
+    // MARK: - ScreenshotsWorker
+
+    @Test("ScreenshotsWorker throws MCPError.methodNotFound for unknown tool")
+    func screenshotsWorkerUnknownTool() async throws {
+        let client = try await TestFactory.makeHTTPClient()
+        let worker = ScreenshotsWorker(httpClient: client)
+        let params = CallTool.Parameters(name: "screenshots_nonexistent", arguments: nil)
+        await #expect(throws: MCPError.self) {
+            _ = try await worker.handleTool(params)
+        }
+    }
+
+    // MARK: - CustomProductPagesWorker
+
+    @Test("CustomProductPagesWorker throws MCPError.methodNotFound for unknown tool")
+    func customProductPagesWorkerUnknownTool() async throws {
+        let client = try await TestFactory.makeHTTPClient()
+        let worker = CustomProductPagesWorker(httpClient: client)
+        let params = CallTool.Parameters(name: "custom_pages_nonexistent", arguments: nil)
+        await #expect(throws: MCPError.self) {
+            _ = try await worker.handleTool(params)
+        }
+    }
+
+    // MARK: - ProductPageOptimizationWorker
+
+    @Test("ProductPageOptimizationWorker throws MCPError.methodNotFound for unknown tool")
+    func productPageOptimizationWorkerUnknownTool() async throws {
+        let client = try await TestFactory.makeHTTPClient()
+        let worker = ProductPageOptimizationWorker(httpClient: client)
+        let params = CallTool.Parameters(name: "ppo_nonexistent", arguments: nil)
+        await #expect(throws: MCPError.self) {
+            _ = try await worker.handleTool(params)
+        }
+    }
+
+    // MARK: - PromotedPurchasesWorker
+
+    @Test("PromotedPurchasesWorker throws MCPError.methodNotFound for unknown tool")
+    func promotedPurchasesWorkerUnknownTool() async throws {
+        let client = try await TestFactory.makeHTTPClient()
+        let worker = PromotedPurchasesWorker(httpClient: client)
+        let params = CallTool.Parameters(name: "promoted_nonexistent", arguments: nil)
+        await #expect(throws: MCPError.self) {
+            _ = try await worker.handleTool(params)
+        }
+    }
+
+    // MARK: - MetricsWorker
+
+    @Test("MetricsWorker throws MCPError.methodNotFound for unknown tool")
+    func metricsWorkerUnknownTool() async throws {
+        let client = try await TestFactory.makeHTTPClient()
+        let worker = MetricsWorker(httpClient: client)
+        let params = CallTool.Parameters(name: "metrics_nonexistent", arguments: nil)
+        await #expect(throws: MCPError.self) {
+            _ = try await worker.handleTool(params)
+        }
+    }
 }

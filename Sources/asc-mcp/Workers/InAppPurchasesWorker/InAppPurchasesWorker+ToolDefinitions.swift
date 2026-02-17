@@ -291,4 +291,117 @@ extension InAppPurchasesWorker {
             ])
         )
     }
+
+    func listIAPPricePointsTool() -> Tool {
+        return Tool(
+            name: "iap_list_price_points",
+            description: "List price points for an in-app purchase",
+            inputSchema: .object([
+                "type": .string("object"),
+                "properties": .object([
+                    "iap_id": .object([
+                        "type": .string("string"),
+                        "description": .string("In-app purchase ID")
+                    ]),
+                    "territory": .object([
+                        "type": .string("string"),
+                        "description": .string("Filter by territory code (e.g. USA, GBR)")
+                    ]),
+                    "limit": .object([
+                        "type": .string("integer"),
+                        "description": .string("Max results (default: 50, max: 200)")
+                    ]),
+                    "next_url": .object([
+                        "type": .string("string"),
+                        "description": .string("Pagination URL from previous response to fetch next page")
+                    ])
+                ]),
+                "required": .array([.string("iap_id")])
+            ])
+        )
+    }
+
+    func getIAPPriceScheduleTool() -> Tool {
+        return Tool(
+            name: "iap_get_price_schedule",
+            description: "Get price schedule for an in-app purchase",
+            inputSchema: .object([
+                "type": .string("object"),
+                "properties": .object([
+                    "iap_id": .object([
+                        "type": .string("string"),
+                        "description": .string("In-app purchase ID")
+                    ])
+                ]),
+                "required": .array([.string("iap_id")])
+            ])
+        )
+    }
+
+    func setIAPPriceScheduleTool() -> Tool {
+        return Tool(
+            name: "iap_set_price_schedule",
+            description: "Set price schedule for an in-app purchase",
+            inputSchema: .object([
+                "type": .string("object"),
+                "properties": .object([
+                    "iap_id": .object([
+                        "type": .string("string"),
+                        "description": .string("In-app purchase ID")
+                    ]),
+                    "base_territory_id": .object([
+                        "type": .string("string"),
+                        "description": .string("Base territory ID (e.g. USA)")
+                    ]),
+                    "manual_price_ids": .object([
+                        "type": .string("string"),
+                        "description": .string("Comma-separated list of manual price IDs")
+                    ])
+                ]),
+                "required": .array([.string("iap_id"), .string("base_territory_id")])
+            ])
+        )
+    }
+
+    func getIAPReviewScreenshotTool() -> Tool {
+        return Tool(
+            name: "iap_get_review_screenshot",
+            description: "Get App Store Review screenshot for an in-app purchase",
+            inputSchema: .object([
+                "type": .string("object"),
+                "properties": .object([
+                    "iap_id": .object([
+                        "type": .string("string"),
+                        "description": .string("In-app purchase ID")
+                    ])
+                ]),
+                "required": .array([.string("iap_id")])
+            ])
+        )
+    }
+
+    func createIAPReviewScreenshotTool() -> Tool {
+        return Tool(
+            name: "iap_create_review_screenshot",
+            description: "Reserve a screenshot for App Store Review of an in-app purchase. Returns upload operations.",
+            inputSchema: .object([
+                "type": .string("object"),
+                "properties": .object([
+                    "iap_id": .object([
+                        "type": .string("string"),
+                        "description": .string("In-app purchase ID")
+                    ]),
+                    "file_name": .object([
+                        "type": .string("string"),
+                        "description": .string("Screenshot file name (e.g. screenshot.png)")
+                    ]),
+                    "file_size": .object([
+                        "type": .string("integer"),
+                        "description": .string("Screenshot file size in bytes")
+                    ])
+                ]),
+                "required": .array([.string("iap_id"), .string("file_name"), .string("file_size")])
+            ])
+        )
+    }
 }

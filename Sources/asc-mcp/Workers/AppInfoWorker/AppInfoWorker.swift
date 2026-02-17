@@ -24,7 +24,8 @@ public final class AppInfoWorker: Sendable {
             updateAppInfoTool(),
             listAppInfoLocalizationsTool(),
             updateAppInfoLocalizationTool(),
-            createAppInfoLocalizationTool()
+            createAppInfoLocalizationTool(),
+            deleteAppInfoLocalizationTool()
         ]
     }
 
@@ -43,6 +44,8 @@ public final class AppInfoWorker: Sendable {
             return try await updateAppInfoLocalization(params)
         case "app_info_create_localization":
             return try await createAppInfoLocalization(params)
+        case "app_info_delete_localization":
+            return try await deleteAppInfoLocalization(params)
         default:
             throw MCPError.methodNotFound("Unknown tool: \(params.name)")
         }
