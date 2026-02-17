@@ -1,0 +1,21 @@
+{
+  "data": [
+    {
+      "type": "territories",
+      "id": "USA",
+      "attributes": {
+        "currency": "USD"
+      }
+    },
+    {
+      "type": "territories",
+      "id": "GBR",
+      "attributes": {
+        "currency": "GBP"
+      }
+    }
+  ],
+  "links": {
+    "self": "https://api.example.com/territories"
+  }
+}

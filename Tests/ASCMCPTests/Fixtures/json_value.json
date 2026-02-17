@@ -1,0 +1,11 @@
+{
+  "string_val": "hello",
+  "int_val": 42,
+  "double_val": 3.14,
+  "bool_val": true,
+  "null_val": null,
+  "array_val": [1, "two", true],
+  "object_val": {
+    "nested": "value"
+  }
+}

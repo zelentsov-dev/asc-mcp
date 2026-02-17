@@ -1,0 +1,15 @@
+{
+  "data": {
+    "type": "devices",
+    "id": "dev-1",
+    "attributes": {
+      "name": "iPhone 15 Pro",
+      "platform": "IOS",
+      "udid": "AAAABBBB-CCCC-DDDD-EEEE-FFFFFFFFFFFF",
+      "deviceClass": "IPHONE",
+      "status": "ENABLED",
+      "model": "iPhone15,3",
+      "addedDate": "2025-01-01T00:00:00Z"
+    }
+  }
+}

@@ -1,0 +1,23 @@
+[
+  {
+    "id": "loc-1",
+    "type": "appStoreVersionLocalizations",
+    "attributes": {
+      "locale": "en-US",
+      "description": "English desc",
+      "whatsNew": "Bug fixes"
+    }
+  },
+  {
+    "id": "ss-1",
+    "type": "appScreenshotSets",
+    "attributes": {
+      "screenshotDisplayType": "APP_IPHONE_67"
+    }
+  },
+  {
+    "id": "unknown-1",
+    "type": "unknownType",
+    "attributes": {}
+  }
+]

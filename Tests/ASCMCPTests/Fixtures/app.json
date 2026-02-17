@@ -1,0 +1,24 @@
+{
+  "data": {
+    "id": "app-123",
+    "type": "apps",
+    "attributes": {
+      "name": "My Test App",
+      "bundleId": "com.test.app",
+      "sku": "TEST_SKU",
+      "primaryLocale": "en-US",
+      "isOrEverWasMadeForKids": false,
+      "availableInNewTerritories": true
+    },
+    "relationships": {
+      "appStoreVersions": {
+        "links": {
+          "related": "https://api.appstoreconnect.apple.com/v1/apps/app-123/appStoreVersions"
+        }
+      }
+    }
+  },
+  "links": {
+    "self": "https://api.appstoreconnect.apple.com/v1/apps/app-123"
+  }
+}

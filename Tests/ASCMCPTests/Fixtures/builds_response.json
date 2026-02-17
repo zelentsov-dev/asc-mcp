@@ -1,0 +1,28 @@
+{
+  "data": [
+    {
+      "type": "builds",
+      "id": "build-1",
+      "attributes": {
+        "version": "42",
+        "uploadedDate": "2025-01-10T08:00:00Z",
+        "processingState": "VALID",
+        "buildAudienceType": "APP_STORE_ELIGIBLE"
+      }
+    },
+    {
+      "type": "builds",
+      "id": "build-2",
+      "attributes": {
+        "version": "41",
+        "uploadedDate": "2025-01-05T08:00:00Z",
+        "processingState": "PROCESSING",
+        "buildAudienceType": "INTERNAL_ONLY"
+      }
+    }
+  ],
+  "links": {
+    "self": "https://api.example.com/builds",
+    "next": "https://api.example.com/builds?cursor=xyz"
+  }
+}

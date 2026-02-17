@@ -1,0 +1,11 @@
+{
+  "data": {
+    "type": "buildBetaDetails",
+    "id": "bbd-1",
+    "attributes": {
+      "autoNotifyEnabled": true,
+      "internalBuildState": "PROCESSING",
+      "externalBuildState": "IN_BETA_TESTING"
+    }
+  }
+}

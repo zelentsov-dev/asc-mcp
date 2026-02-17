@@ -1,0 +1,18 @@
+{
+  "companies": [
+    {
+      "id": "company1",
+      "name": "Your Company Name",
+      "key_id": "YOUR_KEY_ID",
+      "issuer_id": "YOUR_ISSUER_ID",
+      "key_path": "/path/to/your/AuthKey_XXXXXXXXXX.p8"
+    },
+    {
+      "id": "company2",
+      "name": "Another Company",
+      "key_id": "ANOTHER_KEY_ID",
+      "issuer_id": "ANOTHER_ISSUER_ID",
+      "key_path": "/path/to/another/AuthKey.p8"
+    }
+  ]
+}

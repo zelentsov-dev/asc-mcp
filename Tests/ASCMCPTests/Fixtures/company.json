@@ -1,0 +1,8 @@
+{
+  "id": "comp-1",
+  "name": "Test Corp",
+  "key_id": "TESTKEY123",
+  "issuer_id": "TESTISSUER456",
+  "key_path": "/tmp/test.p8",
+  "key_content": "TEST_KEY_CONTENT_PLACEHOLDER"
+}

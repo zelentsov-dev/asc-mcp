@@ -1,0 +1,14 @@
+{
+  "data": {
+    "type": "certificates",
+    "id": "cert-1",
+    "attributes": {
+      "name": "iOS Distribution",
+      "certificateType": "IOS_DISTRIBUTION",
+      "displayName": "iOS Distribution: Test Corp",
+      "serialNumber": "ABC123DEF456",
+      "platform": "IOS",
+      "expirationDate": "2026-01-01T00:00:00Z"
+    }
+  }
+}

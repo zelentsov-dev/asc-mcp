@@ -1,0 +1,12 @@
+{
+  "data": {
+    "type": "bundleIds",
+    "id": "bid-1",
+    "attributes": {
+      "name": "Test App",
+      "identifier": "com.test.app",
+      "platform": "IOS",
+      "seedId": "ABCDEF1234"
+    }
+  }
+}

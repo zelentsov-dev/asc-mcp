@@ -1,0 +1,40 @@
+{
+  "data": [
+    {
+      "id": "ver-1",
+      "type": "appStoreVersions",
+      "attributes": {
+        "platform": "IOS",
+        "versionString": "2.1.0",
+        "appStoreState": "PREPARE_FOR_SUBMISSION",
+        "downloadable": true
+      },
+      "relationships": {
+        "appStoreVersionLocalizations": {
+          "links": {
+            "related": "https://api.example.com/localizations"
+          }
+        }
+      }
+    },
+    {
+      "id": "ver-2",
+      "type": "appStoreVersions",
+      "attributes": {
+        "platform": "IOS",
+        "versionString": "2.0.0",
+        "appStoreState": "READY_FOR_SALE",
+        "downloadable": true
+      }
+    }
+  ],
+  "links": {
+    "self": "https://api.example.com/versions"
+  },
+  "meta": {
+    "paging": {
+      "total": 2,
+      "limit": 10
+    }
+  }
+}

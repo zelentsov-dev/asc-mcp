@@ -1,0 +1,18 @@
+{
+  "data": {
+    "id": "loc-1",
+    "type": "appStoreVersionLocalizations",
+    "attributes": {
+      "locale": "en-US",
+      "description": "Test app description",
+      "keywords": "test,app,demo",
+      "whatsNew": "Bug fixes and improvements",
+      "promotionalText": "Try our new features!",
+      "supportUrl": "https://support.test.com",
+      "marketingUrl": "https://marketing.test.com"
+    }
+  },
+  "links": {
+    "self": "https://api.example.com/localizations/loc-1"
+  }
+}

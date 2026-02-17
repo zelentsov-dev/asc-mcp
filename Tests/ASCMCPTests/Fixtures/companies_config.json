@@ -1,0 +1,19 @@
+{
+  "defaultURL": "https://api.appstoreconnect.apple.com",
+  "companies": [
+    {
+      "id": "comp-1",
+      "name": "Test Corp",
+      "key_id": "KEY1",
+      "issuer_id": "ISS1",
+      "key_path": ""
+    },
+    {
+      "id": "comp-2",
+      "name": "Second Corp",
+      "key_id": "KEY2",
+      "issuer_id": "ISS2",
+      "key_path": ""
+    }
+  ]
+}

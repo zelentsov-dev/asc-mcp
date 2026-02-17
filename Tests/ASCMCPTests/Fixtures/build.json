@@ -1,0 +1,16 @@
+{
+  "data": {
+    "type": "builds",
+    "id": "build-1",
+    "attributes": {
+      "version": "42",
+      "uploadedDate": "2025-01-10T08:00:00Z",
+      "expirationDate": "2025-04-10T08:00:00Z",
+      "expired": false,
+      "minOsVersion": "17.0",
+      "processingState": "VALID",
+      "buildAudienceType": "APP_STORE_ELIGIBLE",
+      "usesNonExemptEncryption": false
+    }
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "data": {
+    "type": "profiles",
+    "id": "prof-1",
+    "attributes": {
+      "name": "Test App Store",
+      "platform": "IOS",
+      "profileType": "IOS_APP_STORE",
+      "profileState": "ACTIVE",
+      "uuid": "12345678-ABCD-1234-ABCD-123456789012",
+      "expirationDate": "2026-01-01T00:00:00Z"
+    }
+  }
+}

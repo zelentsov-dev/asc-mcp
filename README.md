@@ -1,0 +1,757 @@
+<p align="center">
+  <h1 align="center">App Store Connect MCP Server</h1>
+  <p align="center">
+    A Model Context Protocol server for the App Store Connect API.<br/>
+    Manage apps, builds, TestFlight, reviews, and more — directly from Claude.
+  </p>
+</p>
+
+<p align="center">
+  <a href="https://swift.org"><img src="https://img.shields.io/badge/Swift-6.1+-F05138.svg?style=flat&logo=swift&logoColor=white" alt="Swift 6.1+"></a>
+  <a href="https://developer.apple.com/macos/"><img src="https://img.shields.io/badge/macOS-14.0+-000000.svg?style=flat&logo=apple&logoColor=white" alt="macOS 14.0+"></a>
+  <a href="https://modelcontextprotocol.io"><img src="https://img.shields.io/badge/MCP-compatible-4A90D9.svg?style=flat" alt="MCP Compatible"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-yellow.svg?style=flat" alt="MIT License"></a>
+</p>
+
+---
+
+## Overview
+
+**asc-mcp** is a Swift-based MCP server that bridges [Claude](https://claude.ai) (or any MCP-compatible host) with the [App Store Connect API](https://developer.apple.com/documentation/appstoreconnectapi). It exposes **~109 tools** across 17 workers, enabling you to automate your entire iOS/macOS release workflow through natural language.
+
+### Key capabilities
+
+- **Multi-account** — manage multiple App Store Connect teams from a single server
+- **Full release pipeline** — create versions, attach builds, submit for review, phased rollout
+- **TestFlight automation** — beta groups, testers, build distribution, localized What's New
+- **Build management** — track processing, encryption compliance, readiness checks
+- **Customer reviews** — list, respond, update, delete responses, aggregate statistics
+- **In-app purchases** — CRUD for IAPs, subscription groups, localizations
+- **Provisioning** — bundle IDs, devices, certificates, profiles
+- **Metadata management** — localized descriptions, keywords, What's New across all locales
+
+## Quick Start
+
+```bash
+# 1. Install via Mint
+brew install mint
+mint install DeveloperZelentsov/asc-mcp@develop
+
+# 2. Add to Claude Code with env vars (simplest setup)
+claude mcp add asc-mcp \
+  -e ASC_KEY_ID=XXXXXXXXXX \
+  -e ASC_ISSUER_ID=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx \
+  -e ASC_PRIVATE_KEY_PATH=/path/to/AuthKey.p8 \
+  -- ~/.mint/bin/asc-mcp
+```
+
+Or use a JSON config file — see [Configuration](#configuration) below.
+
+## Prerequisites
+
+| Requirement | Version |
+|-------------|---------|
+| macOS | 14.0+ (Sonoma) |
+| Swift | 6.1+ |
+| Xcode | 16.0+ (for building) |
+| App Store Connect API Key | [Create one here](https://appstoreconnect.apple.com/access/integrations/api) |
+
+## Installation
+
+### Option A: Mint (recommended)
+
+[Mint](https://github.com/yonaskolb/Mint) is the simplest way to install — one command, no manual cloning.
+
+```bash
+# Install Mint (if you don't have it)
+brew install mint
+
+# Install asc-mcp from GitHub
+mint install DeveloperZelentsov/asc-mcp@develop
+
+# Register in Claude Code
+claude mcp add asc-mcp -- ~/.mint/bin/asc-mcp
+```
+
+To install a specific branch or tag:
+
+```bash
+mint install DeveloperZelentsov/asc-mcp@main      # main branch
+mint install DeveloperZelentsov/asc-mcp@develop    # develop branch
+mint install DeveloperZelentsov/asc-mcp@v1.0.0     # specific tag
+```
+
+To update to the latest version:
+
+```bash
+mint install DeveloperZelentsov/asc-mcp@develop --force
+```
+
+### Option B: Build from Source
+
+```bash
+git clone https://github.com/DeveloperZelentsov/asc-mcp.git
+cd asc-mcp
+swift build -c release
+
+# Register in Claude Code
+claude mcp add asc-mcp -- $(pwd)/.build/release/asc-mcp
+```
+
+> [!TIP]
+> For convenience, copy the binary to a location in your PATH:
+> ```bash
+> cp .build/release/asc-mcp /usr/local/bin/asc-mcp
+> ```
+
+## Configuration
+
+### 1. App Store Connect API Key
+
+1. Go to [App Store Connect → Users and Access → Integrations → Team Keys](https://appstoreconnect.apple.com/access/integrations/api)
+2. Click **Generate API Key** — select appropriate role (Admin or App Manager recommended)
+3. Download the `.p8` private key file (you can only download it once!)
+4. Note the **Key ID** and **Issuer ID**
+
+### 2. Companies Configuration
+
+asc-mcp supports three configuration methods (checked in this order):
+
+#### Option A: Environment Variables (recommended for MCP clients)
+
+**Single company** — simplest setup:
+
+```bash
+export ASC_KEY_ID=XXXXXXXXXX
+export ASC_ISSUER_ID=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+export ASC_PRIVATE_KEY_PATH=/path/to/AuthKey.p8
+# or pass the key content directly:
+# export ASC_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\nMIGT..."
+# optional:
+# export ASC_COMPANY_NAME="My Company"
+```
+
+**Multiple companies** — numbered variables:
+
+```bash
+export ASC_COMPANY_1_NAME="My Company"
+export ASC_COMPANY_1_KEY_ID=XXXXXXXXXX
+export ASC_COMPANY_1_ISSUER_ID=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+export ASC_COMPANY_1_KEY_PATH=/path/to/AuthKey1.p8
+
+export ASC_COMPANY_2_NAME="Client Corp"
+export ASC_COMPANY_2_KEY_ID=YYYYYYYYYY
+export ASC_COMPANY_2_ISSUER_ID=yyyyyyyy-yyyy-yyyy-yyyy-yyyyyyyyyyyy
+export ASC_COMPANY_2_KEY_PATH=/path/to/AuthKey2.p8
+```
+
+> Numbering starts at 1. The server scans while `ASC_COMPANY_{N}_KEY_ID` exists.
+
+#### Option B: JSON Config File
+
+Create `~/.config/asc-mcp/companies.json`:
+
+```json
+{
+  "companies": [
+    {
+      "id": "my-company",
+      "name": "My Company",
+      "key_id": "XXXXXXXXXX",
+      "issuer_id": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+      "key_path": "/Users/you/.keys/AuthKey_XXXXXXXXXX.p8"
+    },
+    {
+      "id": "client-company",
+      "name": "Client Corp",
+      "key_id": "YYYYYYYYYY",
+      "issuer_id": "yyyyyyyy-yyyy-yyyy-yyyy-yyyyyyyyyyyy",
+      "key_path": "/Users/you/.keys/AuthKey_YYYYYYYYYY.p8"
+    }
+  ]
+}
+```
+
+#### Configuration Priority
+
+The server resolves configuration in this order:
+
+1. `--companies /path/to/companies.json` (CLI argument)
+2. Constructor parameter (programmatic)
+3. `ASC_MCP_COMPANIES=/path/to/companies.json` (env var pointing to JSON file)
+4. Default JSON file paths (`~/.config/asc-mcp/companies.json`, etc.)
+5. `ASC_COMPANY_1_KEY_ID` ... (multi-company env vars)
+6. `ASC_KEY_ID` + `ASC_ISSUER_ID` (single-company env vars)
+
+### 3. MCP Host Configuration
+
+<details>
+<summary><strong>Claude Code (CLI)</strong></summary>
+
+```bash
+claude mcp add asc-mcp -- ~/.mint/bin/asc-mcp
+```
+
+Or add to `.mcp.json` (project) / `.claude/settings.json` (global) with env vars:
+
+```json
+{
+  "mcpServers": {
+    "asc-mcp": {
+      "command": "/path/to/asc-mcp",
+      "env": {
+        "ASC_KEY_ID": "XXXXXXXXXX",
+        "ASC_ISSUER_ID": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+        "ASC_PRIVATE_KEY_PATH": "/path/to/AuthKey.p8"
+      }
+    }
+  }
+}
+```
+
+</details>
+
+<details>
+<summary><strong>Claude Desktop</strong></summary>
+
+Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
+
+```json
+{
+  "mcpServers": {
+    "asc-mcp": {
+      "command": "/path/to/asc-mcp",
+      "env": {
+        "ASC_KEY_ID": "XXXXXXXXXX",
+        "ASC_ISSUER_ID": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+        "ASC_PRIVATE_KEY_PATH": "/path/to/AuthKey.p8"
+      }
+    }
+  }
+}
+```
+
+</details>
+
+<details>
+<summary><strong>Codex CLI</strong></summary>
+
+Add to `~/.codex/config.toml`:
+
+```toml
+[mcp_servers.asc-mcp]
+command = "/path/to/asc-mcp"
+startup_timeout_sec = 20
+tool_timeout_sec = 60
+enabled = true
+```
+
+Set env vars in your shell or use a wrapper script.
+
+</details>
+
+<details>
+<summary><strong>Gemini CLI</strong></summary>
+
+Add to `~/.gemini/settings.json`:
+
+```json
+{
+  "mcpServers": {
+    "asc-mcp": {
+      "command": "/path/to/asc-mcp",
+      "timeout": 60000,
+      "env": {
+        "ASC_KEY_ID": "XXXXXXXXXX",
+        "ASC_ISSUER_ID": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+        "ASC_PRIVATE_KEY_PATH": "/path/to/AuthKey.p8"
+      }
+    }
+  }
+}
+```
+
+</details>
+
+<details>
+<summary><strong>VS Code (Copilot / Continue)</strong></summary>
+
+Add to `.vscode/mcp.json`:
+
+```json
+{
+  "servers": {
+    "asc-mcp": {
+      "command": "/path/to/asc-mcp",
+      "env": {
+        "ASC_KEY_ID": "XXXXXXXXXX",
+        "ASC_ISSUER_ID": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+        "ASC_PRIVATE_KEY_PATH": "/path/to/AuthKey.p8"
+      }
+    }
+  }
+}
+```
+
+</details>
+
+<details>
+<summary><strong>Cursor</strong></summary>
+
+Add to Cursor settings → MCP Servers:
+
+```json
+{
+  "mcpServers": {
+    "asc-mcp": {
+      "command": "/path/to/asc-mcp",
+      "env": {
+        "ASC_KEY_ID": "XXXXXXXXXX",
+        "ASC_ISSUER_ID": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+        "ASC_PRIVATE_KEY_PATH": "/path/to/AuthKey.p8"
+      }
+    }
+  }
+}
+```
+
+</details>
+
+<details>
+<summary><strong>Windsurf</strong></summary>
+
+Add to `~/.codeium/windsurf/mcp_config.json`:
+
+```json
+{
+  "mcpServers": {
+    "asc-mcp": {
+      "command": "/path/to/asc-mcp",
+      "args": ["--workers", "apps,builds,versions,reviews,beta_groups,iap"],
+      "env": {
+        "ASC_KEY_ID": "XXXXXXXXXX",
+        "ASC_ISSUER_ID": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+        "ASC_PRIVATE_KEY_PATH": "/path/to/AuthKey.p8"
+      }
+    }
+  }
+}
+```
+
+> **Note:** Windsurf has a 100-tool limit. The server exposes ~109 tools by default, so you must use `--workers` to select a subset. See [Worker Filtering](#worker-filtering) below.
+
+</details>
+
+> [!IMPORTANT]
+> If the MCP host doesn't inherit your shell PATH, you may need to specify the full path to the binary and ensure `.p8` key paths are absolute.
+
+### Worker Filtering
+
+The server exposes **~109 tools** across 17 workers. Some MCP clients impose a tool limit (e.g., Windsurf caps at 100). Use `--workers` to enable only the workers you need:
+
+```bash
+# Only load apps, builds, and version lifecycle tools
+asc-mcp --workers apps,builds,versions
+
+# Full release workflow subset (~60 tools, fits within any client limit)
+asc-mcp --workers apps,builds,versions,reviews,beta_groups,iap
+```
+
+`company` and `auth` workers are **always enabled** regardless of the filter (they provide core multi-account and authentication functionality).
+
+When `builds` is enabled, it automatically includes `build_processing` and `build_beta` sub-workers.
+
+**Available worker names:**
+
+| Worker | Prefix | Tools | Description |
+|--------|--------|-------|-------------|
+| `apps` | `apps_` | 9 | App listing, metadata, localizations |
+| `builds` | `builds_` | 4 | Build management |
+| `build_processing` | `builds_*_processing_` | 5 | Build states, encryption |
+| `build_beta` | `builds_*_beta_` | 9 | TestFlight localizations, notifications |
+| `versions` | `app_versions_` | 12 | Version lifecycle, submit, release |
+| `reviews` | `reviews_` | 8 | Customer reviews and responses |
+| `beta_groups` | `beta_groups_` | 9 | TestFlight groups |
+| `beta_testers` | `beta_testers_` | 6 | Tester management |
+| `iap` | `iap_` | 12 | In-app purchases, subscriptions |
+| `provisioning` | `provisioning_` | 17 | Bundle IDs, devices, certificates |
+| `app_info` | `app_info_` | 6 | App info, categories |
+| `pricing` | `pricing_` | 6 | Territories, pricing |
+| `users` | `users_` | 6 | Team members, roles |
+| `app_events` | `app_events_` | 6 | In-app events |
+| `analytics` | `analytics_` | 4 | Sales/financial reports |
+
+### Token Cost
+
+When connected to an LLM client, tool definitions consume context tokens. Here's the approximate footprint:
+
+| Configuration | Tools | ~Tokens |
+|---|---:|---:|
+| All workers (default) | 123 | **~14,300** |
+| `--workers apps,builds,versions,reviews` | 52 | ~6,600 |
+| `--workers apps,builds,versions` | 44 | ~5,750 |
+| `--workers apps,builds` | 32 | ~3,500 |
+| `--workers apps` | 16 | ~1,850 |
+
+**Heaviest workers:** AppLifecycle/versions (~2,300 tokens), Provisioning (~1,840), Apps (~1,330).
+
+For Claude (200K context) ~14K tokens is ~3–5% — negligible. For clients with smaller context windows, use `--workers` to reduce the footprint.
+
+## Available Tools
+
+**~109 tools** organized across 17 workers (use `--workers` to filter — see [Worker Filtering](#worker-filtering)):
+
+<details>
+<summary><strong>Company Management</strong> — 3 tools</summary>
+
+| Tool | Description |
+|------|-------------|
+| `company_list` | List all configured companies |
+| `company_switch` | Switch active company for API operations |
+| `company_current` | Get current active company info |
+
+</details>
+
+<details>
+<summary><strong>Authentication</strong> — 4 tools</summary>
+
+| Tool | Description |
+|------|-------------|
+| `auth_generate_token` | Generate JWT token for API access |
+| `auth_validate_token` | Validate an existing JWT token |
+| `auth_refresh_token` | Force refresh JWT token |
+| `auth_token_status` | Get JWT token cache status |
+
+</details>
+
+<details>
+<summary><strong>Apps Management</strong> — 7 tools</summary>
+
+| Tool | Description |
+|------|-------------|
+| `apps_list` | List all applications with filtering |
+| `apps_get_details` | Get detailed app information |
+| `apps_search` | Search apps by name or Bundle ID |
+| `apps_list_versions` | List all versions with states |
+| `apps_get_metadata` | Get localized metadata for a version |
+| `apps_update_metadata` | Update metadata (What's New, description, etc.) |
+| `apps_list_localizations` | List localizations with content status |
+
+</details>
+
+<details>
+<summary><strong>Builds</strong> — 4 tools</summary>
+
+| Tool | Description |
+|------|-------------|
+| `builds_list` | List builds with processing states |
+| `builds_get` | Get detailed build information |
+| `builds_find_by_number` | Find build by version number |
+| `builds_list_for_version` | Get builds for specific app version |
+
+</details>
+
+<details>
+<summary><strong>Build Processing</strong> — 5 tools</summary>
+
+| Tool | Description |
+|------|-------------|
+| `builds_get_processing_state` | Get current processing state |
+| `builds_update_encryption` | Set encryption compliance |
+| `builds_set_expiration` | Configure build expiration |
+| `builds_wait_for_processing` | Poll until build processing completes |
+| `builds_check_readiness` | Check if build is ready for submission |
+
+</details>
+
+<details>
+<summary><strong>TestFlight Beta Details</strong> — 7 tools</summary>
+
+| Tool | Description |
+|------|-------------|
+| `builds_get_beta_detail` | Get TestFlight configuration for build |
+| `builds_update_beta_detail` | Update TestFlight settings |
+| `builds_set_beta_localization` | Set What's New for TestFlight |
+| `builds_list_beta_localizations` | List all TestFlight localizations |
+| `builds_get_beta_groups` | Get beta groups for a build |
+| `builds_get_beta_testers` | Get individual testers for a build |
+| `builds_send_beta_notification` | Send notification to beta testers |
+
+</details>
+
+<details>
+<summary><strong>TestFlight Beta Groups</strong> — 6 tools</summary>
+
+| Tool | Description |
+|------|-------------|
+| `beta_groups_list` | List TestFlight beta groups for an app |
+| `beta_groups_create` | Create a new beta group |
+| `beta_groups_update` | Update beta group settings |
+| `beta_groups_delete` | Delete a beta group |
+| `beta_groups_add_testers` | Add testers to a beta group |
+| `beta_groups_remove_testers` | Remove testers from a beta group |
+
+</details>
+
+<details>
+<summary><strong>App Version Lifecycle</strong> — 12 tools</summary>
+
+| Tool | Description |
+|------|-------------|
+| `app_versions_create` | Create a new app version |
+| `app_versions_list` | List versions with state filtering |
+| `app_versions_get` | Get detailed version information |
+| `app_versions_update` | Update version attributes |
+| `app_versions_attach_build` | Attach build to version |
+| `app_versions_submit_for_review` | Submit for App Store review |
+| `app_versions_cancel_review` | Cancel ongoing review |
+| `app_versions_release` | Release approved version |
+| `app_versions_create_phased_release` | Create gradual rollout |
+| `app_versions_update_phased_release` | Pause/resume/complete rollout |
+| `app_versions_set_review_details` | Set reviewer contact info |
+| `app_versions_update_age_rating` | Configure age rating declaration |
+
+</details>
+
+<details>
+<summary><strong>Customer Reviews</strong> — 8 tools</summary>
+
+| Tool | Description |
+|------|-------------|
+| `reviews_list` | Get reviews with filtering and pagination |
+| `reviews_get` | Get specific review details |
+| `reviews_list_for_version` | Get reviews for a specific version |
+| `reviews_stats` | Aggregated review statistics |
+| `reviews_create_response` | Respond to a customer review |
+| `reviews_update_response` | Update an existing response |
+| `reviews_delete_response` | Delete a response |
+| `reviews_get_response` | Get response for a review |
+
+</details>
+
+<details>
+<summary><strong>In-App Purchases</strong> — 8 tools</summary>
+
+| Tool | Description |
+|------|-------------|
+| `iap_list` | List in-app purchases for an app |
+| `iap_get` | Get IAP details |
+| `iap_create` | Create a new IAP (consumable, non-consumable, subscription) |
+| `iap_update` | Update IAP attributes |
+| `iap_delete` | Delete an in-app purchase |
+| `iap_list_localizations` | List IAP localizations |
+| `iap_list_subscriptions` | List subscription groups |
+| `iap_get_subscription_group` | Get subscription group details |
+
+</details>
+
+<details>
+<summary><strong>Provisioning</strong> — 9 tools</summary>
+
+| Tool | Description |
+|------|-------------|
+| `provisioning_list_bundle_ids` | List registered bundle identifiers |
+| `provisioning_get_bundle_id` | Get bundle ID details |
+| `provisioning_create_bundle_id` | Register a new bundle identifier |
+| `provisioning_delete_bundle_id` | Delete a bundle identifier |
+| `provisioning_list_devices` | List registered devices |
+| `provisioning_register_device` | Register a new device (UDID) |
+| `provisioning_update_device` | Update device name or status |
+| `provisioning_list_certificates` | List signing certificates |
+| `provisioning_list_profiles` | List provisioning profiles |
+
+</details>
+
+## Usage Examples
+
+### Complete Release Workflow
+
+```
+You: "Release version 2.1.0 of my app with build 456"
+
+Claude will:
+1. app_versions_create(app_id, platform: "IOS", version_string: "2.1.0")
+2. app_versions_attach_build(version_id, build_id)
+3. app_versions_set_review_details(version_id, contact_email: "...")
+4. app_versions_submit_for_review(version_id)
+5. app_versions_create_phased_release(version_id)  # after approval
+```
+
+### TestFlight Distribution
+
+```
+You: "Create a beta group 'External Testers' and distribute the latest build"
+
+Claude will:
+1. beta_groups_create(app_id, name: "External Testers")
+2. builds_list(app_id, limit: 1)  # find latest
+3. builds_set_beta_localization(build_id, locale: "en-US", whats_new: "...")
+4. beta_groups_add_testers(group_id, tester_ids: [...])
+```
+
+### Review Management
+
+```
+You: "Show me all 1-star reviews from the last week and draft responses"
+
+Claude will:
+1. reviews_list(app_id, rating: 1, sort: "-createdDate", limit: 50)
+2. reviews_create_response(review_id, response_body: "...")  # for each
+```
+
+### Multi-Company Workflow
+
+```
+You: "Switch to ClientCorp and check their latest build status"
+
+Claude will:
+1. company_switch(company: "ClientCorp")
+2. apps_list(limit: 5)
+3. builds_list(app_id, limit: 1)
+4. builds_get_processing_state(build_id)
+```
+
+## API Constraints
+
+| Constraint | Details |
+|------------|---------|
+| **No emojis** | Metadata fields (What's New, Description, Keywords) must not contain emoji characters |
+| **Version state** | Only versions in `PREPARE_FOR_SUBMISSION` state can be edited |
+| **JWT expiry** | Tokens expire after 20 minutes — the server auto-refreshes them |
+| **Rate limits** | Apple enforces per-account rate limits ([documentation](https://developer.apple.com/documentation/appstoreconnectapi/identifying-rate-limits)) |
+| **Locale format** | Use standard codes: `en-US`, `ru`, `de-DE`, `ja`, `zh-Hans` |
+
+## Architecture
+
+```
+Sources/asc-mcp/
+├── main.swift                      # Entry point, MCP server setup
+├── Core/                           # Error types, configuration
+├── Helpers/                        # JSON formatting, safe helpers
+├── Models/                         # API request/response models
+│   ├── AppStoreConnect/            #   Apps, versions, localizations
+│   ├── Builds/                     #   Builds, beta details, beta groups
+│   ├── InAppPurchases/             #   IAP, subscriptions
+│   └── Provisioning/              #   Bundle IDs, devices, certificates
+├── Services/                       # Infrastructure
+│   ├── HTTPClient.swift            #   Actor-based HTTP with retry logic
+│   ├── JWTService.swift            #   ES256 JWT token generation
+│   └── CompaniesManager.swift      #   Multi-account management
+└── Workers/                        # MCP tool implementations (11 workers)
+    ├── MainWorker/
+    │   └── WorkerManager.swift     #   Central tool registry & routing
+    ├── CompaniesWorker/            #   company_* tools
+    ├── AuthWorker/                 #   auth_* tools
+    ├── AppsWorker/                 #   apps_* tools
+    ├── BuildsWorker/               #   builds_list/get/find tools
+    ├── BuildProcessingWorker/      #   builds_*_processing/encryption tools
+    ├── BuildBetaDetailsWorker/     #   builds_*_beta_* tools
+    ├── AppLifecycleWorker/         #   app_versions_* tools
+    ├── ReviewsWorker/              #   reviews_* tools
+    ├── BetaGroupsWorker/           #   beta_groups_* tools
+    ├── InAppPurchasesWorker/       #   iap_* tools
+    └── ProvisioningWorker/         #   provisioning_* tools
+```
+
+### Design Principles
+
+- **Swift 6 strict concurrency** — all workers and services are `Sendable`, proper actor isolation
+- **Actor-based HTTP client** — thread-safe with exponential backoff and retry logic
+- **Prefix-based routing** — `WorkerManager` routes tool calls by name prefix (zero config)
+- **Minimal dependencies** — only the [MCP Swift SDK](https://github.com/modelcontextprotocol/swift-sdk)
+
+## Troubleshooting
+
+<details>
+<summary><strong>Server not responding / MCP disconnection</strong></summary>
+
+1. Verify the binary path is correct in your MCP host config
+2. Check that `companies.json` exists and is valid JSON
+3. Ensure `.p8` key file paths are absolute and the files exist
+4. Try running the binary directly to see error output: `.build/release/asc-mcp`
+
+</details>
+
+<details>
+<summary><strong>Authentication errors (401)</strong></summary>
+
+1. Verify your Key ID and Issuer ID match what's shown in App Store Connect
+2. Ensure the `.p8` file is the original download (not modified)
+3. Check that the API key hasn't been revoked
+4. JWT tokens auto-refresh, but if the key is invalid, all requests will fail
+
+</details>
+
+<details>
+<summary><strong>"Version must be in PREPARE_FOR_SUBMISSION state"</strong></summary>
+
+You can only edit metadata for versions that are in `PREPARE_FOR_SUBMISSION` state. Versions in `READY_FOR_SALE`, `IN_REVIEW`, or `WAITING_FOR_REVIEW` are read-only. Create a new version first if needed.
+
+</details>
+
+<details>
+<summary><strong>Build processing takes too long</strong></summary>
+
+Use `builds_wait_for_processing` with a reasonable timeout (default 1800s). Apple's build processing typically takes 5–30 minutes but can be longer during peak times.
+
+</details>
+
+<details>
+<summary><strong>Rate limiting (429 errors)</strong></summary>
+
+The HTTP client automatically retries with exponential backoff on 429 responses. If you consistently hit limits, reduce the frequency of API calls or use pagination with smaller page sizes.
+
+</details>
+
+## Development
+
+### Building
+
+```bash
+swift build              # Debug build
+swift build -c release   # Release build (optimized)
+swift package clean      # Clean build artifacts
+```
+
+### Test Mode
+
+```bash
+.build/debug/asc-mcp --test    # Runs built-in integration tests
+```
+
+### Adding a New Tool
+
+1. Create handler method in the appropriate `Worker+Handlers.swift`
+2. Add tool definition in `Worker+ToolDefinitions.swift`
+3. Register in worker's `getTools()` method
+4. Add routing case in worker's `handleTool()` switch
+5. The `WorkerManager` auto-routes by prefix — no changes needed there
+
+### Adding a New Worker
+
+1. Create directory: `Workers/MyWorker/`
+2. Create 3 files: `MyWorker.swift`, `MyWorker+ToolDefinitions.swift`, `MyWorker+Handlers.swift`
+3. Add worker property and initialization in `WorkerManager.swift`
+4. Add routing rule in `WorkerManager.registerWorkers()`
+5. Add `getMyTools()` helper method
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch: `git checkout -b feature/amazing-feature`
+3. Commit your changes: `git commit -m 'Add amazing feature'`
+4. Push to the branch: `git push origin feature/amazing-feature`
+5. Open a Pull Request
+
+## License
+
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+
+## Acknowledgments
+
+- [Model Context Protocol](https://modelcontextprotocol.io) — the protocol specification and [Swift SDK](https://github.com/modelcontextprotocol/swift-sdk)
+- [App Store Connect API](https://developer.apple.com/documentation/appstoreconnectapi) — Apple's official REST API
+
+---
+
+<sub>This is an unofficial, community-maintained tool and is not affiliated with or endorsed by Apple Inc.</sub>

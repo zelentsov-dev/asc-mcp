@@ -1,0 +1,34 @@
+{
+  "data": [
+    {
+      "id": "app-1",
+      "type": "apps",
+      "attributes": {
+        "name": "App One",
+        "bundleId": "com.test.one",
+        "sku": "SKU1",
+        "primaryLocale": "en-US"
+      }
+    },
+    {
+      "id": "app-2",
+      "type": "apps",
+      "attributes": {
+        "name": "App Two",
+        "bundleId": "com.test.two",
+        "sku": "SKU2",
+        "primaryLocale": "ru-RU"
+      }
+    }
+  ],
+  "links": {
+    "self": "https://api.appstoreconnect.apple.com/v1/apps",
+    "next": "https://api.appstoreconnect.apple.com/v1/apps?cursor=abc"
+  },
+  "meta": {
+    "paging": {
+      "total": 5,
+      "limit": 2
+    }
+  }
+}

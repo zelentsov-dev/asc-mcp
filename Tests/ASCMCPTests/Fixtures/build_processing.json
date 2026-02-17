@@ -1,0 +1,12 @@
+{
+  "data": {
+    "type": "appEncryptionDeclarations",
+    "id": "enc-1",
+    "attributes": {
+      "platform": "IOS",
+      "appEncryptionDeclarationState": "APPROVED",
+      "usesEncryption": false,
+      "exempt": true
+    }
+  }
+}

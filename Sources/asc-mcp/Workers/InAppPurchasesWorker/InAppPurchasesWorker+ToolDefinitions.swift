@@ -1,0 +1,294 @@
+import Foundation
+import MCP
+
+// MARK: - Tool Definitions
+extension InAppPurchasesWorker {
+
+    func listIAPTool() -> Tool {
+        return Tool(
+            name: "iap_list",
+            description: "List in-app purchases for an app",
+            inputSchema: .object([
+                "type": .string("object"),
+                "properties": .object([
+                    "app_id": .object([
+                        "type": .string("string"),
+                        "description": .string("App Store Connect app ID")
+                    ]),
+                    "limit": .object([
+                        "type": .string("integer"),
+                        "description": .string("Max results (default: 25, max: 200)")
+                    ]),
+                    "filter_state": .object([
+                        "type": .string("string"),
+                        "description": .string("Filter by state (e.g. APPROVED, DEVELOPER_ACTION_NEEDED)")
+                    ]),
+                    "filter_type": .object([
+                        "type": .string("string"),
+                        "description": .string("Filter by type: CONSUMABLE, NON_CONSUMABLE, AUTO_RENEWABLE, NON_RENEWING")
+                    ]),
+                    "next_url": .object([
+                        "type": .string("string"),
+                        "description": .string("Pagination URL from previous response to fetch next page")
+                    ])
+                ]),
+                "required": .array([.string("app_id")])
+            ])
+        )
+    }
+
+    func getIAPTool() -> Tool {
+        return Tool(
+            name: "iap_get",
+            description: "Get details of a specific in-app purchase",
+            inputSchema: .object([
+                "type": .string("object"),
+                "properties": .object([
+                    "iap_id": .object([
+                        "type": .string("string"),
+                        "description": .string("In-app purchase ID")
+                    ])
+                ]),
+                "required": .array([.string("iap_id")])
+            ])
+        )
+    }
+
+    func createIAPTool() -> Tool {
+        return Tool(
+            name: "iap_create",
+            description: "Create a new in-app purchase",
+            inputSchema: .object([
+                "type": .string("object"),
+                "properties": .object([
+                    "app_id": .object([
+                        "type": .string("string"),
+                        "description": .string("App Store Connect app ID")
+                    ]),
+                    "name": .object([
+                        "type": .string("string"),
+                        "description": .string("Reference name (internal only)")
+                    ]),
+                    "product_id": .object([
+                        "type": .string("string"),
+                        "description": .string("Unique product identifier")
+                    ]),
+                    "iap_type": .object([
+                        "type": .string("string"),
+                        "description": .string("CONSUMABLE, NON_CONSUMABLE, AUTO_RENEWABLE, NON_RENEWING")
+                    ]),
+                    "review_note": .object([
+                        "type": .string("string"),
+                        "description": .string("Notes for App Review")
+                    ]),
+                    "family_sharable": .object([
+                        "type": .string("boolean"),
+                        "description": .string("Enable Family Sharing")
+                    ])
+                ]),
+                "required": .array([.string("app_id"), .string("name"), .string("product_id"), .string("iap_type")])
+            ])
+        )
+    }
+
+    func updateIAPTool() -> Tool {
+        return Tool(
+            name: "iap_update",
+            description: "Update an existing in-app purchase",
+            inputSchema: .object([
+                "type": .string("object"),
+                "properties": .object([
+                    "iap_id": .object([
+                        "type": .string("string"),
+                        "description": .string("In-app purchase ID")
+                    ]),
+                    "name": .object([
+                        "type": .string("string"),
+                        "description": .string("New reference name")
+                    ]),
+                    "review_note": .object([
+                        "type": .string("string"),
+                        "description": .string("Notes for App Review")
+                    ]),
+                    "family_sharable": .object([
+                        "type": .string("boolean"),
+                        "description": .string("Enable Family Sharing")
+                    ])
+                ]),
+                "required": .array([.string("iap_id")])
+            ])
+        )
+    }
+
+    func deleteIAPTool() -> Tool {
+        return Tool(
+            name: "iap_delete",
+            description: "Delete an in-app purchase",
+            inputSchema: .object([
+                "type": .string("object"),
+                "properties": .object([
+                    "iap_id": .object([
+                        "type": .string("string"),
+                        "description": .string("In-app purchase ID to delete")
+                    ])
+                ]),
+                "required": .array([.string("iap_id")])
+            ])
+        )
+    }
+
+    func listIAPLocalizationsTool() -> Tool {
+        return Tool(
+            name: "iap_list_localizations",
+            description: "List localizations for an in-app purchase",
+            inputSchema: .object([
+                "type": .string("object"),
+                "properties": .object([
+                    "iap_id": .object([
+                        "type": .string("string"),
+                        "description": .string("In-app purchase ID")
+                    ]),
+                    "next_url": .object([
+                        "type": .string("string"),
+                        "description": .string("Pagination URL from previous response to fetch next page")
+                    ])
+                ]),
+                "required": .array([.string("iap_id")])
+            ])
+        )
+    }
+
+    func listSubscriptionGroupsTool() -> Tool {
+        return Tool(
+            name: "iap_list_subscriptions",
+            description: "List subscription groups for an app",
+            inputSchema: .object([
+                "type": .string("object"),
+                "properties": .object([
+                    "app_id": .object([
+                        "type": .string("string"),
+                        "description": .string("App Store Connect app ID")
+                    ]),
+                    "limit": .object([
+                        "type": .string("integer"),
+                        "description": .string("Max results (default: 25, max: 200)")
+                    ]),
+                    "next_url": .object([
+                        "type": .string("string"),
+                        "description": .string("Pagination URL from previous response to fetch next page")
+                    ])
+                ]),
+                "required": .array([.string("app_id")])
+            ])
+        )
+    }
+
+    func createIAPLocalizationTool() -> Tool {
+        return Tool(
+            name: "iap_create_localization",
+            description: "Create a localization for an in-app purchase",
+            inputSchema: .object([
+                "type": .string("object"),
+                "properties": .object([
+                    "iap_id": .object([
+                        "type": .string("string"),
+                        "description": .string("In-app purchase ID")
+                    ]),
+                    "locale": .object([
+                        "type": .string("string"),
+                        "description": .string("Locale code (e.g. en-US, ru-RU)")
+                    ]),
+                    "name": .object([
+                        "type": .string("string"),
+                        "description": .string("Display name for the locale")
+                    ]),
+                    "description": .object([
+                        "type": .string("string"),
+                        "description": .string("Description for the locale")
+                    ])
+                ]),
+                "required": .array([.string("iap_id"), .string("locale"), .string("name")])
+            ])
+        )
+    }
+
+    func updateIAPLocalizationTool() -> Tool {
+        return Tool(
+            name: "iap_update_localization",
+            description: "Update a localization for an in-app purchase",
+            inputSchema: .object([
+                "type": .string("object"),
+                "properties": .object([
+                    "localization_id": .object([
+                        "type": .string("string"),
+                        "description": .string("IAP localization ID")
+                    ]),
+                    "name": .object([
+                        "type": .string("string"),
+                        "description": .string("New display name")
+                    ]),
+                    "description": .object([
+                        "type": .string("string"),
+                        "description": .string("New description")
+                    ])
+                ]),
+                "required": .array([.string("localization_id")])
+            ])
+        )
+    }
+
+    func deleteIAPLocalizationTool() -> Tool {
+        return Tool(
+            name: "iap_delete_localization",
+            description: "Delete a localization for an in-app purchase",
+            inputSchema: .object([
+                "type": .string("object"),
+                "properties": .object([
+                    "localization_id": .object([
+                        "type": .string("string"),
+                        "description": .string("IAP localization ID to delete")
+                    ])
+                ]),
+                "required": .array([.string("localization_id")])
+            ])
+        )
+    }
+
+    func submitIAPForReviewTool() -> Tool {
+        return Tool(
+            name: "iap_submit_for_review",
+            description: "Submit an in-app purchase for App Review",
+            inputSchema: .object([
+                "type": .string("object"),
+                "properties": .object([
+                    "iap_id": .object([
+                        "type": .string("string"),
+                        "description": .string("In-app purchase ID to submit")
+                    ])
+                ]),
+                "required": .array([.string("iap_id")])
+            ])
+        )
+    }
+
+    func getSubscriptionGroupTool() -> Tool {
+        return Tool(
+            name: "iap_get_subscription_group",
+            description: "Get details of a subscription group",
+            inputSchema: .object([
+                "type": .string("object"),
+                "properties": .object([
+                    "group_id": .object([
+                        "type": .string("string"),
+                        "description": .string("Subscription group ID")
+                    ]),
+                    "include_subscriptions": .object([
+                        "type": .string("boolean"),
+                        "description": .string("Include subscriptions (default: true)")
+                    ])
+                ]),
+                "required": .array([.string("group_id")])
+            ])
+        )
+    }
+}

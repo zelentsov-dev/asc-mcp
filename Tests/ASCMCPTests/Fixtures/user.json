@@ -1,0 +1,14 @@
+{
+  "data": {
+    "type": "users",
+    "id": "user-1",
+    "attributes": {
+      "username": "john@test.com",
+      "firstName": "John",
+      "lastName": "Doe",
+      "roles": ["ADMIN", "APP_MANAGER"],
+      "allAppsVisible": true,
+      "provisioningAllowed": true
+    }
+  }
+}

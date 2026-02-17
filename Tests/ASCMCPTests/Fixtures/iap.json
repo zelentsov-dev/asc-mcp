@@ -1,0 +1,15 @@
+{
+  "data": {
+    "type": "inAppPurchases",
+    "id": "iap-1",
+    "attributes": {
+      "name": "Premium Upgrade",
+      "productId": "com.test.premium",
+      "inAppPurchaseType": "NON_CONSUMABLE",
+      "state": "APPROVED",
+      "reviewNote": "Test purchase",
+      "familySharable": true,
+      "contentHosting": false
+    }
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "data": {
+    "type": "appEvents",
+    "id": "evt-1",
+    "attributes": {
+      "referenceName": "Summer Sale",
+      "badge": "LIVE_EVENT",
+      "deepLink": "https://app.test.com/sale",
+      "purchaseRequirement": "NO_COST_ASSOCIATED",
+      "purpose": "APPROPRIATE_FOR_ALL_USERS",
+      "eventState": "ACCEPTED",
+      "territorySchedules": [
+        {
+          "territories": ["USA", "GBR"],
+          "publishStart": "2025-06-01T00:00:00Z",
+          "eventStart": "2025-06-15T00:00:00Z",
+          "eventEnd": "2025-06-30T00:00:00Z"
+        }
+      ]
+    },
+    "relationships": {
+      "localizations": {
+        "links": {
+          "related": "https://api.example.com/localizations"
+        }
+      }
+    }
+  }
+}

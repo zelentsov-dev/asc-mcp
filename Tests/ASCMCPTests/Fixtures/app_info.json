@@ -1,0 +1,27 @@
+{
+  "data": {
+    "type": "appInfos",
+    "id": "ai-1",
+    "attributes": {
+      "appStoreState": "READY_FOR_SALE",
+      "appStoreAgeRating": "FOUR_PLUS",
+      "state": "ACCEPTED"
+    },
+    "relationships": {
+      "primaryCategory": {
+        "links": {
+          "related": "https://api.example.com/categories"
+        }
+      }
+    }
+  },
+  "included": [
+    {
+      "type": "appCategories",
+      "id": "cat-1",
+      "attributes": {
+        "platforms": ["IOS", "MAC_OS"]
+      }
+    }
+  ]
+}

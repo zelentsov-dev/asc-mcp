@@ -1,0 +1,18 @@
+{
+  "data": {
+    "id": "ver-1",
+    "type": "appStoreVersions",
+    "attributes": {
+      "platform": "IOS",
+      "versionString": "2.1.0",
+      "appStoreState": "PREPARE_FOR_SUBMISSION",
+      "copyright": "2025 Test Corp",
+      "releaseType": "MANUAL",
+      "downloadable": true,
+      "createdDate": "2025-01-15T10:30:00Z"
+    }
+  },
+  "links": {
+    "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/ver-1"
+  }
+}
