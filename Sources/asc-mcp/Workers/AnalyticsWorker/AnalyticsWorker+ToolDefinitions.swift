@@ -13,17 +13,38 @@ extension AnalyticsWorker {
     func getSalesReportTool() -> Tool {
         return Tool(
             name: "analytics_sales_report",
-            description: "Get sales and download reports from App Store Connect. Returns CSV data with sales metrics including units, proceeds, and download statistics.",
+            description: """
+            Get sales, subscription, and download reports from App Store Connect. Returns structured JSON with parsed TSV data, summary statistics, and individual rows.
+
+            Report types and their use cases:
+            - SALES (version 1_0): Downloads, updates, re-downloads, proceeds. Frequency: DAILY/WEEKLY/MONTHLY/YEARLY. Sub-type: SUMMARY/DETAILED.
+            - SUBSCRIPTION (version 1_3): Active subscriber counts by state/country/device, intro offers, promo offers, billing retry, grace period. Frequency: DAILY. Sub-type: SUMMARY.
+            - SUBSCRIPTION_EVENT (version 1_4): Subscriber activity — new subscriptions, renewals, upgrades, downgrades, cancellations, reactivations, refunds, conversions from trial. Frequency: DAILY. Sub-type: SUMMARY.
+            - SUBSCRIBER (version 1_3): Transaction-level subscriber activity with anonymous Subscriber IDs, purchase dates, proceeds. Frequency: DAILY. Sub-type: DETAILED.
+            - SUBSCRIPTION_OFFER_CODE_REDEMPTION (version 1_0): Offer code redemptions. Frequency: DAILY. Sub-type: SUMMARY.
+            - PRE_ORDER (version 1_1): Pre-order units. Frequency: DAILY/WEEKLY/MONTHLY/YEARLY. Sub-type: SUMMARY.
+
+            Typical workflows:
+            1. Installs/downloads: SALES + SUMMARY + DAILY
+            2. Active subscribers: SUBSCRIPTION + SUMMARY + DAILY
+            3. Trial conversions, cancellations, renewals: SUBSCRIPTION_EVENT + SUMMARY + DAILY
+            4. Per-subscriber transaction history: SUBSCRIBER + DETAILED + DAILY
+            5. Revenue by product: SALES + DETAILED + DAILY
+            """,
             inputSchema: .object([
                 "type": .string("object"),
                 "properties": .object([
                     "vendor_number": .object([
                         "type": .string("string"),
-                        "description": .string("Vendor number from App Store Connect (found in Sales and Trends > Reports)")
+                        "description": .string("Vendor number from App Store Connect (found in Sales and Trends > Reports). If not provided, uses vendor_number from company config.")
+                    ]),
+                    "app_id": .object([
+                        "type": .string("string"),
+                        "description": .string("Apple ID of the app to filter by (numeric, e.g., '1234567890'). If omitted, returns data for all apps. Use apps_list to find app IDs.")
                     ]),
                     "report_type": .object([
                         "type": .string("string"),
-                        "description": .string("Type of sales report"),
+                        "description": .string("Type of report: SALES (downloads/revenue), SUBSCRIPTION (active subs), SUBSCRIPTION_EVENT (renewals/cancellations/trials), SUBSCRIBER (per-user transactions), PRE_ORDER, SUBSCRIPTION_OFFER_CODE_REDEMPTION"),
                         "enum": .array([
                             .string("SALES"),
                             .string("PRE_ORDER"),
@@ -36,7 +57,7 @@ extension AnalyticsWorker {
                     ]),
                     "report_sub_type": .object([
                         "type": .string("string"),
-                        "description": .string("Report sub-type"),
+                        "description": .string("Report sub-type: SUMMARY (aggregated), DETAILED (per-transaction), OPT_IN (marketing opt-ins)"),
                         "enum": .array([
                             .string("SUMMARY"),
                             .string("DETAILED"),
@@ -45,7 +66,7 @@ extension AnalyticsWorker {
                     ]),
                     "frequency": .object([
                         "type": .string("string"),
-                        "description": .string("Report frequency"),
+                        "description": .string("Report frequency. SUBSCRIPTION/SUBSCRIPTION_EVENT/SUBSCRIBER only support DAILY."),
                         "enum": .array([
                             .string("DAILY"),
                             .string("WEEKLY"),
@@ -55,14 +76,67 @@ extension AnalyticsWorker {
                     ]),
                     "report_date": .object([
                         "type": .string("string"),
-                        "description": .string("Report date in YYYY-MM-DD format (e.g., 2025-01-15)")
+                        "description": .string("Report date in YYYY-MM-DD format (e.g., 2025-01-15). Reports available next day by 8am PT.")
+                    ]),
+                    "version": .object([
+                        "type": .string("string"),
+                        "description": .string("Report version (e.g., 1_0, 1_3, 1_4). If omitted, uses the latest known default for the report type.")
+                    ]),
+                    "summary_only": .object([
+                        "type": .string("boolean"),
+                        "description": .string("If true (default), returns only summary statistics (by app, by country, by product type, proceeds). Set to false to include raw rows.")
+                    ]),
+                    "limit": .object([
+                        "type": .string("integer"),
+                        "description": .string("Max raw rows to return when summary_only=false (default: 25). Summary is always computed from all rows.")
                     ])
                 ]),
                 "required": .array([
-                    .string("vendor_number"),
                     .string("report_type"),
                     .string("report_sub_type"),
                     .string("frequency"),
+                    .string("report_date")
+                ])
+            ])
+        )
+    }
+
+    /// Creates tool definition for combined app analytics summary
+    func getAppSummaryTool() -> Tool {
+        return Tool(
+            name: "analytics_app_summary",
+            description: """
+            Get a combined analytics summary for an app in a single call. Fetches 4 report types in parallel and returns all results together.
+
+            Sections returned:
+            - downloads: Units, proceeds, by country/product type (from SALES/SUMMARY/DAILY)
+            - subscriptions: Active subscribers, free trials, billing retry, grace period (from SUBSCRIPTION/SUMMARY/DAILY)
+            - subscription_events: Renewals, cancellations, trials, upgrades, downgrades (from SUBSCRIPTION_EVENT/SUMMARY/DAILY)
+            - revenue: Per-subscriber transaction data with proceeds (from SUBSCRIBER/DETAILED/DAILY)
+
+            Each section has status "success" or "error" (partial success supported — e.g., no subscriptions won't block downloads).
+
+            Example use cases:
+            - "How is my app doing today?" → analytics_app_summary with today's date
+            - "Show me downloads and revenue for app X" → analytics_app_summary with app_id filter
+            """,
+            inputSchema: .object([
+                "type": .string("object"),
+                "properties": .object([
+                    "report_date": .object([
+                        "type": .string("string"),
+                        "description": .string("Report date in YYYY-MM-DD format (e.g., 2025-01-15). Reports available next day by 8am PT.")
+                    ]),
+                    "app_id": .object([
+                        "type": .string("string"),
+                        "description": .string("Apple ID of the app to filter by (numeric, e.g., '1234567890'). If omitted, returns data for all apps.")
+                    ]),
+                    "vendor_number": .object([
+                        "type": .string("string"),
+                        "description": .string("Vendor number from App Store Connect. If not provided, uses vendor_number from company config.")
+                    ])
+                ]),
+                "required": .array([
                     .string("report_date")
                 ])
             ])
@@ -73,13 +147,13 @@ extension AnalyticsWorker {
     func getFinancialReportTool() -> Tool {
         return Tool(
             name: "analytics_financial_report",
-            description: "Get financial reports from App Store Connect. Returns CSV data with financial metrics including earnings, taxes, and currency details.",
+            description: "Get financial reports from App Store Connect. Returns summary with total quantity, partner share by currency, and top countries. Set summary_only=false to include raw rows.",
             inputSchema: .object([
                 "type": .string("object"),
                 "properties": .object([
                     "vendor_number": .object([
                         "type": .string("string"),
-                        "description": .string("Vendor number from App Store Connect")
+                        "description": .string("Vendor number from App Store Connect. If not provided, uses vendor_number from company config.")
                     ]),
                     "region_code": .object([
                         "type": .string("string"),
@@ -96,10 +170,17 @@ extension AnalyticsWorker {
                             .string("FINANCIAL"),
                             .string("FINANCE_DETAIL")
                         ])
+                    ]),
+                    "summary_only": .object([
+                        "type": .string("boolean"),
+                        "description": .string("If true (default), returns only summary statistics. Set to false to include raw rows.")
+                    ]),
+                    "limit": .object([
+                        "type": .string("integer"),
+                        "description": .string("Max raw rows to return when summary_only=false (default: 25). Summary is always computed from all rows.")
                     ])
                 ]),
                 "required": .array([
-                    .string("vendor_number"),
                     .string("region_code"),
                     .string("report_date"),
                     .string("report_type")
@@ -156,6 +237,149 @@ extension AnalyticsWorker {
                     ])
                 ]),
                 "required": .array([.string("app_id"), .string("access_type")])
+            ])
+        )
+    }
+
+    /// Creates tool definition for listing analytics reports for a report request
+    func listAnalyticsReportsTool() -> Tool {
+        return Tool(
+            name: "analytics_list_reports",
+            description: "List analytics reports for a report request. Returns report categories and names available for download.",
+            inputSchema: .object([
+                "type": .string("object"),
+                "properties": .object([
+                    "request_id": .object([
+                        "type": .string("string"),
+                        "description": .string("Analytics report request ID")
+                    ]),
+                    "limit": .object([
+                        "type": .string("integer"),
+                        "description": .string("Maximum number of results to return (1-200, default: 25)")
+                    ]),
+                    "next_url": .object([
+                        "type": .string("string"),
+                        "description": .string("URL for next page of results (from previous response)")
+                    ])
+                ]),
+                "required": .array([.string("request_id")])
+            ])
+        )
+    }
+
+    /// Creates tool definition for getting details of a specific analytics report
+    func getAnalyticsReportTool() -> Tool {
+        return Tool(
+            name: "analytics_get_report",
+            description: "Get details of a specific analytics report including its category and name.",
+            inputSchema: .object([
+                "type": .string("object"),
+                "properties": .object([
+                    "report_id": .object([
+                        "type": .string("string"),
+                        "description": .string("Analytics report ID")
+                    ])
+                ]),
+                "required": .array([.string("report_id")])
+            ])
+        )
+    }
+
+    /// Creates tool definition for listing instances of an analytics report
+    func listAnalyticsReportInstancesTool() -> Tool {
+        return Tool(
+            name: "analytics_list_instances",
+            description: "List instances of an analytics report. Each instance represents a specific time period of data.",
+            inputSchema: .object([
+                "type": .string("object"),
+                "properties": .object([
+                    "report_id": .object([
+                        "type": .string("string"),
+                        "description": .string("Analytics report ID")
+                    ]),
+                    "limit": .object([
+                        "type": .string("integer"),
+                        "description": .string("Maximum number of results to return (1-200, default: 25)")
+                    ]),
+                    "next_url": .object([
+                        "type": .string("string"),
+                        "description": .string("URL for next page of results (from previous response)")
+                    ])
+                ]),
+                "required": .array([.string("report_id")])
+            ])
+        )
+    }
+
+    /// Creates tool definition for getting a specific analytics report instance
+    func getAnalyticsReportInstanceTool() -> Tool {
+        return Tool(
+            name: "analytics_get_instance",
+            description: "Get a specific analytics report instance with its granularity and processing date.",
+            inputSchema: .object([
+                "type": .string("object"),
+                "properties": .object([
+                    "instance_id": .object([
+                        "type": .string("string"),
+                        "description": .string("Analytics report instance ID")
+                    ])
+                ]),
+                "required": .array([.string("instance_id")])
+            ])
+        )
+    }
+
+    /// Creates tool definition for checking snapshot readiness status
+    func checkSnapshotStatusTool() -> Tool {
+        return Tool(
+            name: "analytics_check_snapshot_status",
+            description: "Check readiness of all reports in an analytics snapshot. Returns summary with ready/pending counts and report details. Useful after creating a ONE_TIME_SNAPSHOT to monitor when reports become available.",
+            inputSchema: .object([
+                "type": .string("object"),
+                "properties": .object([
+                    "request_id": .object([
+                        "type": .string("string"),
+                        "description": .string("Analytics report request ID (from analytics_create_report_request or analytics_list_report_requests)")
+                    ]),
+                    "category": .object([
+                        "type": .string("string"),
+                        "description": .string("Optional filter by report category"),
+                        "enum": .array([
+                            .string("APP_USAGE"),
+                            .string("APP_STORE_ENGAGEMENT"),
+                            .string("COMMERCE"),
+                            .string("FRAMEWORK_USAGE"),
+                            .string("PERFORMANCE")
+                        ])
+                    ])
+                ]),
+                "required": .array([.string("request_id")])
+            ])
+        )
+    }
+
+    /// Creates tool definition for listing segments of an analytics report instance
+    func listAnalyticsReportSegmentsTool() -> Tool {
+        return Tool(
+            name: "analytics_list_segments",
+            description: "List segments of an analytics report instance. Each segment contains a download URL for the actual report data.",
+            inputSchema: .object([
+                "type": .string("object"),
+                "properties": .object([
+                    "instance_id": .object([
+                        "type": .string("string"),
+                        "description": .string("Analytics report instance ID")
+                    ]),
+                    "limit": .object([
+                        "type": .string("integer"),
+                        "description": .string("Maximum number of results to return (1-200, default: 25)")
+                    ]),
+                    "next_url": .object([
+                        "type": .string("string"),
+                        "description": .string("URL for next page of results (from previous response)")
+                    ])
+                ]),
+                "required": .array([.string("instance_id")])
             ])
         )
     }

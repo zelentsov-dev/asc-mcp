@@ -193,3 +193,137 @@ public struct CreateInAppPurchaseSubmissionRequest: Codable, Sendable {
         public let data: ASCResourceIdentifier
     }
 }
+
+// MARK: - IAP Price Points
+
+/// IAP price points list response
+public struct ASCIAPPricePointsResponse: Codable, Sendable {
+    public let data: [ASCIAPPricePoint]
+    public let links: ASCPagedDocumentLinks?
+}
+
+/// IAP price point resource
+public struct ASCIAPPricePoint: Codable, Sendable {
+    public let type: String
+    public let id: String
+    public let attributes: IAPPricePointAttributes?
+}
+
+/// IAP price point attributes
+public struct IAPPricePointAttributes: Codable, Sendable {
+    public let customerPrice: String?
+    public let proceeds: String?
+    public let priceTier: String?
+}
+
+// MARK: - IAP Price Schedule
+
+/// IAP price schedule response
+public struct ASCIAPPriceScheduleResponse: Codable, Sendable {
+    public let data: ASCIAPPriceSchedule
+}
+
+/// IAP price schedule resource
+public struct ASCIAPPriceSchedule: Codable, Sendable {
+    public let type: String
+    public let id: String
+}
+
+// MARK: - Create IAP Price Schedule
+
+/// Create IAP price schedule request
+public struct CreateIAPPriceScheduleRequest: Codable, Sendable {
+    public let data: CreateData
+
+    public struct CreateData: Codable, Sendable {
+        public let type: String = "inAppPurchasePriceSchedules"
+        public let relationships: Relationships
+    }
+
+    public struct Relationships: Codable, Sendable {
+        public let inAppPurchase: InAppPurchaseRelationship
+        public let manualPrices: ManualPricesRelationship
+        public let baseTerritory: BaseTerritoryRelationship
+    }
+
+    public struct InAppPurchaseRelationship: Codable, Sendable {
+        public let data: ASCResourceIdentifier
+    }
+
+    public struct ManualPricesRelationship: Codable, Sendable {
+        public let data: [ASCResourceIdentifier]
+    }
+
+    public struct BaseTerritoryRelationship: Codable, Sendable {
+        public let data: ASCResourceIdentifier
+    }
+}
+
+// MARK: - IAP Review Screenshot
+
+/// IAP review screenshot response
+public struct ASCIAPReviewScreenshotResponse: Codable, Sendable {
+    public let data: ASCIAPReviewScreenshot
+}
+
+/// IAP review screenshot resource
+public struct ASCIAPReviewScreenshot: Codable, Sendable {
+    public let type: String
+    public let id: String
+    public let attributes: IAPReviewScreenshotAttributes?
+}
+
+/// IAP review screenshot attributes
+public struct IAPReviewScreenshotAttributes: Codable, Sendable {
+    public let fileSize: Int?
+    public let fileName: String?
+    public let imageAsset: ASCImageAssetSimple?
+    public let assetToken: String?
+    public let sourceFileChecksum: String?
+    public let assetDeliveryState: ASCAssetDeliveryStateSimple?
+}
+
+/// Simple image asset model
+public struct ASCImageAssetSimple: Codable, Sendable {
+    public let templateUrl: String?
+    public let width: Int?
+    public let height: Int?
+}
+
+/// Simple asset delivery state model
+public struct ASCAssetDeliveryStateSimple: Codable, Sendable {
+    public let state: String?
+    public let errors: [ASCAssetDeliveryErrorSimple]?
+}
+
+/// Simple asset delivery error model
+public struct ASCAssetDeliveryErrorSimple: Codable, Sendable {
+    public let code: String?
+    public let description: String?
+}
+
+// MARK: - Create IAP Review Screenshot Request
+
+/// Create IAP review screenshot request
+public struct CreateIAPReviewScreenshotRequest: Codable, Sendable {
+    public let data: CreateData
+
+    public struct CreateData: Codable, Sendable {
+        public let type: String = "inAppPurchaseAppStoreReviewScreenshots"
+        public let attributes: Attributes
+        public let relationships: Relationships
+    }
+
+    public struct Attributes: Codable, Sendable {
+        public let fileName: String
+        public let fileSize: Int
+    }
+
+    public struct Relationships: Codable, Sendable {
+        public let inAppPurchaseV2: InAppPurchaseRelationship
+    }
+
+    public struct InAppPurchaseRelationship: Codable, Sendable {
+        public let data: ASCResourceIdentifier
+    }
+}

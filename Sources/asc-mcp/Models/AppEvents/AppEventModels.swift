@@ -153,3 +153,53 @@ public struct UpdateAppEventRequest: Codable, Sendable {
         public let purpose: String?
     }
 }
+
+// MARK: - App Event Localization Request Models
+
+/// Request body for creating an app event localization
+public struct CreateAppEventLocalizationRequest: Codable, Sendable {
+    public let data: CreateData
+
+    public struct CreateData: Codable, Sendable {
+        public let type: String = "appEventLocalizations"
+        public let attributes: Attributes
+        public let relationships: Relationships
+    }
+
+    public struct Attributes: Codable, Sendable {
+        public let locale: String
+        public let name: String?
+        public let shortDescription: String?
+        public let longDescription: String?
+    }
+
+    public struct Relationships: Codable, Sendable {
+        public let appEvent: AppEventRelationship
+    }
+
+    public struct AppEventRelationship: Codable, Sendable {
+        public let data: ASCResourceIdentifier
+    }
+}
+
+/// Request body for updating an app event localization
+public struct UpdateAppEventLocalizationRequest: Codable, Sendable {
+    public let data: UpdateData
+
+    public struct UpdateData: Codable, Sendable {
+        public let type: String = "appEventLocalizations"
+        public let id: String
+        public let attributes: Attributes
+    }
+
+    public struct Attributes: Codable, Sendable {
+        public let name: String?
+        public let shortDescription: String?
+        public let longDescription: String?
+    }
+}
+
+/// Single app event localization response
+public struct ASCAppEventLocalizationSingleResponse: Codable, Sendable {
+    public let data: ASCAppEventLocalization
+}

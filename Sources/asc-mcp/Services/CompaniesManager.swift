@@ -119,6 +119,7 @@ public actor CompaniesManager {
             let keyPath = env["ASC_COMPANY_\(index)_KEY_PATH"] ?? ""
             let keyContent = env["ASC_COMPANY_\(index)_KEY"]
             let name = env["ASC_COMPANY_\(index)_NAME"] ?? "Company \(index)"
+            let vendorNumber = env["ASC_COMPANY_\(index)_VENDOR_NUMBER"]
 
             // Skip if neither key path nor key content provided
             guard !keyPath.isEmpty || keyContent != nil else {
@@ -129,7 +130,8 @@ public actor CompaniesManager {
             companies.append(Company(
                 id: "\(index)", name: name,
                 keyID: keyID, issuerID: issuerID,
-                privateKeyPath: keyPath, privateKeyContent: keyContent
+                privateKeyPath: keyPath, privateKeyContent: keyContent,
+                vendorNumber: vendorNumber
             ))
             index += 1
         }
@@ -145,10 +147,12 @@ public actor CompaniesManager {
         guard !keyPath.isEmpty || keyContent != nil else { return nil }
 
         let name = env["ASC_COMPANY_NAME"] ?? "Default"
+        let vendorNumber = env["ASC_VENDOR_NUMBER"]
         let company = Company(
             id: "1", name: name,
             keyID: keyID, issuerID: issuerID,
-            privateKeyPath: keyPath, privateKeyContent: keyContent
+            privateKeyPath: keyPath, privateKeyContent: keyContent,
+            vendorNumber: vendorNumber
         )
         return CompaniesConfig(companies: [company])
     }

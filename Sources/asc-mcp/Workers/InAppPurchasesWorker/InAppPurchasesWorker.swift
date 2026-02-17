@@ -23,7 +23,12 @@ public final class InAppPurchasesWorker: Sendable {
             deleteIAPLocalizationTool(),
             submitIAPForReviewTool(),
             listSubscriptionGroupsTool(),
-            getSubscriptionGroupTool()
+            getSubscriptionGroupTool(),
+            listIAPPricePointsTool(),
+            getIAPPriceScheduleTool(),
+            setIAPPriceScheduleTool(),
+            getIAPReviewScreenshotTool(),
+            createIAPReviewScreenshotTool()
         ]
     }
 
@@ -54,6 +59,16 @@ public final class InAppPurchasesWorker: Sendable {
             return try await listSubscriptionGroups(params)
         case "iap_get_subscription_group":
             return try await getSubscriptionGroup(params)
+        case "iap_list_price_points":
+            return try await listIAPPricePoints(params)
+        case "iap_get_price_schedule":
+            return try await getIAPPriceSchedule(params)
+        case "iap_set_price_schedule":
+            return try await setIAPPriceSchedule(params)
+        case "iap_get_review_screenshot":
+            return try await getIAPReviewScreenshot(params)
+        case "iap_create_review_screenshot":
+            return try await createIAPReviewScreenshot(params)
         default:
             throw MCPError.methodNotFound("Unknown tool: \(params.name)")
         }

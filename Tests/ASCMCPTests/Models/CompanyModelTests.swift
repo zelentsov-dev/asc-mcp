@@ -15,6 +15,15 @@ struct CompanyModelTests {
         #expect(company.issuerID == "I1")
         #expect(company.privateKeyPath == "/tmp/k.p8")
         #expect(company.privateKeyContent == "PEM_DATA")
+        #expect(company.vendorNumber == nil)
+    }
+
+    @Test func decodeWithVendorNumber() throws {
+        let json = """
+        {"id":"c1","name":"Corp","key_id":"K1","issuer_id":"I1","vendor_number":"87654321"}
+        """.data(using: .utf8)!
+        let company = try JSONDecoder().decode(Company.self, from: json)
+        #expect(company.vendorNumber == "87654321")
     }
 
     @Test func decodeWithoutOptionalFields() throws {
@@ -24,22 +33,25 @@ struct CompanyModelTests {
         let company = try JSONDecoder().decode(Company.self, from: json)
         #expect(company.privateKeyPath == "")
         #expect(company.privateKeyContent == nil)
+        #expect(company.vendorNumber == nil)
     }
 
     @Test func memberwiseInit() {
-        let company = Company(id: "x", name: "X", keyID: "k", issuerID: "i", privateKeyPath: "/p", privateKeyContent: "c")
+        let company = Company(id: "x", name: "X", keyID: "k", issuerID: "i", privateKeyPath: "/p", privateKeyContent: "c", vendorNumber: "12345")
         #expect(company.id == "x")
         #expect(company.name == "X")
         #expect(company.keyID == "k")
         #expect(company.issuerID == "i")
         #expect(company.privateKeyPath == "/p")
         #expect(company.privateKeyContent == "c")
+        #expect(company.vendorNumber == "12345")
     }
 
     @Test func memberwiseInitDefaults() {
         let company = Company(id: "x", name: "X", keyID: "k", issuerID: "i")
         #expect(company.privateKeyPath == "")
         #expect(company.privateKeyContent == nil)
+        #expect(company.vendorNumber == nil)
     }
 
     @Test func equatable() {

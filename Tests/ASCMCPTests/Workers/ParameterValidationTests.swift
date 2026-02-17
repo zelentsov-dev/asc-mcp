@@ -343,6 +343,15 @@ struct ParameterValidationTests {
         #expect(result.isError == true)
     }
 
+    @Test("app_info_delete_localization without localization_id returns isError")
+    func appInfoDeleteLocalizationMissing() async throws {
+        let client = try await TestFactory.makeHTTPClient()
+        let worker = AppInfoWorker(httpClient: client)
+        let params = CallTool.Parameters(name: "app_info_delete_localization", arguments: nil)
+        let result = try await worker.handleTool(params)
+        #expect(result.isError == true)
+    }
+
     @Test("app_info_update without required params returns isError")
     func appInfoUpdateMissing() async throws {
         let client = try await TestFactory.makeHTTPClient()
@@ -473,6 +482,366 @@ struct ParameterValidationTests {
         let client = try await TestFactory.makeHTTPClient()
         let worker = AnalyticsWorker(httpClient: client)
         let params = CallTool.Parameters(name: "analytics_create_report_request", arguments: nil)
+        let result = try await worker.handleTool(params)
+        #expect(result.isError == true)
+    }
+
+    @Test("analytics_list_reports without request_id returns isError")
+    func analyticsListReportsMissing() async throws {
+        let client = try await TestFactory.makeHTTPClient()
+        let worker = AnalyticsWorker(httpClient: client)
+        let params = CallTool.Parameters(name: "analytics_list_reports", arguments: nil)
+        let result = try await worker.handleTool(params)
+        #expect(result.isError == true)
+    }
+
+    @Test("analytics_get_report without report_id returns isError")
+    func analyticsGetReportMissing() async throws {
+        let client = try await TestFactory.makeHTTPClient()
+        let worker = AnalyticsWorker(httpClient: client)
+        let params = CallTool.Parameters(name: "analytics_get_report", arguments: nil)
+        let result = try await worker.handleTool(params)
+        #expect(result.isError == true)
+    }
+
+    @Test("analytics_list_segments without instance_id returns isError")
+    func analyticsListSegmentsMissing() async throws {
+        let client = try await TestFactory.makeHTTPClient()
+        let worker = AnalyticsWorker(httpClient: client)
+        let params = CallTool.Parameters(name: "analytics_list_segments", arguments: nil)
+        let result = try await worker.handleTool(params)
+        #expect(result.isError == true)
+    }
+
+    @Test("analytics_check_snapshot_status without request_id returns isError")
+    func analyticsCheckSnapshotStatusMissing() async throws {
+        let client = try await TestFactory.makeHTTPClient()
+        let worker = AnalyticsWorker(httpClient: client)
+        let params = CallTool.Parameters(name: "analytics_check_snapshot_status", arguments: nil)
+        let result = try await worker.handleTool(params)
+        #expect(result.isError == true)
+    }
+
+    @Test("analytics_app_summary without report_date returns isError")
+    func analyticsAppSummaryMissingDate() async throws {
+        let client = try await TestFactory.makeHTTPClient()
+        let worker = AnalyticsWorker(httpClient: client)
+        let params = CallTool.Parameters(name: "analytics_app_summary", arguments: nil)
+        let result = try await worker.handleTool(params)
+        #expect(result.isError == true)
+    }
+
+    @Test("analytics_app_summary without vendor_number and without config returns isError")
+    func analyticsAppSummaryMissingVendorNumber() async throws {
+        let client = try await TestFactory.makeHTTPClient()
+        let worker = AnalyticsWorker(httpClient: client)
+        let params = CallTool.Parameters(name: "analytics_app_summary", arguments: [
+            "report_date": .string("2025-01-15")
+        ])
+        let result = try await worker.handleTool(params)
+        #expect(result.isError == true)
+    }
+
+    @Test("analytics_sales_report without vendor_number and without config returns isError")
+    func analyticsSalesReportMissingVendorNumber() async throws {
+        let client = try await TestFactory.makeHTTPClient()
+        let worker = AnalyticsWorker(httpClient: client)
+        let params = CallTool.Parameters(name: "analytics_sales_report", arguments: [
+            "report_type": .string("SALES"),
+            "report_sub_type": .string("SUMMARY"),
+            "frequency": .string("DAILY"),
+            "report_date": .string("2025-01-15")
+        ])
+        let result = try await worker.handleTool(params)
+        #expect(result.isError == true)
+    }
+
+    // MARK: - InAppPurchasesWorker (extensions)
+
+    @Test("iap_list_price_points without iap_id returns isError")
+    func iapListPricePointsMissing() async throws {
+        let client = try await TestFactory.makeHTTPClient()
+        let worker = InAppPurchasesWorker(httpClient: client)
+        let params = CallTool.Parameters(name: "iap_list_price_points", arguments: nil)
+        let result = try await worker.handleTool(params)
+        #expect(result.isError == true)
+    }
+
+    @Test("iap_get_price_schedule without iap_id returns isError")
+    func iapGetPriceScheduleMissing() async throws {
+        let client = try await TestFactory.makeHTTPClient()
+        let worker = InAppPurchasesWorker(httpClient: client)
+        let params = CallTool.Parameters(name: "iap_get_price_schedule", arguments: nil)
+        let result = try await worker.handleTool(params)
+        #expect(result.isError == true)
+    }
+
+    @Test("iap_create_review_screenshot without required params returns isError")
+    func iapCreateReviewScreenshotMissing() async throws {
+        let client = try await TestFactory.makeHTTPClient()
+        let worker = InAppPurchasesWorker(httpClient: client)
+        let params = CallTool.Parameters(name: "iap_create_review_screenshot", arguments: nil)
+        let result = try await worker.handleTool(params)
+        #expect(result.isError == true)
+    }
+
+    // MARK: - AppEventsWorker (extensions)
+
+    @Test("app_events_create_localization without required params returns isError")
+    func appEventsCreateLocalizationMissing() async throws {
+        let client = try await TestFactory.makeHTTPClient()
+        let worker = AppEventsWorker(httpClient: client)
+        let params = CallTool.Parameters(name: "app_events_create_localization", arguments: nil)
+        let result = try await worker.handleTool(params)
+        #expect(result.isError == true)
+    }
+
+    @Test("app_events_update_localization without localization_id returns isError")
+    func appEventsUpdateLocalizationMissing() async throws {
+        let client = try await TestFactory.makeHTTPClient()
+        let worker = AppEventsWorker(httpClient: client)
+        let params = CallTool.Parameters(name: "app_events_update_localization", arguments: nil)
+        let result = try await worker.handleTool(params)
+        #expect(result.isError == true)
+    }
+
+    @Test("app_events_delete_localization without localization_id returns isError")
+    func appEventsDeleteLocalizationMissing() async throws {
+        let client = try await TestFactory.makeHTTPClient()
+        let worker = AppEventsWorker(httpClient: client)
+        let params = CallTool.Parameters(name: "app_events_delete_localization", arguments: nil)
+        let result = try await worker.handleTool(params)
+        #expect(result.isError == true)
+    }
+
+    // MARK: - SubscriptionsWorker
+
+    @Test("subscriptions_list without group_id returns isError")
+    func subscriptionsListMissing() async throws {
+        let client = try await TestFactory.makeHTTPClient()
+        let worker = SubscriptionsWorker(httpClient: client)
+        let params = CallTool.Parameters(name: "subscriptions_list", arguments: nil)
+        let result = try await worker.handleTool(params)
+        #expect(result.isError == true)
+    }
+
+    @Test("subscriptions_get without subscription_id returns isError")
+    func subscriptionsGetMissing() async throws {
+        let client = try await TestFactory.makeHTTPClient()
+        let worker = SubscriptionsWorker(httpClient: client)
+        let params = CallTool.Parameters(name: "subscriptions_get", arguments: nil)
+        let result = try await worker.handleTool(params)
+        #expect(result.isError == true)
+    }
+
+    @Test("subscriptions_create without required params returns isError")
+    func subscriptionsCreateMissing() async throws {
+        let client = try await TestFactory.makeHTTPClient()
+        let worker = SubscriptionsWorker(httpClient: client)
+        let params = CallTool.Parameters(name: "subscriptions_create", arguments: nil)
+        let result = try await worker.handleTool(params)
+        #expect(result.isError == true)
+    }
+
+    @Test("subscriptions_delete without subscription_id returns isError")
+    func subscriptionsDeleteMissing() async throws {
+        let client = try await TestFactory.makeHTTPClient()
+        let worker = SubscriptionsWorker(httpClient: client)
+        let params = CallTool.Parameters(name: "subscriptions_delete", arguments: nil)
+        let result = try await worker.handleTool(params)
+        #expect(result.isError == true)
+    }
+
+    // MARK: - OfferCodesWorker
+
+    @Test("offer_codes_list without subscription_id returns isError")
+    func offerCodesListMissing() async throws {
+        let client = try await TestFactory.makeHTTPClient()
+        let worker = OfferCodesWorker(httpClient: client)
+        let params = CallTool.Parameters(name: "offer_codes_list", arguments: nil)
+        let result = try await worker.handleTool(params)
+        #expect(result.isError == true)
+    }
+
+    @Test("offer_codes_create without required params returns isError")
+    func offerCodesCreateMissing() async throws {
+        let client = try await TestFactory.makeHTTPClient()
+        let worker = OfferCodesWorker(httpClient: client)
+        let params = CallTool.Parameters(name: "offer_codes_create", arguments: nil)
+        let result = try await worker.handleTool(params)
+        #expect(result.isError == true)
+    }
+
+    // MARK: - WinBackOffersWorker
+
+    @Test("winback_list without subscription_id returns isError")
+    func winbackListMissing() async throws {
+        let client = try await TestFactory.makeHTTPClient()
+        let worker = WinBackOffersWorker(httpClient: client)
+        let params = CallTool.Parameters(name: "winback_list", arguments: nil)
+        let result = try await worker.handleTool(params)
+        #expect(result.isError == true)
+    }
+
+    @Test("winback_create without required params returns isError")
+    func winbackCreateMissing() async throws {
+        let client = try await TestFactory.makeHTTPClient()
+        let worker = WinBackOffersWorker(httpClient: client)
+        let params = CallTool.Parameters(name: "winback_create", arguments: nil)
+        let result = try await worker.handleTool(params)
+        #expect(result.isError == true)
+    }
+
+    @Test("winback_delete without offer_id returns isError")
+    func winbackDeleteMissing() async throws {
+        let client = try await TestFactory.makeHTTPClient()
+        let worker = WinBackOffersWorker(httpClient: client)
+        let params = CallTool.Parameters(name: "winback_delete", arguments: nil)
+        let result = try await worker.handleTool(params)
+        #expect(result.isError == true)
+    }
+
+    // MARK: - ScreenshotsWorker
+
+    @Test("screenshots_list_sets without localization_id returns isError")
+    func screenshotsListSetsMissing() async throws {
+        let client = try await TestFactory.makeHTTPClient()
+        let worker = ScreenshotsWorker(httpClient: client)
+        let params = CallTool.Parameters(name: "screenshots_list_sets", arguments: nil)
+        let result = try await worker.handleTool(params)
+        #expect(result.isError == true)
+    }
+
+    @Test("screenshots_create without required params returns isError")
+    func screenshotsCreateMissing() async throws {
+        let client = try await TestFactory.makeHTTPClient()
+        let worker = ScreenshotsWorker(httpClient: client)
+        let params = CallTool.Parameters(name: "screenshots_create", arguments: nil)
+        let result = try await worker.handleTool(params)
+        #expect(result.isError == true)
+    }
+
+    @Test("screenshots_delete without screenshot_id returns isError")
+    func screenshotsDeleteMissing() async throws {
+        let client = try await TestFactory.makeHTTPClient()
+        let worker = ScreenshotsWorker(httpClient: client)
+        let params = CallTool.Parameters(name: "screenshots_delete", arguments: nil)
+        let result = try await worker.handleTool(params)
+        #expect(result.isError == true)
+    }
+
+    // MARK: - CustomProductPagesWorker
+
+    @Test("custom_pages_list without app_id returns isError")
+    func customPagesListMissing() async throws {
+        let client = try await TestFactory.makeHTTPClient()
+        let worker = CustomProductPagesWorker(httpClient: client)
+        let params = CallTool.Parameters(name: "custom_pages_list", arguments: nil)
+        let result = try await worker.handleTool(params)
+        #expect(result.isError == true)
+    }
+
+    @Test("custom_pages_create without required params returns isError")
+    func customPagesCreateMissing() async throws {
+        let client = try await TestFactory.makeHTTPClient()
+        let worker = CustomProductPagesWorker(httpClient: client)
+        let params = CallTool.Parameters(name: "custom_pages_create", arguments: nil)
+        let result = try await worker.handleTool(params)
+        #expect(result.isError == true)
+    }
+
+    @Test("custom_pages_delete without page_id returns isError")
+    func customPagesDeleteMissing() async throws {
+        let client = try await TestFactory.makeHTTPClient()
+        let worker = CustomProductPagesWorker(httpClient: client)
+        let params = CallTool.Parameters(name: "custom_pages_delete", arguments: nil)
+        let result = try await worker.handleTool(params)
+        #expect(result.isError == true)
+    }
+
+    // MARK: - ProductPageOptimizationWorker
+
+    @Test("ppo_list_experiments without app_id returns isError")
+    func ppoListExperimentsMissing() async throws {
+        let client = try await TestFactory.makeHTTPClient()
+        let worker = ProductPageOptimizationWorker(httpClient: client)
+        let params = CallTool.Parameters(name: "ppo_list_experiments", arguments: nil)
+        let result = try await worker.handleTool(params)
+        #expect(result.isError == true)
+    }
+
+    @Test("ppo_create_experiment without required params returns isError")
+    func ppoCreateExperimentMissing() async throws {
+        let client = try await TestFactory.makeHTTPClient()
+        let worker = ProductPageOptimizationWorker(httpClient: client)
+        let params = CallTool.Parameters(name: "ppo_create_experiment", arguments: nil)
+        let result = try await worker.handleTool(params)
+        #expect(result.isError == true)
+    }
+
+    @Test("ppo_delete_experiment without experiment_id returns isError")
+    func ppoDeleteExperimentMissing() async throws {
+        let client = try await TestFactory.makeHTTPClient()
+        let worker = ProductPageOptimizationWorker(httpClient: client)
+        let params = CallTool.Parameters(name: "ppo_delete_experiment", arguments: nil)
+        let result = try await worker.handleTool(params)
+        #expect(result.isError == true)
+    }
+
+    // MARK: - PromotedPurchasesWorker
+
+    @Test("promoted_list without app_id returns isError")
+    func promotedListMissing() async throws {
+        let client = try await TestFactory.makeHTTPClient()
+        let worker = PromotedPurchasesWorker(httpClient: client)
+        let params = CallTool.Parameters(name: "promoted_list", arguments: nil)
+        let result = try await worker.handleTool(params)
+        #expect(result.isError == true)
+    }
+
+    @Test("promoted_create without required params returns isError")
+    func promotedCreateMissing() async throws {
+        let client = try await TestFactory.makeHTTPClient()
+        let worker = PromotedPurchasesWorker(httpClient: client)
+        let params = CallTool.Parameters(name: "promoted_create", arguments: nil)
+        let result = try await worker.handleTool(params)
+        #expect(result.isError == true)
+    }
+
+    @Test("promoted_delete without promoted_purchase_id returns isError")
+    func promotedDeleteMissing() async throws {
+        let client = try await TestFactory.makeHTTPClient()
+        let worker = PromotedPurchasesWorker(httpClient: client)
+        let params = CallTool.Parameters(name: "promoted_delete", arguments: nil)
+        let result = try await worker.handleTool(params)
+        #expect(result.isError == true)
+    }
+
+    // MARK: - MetricsWorker
+
+    @Test("metrics_app_perf without required params returns isError")
+    func metricsAppPerfMissing() async throws {
+        let client = try await TestFactory.makeHTTPClient()
+        let worker = MetricsWorker(httpClient: client)
+        let params = CallTool.Parameters(name: "metrics_app_perf", arguments: nil)
+        let result = try await worker.handleTool(params)
+        #expect(result.isError == true)
+    }
+
+    @Test("metrics_list_diagnostics without build_id returns isError")
+    func metricsListDiagnosticsMissing() async throws {
+        let client = try await TestFactory.makeHTTPClient()
+        let worker = MetricsWorker(httpClient: client)
+        let params = CallTool.Parameters(name: "metrics_list_diagnostics", arguments: nil)
+        let result = try await worker.handleTool(params)
+        #expect(result.isError == true)
+    }
+
+    @Test("metrics_get_diagnostic_logs without signature_id returns isError")
+    func metricsGetDiagnosticLogsMissing() async throws {
+        let client = try await TestFactory.makeHTTPClient()
+        let worker = MetricsWorker(httpClient: client)
+        let params = CallTool.Parameters(name: "metrics_get_diagnostic_logs", arguments: nil)
         let result = try await worker.handleTool(params)
         #expect(result.isError == true)
     }

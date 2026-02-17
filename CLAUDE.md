@@ -16,10 +16,16 @@ MCP (Model Context Protocol) server for App Store Connect API integration, desig
 # Build the project
 swift build
 
-# Run the MCP server (requires environment variables)
+# Run all unit tests (345 tests)
+swift test
+
+# Run the MCP server (requires environment variables or companies.json)
 ./.build/debug/asc-mcp
 
-# Run tests/debug mode
+# Run with worker filtering (for clients with tool limits)
+./.build/debug/asc-mcp --workers apps,builds,versions,reviews
+
+# Run integration tests
 ./.build/debug/asc-mcp --test
 
 # Clean build
@@ -28,7 +34,14 @@ swift package clean
 
 ## Environment Configuration
 
-Uses `companies.json` for multi-account configuration. Each company entry contains `keyID`, `issuerID`, and `privateKeyPath`.
+Three config methods (checked in priority order):
+1. `--companies /path/to/companies.json` (CLI argument)
+2. `ASC_MCP_COMPANIES` env var → path to JSON file
+3. Default JSON: `~/.config/asc-mcp/companies.json`
+4. `ASC_COMPANY_1_KEY_ID`, `ASC_COMPANY_2_KEY_ID`... (multi-company env vars)
+5. `ASC_KEY_ID` + `ASC_ISSUER_ID` + `ASC_PRIVATE_KEY_PATH` (single company env vars)
+
+Each company needs: `keyID`, `issuerID`, `privateKeyPath` (path to `.p8` file).
 
 ## Architecture
 
@@ -36,29 +49,37 @@ Uses `companies.json` for multi-account configuration. Each company entry contai
 
 **WorkerManager** (`Workers/MainWorker/WorkerManager.swift`) — central registry, routes tool calls by prefix.
 
-**Workers** (17 workers, ~109 tools):
+**Workers** (25 workers, ~188 tools):
 
 | Worker | Prefix | Tools | Domain |
 |--------|--------|-------|--------|
 | CompaniesWorker | `company_` | 3 | Multi-account management |
 | AuthWorker | `auth_` | 4 | JWT tokens |
-| AppsWorker | `apps_` | 9 | App listing, metadata, localizations, create/delete localization |
+| AppsWorker | `apps_` | 9 | App listing, metadata, localizations |
 | BuildsWorker | `builds_` | 4 | Build management |
-| BuildBetaDetailsWorker | `builds_*_beta_` | 9 | TestFlight localizations, notifications, beta groups |
-| BuildProcessingWorker | `builds_*_processing_` | 5 | Build states, encryption |
+| BuildBetaDetailsWorker | `builds_*_beta_` | 8 | TestFlight localizations, notifications, beta groups |
+| BuildProcessingWorker | `builds_*_processing_` | 4 | Build states, encryption |
 | AppLifecycleWorker | `app_versions_` | 12 | Versions, submit, release, phased rollout |
-| ReviewsWorker | `reviews_` | 8 | Customer reviews and responses |
+| ReviewsWorker | `reviews_` | 7 | Customer reviews and responses |
 | BetaGroupsWorker | `beta_groups_` | 9 | TestFlight groups CRUD, testers, builds |
-| InAppPurchasesWorker | `iap_` | 12 | IAP, subscriptions, localizations CRUD, submit |
+| InAppPurchasesWorker | `iap_` | 17 | IAP, subscriptions, localizations, prices, screenshots |
 | ProvisioningWorker | `provisioning_` | 17 | Bundle IDs, devices, certificates, profiles, capabilities |
 | BetaTestersWorker | `beta_testers_` | 6 | Tester management, search, invite |
 | AppInfoWorker | `app_info_` | 6 | App info, categories, localizations |
 | PricingWorker | `pricing_` | 6 | Territories, availability, price points/schedule |
-| UsersWorker | `users_` | 6 | Team members, roles, invitations |
-| AppEventsWorker | `app_events_` | 6 | In-app events CRUD, localizations |
-| AnalyticsWorker | `analytics_` | 4 | Sales/financial reports, analytics requests |
+| UsersWorker | `users_` | 7 | Team members, roles, invitations |
+| AppEventsWorker | `app_events_` | 9 | In-app events CRUD, localizations |
+| AnalyticsWorker | `analytics_` | 11 | Sales/financial reports, app summary, analytics reports/instances/segments, snapshot status |
+| SubscriptionsWorker | `subscriptions_` | 15 | Subscription CRUD, groups, localizations, prices, submit |
+| OfferCodesWorker | `offer_codes_` | 7 | Subscription offer codes, one-time codes |
+| WinBackOffersWorker | `winback_` | 5 | Win-back offers for subscriptions |
+| ScreenshotsWorker | `screenshots_` | 12 | Screenshots, previews, sets, reorder |
+| CustomProductPagesWorker | `custom_pages_` | 10 | Custom product pages, versions, localizations |
+| ProductPageOptimizationWorker | `ppo_` | 9 | A/B test experiments, treatments |
+| PromotedPurchasesWorker | `promoted_` | 6 | Promoted in-app purchases, images |
+| MetricsWorker | `metrics_` | 5 | Performance/power metrics, diagnostics |
 
-**Services**: HTTPClient (actor, GET/POST/PATCH/PUT/DELETE + retry with 429), JWTService (ES256)
+**Services**: HTTPClient (actor, GET/POST/PATCH/PUT/DELETE + retry with 429), JWTService (ES256), CompaniesManager
 
 ### Key Implementation Details
 
@@ -79,20 +100,52 @@ Uses `companies.json` for multi-account configuration. Each company entry contai
 
 ## Testing
 
-Test mode (`--test` flag) performs:
-1. Lists app versions to find editable one
-2. If found, updates What's New field
-3. Verifies the update succeeded
+### Unit Tests (Swift Testing)
+
+```bash
+swift test    # Run all 345 tests across 28 suites
+```
+
+Test categories:
+- **Worker tests** (`Tests/ASCMCPTests/Workers/`):
+  - `WorkerToolDefinitionsTests` — tool count and name correctness per worker
+  - `WorkerRoutingTests` — unknown tool throws `MCPError.methodNotFound`
+  - `ParameterValidationTests` — missing required params returns `isError`
+- **Model tests** (`Tests/ASCMCPTests/Models/`) — decode, roundtrip, edge cases
+- **Service tests** (`Tests/ASCMCPTests/Services/`) — JWT generation
+- **Helper tests** (`Tests/ASCMCPTests/HelperTests/`) — JSON formatting, pagination
+- **Core tests** (`Tests/ASCMCPTests/Core/`) — ASCError, config models
+
+Test infrastructure: `TestFactory` (`Tests/ASCMCPTests/Helpers/TestHelpers.swift`) — creates mock HTTPClient, JWTService, loads fixtures.
+
+### Integration Test Mode
+
+```bash
+./.build/debug/asc-mcp --test              # Test company switching
+./.build/debug/asc-mcp --test-metadata      # Test metadata update
+```
 
 ## Common Tasks
 
-### Adding New Tool
+### Adding New Tool to Existing Worker
 
-1. Implement method in appropriate Worker (e.g., `AppsWorker+Handlers.swift`)
-2. Add tool definition method in Worker's tool definitions file (e.g., `AppsWorker+ToolDefinitions.swift`)
-3. Register the tool in Worker's `getTools()` method
-4. Add case to Worker's `handleTool()` switch
-5. No changes needed in WorkerManager - it automatically routes by prefix
+1. Implement handler in `Worker+Handlers.swift`
+2. Add tool definition in `Worker+ToolDefinitions.swift`
+3. Register in worker's `getTools()` array
+4. Add case to worker's `handleTool()` switch
+5. No changes needed in WorkerManager — it automatically routes by prefix
+
+### Adding New Worker
+
+1. Create directory `Workers/MyWorker/` with 3 files:
+   - `MyWorker.swift` — class, `getTools()`, `handleTool()` switch
+   - `MyWorker+ToolDefinitions.swift` — tool schemas
+   - `MyWorker+Handlers.swift` — handler implementations
+2. Create models in `Models/MyDomain/MyModels.swift`
+3. Register in `WorkerManager.swift`: property, init, `registerWorkers()` (ListTools + CallTool), `reinitializeWorkers()`, getter method
+4. Add worker name to `EntryPoint.swift` → `validWorkers` set
+5. Add prefix description to `Application.swift` → server instructions
+6. Update tests: `WorkerToolDefinitionsTests`, `WorkerRoutingTests`, `ParameterValidationTests`
 
 ### Debugging API Issues
 
@@ -103,10 +156,20 @@ Test mode (`--test` flag) performs:
 
 ## Important Files
 
-- `main.swift`: Entry point with test mode
+- `EntryPoint.swift`: Entry point with `--workers` filtering and test modes
+- `Core/Application.swift`: MCP server setup and initialization
 - `Workers/MainWorker/WorkerManager.swift`: Tool registry and routing
-- `Models/`: API response/request models (AppStoreConnect, Builds, InAppPurchases, Provisioning)
+- `Models/`: API response/request models organized by domain:
+  - `AppStoreConnect/`, `Builds/`, `AppLifecycle/` — apps, versions, builds
+  - `InAppPurchases/`, `Subscriptions/` — IAP, subscriptions, offer codes, win-back
+  - `Marketing/` — screenshots, custom pages, PPO experiments, promoted purchases
+  - `Metrics/`, `Analytics/`, `AppEvents/` — performance, reports, events
+  - `Provisioning/`, `Pricing/`, `Users/`, `AppInfo/` — provisioning, pricing, users
+  - `Shared/` — shared types (upload operations, image assets)
 - `Services/HTTPClient.swift`: HTTP actor with JWT auth and retry logic
+- `Services/CompaniesManager.swift`: Multi-account management
+- `Services/JWTService.swift`: ES256 JWT token generation
+- `Helpers/`: JSONFormatter, SafeJSONHelpers, PaginationHelper, StderrWriter
 
 ## Development Workflow Rules
 

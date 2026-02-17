@@ -149,6 +149,24 @@ extension AppInfoWorker {
         )
     }
 
+    /// Creates tool definition for deleting app info localization
+    func deleteAppInfoLocalizationTool() -> Tool {
+        return Tool(
+            name: "app_info_delete_localization",
+            description: "Delete an app info localization for a specific locale",
+            inputSchema: .object([
+                "type": .string("object"),
+                "properties": .object([
+                    "localization_id": .object([
+                        "type": .string("string"),
+                        "description": .string("App info localization ID to delete")
+                    ])
+                ]),
+                "required": .array([.string("localization_id")])
+            ])
+        )
+    }
+
     /// Creates tool definition for creating app info localization
     func createAppInfoLocalizationTool() -> Tool {
         return Tool(

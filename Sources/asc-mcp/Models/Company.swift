@@ -9,6 +9,8 @@ public struct Company: Codable, Sendable, Identifiable, Equatable {
     public let privateKeyPath: String
     /// Private key content (PEM string). If set, takes priority over `privateKeyPath`.
     public let privateKeyContent: String?
+    /// Vendor number for sales/financial reports (found in ASC Sales and Trends)
+    public let vendorNumber: String?
 
     enum CodingKeys: String, CodingKey {
         case id
@@ -17,6 +19,7 @@ public struct Company: Codable, Sendable, Identifiable, Equatable {
         case issuerID = "issuer_id"
         case privateKeyPath = "key_path"
         case privateKeyContent = "key_content"
+        case vendorNumber = "vendor_number"
     }
 
     public init(from decoder: Decoder) throws {
@@ -27,13 +30,15 @@ public struct Company: Codable, Sendable, Identifiable, Equatable {
         issuerID = try container.decode(String.self, forKey: .issuerID)
         privateKeyPath = try container.decodeIfPresent(String.self, forKey: .privateKeyPath) ?? ""
         privateKeyContent = try container.decodeIfPresent(String.self, forKey: .privateKeyContent)
+        vendorNumber = try container.decodeIfPresent(String.self, forKey: .vendorNumber)
     }
 
     public init(
         id: String, name: String,
         keyID: String, issuerID: String,
         privateKeyPath: String = "",
-        privateKeyContent: String? = nil
+        privateKeyContent: String? = nil,
+        vendorNumber: String? = nil
     ) {
         self.id = id
         self.name = name
@@ -41,6 +46,7 @@ public struct Company: Codable, Sendable, Identifiable, Equatable {
         self.issuerID = issuerID
         self.privateKeyPath = privateKeyPath
         self.privateKeyContent = privateKeyContent
+        self.vendorNumber = vendorNumber
     }
 }
 

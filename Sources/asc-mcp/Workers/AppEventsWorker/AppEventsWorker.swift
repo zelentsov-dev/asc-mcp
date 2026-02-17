@@ -17,7 +17,10 @@ public final class AppEventsWorker: Sendable {
             createAppEventTool(),
             updateAppEventTool(),
             deleteAppEventTool(),
-            listAppEventLocalizationsTool()
+            listAppEventLocalizationsTool(),
+            createAppEventLocalizationTool(),
+            updateAppEventLocalizationTool(),
+            deleteAppEventLocalizationTool()
         ]
     }
 
@@ -36,6 +39,12 @@ public final class AppEventsWorker: Sendable {
             return try await deleteAppEvent(params)
         case "app_events_list_localizations":
             return try await listAppEventLocalizations(params)
+        case "app_events_create_localization":
+            return try await createAppEventLocalization(params)
+        case "app_events_update_localization":
+            return try await updateAppEventLocalization(params)
+        case "app_events_delete_localization":
+            return try await deleteAppEventLocalization(params)
         default:
             throw MCPError.methodNotFound("Unknown tool: \(params.name)")
         }
