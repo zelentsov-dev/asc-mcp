@@ -356,9 +356,24 @@ extension AppsWorker {
                     selected = match
                 } else {
                     // Priority: PREPARE_FOR_SUBMISSION > READY_FOR_SALE > first available
-                    if let editable = versions.first(where: { $0.attributes?.appStoreState == "PREPARE_FOR_SUBMISSION" }) {
+                    // Within each state, prefer platform: IOS > MAC_OS > TV_OS > VISION_OS
+                    let platformPriority = ["IOS", "MAC_OS", "TV_OS", "WATCH_OS", "VISION_OS"]
+
+                    func preferredByPlatform(_ candidates: [ASCAppStoreVersion]) -> ASCAppStoreVersion? {
+                        for platform in platformPriority {
+                            if let match = candidates.first(where: { $0.attributes?.platform == platform }) {
+                                return match
+                            }
+                        }
+                        return candidates.first
+                    }
+
+                    let editableCandidates = versions.filter { $0.attributes?.appStoreState == "PREPARE_FOR_SUBMISSION" }
+                    let publishedCandidates = versions.filter { $0.attributes?.appStoreState == "READY_FOR_SALE" }
+
+                    if let editable = preferredByPlatform(editableCandidates) {
                         selected = editable
-                    } else if let published = versions.first(where: { $0.attributes?.appStoreState == "READY_FOR_SALE" }) {
+                    } else if let published = preferredByPlatform(publishedCandidates) {
                         selected = published
                     } else {
                         selected = versions[0]

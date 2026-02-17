@@ -80,7 +80,7 @@ extension AppLifecycleWorker {
                 if let states = arguments["states"]?.arrayValue {
                     let stateStrings = states.compactMap { $0.stringValue }
                     if !stateStrings.isEmpty {
-                        queryParams["filter[appStoreVersionState]"] = stateStrings.joined(separator: ",")
+                        queryParams["filter[appVersionState]"] = stateStrings.joined(separator: ",")
                     }
                 }
 
@@ -204,12 +204,19 @@ extension AppLifecycleWorker {
             let response = try await httpClient.patch(
                 "/v1/appStoreVersions/\(versionId)",
                 body: request,
-                as: PassthroughAPIResponse.self
+                as: ASCAppStoreVersionResponse.self
             )
 
+            let v = response.data
             let result: [String: Any] = [
                 "success": true,
-                "version": response.data.asAny,
+                "version": [
+                    "id": v.id,
+                    "version_string": v.attributes?.versionString.jsonSafe ?? NSNull(),
+                    "state": v.attributes?.appStoreState.jsonSafe ?? NSNull(),
+                    "release_type": v.attributes?.releaseType.jsonSafe ?? NSNull(),
+                    "created_date": v.attributes?.createdDate.jsonSafe ?? NSNull()
+                ] as [String: Any],
                 "message": "Version updated successfully"
             ]
 
