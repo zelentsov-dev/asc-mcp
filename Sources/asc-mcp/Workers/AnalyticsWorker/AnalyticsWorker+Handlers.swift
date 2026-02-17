@@ -24,8 +24,19 @@ extension AnalyticsWorker {
         return nil
     }
 
+    /// Default report version by report type (latest known as of 2026)
+    private static let defaultReportVersions: [String: String] = [
+        "SALES": "1_0",
+        "PRE_ORDER": "1_1",
+        "NEWSSTAND": "1_0",
+        "SUBSCRIPTION": "1_3",
+        "SUBSCRIPTION_EVENT": "1_4",
+        "SUBSCRIBER": "1_3",
+        "SUBSCRIPTION_OFFER_CODE_REDEMPTION": "1_0"
+    ]
+
     /// Gets a sales/download report from App Store Connect
-    /// - Returns: Structured JSON with parsed TSV data, summary, and row limit
+    /// - Returns: Structured JSON with summary (always) and optional raw rows
     /// - Throws: Error if required parameters are missing or API call fails
     func getSalesReport(_ params: CallTool.Parameters) async throws -> CallTool.Result {
         guard let arguments = params.arguments,
@@ -46,7 +57,11 @@ extension AnalyticsWorker {
             )
         }
 
-        let limit = arguments["limit"]?.intValue ?? 100
+        let version = arguments["version"]?.stringValue
+            ?? Self.defaultReportVersions[reportType]
+            ?? "1_0"
+        let summaryOnly = arguments["summary_only"]?.boolValue ?? true
+        let limit = arguments["limit"]?.intValue ?? 25
 
         do {
             let queryParams: [String: String] = [
@@ -54,7 +69,8 @@ extension AnalyticsWorker {
                 "filter[reportType]": reportType,
                 "filter[reportSubType]": reportSubType,
                 "filter[frequency]": frequency,
-                "filter[reportDate]": reportDate
+                "filter[reportDate]": reportDate,
+                "filter[version]": version
             ]
 
             let data = try await httpClient.getRaw("/v1/salesReports", parameters: queryParams, accept: "application/a-gzip")
@@ -67,23 +83,26 @@ extension AnalyticsWorker {
                 )
             }
 
-            // Parse all rows for summary, then limit for response
             let allParsed = TSVParser.parse(data: tsvString)
-            let limitedParsed = TSVParser.parse(data: tsvString, limit: limit)
-            let summary = ReportSummary.salesSummary(from: allParsed.rows)
+            let summary = ReportSummary.summary(for: reportType, from: allParsed.rows)
 
-            let result: [String: Any] = [
+            var result: [String: Any] = [
                 "success": true,
                 "report_type": reportType,
                 "report_sub_type": reportSubType,
                 "frequency": frequency,
                 "report_date": reportDate,
+                "version": version,
                 "total_rows": allParsed.totalRowCount,
-                "showing_rows": limitedParsed.rows.count,
-                "summary": summary,
-                "columns": limitedParsed.headers,
-                "rows": limitedParsed.rows
+                "summary": summary
             ]
+
+            if !summaryOnly {
+                let limitedParsed = TSVParser.parse(data: tsvString, limit: limit)
+                result["showing_rows"] = limitedParsed.rows.count
+                result["columns"] = limitedParsed.headers
+                result["rows"] = limitedParsed.rows
+            }
 
             return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
         } catch {
@@ -95,7 +114,7 @@ extension AnalyticsWorker {
     }
 
     /// Gets a financial report from App Store Connect
-    /// - Returns: Structured JSON with parsed TSV data, summary, and row limit
+    /// - Returns: Structured JSON with summary (always) and optional raw rows
     /// - Throws: Error if required parameters are missing or API call fails
     func getFinancialReport(_ params: CallTool.Parameters) async throws -> CallTool.Result {
         guard let arguments = params.arguments,
@@ -115,7 +134,8 @@ extension AnalyticsWorker {
             )
         }
 
-        let limit = arguments["limit"]?.intValue ?? 100
+        let summaryOnly = arguments["summary_only"]?.boolValue ?? true
+        let limit = arguments["limit"]?.intValue ?? 25
 
         do {
             let queryParams: [String: String] = [
@@ -135,22 +155,24 @@ extension AnalyticsWorker {
                 )
             }
 
-            // Parse all rows for summary, then limit for response
             let allParsed = TSVParser.parse(data: tsvString)
-            let limitedParsed = TSVParser.parse(data: tsvString, limit: limit)
             let summary = ReportSummary.financialSummary(from: allParsed.rows)
 
-            let result: [String: Any] = [
+            var result: [String: Any] = [
                 "success": true,
                 "report_type": reportType,
                 "region_code": regionCode,
                 "report_date": reportDate,
                 "total_rows": allParsed.totalRowCount,
-                "showing_rows": limitedParsed.rows.count,
-                "summary": summary,
-                "columns": limitedParsed.headers,
-                "rows": limitedParsed.rows
+                "summary": summary
             ]
+
+            if !summaryOnly {
+                let limitedParsed = TSVParser.parse(data: tsvString, limit: limit)
+                result["showing_rows"] = limitedParsed.rows.count
+                result["columns"] = limitedParsed.headers
+                result["rows"] = limitedParsed.rows
+            }
 
             return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
         } catch {

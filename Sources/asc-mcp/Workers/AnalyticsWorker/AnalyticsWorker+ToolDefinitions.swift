@@ -13,7 +13,24 @@ extension AnalyticsWorker {
     func getSalesReportTool() -> Tool {
         return Tool(
             name: "analytics_sales_report",
-            description: "Get sales and download reports from App Store Connect. Returns structured JSON with parsed TSV data, summary statistics (total units, proceeds by currency, top countries), and individual rows.",
+            description: """
+            Get sales, subscription, and download reports from App Store Connect. Returns structured JSON with parsed TSV data, summary statistics, and individual rows.
+
+            Report types and their use cases:
+            - SALES (version 1_0): Downloads, updates, re-downloads, proceeds. Frequency: DAILY/WEEKLY/MONTHLY/YEARLY. Sub-type: SUMMARY/DETAILED.
+            - SUBSCRIPTION (version 1_3): Active subscriber counts by state/country/device, intro offers, promo offers, billing retry, grace period. Frequency: DAILY. Sub-type: SUMMARY.
+            - SUBSCRIPTION_EVENT (version 1_4): Subscriber activity — new subscriptions, renewals, upgrades, downgrades, cancellations, reactivations, refunds, conversions from trial. Frequency: DAILY. Sub-type: SUMMARY.
+            - SUBSCRIBER (version 1_3): Transaction-level subscriber activity with anonymous Subscriber IDs, purchase dates, proceeds. Frequency: DAILY. Sub-type: DETAILED.
+            - SUBSCRIPTION_OFFER_CODE_REDEMPTION (version 1_0): Offer code redemptions. Frequency: DAILY. Sub-type: SUMMARY.
+            - PRE_ORDER (version 1_1): Pre-order units. Frequency: DAILY/WEEKLY/MONTHLY/YEARLY. Sub-type: SUMMARY.
+
+            Typical workflows:
+            1. Installs/downloads: SALES + SUMMARY + DAILY
+            2. Active subscribers: SUBSCRIPTION + SUMMARY + DAILY
+            3. Trial conversions, cancellations, renewals: SUBSCRIPTION_EVENT + SUMMARY + DAILY
+            4. Per-subscriber transaction history: SUBSCRIBER + DETAILED + DAILY
+            5. Revenue by product: SALES + DETAILED + DAILY
+            """,
             inputSchema: .object([
                 "type": .string("object"),
                 "properties": .object([
@@ -23,7 +40,7 @@ extension AnalyticsWorker {
                     ]),
                     "report_type": .object([
                         "type": .string("string"),
-                        "description": .string("Type of sales report"),
+                        "description": .string("Type of report: SALES (downloads/revenue), SUBSCRIPTION (active subs), SUBSCRIPTION_EVENT (renewals/cancellations/trials), SUBSCRIBER (per-user transactions), PRE_ORDER, SUBSCRIPTION_OFFER_CODE_REDEMPTION"),
                         "enum": .array([
                             .string("SALES"),
                             .string("PRE_ORDER"),
@@ -36,7 +53,7 @@ extension AnalyticsWorker {
                     ]),
                     "report_sub_type": .object([
                         "type": .string("string"),
-                        "description": .string("Report sub-type"),
+                        "description": .string("Report sub-type: SUMMARY (aggregated), DETAILED (per-transaction), OPT_IN (marketing opt-ins)"),
                         "enum": .array([
                             .string("SUMMARY"),
                             .string("DETAILED"),
@@ -45,7 +62,7 @@ extension AnalyticsWorker {
                     ]),
                     "frequency": .object([
                         "type": .string("string"),
-                        "description": .string("Report frequency"),
+                        "description": .string("Report frequency. SUBSCRIPTION/SUBSCRIPTION_EVENT/SUBSCRIBER only support DAILY."),
                         "enum": .array([
                             .string("DAILY"),
                             .string("WEEKLY"),
@@ -55,11 +72,19 @@ extension AnalyticsWorker {
                     ]),
                     "report_date": .object([
                         "type": .string("string"),
-                        "description": .string("Report date in YYYY-MM-DD format (e.g., 2025-01-15)")
+                        "description": .string("Report date in YYYY-MM-DD format (e.g., 2025-01-15). Reports available next day by 8am PT.")
+                    ]),
+                    "version": .object([
+                        "type": .string("string"),
+                        "description": .string("Report version (e.g., 1_0, 1_3, 1_4). If omitted, uses the latest known default for the report type.")
+                    ]),
+                    "summary_only": .object([
+                        "type": .string("boolean"),
+                        "description": .string("If true (default), returns only summary statistics (by app, by country, by product type, proceeds). Set to false to include raw rows.")
                     ]),
                     "limit": .object([
                         "type": .string("integer"),
-                        "description": .string("Max rows to return (default: 100). Summary is always computed from all rows.")
+                        "description": .string("Max raw rows to return when summary_only=false (default: 25). Summary is always computed from all rows.")
                     ])
                 ]),
                 "required": .array([
@@ -76,7 +101,7 @@ extension AnalyticsWorker {
     func getFinancialReportTool() -> Tool {
         return Tool(
             name: "analytics_financial_report",
-            description: "Get financial reports from App Store Connect. Returns structured JSON with parsed TSV data, summary statistics (total quantity, partner share by currency, top countries), and individual rows.",
+            description: "Get financial reports from App Store Connect. Returns summary with total quantity, partner share by currency, and top countries. Set summary_only=false to include raw rows.",
             inputSchema: .object([
                 "type": .string("object"),
                 "properties": .object([
@@ -100,9 +125,13 @@ extension AnalyticsWorker {
                             .string("FINANCE_DETAIL")
                         ])
                     ]),
+                    "summary_only": .object([
+                        "type": .string("boolean"),
+                        "description": .string("If true (default), returns only summary statistics. Set to false to include raw rows.")
+                    ]),
                     "limit": .object([
                         "type": .string("integer"),
-                        "description": .string("Max rows to return (default: 100). Summary is always computed from all rows.")
+                        "description": .string("Max raw rows to return when summary_only=false (default: 25). Summary is always computed from all rows.")
                     ])
                 ]),
                 "required": .array([
