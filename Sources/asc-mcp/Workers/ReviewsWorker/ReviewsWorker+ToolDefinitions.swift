@@ -31,7 +31,7 @@ extension ReviewsWorker {
                     ]),
                     "territory": .object([
                         "type": .string("string"),
-                        "description": .string("Filter by territory code (e.g., US, RU, DE)")
+                        "description": .string("ISO 3166-1 alpha-2 territory code (US, RU, DE, JP)")
                     ]),
                     "sort": .object([
                         "type": .string("string"),

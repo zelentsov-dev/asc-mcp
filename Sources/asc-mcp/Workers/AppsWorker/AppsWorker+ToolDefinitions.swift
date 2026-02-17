@@ -188,7 +188,7 @@ extension AppsWorker {
     func createLocalizationTool() -> Tool {
         return Tool(
             name: "apps_create_localization",
-            description: "Создает новую локализацию для версии приложения",
+            description: "Создает новую локализацию для версии приложения. Locale format depends on language: ru, ja (language only) vs en-US, de-DE (with region). Use apps_list_localizations to see existing locales.",
             inputSchema: .object([
                 "type": .string("object"),
                 "properties": .object([

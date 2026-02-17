@@ -31,7 +31,7 @@ extension BetaTestersWorker {
     func searchBetaTestersTool() -> Tool {
         return Tool(
             name: "beta_testers_search",
-            description: "Search beta tester by email address",
+            description: "Search beta tester by email address. Exact email match only. Partial/wildcard not supported.",
             inputSchema: .object([
                 "type": .string("object"),
                 "properties": .object([

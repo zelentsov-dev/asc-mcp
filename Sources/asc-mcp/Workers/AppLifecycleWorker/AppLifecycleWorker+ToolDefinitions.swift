@@ -236,7 +236,7 @@ extension AppLifecycleWorker {
     func updatePhasedReleaseTool() -> Tool {
         Tool(
             name: "app_versions_update_phased_release",
-            description: "Update phased release state (pause/resume/complete)",
+            description: "Update phased release state (pause/resume/complete). Get phased_release_id from app_versions_create_phased_release response.",
             inputSchema: .object([
                 "type": .string("object"),
                 "properties": .object([

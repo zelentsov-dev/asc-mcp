@@ -94,7 +94,7 @@ extension BuildProcessingWorker {
                   let dataObj = declarationJson["data"] as? [String: Any],
                   let declarationId = dataObj["id"] as? String else {
                 return CallTool.Result(
-                    content: [.text("Error: Could not parse encryption declaration response for build \(buildId). The build may not have an encryption declaration.")],
+                    content: [.text("Error: Could not parse encryption declaration response for build \(buildId). The build may not have an encryption declaration. Note: builds older than 90 days may have expired and no longer support this operation.")],
                     isError: true
                 )
             }

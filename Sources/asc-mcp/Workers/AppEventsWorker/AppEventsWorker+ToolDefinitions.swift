@@ -94,7 +94,7 @@ extension AppEventsWorker {
     func updateAppEventTool() -> Tool {
         return Tool(
             name: "app_events_update",
-            description: "Update an existing in-app event",
+            description: "Update an existing in-app event. Territory schedules are NOT modified by this tool.",
             inputSchema: .object([
                 "type": .string("object"),
                 "properties": .object([
