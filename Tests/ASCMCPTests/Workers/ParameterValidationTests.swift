@@ -522,6 +522,26 @@ struct ParameterValidationTests {
         #expect(result.isError == true)
     }
 
+    @Test("analytics_app_summary without report_date returns isError")
+    func analyticsAppSummaryMissingDate() async throws {
+        let client = try await TestFactory.makeHTTPClient()
+        let worker = AnalyticsWorker(httpClient: client)
+        let params = CallTool.Parameters(name: "analytics_app_summary", arguments: nil)
+        let result = try await worker.handleTool(params)
+        #expect(result.isError == true)
+    }
+
+    @Test("analytics_app_summary without vendor_number and without config returns isError")
+    func analyticsAppSummaryMissingVendorNumber() async throws {
+        let client = try await TestFactory.makeHTTPClient()
+        let worker = AnalyticsWorker(httpClient: client)
+        let params = CallTool.Parameters(name: "analytics_app_summary", arguments: [
+            "report_date": .string("2025-01-15")
+        ])
+        let result = try await worker.handleTool(params)
+        #expect(result.isError == true)
+    }
+
     @Test("analytics_sales_report without vendor_number and without config returns isError")
     func analyticsSalesReportMissingVendorNumber() async throws {
         let client = try await TestFactory.makeHTTPClient()

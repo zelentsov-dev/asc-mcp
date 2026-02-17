@@ -35,6 +35,52 @@ extension AnalyticsWorker {
         "SUBSCRIPTION_OFFER_CODE_REDEMPTION": "1_0"
     ]
 
+    /// Fetches and parses a sales report, returning summary and row counts
+    /// - Returns: Tuple with summary dict, total row count, and filtered row count
+    /// - Throws: Error if API call or decompression fails
+    private func fetchReportSummary(
+        vendorNumber: String,
+        reportType: String,
+        reportSubType: String,
+        frequency: String,
+        reportDate: String,
+        version: String? = nil,
+        appIdFilter: String? = nil
+    ) async throws -> (summary: [String: Any], totalRows: Int, filteredRows: Int) {
+        let resolvedVersion = version
+            ?? Self.defaultReportVersions[reportType]
+            ?? "1_0"
+
+        let queryParams: [String: String] = [
+            "filter[vendorNumber]": vendorNumber,
+            "filter[reportType]": reportType,
+            "filter[reportSubType]": reportSubType,
+            "filter[frequency]": frequency,
+            "filter[reportDate]": reportDate,
+            "filter[version]": resolvedVersion
+        ]
+
+        let data = try await httpClient.getRaw("/v1/salesReports", parameters: queryParams, accept: "application/a-gzip")
+
+        guard let tsvString = decompressReportData(data) else {
+            throw ASCError.parsing("Failed to decode report data: not valid UTF-8 or gzip")
+        }
+
+        let allParsed = TSVParser.parse(data: tsvString)
+
+        let filteredRows: [[String: String]]
+        if let appId = appIdFilter {
+            filteredRows = allParsed.rows.filter { row in
+                row["Apple Identifier"] == appId || row["App Apple ID"] == appId
+            }
+        } else {
+            filteredRows = allParsed.rows
+        }
+
+        let summary = ReportSummary.summary(for: reportType, from: filteredRows)
+        return (summary: summary, totalRows: allParsed.totalRowCount, filteredRows: filteredRows.count)
+    }
+
     /// Gets a sales/download report from App Store Connect
     /// - Returns: Structured JSON with summary (always) and optional raw rows
     /// - Throws: Error if required parameters are missing or API call fails
@@ -58,45 +104,24 @@ extension AnalyticsWorker {
         }
 
         let version = arguments["version"]?.stringValue
-            ?? Self.defaultReportVersions[reportType]
-            ?? "1_0"
         let summaryOnly = arguments["summary_only"]?.boolValue ?? true
         let limit = arguments["limit"]?.intValue ?? 25
         let appIdFilter = arguments["app_id"]?.stringValue
 
         do {
-            let queryParams: [String: String] = [
-                "filter[vendorNumber]": vendorNumber,
-                "filter[reportType]": reportType,
-                "filter[reportSubType]": reportSubType,
-                "filter[frequency]": frequency,
-                "filter[reportDate]": reportDate,
-                "filter[version]": version
-            ]
+            let report = try await fetchReportSummary(
+                vendorNumber: vendorNumber,
+                reportType: reportType,
+                reportSubType: reportSubType,
+                frequency: frequency,
+                reportDate: reportDate,
+                version: version,
+                appIdFilter: appIdFilter
+            )
 
-            let data = try await httpClient.getRaw("/v1/salesReports", parameters: queryParams, accept: "application/a-gzip")
-            let tsvString = decompressReportData(data)
-
-            guard let tsvString else {
-                return CallTool.Result(
-                    content: [.text("Failed to decode report data: not valid UTF-8 or gzip")],
-                    isError: true
-                )
-            }
-
-            let allParsed = TSVParser.parse(data: tsvString)
-
-            // Filter by app if requested (column: "Apple Identifier" or "App Apple ID")
-            let filteredRows: [[String: String]]
-            if let appId = appIdFilter {
-                filteredRows = allParsed.rows.filter { row in
-                    row["Apple Identifier"] == appId || row["App Apple ID"] == appId
-                }
-            } else {
-                filteredRows = allParsed.rows
-            }
-
-            let summary = ReportSummary.summary(for: reportType, from: filteredRows)
+            let resolvedVersion = version
+                ?? Self.defaultReportVersions[reportType]
+                ?? "1_0"
 
             var result: [String: Any] = [
                 "success": true,
@@ -104,10 +129,10 @@ extension AnalyticsWorker {
                 "report_sub_type": reportSubType,
                 "frequency": frequency,
                 "report_date": reportDate,
-                "version": version,
-                "total_rows": allParsed.totalRowCount,
-                "filtered_rows": filteredRows.count,
-                "summary": summary
+                "version": resolvedVersion,
+                "total_rows": report.totalRows,
+                "filtered_rows": report.filteredRows,
+                "summary": report.summary
             ]
 
             if let appId = appIdFilter {
@@ -115,10 +140,31 @@ extension AnalyticsWorker {
             }
 
             if !summaryOnly {
-                let rows = Array(filteredRows.prefix(limit))
-                result["showing_rows"] = rows.count
-                result["columns"] = allParsed.headers
-                result["rows"] = rows
+                // Re-fetch raw rows for display (fetchReportSummary doesn't return them)
+                let queryParams: [String: String] = [
+                    "filter[vendorNumber]": vendorNumber,
+                    "filter[reportType]": reportType,
+                    "filter[reportSubType]": reportSubType,
+                    "filter[frequency]": frequency,
+                    "filter[reportDate]": reportDate,
+                    "filter[version]": resolvedVersion
+                ]
+                let data = try await httpClient.getRaw("/v1/salesReports", parameters: queryParams, accept: "application/a-gzip")
+                if let tsvString = decompressReportData(data) {
+                    let allParsed = TSVParser.parse(data: tsvString)
+                    let filteredRows: [[String: String]]
+                    if let appId = appIdFilter {
+                        filteredRows = allParsed.rows.filter { row in
+                            row["Apple Identifier"] == appId || row["App Apple ID"] == appId
+                        }
+                    } else {
+                        filteredRows = allParsed.rows
+                    }
+                    let rows = Array(filteredRows.prefix(limit))
+                    result["showing_rows"] = rows.count
+                    result["columns"] = allParsed.headers
+                    result["rows"] = rows
+                }
             }
 
             return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
@@ -127,6 +173,111 @@ extension AnalyticsWorker {
                 content: [.text("Failed to get sales report: \(error.localizedDescription)")],
                 isError: true
             )
+        }
+    }
+
+    /// Gets a combined analytics summary for an app in a single call
+    /// - Returns: JSON with downloads, subscriptions, subscription events, and revenue sections
+    /// - Throws: Error if required parameters are missing
+    func getAppSummary(_ params: CallTool.Parameters) async throws -> CallTool.Result {
+        guard let arguments = params.arguments,
+              let reportDate = arguments["report_date"]?.stringValue else {
+            return CallTool.Result(
+                content: [.text("Missing required parameter: report_date")],
+                isError: true
+            )
+        }
+
+        guard let vendorNumber = await resolveVendorNumber(from: arguments) else {
+            return CallTool.Result(
+                content: [.text("Missing vendor_number: provide it as parameter or set vendor_number in company config")],
+                isError: true
+            )
+        }
+
+        let appIdFilter = arguments["app_id"]?.stringValue
+
+        // Fetch 4 report types in parallel with partial success handling
+        async let downloadsTask = fetchSectionSummary(
+            vendorNumber: vendorNumber, reportType: "SALES",
+            reportSubType: "SUMMARY", frequency: "DAILY",
+            reportDate: reportDate, appIdFilter: appIdFilter
+        )
+        async let subscriptionsTask = fetchSectionSummary(
+            vendorNumber: vendorNumber, reportType: "SUBSCRIPTION",
+            reportSubType: "SUMMARY", frequency: "DAILY",
+            reportDate: reportDate, appIdFilter: appIdFilter
+        )
+        async let eventsTask = fetchSectionSummary(
+            vendorNumber: vendorNumber, reportType: "SUBSCRIPTION_EVENT",
+            reportSubType: "SUMMARY", frequency: "DAILY",
+            reportDate: reportDate, appIdFilter: appIdFilter
+        )
+        async let revenueTask = fetchSectionSummary(
+            vendorNumber: vendorNumber, reportType: "SUBSCRIBER",
+            reportSubType: "DETAILED", frequency: "DAILY",
+            reportDate: reportDate, appIdFilter: appIdFilter
+        )
+
+        let downloads = await downloadsTask
+        let subscriptions = await subscriptionsTask
+        let events = await eventsTask
+        let revenue = await revenueTask
+
+        let sections: [String: [String: Any]] = [
+            "downloads": downloads,
+            "subscriptions": subscriptions,
+            "subscription_events": events,
+            "revenue": revenue
+        ]
+
+        let succeeded = sections.values.filter { ($0["status"] as? String) == "success" }.count
+        let failed = sections.count - succeeded
+
+        var result: [String: Any] = [
+            "success": true,
+            "report_date": reportDate,
+            "sections": sections,
+            "sections_succeeded": succeeded,
+            "sections_failed": failed
+        ]
+
+        if let appId = appIdFilter {
+            result["app_id_filter"] = appId
+        }
+
+        return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+    }
+
+    /// Fetches a single report section, returning success or error dict
+    private func fetchSectionSummary(
+        vendorNumber: String,
+        reportType: String,
+        reportSubType: String,
+        frequency: String,
+        reportDate: String,
+        appIdFilter: String?
+    ) async -> [String: Any] {
+        do {
+            let report = try await fetchReportSummary(
+                vendorNumber: vendorNumber,
+                reportType: reportType,
+                reportSubType: reportSubType,
+                frequency: frequency,
+                reportDate: reportDate,
+                appIdFilter: appIdFilter
+            )
+            return [
+                "status": "success",
+                "summary": report.summary,
+                "total_rows": report.totalRows,
+                "filtered_rows": report.filteredRows
+            ]
+        } catch {
+            return [
+                "status": "error",
+                "error_message": error.localizedDescription
+            ]
         }
     }
 

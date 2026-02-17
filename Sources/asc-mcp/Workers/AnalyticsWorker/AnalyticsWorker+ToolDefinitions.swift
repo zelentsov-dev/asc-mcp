@@ -101,6 +101,48 @@ extension AnalyticsWorker {
         )
     }
 
+    /// Creates tool definition for combined app analytics summary
+    func getAppSummaryTool() -> Tool {
+        return Tool(
+            name: "analytics_app_summary",
+            description: """
+            Get a combined analytics summary for an app in a single call. Fetches 4 report types in parallel and returns all results together.
+
+            Sections returned:
+            - downloads: Units, proceeds, by country/product type (from SALES/SUMMARY/DAILY)
+            - subscriptions: Active subscribers, free trials, billing retry, grace period (from SUBSCRIPTION/SUMMARY/DAILY)
+            - subscription_events: Renewals, cancellations, trials, upgrades, downgrades (from SUBSCRIPTION_EVENT/SUMMARY/DAILY)
+            - revenue: Per-subscriber transaction data with proceeds (from SUBSCRIBER/DETAILED/DAILY)
+
+            Each section has status "success" or "error" (partial success supported — e.g., no subscriptions won't block downloads).
+
+            Example use cases:
+            - "How is my app doing today?" → analytics_app_summary with today's date
+            - "Show me downloads and revenue for app X" → analytics_app_summary with app_id filter
+            """,
+            inputSchema: .object([
+                "type": .string("object"),
+                "properties": .object([
+                    "report_date": .object([
+                        "type": .string("string"),
+                        "description": .string("Report date in YYYY-MM-DD format (e.g., 2025-01-15). Reports available next day by 8am PT.")
+                    ]),
+                    "app_id": .object([
+                        "type": .string("string"),
+                        "description": .string("Apple ID of the app to filter by (numeric, e.g., '1234567890'). If omitted, returns data for all apps.")
+                    ]),
+                    "vendor_number": .object([
+                        "type": .string("string"),
+                        "description": .string("Vendor number from App Store Connect. If not provided, uses vendor_number from company config.")
+                    ])
+                ]),
+                "required": .array([
+                    .string("report_date")
+                ])
+            ])
+        )
+    }
+
     /// Creates tool definition for getting financial reports
     func getFinancialReportTool() -> Tool {
         return Tool(

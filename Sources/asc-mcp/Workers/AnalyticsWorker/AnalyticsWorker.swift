@@ -22,6 +22,7 @@ public final class AnalyticsWorker: Sendable {
     public func getTools() async -> [Tool] {
         return [
             getSalesReportTool(),
+            getAppSummaryTool(),
             getFinancialReportTool(),
             listAnalyticsReportRequestsTool(),
             createAnalyticsReportRequestTool(),
@@ -39,6 +40,8 @@ public final class AnalyticsWorker: Sendable {
         switch params.name {
         case "analytics_sales_report":
             return try await getSalesReport(params)
+        case "analytics_app_summary":
+            return try await getAppSummary(params)
         case "analytics_financial_report":
             return try await getFinancialReport(params)
         case "analytics_list_report_requests":
