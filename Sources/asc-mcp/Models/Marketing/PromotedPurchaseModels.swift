@@ -11,6 +11,22 @@ public struct ASCPromotedPurchasesResponse: Codable, Sendable {
 /// Single promoted purchase response
 public struct ASCPromotedPurchaseResponse: Codable, Sendable {
     public let data: ASCPromotedPurchase
+    public let included: [PromotedPurchaseIncludedResource]?
+}
+
+/// Included resource in promoted purchase response (IAP or subscription)
+public struct PromotedPurchaseIncludedResource: Codable, Sendable {
+    public let type: String
+    public let id: String
+    public let attributes: PromotedPurchaseIncludedAttributes?
+}
+
+/// Attributes for included IAP/subscription resources
+public struct PromotedPurchaseIncludedAttributes: Codable, Sendable {
+    public let name: String?
+    public let productId: String?
+    public let inAppPurchaseType: String?
+    public let state: String?
 }
 
 /// Promoted purchase resource

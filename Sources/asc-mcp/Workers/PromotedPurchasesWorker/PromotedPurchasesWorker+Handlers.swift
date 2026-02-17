@@ -74,10 +74,11 @@ extension PromotedPurchasesWorker {
         do {
             let response: ASCPromotedPurchaseResponse = try await httpClient.get(
                 "/v1/promotedPurchases/\(promotedPurchaseId)",
+                parameters: ["include": "inAppPurchaseV2,subscription"],
                 as: ASCPromotedPurchaseResponse.self
             )
 
-            let purchase = formatPromotedPurchase(response.data)
+            let purchase = formatPromotedPurchase(response.data, included: response.included)
 
             let result = [
                 "success": true,
@@ -254,13 +255,25 @@ extension PromotedPurchasesWorker {
 
     // MARK: - Formatting
 
-    private func formatPromotedPurchase(_ purchase: ASCPromotedPurchase) -> [String: Any] {
-        return [
+    private func formatPromotedPurchase(_ purchase: ASCPromotedPurchase, included: [PromotedPurchaseIncludedResource]? = nil) -> [String: Any] {
+        var result: [String: Any] = [
             "id": purchase.id,
             "type": purchase.type,
             "visibleForAllUsers": purchase.attributes?.visibleForAllUsers.jsonSafe ?? NSNull(),
             "enabled": purchase.attributes?.enabled.jsonSafe ?? NSNull(),
             "state": purchase.attributes?.state.jsonSafe ?? NSNull()
         ]
+
+        // Add linked product info from included resources
+        if let included = included, let resource = included.first {
+            result["linkedProduct"] = [
+                "type": resource.type,
+                "id": resource.id,
+                "name": resource.attributes?.name.jsonSafe ?? NSNull(),
+                "productId": resource.attributes?.productId.jsonSafe ?? NSNull()
+            ] as [String: Any]
+        }
+
+        return result
     }
 }
