@@ -38,7 +38,7 @@
 ```bash
 # 1. Install via Mint
 brew install mint
-mint install DeveloperZelentsov/asc-mcp@develop
+mint install zelentsov-dev/asc-mcp@develop
 
 # 2. Add to Claude Code with env vars (simplest setup)
 claude mcp add asc-mcp \
@@ -70,7 +70,7 @@ Or use a JSON config file — see [Configuration](#configuration) below.
 brew install mint
 
 # Install asc-mcp from GitHub
-mint install DeveloperZelentsov/asc-mcp@develop
+mint install zelentsov-dev/asc-mcp@develop
 
 # Register in Claude Code
 claude mcp add asc-mcp -- ~/.mint/bin/asc-mcp
@@ -79,21 +79,21 @@ claude mcp add asc-mcp -- ~/.mint/bin/asc-mcp
 To install a specific branch or tag:
 
 ```bash
-mint install DeveloperZelentsov/asc-mcp@main      # main branch
-mint install DeveloperZelentsov/asc-mcp@develop    # develop branch
-mint install DeveloperZelentsov/asc-mcp@v1.0.0     # specific tag
+mint install zelentsov-dev/asc-mcp@main      # main branch
+mint install zelentsov-dev/asc-mcp@develop    # develop branch
+mint install zelentsov-dev/asc-mcp@v1.0.0     # specific tag
 ```
 
 To update to the latest version:
 
 ```bash
-mint install DeveloperZelentsov/asc-mcp@develop --force
+mint install zelentsov-dev/asc-mcp@develop --force
 ```
 
 ### Option B: Build from Source
 
 ```bash
-git clone https://github.com/DeveloperZelentsov/asc-mcp.git
+git clone https://github.com/zelentsov-dev/asc-mcp.git
 cd asc-mcp
 swift build -c release
 
