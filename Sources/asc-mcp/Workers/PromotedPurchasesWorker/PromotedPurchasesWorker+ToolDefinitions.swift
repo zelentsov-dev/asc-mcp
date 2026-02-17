@@ -121,28 +121,4 @@ extension PromotedPurchasesWorker {
         )
     }
 
-    func listPromotionImagesTool() -> Tool {
-        return Tool(
-            name: "promoted_list_images",
-            description: "List promotion images for a promoted purchase",
-            inputSchema: .object([
-                "type": .string("object"),
-                "properties": .object([
-                    "promoted_purchase_id": .object([
-                        "type": .string("string"),
-                        "description": .string("Promoted purchase ID")
-                    ]),
-                    "limit": .object([
-                        "type": .string("integer"),
-                        "description": .string("Max results (default: 25, max: 200)")
-                    ]),
-                    "next_url": .object([
-                        "type": .string("string"),
-                        "description": .string("Pagination URL from previous response to fetch next page")
-                    ])
-                ]),
-                "required": .array([.string("promoted_purchase_id")])
-            ])
-        )
-    }
 }

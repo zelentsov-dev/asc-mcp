@@ -83,6 +83,9 @@ extension OfferCodesWorker {
                 customerEligibilities = [offerEligibility]
             }
 
+            // Parse territory_ids
+            let territoryIds = arguments["territory_ids"]?.arrayValue?.compactMap { $0.stringValue } ?? []
+
             // Build prices relationship and included if price_point_ids provided
             var pricesRelationship: CreateOfferCodeRequest.PricesRelationship?
             var included: [OfferCodePriceInlineCreate]?
@@ -90,6 +93,13 @@ extension OfferCodesWorker {
             if let pricePointIds = arguments["price_point_ids"]?.arrayValue {
                 let ids = pricePointIds.compactMap { $0.stringValue }
                 if !ids.isEmpty {
+                    guard ids.count == territoryIds.count else {
+                        return CallTool.Result(
+                            content: [.text("Error: price_point_ids and territory_ids must have the same count (got \(ids.count) vs \(territoryIds.count))")],
+                            isError: true
+                        )
+                    }
+
                     var priceRefs: [ASCResourceIdentifier] = []
                     var priceInlines: [OfferCodePriceInlineCreate] = []
 
@@ -101,6 +111,9 @@ extension OfferCodesWorker {
                             relationships: OfferCodePriceInlineCreate.Relationships(
                                 subscriptionPricePoint: OfferCodePriceInlineCreate.PricePointRelationship(
                                     data: ASCResourceIdentifier(type: "subscriptionPricePoints", id: pricePointId)
+                                ),
+                                territory: OfferCodePriceInlineCreate.TerritoryRelationship(
+                                    data: ASCResourceIdentifier(type: "territories", id: territoryIds[index])
                                 )
                             )
                         ))

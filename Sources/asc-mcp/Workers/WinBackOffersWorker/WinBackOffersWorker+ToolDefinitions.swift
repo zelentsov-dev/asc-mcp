@@ -84,7 +84,7 @@ extension WinBackOffersWorker {
                     ]),
                     "eligibility_wait_between_months": .object([
                         "type": .string("integer"),
-                        "description": .string("Min months between offers")
+                        "description": .string("Min months between offers (2-24)")
                     ]),
                     "start_date": .object([
                         "type": .string("string"),
@@ -96,7 +96,14 @@ extension WinBackOffersWorker {
                     ]),
                     "price_point_ids": .object([
                         "type": .string("array"),
-                        "description": .string("Array of subscription price point IDs for the offer prices"),
+                        "description": .string("Array of subscription price point IDs for the offer prices (not needed for FREE_TRIAL)"),
+                        "items": .object([
+                            "type": .string("string")
+                        ])
+                    ]),
+                    "territory_ids": .object([
+                        "type": .string("array"),
+                        "description": .string("Array of territory IDs matching price_point_ids (e.g. [\"USA\", \"GBR\"]). Required for all offer modes."),
                         "items": .object([
                             "type": .string("string")
                         ])

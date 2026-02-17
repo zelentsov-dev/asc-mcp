@@ -27,31 +27,6 @@ public struct PromotedPurchaseAttributes: Codable, Sendable {
     public let state: String?
 }
 
-// MARK: - Promotion Image Models
-
-/// Promotion images list response
-public struct ASCPromotionImagesResponse: Codable, Sendable {
-    public let data: [ASCPromotionImage]
-    public let links: ASCPagedDocumentLinks?
-}
-
-/// Promotion image resource
-public struct ASCPromotionImage: Codable, Sendable {
-    public let type: String
-    public let id: String
-    public let attributes: PromotionImageAttributes?
-}
-
-/// Promotion image attributes
-public struct PromotionImageAttributes: Codable, Sendable {
-    public let fileSize: Int?
-    public let fileName: String?
-    public let imageAsset: ASCImageAsset?
-    public let assetToken: String?
-    public let sourceFileChecksum: String?
-    public let assetDeliveryState: ASCAssetDeliveryState?
-}
-
 // MARK: - Request Models
 
 /// Create promoted purchase request

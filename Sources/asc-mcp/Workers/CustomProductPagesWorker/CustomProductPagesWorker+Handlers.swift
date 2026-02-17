@@ -113,13 +113,14 @@ extension CustomProductPagesWorker {
 
         do {
             // Build request with included[] for version and localization (heterogeneous types)
-            var versionRelationships: [String: Any] = [:]
-
-            if let templateVersionId = arguments["template_version_id"]?.stringValue {
-                versionRelationships["appStoreVersionTemplate"] = [
-                    "data": ["type": "appStoreVersions", "id": templateVersionId]
+            // Version must link to its localizations so Apple API sees included[1] as "linked"
+            let versionRelationships: [String: Any] = [
+                "appCustomProductPageLocalizations": [
+                    "data": [
+                        ["type": "appCustomProductPageLocalizations", "id": "${loc-0}"]
+                    ]
                 ]
-            }
+            ]
 
             var localizationAttributes: [String: Any] = [
                 "locale": locale

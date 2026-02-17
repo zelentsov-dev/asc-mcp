@@ -418,21 +418,20 @@ struct WorkerToolDefinitionsTests {
         #expect(names.contains("ppo_create_treatment_localization"))
     }
 
-    // MARK: - PromotedPurchasesWorker (6 tools)
+    // MARK: - PromotedPurchasesWorker (5 tools)
 
-    @Test("PromotedPurchasesWorker returns 6 tools with correct names")
+    @Test("PromotedPurchasesWorker returns 5 tools with correct names")
     func promotedPurchasesWorkerTools() async throws {
         let client = try await TestFactory.makeHTTPClient()
         let worker = PromotedPurchasesWorker(httpClient: client)
         let tools = await worker.getTools()
-        #expect(tools.count == 6)
+        #expect(tools.count == 5)
         let names = Set(tools.map(\.name))
         #expect(names.contains("promoted_list"))
         #expect(names.contains("promoted_get"))
         #expect(names.contains("promoted_create"))
         #expect(names.contains("promoted_update"))
         #expect(names.contains("promoted_delete"))
-        #expect(names.contains("promoted_list_images"))
     }
 
     // MARK: - MetricsWorker (5 tools)

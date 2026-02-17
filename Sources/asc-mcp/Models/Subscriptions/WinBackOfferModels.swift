@@ -63,10 +63,15 @@ public struct WinBackOfferPriceInlineCreate: Codable, Sendable {
     public let relationships: Relationships?
 
     public struct Relationships: Codable, Sendable {
-        public let subscriptionPricePoint: PricePointRelationship
+        public let subscriptionPricePoint: PricePointRelationship?
+        public let territory: TerritoryRelationship?
     }
 
     public struct PricePointRelationship: Codable, Sendable {
+        public let data: ASCResourceIdentifier
+    }
+
+    public struct TerritoryRelationship: Codable, Sendable {
         public let data: ASCResourceIdentifier
     }
 }

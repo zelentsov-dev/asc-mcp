@@ -252,61 +252,6 @@ extension PromotedPurchasesWorker {
         }
     }
 
-    /// Lists promotion images for a promoted purchase
-    /// - Returns: JSON array of images with file details and delivery state
-    /// - Throws: On network or decoding errors
-    func listPromotionImages(_ params: CallTool.Parameters) async throws -> CallTool.Result {
-        guard let arguments = params.arguments,
-              let promotedPurchaseId = arguments["promoted_purchase_id"]?.stringValue else {
-            return CallTool.Result(
-                content: [.text("Error: Required parameter 'promoted_purchase_id' is missing")],
-                isError: true
-            )
-        }
-
-        do {
-            let response: ASCPromotionImagesResponse
-
-            if let nextUrl = arguments["next_url"]?.stringValue,
-               let parsed = parsePaginationUrl(nextUrl) {
-                response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCPromotionImagesResponse.self)
-            } else {
-                var queryParams: [String: String] = [:]
-
-                if let limit = arguments["limit"]?.intValue {
-                    queryParams["limit"] = String(min(max(limit, 1), 200))
-                } else {
-                    queryParams["limit"] = "25"
-                }
-
-                response = try await httpClient.get(
-                    "/v1/promotedPurchases/\(promotedPurchaseId)/promotionImages",
-                    parameters: queryParams,
-                    as: ASCPromotionImagesResponse.self
-                )
-            }
-
-            let images = response.data.map { formatPromotionImage($0) }
-
-            var result: [String: Any] = [
-                "success": true,
-                "promotion_images": images,
-                "count": images.count
-            ]
-            if let next = response.links?.next {
-                result["next_url"] = next
-            }
-
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
-
-        } catch {
-            return CallTool.Result(
-                content: [.text("Error: Failed to list promotion images: \(error.localizedDescription)")],
-                isError: true
-            )
-        }
-    }
-
     // MARK: - Formatting
 
     private func formatPromotedPurchase(_ purchase: ASCPromotedPurchase) -> [String: Any] {
@@ -317,36 +262,5 @@ extension PromotedPurchasesWorker {
             "enabled": purchase.attributes?.enabled.jsonSafe ?? NSNull(),
             "state": purchase.attributes?.state.jsonSafe ?? NSNull()
         ]
-    }
-
-    private func formatPromotionImage(_ image: ASCPromotionImage) -> [String: Any] {
-        var result: [String: Any] = [
-            "id": image.id,
-            "type": image.type,
-            "fileSize": image.attributes?.fileSize.jsonSafe ?? NSNull(),
-            "fileName": image.attributes?.fileName.jsonSafe ?? NSNull(),
-            "assetToken": image.attributes?.assetToken.jsonSafe ?? NSNull(),
-            "sourceFileChecksum": image.attributes?.sourceFileChecksum.jsonSafe ?? NSNull()
-        ]
-
-        if let imageAsset = image.attributes?.imageAsset {
-            result["imageAsset"] = [
-                "templateUrl": imageAsset.templateUrl.jsonSafe,
-                "width": imageAsset.width.jsonSafe,
-                "height": imageAsset.height.jsonSafe
-            ] as [String: Any]
-        }
-
-        if let deliveryState = image.attributes?.assetDeliveryState {
-            result["assetDeliveryState"] = [
-                "state": deliveryState.state.jsonSafe,
-                "errors": (deliveryState.errors?.map { [
-                    "code": $0.code.jsonSafe,
-                    "description": $0.description.jsonSafe
-                ] as [String: Any] }).jsonSafe
-            ] as [String: Any]
-        }
-
-        return result
     }
 }

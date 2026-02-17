@@ -218,9 +218,18 @@ extension MetricsWorker {
 
         do {
             let data = try await httpClient.getRaw("/v1/diagnosticSignatures/\(signatureId)/logs", accept: "application/vnd.apple.diagnostic-logs+json")
-            let response = try JSONDecoder().decode(ASCDiagnosticLogsResponse.self, from: data)
 
-            let logs = (response.productData ?? []).map { formatDiagnosticLogProductData($0) }
+            // Parse raw JSON because response format (application/vnd.apple.diagnostic-logs+json)
+            // is non-standard and Codable model may not match the actual response structure
+            let logs: [[String: Any]]
+            if let json = try JSONSerialization.jsonObject(with: data) as? [String: Any],
+               let productData = json["productData"] as? [[String: Any]] {
+                logs = productData.map { formatDiagnosticLogProductDataRaw($0) }
+            } else {
+                // Fallback: try Codable decoding
+                let response = try JSONDecoder().decode(ASCDiagnosticLogsResponse.self, from: data)
+                logs = (response.productData ?? []).map { formatDiagnosticLogProductData($0) }
+            }
 
             let result: [String: Any] = [
                 "success": true,
@@ -315,6 +324,74 @@ extension MetricsWorker {
                     "reference_url": insight.referenceURL.jsonSafe
                 ]
             }
+        }
+        return dict
+    }
+
+    /// Formats diagnostic log product data from raw JSON (JSONSerialization)
+    private func formatDiagnosticLogProductDataRaw(_ productData: [String: Any]) -> [String: Any] {
+        var dict: [String: Any] = [:]
+        dict["signature_id"] = productData["signatureId"] ?? NSNull()
+        if let logs = productData["diagnosticLogs"] as? [[String: Any]] {
+            dict["logs"] = logs.map { formatDiagnosticLogRaw($0) }
+        } else {
+            dict["logs"] = []
+        }
+        return dict
+    }
+
+    /// Formats a diagnostic log entry from raw JSON, handling callStackTree as string, base64, or dict
+    private func formatDiagnosticLogRaw(_ log: [String: Any]) -> [String: Any] {
+        var dict: [String: Any] = [:]
+
+        if let treeDict = log["callStackTree"] as? [String: Any] {
+            // callStackTree is already a JSON object
+            dict["call_stack_per_thread"] = treeDict["callStackPerThread"] ?? NSNull()
+            if let callStacks = treeDict["callStacks"] as? [[String: Any]] {
+                dict["call_stacks"] = callStacks.map { formatCallStackRaw($0) }
+            }
+        } else if let treeString = log["callStackTree"] as? String {
+            // callStackTree is a string — try base64 first, then raw JSON
+            let jsonData: Data?
+            if let base64Data = Data(base64Encoded: treeString) {
+                jsonData = base64Data
+            } else {
+                jsonData = treeString.data(using: .utf8)
+            }
+
+            if let data = jsonData,
+               let treeObj = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
+                dict["call_stack_per_thread"] = treeObj["callStackPerThread"] ?? NSNull()
+                if let callStacks = treeObj["callStacks"] as? [[String: Any]] {
+                    dict["call_stacks"] = callStacks.map { formatCallStackRaw($0) }
+                }
+            } else {
+                dict["raw_call_stack_tree"] = treeString
+            }
+        }
+
+        return dict
+    }
+
+    /// Formats a call stack from raw JSON
+    private func formatCallStackRaw(_ stack: [String: Any]) -> [String: Any] {
+        var dict: [String: Any] = [:]
+        dict["thread_attributed"] = stack["threadAttributed"] ?? NSNull()
+        if let rootFrames = stack["callStackRootFrames"] as? [[String: Any]] {
+            dict["root_frames"] = rootFrames.map { formatCallStackFrameRaw($0) }
+        }
+        return dict
+    }
+
+    /// Formats a call stack frame from raw JSON (recursive for subframes)
+    private func formatCallStackFrameRaw(_ frame: [String: Any]) -> [String: Any] {
+        var dict: [String: Any] = [:]
+        dict["binary_name"] = frame["binaryName"] ?? NSNull()
+        dict["address"] = frame["address"] ?? NSNull()
+        dict["offset"] = frame["offsetIntoBinaryTextSegment"] ?? NSNull()
+        dict["raw_frame"] = frame["rawFrame"] ?? NSNull()
+        if let subFrames = frame["subFrames"] as? [[String: Any]], !subFrames.isEmpty {
+            dict["sub_frames"] = subFrames.map { formatCallStackFrameRaw($0) }
         }
         return dict
     }

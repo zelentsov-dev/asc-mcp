@@ -10,15 +10,14 @@ public final class PromotedPurchasesWorker: Sendable {
     }
 
     /// Get list of available tools
-    /// - Returns: Array of 6 promoted purchase tools
+    /// - Returns: Array of 5 promoted purchase tools
     public func getTools() async -> [Tool] {
         return [
             listPromotedPurchasesTool(),
             getPromotedPurchaseTool(),
             createPromotedPurchaseTool(),
             updatePromotedPurchaseTool(),
-            deletePromotedPurchaseTool(),
-            listPromotionImagesTool()
+            deletePromotedPurchaseTool()
         ]
     }
 
@@ -37,8 +36,6 @@ public final class PromotedPurchasesWorker: Sendable {
             return try await updatePromotedPurchase(params)
         case "promoted_delete":
             return try await deletePromotedPurchase(params)
-        case "promoted_list_images":
-            return try await listPromotionImages(params)
         default:
             throw MCPError.methodNotFound("Unknown tool: \(params.name)")
         }
