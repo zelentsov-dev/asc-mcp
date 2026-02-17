@@ -29,12 +29,22 @@ extension MetricsWorker {
             ]
 
             let data = try await httpClient.getRaw("/v1/apps/\(appId)/perfPowerMetrics", parameters: queryParams, accept: "application/vnd.apple.xcode-metrics+json")
-            let response = try JSONDecoder().decode(ASCPerfPowerMetricsResponse.self, from: data)
+
+            // Try Codable first, fall back to raw JSON for metric types with different structures
+            let productData: [[String: Any]]
+            if let response = try? JSONDecoder().decode(ASCPerfPowerMetricsResponse.self, from: data) {
+                productData = (response.productData ?? []).map { formatProductData($0) }
+            } else if let json = try JSONSerialization.jsonObject(with: data) as? [String: Any],
+                      let rawProductData = json["productData"] as? [[String: Any]] {
+                productData = rawProductData.map { formatProductDataRaw($0) }
+            } else {
+                productData = []
+            }
 
             let result: [String: Any] = [
                 "success": true,
                 "metric_type": metricType,
-                "product_data": (response.productData ?? []).map { formatProductData($0) }
+                "product_data": productData
             ]
 
             return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
@@ -66,12 +76,22 @@ extension MetricsWorker {
             ]
 
             let data = try await httpClient.getRaw("/v1/builds/\(buildId)/perfPowerMetrics", parameters: queryParams, accept: "application/vnd.apple.xcode-metrics+json")
-            let response = try JSONDecoder().decode(ASCPerfPowerMetricsResponse.self, from: data)
+
+            // Try Codable first, fall back to raw JSON for metric types with different structures
+            let productData: [[String: Any]]
+            if let response = try? JSONDecoder().decode(ASCPerfPowerMetricsResponse.self, from: data) {
+                productData = (response.productData ?? []).map { formatProductData($0) }
+            } else if let json = try JSONSerialization.jsonObject(with: data) as? [String: Any],
+                      let rawProductData = json["productData"] as? [[String: Any]] {
+                productData = rawProductData.map { formatProductDataRaw($0) }
+            } else {
+                productData = []
+            }
 
             let result: [String: Any] = [
                 "success": true,
                 "metric_type": metricType,
-                "product_data": (response.productData ?? []).map { formatProductData($0) }
+                "product_data": productData
             ]
 
             return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
@@ -248,6 +268,58 @@ extension MetricsWorker {
     }
 
     // MARK: - Formatting
+
+    /// Formats product data from raw JSON (fallback for BATTERY, TERMINATION, ANIMATION metric types)
+    private func formatProductDataRaw(_ productData: [String: Any]) -> [String: Any] {
+        var dict: [String: Any] = [:]
+        dict["platform"] = productData["platform"] ?? NSNull()
+        if let categories = productData["metricCategories"] as? [[String: Any]] {
+            dict["metric_categories"] = categories.map { category -> [String: Any] in
+                var catDict: [String: Any] = [:]
+                catDict["identifier"] = category["identifier"] ?? NSNull()
+                if let metrics = category["metrics"] as? [[String: Any]] {
+                    catDict["metrics"] = metrics.map { metric -> [String: Any] in
+                        var metricDict: [String: Any] = [:]
+                        metricDict["identifier"] = metric["identifier"] ?? NSNull()
+                        if let unit = metric["unit"] as? [String: Any] {
+                            metricDict["unit"] = [
+                                "identifier": unit["identifier"] ?? NSNull(),
+                                "display_name": unit["displayName"] ?? NSNull()
+                            ]
+                        }
+                        if let datasets = metric["datasets"] as? [[String: Any]] {
+                            metricDict["datasets"] = datasets.map { dataset -> [String: Any] in
+                                var dsDict: [String: Any] = [:]
+                                if let criteria = dataset["filterCriteria"] as? [String: Any] {
+                                    dsDict["filter_criteria"] = [
+                                        "device": criteria["device"] ?? NSNull(),
+                                        "device_marketing_name": criteria["deviceMarketingName"] ?? NSNull(),
+                                        "percentile": criteria["percentile"] ?? NSNull()
+                                    ]
+                                }
+                                if let points = dataset["points"] as? [[String: Any]] {
+                                    dsDict["points"] = points.map { point -> [String: Any] in
+                                        var ptDict: [String: Any] = [:]
+                                        ptDict["version"] = point["version"] ?? NSNull()
+                                        ptDict["value"] = point["value"] ?? NSNull()
+                                        ptDict["goal"] = point["goal"] ?? NSNull()
+                                        if let breakdown = point["percentageBreakdown"] {
+                                            ptDict["percentage_breakdown"] = breakdown
+                                        }
+                                        return ptDict
+                                    }
+                                }
+                                return dsDict
+                            }
+                        }
+                        return metricDict
+                    }
+                }
+                return catDict
+            }
+        }
+        return dict
+    }
 
     /// Formats product data from perfPowerMetrics response
     private func formatProductData(_ productData: ASCProductData) -> [String: Any] {
