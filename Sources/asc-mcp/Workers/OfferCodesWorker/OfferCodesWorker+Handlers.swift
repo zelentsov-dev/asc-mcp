@@ -66,9 +66,10 @@ extension OfferCodesWorker {
               let name = arguments["name"]?.stringValue,
               let offerEligibility = arguments["offer_eligibility"]?.stringValue,
               let offerMode = arguments["offer_mode"]?.stringValue,
-              let duration = arguments["duration"]?.stringValue else {
+              let duration = arguments["duration"]?.stringValue,
+              let numberOfPeriods = arguments["number_of_periods"]?.intValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameters: subscription_id, name, offer_eligibility, offer_mode, duration")],
+                content: [.text("Error: Required parameters: subscription_id, name, offer_eligibility, offer_mode, duration, number_of_periods")],
                 isError: true
             )
         }
@@ -89,7 +90,7 @@ extension OfferCodesWorker {
                         offerEligibility: offerEligibility,
                         offerMode: offerMode,
                         duration: duration,
-                        numberOfPeriods: arguments["number_of_periods"]?.intValue,
+                        numberOfPeriods: numberOfPeriods,
                         customerEligibilities: customerEligibilities
                     ),
                     relationships: CreateOfferCodeRequest.Relationships(

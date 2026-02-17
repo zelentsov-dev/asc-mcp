@@ -96,6 +96,7 @@ public struct CreateExperimentRequest: Codable, Sendable {
     public struct Attributes: Codable, Sendable {
         public let name: String
         public let trafficProportion: Int
+        public let platform: String
     }
 
     public struct Relationships: Codable, Sendable {

@@ -67,15 +67,49 @@ extension WinBackOffersWorker {
               let offerId = arguments["offer_id"]?.stringValue,
               let duration = arguments["duration"]?.stringValue,
               let offerMode = arguments["offer_mode"]?.stringValue,
+              let periodCount = arguments["period_count"]?.intValue,
               let priority = arguments["priority"]?.stringValue,
+              let promotionIntent = arguments["promotion_intent"]?.stringValue,
+              let eligibilityDurationMonths = arguments["eligibility_duration_months"]?.intValue,
+              let eligibilityTimeSinceLastMin = arguments["eligibility_time_since_last_months_min"]?.intValue,
+              let eligibilityTimeSinceLastMax = arguments["eligibility_time_since_last_months_max"]?.intValue,
+              let eligibilityWaitBetweenMonths = arguments["eligibility_wait_between_months"]?.intValue,
               let startDate = arguments["start_date"]?.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameters: subscription_id, reference_name, offer_id, duration, offer_mode, priority, start_date")],
+                content: [.text("Error: Required parameters: subscription_id, reference_name, offer_id, duration, offer_mode, period_count, priority, promotion_intent, eligibility_duration_months, eligibility_time_since_last_months_min, eligibility_time_since_last_months_max, eligibility_wait_between_months, start_date")],
                 isError: true
             )
         }
 
         do {
+            // Build prices relationship and included if price_point_ids provided
+            var pricesRelationship: CreateWinBackOfferRequest.PricesRelationship?
+            var included: [WinBackOfferPriceInlineCreate]?
+
+            if let pricePointIds = arguments["price_point_ids"]?.arrayValue {
+                let ids = pricePointIds.compactMap { $0.stringValue }
+                if !ids.isEmpty {
+                    var priceRefs: [ASCResourceIdentifier] = []
+                    var priceInlines: [WinBackOfferPriceInlineCreate] = []
+
+                    for (index, pricePointId) in ids.enumerated() {
+                        let tempId = "${price-\(index)}"
+                        priceRefs.append(ASCResourceIdentifier(type: "winBackOfferPrices", id: tempId))
+                        priceInlines.append(WinBackOfferPriceInlineCreate(
+                            id: tempId,
+                            relationships: WinBackOfferPriceInlineCreate.Relationships(
+                                subscriptionPricePoint: WinBackOfferPriceInlineCreate.PricePointRelationship(
+                                    data: ASCResourceIdentifier(type: "subscriptionPricePoints", id: pricePointId)
+                                )
+                            )
+                        ))
+                    }
+
+                    pricesRelationship = CreateWinBackOfferRequest.PricesRelationship(data: priceRefs)
+                    included = priceInlines
+                }
+            }
+
             let request = CreateWinBackOfferRequest(
                 data: CreateWinBackOfferRequest.CreateData(
                     attributes: CreateWinBackOfferRequest.Attributes(
@@ -83,20 +117,26 @@ extension WinBackOffersWorker {
                         offerId: offerId,
                         duration: duration,
                         offerMode: offerMode,
-                        periodCount: arguments["period_count"]?.intValue,
+                        periodCount: periodCount,
                         priority: priority,
-                        customerEligibilityPaidSubscriptionDurationInMonths: arguments["eligibility_duration_months"]?.intValue,
-                        customerEligibilityTimeSinceLastSubscribedInMonths: arguments["eligibility_time_since_last_months"]?.intValue,
-                        customerEligibilityWaitBetweenOffersInMonths: arguments["eligibility_wait_between_months"]?.intValue,
+                        promotionIntent: promotionIntent,
+                        customerEligibilityPaidSubscriptionDurationInMonths: eligibilityDurationMonths,
+                        customerEligibilityTimeSinceLastSubscribedInMonths: EligibilityRange(
+                            minimum: eligibilityTimeSinceLastMin,
+                            maximum: eligibilityTimeSinceLastMax
+                        ),
+                        customerEligibilityWaitBetweenOffersInMonths: eligibilityWaitBetweenMonths,
                         startDate: startDate,
                         endDate: arguments["end_date"]?.stringValue
                     ),
                     relationships: CreateWinBackOfferRequest.Relationships(
                         subscription: CreateWinBackOfferRequest.SubscriptionRelationship(
                             data: ASCResourceIdentifier(type: "subscriptions", id: subscriptionId)
-                        )
+                        ),
+                        prices: pricesRelationship
                     )
-                )
+                ),
+                included: included
             )
 
             let response: ASCWinBackOfferResponse = try await httpClient.post(
@@ -254,7 +294,7 @@ extension WinBackOffersWorker {
     // MARK: - Formatting
 
     private func formatWinBackOffer(_ offer: ASCWinBackOffer) -> [String: Any] {
-        return [
+        var result: [String: Any] = [
             "id": offer.id,
             "type": offer.type,
             "referenceName": offer.attributes.referenceName.jsonSafe,
@@ -263,12 +303,21 @@ extension WinBackOffersWorker {
             "offerMode": offer.attributes.offerMode.jsonSafe,
             "periodCount": offer.attributes.periodCount.jsonSafe,
             "priority": offer.attributes.priority.jsonSafe,
+            "promotionIntent": offer.attributes.promotionIntent.jsonSafe,
             "eligibilityDurationMonths": offer.attributes.customerEligibilityPaidSubscriptionDurationInMonths.jsonSafe,
-            "eligibilityTimeSinceLastMonths": offer.attributes.customerEligibilityTimeSinceLastSubscribedInMonths.jsonSafe,
             "eligibilityWaitBetweenMonths": offer.attributes.customerEligibilityWaitBetweenOffersInMonths.jsonSafe,
             "startDate": offer.attributes.startDate.jsonSafe,
             "endDate": offer.attributes.endDate.jsonSafe
         ]
+        if let range = offer.attributes.customerEligibilityTimeSinceLastSubscribedInMonths {
+            result["eligibilityTimeSinceLastMonths"] = [
+                "minimum": range.minimum,
+                "maximum": range.maximum
+            ] as [String: Any]
+        } else {
+            result["eligibilityTimeSinceLastMonths"] = NSNull()
+        }
+        return result
     }
 
     private func formatWinBackOfferPrice(_ price: ASCWinBackOfferPrice) -> [String: Any] {

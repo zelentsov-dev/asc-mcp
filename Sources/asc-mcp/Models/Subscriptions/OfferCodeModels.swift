@@ -91,7 +91,7 @@ public struct CreateOfferCodeRequest: Codable, Sendable {
         public let offerEligibility: String
         public let offerMode: String
         public let duration: String
-        public let numberOfPeriods: Int?
+        public let numberOfPeriods: Int
         public let customerEligibilities: [String]
     }
 

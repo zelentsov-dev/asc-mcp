@@ -46,11 +46,13 @@ extension OfferCodesWorker {
                     ]),
                     "offer_eligibility": .object([
                         "type": .string("string"),
-                        "description": .string("Eligibility: NEW, EXISTING, EXPIRED")
+                        "description": .string("Eligibility for the offer"),
+                        "enum": .array([.string("NEW_USERS_ONLY"), .string("EXISTING_USERS_ONLY"), .string("EXISTING_AND_NEW_USERS")])
                     ]),
                     "offer_mode": .object([
                         "type": .string("string"),
-                        "description": .string("Mode: PAY_AS_YOU_GO, PAY_UP_FRONT, FREE")
+                        "description": .string("Offer pricing mode"),
+                        "enum": .array([.string("FREE_TRIAL"), .string("PAY_UP_FRONT"), .string("PAY_AS_YOU_GO")])
                     ]),
                     "duration": .object([
                         "type": .string("string"),
@@ -62,10 +64,14 @@ extension OfferCodesWorker {
                     ]),
                     "customer_eligibilities": .object([
                         "type": .string("array"),
-                        "description": .string("Customer eligibilities array: NEW, EXISTING, EXPIRED")
+                        "description": .string("Customer eligibilities array"),
+                        "items": .object([
+                            "type": .string("string"),
+                            "enum": .array([.string("NEW_SUBSCRIBER"), .string("EXISTING_PAID_SUBSCRIBER"), .string("LAPSED")])
+                        ])
                     ])
                 ]),
-                "required": .array([.string("subscription_id"), .string("name"), .string("offer_eligibility"), .string("offer_mode"), .string("duration")])
+                "required": .array([.string("subscription_id"), .string("name"), .string("offer_eligibility"), .string("offer_mode"), .string("duration"), .string("number_of_periods")])
             ])
         )
     }

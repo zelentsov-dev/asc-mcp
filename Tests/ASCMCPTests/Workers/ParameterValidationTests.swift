@@ -776,7 +776,7 @@ struct ParameterValidationTests {
         #expect(result.isError == true)
     }
 
-    @Test("metrics_list_diagnostics without app_id returns isError")
+    @Test("metrics_list_diagnostics without build_id returns isError")
     func metricsListDiagnosticsMissing() async throws {
         let client = try await TestFactory.makeHTTPClient()
         let worker = MetricsWorker(httpClient: client)

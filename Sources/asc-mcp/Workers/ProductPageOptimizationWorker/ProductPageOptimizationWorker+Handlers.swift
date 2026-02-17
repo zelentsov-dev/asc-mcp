@@ -23,9 +23,7 @@ extension ProductPageOptimizationWorker {
                let parsed = parsePaginationUrl(nextUrl) {
                 response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCExperimentsResponse.self)
             } else {
-                var queryParams: [String: String] = [
-                    "filter[app]": appId
-                ]
+                var queryParams: [String: String] = [:]
 
                 if let limit = arguments["limit"]?.intValue {
                     queryParams["limit"] = String(min(max(limit, 1), 200))
@@ -34,7 +32,7 @@ extension ProductPageOptimizationWorker {
                 }
 
                 response = try await httpClient.get(
-                    "/v2/appStoreVersionExperiments",
+                    "/v1/apps/\(appId)/appStoreVersionExperimentsV2",
                     parameters: queryParams,
                     as: ASCExperimentsResponse.self
                 )
@@ -110,12 +108,15 @@ extension ProductPageOptimizationWorker {
             )
         }
 
+        let platform = arguments["platform"]?.stringValue ?? "IOS"
+
         do {
             let request = CreateExperimentRequest(
                 data: CreateExperimentRequest.CreateData(
                     attributes: CreateExperimentRequest.Attributes(
                         name: name,
-                        trafficProportion: trafficProportion
+                        trafficProportion: trafficProportion,
+                        platform: platform
                     ),
                     relationships: CreateExperimentRequest.Relationships(
                         app: CreateExperimentRequest.AppRelationship(

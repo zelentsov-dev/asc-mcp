@@ -49,7 +49,7 @@ extension CustomProductPagesWorker {
     func createCustomPageTool() -> Tool {
         return Tool(
             name: "custom_pages_create",
-            description: "Create a new custom product page for an app",
+            description: "Create a new custom product page for an app with initial version and localization",
             inputSchema: .object([
                 "type": .string("object"),
                 "properties": .object([
@@ -60,9 +60,21 @@ extension CustomProductPagesWorker {
                     "name": .object([
                         "type": .string("string"),
                         "description": .string("Custom product page name (internal reference)")
+                    ]),
+                    "locale": .object([
+                        "type": .string("string"),
+                        "description": .string("Initial locale code (e.g. en-US, ru-RU)")
+                    ]),
+                    "promotional_text": .object([
+                        "type": .string("string"),
+                        "description": .string("Promotional text for the initial localization (optional)")
+                    ]),
+                    "template_version_id": .object([
+                        "type": .string("string"),
+                        "description": .string("App Store version ID to use as template (optional)")
                     ])
                 ]),
-                "required": .array([.string("app_id"), .string("name")])
+                "required": .array([.string("app_id"), .string("name"), .string("locale")])
             ])
         )
     }

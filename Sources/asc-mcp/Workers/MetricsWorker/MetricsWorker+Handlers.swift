@@ -28,7 +28,7 @@ extension MetricsWorker {
                 "filter[metricType]": metricType
             ]
 
-            let data = try await httpClient.get("/v1/apps/\(appId)/perfPowerMetrics", parameters: queryParams)
+            let data = try await httpClient.getRaw("/v1/apps/\(appId)/perfPowerMetrics", parameters: queryParams, accept: "application/vnd.apple.xcode-metrics+json")
             let response = try JSONDecoder().decode(ASCPerfPowerMetricsResponse.self, from: data)
 
             let result: [String: Any] = [
@@ -65,7 +65,7 @@ extension MetricsWorker {
                 "filter[metricType]": metricType
             ]
 
-            let data = try await httpClient.get("/v1/builds/\(buildId)/perfPowerMetrics", parameters: queryParams)
+            let data = try await httpClient.getRaw("/v1/builds/\(buildId)/perfPowerMetrics", parameters: queryParams, accept: "application/vnd.apple.xcode-metrics+json")
             let response = try JSONDecoder().decode(ASCPerfPowerMetricsResponse.self, from: data)
 
             let result: [String: Any] = [
@@ -84,14 +84,14 @@ extension MetricsWorker {
         }
     }
 
-    /// Lists diagnostic signatures for an app
+    /// Lists diagnostic signatures for a build
     /// - Returns: JSON array of diagnostic signatures with weight and insights
     /// - Throws: Error if required parameters are missing or API call fails
     func listDiagnostics(_ params: CallTool.Parameters) async throws -> CallTool.Result {
         guard let arguments = params.arguments,
-              let appId = arguments["app_id"]?.stringValue else {
+              let buildId = arguments["build_id"]?.stringValue else {
             return CallTool.Result(
-                content: [.text("Required parameter 'app_id' is missing")],
+                content: [.text("Required parameter 'build_id' is missing")],
                 isError: true
             )
         }
@@ -116,7 +116,7 @@ extension MetricsWorker {
                 }
 
                 response = try await httpClient.get(
-                    "/v1/apps/\(appId)/diagnosticSignatures",
+                    "/v1/builds/\(buildId)/diagnosticSignatures",
                     parameters: queryParams,
                     as: ASCDiagnosticSignaturesResponse.self
                 )
@@ -217,7 +217,7 @@ extension MetricsWorker {
         }
 
         do {
-            let data = try await httpClient.get("/v1/diagnosticSignatures/\(signatureId)/logs")
+            let data = try await httpClient.getRaw("/v1/diagnosticSignatures/\(signatureId)/logs", accept: "application/vnd.apple.diagnostic-logs+json")
             let response = try JSONDecoder().decode(ASCDiagnosticLogsResponse.self, from: data)
 
             let logs = (response.productData ?? []).map { formatDiagnosticLogProductData($0) }

@@ -20,6 +20,12 @@ public struct ASCWinBackOffer: Codable, Sendable {
     public let attributes: WinBackOfferAttributes
 }
 
+/// Eligibility time range with minimum and maximum months
+public struct EligibilityRange: Codable, Sendable {
+    public let minimum: Int
+    public let maximum: Int
+}
+
 /// Win-back offer attributes
 public struct WinBackOfferAttributes: Codable, Sendable {
     public let referenceName: String?
@@ -28,8 +34,9 @@ public struct WinBackOfferAttributes: Codable, Sendable {
     public let offerMode: String?
     public let periodCount: Int?
     public let priority: String?
+    public let promotionIntent: String?
     public let customerEligibilityPaidSubscriptionDurationInMonths: Int?
-    public let customerEligibilityTimeSinceLastSubscribedInMonths: Int?
+    public let customerEligibilityTimeSinceLastSubscribedInMonths: EligibilityRange?
     public let customerEligibilityWaitBetweenOffersInMonths: Int?
     public let startDate: String?
     public let endDate: String?
@@ -49,11 +56,27 @@ public struct ASCWinBackOfferPrice: Codable, Sendable {
     public let id: String
 }
 
+/// Inline create for win-back offer price
+public struct WinBackOfferPriceInlineCreate: Codable, Sendable {
+    public let type: String = "winBackOfferPrices"
+    public let id: String
+    public let relationships: Relationships?
+
+    public struct Relationships: Codable, Sendable {
+        public let subscriptionPricePoint: PricePointRelationship
+    }
+
+    public struct PricePointRelationship: Codable, Sendable {
+        public let data: ASCResourceIdentifier
+    }
+}
+
 // MARK: - Win-Back Offer Request Models
 
 /// Create win-back offer request
 public struct CreateWinBackOfferRequest: Codable, Sendable {
     public let data: CreateData
+    public let included: [WinBackOfferPriceInlineCreate]?
 
     public struct CreateData: Codable, Sendable {
         public let type: String = "winBackOffers"
@@ -66,21 +89,27 @@ public struct CreateWinBackOfferRequest: Codable, Sendable {
         public let offerId: String
         public let duration: String
         public let offerMode: String
-        public let periodCount: Int?
+        public let periodCount: Int
         public let priority: String
-        public let customerEligibilityPaidSubscriptionDurationInMonths: Int?
-        public let customerEligibilityTimeSinceLastSubscribedInMonths: Int?
-        public let customerEligibilityWaitBetweenOffersInMonths: Int?
+        public let promotionIntent: String
+        public let customerEligibilityPaidSubscriptionDurationInMonths: Int
+        public let customerEligibilityTimeSinceLastSubscribedInMonths: EligibilityRange
+        public let customerEligibilityWaitBetweenOffersInMonths: Int
         public let startDate: String
         public let endDate: String?
     }
 
     public struct Relationships: Codable, Sendable {
         public let subscription: SubscriptionRelationship
+        public let prices: PricesRelationship?
     }
 
     public struct SubscriptionRelationship: Codable, Sendable {
         public let data: ASCResourceIdentifier
+    }
+
+    public struct PricesRelationship: Codable, Sendable {
+        public let data: [ASCResourceIdentifier]
     }
 }
 

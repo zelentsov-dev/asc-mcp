@@ -64,6 +64,11 @@ extension ProductPageOptimizationWorker {
                     "traffic_proportion": .object([
                         "type": .string("integer"),
                         "description": .string("Percentage of traffic for the experiment (e.g. 50)")
+                    ]),
+                    "platform": .object([
+                        "type": .string("string"),
+                        "description": .string("Platform (default: IOS)"),
+                        "enum": .array([.string("IOS"), .string("MAC_OS"), .string("TV_OS")])
                     ])
                 ]),
                 "required": .array([.string("app_id"), .string("name"), .string("traffic_proportion")])

@@ -54,23 +54,33 @@ extension WinBackOffersWorker {
                     ]),
                     "offer_mode": .object([
                         "type": .string("string"),
-                        "description": .string("Mode: PAY_AS_YOU_GO, PAY_UP_FRONT, FREE")
+                        "description": .string("Offer pricing mode"),
+                        "enum": .array([.string("FREE_TRIAL"), .string("PAY_UP_FRONT"), .string("PAY_AS_YOU_GO")])
                     ]),
                     "period_count": .object([
                         "type": .string("integer"),
-                        "description": .string("Number of periods")
+                        "description": .string("Number of periods for the offer")
                     ]),
                     "priority": .object([
                         "type": .string("string"),
                         "description": .string("Priority: HIGH, NORMAL")
                     ]),
+                    "promotion_intent": .object([
+                        "type": .string("string"),
+                        "description": .string("Promotion intent"),
+                        "enum": .array([.string("USE_AUTO_GENERATED_ASSETS"), .string("NOT_PROMOTED")])
+                    ]),
                     "eligibility_duration_months": .object([
                         "type": .string("integer"),
                         "description": .string("Min months of paid subscription for eligibility")
                     ]),
-                    "eligibility_time_since_last_months": .object([
+                    "eligibility_time_since_last_months_min": .object([
                         "type": .string("integer"),
-                        "description": .string("Min months since last subscribed")
+                        "description": .string("Min months since last subscribed (minimum of range)")
+                    ]),
+                    "eligibility_time_since_last_months_max": .object([
+                        "type": .string("integer"),
+                        "description": .string("Min months since last subscribed (maximum of range)")
                     ]),
                     "eligibility_wait_between_months": .object([
                         "type": .string("integer"),
@@ -83,11 +93,24 @@ extension WinBackOffersWorker {
                     "end_date": .object([
                         "type": .string("string"),
                         "description": .string("End date (ISO 8601 format, optional)")
+                    ]),
+                    "price_point_ids": .object([
+                        "type": .string("array"),
+                        "description": .string("Array of subscription price point IDs for the offer prices"),
+                        "items": .object([
+                            "type": .string("string")
+                        ])
                     ])
                 ]),
                 "required": .array([
                     .string("subscription_id"), .string("reference_name"), .string("offer_id"),
-                    .string("duration"), .string("offer_mode"), .string("priority"), .string("start_date")
+                    .string("duration"), .string("offer_mode"), .string("period_count"),
+                    .string("priority"), .string("promotion_intent"),
+                    .string("eligibility_duration_months"),
+                    .string("eligibility_time_since_last_months_min"),
+                    .string("eligibility_time_since_last_months_max"),
+                    .string("eligibility_wait_between_months"),
+                    .string("start_date")
                 ])
             ])
         )

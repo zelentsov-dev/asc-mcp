@@ -72,17 +72,17 @@ extension MetricsWorker {
         )
     }
 
-    /// Creates tool definition for listing diagnostic signatures for an app
+    /// Creates tool definition for listing diagnostic signatures for a build
     func listDiagnosticsTool() -> Tool {
         return Tool(
             name: "metrics_list_diagnostics",
-            description: "List diagnostic signatures for an app. Shows top crash/hang/disk-write signatures with their weight and insights.",
+            description: "List diagnostic signatures for a build (use builds_list to find build IDs). Shows top crash/hang/disk-write signatures with their weight and insights.",
             inputSchema: .object([
                 "type": .string("object"),
                 "properties": .object([
-                    "app_id": .object([
+                    "build_id": .object([
                         "type": .string("string"),
-                        "description": .string("App Store Connect app ID")
+                        "description": .string("Build ID from App Store Connect")
                     ]),
                     "diagnostic_type": .object([
                         "type": .string("string"),
@@ -101,7 +101,7 @@ extension MetricsWorker {
                         "description": .string("URL for next page of results (from previous response)")
                     ])
                 ]),
-                "required": .array([.string("app_id")])
+                "required": .array([.string("build_id")])
             ])
         )
     }
