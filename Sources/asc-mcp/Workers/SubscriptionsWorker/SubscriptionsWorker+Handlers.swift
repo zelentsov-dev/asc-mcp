@@ -414,7 +414,10 @@ extension SubscriptionsWorker {
                let parsed = parsePaginationUrl(nextUrl) {
                 response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCSubscriptionPricesResponse.self)
             } else {
-                var queryParams: [String: String] = [:]
+                var queryParams: [String: String] = [
+                    "include": "subscriptionPricePoint",
+                    "fields[subscriptionPricePoints]": "customerPrice,proceeds"
+                ]
 
                 if let limit = arguments["limit"]?.intValue {
                     queryParams["limit"] = String(min(max(limit, 1), 200))
@@ -429,7 +432,15 @@ extension SubscriptionsWorker {
                 )
             }
 
-            let prices = response.data.map { formatPrice($0) }
+            // Build price point lookup from included resources
+            var pricePointMap: [String: ASCSubscriptionPricePoint] = [:]
+            if let included = response.included {
+                for point in included {
+                    pricePointMap[point.id] = point
+                }
+            }
+
+            let prices = response.data.map { formatPrice($0, pricePointMap: pricePointMap) }
 
             var result: [String: Any] = [
                 "success": true,
@@ -694,13 +705,22 @@ extension SubscriptionsWorker {
         ]
     }
 
-    private func formatPrice(_ price: ASCSubscriptionPrice) -> [String: Any] {
-        return [
+    private func formatPrice(_ price: ASCSubscriptionPrice, pricePointMap: [String: ASCSubscriptionPricePoint] = [:]) -> [String: Any] {
+        var result: [String: Any] = [
             "id": price.id,
             "type": price.type,
             "startDate": price.attributes?.startDate.jsonSafe ?? NSNull(),
             "preserved": price.attributes?.preserved.jsonSafe ?? NSNull()
         ]
+
+        // Enrich with price point data if available
+        if let pricePointId = price.relationships?.subscriptionPricePoint?.data?.id,
+           let pricePoint = pricePointMap[pricePointId] {
+            result["customerPrice"] = pricePoint.attributes?.customerPrice.jsonSafe ?? NSNull()
+            result["proceeds"] = pricePoint.attributes?.proceeds.jsonSafe ?? NSNull()
+        }
+
+        return result
     }
 
     private func formatPricePoint(_ point: ASCSubscriptionPricePoint) -> [String: Any] {
