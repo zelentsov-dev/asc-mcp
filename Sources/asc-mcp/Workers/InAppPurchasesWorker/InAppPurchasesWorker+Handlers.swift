@@ -560,6 +560,260 @@ extension InAppPurchasesWorker {
         }
     }
 
+    // MARK: - Price Points & Schedule
+
+    /// Lists price points for an in-app purchase
+    /// - Returns: JSON array of price points with customer price, proceeds, and tier
+    func listIAPPricePoints(_ params: CallTool.Parameters) async throws -> CallTool.Result {
+        guard let arguments = params.arguments,
+              let iapIdValue = arguments["iap_id"],
+              let iapId = iapIdValue.stringValue else {
+            return CallTool.Result(
+                content: [.text("Error: Required parameter 'iap_id' is missing")],
+                isError: true
+            )
+        }
+
+        do {
+            let response: ASCIAPPricePointsResponse
+
+            if let nextUrl = arguments["next_url"]?.stringValue,
+               let parsed = parsePaginationUrl(nextUrl) {
+                response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCIAPPricePointsResponse.self)
+            } else {
+                var queryParams: [String: String] = [:]
+
+                if let limitValue = arguments["limit"],
+                   let limit = limitValue.intValue {
+                    queryParams["limit"] = String(min(max(limit, 1), 200))
+                } else {
+                    queryParams["limit"] = "50"
+                }
+
+                if let territory = arguments["territory"]?.stringValue {
+                    queryParams["filter[territory]"] = territory
+                }
+
+                response = try await httpClient.get(
+                    "/v2/inAppPurchases/\(iapId)/pricePoints",
+                    parameters: queryParams,
+                    as: ASCIAPPricePointsResponse.self
+                )
+            }
+
+            let pricePoints = response.data.map { formatPricePoint($0) }
+
+            var result: [String: Any] = [
+                "success": true,
+                "price_points": pricePoints,
+                "count": pricePoints.count
+            ]
+            if let next = response.links?.next {
+                result["next_url"] = next
+            }
+
+            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+
+        } catch {
+            return CallTool.Result(
+                content: [.text("Error: Failed to list IAP price points: \(error.localizedDescription)")],
+                isError: true
+            )
+        }
+    }
+
+    /// Gets the price schedule for an in-app purchase
+    /// - Returns: JSON with price schedule ID
+    func getIAPPriceSchedule(_ params: CallTool.Parameters) async throws -> CallTool.Result {
+        guard let arguments = params.arguments,
+              let iapIdValue = arguments["iap_id"],
+              let iapId = iapIdValue.stringValue else {
+            return CallTool.Result(
+                content: [.text("Error: Required parameter 'iap_id' is missing")],
+                isError: true
+            )
+        }
+
+        do {
+            let response: ASCIAPPriceScheduleResponse = try await httpClient.get(
+                "/v2/inAppPurchases/\(iapId)/iapPriceSchedule",
+                as: ASCIAPPriceScheduleResponse.self
+            )
+
+            let result: [String: Any] = [
+                "success": true,
+                "price_schedule": [
+                    "id": response.data.id,
+                    "type": response.data.type
+                ]
+            ]
+
+            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+
+        } catch {
+            return CallTool.Result(
+                content: [.text("Error: Failed to get IAP price schedule: \(error.localizedDescription)")],
+                isError: true
+            )
+        }
+    }
+
+    /// Sets the price schedule for an in-app purchase
+    /// - Returns: JSON with created price schedule
+    /// - Throws: Error if IAP ID or base territory ID is missing
+    func setIAPPriceSchedule(_ params: CallTool.Parameters) async throws -> CallTool.Result {
+        guard let arguments = params.arguments,
+              let iapIdValue = arguments["iap_id"],
+              let iapId = iapIdValue.stringValue,
+              let baseTerritoryIdValue = arguments["base_territory_id"],
+              let baseTerritoryId = baseTerritoryIdValue.stringValue else {
+            return CallTool.Result(
+                content: [.text("Error: Required parameters: iap_id, base_territory_id")],
+                isError: true
+            )
+        }
+
+        do {
+            var manualPriceIdentifiers: [ASCResourceIdentifier] = []
+            if let manualPriceIds = arguments["manual_price_ids"]?.stringValue {
+                manualPriceIdentifiers = manualPriceIds
+                    .split(separator: ",")
+                    .map { String($0).trimmingCharacters(in: .whitespaces) }
+                    .map { ASCResourceIdentifier(type: "inAppPurchasePrices", id: $0) }
+            }
+
+            let request = CreateIAPPriceScheduleRequest(
+                data: CreateIAPPriceScheduleRequest.CreateData(
+                    relationships: CreateIAPPriceScheduleRequest.Relationships(
+                        inAppPurchase: CreateIAPPriceScheduleRequest.InAppPurchaseRelationship(
+                            data: ASCResourceIdentifier(type: "inAppPurchases", id: iapId)
+                        ),
+                        manualPrices: CreateIAPPriceScheduleRequest.ManualPricesRelationship(
+                            data: manualPriceIdentifiers
+                        ),
+                        baseTerritory: CreateIAPPriceScheduleRequest.BaseTerritoryRelationship(
+                            data: ASCResourceIdentifier(type: "territories", id: baseTerritoryId)
+                        )
+                    )
+                )
+            )
+
+            let response: ASCIAPPriceScheduleResponse = try await httpClient.post(
+                "/v1/inAppPurchasePriceSchedules",
+                body: request,
+                as: ASCIAPPriceScheduleResponse.self
+            )
+
+            let result: [String: Any] = [
+                "success": true,
+                "price_schedule": [
+                    "id": response.data.id,
+                    "type": response.data.type
+                ]
+            ]
+
+            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+
+        } catch {
+            return CallTool.Result(
+                content: [.text("Error: Failed to set IAP price schedule: \(error.localizedDescription)")],
+                isError: true
+            )
+        }
+    }
+
+    // MARK: - Review Screenshots
+
+    /// Gets the App Store Review screenshot for an in-app purchase
+    /// - Returns: JSON with screenshot details including file info and delivery state
+    func getIAPReviewScreenshot(_ params: CallTool.Parameters) async throws -> CallTool.Result {
+        guard let arguments = params.arguments,
+              let iapIdValue = arguments["iap_id"],
+              let iapId = iapIdValue.stringValue else {
+            return CallTool.Result(
+                content: [.text("Error: Required parameter 'iap_id' is missing")],
+                isError: true
+            )
+        }
+
+        do {
+            let response: ASCIAPReviewScreenshotResponse = try await httpClient.get(
+                "/v2/inAppPurchases/\(iapId)/appStoreReviewScreenshot",
+                as: ASCIAPReviewScreenshotResponse.self
+            )
+
+            let screenshot = formatReviewScreenshot(response.data)
+
+            let result: [String: Any] = [
+                "success": true,
+                "review_screenshot": screenshot
+            ]
+
+            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+
+        } catch {
+            return CallTool.Result(
+                content: [.text("Error: Failed to get IAP review screenshot: \(error.localizedDescription)")],
+                isError: true
+            )
+        }
+    }
+
+    /// Reserves a screenshot for App Store Review of an in-app purchase
+    /// - Returns: JSON with screenshot reservation details and upload operations
+    /// - Throws: Error if required parameters are missing
+    func createIAPReviewScreenshot(_ params: CallTool.Parameters) async throws -> CallTool.Result {
+        guard let arguments = params.arguments,
+              let iapIdValue = arguments["iap_id"],
+              let iapId = iapIdValue.stringValue,
+              let fileNameValue = arguments["file_name"],
+              let fileName = fileNameValue.stringValue,
+              let fileSizeValue = arguments["file_size"],
+              let fileSize = fileSizeValue.intValue else {
+            return CallTool.Result(
+                content: [.text("Error: Required parameters: iap_id, file_name, file_size")],
+                isError: true
+            )
+        }
+
+        do {
+            let request = CreateIAPReviewScreenshotRequest(
+                data: CreateIAPReviewScreenshotRequest.CreateData(
+                    attributes: CreateIAPReviewScreenshotRequest.Attributes(
+                        fileName: fileName,
+                        fileSize: fileSize
+                    ),
+                    relationships: CreateIAPReviewScreenshotRequest.Relationships(
+                        inAppPurchaseV2: CreateIAPReviewScreenshotRequest.InAppPurchaseRelationship(
+                            data: ASCResourceIdentifier(type: "inAppPurchases", id: iapId)
+                        )
+                    )
+                )
+            )
+
+            let response: ASCIAPReviewScreenshotResponse = try await httpClient.post(
+                "/v1/inAppPurchaseAppStoreReviewScreenshots",
+                body: request,
+                as: ASCIAPReviewScreenshotResponse.self
+            )
+
+            let screenshot = formatReviewScreenshot(response.data)
+
+            let result: [String: Any] = [
+                "success": true,
+                "review_screenshot": screenshot
+            ]
+
+            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+
+        } catch {
+            return CallTool.Result(
+                content: [.text("Error: Failed to create IAP review screenshot: \(error.localizedDescription)")],
+                isError: true
+            )
+        }
+    }
+
     // MARK: - Formatting
 
     private func formatIAP(_ iap: ASCInAppPurchaseV2) -> [String: Any] {
@@ -592,5 +846,48 @@ extension InAppPurchasesWorker {
             "type": group.type,
             "referenceName": group.attributes.referenceName.jsonSafe
         ]
+    }
+
+    private func formatPricePoint(_ pricePoint: ASCIAPPricePoint) -> [String: Any] {
+        return [
+            "id": pricePoint.id,
+            "type": pricePoint.type,
+            "customerPrice": pricePoint.attributes?.customerPrice.jsonSafe as Any,
+            "proceeds": pricePoint.attributes?.proceeds.jsonSafe as Any,
+            "priceTier": pricePoint.attributes?.priceTier.jsonSafe as Any
+        ]
+    }
+
+    private func formatReviewScreenshot(_ screenshot: ASCIAPReviewScreenshot) -> [String: Any] {
+        var result: [String: Any] = [
+            "id": screenshot.id,
+            "type": screenshot.type
+        ]
+        if let attrs = screenshot.attributes {
+            result["fileSize"] = attrs.fileSize.jsonSafe
+            result["fileName"] = attrs.fileName.jsonSafe
+            result["assetToken"] = attrs.assetToken.jsonSafe
+            result["sourceFileChecksum"] = attrs.sourceFileChecksum.jsonSafe
+            if let imageAsset = attrs.imageAsset {
+                result["imageAsset"] = [
+                    "templateUrl": imageAsset.templateUrl.jsonSafe,
+                    "width": imageAsset.width.jsonSafe,
+                    "height": imageAsset.height.jsonSafe
+                ] as [String: Any]
+            }
+            if let deliveryState = attrs.assetDeliveryState {
+                var stateDict: [String: Any] = [
+                    "state": deliveryState.state.jsonSafe
+                ]
+                if let errors = deliveryState.errors {
+                    stateDict["errors"] = errors.map { [
+                        "code": $0.code.jsonSafe,
+                        "description": $0.description.jsonSafe
+                    ] as [String: Any] }
+                }
+                result["assetDeliveryState"] = stateDict
+            }
+        }
+        return result
     }
 }

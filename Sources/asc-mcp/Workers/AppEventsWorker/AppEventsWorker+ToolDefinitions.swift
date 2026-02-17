@@ -161,4 +161,86 @@ extension AppEventsWorker {
             ])
         )
     }
+
+    /// Creates tool definition for creating an app event localization
+    func createAppEventLocalizationTool() -> Tool {
+        return Tool(
+            name: "app_events_create_localization",
+            description: "Create a localization for an in-app event. Sets name, short and long descriptions for a specific locale.",
+            inputSchema: .object([
+                "type": .string("object"),
+                "properties": .object([
+                    "event_id": .object([
+                        "type": .string("string"),
+                        "description": .string("App event ID")
+                    ]),
+                    "locale": .object([
+                        "type": .string("string"),
+                        "description": .string("Locale code (e.g., en-US, ru-RU, de-DE)")
+                    ]),
+                    "name": .object([
+                        "type": .string("string"),
+                        "description": .string("Localized event name (max 30 characters)")
+                    ]),
+                    "short_description": .object([
+                        "type": .string("string"),
+                        "description": .string("Localized short description (max 120 characters)")
+                    ]),
+                    "long_description": .object([
+                        "type": .string("string"),
+                        "description": .string("Localized long description (max 500 characters)")
+                    ])
+                ]),
+                "required": .array([.string("event_id"), .string("locale")])
+            ])
+        )
+    }
+
+    /// Creates tool definition for updating an app event localization
+    func updateAppEventLocalizationTool() -> Tool {
+        return Tool(
+            name: "app_events_update_localization",
+            description: "Update a localization for an in-app event. Modify name, short and/or long descriptions.",
+            inputSchema: .object([
+                "type": .string("object"),
+                "properties": .object([
+                    "localization_id": .object([
+                        "type": .string("string"),
+                        "description": .string("App event localization ID")
+                    ]),
+                    "name": .object([
+                        "type": .string("string"),
+                        "description": .string("Localized event name (max 30 characters)")
+                    ]),
+                    "short_description": .object([
+                        "type": .string("string"),
+                        "description": .string("Localized short description (max 120 characters)")
+                    ]),
+                    "long_description": .object([
+                        "type": .string("string"),
+                        "description": .string("Localized long description (max 500 characters)")
+                    ])
+                ]),
+                "required": .array([.string("localization_id")])
+            ])
+        )
+    }
+
+    /// Creates tool definition for deleting an app event localization
+    func deleteAppEventLocalizationTool() -> Tool {
+        return Tool(
+            name: "app_events_delete_localization",
+            description: "Delete a localization for an in-app event",
+            inputSchema: .object([
+                "type": .string("object"),
+                "properties": .object([
+                    "localization_id": .object([
+                        "type": .string("string"),
+                        "description": .string("App event localization ID to delete")
+                    ])
+                ]),
+                "required": .array([.string("localization_id")])
+            ])
+        )
+    }
 }

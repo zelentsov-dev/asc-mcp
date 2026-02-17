@@ -224,6 +224,244 @@ extension AnalyticsWorker {
         }
     }
 
+    // MARK: - Analytics Reports
+
+    /// Lists analytics reports for a report request
+    /// - Returns: JSON array of reports with category and name
+    /// - Throws: Error if required parameters are missing or API call fails
+    func listAnalyticsReports(_ params: CallTool.Parameters) async throws -> CallTool.Result {
+        guard let arguments = params.arguments,
+              let requestId = arguments["request_id"]?.stringValue else {
+            return CallTool.Result(
+                content: [.text("Required parameter 'request_id' is missing")],
+                isError: true
+            )
+        }
+
+        do {
+            let response: ASCAnalyticsReportsResponse
+
+            if let nextUrl = arguments["next_url"]?.stringValue,
+               let parsed = parsePaginationUrl(nextUrl) {
+                response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCAnalyticsReportsResponse.self)
+            } else {
+                var queryParams: [String: String] = [:]
+
+                if let limit = arguments["limit"]?.intValue {
+                    queryParams["limit"] = String(min(max(limit, 1), 200))
+                } else {
+                    queryParams["limit"] = "25"
+                }
+
+                response = try await httpClient.get(
+                    "/v1/analyticsReportRequests/\(requestId)/reports",
+                    parameters: queryParams,
+                    as: ASCAnalyticsReportsResponse.self
+                )
+            }
+
+            let reports = response.data.map { formatReport($0) }
+
+            var result: [String: Any] = [
+                "success": true,
+                "reports": reports,
+                "count": reports.count
+            ]
+
+            if let nextUrl = response.links?.next {
+                result["next_url"] = nextUrl
+            }
+
+            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+
+        } catch {
+            return CallTool.Result(
+                content: [.text("Failed to list analytics reports: \(error.localizedDescription)")],
+                isError: true
+            )
+        }
+    }
+
+    /// Gets details of a specific analytics report
+    /// - Returns: JSON with report details including category and name
+    /// - Throws: Error if required parameters are missing or API call fails
+    func getAnalyticsReport(_ params: CallTool.Parameters) async throws -> CallTool.Result {
+        guard let arguments = params.arguments,
+              let reportId = arguments["report_id"]?.stringValue else {
+            return CallTool.Result(
+                content: [.text("Required parameter 'report_id' is missing")],
+                isError: true
+            )
+        }
+
+        do {
+            let response: ASCAnalyticsReportResponse = try await httpClient.get(
+                "/v1/analyticsReports/\(reportId)",
+                parameters: [:],
+                as: ASCAnalyticsReportResponse.self
+            )
+
+            let result: [String: Any] = [
+                "success": true,
+                "report": formatReport(response.data)
+            ]
+
+            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+
+        } catch {
+            return CallTool.Result(
+                content: [.text("Failed to get analytics report: \(error.localizedDescription)")],
+                isError: true
+            )
+        }
+    }
+
+    /// Lists instances of an analytics report
+    /// - Returns: JSON array of report instances with granularity and processing date
+    /// - Throws: Error if required parameters are missing or API call fails
+    func listAnalyticsReportInstances(_ params: CallTool.Parameters) async throws -> CallTool.Result {
+        guard let arguments = params.arguments,
+              let reportId = arguments["report_id"]?.stringValue else {
+            return CallTool.Result(
+                content: [.text("Required parameter 'report_id' is missing")],
+                isError: true
+            )
+        }
+
+        do {
+            let response: ASCAnalyticsReportInstancesResponse
+
+            if let nextUrl = arguments["next_url"]?.stringValue,
+               let parsed = parsePaginationUrl(nextUrl) {
+                response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCAnalyticsReportInstancesResponse.self)
+            } else {
+                var queryParams: [String: String] = [:]
+
+                if let limit = arguments["limit"]?.intValue {
+                    queryParams["limit"] = String(min(max(limit, 1), 200))
+                } else {
+                    queryParams["limit"] = "25"
+                }
+
+                response = try await httpClient.get(
+                    "/v1/analyticsReports/\(reportId)/instances",
+                    parameters: queryParams,
+                    as: ASCAnalyticsReportInstancesResponse.self
+                )
+            }
+
+            let instances = response.data.map { formatReportInstance($0) }
+
+            var result: [String: Any] = [
+                "success": true,
+                "instances": instances,
+                "count": instances.count
+            ]
+
+            if let nextUrl = response.links?.next {
+                result["next_url"] = nextUrl
+            }
+
+            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+
+        } catch {
+            return CallTool.Result(
+                content: [.text("Failed to list analytics report instances: \(error.localizedDescription)")],
+                isError: true
+            )
+        }
+    }
+
+    /// Gets a specific analytics report instance
+    /// - Returns: JSON with report instance details
+    /// - Throws: Error if required parameters are missing or API call fails
+    func getAnalyticsReportInstance(_ params: CallTool.Parameters) async throws -> CallTool.Result {
+        guard let arguments = params.arguments,
+              let instanceId = arguments["instance_id"]?.stringValue else {
+            return CallTool.Result(
+                content: [.text("Required parameter 'instance_id' is missing")],
+                isError: true
+            )
+        }
+
+        do {
+            let response: ASCAnalyticsReportInstanceResponse = try await httpClient.get(
+                "/v1/analyticsReportInstances/\(instanceId)",
+                parameters: [:],
+                as: ASCAnalyticsReportInstanceResponse.self
+            )
+
+            let result: [String: Any] = [
+                "success": true,
+                "instance": formatReportInstance(response.data)
+            ]
+
+            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+
+        } catch {
+            return CallTool.Result(
+                content: [.text("Failed to get analytics report instance: \(error.localizedDescription)")],
+                isError: true
+            )
+        }
+    }
+
+    /// Lists segments of an analytics report instance
+    /// - Returns: JSON array of report segments with download URLs
+    /// - Throws: Error if required parameters are missing or API call fails
+    func listAnalyticsReportSegments(_ params: CallTool.Parameters) async throws -> CallTool.Result {
+        guard let arguments = params.arguments,
+              let instanceId = arguments["instance_id"]?.stringValue else {
+            return CallTool.Result(
+                content: [.text("Required parameter 'instance_id' is missing")],
+                isError: true
+            )
+        }
+
+        do {
+            let response: ASCAnalyticsReportSegmentsResponse
+
+            if let nextUrl = arguments["next_url"]?.stringValue,
+               let parsed = parsePaginationUrl(nextUrl) {
+                response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCAnalyticsReportSegmentsResponse.self)
+            } else {
+                var queryParams: [String: String] = [:]
+
+                if let limit = arguments["limit"]?.intValue {
+                    queryParams["limit"] = String(min(max(limit, 1), 200))
+                } else {
+                    queryParams["limit"] = "25"
+                }
+
+                response = try await httpClient.get(
+                    "/v1/analyticsReportInstances/\(instanceId)/segments",
+                    parameters: queryParams,
+                    as: ASCAnalyticsReportSegmentsResponse.self
+                )
+            }
+
+            let segments = response.data.map { formatReportSegment($0) }
+
+            var result: [String: Any] = [
+                "success": true,
+                "segments": segments,
+                "count": segments.count
+            ]
+
+            if let nextUrl = response.links?.next {
+                result["next_url"] = nextUrl
+            }
+
+            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+
+        } catch {
+            return CallTool.Result(
+                content: [.text("Failed to list analytics report segments: \(error.localizedDescription)")],
+                isError: true
+            )
+        }
+    }
+
     // MARK: - Formatting
 
     /// Formats an analytics report request as a dictionary for JSON output
@@ -238,6 +476,40 @@ extension AnalyticsWorker {
         if let stoppedDueToInactivity = request.attributes?.stoppedDueToInactivity {
             dict["stopped_due_to_inactivity"] = stoppedDueToInactivity
         }
+        return dict
+    }
+
+    /// Formats an analytics report as a dictionary for JSON output
+    private func formatReport(_ report: ASCAnalyticsReport) -> [String: Any] {
+        var dict: [String: Any] = [
+            "id": report.id,
+            "type": report.type
+        ]
+        dict["category"] = report.attributes?.category.jsonSafe ?? NSNull()
+        dict["name"] = report.attributes?.name.jsonSafe ?? NSNull()
+        return dict
+    }
+
+    /// Formats an analytics report instance as a dictionary for JSON output
+    private func formatReportInstance(_ instance: ASCAnalyticsReportInstance) -> [String: Any] {
+        var dict: [String: Any] = [
+            "id": instance.id,
+            "type": instance.type
+        ]
+        dict["granularity"] = instance.attributes?.granularity.jsonSafe ?? NSNull()
+        dict["processing_date"] = instance.attributes?.processingDate.jsonSafe ?? NSNull()
+        return dict
+    }
+
+    /// Formats an analytics report segment as a dictionary for JSON output
+    private func formatReportSegment(_ segment: ASCAnalyticsReportSegment) -> [String: Any] {
+        var dict: [String: Any] = [
+            "id": segment.id,
+            "type": segment.type
+        ]
+        dict["checksum"] = segment.attributes?.checksum.jsonSafe ?? NSNull()
+        dict["size_in_bytes"] = segment.attributes?.sizeInBytes.jsonSafe ?? NSNull()
+        dict["url"] = segment.attributes?.url.jsonSafe ?? NSNull()
         return dict
     }
 }

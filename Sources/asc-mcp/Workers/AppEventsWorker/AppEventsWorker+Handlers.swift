@@ -297,6 +297,134 @@ extension AppEventsWorker {
         }
     }
 
+    // MARK: - Localization CRUD
+
+    /// Creates a localization for an in-app event
+    /// - Returns: JSON with created localization details
+    /// - Throws: ASCError on API failures
+    func createAppEventLocalization(_ params: CallTool.Parameters) async throws -> CallTool.Result {
+        guard let arguments = params.arguments,
+              let eventId = arguments["event_id"]?.stringValue,
+              let locale = arguments["locale"]?.stringValue else {
+            return CallTool.Result(
+                content: [.text("Required parameters: event_id, locale")],
+                isError: true
+            )
+        }
+
+        do {
+            let request = CreateAppEventLocalizationRequest(
+                data: CreateAppEventLocalizationRequest.CreateData(
+                    attributes: CreateAppEventLocalizationRequest.Attributes(
+                        locale: locale,
+                        name: arguments["name"]?.stringValue,
+                        shortDescription: arguments["short_description"]?.stringValue,
+                        longDescription: arguments["long_description"]?.stringValue
+                    ),
+                    relationships: CreateAppEventLocalizationRequest.Relationships(
+                        appEvent: CreateAppEventLocalizationRequest.AppEventRelationship(
+                            data: ASCResourceIdentifier(type: "appEvents", id: eventId)
+                        )
+                    )
+                )
+            )
+
+            let response: ASCAppEventLocalizationSingleResponse = try await httpClient.post(
+                "/v1/appEventLocalizations",
+                body: request,
+                as: ASCAppEventLocalizationSingleResponse.self
+            )
+
+            let result: [String: Any] = [
+                "success": true,
+                "localization": formatLocalization(response.data)
+            ]
+
+            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+
+        } catch {
+            return CallTool.Result(
+                content: [.text("Failed to create app event localization: \(error.localizedDescription)")],
+                isError: true
+            )
+        }
+    }
+
+    /// Updates an existing app event localization
+    /// - Returns: JSON with updated localization details
+    /// - Throws: ASCError on API failures
+    func updateAppEventLocalization(_ params: CallTool.Parameters) async throws -> CallTool.Result {
+        guard let arguments = params.arguments,
+              let localizationId = arguments["localization_id"]?.stringValue else {
+            return CallTool.Result(
+                content: [.text("Required parameter 'localization_id' is missing")],
+                isError: true
+            )
+        }
+
+        do {
+            let request = UpdateAppEventLocalizationRequest(
+                data: UpdateAppEventLocalizationRequest.UpdateData(
+                    id: localizationId,
+                    attributes: UpdateAppEventLocalizationRequest.Attributes(
+                        name: arguments["name"]?.stringValue,
+                        shortDescription: arguments["short_description"]?.stringValue,
+                        longDescription: arguments["long_description"]?.stringValue
+                    )
+                )
+            )
+
+            let response: ASCAppEventLocalizationSingleResponse = try await httpClient.patch(
+                "/v1/appEventLocalizations/\(localizationId)",
+                body: request,
+                as: ASCAppEventLocalizationSingleResponse.self
+            )
+
+            let result: [String: Any] = [
+                "success": true,
+                "localization": formatLocalization(response.data)
+            ]
+
+            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+
+        } catch {
+            return CallTool.Result(
+                content: [.text("Failed to update app event localization: \(error.localizedDescription)")],
+                isError: true
+            )
+        }
+    }
+
+    /// Deletes an app event localization
+    /// - Returns: JSON confirmation of deletion
+    /// - Throws: ASCError on API failures
+    func deleteAppEventLocalization(_ params: CallTool.Parameters) async throws -> CallTool.Result {
+        guard let arguments = params.arguments,
+              let localizationId = arguments["localization_id"]?.stringValue else {
+            return CallTool.Result(
+                content: [.text("Required parameter 'localization_id' is missing")],
+                isError: true
+            )
+        }
+
+        do {
+            _ = try await httpClient.delete("/v1/appEventLocalizations/\(localizationId)")
+
+            let result: [String: Any] = [
+                "success": true,
+                "message": "App event localization '\(localizationId)' deleted"
+            ]
+
+            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+
+        } catch {
+            return CallTool.Result(
+                content: [.text("Failed to delete app event localization: \(error.localizedDescription)")],
+                isError: true
+            )
+        }
+    }
+
     // MARK: - Formatting
 
     private func formatAppEvent(_ event: ASCAppEvent) -> [String: Any] {

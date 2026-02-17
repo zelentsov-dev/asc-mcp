@@ -159,4 +159,118 @@ extension AnalyticsWorker {
             ])
         )
     }
+
+    /// Creates tool definition for listing analytics reports for a report request
+    func listAnalyticsReportsTool() -> Tool {
+        return Tool(
+            name: "analytics_list_reports",
+            description: "List analytics reports for a report request. Returns report categories and names available for download.",
+            inputSchema: .object([
+                "type": .string("object"),
+                "properties": .object([
+                    "request_id": .object([
+                        "type": .string("string"),
+                        "description": .string("Analytics report request ID")
+                    ]),
+                    "limit": .object([
+                        "type": .string("integer"),
+                        "description": .string("Maximum number of results to return (1-200, default: 25)")
+                    ]),
+                    "next_url": .object([
+                        "type": .string("string"),
+                        "description": .string("URL for next page of results (from previous response)")
+                    ])
+                ]),
+                "required": .array([.string("request_id")])
+            ])
+        )
+    }
+
+    /// Creates tool definition for getting details of a specific analytics report
+    func getAnalyticsReportTool() -> Tool {
+        return Tool(
+            name: "analytics_get_report",
+            description: "Get details of a specific analytics report including its category and name.",
+            inputSchema: .object([
+                "type": .string("object"),
+                "properties": .object([
+                    "report_id": .object([
+                        "type": .string("string"),
+                        "description": .string("Analytics report ID")
+                    ])
+                ]),
+                "required": .array([.string("report_id")])
+            ])
+        )
+    }
+
+    /// Creates tool definition for listing instances of an analytics report
+    func listAnalyticsReportInstancesTool() -> Tool {
+        return Tool(
+            name: "analytics_list_instances",
+            description: "List instances of an analytics report. Each instance represents a specific time period of data.",
+            inputSchema: .object([
+                "type": .string("object"),
+                "properties": .object([
+                    "report_id": .object([
+                        "type": .string("string"),
+                        "description": .string("Analytics report ID")
+                    ]),
+                    "limit": .object([
+                        "type": .string("integer"),
+                        "description": .string("Maximum number of results to return (1-200, default: 25)")
+                    ]),
+                    "next_url": .object([
+                        "type": .string("string"),
+                        "description": .string("URL for next page of results (from previous response)")
+                    ])
+                ]),
+                "required": .array([.string("report_id")])
+            ])
+        )
+    }
+
+    /// Creates tool definition for getting a specific analytics report instance
+    func getAnalyticsReportInstanceTool() -> Tool {
+        return Tool(
+            name: "analytics_get_instance",
+            description: "Get a specific analytics report instance with its granularity and processing date.",
+            inputSchema: .object([
+                "type": .string("object"),
+                "properties": .object([
+                    "instance_id": .object([
+                        "type": .string("string"),
+                        "description": .string("Analytics report instance ID")
+                    ])
+                ]),
+                "required": .array([.string("instance_id")])
+            ])
+        )
+    }
+
+    /// Creates tool definition for listing segments of an analytics report instance
+    func listAnalyticsReportSegmentsTool() -> Tool {
+        return Tool(
+            name: "analytics_list_segments",
+            description: "List segments of an analytics report instance. Each segment contains a download URL for the actual report data.",
+            inputSchema: .object([
+                "type": .string("object"),
+                "properties": .object([
+                    "instance_id": .object([
+                        "type": .string("string"),
+                        "description": .string("Analytics report instance ID")
+                    ]),
+                    "limit": .object([
+                        "type": .string("integer"),
+                        "description": .string("Maximum number of results to return (1-200, default: 25)")
+                    ]),
+                    "next_url": .object([
+                        "type": .string("string"),
+                        "description": .string("URL for next page of results (from previous response)")
+                    ])
+                ]),
+                "required": .array([.string("instance_id")])
+            ])
+        )
+    }
 }

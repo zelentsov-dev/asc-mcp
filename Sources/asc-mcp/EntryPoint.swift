@@ -47,7 +47,9 @@ struct ASCMCPApp {
         let validWorkers: Set<String> = [
             "company", "auth", "apps", "builds", "build_processing", "build_beta",
             "versions", "reviews", "beta_groups", "beta_testers", "iap",
-            "provisioning", "app_info", "pricing", "users", "app_events", "analytics"
+            "provisioning", "app_info", "pricing", "users", "app_events", "analytics",
+            "subscriptions", "offer_codes", "winback", "screenshots", "custom_pages",
+            "ppo", "promoted", "metrics"
         ]
 
         let requested = CommandLine.arguments[index + 1]

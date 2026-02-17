@@ -63,6 +63,14 @@ public actor WorkerManager {
     private var usersWorker: UsersWorker
     private var appEventsWorker: AppEventsWorker
     private var analyticsWorker: AnalyticsWorker
+    private var subscriptionsWorker: SubscriptionsWorker
+    private var offerCodesWorker: OfferCodesWorker
+    private var winBackOffersWorker: WinBackOffersWorker
+    private var screenshotsWorker: ScreenshotsWorker
+    private var customProductPagesWorker: CustomProductPagesWorker
+    private var productPageOptimizationWorker: ProductPageOptimizationWorker
+    private var promotedPurchasesWorker: PromotedPurchasesWorker
+    private var metricsWorker: MetricsWorker
 
     /// Direct initialization with dependencies (for testing and flexibility)
     /// - Parameter enabledWorkers: Set of worker names to enable, nil = all
@@ -85,6 +93,14 @@ public actor WorkerManager {
         self.usersWorker = await UsersWorker(httpClient: dependencies.httpClient)
         self.appEventsWorker = await AppEventsWorker(httpClient: dependencies.httpClient)
         self.analyticsWorker = await AnalyticsWorker(httpClient: dependencies.httpClient)
+        self.subscriptionsWorker = await SubscriptionsWorker(httpClient: dependencies.httpClient)
+        self.offerCodesWorker = await OfferCodesWorker(httpClient: dependencies.httpClient)
+        self.winBackOffersWorker = await WinBackOffersWorker(httpClient: dependencies.httpClient)
+        self.screenshotsWorker = await ScreenshotsWorker(httpClient: dependencies.httpClient)
+        self.customProductPagesWorker = await CustomProductPagesWorker(httpClient: dependencies.httpClient)
+        self.productPageOptimizationWorker = await ProductPageOptimizationWorker(httpClient: dependencies.httpClient)
+        self.promotedPurchasesWorker = await PromotedPurchasesWorker(httpClient: dependencies.httpClient)
+        self.metricsWorker = await MetricsWorker(httpClient: dependencies.httpClient)
     }
 
     /// Convenience factory method for production use
@@ -176,6 +192,30 @@ public actor WorkerManager {
             }
             if self.isWorkerEnabled("analytics") {
                 allTools += await self.getAnalyticsTools()
+            }
+            if self.isWorkerEnabled("subscriptions") {
+                allTools += await self.getSubscriptionsTools()
+            }
+            if self.isWorkerEnabled("offer_codes") {
+                allTools += await self.getOfferCodesTools()
+            }
+            if self.isWorkerEnabled("winback") {
+                allTools += await self.getWinBackOffersTools()
+            }
+            if self.isWorkerEnabled("screenshots") {
+                allTools += await self.getScreenshotsTools()
+            }
+            if self.isWorkerEnabled("custom_pages") {
+                allTools += await self.getCustomProductPagesTools()
+            }
+            if self.isWorkerEnabled("ppo") {
+                allTools += await self.getProductPageOptimizationTools()
+            }
+            if self.isWorkerEnabled("promoted") {
+                allTools += await self.getPromotedPurchasesTools()
+            }
+            if self.isWorkerEnabled("metrics") {
+                allTools += await self.getMetricsTools()
             }
 
             return ListTools.Result(tools: allTools)
@@ -283,6 +323,46 @@ public actor WorkerManager {
                     return try await self.analyticsWorker.handleTool(params)
                 }
 
+                if params.name.hasPrefix("subscriptions_") {
+                    guard self.isWorkerEnabled("subscriptions") else { return self.disabledWorkerResult("subscriptions") }
+                    return try await self.subscriptionsWorker.handleTool(params)
+                }
+
+                if params.name.hasPrefix("offer_codes_") {
+                    guard self.isWorkerEnabled("offer_codes") else { return self.disabledWorkerResult("offer_codes") }
+                    return try await self.offerCodesWorker.handleTool(params)
+                }
+
+                if params.name.hasPrefix("winback_") {
+                    guard self.isWorkerEnabled("winback") else { return self.disabledWorkerResult("winback") }
+                    return try await self.winBackOffersWorker.handleTool(params)
+                }
+
+                if params.name.hasPrefix("screenshots_") {
+                    guard self.isWorkerEnabled("screenshots") else { return self.disabledWorkerResult("screenshots") }
+                    return try await self.screenshotsWorker.handleTool(params)
+                }
+
+                if params.name.hasPrefix("custom_pages_") {
+                    guard self.isWorkerEnabled("custom_pages") else { return self.disabledWorkerResult("custom_pages") }
+                    return try await self.customProductPagesWorker.handleTool(params)
+                }
+
+                if params.name.hasPrefix("ppo_") {
+                    guard self.isWorkerEnabled("ppo") else { return self.disabledWorkerResult("ppo") }
+                    return try await self.productPageOptimizationWorker.handleTool(params)
+                }
+
+                if params.name.hasPrefix("promoted_") {
+                    guard self.isWorkerEnabled("promoted") else { return self.disabledWorkerResult("promoted") }
+                    return try await self.promotedPurchasesWorker.handleTool(params)
+                }
+
+                if params.name.hasPrefix("metrics_") {
+                    guard self.isWorkerEnabled("metrics") else { return self.disabledWorkerResult("metrics") }
+                    return try await self.metricsWorker.handleTool(params)
+                }
+
                 return CallTool.Result(
                     content: [.text("Error: Unknown tool: \(params.name)")],
                     isError: true
@@ -315,6 +395,14 @@ public actor WorkerManager {
         self.usersWorker = await UsersWorker(httpClient: dependencies.httpClient)
         self.appEventsWorker = await AppEventsWorker(httpClient: dependencies.httpClient)
         self.analyticsWorker = await AnalyticsWorker(httpClient: dependencies.httpClient)
+        self.subscriptionsWorker = await SubscriptionsWorker(httpClient: dependencies.httpClient)
+        self.offerCodesWorker = await OfferCodesWorker(httpClient: dependencies.httpClient)
+        self.winBackOffersWorker = await WinBackOffersWorker(httpClient: dependencies.httpClient)
+        self.screenshotsWorker = await ScreenshotsWorker(httpClient: dependencies.httpClient)
+        self.customProductPagesWorker = await CustomProductPagesWorker(httpClient: dependencies.httpClient)
+        self.productPageOptimizationWorker = await ProductPageOptimizationWorker(httpClient: dependencies.httpClient)
+        self.promotedPurchasesWorker = await PromotedPurchasesWorker(httpClient: dependencies.httpClient)
+        self.metricsWorker = await MetricsWorker(httpClient: dependencies.httpClient)
 
         print("✅ Workers reinitialized successfully", to: &standardError)
     }
@@ -412,6 +500,38 @@ public actor WorkerManager {
     /// Get tools from analytics worker
     private func getAnalyticsTools() async -> [Tool] {
         return await analyticsWorker.getTools()
+    }
+
+    private func getSubscriptionsTools() async -> [Tool] {
+        return await subscriptionsWorker.getTools()
+    }
+
+    private func getOfferCodesTools() async -> [Tool] {
+        return await offerCodesWorker.getTools()
+    }
+
+    private func getWinBackOffersTools() async -> [Tool] {
+        return await winBackOffersWorker.getTools()
+    }
+
+    private func getScreenshotsTools() async -> [Tool] {
+        return await screenshotsWorker.getTools()
+    }
+
+    private func getCustomProductPagesTools() async -> [Tool] {
+        return await customProductPagesWorker.getTools()
+    }
+
+    private func getProductPageOptimizationTools() async -> [Tool] {
+        return await productPageOptimizationWorker.getTools()
+    }
+
+    private func getPromotedPurchasesTools() async -> [Tool] {
+        return await promotedPurchasesWorker.getTools()
+    }
+
+    private func getMetricsTools() async -> [Tool] {
+        return await metricsWorker.getTools()
     }
 }
 

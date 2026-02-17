@@ -54,6 +54,14 @@ public func runApplication(enabledWorkers: Set<String>? = nil) async throws {
         - users_* — team members and roles
         - app_events_* — in-app events
         - analytics_* — sales and financial reports
+        - subscriptions_* -- subscription management (CRUD, localizations, prices, groups)
+        - offer_codes_* -- subscription offer codes
+        - winback_* -- win-back offers for subscriptions
+        - screenshots_* -- screenshots and app previews management
+        - custom_pages_* -- custom product pages
+        - ppo_* -- product page optimization (A/B testing)
+        - promoted_* -- promoted in-app purchases
+        - metrics_* -- performance metrics and diagnostics
         """,
         capabilities: Server.Capabilities(
             tools: Server.Capabilities.Tools(listChanged: true)

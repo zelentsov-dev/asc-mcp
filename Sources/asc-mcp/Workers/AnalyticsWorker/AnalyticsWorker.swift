@@ -22,7 +22,12 @@ public final class AnalyticsWorker: Sendable {
             getSalesReportTool(),
             getFinancialReportTool(),
             listAnalyticsReportRequestsTool(),
-            createAnalyticsReportRequestTool()
+            createAnalyticsReportRequestTool(),
+            listAnalyticsReportsTool(),
+            getAnalyticsReportTool(),
+            listAnalyticsReportInstancesTool(),
+            getAnalyticsReportInstanceTool(),
+            listAnalyticsReportSegmentsTool()
         ]
     }
 
@@ -37,6 +42,16 @@ public final class AnalyticsWorker: Sendable {
             return try await listAnalyticsReportRequests(params)
         case "analytics_create_report_request":
             return try await createAnalyticsReportRequest(params)
+        case "analytics_list_reports":
+            return try await listAnalyticsReports(params)
+        case "analytics_get_report":
+            return try await getAnalyticsReport(params)
+        case "analytics_list_instances":
+            return try await listAnalyticsReportInstances(params)
+        case "analytics_get_instance":
+            return try await getAnalyticsReportInstance(params)
+        case "analytics_list_segments":
+            return try await listAnalyticsReportSegments(params)
         default:
             throw MCPError.methodNotFound("Unknown tool: \(params.name)")
         }
