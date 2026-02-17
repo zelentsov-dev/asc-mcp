@@ -343,6 +343,15 @@ struct ParameterValidationTests {
         #expect(result.isError == true)
     }
 
+    @Test("app_info_delete_localization without localization_id returns isError")
+    func appInfoDeleteLocalizationMissing() async throws {
+        let client = try await TestFactory.makeHTTPClient()
+        let worker = AppInfoWorker(httpClient: client)
+        let params = CallTool.Parameters(name: "app_info_delete_localization", arguments: nil)
+        let result = try await worker.handleTool(params)
+        #expect(result.isError == true)
+    }
+
     @Test("app_info_update without required params returns isError")
     func appInfoUpdateMissing() async throws {
         let client = try await TestFactory.makeHTTPClient()

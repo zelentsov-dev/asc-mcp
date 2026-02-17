@@ -113,11 +113,7 @@ extension CustomProductPagesWorker {
 
         do {
             // Build request with included[] for version and localization (heterogeneous types)
-            var versionRelationships: [String: Any] = [
-                "appCustomProductPage": [
-                    "data": ["type": "appCustomProductPages", "id": "${new}"]
-                ]
-            ]
+            var versionRelationships: [String: Any] = [:]
 
             if let templateVersionId = arguments["template_version_id"]?.stringValue {
                 versionRelationships["appStoreVersionTemplate"] = [

@@ -83,6 +83,34 @@ extension OfferCodesWorker {
                 customerEligibilities = [offerEligibility]
             }
 
+            // Build prices relationship and included if price_point_ids provided
+            var pricesRelationship: CreateOfferCodeRequest.PricesRelationship?
+            var included: [OfferCodePriceInlineCreate]?
+
+            if let pricePointIds = arguments["price_point_ids"]?.arrayValue {
+                let ids = pricePointIds.compactMap { $0.stringValue }
+                if !ids.isEmpty {
+                    var priceRefs: [ASCResourceIdentifier] = []
+                    var priceInlines: [OfferCodePriceInlineCreate] = []
+
+                    for (index, pricePointId) in ids.enumerated() {
+                        let tempId = "${price-\(index)}"
+                        priceRefs.append(ASCResourceIdentifier(type: "subscriptionOfferCodePrices", id: tempId))
+                        priceInlines.append(OfferCodePriceInlineCreate(
+                            id: tempId,
+                            relationships: OfferCodePriceInlineCreate.Relationships(
+                                subscriptionPricePoint: OfferCodePriceInlineCreate.PricePointRelationship(
+                                    data: ASCResourceIdentifier(type: "subscriptionPricePoints", id: pricePointId)
+                                )
+                            )
+                        ))
+                    }
+
+                    pricesRelationship = CreateOfferCodeRequest.PricesRelationship(data: priceRefs)
+                    included = priceInlines
+                }
+            }
+
             let request = CreateOfferCodeRequest(
                 data: CreateOfferCodeRequest.CreateData(
                     attributes: CreateOfferCodeRequest.Attributes(
@@ -96,9 +124,11 @@ extension OfferCodesWorker {
                     relationships: CreateOfferCodeRequest.Relationships(
                         subscription: CreateOfferCodeRequest.SubscriptionRelationship(
                             data: ASCResourceIdentifier(type: "subscriptions", id: subscriptionId)
-                        )
+                        ),
+                        prices: pricesRelationship
                     )
-                )
+                ),
+                included: included
             )
 
             let response: ASCOfferCodeResponse = try await httpClient.post(

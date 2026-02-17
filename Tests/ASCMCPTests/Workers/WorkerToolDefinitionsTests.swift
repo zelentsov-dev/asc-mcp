@@ -203,12 +203,12 @@ struct WorkerToolDefinitionsTests {
 
     // MARK: - AppInfoWorker (6 tools)
 
-    @Test("AppInfoWorker returns 6 tools with correct names")
+    @Test("AppInfoWorker returns 7 tools with correct names")
     func appInfoWorkerTools() async throws {
         let client = try await TestFactory.makeHTTPClient()
         let worker = AppInfoWorker(httpClient: client)
         let tools = await worker.getTools()
-        #expect(tools.count == 6)
+        #expect(tools.count == 7)
         let names = Set(tools.map(\.name))
         #expect(names.contains("app_info_list"))
         #expect(names.contains("app_info_get"))
@@ -216,6 +216,7 @@ struct WorkerToolDefinitionsTests {
         #expect(names.contains("app_info_list_localizations"))
         #expect(names.contains("app_info_update_localization"))
         #expect(names.contains("app_info_create_localization"))
+        #expect(names.contains("app_info_delete_localization"))
     }
 
     // MARK: - PricingWorker (6 tools)

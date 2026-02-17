@@ -74,11 +74,29 @@ public struct OneTimeUseCodeAttributes: Codable, Sendable {
     public let active: Bool?
 }
 
+// MARK: - Offer Code Price Inline Create
+
+/// Inline create for offer code price (used in included[] when creating offer codes)
+public struct OfferCodePriceInlineCreate: Codable, Sendable {
+    public let type: String = "subscriptionOfferCodePrices"
+    public let id: String
+    public let relationships: Relationships?
+
+    public struct Relationships: Codable, Sendable {
+        public let subscriptionPricePoint: PricePointRelationship
+    }
+
+    public struct PricePointRelationship: Codable, Sendable {
+        public let data: ASCResourceIdentifier
+    }
+}
+
 // MARK: - Offer Code Request Models
 
 /// Create offer code request
 public struct CreateOfferCodeRequest: Codable, Sendable {
     public let data: CreateData
+    public let included: [OfferCodePriceInlineCreate]?
 
     public struct CreateData: Codable, Sendable {
         public let type: String = "subscriptionOfferCodes"
@@ -97,10 +115,15 @@ public struct CreateOfferCodeRequest: Codable, Sendable {
 
     public struct Relationships: Codable, Sendable {
         public let subscription: SubscriptionRelationship
+        public let prices: PricesRelationship?
     }
 
     public struct SubscriptionRelationship: Codable, Sendable {
         public let data: ASCResourceIdentifier
+    }
+
+    public struct PricesRelationship: Codable, Sendable {
+        public let data: [ASCResourceIdentifier]
     }
 }
 

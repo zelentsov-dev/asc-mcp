@@ -280,7 +280,7 @@ extension PromotedPurchasesWorker {
                 }
 
                 response = try await httpClient.get(
-                    "/v1/promotedPurchases/\(promotedPurchaseId)/promotedPurchaseImages",
+                    "/v1/promotedPurchases/\(promotedPurchaseId)/promotionImages",
                     parameters: queryParams,
                     as: ASCPromotionImagesResponse.self
                 )

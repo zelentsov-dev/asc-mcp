@@ -327,12 +327,26 @@ extension MetricsWorker {
         return dict
     }
 
-    /// Formats a diagnostic log entry
+    /// Formats a diagnostic log entry, decoding callStackTree from base64 or raw JSON string
     private func formatDiagnosticLog(_ log: ASCDiagnosticLog) -> [String: Any] {
         var dict: [String: Any] = [:]
-        if let tree = log.callStackTree {
+        guard let treeString = log.callStackTree else { return dict }
+
+        // Try to decode: first as base64, then as raw JSON string
+        let jsonData: Data?
+        if let base64Data = Data(base64Encoded: treeString) {
+            jsonData = base64Data
+        } else {
+            jsonData = treeString.data(using: .utf8)
+        }
+
+        if let data = jsonData,
+           let tree = try? JSONDecoder().decode(ASCCallStackTree.self, from: data) {
             dict["call_stack_per_thread"] = tree.callStackPerThread.jsonSafe
             dict["call_stacks"] = (tree.callStacks ?? []).map { formatCallStack($0) }
+        } else {
+            // Fallback: return raw string
+            dict["raw_call_stack_tree"] = treeString
         }
         return dict
     }

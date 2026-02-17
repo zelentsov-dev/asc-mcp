@@ -47,7 +47,7 @@ extension OfferCodesWorker {
                     "offer_eligibility": .object([
                         "type": .string("string"),
                         "description": .string("Eligibility for the offer"),
-                        "enum": .array([.string("NEW_USERS_ONLY"), .string("EXISTING_USERS_ONLY"), .string("EXISTING_AND_NEW_USERS")])
+                        "enum": .array([.string("STACK_WITH_INTRO_OFFERS"), .string("REPLACE_INTRO_OFFERS")])
                     ]),
                     "offer_mode": .object([
                         "type": .string("string"),
@@ -67,11 +67,18 @@ extension OfferCodesWorker {
                         "description": .string("Customer eligibilities array"),
                         "items": .object([
                             "type": .string("string"),
-                            "enum": .array([.string("NEW_SUBSCRIBER"), .string("EXISTING_PAID_SUBSCRIBER"), .string("LAPSED")])
+                            "enum": .array([.string("NEW"), .string("EXISTING"), .string("EXPIRED")])
+                        ])
+                    ]),
+                    "price_point_ids": .object([
+                        "type": .string("array"),
+                        "description": .string("Array of subscription price point IDs for offer code prices"),
+                        "items": .object([
+                            "type": .string("string")
                         ])
                     ])
                 ]),
-                "required": .array([.string("subscription_id"), .string("name"), .string("offer_eligibility"), .string("offer_mode"), .string("duration"), .string("number_of_periods")])
+                "required": .array([.string("subscription_id"), .string("name"), .string("offer_eligibility"), .string("offer_mode"), .string("duration"), .string("number_of_periods"), .string("price_point_ids")])
             ])
         )
     }

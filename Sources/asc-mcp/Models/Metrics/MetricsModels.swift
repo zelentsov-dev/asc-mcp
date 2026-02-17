@@ -95,7 +95,7 @@ public struct ASCDiagnosticLogProductData: Codable, Sendable {
 }
 
 public struct ASCDiagnosticLog: Codable, Sendable {
-    public let callStackTree: ASCCallStackTree?
+    public let callStackTree: String?
 }
 
 public struct ASCCallStackTree: Codable, Sendable {

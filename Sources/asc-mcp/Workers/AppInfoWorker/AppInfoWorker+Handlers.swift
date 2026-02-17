@@ -323,6 +323,37 @@ extension AppInfoWorker {
         }
     }
 
+    /// Deletes an app info localization
+    /// - Returns: JSON confirmation
+    /// - Throws: On network errors
+    func deleteAppInfoLocalization(_ params: CallTool.Parameters) async throws -> CallTool.Result {
+        guard let arguments = params.arguments,
+              let locIdValue = arguments["localization_id"],
+              let localizationId = locIdValue.stringValue else {
+            return CallTool.Result(
+                content: [.text("Required parameter 'localization_id' is missing")],
+                isError: true
+            )
+        }
+
+        do {
+            _ = try await httpClient.delete("/v1/appInfoLocalizations/\(localizationId)")
+
+            let result = [
+                "success": true,
+                "message": "App info localization '\(localizationId)' deleted"
+            ] as [String: Any]
+
+            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+
+        } catch {
+            return CallTool.Result(
+                content: [.text("Failed to delete app info localization: \(error.localizedDescription)")],
+                isError: true
+            )
+        }
+    }
+
     // MARK: - Formatting
 
     private func formatAppInfo(_ info: ASCAppInfo) -> [String: Any] {
