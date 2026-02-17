@@ -443,11 +443,10 @@ struct WorkerToolDefinitionsTests {
         let client = try await TestFactory.makeHTTPClient()
         let worker = MetricsWorker(httpClient: client)
         let tools = await worker.getTools()
-        #expect(tools.count == 5)
+        #expect(tools.count == 4)
         let names = Set(tools.map(\.name))
         #expect(names.contains("metrics_app_perf"))
         #expect(names.contains("metrics_build_perf"))
-        #expect(names.contains("metrics_list_diagnostics"))
         #expect(names.contains("metrics_build_diagnostics"))
         #expect(names.contains("metrics_get_diagnostic_logs"))
     }

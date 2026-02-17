@@ -204,7 +204,7 @@ extension AppInfoWorker {
                         "description": .string("Privacy policy text (for China mainland)")
                     ])
                 ]),
-                "required": .array([.string("info_id"), .string("locale")])
+                "required": .array([.string("info_id"), .string("locale"), .string("name")])
             ])
         )
     }

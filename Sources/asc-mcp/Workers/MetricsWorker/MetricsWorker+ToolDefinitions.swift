@@ -45,7 +45,7 @@ extension MetricsWorker {
     func buildPerfMetricsTool() -> Tool {
         return Tool(
             name: "metrics_build_perf",
-            description: "Get performance and power metrics for a specific build. Returns metrics broken down by device type and percentile.",
+            description: "Get performance and power metrics for a specific build. Returns metrics broken down by device type and percentile. Available only for App Store builds. Pre-release/TestFlight builds return 404.",
             inputSchema: .object([
                 "type": .string("object"),
                 "properties": .object([
@@ -73,44 +73,10 @@ extension MetricsWorker {
     }
 
     /// Creates tool definition for listing diagnostic signatures for a build
-    func listDiagnosticsTool() -> Tool {
-        return Tool(
-            name: "metrics_list_diagnostics",
-            description: "List diagnostic signatures for a build (use builds_list to find build IDs). Shows top crash/hang/disk-write signatures with their weight and insights.",
-            inputSchema: .object([
-                "type": .string("object"),
-                "properties": .object([
-                    "build_id": .object([
-                        "type": .string("string"),
-                        "description": .string("Build ID from App Store Connect")
-                    ]),
-                    "diagnostic_type": .object([
-                        "type": .string("string"),
-                        "description": .string("Filter by diagnostic type"),
-                        "enum": .array([
-                            .string("DISK_WRITES"),
-                            .string("HANGS")
-                        ])
-                    ]),
-                    "limit": .object([
-                        "type": .string("integer"),
-                        "description": .string("Maximum number of results to return (1-200, default: 25)")
-                    ]),
-                    "next_url": .object([
-                        "type": .string("string"),
-                        "description": .string("URL for next page of results (from previous response)")
-                    ])
-                ]),
-                "required": .array([.string("build_id")])
-            ])
-        )
-    }
-
-    /// Creates tool definition for listing diagnostic signatures for a build
     func buildDiagnosticsTool() -> Tool {
         return Tool(
             name: "metrics_build_diagnostics",
-            description: "List diagnostic signatures for a specific build. Shows crash/hang/disk-write signatures with their weight and insights.",
+            description: "List diagnostic signatures for a specific build. Shows crash/hang/disk-write signatures with their weight and insights. Available only for App Store builds. Pre-release/TestFlight builds return 404.",
             inputSchema: .object([
                 "type": .string("object"),
                 "properties": .object([

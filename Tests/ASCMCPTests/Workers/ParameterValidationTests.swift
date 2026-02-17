@@ -828,15 +828,6 @@ struct ParameterValidationTests {
         #expect(result.isError == true)
     }
 
-    @Test("metrics_list_diagnostics without build_id returns isError")
-    func metricsListDiagnosticsMissing() async throws {
-        let client = try await TestFactory.makeHTTPClient()
-        let worker = MetricsWorker(httpClient: client)
-        let params = CallTool.Parameters(name: "metrics_list_diagnostics", arguments: nil)
-        let result = try await worker.handleTool(params)
-        #expect(result.isError == true)
-    }
-
     @Test("metrics_get_diagnostic_logs without signature_id returns isError")
     func metricsGetDiagnosticLogsMissing() async throws {
         let client = try await TestFactory.makeHTTPClient()

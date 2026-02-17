@@ -21,7 +21,6 @@ public final class MetricsWorker: Sendable {
         return [
             appPerfMetricsTool(),
             buildPerfMetricsTool(),
-            listDiagnosticsTool(),
             buildDiagnosticsTool(),
             getDiagnosticLogsTool()
         ]
@@ -34,8 +33,6 @@ public final class MetricsWorker: Sendable {
             return try await getAppPerfMetrics(params)
         case "metrics_build_perf":
             return try await getBuildPerfMetrics(params)
-        case "metrics_list_diagnostics":
-            return try await listDiagnostics(params)
         case "metrics_build_diagnostics":
             return try await getBuildDiagnostics(params)
         case "metrics_get_diagnostic_logs":
