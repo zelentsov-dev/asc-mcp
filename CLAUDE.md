@@ -49,7 +49,7 @@ Each company needs: `keyID`, `issuerID`, `privateKeyPath` (path to `.p8` file).
 
 **WorkerManager** (`Workers/MainWorker/WorkerManager.swift`) — central registry, routes tool calls by prefix.
 
-**Workers** (25 workers, ~188 tools):
+**Workers** (25 workers, 207 tools):
 
 | Worker | Prefix | Tools | Domain |
 |--------|--------|-------|--------|

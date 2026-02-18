@@ -28,7 +28,7 @@
 
 ## Overview
 
-**asc-mcp** is a Swift-based MCP server that bridges [Claude](https://claude.ai) (or any MCP-compatible host) with the [App Store Connect API](https://developer.apple.com/documentation/appstoreconnectapi). It exposes **~185 tools** across 25 workers, enabling you to automate your entire iOS/macOS release workflow through natural language.
+**asc-mcp** is a Swift-based MCP server that bridges [Claude](https://claude.ai) (or any MCP-compatible host) with the [App Store Connect API](https://developer.apple.com/documentation/appstoreconnectapi). It exposes **207 tools** across 25 workers, enabling you to automate your entire iOS/macOS release workflow through natural language.
 
 ### Key capabilities
 
@@ -361,7 +361,7 @@ Add to `~/.codeium/windsurf/mcp_config.json`:
 
 ### Worker Filtering
 
-The server exposes **~185 tools** across 25 workers. Some MCP clients impose a tool limit (e.g., Windsurf caps at 100). Use `--workers` to enable only the workers you need:
+The server exposes **207 tools** across 25 workers. Some MCP clients impose a tool limit (e.g., Windsurf caps at 100). Use `--workers` to enable only the workers you need:
 
 ```bash
 # Only load apps, builds, and version lifecycle tools
@@ -412,7 +412,7 @@ When connected to an LLM client, tool definitions consume context tokens. Here's
 
 | Configuration | Tools | ~Tokens |
 |---|---:|---:|
-| All workers (default) | ~186 | **~22,000** |
+| All workers (default) | 207 | **~24,000** |
 | Release workflow: `apps,builds,versions,reviews` | ~40 | ~5,500 |
 | Monetization: `apps,iap,subscriptions,pricing` | ~47 | ~6,000 |
 | TestFlight: `apps,builds,beta_groups,beta_testers` | ~34 | ~4,500 |
@@ -425,7 +425,7 @@ For Claude (200K context) ~22K tokens is ~5–7% — negligible. For clients wit
 
 ## Available Tools
 
-**~185 tools** organized across 25 workers (use `--workers` to filter — see [Worker Filtering](#worker-filtering)):
+**207 tools** organized across 25 workers (use `--workers` to filter — see [Worker Filtering](#worker-filtering)):
 
 <details>
 <summary><strong>Company Management</strong> — 3 tools</summary>
