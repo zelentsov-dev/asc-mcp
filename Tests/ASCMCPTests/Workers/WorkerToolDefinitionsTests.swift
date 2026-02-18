@@ -202,7 +202,7 @@ struct WorkerToolDefinitionsTests {
         #expect(names.contains("beta_testers_list_apps"))
     }
 
-    // MARK: - AppInfoWorker (6 tools)
+    // MARK: - AppInfoWorker (7 tools)
 
     @Test("AppInfoWorker returns 7 tools with correct names")
     func appInfoWorkerTools() async throws {
@@ -437,9 +437,9 @@ struct WorkerToolDefinitionsTests {
         #expect(names.contains("promoted_delete"))
     }
 
-    // MARK: - MetricsWorker (5 tools)
+    // MARK: - MetricsWorker (4 tools)
 
-    @Test("MetricsWorker returns 5 tools with correct names")
+    @Test("MetricsWorker returns 4 tools with correct names")
     func metricsWorkerTools() async throws {
         let client = try await TestFactory.makeHTTPClient()
         let worker = MetricsWorker(httpClient: client)

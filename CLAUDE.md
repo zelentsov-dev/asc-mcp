@@ -65,7 +65,7 @@ Each company needs: `keyID`, `issuerID`, `privateKeyPath` (path to `.p8` file).
 | InAppPurchasesWorker | `iap_` | 17 | IAP, subscriptions, localizations, prices, screenshots |
 | ProvisioningWorker | `provisioning_` | 17 | Bundle IDs, devices, certificates, profiles, capabilities |
 | BetaTestersWorker | `beta_testers_` | 6 | Tester management, search, invite |
-| AppInfoWorker | `app_info_` | 6 | App info, categories, localizations |
+| AppInfoWorker | `app_info_` | 7 | App info, categories, localizations |
 | PricingWorker | `pricing_` | 6 | Territories, availability, price points/schedule |
 | UsersWorker | `users_` | 7 | Team members, roles, invitations |
 | AppEventsWorker | `app_events_` | 9 | In-app events CRUD, localizations |
@@ -76,8 +76,8 @@ Each company needs: `keyID`, `issuerID`, `privateKeyPath` (path to `.p8` file).
 | ScreenshotsWorker | `screenshots_` | 12 | Screenshots, previews, sets, reorder |
 | CustomProductPagesWorker | `custom_pages_` | 10 | Custom product pages, versions, localizations |
 | ProductPageOptimizationWorker | `ppo_` | 9 | A/B test experiments, treatments |
-| PromotedPurchasesWorker | `promoted_` | 6 | Promoted in-app purchases, images |
-| MetricsWorker | `metrics_` | 5 | Performance/power metrics, diagnostics |
+| PromotedPurchasesWorker | `promoted_` | 5 | Promoted in-app purchases, images |
+| MetricsWorker | `metrics_` | 4 | Performance/power metrics, diagnostics |
 
 **Services**: HTTPClient (actor, GET/POST/PATCH/PUT/DELETE + retry with 429), JWTService (ES256), CompaniesManager
 
