@@ -63,7 +63,7 @@ extension CustomProductPagesWorker {
                     ]),
                     "locale": .object([
                         "type": .string("string"),
-                        "description": .string("Initial locale code (e.g. en-US, ru-RU)")
+                        "description": .string("Initial locale code (e.g. en-US, ru-RU, de-DE, ja, zh-Hans)")
                     ]),
                     "promotional_text": .object([
                         "type": .string("string"),
@@ -201,7 +201,7 @@ extension CustomProductPagesWorker {
                     ]),
                     "locale": .object([
                         "type": .string("string"),
-                        "description": .string("Locale code (e.g. en-US, ru-RU)")
+                        "description": .string("Locale code (e.g. en-US, ru-RU, de-DE, ja, zh-Hans)")
                     ]),
                     "promotional_text": .object([
                         "type": .string("string"),

@@ -65,7 +65,7 @@ extension PricingWorker {
                     ]),
                     "territory_id": .object([
                         "type": .string("string"),
-                        "description": .string("Filter by territory code (e.g. USA, RUS, DEU)")
+                        "description": .string("Filter by ISO 3166-1 alpha-3 territory code (e.g. USA, RUS, DEU, JPN, GBR). Get codes from pricing_list_territories.")
                     ]),
                     "limit": .object([
                         "type": .string("integer"),
@@ -113,7 +113,7 @@ extension PricingWorker {
                     ]),
                     "base_territory_id": .object([
                         "type": .string("string"),
-                        "description": .string("Base territory code (e.g. USA)")
+                        "description": .string("Base ISO 3166-1 alpha-3 territory code (e.g. USA). Get codes from pricing_list_territories.")
                     ]),
                     "price_point_id": .object([
                         "type": .string("string"),

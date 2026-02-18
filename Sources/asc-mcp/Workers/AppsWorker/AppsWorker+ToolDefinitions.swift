@@ -116,7 +116,7 @@ extension AppsWorker {
                     ]),
                     "locale": .object([
                         "type": .string("string"),
-                        "description": .string("Locale code (en-US, ru-RU, de-DE). If omitted — returns all locales")
+                        "description": .string("Locale code (e.g. en-US, ru-RU, de-DE, ja, zh-Hans). If omitted — returns all locales")
                     ]),
                     "version_id": .object([
                         "type": .string("string"),

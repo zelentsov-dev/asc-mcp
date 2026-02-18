@@ -28,7 +28,7 @@
 
 ## Overview
 
-**asc-mcp** is a Swift-based MCP server that bridges [Claude](https://claude.ai) (or any MCP-compatible host) with the [App Store Connect API](https://developer.apple.com/documentation/appstoreconnectapi). It exposes **207 tools** across 25 workers, enabling you to automate your entire iOS/macOS release workflow through natural language.
+**asc-mcp** is a Swift-based MCP server that bridges [Claude](https://claude.ai) (or any MCP-compatible host) with the [App Store Connect API](https://developer.apple.com/documentation/appstoreconnectapi). It exposes **208 tools** across 25 workers, enabling you to automate your entire iOS/macOS release workflow through natural language.
 
 ### Key capabilities
 
@@ -361,7 +361,7 @@ Add to `~/.codeium/windsurf/mcp_config.json`:
 
 ### Worker Filtering
 
-The server exposes **207 tools** across 25 workers. Some MCP clients impose a tool limit (e.g., Windsurf caps at 100). Use `--workers` to enable only the workers you need:
+The server exposes **208 tools** across 25 workers. Some MCP clients impose a tool limit (e.g., Windsurf caps at 100). Use `--workers` to enable only the workers you need:
 
 ```bash
 # Only load apps, builds, and version lifecycle tools
@@ -386,7 +386,7 @@ When `builds` is enabled, it automatically includes `build_processing` and `buil
 | `builds` | `builds_` | 4 | Build management |
 | `build_processing` | `builds_*_processing_` | 4 | Build states, encryption |
 | `build_beta` | `builds_*_beta_` | 8 | TestFlight localizations, notifications |
-| `versions` | `app_versions_` | 12 | Version lifecycle, submit, release |
+| `versions` | `app_versions_` | 13 | Version lifecycle, submit, release |
 | `reviews` | `reviews_` | 7 | Customer reviews and responses |
 | `beta_groups` | `beta_groups_` | 9 | TestFlight groups |
 | `beta_testers` | `beta_testers_` | 6 | Tester management |
@@ -412,20 +412,20 @@ When connected to an LLM client, tool definitions consume context tokens. Here's
 
 | Configuration | Tools | ~Tokens |
 |---|---:|---:|
-| All workers (default) | 207 | **~24,000** |
+| All workers (default) | 208 | **~24,000** |
 | Release workflow: `apps,builds,versions,reviews` | ~40 | ~5,500 |
 | Monetization: `apps,iap,subscriptions,pricing` | ~47 | ~6,000 |
 | TestFlight: `apps,builds,beta_groups,beta_testers` | ~34 | ~4,500 |
 | Marketing: `apps,screenshots,custom_pages,ppo,promoted` | ~46 | ~5,800 |
 | `--workers apps` | 16 | ~1,850 |
 
-**Heaviest workers:** Provisioning (17 tools), InAppPurchases (17 tools), Subscriptions (15 tools), AppLifecycle (12 tools), Screenshots (12 tools).
+**Heaviest workers:** Provisioning (17 tools), InAppPurchases (17 tools), Subscriptions (15 tools), AppLifecycle (13 tools), Screenshots (12 tools).
 
 For Claude (200K context) ~22K tokens is ~5–7% — negligible. For clients with smaller context windows, use `--workers` to reduce the footprint.
 
 ## Available Tools
 
-**207 tools** organized across 25 workers (use `--workers` to filter — see [Worker Filtering](#worker-filtering)):
+**208 tools** organized across 25 workers (use `--workers` to filter — see [Worker Filtering](#worker-filtering)):
 
 <details>
 <summary><strong>Company Management</strong> — 3 tools</summary>
@@ -538,6 +538,7 @@ For Claude (200K context) ~22K tokens is ~5–7% — negligible. For clients wit
 | `app_versions_cancel_review` | Cancel ongoing review |
 | `app_versions_release` | Release approved version |
 | `app_versions_create_phased_release` | Create gradual rollout |
+| `app_versions_get_phased_release` | Get phased release info and ID |
 | `app_versions_update_phased_release` | Pause/resume/complete rollout |
 | `app_versions_set_review_details` | Set reviewer contact info |
 | `app_versions_update_age_rating` | Configure age rating declaration |

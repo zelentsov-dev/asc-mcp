@@ -206,7 +206,7 @@ extension ProductPageOptimizationWorker {
                     ]),
                     "locale": .object([
                         "type": .string("string"),
-                        "description": .string("Locale code (e.g. en-US, ru-RU)")
+                        "description": .string("Locale code (e.g. en-US, ru-RU, de-DE, ja, zh-Hans)")
                     ])
                 ]),
                 "required": .array([.string("treatment_id"), .string("locale")])

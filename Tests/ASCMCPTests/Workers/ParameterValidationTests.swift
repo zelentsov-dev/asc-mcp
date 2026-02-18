@@ -419,6 +419,17 @@ struct ParameterValidationTests {
         #expect(result.isError == true)
     }
 
+    // MARK: - AppLifecycleWorker (extensions)
+
+    @Test("app_versions_get_phased_release without version_id returns isError")
+    func appVersionsGetPhasedReleaseMissing() async throws {
+        let client = try await TestFactory.makeHTTPClient()
+        let worker = AppLifecycleWorker(httpClient: client)
+        let params = CallTool.Parameters(name: "app_versions_get_phased_release", arguments: nil)
+        let result = try await worker.handleTool(params)
+        #expect(result.isError == true)
+    }
+
     // MARK: - AppEventsWorker
 
     @Test("app_events_list without app_id returns isError")

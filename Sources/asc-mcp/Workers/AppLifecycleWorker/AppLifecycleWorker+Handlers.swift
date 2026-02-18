@@ -416,6 +416,40 @@ extension AppLifecycleWorker {
         }
     }
 
+    /// Gets phased release info for an app version
+    /// - Returns: JSON with phased release details including ID, state, startDate, currentDayNumber, totalPauseDuration
+    /// - Throws: CallTool.Result with error if version_id missing or API call fails
+    func getPhasedRelease(_ params: CallTool.Parameters) async throws -> CallTool.Result {
+        guard let arguments = params.arguments,
+              let versionId = arguments["version_id"]?.stringValue else {
+            return CallTool.Result(
+                content: [.text("Error: Required parameter 'version_id' is missing")],
+                isError: true
+            )
+        }
+
+        do {
+            let response = try await httpClient.get(
+                "/v1/appStoreVersions/\(versionId)/appStoreVersionPhasedRelease",
+                parameters: [:],
+                as: PassthroughAPIResponse.self
+            )
+
+            let result: [String: Any] = [
+                "success": true,
+                "phased_release": response.data.asAny
+            ]
+
+            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+
+        } catch {
+            return CallTool.Result(
+                content: [.text("Error: Failed to get phased release: \(error.localizedDescription)")],
+                isError: true
+            )
+        }
+    }
+
     /// Updates phased release state to pause, resume or complete rollout
     /// - Returns: JSON with updated phased release state and percentage
     /// - Throws: CallTool.Result with error if required parameters missing or update fails

@@ -16,7 +16,7 @@ MCP (Model Context Protocol) server for App Store Connect API integration, desig
 # Build the project
 swift build
 
-# Run all unit tests (345 tests)
+# Run all unit tests (393 tests)
 swift test
 
 # Run the MCP server (requires environment variables or companies.json)
@@ -49,7 +49,7 @@ Each company needs: `keyID`, `issuerID`, `privateKeyPath` (path to `.p8` file).
 
 **WorkerManager** (`Workers/MainWorker/WorkerManager.swift`) — central registry, routes tool calls by prefix.
 
-**Workers** (25 workers, 207 tools):
+**Workers** (25 workers, 208 tools):
 
 | Worker | Prefix | Tools | Domain |
 |--------|--------|-------|--------|
@@ -59,7 +59,7 @@ Each company needs: `keyID`, `issuerID`, `privateKeyPath` (path to `.p8` file).
 | BuildsWorker | `builds_` | 4 | Build management |
 | BuildBetaDetailsWorker | `builds_*_beta_` | 8 | TestFlight localizations, notifications, beta groups |
 | BuildProcessingWorker | `builds_*_processing_` | 4 | Build states, encryption |
-| AppLifecycleWorker | `app_versions_` | 12 | Versions, submit, release, phased rollout |
+| AppLifecycleWorker | `app_versions_` | 13 | Versions, submit, release, phased rollout |
 | ReviewsWorker | `reviews_` | 7 | Customer reviews and responses |
 | BetaGroupsWorker | `beta_groups_` | 9 | TestFlight groups CRUD, testers, builds |
 | InAppPurchasesWorker | `iap_` | 17 | IAP, subscriptions, localizations, prices, screenshots |
@@ -103,7 +103,7 @@ Each company needs: `keyID`, `issuerID`, `privateKeyPath` (path to `.p8` file).
 ### Unit Tests (Swift Testing)
 
 ```bash
-swift test    # Run all 345 tests across 28 suites
+swift test    # Run all 393 tests across 28 suites
 ```
 
 Test categories:
