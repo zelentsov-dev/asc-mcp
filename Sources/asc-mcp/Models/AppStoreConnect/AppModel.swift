@@ -2,7 +2,7 @@ import Foundation
 
 // MARK: - App Store Connect API Models
 
-/// Модель приложения из App Store Connect API
+/// App resource from App Store Connect API
 public struct ASCApp: Codable, Sendable {
     public let id: String
     public let type: String
@@ -78,7 +78,7 @@ public struct ASCApp: Codable, Sendable {
     }
 }
 
-/// Ответ со списком приложений
+/// Apps list response
 public struct ASCAppsResponse: Codable, Sendable {
     public let data: [ASCApp]
     public let links: Links
@@ -100,7 +100,7 @@ public struct ASCAppsResponse: Codable, Sendable {
     }
 }
 
-/// Ответ с одним приложением
+/// Single app response
 public struct ASCAppResponse: Codable, Sendable {
     public let data: ASCApp
     public let links: Links
@@ -113,34 +113,34 @@ public struct ASCAppResponse: Codable, Sendable {
 // MARK: - Convenience Extensions
 
 extension ASCApp {
-    /// Человекочитаемое описание приложения
+    /// Human-readable app display name
     public var displayName: String {
         return attributes?.name ?? "Unknown App"
     }
     
-    /// Bundle ID приложения
+    /// App bundle identifier
     public var bundleIdentifier: String {
         return attributes?.bundleId ?? "Unknown Bundle ID"
     }
     
-    /// SKU приложения
+    /// App SKU
     public var appSKU: String {
         return attributes?.sku ?? "Unknown SKU"
     }
     
-    /// Основная локаль приложения
+    /// App primary locale
     public var locale: String {
         return attributes?.primaryLocale ?? "en-US"
     }
 }
 
 extension ASCAppsResponse {
-    /// Общее количество приложений
+    /// Total number of apps
     public var totalCount: Int {
         return meta?.paging.total ?? data.count
     }
     
-    /// Есть ли следующая страница
+    /// Whether there is a next page
     public var hasNextPage: Bool {
         return links.next != nil
     }

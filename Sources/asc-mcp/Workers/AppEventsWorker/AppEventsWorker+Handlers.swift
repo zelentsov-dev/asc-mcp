@@ -191,6 +191,13 @@ extension AppEventsWorker {
         }
 
         do {
+            // Parse territory_schedules JSON string if provided
+            var schedules: [TerritorySchedule]?
+            if let schedulesJson = arguments["territory_schedules"]?.stringValue,
+               let data = schedulesJson.data(using: .utf8) {
+                schedules = try? JSONDecoder().decode([TerritorySchedule].self, from: data)
+            }
+
             let request = UpdateAppEventRequest(
                 data: UpdateAppEventRequest.UpdateAppEventData(
                     id: eventId,
@@ -199,7 +206,8 @@ extension AppEventsWorker {
                         badge: arguments["badge"]?.stringValue,
                         deepLink: arguments["deep_link"]?.stringValue,
                         purchaseRequirement: arguments["purchase_requirement"]?.stringValue,
-                        purpose: arguments["purpose"]?.stringValue
+                        purpose: arguments["purpose"]?.stringValue,
+                        territorySchedules: schedules
                     )
                 )
             )

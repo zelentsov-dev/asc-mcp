@@ -196,7 +196,7 @@ extension InAppPurchasesWorker {
                     ]),
                     "locale": .object([
                         "type": .string("string"),
-                        "description": .string("Locale code (e.g. en-US, ru-RU)")
+                        "description": .string("Locale code (e.g. en-US, ru-RU, de-DE, ja, zh-Hans)")
                     ]),
                     "name": .object([
                         "type": .string("string"),

@@ -104,66 +104,6 @@ extension MetricsWorker {
         }
     }
 
-    /// Lists diagnostic signatures for a build
-    /// - Returns: JSON array of diagnostic signatures with weight and insights
-    /// - Throws: Error if required parameters are missing or API call fails
-    func listDiagnostics(_ params: CallTool.Parameters) async throws -> CallTool.Result {
-        guard let arguments = params.arguments,
-              let buildId = arguments["build_id"]?.stringValue else {
-            return CallTool.Result(
-                content: [.text("Required parameter 'build_id' is missing")],
-                isError: true
-            )
-        }
-
-        do {
-            let response: ASCDiagnosticSignaturesResponse
-
-            if let nextUrl = arguments["next_url"]?.stringValue,
-               let parsed = parsePaginationUrl(nextUrl) {
-                response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCDiagnosticSignaturesResponse.self)
-            } else {
-                var queryParams: [String: String] = [:]
-
-                if let diagnosticType = arguments["diagnostic_type"]?.stringValue {
-                    queryParams["filter[diagnosticType]"] = diagnosticType
-                }
-
-                if let limit = arguments["limit"]?.intValue {
-                    queryParams["limit"] = String(min(max(limit, 1), 200))
-                } else {
-                    queryParams["limit"] = "25"
-                }
-
-                response = try await httpClient.get(
-                    "/v1/builds/\(buildId)/diagnosticSignatures",
-                    parameters: queryParams,
-                    as: ASCDiagnosticSignaturesResponse.self
-                )
-            }
-
-            let signatures = response.data.map { formatDiagnosticSignature($0) }
-
-            var result: [String: Any] = [
-                "success": true,
-                "diagnostic_signatures": signatures,
-                "count": signatures.count
-            ]
-
-            if let nextUrl = response.links?.next {
-                result["next_url"] = nextUrl
-            }
-
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
-
-        } catch {
-            return CallTool.Result(
-                content: [.text("Failed to list diagnostic signatures: \(error.localizedDescription)")],
-                isError: true
-            )
-        }
-    }
-
     /// Lists diagnostic signatures for a specific build
     /// - Returns: JSON array of diagnostic signatures with weight and insights
     /// - Throws: Error if required parameters are missing or API call fails

@@ -20,6 +20,7 @@ public final class AppLifecycleWorker: Sendable {
             submitForReviewTool(),
             cancelReviewTool(),
             createPhasedReleaseTool(),
+            getPhasedReleaseTool(),
             updatePhasedReleaseTool(),
             releaseVersionTool(),
             setReviewDetailsTool(),
@@ -46,6 +47,8 @@ public final class AppLifecycleWorker: Sendable {
             return try await cancelReview(params)
         case "app_versions_create_phased_release":
             return try await createPhasedRelease(params)
+        case "app_versions_get_phased_release":
+            return try await getPhasedRelease(params)
         case "app_versions_update_phased_release":
             return try await updatePhasedRelease(params)
         case "app_versions_release":

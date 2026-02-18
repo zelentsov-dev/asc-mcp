@@ -11,11 +11,11 @@ extension AuthWorker {
         do {
             let _ = try await jwtService.getToken()
             return CallTool.Result(content: [
-                .text("JWT токен успешно сгенерирован")
+                .text("JWT token generated successfully")
             ])
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Ошибка генерации токена: \(error.localizedDescription)")],
+                content: [.text("Error: Token generation failed: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -29,7 +29,7 @@ extension AuthWorker {
               let tokenValue = arguments["token"],
               let token = tokenValue.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Требуется параметр 'token'")],
+                content: [.text("Error: Required parameter 'token' is missing")],
                 isError: true
             )
         }
@@ -38,11 +38,11 @@ extension AuthWorker {
 
         if isValid {
             return CallTool.Result(content: [
-                .text("JWT токен действителен")
+                .text("JWT token is valid")
             ])
         } else {
             return CallTool.Result(content: [
-                .text("JWT токен недействителен или истек")
+                .text("JWT token is invalid or expired")
             ])
         }
     }
@@ -54,11 +54,11 @@ extension AuthWorker {
         do {
             let _ = try await jwtService.refreshToken()
             return CallTool.Result(content: [
-                .text("JWT токен успешно обновлен")
+                .text("JWT token refreshed successfully")
             ])
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Ошибка обновления токена: \(error.localizedDescription)")],
+                content: [.text("Error: Token refresh failed: \(error.localizedDescription)")],
                 isError: true
             )
         }

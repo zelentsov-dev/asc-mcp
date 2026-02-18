@@ -63,6 +63,7 @@ public struct SubscriptionLocalizationAttributes: Codable, Sendable {
 /// Subscription prices list response
 public struct ASCSubscriptionPricesResponse: Codable, Sendable {
     public let data: [ASCSubscriptionPrice]
+    public let included: [ASCSubscriptionPricePoint]?
     public let links: ASCPagedDocumentLinks?
 }
 
@@ -71,6 +72,16 @@ public struct ASCSubscriptionPrice: Codable, Sendable {
     public let type: String
     public let id: String
     public let attributes: SubscriptionPriceAttributes?
+    public let relationships: SubscriptionPriceRelationships?
+}
+
+/// Subscription price relationships
+public struct SubscriptionPriceRelationships: Codable, Sendable {
+    public let subscriptionPricePoint: RelationshipData?
+
+    public struct RelationshipData: Codable, Sendable {
+        public let data: ASCResourceIdentifier?
+    }
 }
 
 /// Subscription price attributes

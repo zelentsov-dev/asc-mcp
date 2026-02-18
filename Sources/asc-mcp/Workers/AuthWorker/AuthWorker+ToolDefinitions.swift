@@ -7,7 +7,7 @@ extension AuthWorker {
     func generateTokenTool() -> Tool {
         return Tool(
             name: "auth_generate_token",
-            description: "Генерирует JWT токен для аутентификации в App Store Connect API",
+            description: "Generate JWT token for App Store Connect API authentication",
             inputSchema: .object([
                 "type": .string("object"),
                 "properties": .object([:]),
@@ -19,13 +19,13 @@ extension AuthWorker {
     func validateTokenTool() -> Tool {
         return Tool(
             name: "auth_validate_token",
-            description: "Проверяет действительность JWT токена",
+            description: "Validate a JWT token",
             inputSchema: .object([
                 "type": .string("object"),
                 "properties": .object([
                     "token": .object([
                         "type": .string("string"),
-                        "description": .string("JWT токен для проверки")
+                        "description": .string("JWT token to validate")
                     ])
                 ]),
                 "required": .array([.string("token")])
@@ -36,7 +36,7 @@ extension AuthWorker {
     func refreshTokenTool() -> Tool {
         return Tool(
             name: "auth_refresh_token",
-            description: "Принудительно обновляет JWT токен",
+            description: "Force refresh JWT token",
             inputSchema: .object([
                 "type": .string("object"),
                 "properties": .object([:]),
@@ -48,7 +48,7 @@ extension AuthWorker {
     func tokenStatusTool() -> Tool {
         return Tool(
             name: "auth_token_status",
-            description: "Получает информацию о состоянии кэша JWT токена",
+            description: "Get JWT token cache status information",
             inputSchema: .object([
                 "type": .string("object"),
                 "properties": .object([:]),

@@ -2,7 +2,7 @@ import Foundation
 
 // MARK: - App Store Version Localization Models
 
-/// Модель локализации версии приложения
+/// App store version localization resource
 public struct ASCAppStoreVersionLocalization: Codable, Sendable {
     public let id: String
     public let type: String
@@ -67,7 +67,7 @@ public struct ASCAppStoreVersionLocalization: Codable, Sendable {
     }
 }
 
-/// Ответ со списком локализаций
+/// Localizations list response
 public struct ASCAppStoreVersionLocalizationsResponse: Codable, Sendable {
     public let data: [ASCAppStoreVersionLocalization]
     public let included: [IncludedResource]?
@@ -92,7 +92,7 @@ public struct ASCAppStoreVersionLocalizationsResponse: Codable, Sendable {
 
 // MARK: - Screenshot Models
 
-/// Модель набора скриншотов
+/// Screenshot set resource
 public struct ASCAppScreenshotSet: Codable, Sendable {
     public let id: String
     public let type: String
@@ -150,7 +150,7 @@ public struct ASCAppScreenshotSet: Codable, Sendable {
     }
 }
 
-/// Модель скриншота
+/// Screenshot resource
 public struct ASCAppScreenshot: Codable, Sendable {
     public let id: String
     public let type: String
@@ -203,7 +203,7 @@ public struct ASCAppScreenshot: Codable, Sendable {
     }
 }
 
-/// Ответ со списком наборов скриншотов
+/// Screenshot sets list response
 public struct ASCAppScreenshotSetsResponse: Codable, Sendable {
     public let data: [ASCAppScreenshotSet]
     public let included: [ASCAppScreenshot]?
@@ -218,7 +218,7 @@ public struct ASCAppScreenshotSetsResponse: Codable, Sendable {
 
 // MARK: - Update Models
 
-/// Запрос на обновление локализации версии
+/// Version localization update request
 public struct ASCAppStoreVersionLocalizationUpdateRequest: Codable, Sendable {
     public let data: Data
     
@@ -242,12 +242,12 @@ public struct ASCAppStoreVersionLocalizationUpdateRequest: Codable, Sendable {
     }
 }
 
-/// Ответ после обновления локализации
+/// Localization update response
 public struct ASCAppStoreVersionLocalizationUpdateResponse: Codable, Sendable {
     public let data: ASCAppStoreVersionLocalization
 }
 
-/// Ответ со списком скриншотов
+/// Screenshots list response
 public struct ASCAppScreenshotsResponse: Codable, Sendable {
     public let data: [ASCAppScreenshot]
     public let links: Links?
@@ -261,7 +261,7 @@ public struct ASCAppScreenshotsResponse: Codable, Sendable {
 
 // MARK: - App Preview Models (Video)
 
-/// Модель набора видео-превью
+/// App preview set resource
 public struct ASCAppPreviewSet: Codable, Sendable {
     public let id: String
     public let type: String
@@ -319,7 +319,7 @@ public struct ASCAppPreviewSet: Codable, Sendable {
     }
 }
 
-/// Модель видео-превью
+/// App preview resource
 public struct ASCAppPreview: Codable, Sendable {
     public let id: String
     public let type: String
@@ -359,7 +359,7 @@ public struct ASCAppPreview: Codable, Sendable {
     }
 }
 
-/// Ответ со списком наборов видео-превью
+/// App preview sets list response
 public struct ASCAppPreviewSetsResponse: Codable, Sendable {
     public let data: [ASCAppPreviewSet]
     public let included: [ASCAppPreview]?
@@ -375,24 +375,24 @@ public struct ASCAppPreviewSetsResponse: Codable, Sendable {
 // MARK: - Convenience Extensions
 
 extension ASCAppStoreVersionLocalization {
-    /// Локаль
+    /// Locale
     public var locale: String {
         return attributes?.locale ?? "Unknown"
     }
     
-    /// Есть ли What's New
+    /// Whether What's New is set
     public var hasWhatsNew: Bool {
         return !(attributes?.whatsNew?.isEmpty ?? true)
     }
     
-    /// Есть ли описание
+    /// Whether description is set
     public var hasDescription: Bool {
         return !(attributes?.description?.isEmpty ?? true)
     }
 }
 
 extension ASCAppScreenshot {
-    /// URL изображения
+    /// Image URL
     public var imageUrl: String? {
         guard let templateUrl = attributes?.imageAsset?.templateUrl,
               let width = attributes?.imageAsset?.width,
@@ -400,14 +400,14 @@ extension ASCAppScreenshot {
             return nil
         }
         
-        // Заменяем плейсхолдеры на реальные значения
+        // Replace placeholders with actual values
         return templateUrl
             .replacingOccurrences(of: "{w}", with: String(width))
             .replacingOccurrences(of: "{h}", with: String(height))
             .replacingOccurrences(of: "{f}", with: "png")
     }
     
-    /// Размеры изображения
+    /// Image dimensions
     public var dimensions: (width: Int, height: Int)? {
         guard let width = attributes?.imageAsset?.width,
               let height = attributes?.imageAsset?.height else {
@@ -470,20 +470,20 @@ public struct CreateAppStoreVersionLocalizationRequest: Codable, Sendable {
 }
 
 extension ASCAppPreview {
-    /// URL превью изображения
+    /// Preview image URL
     public var previewImageUrl: String? {
         guard let templateUrl = attributes?.previewImage?.templateUrl else {
             return nil
         }
         
-        // Заменяем плейсхолдеры на реальные значения для максимального размера
+        // Replace placeholders with actual values for maximum size
         return templateUrl
             .replacingOccurrences(of: "{w}", with: "1290")
             .replacingOccurrences(of: "{h}", with: "2796")
             .replacingOccurrences(of: "{f}", with: "png")
     }
     
-    /// URL видео
+    /// Video URL
     public var videoUrl: String? {
         return attributes?.videoUrl
     }

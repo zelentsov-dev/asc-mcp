@@ -1,138 +1,138 @@
 # App Store Connect MCP Server - Roadmap
 
-## Архитектура и приоритеты
+## Architecture and Priorities
 
-### 🔴 Критически важные функции
+### 🔴 Critical Features
 
-#### 1. Релизный пайплайн (AppLifecycleWorker)
-- **AppStoreVersions**: создание версии, привязка билда, submit for review
+#### 1. Release Pipeline (AppLifecycleWorker)
+- **AppStoreVersions**: version creation, build attachment, submit for review
 - **Release Management**: manual/auto/scheduled release, phased rollout
-- **Builds**: поиск по номеру, статус обработки, encryption declarations
-- **Media Upload**: скриншоты, превью через uploadOperations
+- **Builds**: search by number, processing status, encryption declarations
+- **Media Upload**: screenshots, previews via uploadOperations
 
 #### 2. TestFlight (TestFlightWorker)
-- **Beta Groups & Testers**: управление группами и тестерами
-- **Build Distribution**: привязка билдов к группам
-- **Beta App Review**: подача на внешнее тестирование
-- **Test Info & Localizations**: информация для тестеров
+- **Beta Groups & Testers**: group and tester management
+- **Build Distribution**: attaching builds to groups
+- **Beta App Review**: submitting for external testing
+- **Test Info & Localizations**: information for testers
 
-#### 3. Provisioning для CI/CD (ProvisioningWorker)
-- **Devices**: регистрация UDID, batch операции
-- **Certificates**: создание, ревокация
-- **Profiles**: создание, регенерация
-- **Bundle IDs & Capabilities**: управление идентификаторами
+#### 3. Provisioning for CI/CD (ProvisioningWorker)
+- **Devices**: UDID registration, batch operations
+- **Certificates**: creation, revocation
+- **Profiles**: creation, regeneration
+- **Bundle IDs & Capabilities**: identifier management
 
-### 🟡 Важные функции
+### 🟡 Important Features
 
 #### 4. Pricing & Availability (PricingWorker)
-- **App Pricing**: цены и точки
-- **Price Schedules**: планирование изменений
-- **Territory Availability**: доступность по странам
+- **App Pricing**: prices and price points
+- **Price Schedules**: scheduling changes
+- **Territory Availability**: availability by country
 
 #### 5. In-App Purchases & Subscriptions (IAPWorker)
-- **IAP Management**: CRUD операций
-- **Subscription Groups**: управление подписками
-- **Offers & Promos**: промо-коды и предложения
-- **Localization & Media**: локализации и медиа
+- **IAP Management**: CRUD operations
+- **Subscription Groups**: subscription management
+- **Offers & Promos**: promo codes and offers
+- **Localization & Media**: localizations and media
 
 #### 6. Customer Reviews (ReviewsWorker)
-- **Review Fetching**: получение отзывов
-- **Response Management**: ответы на отзывы
-- **Auto-response Rules**: автоматические ответы
-- **Analytics**: анализ и триаж
+- **Review Fetching**: retrieving reviews
+- **Response Management**: responding to reviews
+- **Auto-response Rules**: automatic responses
+- **Analytics**: analysis and triage
 
 #### 7. Users & Access (UsersAccessWorker)
-- **User Management**: управление пользователями
-- **Invitations**: приглашения
-- **Roles & Permissions**: роли и права
+- **User Management**: managing users
+- **Invitations**: invitations
+- **Roles & Permissions**: roles and permissions
 
 #### 8. Reporting (ReportingWorker)
-- **Sales & Trends**: отчеты о продажах
-- **Finance Reports**: финансовые отчеты
-- **Metrics & Analytics**: метрики и аналитика
+- **Sales & Trends**: sales reports
+- **Finance Reports**: financial reports
+- **Metrics & Analytics**: metrics and analytics
 
-### 🟢 Полезные функции
+### 🟢 Nice-to-Have Features
 
 #### 9. Xcode Cloud (XcodeCloudWorker)
-- **Workflows**: управление CI/CD
-- **Build Runs**: запуск и мониторинг
-- **Artifacts**: артефакты сборок
+- **Workflows**: CI/CD management
+- **Build Runs**: launching and monitoring
+- **Artifacts**: build artifacts
 
 #### 10. Game Center (GameCenterWorker)
-- **Achievements**: достижения
-- **Leaderboards**: таблицы лидеров
-- **Localizations**: локализации
+- **Achievements**: achievements
+- **Leaderboards**: leaderboards
+- **Localizations**: localizations
 
-## Разделение на воркеры
+## Worker Breakdown
 
-📋 **[Детальный маппинг методов и API endpoints](./WORKERS_API_MAPPING.md)**
+📋 **[Detailed method and API endpoint mapping](./WORKERS_API_MAPPING.md)**
 
-### Существующие (требуют рефакторинга)
+### Existing (require refactoring)
 ```
-AuthWorker (остается как есть + улучшения)
-├── JWT кэширование (TTL ~20 мин)
-├── Auto-refresh при 401
+AuthWorker (stays as is + improvements)
+├── JWT caching (TTL ~20 min)
+├── Auto-refresh on 401
 └── Clock skew handling
 
-AppsWorker → разделить на:
-├── AppCatalogWorker (листинг, поиск)
-├── AppMetadataWorker (локализации, медиа)
-└── AppLifecycleWorker (версии, релизы)
+AppsWorker → split into:
+├── AppCatalogWorker (listing, search)
+├── AppMetadataWorker (localizations, media)
+└── AppLifecycleWorker (versions, releases)
 ```
 
-### Новые воркеры (по приоритету)
+### New Workers (by priority)
 ```
-Фаза 1: Критические
+Phase 1: Critical
 ├── AppLifecycleWorker
 ├── BuildWorker
 ├── TestFlightWorker
 └── MediaUploadWorker
 
-Фаза 2: CI/CD и отзывы
+Phase 2: CI/CD and Reviews
 ├── ProvisioningWorker
 └── ReviewsWorker
 
-Фаза 3: Монетизация
+Phase 3: Monetization
 ├── PricingWorker
 └── IAPWorker
 
-Фаза 4: Аналитика
+Phase 4: Analytics
 ├── ReportingWorker
 └── WebhooksWorker
 
-Фаза 5: Дополнительные
+Phase 5: Additional
 ├── UsersAccessWorker
 ├── XcodeCloudWorker
 ├── GameCenterWorker
 └── AlternativeDistributionWorker
 ```
 
-### Общие сервисы (Services/)
+### Shared Services (Services/)
 ```
 Core Services
-├── ASCClient (actor): HTTP client с JSON:API
+├── ASCClient (actor): HTTP client with JSON:API
 ├── RateLimiter: per-account rate limiting
 ├── Paginator: async stream pagination
 ├── ResourceCache: ETag/If-None-Match
 ├── MediaUploader: S3-like upload operations
-├── ErrorMapper: единая таксономия ошибок
-└── AuditLogger: логирование и трейсинг
+├── ErrorMapper: unified error taxonomy
+└── AuditLogger: logging and tracing
 ```
 
-## План реализации (Roadmap)
+## Implementation Plan (Roadmap)
 
-### Фаза 0: Платформа (1-2 недели)
-- [ ] Рефакторинг ASCClient для JSON:API
-- [ ] Реализация RateLimiter с token bucket
-- [ ] Paginator с AsyncThrowingStream
-- [ ] ResourceCache с ETag поддержкой
-- [ ] ErrorMapper для единообразных ошибок
-- [ ] Улучшение AuthWorker (кэш JWT)
+### Phase 0: Platform (1-2 weeks)
+- [ ] Refactor ASCClient for JSON:API
+- [ ] Implement RateLimiter with token bucket
+- [ ] Paginator with AsyncThrowingStream
+- [ ] ResourceCache with ETag support
+- [ ] ErrorMapper for consistent errors
+- [ ] Improve AuthWorker (JWT caching)
 
-### Фаза 1: Релизный контур ✅ ПОЛНОСТЬЮ ЗАВЕРШЕНА
+### Phase 1: Release Pipeline ✅ FULLY COMPLETED
 - [x] **BuildsWorker** ✅
-  - [x] Поиск билдов (`builds_list`, `builds_find_by_number`)
-  - [x] Статусы обработки (`builds_get_processing_state`, `builds_wait_for_processing`)
+  - [x] Build search (`builds_list`, `builds_find_by_number`)
+  - [x] Processing statuses (`builds_get_processing_state`, `builds_wait_for_processing`)
   - [x] Encryption declarations (`builds_update_encryption`)
   - [x] Build readiness checking (`builds_check_readiness`)
 - [x] **BuildBetaDetailsWorker** (TestFlight) ✅
@@ -144,36 +144,36 @@ Core Services
   - [x] Processing state management
   - [x] Expiration control (`builds_set_expiration`)
   - [x] Build readiness validation
-- [x] **Технические улучшения** ✅
-  - [x] SafeJSONHelpers - замена небезопасных `as Any`
-  - [x] Structured JSON responses для всех методов
-  - [x] Enhanced error handling для предотвращения MCP disconnections
+- [x] **Technical Improvements** ✅
+  - [x] SafeJSONHelpers - replacing unsafe `as Any`
+  - [x] Structured JSON responses for all methods
+  - [x] Enhanced error handling to prevent MCP disconnections
   - [x] Type-safe optional handling
 
-- [x] **AppLifecycleWorker** ✅ ЗАВЕРШЕН
-  - [x] Создание версий (`app_versions_create`)
-  - [x] Управление версиями (`app_versions_list`, `app_versions_get`, `app_versions_update`)
-  - [x] Привязка билдов (`app_versions_attach_build`)
+- [x] **AppLifecycleWorker** ✅ COMPLETED
+  - [x] Version creation (`app_versions_create`)
+  - [x] Version management (`app_versions_list`, `app_versions_get`, `app_versions_update`)
+  - [x] Build attachment (`app_versions_attach_build`)
   - [x] Submit for review (`app_versions_submit_for_review`, `app_versions_cancel_review`)
   - [x] Release management (`app_versions_release`)
   - [x] Phased rollout (`app_versions_create_phased_release`, `app_versions_update_phased_release`)
-  - [x] Review details (`app_versions_set_review_details`) - с автоматическим определением POST/PATCH
-  - [x] Age rating (`app_versions_update_age_rating`) - с автоматическим определением POST/PATCH
+  - [x] Review details (`app_versions_set_review_details`) - with automatic POST/PATCH detection
+  - [x] Age rating (`app_versions_update_age_rating`) - with automatic POST/PATCH detection
 
-### Фаза 2: CI/CD и отзывы ✅ ЗАВЕРШЕНА
+### Phase 2: CI/CD and Reviews ✅ COMPLETED
 - [x] **ProvisioningWorker** ✅
   - [x] Bundle IDs CRUD (`provisioning_list_bundle_ids`, `provisioning_get_bundle_id`, `provisioning_create_bundle_id`, `provisioning_delete_bundle_id`)
   - [x] Devices management (`provisioning_list_devices`, `provisioning_register_device`, `provisioning_update_device`)
   - [x] Certificates listing (`provisioning_list_certificates`)
   - [x] Profiles listing (`provisioning_list_profiles`)
-- [x] **ReviewsWorker** ✅ (реализован ранее)
+- [x] **ReviewsWorker** ✅ (implemented earlier)
   - [x] Reviews listing, stats, filtering
   - [x] Response management
 - [x] **BetaGroupsWorker** ✅
   - [x] Beta groups CRUD (`beta_groups_list`, `beta_groups_create`, `beta_groups_update`, `beta_groups_delete`)
   - [x] Testers management (`beta_groups_add_testers`, `beta_groups_remove_testers`)
 
-### Фаза 3: Монетизация ✅ ЗАВЕРШЕНА
+### Phase 3: Monetization ✅ COMPLETED
 - [x] **InAppPurchasesWorker** ✅
   - [x] IAP CRUD (`iap_list`, `iap_get`, `iap_create`, `iap_update`, `iap_delete`)
   - [x] IAP Localizations (`iap_list_localizations`)
@@ -183,7 +183,7 @@ Core Services
   - [ ] Price schedules
   - [ ] Territory availability
 
-### Фаза 4: Аналитика и события (1-2 недели)
+### Phase 4: Analytics and Events (1-2 weeks)
 - [ ] ReportingWorker
   - [ ] Sales reports
   - [ ] Finance reports
@@ -193,17 +193,17 @@ Core Services
   - [ ] Delivery management
   - [ ] Retry logic
 
-### Фаза 5: Дополнительные функции (по требованию)
+### Phase 5: Additional Features (on demand)
 - [ ] UsersAccessWorker
 - [ ] XcodeCloudWorker
 - [ ] GameCenterWorker
 - [ ] AlternativeDistributionWorker
 
-## Практические сценарии автоматизации
+## Practical Automation Scenarios
 
-### Приоритет 1: One-click release
+### Priority 1: One-click release
 ```swift
-// Найти билд → создать версию → прикрепить → submit → release
+// Find build → create version → attach → submit → release
 let build = await buildWorker.findBuild(number: "1.2.3")
 let version = await lifecycleWorker.createVersion(app: appId, version: "1.2.0")
 await lifecycleWorker.attachBuild(version: version, build: build)
@@ -211,84 +211,84 @@ await lifecycleWorker.submitForReview(version: version)
 await lifecycleWorker.release(version: version, type: .automatic)
 ```
 
-### Приоритет 2: TestFlight automation
+### Priority 2: TestFlight automation
 ```swift
-// Создать группу → добавить тестеров → назначить билд
+// Create group → add testers → assign build
 let group = await testFlightWorker.createGroup(name: "External Beta")
 await testFlightWorker.addTesters(group: group, emails: csvEmails)
 await testFlightWorker.assignBuild(group: group, build: latestBuild)
 ```
 
-### Приоритет 3: Provisioning as code
+### Priority 3: Provisioning as code
 ```swift
-// Синхронизация из конфига
+// Sync from config
 let config = ProvisioningConfig.load("provisioning.yml")
 await provisioningWorker.sync(config: config)
-// Авто-регенерация истекших
+// Auto-regenerate expired
 await provisioningWorker.regenerateExpired()
 ```
 
-### Приоритет 4: Review management
+### Priority 4: Review management
 ```swift
-// Авто-ответы по правилам
+// Auto-respond based on rules
 let rules = ReviewRules.load("review-rules.yml")
 await reviewsWorker.processNewReviews(rules: rules)
-// Алерты при падении рейтинга
+// Alerts when rating drops
 await reviewsWorker.monitorRating(threshold: 4.0)
 ```
 
-## Технические принципы
+## Technical Principles
 
 ### Swift 6 & Concurrency
-- Все воркеры - actors с изоляцией
-- Sendable для всех публичных типов
-- TaskGroup для параллельных операций
-- AsyncThrowingStream для пагинации
+- All workers are actors with isolation
+- Sendable for all public types
+- TaskGroup for parallel operations
+- AsyncThrowingStream for pagination
 
-### Безопасность
-- Минимальные права для API ключей
-- Per-tool permissions в MCP
-- Секреты через environment/Keychain
-- Аудит лог для критических операций
-- Dry-run режим для опасных операций
+### Security
+- Minimal permissions for API keys
+- Per-tool permissions in MCP
+- Secrets via environment/Keychain
+- Audit log for critical operations
+- Dry-run mode for dangerous operations
 
-### Производительность
+### Performance
 - Rate limiting per account
-- Кэширование с ETag
-- Field-sparse запросы
-- Include для минимизации запросов
-- Batch операции где возможно
+- Caching with ETag
+- Field-sparse requests
+- Include for minimizing requests
+- Batch operations where possible
 
-### Качество
-- Контрактные тесты с фикстурами
-- Интеграционные тесты с песочницей
+### Quality
+- Contract tests with fixtures
+- Integration tests with sandbox
 - Fault injection (429/5xx/timeout)
 - Structured logging
-- Метрики и алерты
+- Metrics and alerts
 
-## Метрики успеха
+## Success Metrics
 
-### Технические
-- Покрытие тестами > 80%
-- Время ответа < 500ms (p95)
-- Успешность операций > 99.5%
-- Zero критических багов в проде
+### Technical
+- Test coverage > 80%
+- Response time < 500ms (p95)
+- Operation success rate > 99.5%
+- Zero critical bugs in production
 
-### Бизнес
-- Автоматизация 90% релизного процесса
-- Сокращение времени релиза на 70%
-- Экономия 20+ часов в неделю на рутине
-- Поддержка 10+ команд одновременно
+### Business
+- Automate 90% of the release process
+- Reduce release time by 70%
+- Save 20+ hours per week on routine tasks
+- Support 10+ teams simultaneously
 
-## Следующие шаги
+## Next Steps
 
-1. **Немедленно**: Начать с Фазы 0 (платформа)
-2. **Неделя 1-2**: Реализовать базовый релизный контур
-3. **Неделя 3-4**: Добавить TestFlight автоматизацию
-4. **Месяц 2**: CI/CD provisioning и reviews
-5. **Месяц 3**: Монетизация и аналитика
+1. **Immediately**: Start with Phase 0 (platform)
+2. **Week 1-2**: Implement the basic release pipeline
+3. **Week 3-4**: Add TestFlight automation
+4. **Month 2**: CI/CD provisioning and reviews
+5. **Month 3**: Monetization and analytics
 
-## Контакты и ресурсы
+## Contacts and Resources
 
 - [App Store Connect API Documentation](https://developer.apple.com/documentation/appstoreconnectapi)
 - [JSON:API Specification](https://jsonapi.org)

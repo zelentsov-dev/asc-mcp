@@ -7,17 +7,28 @@
 </p>
 
 <p align="center">
-  <a href="https://swift.org"><img src="https://img.shields.io/badge/Swift-6.1+-F05138.svg?style=flat&logo=swift&logoColor=white" alt="Swift 6.1+"></a>
+  <a href="https://swift.org"><img src="https://img.shields.io/badge/Swift-6.2+-F05138.svg?style=flat&logo=swift&logoColor=white" alt="Swift 6.2+"></a>
   <a href="https://developer.apple.com/macos/"><img src="https://img.shields.io/badge/macOS-14.0+-000000.svg?style=flat&logo=apple&logoColor=white" alt="macOS 14.0+"></a>
   <a href="https://modelcontextprotocol.io"><img src="https://img.shields.io/badge/MCP-compatible-4A90D9.svg?style=flat" alt="MCP Compatible"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-yellow.svg?style=flat" alt="MIT License"></a>
+</p>
+
+<p align="center">
+  <strong>Works with:</strong><br/>
+  <a href="https://claude.ai/code"><img src="https://img.shields.io/badge/Claude_Code-black?style=flat&logo=anthropic&logoColor=white" alt="Claude Code"></a>
+  <a href="https://claude.ai/download"><img src="https://img.shields.io/badge/Claude_Desktop-black?style=flat&logo=anthropic&logoColor=white" alt="Claude Desktop"></a>
+  <a href="https://code.visualstudio.com"><img src="https://img.shields.io/badge/VS_Code-007ACC?style=flat&logo=visualstudiocode&logoColor=white" alt="VS Code"></a>
+  <a href="https://cursor.com"><img src="https://img.shields.io/badge/Cursor-000000?style=flat&logo=cursor&logoColor=white" alt="Cursor"></a>
+  <a href="https://windsurf.com"><img src="https://img.shields.io/badge/Windsurf-0066FF?style=flat" alt="Windsurf"></a>
+  <a href="https://github.com/openai/codex"><img src="https://img.shields.io/badge/Codex_CLI-412991?style=flat&logo=openai&logoColor=white" alt="Codex CLI"></a>
+  <a href="https://ai.google.dev"><img src="https://img.shields.io/badge/Gemini_CLI-4285F4?style=flat&logo=google&logoColor=white" alt="Gemini CLI"></a>
 </p>
 
 ---
 
 ## Overview
 
-**asc-mcp** is a Swift-based MCP server that bridges [Claude](https://claude.ai) (or any MCP-compatible host) with the [App Store Connect API](https://developer.apple.com/documentation/appstoreconnectapi). It exposes **~186 tools** across 25 workers, enabling you to automate your entire iOS/macOS release workflow through natural language.
+**asc-mcp** is a Swift-based MCP server that bridges [Claude](https://claude.ai) (or any MCP-compatible host) with the [App Store Connect API](https://developer.apple.com/documentation/appstoreconnectapi). It exposes **208 tools** across 25 workers, enabling you to automate your entire iOS/macOS release workflow through natural language.
 
 ### Key capabilities
 
@@ -38,7 +49,7 @@
 ```bash
 # 1. Install via Mint
 brew install mint
-mint install zelentsov-dev/asc-mcp@develop
+mint install zelentsov-dev/asc-mcp@1.2.0
 
 # 2. Add to Claude Code with env vars (simplest setup)
 claude mcp add asc-mcp \
@@ -55,7 +66,7 @@ Or use a JSON config file — see [Configuration](#configuration) below.
 | Requirement | Version |
 |-------------|---------|
 | macOS | 14.0+ (Sonoma) |
-| Swift | 6.1+ |
+| Swift | 6.2+ |
 | Xcode | 16.0+ (for building) |
 | App Store Connect API Key | [Create one here](https://appstoreconnect.apple.com/access/integrations/api) |
 
@@ -70,7 +81,7 @@ Or use a JSON config file — see [Configuration](#configuration) below.
 brew install mint
 
 # Install asc-mcp from GitHub
-mint install zelentsov-dev/asc-mcp@develop
+mint install zelentsov-dev/asc-mcp@1.2.0
 
 # Register in Claude Code
 claude mcp add asc-mcp -- ~/.mint/bin/asc-mcp
@@ -81,13 +92,13 @@ To install a specific branch or tag:
 ```bash
 mint install zelentsov-dev/asc-mcp@main      # main branch
 mint install zelentsov-dev/asc-mcp@develop    # develop branch
-mint install zelentsov-dev/asc-mcp@v1.0.0     # specific tag
+mint install zelentsov-dev/asc-mcp@1.2.0      # specific tag
 ```
 
 To update to the latest version:
 
 ```bash
-mint install zelentsov-dev/asc-mcp@develop --force
+mint install zelentsov-dev/asc-mcp@1.2.0 --force
 ```
 
 ### Option B: Build from Source
@@ -350,7 +361,7 @@ Add to `~/.codeium/windsurf/mcp_config.json`:
 
 ### Worker Filtering
 
-The server exposes **~186 tools** across 25 workers. Some MCP clients impose a tool limit (e.g., Windsurf caps at 100). Use `--workers` to enable only the workers you need:
+The server exposes **208 tools** across 25 workers. Some MCP clients impose a tool limit (e.g., Windsurf caps at 100). Use `--workers` to enable only the workers you need:
 
 ```bash
 # Only load apps, builds, and version lifecycle tools
@@ -375,7 +386,7 @@ When `builds` is enabled, it automatically includes `build_processing` and `buil
 | `builds` | `builds_` | 4 | Build management |
 | `build_processing` | `builds_*_processing_` | 4 | Build states, encryption |
 | `build_beta` | `builds_*_beta_` | 8 | TestFlight localizations, notifications |
-| `versions` | `app_versions_` | 12 | Version lifecycle, submit, release |
+| `versions` | `app_versions_` | 13 | Version lifecycle, submit, release |
 | `reviews` | `reviews_` | 7 | Customer reviews and responses |
 | `beta_groups` | `beta_groups_` | 9 | TestFlight groups |
 | `beta_testers` | `beta_testers_` | 6 | Tester management |
@@ -393,7 +404,7 @@ When `builds` is enabled, it automatically includes `build_processing` and `buil
 | `custom_pages` | `custom_pages_` | 10 | Custom product pages |
 | `ppo` | `ppo_` | 9 | Product page optimization (A/B tests) |
 | `promoted` | `promoted_` | 6 | Promoted in-app purchases |
-| `metrics` | `metrics_` | 5 | Performance metrics, diagnostics |
+| `metrics` | `metrics_` | 4 | Performance metrics, diagnostics |
 
 ### Token Cost
 
@@ -401,20 +412,20 @@ When connected to an LLM client, tool definitions consume context tokens. Here's
 
 | Configuration | Tools | ~Tokens |
 |---|---:|---:|
-| All workers (default) | ~186 | **~22,000** |
+| All workers (default) | 208 | **~24,000** |
 | Release workflow: `apps,builds,versions,reviews` | ~40 | ~5,500 |
 | Monetization: `apps,iap,subscriptions,pricing` | ~47 | ~6,000 |
 | TestFlight: `apps,builds,beta_groups,beta_testers` | ~34 | ~4,500 |
 | Marketing: `apps,screenshots,custom_pages,ppo,promoted` | ~46 | ~5,800 |
 | `--workers apps` | 16 | ~1,850 |
 
-**Heaviest workers:** Provisioning (17 tools), InAppPurchases (17 tools), Subscriptions (15 tools), AppLifecycle (12 tools), Screenshots (12 tools).
+**Heaviest workers:** Provisioning (17 tools), InAppPurchases (17 tools), Subscriptions (15 tools), AppLifecycle (13 tools), Screenshots (12 tools).
 
 For Claude (200K context) ~22K tokens is ~5–7% — negligible. For clients with smaller context windows, use `--workers` to reduce the footprint.
 
 ## Available Tools
 
-**~186 tools** organized across 25 workers (use `--workers` to filter — see [Worker Filtering](#worker-filtering)):
+**208 tools** organized across 25 workers (use `--workers` to filter — see [Worker Filtering](#worker-filtering)):
 
 <details>
 <summary><strong>Company Management</strong> — 3 tools</summary>
@@ -527,6 +538,7 @@ For Claude (200K context) ~22K tokens is ~5–7% — negligible. For clients wit
 | `app_versions_cancel_review` | Cancel ongoing review |
 | `app_versions_release` | Release approved version |
 | `app_versions_create_phased_release` | Create gradual rollout |
+| `app_versions_get_phased_release` | Get phased release info and ID |
 | `app_versions_update_phased_release` | Pause/resume/complete rollout |
 | `app_versions_set_review_details` | Set reviewer contact info |
 | `app_versions_update_age_rating` | Configure age rating declaration |
@@ -719,13 +731,12 @@ For Claude (200K context) ~22K tokens is ~5–7% — negligible. For clients wit
 </details>
 
 <details>
-<summary><strong>Performance Metrics</strong> — 5 tools</summary>
+<summary><strong>Performance Metrics</strong> — 4 tools</summary>
 
 | Tool | Description |
 |------|-------------|
 | `metrics_app_perf` | Get app performance/power metrics |
 | `metrics_build_perf` | Get build performance metrics |
-| `metrics_list_diagnostics` | List diagnostic signatures for app |
 | `metrics_build_diagnostics` | List diagnostics for a build |
 | `metrics_get_diagnostic_logs` | Get diagnostic logs |
 

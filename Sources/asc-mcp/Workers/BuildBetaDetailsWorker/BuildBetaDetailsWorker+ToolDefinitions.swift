@@ -65,7 +65,7 @@ extension BuildBetaDetailsWorker {
                     ]),
                     "locale": .object([
                         "type": .string("string"),
-                        "description": .string("Locale code (e.g., en-US, ru-RU)")
+                        "description": .string("Locale code (e.g. en-US, ru-RU, de-DE, ja, zh-Hans)")
                     ]),
                     "whats_new": .object([
                         "type": .string("string"),

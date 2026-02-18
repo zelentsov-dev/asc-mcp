@@ -151,6 +151,7 @@ public struct UpdateAppEventRequest: Codable, Sendable {
         public let deepLink: String?
         public let purchaseRequirement: String?
         public let purpose: String?
+        public let territorySchedules: [TerritorySchedule]?
     }
 }
 

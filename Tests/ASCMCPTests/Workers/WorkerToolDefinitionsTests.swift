@@ -71,14 +71,14 @@ struct WorkerToolDefinitionsTests {
         #expect(names.contains("builds_list_beta_localizations"))
     }
 
-    // MARK: - AppLifecycleWorker (12 tools)
+    // MARK: - AppLifecycleWorker (13 tools)
 
-    @Test("AppLifecycleWorker returns 12 tools with correct names")
+    @Test("AppLifecycleWorker returns 13 tools with correct names")
     func appLifecycleWorkerTools() async throws {
         let client = try await TestFactory.makeHTTPClient()
         let worker = AppLifecycleWorker(httpClient: client)
         let tools = await worker.getTools()
-        #expect(tools.count == 12)
+        #expect(tools.count == 13)
         let names = Set(tools.map(\.name))
         #expect(names.contains("app_versions_create"))
         #expect(names.contains("app_versions_list"))
@@ -87,6 +87,7 @@ struct WorkerToolDefinitionsTests {
         #expect(names.contains("app_versions_attach_build"))
         #expect(names.contains("app_versions_submit_for_review"))
         #expect(names.contains("app_versions_cancel_review"))
+        #expect(names.contains("app_versions_get_phased_release"))
         #expect(names.contains("app_versions_release"))
     }
 
@@ -443,11 +444,10 @@ struct WorkerToolDefinitionsTests {
         let client = try await TestFactory.makeHTTPClient()
         let worker = MetricsWorker(httpClient: client)
         let tools = await worker.getTools()
-        #expect(tools.count == 5)
+        #expect(tools.count == 4)
         let names = Set(tools.map(\.name))
         #expect(names.contains("metrics_app_perf"))
         #expect(names.contains("metrics_build_perf"))
-        #expect(names.contains("metrics_list_diagnostics"))
         #expect(names.contains("metrics_build_diagnostics"))
         #expect(names.contains("metrics_get_diagnostic_logs"))
     }

@@ -233,10 +233,27 @@ extension AppLifecycleWorker {
         )
     }
     
+    func getPhasedReleaseTool() -> Tool {
+        Tool(
+            name: "app_versions_get_phased_release",
+            description: "Get phased release info for an app version. Returns phased_release_id needed for app_versions_update_phased_release.",
+            inputSchema: .object([
+                "type": .string("object"),
+                "properties": .object([
+                    "version_id": .object([
+                        "type": .string("string"),
+                        "description": .string("Version ID in App Store Connect")
+                    ])
+                ]),
+                "required": .array([.string("version_id")])
+            ])
+        )
+    }
+
     func updatePhasedReleaseTool() -> Tool {
         Tool(
             name: "app_versions_update_phased_release",
-            description: "Update phased release state (pause/resume/complete)",
+            description: "Update phased release state (pause/resume/complete). Get phased_release_id from app_versions_get_phased_release.",
             inputSchema: .object([
                 "type": .string("object"),
                 "properties": .object([

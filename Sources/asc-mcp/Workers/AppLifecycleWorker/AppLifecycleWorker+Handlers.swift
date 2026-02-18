@@ -80,7 +80,7 @@ extension AppLifecycleWorker {
                 if let states = arguments["states"]?.arrayValue {
                     let stateStrings = states.compactMap { $0.stringValue }
                     if !stateStrings.isEmpty {
-                        queryParams["filter[appStoreVersionState]"] = stateStrings.joined(separator: ",")
+                        queryParams["filter[appVersionState]"] = stateStrings.joined(separator: ",")
                     }
                 }
 
@@ -204,12 +204,19 @@ extension AppLifecycleWorker {
             let response = try await httpClient.patch(
                 "/v1/appStoreVersions/\(versionId)",
                 body: request,
-                as: PassthroughAPIResponse.self
+                as: ASCAppStoreVersionResponse.self
             )
 
+            let v = response.data
             let result: [String: Any] = [
                 "success": true,
-                "version": response.data.asAny,
+                "version": [
+                    "id": v.id,
+                    "version_string": v.attributes?.versionString.jsonSafe ?? NSNull(),
+                    "state": v.attributes?.appStoreState.jsonSafe ?? NSNull(),
+                    "release_type": v.attributes?.releaseType.jsonSafe ?? NSNull(),
+                    "created_date": v.attributes?.createdDate.jsonSafe ?? NSNull()
+                ] as [String: Any],
                 "message": "Version updated successfully"
             ]
 
@@ -404,6 +411,40 @@ extension AppLifecycleWorker {
         } catch {
             return CallTool.Result(
                 content: [.text("Error: Failed to create phased release: \(error.localizedDescription)")],
+                isError: true
+            )
+        }
+    }
+
+    /// Gets phased release info for an app version
+    /// - Returns: JSON with phased release details including ID, state, startDate, currentDayNumber, totalPauseDuration
+    /// - Throws: CallTool.Result with error if version_id missing or API call fails
+    func getPhasedRelease(_ params: CallTool.Parameters) async throws -> CallTool.Result {
+        guard let arguments = params.arguments,
+              let versionId = arguments["version_id"]?.stringValue else {
+            return CallTool.Result(
+                content: [.text("Error: Required parameter 'version_id' is missing")],
+                isError: true
+            )
+        }
+
+        do {
+            let response = try await httpClient.get(
+                "/v1/appStoreVersions/\(versionId)/appStoreVersionPhasedRelease",
+                parameters: [:],
+                as: PassthroughAPIResponse.self
+            )
+
+            let result: [String: Any] = [
+                "success": true,
+                "phased_release": response.data.asAny
+            ]
+
+            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+
+        } catch {
+            return CallTool.Result(
+                content: [.text("Error: Failed to get phased release: \(error.localizedDescription)")],
                 isError: true
             )
         }

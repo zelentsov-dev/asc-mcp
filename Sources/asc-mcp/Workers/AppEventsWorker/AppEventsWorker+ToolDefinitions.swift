@@ -94,7 +94,7 @@ extension AppEventsWorker {
     func updateAppEventTool() -> Tool {
         return Tool(
             name: "app_events_update",
-            description: "Update an existing in-app event",
+            description: "Update an existing in-app event including territory schedules",
             inputSchema: .object([
                 "type": .string("object"),
                 "properties": .object([
@@ -121,6 +121,10 @@ extension AppEventsWorker {
                     "purpose": .object([
                         "type": .string("string"),
                         "description": .string("Event purpose: APPROPRIATE_FOR_ALL_USERS, ATTRACT_NEW_USERS, KEEP_ACTIVE_USERS_INFORMED, BRING_BACK_LAPSED_USERS")
+                    ]),
+                    "territory_schedules": .object([
+                        "type": .string("string"),
+                        "description": .string("JSON array of territory schedules: [{\"territories\":[\"USA\"],\"publishStart\":\"2025-01-01T00:00:00Z\",\"eventStart\":\"2025-01-01T00:00:00Z\",\"eventEnd\":\"2025-01-07T00:00:00Z\"}]")
                     ])
                 ]),
                 "required": .array([.string("event_id")])
@@ -176,7 +180,7 @@ extension AppEventsWorker {
                     ]),
                     "locale": .object([
                         "type": .string("string"),
-                        "description": .string("Locale code (e.g., en-US, ru-RU, de-DE)")
+                        "description": .string("Locale code (e.g. en-US, ru-RU, de-DE, ja, zh-Hans)")
                     ]),
                     "name": .object([
                         "type": .string("string"),

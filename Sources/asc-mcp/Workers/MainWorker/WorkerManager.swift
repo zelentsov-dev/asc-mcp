@@ -142,7 +142,7 @@ public actor WorkerManager {
     
     /// Register all workers in MCP server
     public func registerWorkers(in server: Server) async {
-        // Регистрируем единый обработчик для списка инструментов
+        // Register unified handler for tool listing
         await server.withMethodHandler(ListTools.self) { _ in
             // Company and auth are always included (core functionality)
             async let companyTools = self.getCompanyTools()
@@ -224,10 +224,10 @@ public actor WorkerManager {
             return ListTools.Result(tools: allTools)
         }
         
-        // Обработчик для всех вызовов инструментов
+        // Handler for all tool calls
         await server.withMethodHandler(CallTool.self) { params in
             do {
-                // Специальная обработка для company_switch
+                // Special handling for company_switch
                 if params.name == "company_switch" {
                     let result = try await self.dependencies.companiesWorker.handleTool(params)
                     // Reinitialize all workers with the new company
@@ -235,7 +235,7 @@ public actor WorkerManager {
                     return result
                 }
 
-                // Передаем вызовы соответствующим воркерам
+                // Route calls to corresponding workers
                 // company_ and auth_ are always enabled
                 if params.name.hasPrefix("company_") {
                     return try await self.dependencies.companiesWorker.handleTool(params)
@@ -371,7 +371,7 @@ public actor WorkerManager {
                     isError: true
                 )
             } catch {
-                // Ловим все ошибки и возвращаем их как Result
+                // Catch all errors and return them as Result
                 return CallTool.Result(
                     content: [.text("Error: \(error.localizedDescription)")],
                     isError: true

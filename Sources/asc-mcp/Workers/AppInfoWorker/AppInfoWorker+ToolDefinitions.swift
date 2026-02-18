@@ -181,7 +181,7 @@ extension AppInfoWorker {
                     ]),
                     "locale": .object([
                         "type": .string("string"),
-                        "description": .string("Locale code (e.g., en-US, ru, de-DE)")
+                        "description": .string("Locale code (e.g. en-US, ru-RU, de-DE, ja, zh-Hans)")
                     ]),
                     "name": .object([
                         "type": .string("string"),
@@ -204,7 +204,7 @@ extension AppInfoWorker {
                         "description": .string("Privacy policy text (for China mainland)")
                     ])
                 ]),
-                "required": .array([.string("info_id"), .string("locale")])
+                "required": .array([.string("info_id"), .string("locale"), .string("name")])
             ])
         )
     }

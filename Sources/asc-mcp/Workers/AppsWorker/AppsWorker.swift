@@ -1,7 +1,7 @@
 import Foundation
 import MCP
 
-/// AppsWorker отвечает за управление приложениями в App Store Connect
+/// Manages apps in App Store Connect
 public final class AppsWorker: Sendable {
     let httpClient: HTTPClient
     
