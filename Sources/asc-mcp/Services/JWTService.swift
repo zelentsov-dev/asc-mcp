@@ -1,7 +1,7 @@
 import Foundation
 import CryptoKit
 
-/// Информация о состоянии кэша токена
+/// Token cache status information
 public struct TokenCacheInfo: Sendable {
     public let hasCachedToken: Bool
     public let refreshLeewaySeconds: Int
@@ -10,24 +10,24 @@ public struct TokenCacheInfo: Sendable {
     public let expirationDate: String?
 }
 
-/// Декодированный JWT payload
+/// Decoded JWT payload
 private struct DecodedJWTPayload: Decodable {
     let exp: Int  // Unix timestamp
     let iat: Int?
     let iss: String?
 }
 
-/// Сервис для работы с JWT токенами App Store Connect API
+/// JWT token service for App Store Connect API
 public actor JWTService {
     private let company: Company
     private let privateKey: P256.Signing.PrivateKey
-    
-    /// Кешированный токен
+
+    /// Cached token
     private var cachedToken: String?
-    
-    /// Время упреждающего обновления токена (секунды до истечения)
-    private let tokenRefreshLeeway: TimeInterval = 90 // 1.5 минуты
-    
+
+    /// Token refresh leeway (seconds before expiration)
+    private let tokenRefreshLeeway: TimeInterval = 90 // 1.5 minutes
+
     public init(company: Company) throws {
         self.company = company
 
@@ -63,23 +63,23 @@ public actor JWTService {
             throw ASCError.configuration("Failed to load private key for company '\(company.name)': \(error.localizedDescription)")
         }
     }
-    
-    /// Декодирует JWT токен и извлекает время истечения
+
+    /// Decodes JWT token and extracts expiration time
     private func decodeTokenExpiration(_ token: String) -> Date? {
         let parts = token.split(separator: ".")
         guard parts.count == 3 else { return nil }
-        
+
         let payloadBase64 = String(parts[1])
-        // Добавляем padding если нужно
+        // Add padding if needed
         let padded = payloadBase64.padding(toLength: ((payloadBase64.count + 3) / 4) * 4,
                                            withPad: "=",
                                            startingAt: 0)
-        
+
         guard let payloadData = Data(base64Encoded: padded.replacingOccurrences(of: "-", with: "+")
                                                           .replacingOccurrences(of: "_", with: "/")) else {
             return nil
         }
-        
+
         do {
             let payload = try JSONDecoder().decode(DecodedJWTPayload.self, from: payloadData)
             return Date(timeIntervalSince1970: TimeInterval(payload.exp))
@@ -90,18 +90,18 @@ public actor JWTService {
             return nil
         }
     }
-    
-    /// Получить действующий JWT токен (с кешированием)
+
+    /// Get a valid JWT token (with caching)
     public func getToken() async throws -> String {
         let now = Date()
-        
-        // Проверяем, есть ли действующий кешированный токен
+
+        // Check if there is a valid cached token
         if let token = cachedToken,
            let expirationDate = decodeTokenExpiration(token) {
             let timeUntilExpiry = expirationDate.timeIntervalSince(now)
-            
+
             if timeUntilExpiry > tokenRefreshLeeway {
-                // Токен еще действителен
+                // Token is still valid
                 #if DEBUG
                 print("🔐 JWT: Using cached token (expires in \(Int(timeUntilExpiry))s)")
                 #endif
@@ -112,33 +112,33 @@ public actor JWTService {
                 #endif
             }
         }
-        
-        // Генерируем новый токен
+
+        // Generate new token
         let token = try generateToken()
         self.cachedToken = token
-        
+
         #if DEBUG
         if let exp = decodeTokenExpiration(token) {
             let duration = exp.timeIntervalSince(now)
             print("🔐 JWT: Generated new token (valid for \(Int(duration))s)")
         }
         #endif
-        
+
         return token
     }
-    
-    /// Генерирует новый JWT токен
+
+    /// Generates a new JWT token
     private func generateToken() throws -> String {
         let now = Date()
-        let expiration = now.addingTimeInterval(20 * 60) // 20 минут
-        
+        let expiration = now.addingTimeInterval(20 * 60) // 20 minutes
+
         // Header
         let header = JWTHeader(
             alg: "ES256",
             kid: company.keyID,
             typ: "JWT"
         )
-        
+
         // Payload
         let payload = JWTPayload(
             iss: company.issuerID,
@@ -146,48 +146,48 @@ public actor JWTService {
             exp: Int(expiration.timeIntervalSince1970),
             aud: "appstoreconnect-v1"
         )
-        
-        // Кодируем header и payload в Base64URL
+
+        // Encode header and payload as Base64URL
         let headerData = try JSONEncoder().encode(header)
         let payloadData = try JSONEncoder().encode(payload)
-        
+
         let headerBase64 = headerData.base64URLEncodedString()
         let payloadBase64 = payloadData.base64URLEncodedString()
-        
-        // Создаем строку для подписи
+
+        // Create signing input string
         let signingInput = "\(headerBase64).\(payloadBase64)"
-        
-        // Подписываем
+
+        // Sign
         guard let signingData = signingInput.data(using: .utf8) else {
             throw ASCError.authentication("Failed to encode JWT signing input as UTF-8")
         }
         let signature = try privateKey.signature(for: signingData)
         let signatureBase64 = signature.rawRepresentation.base64URLEncodedString()
-        
+
         return "\(signingInput).\(signatureBase64)"
     }
-    
-    /// Валидация токена (проверка срока действия)
+
+    /// Validate token (check expiration)
     public func validateToken(_ token: String) -> Bool {
         guard let expirationDate = decodeTokenExpiration(token) else { return false }
-        // Считаем токен невалидным если до истечения осталось меньше leeway времени
+        // Token is invalid if less than leeway time until expiration
         return expirationDate.timeIntervalSinceNow > tokenRefreshLeeway
     }
-    
-    /// Принудительное обновление токена
+
+    /// Force token refresh
     public func refreshToken() async throws -> String {
         self.cachedToken = nil
         return try await getToken()
     }
-    
-    /// Получить информацию о состоянии кэша токена
+
+    /// Get token cache status information
     public func getCacheInfo() -> TokenCacheInfo {
         let now = Date()
-        
+
         var expiresInSeconds: Int? = nil
         var isValid: Bool? = nil
         var expirationDateString: String? = nil
-        
+
         if let token = cachedToken,
            let expirationDate = decodeTokenExpiration(token) {
             let timeUntilExpiry = expirationDate.timeIntervalSince(now)
@@ -195,7 +195,7 @@ public actor JWTService {
             isValid = timeUntilExpiry > tokenRefreshLeeway
             expirationDateString = ISO8601DateFormatter().string(from: expirationDate)
         }
-        
+
         return TokenCacheInfo(
             hasCachedToken: cachedToken != nil,
             refreshLeewaySeconds: Int(tokenRefreshLeeway),
@@ -224,7 +224,7 @@ private struct JWTPayload: Codable {
 // MARK: - Base64URL Extension
 
 private extension Data {
-    /// Base64URL кодирование (без padding)
+    /// Base64URL encoding (without padding)
     func base64URLEncodedString() -> String {
         return self.base64EncodedString()
             .replacingOccurrences(of: "+", with: "-")

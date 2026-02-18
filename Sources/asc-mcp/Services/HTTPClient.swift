@@ -1,71 +1,71 @@
 import Foundation
 import os
 
-/// HTTP клиент для App Store Connect API с использованием URLSession
+/// HTTP client for App Store Connect API using URLSession
 public actor HTTPClient {
     private let urlSession: URLSession
     private let jwtService: JWTService
     private let baseURL: String
     private let logger = Logger(subsystem: "com.asc-mcp", category: "HTTPClient")
-    
+
     // Retry configuration
     private let maxRetries = 3
     private let retryableStatusCodes = Set([408, 429, 500, 502, 503, 504])
-    
+
     public init(jwtService: JWTService, baseURL: String) async {
         self.jwtService = jwtService
         self.baseURL = baseURL
-        
-        // Настраиваем URLSession для Swift 6
+
+        // Configure URLSession for Swift 6
         let config = URLSessionConfiguration.default
         config.timeoutIntervalForRequest = 30
         config.timeoutIntervalForResource = 60
         config.waitsForConnectivity = true
         self.urlSession = URLSession(configuration: config)
     }
-    
+
     deinit {
-        // Правильно завершаем URLSession чтобы избежать утечек
+        // Properly invalidate URLSession to avoid leaks
         urlSession.invalidateAndCancel()
     }
-    
-    /// Выполняет GET запрос к App Store Connect API
+
+    /// Performs GET request to App Store Connect API
     public func get(_ endpoint: String, parameters: [String: String] = [:]) async throws -> Data {
         return try await request(.GET, endpoint: endpoint, parameters: parameters)
     }
-    
-    /// Выполняет POST запрос к App Store Connect API
+
+    /// Performs POST request to App Store Connect API
     public func post(_ endpoint: String, body: Data? = nil) async throws -> Data {
         return try await request(.POST, endpoint: endpoint, body: body)
     }
-    
-    /// Выполняет PATCH запрос к App Store Connect API
+
+    /// Performs PATCH request to App Store Connect API
     public func patch(_ endpoint: String, body: Data) async throws -> Data {
         return try await request(.PATCH, endpoint: endpoint, body: body)
     }
-    
-    /// Выполняет PUT запрос к App Store Connect API
+
+    /// Performs PUT request to App Store Connect API
     public func put(_ endpoint: String, body: Data) async throws -> Data {
         return try await request(.PUT, endpoint: endpoint, body: body)
     }
 
-    /// Выполняет DELETE запрос к App Store Connect API
+    /// Performs DELETE request to App Store Connect API
     public func delete(_ endpoint: String) async throws -> Data {
         return try await request(.DELETE, endpoint: endpoint)
     }
 
-    /// Выполняет DELETE запрос с телом (для relationship endpoints)
+    /// Performs DELETE request with body (for relationship endpoints)
     public func delete(_ endpoint: String, body: Data) async throws -> Data {
         return try await request(.DELETE, endpoint: endpoint, body: body)
     }
-    
+
     /// GET request with custom Accept header (for gzip reports like salesReports/financeReports)
     /// - Returns: Raw response data (may be gzip-compressed)
     public func getRaw(_ endpoint: String, parameters: [String: String] = [:], accept: String) async throws -> Data {
         return try await request(.GET, endpoint: endpoint, parameters: parameters, acceptHeader: accept)
     }
 
-    /// Базовый метод для выполнения HTTP запросов с retry логикой
+    /// Base method for HTTP requests with retry logic
     private func request(
         _ method: HTTPMethod,
         endpoint: String,
@@ -74,10 +74,10 @@ public actor HTTPClient {
         acceptHeader: String = "application/json"
     ) async throws -> Data {
 
-        // Безопасное формирование URL
+        // Safe URL construction
         guard var urlComponents = URLComponents(string: "\(baseURL)\(endpoint)") else {
             logger.error("Invalid URL components: \(self.baseURL)\(endpoint)")
-            throw ASCError.network("Неверный URL: \(baseURL)\(endpoint)")
+            throw ASCError.network("Invalid URL: \(baseURL)\(endpoint)")
         }
 
         if !parameters.isEmpty {
@@ -86,16 +86,16 @@ public actor HTTPClient {
 
         guard let url = urlComponents.url else {
             logger.error("Failed to create URL from components")
-            throw ASCError.network("Не удалось создать URL из компонентов")
+            throw ASCError.network("Failed to create URL from components")
         }
 
-        // Создаем URLRequest
+        // Create URLRequest
         var request = URLRequest(url: url)
         request.httpMethod = method.rawValue
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue(acceptHeader, forHTTPHeaderField: "Accept")
 
-        // Добавляем body если есть
+        // Add body if present
         if let body = body {
             request.httpBody = body
         }
@@ -111,27 +111,27 @@ public actor HTTPClient {
             request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
 
             do {
-                // Логируем запрос
+                // Log request
                 logger.debug("[\(method.rawValue)] \(url.absoluteString) - Attempt \(attempt + 1)/\(maxAttempts)")
 
                 let startTime = Date()
                 let (data, response) = try await urlSession.data(for: request)
                 let duration = Date().timeIntervalSince(startTime)
 
-                // Проверяем HTTP статус код
+                // Check HTTP status code
                 guard let httpResponse = response as? HTTPURLResponse else {
-                    throw ASCError.network("Неверный формат ответа")
+                    throw ASCError.network("Invalid response format")
                 }
 
                 logger.debug("Response: \(httpResponse.statusCode) in \(String(format: "%.2f", duration))s")
 
-                // Успешный ответ
+                // Successful response
                 if 200...299 ~= httpResponse.statusCode {
                     return data
                 }
 
-                // Обработка ошибок
-                let errorMessage = String(data: data, encoding: .utf8) ?? "Неизвестная ошибка"
+                // Error handling
+                let errorMessage = String(data: data, encoding: .utf8) ?? "Unknown error"
 
                 // Handle 401 Unauthorized: refresh token and retry
                 if httpResponse.statusCode == 401 && attempt < maxAttempts - 1 {
@@ -160,12 +160,12 @@ public actor HTTPClient {
                     }
                 }
 
-                // Финальная ошибка
+                // Final error
                 logger.error("HTTP error \(httpResponse.statusCode): \(errorMessage)")
                 throw ASCError.api(errorMessage, httpResponse.statusCode)
 
             } catch let error as ASCError {
-                // Пробрасываем ASCError дальше
+                // Propagate ASCError
                 throw error
             } catch {
                 // Network errors: only retry for idempotent methods
@@ -177,31 +177,31 @@ public actor HTTPClient {
                 }
 
                 logger.error("Network request failed: \(error.localizedDescription)")
-                throw ASCError.network("HTTP запрос не выполнен: \(error.localizedDescription)")
+                throw ASCError.network("HTTP request failed: \(error.localizedDescription)")
             }
         }
 
-        // Не должны сюда попасть, но для безопасности
-        throw ASCError.network("Превышено максимальное количество попыток")
+        // Should not reach here, but for safety
+        throw ASCError.network("Maximum retry attempts exceeded")
     }
-    
-    /// Вычисляет задержку перед повторной попыткой с экспоненциальным backoff
+
+    /// Calculates retry delay with exponential backoff
     private func calculateRetryDelay(attempt: Int, response: HTTPURLResponse?) -> Double {
-        // Проверяем заголовок Retry-After
+        // Check Retry-After header
         if let response = response,
            let retryAfterString = response.value(forHTTPHeaderField: "Retry-After"),
            let retryAfter = Double(retryAfterString) {
             return retryAfter
         }
-        
-        // Экспоненциальный backoff с jitter
+
+        // Exponential backoff with jitter
         let baseDelay = pow(2.0, Double(attempt))
         let jitter = Double.random(in: 0...1)
-        return min(baseDelay + jitter, 30) // Максимум 30 секунд
+        return min(baseDelay + jitter, 30) // Maximum 30 seconds
     }
 }
 
-/// HTTP методы
+/// HTTP methods
 private enum HTTPMethod: String {
     case GET = "GET"
     case POST = "POST"
@@ -213,42 +213,42 @@ private enum HTTPMethod: String {
 // MARK: - Convenience Methods
 
 extension HTTPClient {
-    /// Декодирует JSON ответ в указанный тип
+    /// Decodes JSON response into specified type
     public func get<T: Codable & Sendable>(_ endpoint: String, parameters: [String: String] = [:], as type: T.Type) async throws -> T {
         let data = try await get(endpoint, parameters: parameters)
-        
+
         do {
             return try JSONDecoder().decode(type, from: data)
         } catch {
-            throw ASCError.parsing("Не удалось декодировать \(type): \(error.localizedDescription)")
+            throw ASCError.parsing("Failed to decode \(type): \(error.localizedDescription)")
         }
     }
-    
-    /// POST запрос с кодированием JSON body
+
+    /// POST request with JSON body encoding
     public func post<T: Codable & Sendable, R: Codable & Sendable>(_ endpoint: String, body: T, as responseType: R.Type) async throws -> R {
         let bodyData: Data
         do {
             bodyData = try JSONEncoder().encode(body)
         } catch {
-            throw ASCError.parsing("Не удалось закодировать тело запроса: \(error.localizedDescription)")
+            throw ASCError.parsing("Failed to encode request body: \(error.localizedDescription)")
         }
-        
+
         let responseData = try await post(endpoint, body: bodyData)
-        
+
         do {
             return try JSONDecoder().decode(responseType, from: responseData)
         } catch {
-            throw ASCError.parsing("Не удалось декодировать \(responseType): \(error.localizedDescription)")
+            throw ASCError.parsing("Failed to decode \(responseType): \(error.localizedDescription)")
         }
     }
-    
-    /// PATCH запрос для обновления ресурсов
+
+    /// PATCH request for updating resources
     public func patch<T: Codable & Sendable, R: Codable & Sendable>(_ endpoint: String, body: T, as responseType: R.Type) async throws -> R {
         let bodyData: Data
         do {
             bodyData = try JSONEncoder().encode(body)
         } catch {
-            throw ASCError.parsing("Не удалось закодировать тело запроса: \(error.localizedDescription)")
+            throw ASCError.parsing("Failed to encode request body: \(error.localizedDescription)")
         }
 
         let responseData = try await request(.PATCH, endpoint: endpoint, body: bodyData)
@@ -256,7 +256,7 @@ extension HTTPClient {
         do {
             return try JSONDecoder().decode(responseType, from: responseData)
         } catch {
-            throw ASCError.parsing("Не удалось декодировать \(responseType): \(error.localizedDescription)")
+            throw ASCError.parsing("Failed to decode \(responseType): \(error.localizedDescription)")
         }
     }
 

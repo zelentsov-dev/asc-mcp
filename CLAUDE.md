@@ -180,15 +180,15 @@ Test infrastructure: `TestFactory` (`Tests/ASCMCPTests/Helpers/TestHelpers.swift
 
 ### Development Process
 1. **After making changes and building the project:**
-   - Always respond: "✅ Готово к перезагрузке MCP"
-   - Wait for user confirmation: "я перезагрузил" or similar
+   - Always respond: "Ready to reload MCP"
+   - Wait for user confirmation: "reloaded" or similar
    - Then proceed with testing via MCP commands
    - Fix any issues found during testing
 
 2. **After implementing features:**
    - Explain what each method returns
    - Describe practical use cases for the returned data
-   - Example: "Метод `builds_list` возвращает список билдов с их статусами и датами. Это нужно для выбора билда для TestFlight или отправки в App Store"
+   - Example: "The `builds_list` method returns a list of builds with their statuses and dates. This is useful for selecting a build for TestFlight or submitting to the App Store"
 
 ### Code Documentation Requirements
 - **MANDATORY**: Comment all public methods with:

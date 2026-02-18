@@ -1,30 +1,30 @@
 import Foundation
 import MCP
 
-/// Основная логика приложения
+/// Main application logic
 /// - Parameter enabledWorkers: Set of worker names to enable, nil = all workers
 public func runApplication(enabledWorkers: Set<String>? = nil) async throws {
-    print("🚀 Запуск App Store Connect MCP Server...", to: &standardError)
+    print("🚀 Starting App Store Connect MCP Server...", to: &standardError)
 
-    // 1. Создаем и загружаем компании
-    print("📋 Загрузка конфигурации компаний...", to: &standardError)
+    // 1. Create and load companies
+    print("📋 Loading company configuration...", to: &standardError)
     let companiesManager = try CompaniesManager()
     let companiesWorker = CompaniesWorker(manager: companiesManager)
-    
-    // Проверяем что компании загружены
+
+    // Verify companies are loaded
     let companies = await companiesWorker.manager.listCompanies()
     guard !companies.isEmpty else {
-        print("❌ Не найдено ни одной компании в конфигурации", to: &standardError)
-        print("Настройте env vars или companies.json с данными ваших компаний", to: &standardError)
+        print("❌ No companies found in configuration", to: &standardError)
+        print("Configure env vars or companies.json with your company data", to: &standardError)
         exit(1)
     }
-    
-    print("✅ Загружено компаний: \(companies.count)", to: &standardError)
+
+    print("✅ Companies loaded: \(companies.count)", to: &standardError)
     for company in companies {
         print("   • \(company.name) (ID: \(company.id))", to: &standardError)
     }
-    
-    // 2. Создаем MCP сервер
+
+    // 2. Create MCP server
     let server = Server(
         name: "app-store-connect-mcp",
         version: "2.0.0",
@@ -67,29 +67,28 @@ public func runApplication(enabledWorkers: Set<String>? = nil) async throws {
             tools: Server.Capabilities.Tools(listChanged: true)
         )
     )
-    
-    // 3. Создаем менеджер воркеров с загруженными компаниями используя фабричный метод
+
+    // 3. Create worker manager with loaded companies using factory method
     let workerManager = try await WorkerManager.createForProduction(
         companiesWorker: companiesWorker,
         enabledWorkers: enabledWorkers
     )
-    print("✅ Воркеры инициализированы", to: &standardError)
+    print("✅ Workers initialized", to: &standardError)
 
-    // 4. Регистрируем воркеры в сервере
+    // 4. Register workers in server
     await workerManager.registerWorkers(in: server)
-    print("✅ Воркеры зарегистрированы", to: &standardError)
-    
-    // 5. Запускаем сервер
+    print("✅ Workers registered", to: &standardError)
+
+    // 5. Start server
     let transport = StdioTransport()
-    print("🌐 MCP сервер запущен и готов к работе!", to: &standardError)
-    
+    print("🌐 MCP server started and ready!", to: &standardError)
+
     do {
         try await server.start(transport: transport)
         await server.waitUntilCompleted()
-        print("✅ MCP сервер завершил работу корректно", to: &standardError)
+        print("✅ MCP server finished successfully", to: &standardError)
     } catch {
-        print("⚠️ MCP сервер завершил работу с ошибкой: \(error.localizedDescription)", to: &standardError)
+        print("⚠️ MCP server finished with error: \(error.localizedDescription)", to: &standardError)
         throw error
     }
 }
-

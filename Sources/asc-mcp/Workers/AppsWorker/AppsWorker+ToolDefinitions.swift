@@ -7,29 +7,29 @@ extension AppsWorker {
     func listAppsTool() -> Tool {
         return Tool(
             name: "apps_list",
-            description: "Получает список всех приложений из App Store Connect",
+            description: "List all apps from App Store Connect",
             inputSchema: .object([
                 "type": .string("object"),
                 "properties": .object([
                     "limit": .object([
                         "type": .string("integer"),
-                        "description": .string("Максимальное количество приложений (по умолчанию 25)")
+                        "description": .string("Maximum number of apps (default 25)")
                     ]),
                     "sort": .object([
                         "type": .string("string"),
-                        "description": .string("Сортировка: name, -name, bundleId, -bundleId")
+                        "description": .string("Sort order: name, -name, bundleId, -bundleId")
                     ]),
                     "bundle_id": .object([
                         "type": .string("string"),
-                        "description": .string("Фильтр по Bundle ID")
+                        "description": .string("Filter by Bundle ID")
                     ]),
                     "name": .object([
                         "type": .string("string"),
-                        "description": .string("Фильтр по имени приложения")
+                        "description": .string("Filter by app name")
                     ]),
                     "next_url": .object([
                         "type": .string("string"),
-                        "description": .string("URL следующей страницы из предыдущего ответа (поле next_url)")
+                        "description": .string("Next page URL from previous response (next_url field)")
                     ])
                 ]),
                 "required": .array([])
@@ -40,17 +40,17 @@ extension AppsWorker {
     func getAppDetailsTool() -> Tool {
         return Tool(
             name: "apps_get_details",
-            description: "Получает детальную информацию о конкретном приложении",
+            description: "Get detailed information about a specific app",
             inputSchema: .object([
                 "type": .string("object"),
                 "properties": .object([
                     "app_id": .object([
                         "type": .string("string"),
-                        "description": .string("ID приложения в App Store Connect")
+                        "description": .string("App Store Connect app ID")
                     ]),
                     "include": .object([
                         "type": .string("string"),
-                        "description": .string("Дополнительные связанные данные для включения")
+                        "description": .string("Additional related data to include")
                     ])
                 ]),
                 "required": .array([.string("app_id")])
@@ -61,17 +61,17 @@ extension AppsWorker {
     func listVersionsTool() -> Tool {
         return Tool(
             name: "apps_list_versions",
-            description: "Получает список всех версий приложения с их ID и статусами",
+            description: "List all app versions with their IDs and states",
             inputSchema: .object([
                 "type": .string("object"),
                 "properties": .object([
                     "app_id": .object([
                         "type": .string("string"),
-                        "description": .string("ID приложения в App Store Connect")
+                        "description": .string("App Store Connect app ID")
                     ]),
                     "next_url": .object([
                         "type": .string("string"),
-                        "description": .string("URL следующей страницы из предыдущего ответа (поле next_url)")
+                        "description": .string("Next page URL from previous response (next_url field)")
                     ])
                 ]),
                 "required": .array([.string("app_id")])
@@ -82,13 +82,13 @@ extension AppsWorker {
     func searchAppsTool() -> Tool {
         return Tool(
             name: "apps_search",
-            description: "Поиск приложений по имени или Bundle ID",
+            description: "Search apps by name or Bundle ID",
             inputSchema: .object([
                 "type": .string("object"),
                 "properties": .object([
                     "query": .object([
                         "type": .string("string"),
-                        "description": .string("Поисковый запрос (имя приложения или Bundle ID)")
+                        "description": .string("Search query (app name or Bundle ID)")
                     ])
                 ]),
                 "required": .array([.string("query")])
@@ -100,35 +100,35 @@ extension AppsWorker {
         return Tool(
             name: "apps_get_metadata",
             description: """
-                Получает метаданные приложения (описание, whatsNew, keywords и др.) для версии и локализации.
+                Get app metadata (description, whatsNew, keywords, etc.) for a version and localization.
 
-                Поведение:
-                - Без locale: возвращает ВСЕ локали за один запрос
-                - Без version_id: автоматически находит версию (приоритет: PREPARE_FOR_SUBMISSION > READY_FOR_SALE)
-                - include_media: по умолчанию false, медиа загружается только по запросу
+                Behavior:
+                - Without locale: returns ALL locales in one request
+                - Without version_id: auto-selects version (priority: PREPARE_FOR_SUBMISSION > READY_FOR_SALE)
+                - include_media: false by default, media loaded only on request
                 """,
             inputSchema: .object([
                 "type": .string("object"),
                 "properties": .object([
                     "app_id": .object([
                         "type": .string("string"),
-                        "description": .string("ID приложения в App Store Connect")
+                        "description": .string("App Store Connect app ID")
                     ]),
                     "locale": .object([
                         "type": .string("string"),
-                        "description": .string("Код локали (en-US, ru-RU, de-DE). Если не указан — возвращает все локали")
+                        "description": .string("Locale code (en-US, ru-RU, de-DE). If omitted — returns all locales")
                     ]),
                     "version_id": .object([
                         "type": .string("string"),
-                        "description": .string("ID версии приложения. Если не указан — автоматически выбирает подходящую версию")
+                        "description": .string("App version ID. If omitted — auto-selects suitable version")
                     ]),
                     "version_state": .object([
                         "type": .string("string"),
-                        "description": .string("Фильтр состояния версии: PREPARE_FOR_SUBMISSION (редактируемая) или READY_FOR_SALE (опубликованная)")
+                        "description": .string("Version state filter: PREPARE_FOR_SUBMISSION (editable) or READY_FOR_SALE (published)")
                     ]),
                     "include_media": .object([
                         "type": .string("boolean"),
-                        "description": .string("Включить скриншоты и видео в ответ (по умолчанию: false)")
+                        "description": .string("Include screenshots and videos in response (default: false)")
                     ])
                 ]),
                 "required": .array([.string("app_id")])
@@ -139,45 +139,45 @@ extension AppsWorker {
     func updateMetadataTool() -> Tool {
         return Tool(
             name: "apps_update_metadata",
-            description: "Обновляет метаданные версии приложения для конкретной локализации (версия должна быть в состоянии PREPARE_FOR_SUBMISSION)",
+            description: "Update app version metadata for a specific localization (version must be in PREPARE_FOR_SUBMISSION state)",
             inputSchema: .object([
                 "type": .string("object"),
                 "properties": .object([
                     "app_id": .object([
                         "type": .string("string"),
-                        "description": .string("ID приложения в App Store Connect")
+                        "description": .string("App Store Connect app ID")
                     ]),
                     "version_id": .object([
                         "type": .string("string"),
-                        "description": .string("ID версии приложения (получить через apps_list_versions)")
+                        "description": .string("App version ID (get via apps_list_versions)")
                     ]),
                     "locale": .object([
                         "type": .string("string"),
-                        "description": .string("Код локализации (например: 'en-US', 'ru-RU', 'de-DE', 'fr-FR', 'ja', 'zh-Hans')")
+                        "description": .string("Locale code (e.g. 'en-US', 'ru-RU', 'de-DE', 'fr-FR', 'ja', 'zh-Hans')")
                     ]),
                     "description": .object([
                         "type": .string("string"),
-                        "description": .string("Описание приложения (до 4000 символов)")
+                        "description": .string("App description (up to 4000 characters)")
                     ]),
                     "whats_new": .object([
                         "type": .string("string"),
-                        "description": .string("What's New in This Version (до 4000 символов)")
+                        "description": .string("What's New in This Version (up to 4000 characters)")
                     ]),
                     "keywords": .object([
                         "type": .string("string"),
-                        "description": .string("Ключевые слова через запятую (до 100 символов)")
+                        "description": .string("Keywords separated by commas (up to 100 characters)")
                     ]),
                     "promotional_text": .object([
                         "type": .string("string"),
-                        "description": .string("Промо-текст (до 170 символов)")
+                        "description": .string("Promotional text (up to 170 characters)")
                     ]),
                     "support_url": .object([
                         "type": .string("string"),
-                        "description": .string("URL поддержки")
+                        "description": .string("Support URL")
                     ]),
                     "marketing_url": .object([
                         "type": .string("string"),
-                        "description": .string("Маркетинговый URL")
+                        "description": .string("Marketing URL")
                     ])
                 ]),
                 "required": .array([.string("app_id"), .string("version_id"), .string("locale")])
@@ -188,41 +188,41 @@ extension AppsWorker {
     func createLocalizationTool() -> Tool {
         return Tool(
             name: "apps_create_localization",
-            description: "Создает новую локализацию для версии приложения. Locale format depends on language: ru, ja (language only) vs en-US, de-DE (with region). Use apps_list_localizations to see existing locales.",
+            description: "Create a new localization for an app version. Locale format depends on language: ru, ja (language only) vs en-US, de-DE (with region). Use apps_list_localizations to see existing locales.",
             inputSchema: .object([
                 "type": .string("object"),
                 "properties": .object([
                     "version_id": .object([
                         "type": .string("string"),
-                        "description": .string("ID версии приложения (получить через apps_list_versions)")
+                        "description": .string("App version ID (get via apps_list_versions)")
                     ]),
                     "locale": .object([
                         "type": .string("string"),
-                        "description": .string("Код локализации (например: 'en-US', 'ru-RU', 'de-DE', 'fr-FR', 'ja', 'zh-Hans')")
+                        "description": .string("Locale code (e.g. 'en-US', 'ru-RU', 'de-DE', 'fr-FR', 'ja', 'zh-Hans')")
                     ]),
                     "description": .object([
                         "type": .string("string"),
-                        "description": .string("Описание приложения (до 4000 символов)")
+                        "description": .string("App description (up to 4000 characters)")
                     ]),
                     "whats_new": .object([
                         "type": .string("string"),
-                        "description": .string("What's New in This Version (до 4000 символов)")
+                        "description": .string("What's New in This Version (up to 4000 characters)")
                     ]),
                     "keywords": .object([
                         "type": .string("string"),
-                        "description": .string("Ключевые слова через запятую (до 100 символов)")
+                        "description": .string("Keywords separated by commas (up to 100 characters)")
                     ]),
                     "promotional_text": .object([
                         "type": .string("string"),
-                        "description": .string("Промо-текст (до 170 символов)")
+                        "description": .string("Promotional text (up to 170 characters)")
                     ]),
                     "support_url": .object([
                         "type": .string("string"),
-                        "description": .string("URL поддержки")
+                        "description": .string("Support URL")
                     ]),
                     "marketing_url": .object([
                         "type": .string("string"),
-                        "description": .string("Маркетинговый URL")
+                        "description": .string("Marketing URL")
                     ])
                 ]),
                 "required": .array([.string("version_id"), .string("locale")])
@@ -233,13 +233,13 @@ extension AppsWorker {
     func deleteLocalizationTool() -> Tool {
         return Tool(
             name: "apps_delete_localization",
-            description: "Удаляет локализацию версии приложения",
+            description: "Delete an app version localization",
             inputSchema: .object([
                 "type": .string("object"),
                 "properties": .object([
                     "localization_id": .object([
                         "type": .string("string"),
-                        "description": .string("ID локализации для удаления (получить через apps_list_localizations)")
+                        "description": .string("Localization ID to delete (get via apps_list_localizations)")
                     ])
                 ]),
                 "required": .array([.string("localization_id")])
@@ -250,21 +250,21 @@ extension AppsWorker {
     func listLocalizationsTool() -> Tool {
         return Tool(
             name: "apps_list_localizations",
-            description: "Получает список всех локализаций для версии приложения",
+            description: "List all localizations for an app version",
             inputSchema: [
                 "type": .string("object"),
                 "properties": .object([
                     "app_id": .object([
                         "type": .string("string"),
-                        "description": .string("ID приложения в App Store Connect")
+                        "description": .string("App Store Connect app ID")
                     ]),
                     "version_id": .object([
                         "type": .string("string"),
-                        "description": .string("ID версии приложения")
+                        "description": .string("App version ID")
                     ]),
                     "next_url": .object([
                         "type": .string("string"),
-                        "description": .string("URL следующей страницы из предыдущего ответа (поле next_url)")
+                        "description": .string("Next page URL from previous response (next_url field)")
                     ])
                 ]),
                 "required": .array([.string("app_id"), .string("version_id")])

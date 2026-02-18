@@ -2,7 +2,7 @@ import Foundation
 
 // MARK: - App Store Version Models
 
-/// Модель версии приложения в App Store
+/// App Store version resource
 public struct ASCAppStoreVersion: Codable, Sendable {
     public let id: String
     public let type: String
@@ -70,7 +70,7 @@ public struct ASCAppStoreVersion: Codable, Sendable {
     }
 }
 
-/// Ответ со списком версий приложения
+/// App store versions list response
 public struct ASCAppStoreVersionsResponse: Codable, Sendable {
     public let data: [ASCAppStoreVersion]
     public let included: [IncludedResource]?
@@ -93,7 +93,7 @@ public struct ASCAppStoreVersionsResponse: Codable, Sendable {
     }
 }
 
-/// Включенные ресурсы (для include параметра)
+/// Included resources (for include parameter)
 public enum IncludedResource: Codable, Sendable {
     case appStoreVersionLocalization(ASCAppStoreVersionLocalization)
     case appScreenshotSet(ASCAppScreenshotSet)
@@ -150,7 +150,7 @@ public enum IncludedResource: Codable, Sendable {
     }
 }
 
-/// Ответ с одной версией приложения
+/// Single app store version response
 public struct ASCAppStoreVersionResponse: Codable, Sendable {
     public let data: ASCAppStoreVersion
     public let included: [IncludedResource]?
@@ -164,22 +164,22 @@ public struct ASCAppStoreVersionResponse: Codable, Sendable {
 // MARK: - Convenience Extensions
 
 extension ASCAppStoreVersion {
-    /// Версия приложения
+    /// App version string
     public var version: String {
         return attributes?.versionString ?? "Unknown"
     }
     
-    /// Состояние версии
+    /// Version state
     public var state: String {
         return attributes?.appStoreState ?? "Unknown"
     }
     
-    /// Платформа
+    /// Platform
     public var platform: String {
         return attributes?.platform ?? "IOS"
     }
     
-    /// Доступна ли для скачивания
+    /// Whether the version is downloadable
     public var isDownloadable: Bool {
         return attributes?.downloadable ?? false
     }

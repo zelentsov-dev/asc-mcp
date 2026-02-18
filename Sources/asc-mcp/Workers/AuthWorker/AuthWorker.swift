@@ -1,7 +1,7 @@
 import Foundation
 import MCP
 
-/// AuthWorker отвечает за аутентификацию в App Store Connect API
+/// Handles authentication for App Store Connect API
 public final class AuthWorker: Sendable {
     let jwtService: JWTService
     

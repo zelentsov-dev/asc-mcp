@@ -1,15 +1,15 @@
 # App Store Connect MCP - Workers API Mapping
 
-## 🔴 AppLifecycleWorker ✅ РЕАЛИЗОВАН
+## 🔴 AppLifecycleWorker ✅ IMPLEMENTED
 
-Управление жизненным циклом версий приложения в App Store.
+Management of the application version lifecycle in the App Store.
 
-**Статус**: Полностью реализован с 12 методами
+**Status**: Fully implemented with 12 methods
 
-### Методы и API Endpoints
+### Methods and API Endpoints
 
 ```swift
-// 1. Создание новой версии
+// 1. Create a new version
 func createVersion(appId: String, platform: Platform, versionString: String) async
     POST /v1/appStoreVersions
     Body: {
@@ -27,31 +27,31 @@ func createVersion(appId: String, platform: Platform, versionString: String) asy
     }
     Returns: AppStoreVersion
 
-// 2. Получение версий приложения
+// 2. Get app versions
 func listVersions(appId: String, states: [VersionState]?) async
     GET /v1/apps/{appId}/appStoreVersions
     Query: filter[appStoreVersionState], include=build,appStoreVersionSubmission
     Returns: [AppStoreVersion]
 
-// 3. Получение конкретной версии
+// 3. Get a specific version
 func getVersion(versionId: String) async
     GET /v1/appStoreVersions/{versionId}
     Query: include=build,appStoreVersionSubmission,appStoreVersionPhasedRelease
     Returns: AppStoreVersion
 
-// 4. Обновление версии
+// 4. Update a version
 func updateVersion(versionId: String, attributes: VersionUpdateAttributes) async
     PATCH /v1/appStoreVersions/{versionId}
     Body: { "data": { "type": "appStoreVersions", "id": "{versionId}", "attributes": {...} } }
     Returns: AppStoreVersion
 
-// 5. Привязка билда к версии
+// 5. Attach a build to a version
 func attachBuild(versionId: String, buildId: String) async
     PATCH /v1/appStoreVersions/{versionId}/relationships/build
     Body: { "data": { "type": "builds", "id": "{buildId}" } }
     Returns: Success
 
-// 6. Отправка на ревью
+// 6. Submit for review
 func submitForReview(versionId: String) async
     POST /v1/appStoreVersionSubmissions
     Body: {
@@ -64,12 +64,12 @@ func submitForReview(versionId: String) async
     }
     Returns: AppStoreVersionSubmission
 
-// 7. Отмена ревью
+// 7. Cancel review
 func cancelReview(submissionId: String) async
     DELETE /v1/appStoreVersionSubmissions/{submissionId}
     Returns: Success
 
-// 8. Создание поэтапного релиза
+// 8. Create a phased release
 func createPhasedRelease(versionId: String, startDate: Date?) async
     POST /v1/appStoreVersionPhasedReleases
     Body: {
@@ -85,13 +85,13 @@ func createPhasedRelease(versionId: String, startDate: Date?) async
     }
     Returns: AppStoreVersionPhasedRelease
 
-// 9. Управление поэтапным релизом
+// 9. Manage phased release
 func updatePhasedRelease(phasedReleaseId: String, state: PhasedReleaseState) async
     PATCH /v1/appStoreVersionPhasedReleases/{phasedReleaseId}
     Body: { "data": { "type": "appStoreVersionPhasedReleases", "id": "{id}", "attributes": { "phasedReleaseState": "ACTIVE" } } }
     Returns: AppStoreVersionPhasedRelease
 
-// 10. Релиз версии
+// 10. Release a version
 func releaseVersion(versionId: String) async
     POST /v1/appStoreVersionReleaseRequests
     Body: {
@@ -104,12 +104,12 @@ func releaseVersion(versionId: String) async
     }
     Returns: AppStoreVersionReleaseRequest
 
-// 11. Установка деталей для ревью (с автоматическим определением POST/PATCH)
+// 11. Set review details (with automatic POST/PATCH detection)
 func setReviewDetails(versionId: String, contactInfo: ReviewContactInfo) async
-    Сначала: GET /v1/appStoreVersions/{versionId}?include=appStoreReviewDetail
-    Если существует:
+    First: GET /v1/appStoreVersions/{versionId}?include=appStoreReviewDetail
+    If exists:
         PATCH /v1/appStoreReviewDetails/{reviewDetailId}
-    Если не существует:
+    If not exists:
         POST /v1/appStoreReviewDetails
     Body: {
         "data": {
@@ -123,19 +123,19 @@ func setReviewDetails(versionId: String, contactInfo: ReviewContactInfo) async
                 "demoAccountPassword": "password",
                 "notes": "Review notes"
             },
-            "relationships": { // только для POST
+            "relationships": { // only for POST
                 "appStoreVersion": { "data": { "type": "appStoreVersions", "id": "{versionId}" } }
             }
         }
     }
     Returns: AppStoreReviewDetail
 
-// 12. Управление возрастным рейтингом (с автоматическим определением POST/PATCH)
+// 12. Manage age rating (with automatic POST/PATCH detection)
 func updateAgeRating(versionId: String, declaration: AgeRatingDeclaration) async
-    Сначала: GET /v1/appStoreVersions/{versionId}?include=ageRatingDeclaration
-    Если существует:
+    First: GET /v1/appStoreVersions/{versionId}?include=ageRatingDeclaration
+    If exists:
         PATCH /v1/ageRatingDeclarations/{ageRatingId}
-    Если не существует:
+    If not exists:
         POST /v1/ageRatingDeclarations
     Body: {
         "data": {
@@ -143,9 +143,9 @@ func updateAgeRating(versionId: String, declaration: AgeRatingDeclaration) async
             "attributes": {
                 "alcoholTobaccoOrDrugUseOrReferences": "NONE",
                 "violenceCartoonOrFantasy": "NONE",
-                // ... другие атрибуты рейтинга
+                // ... other rating attributes
             },
-            "relationships": { // только для POST
+            "relationships": { // only for POST
                 "appStoreVersion": { "data": { "type": "appStoreVersions", "id": "{versionId}" } }
             }
         }
@@ -153,61 +153,61 @@ func updateAgeRating(versionId: String, declaration: AgeRatingDeclaration) async
     Returns: AgeRatingDeclaration
 ```
 
-## 🔴 BuildsWorker ✅ РЕАЛИЗОВАН
+## 🔴 BuildsWorker ✅ IMPLEMENTED
 
-Управление билдами приложения.
+Management of application builds.
 
-### Методы и API Endpoints
+### Methods and API Endpoints
 
 ```swift
-// ✅ РЕАЛИЗОВАНО
-// 1. Получение списка билдов
+// ✅ IMPLEMENTED
+// 1. Get list of builds
 func builds_list(appId: String, version?: String, processingState?: ProcessingState) async
     GET /v1/builds
     Query: filter[app]={appId}, filter[version], filter[processingState], include=app,buildBetaDetail,preReleaseVersion
-    Returns: JSON с массивом билдов
+    Returns: JSON with array of builds
 
-// ✅ РЕАЛИЗОВАНО
-// 2. Получение конкретного билда
+// ✅ IMPLEMENTED
+// 2. Get a specific build
 func builds_get(buildId: String) async
     GET /v1/builds/{buildId}
     Query: include=app,buildBetaDetail,preReleaseVersion,buildBundles
-    Returns: JSON с деталями билда
+    Returns: JSON with build details
 
-// ✅ РЕАЛИЗОВАНО
-// 3. Поиск билда по номеру
+// ✅ IMPLEMENTED
+// 3. Find build by number
 func builds_find_by_number(appId: String, buildNumber: String) async
     GET /v1/builds
     Query: filter[app]={appId}, filter[version]={buildNumber}, limit=1
-    Returns: JSON с найденным билдом или null
+    Returns: JSON with found build or null
 
-// ✅ РЕАЛИЗОВАНО
-// 4. Список билдов для версии
+// ✅ IMPLEMENTED
+// 4. List builds for a version
 func builds_list_for_version(versionId: String) async
     GET /v1/appStoreVersions/{versionId}/builds
-    Returns: JSON с билдами для версии
+    Returns: JSON with builds for the version
 
-// ✅ РЕАЛИЗОВАНО через BuildProcessingWorker
-// 5. Получение статуса обработки
+// ✅ IMPLEMENTED via BuildProcessingWorker
+// 5. Get processing state
 func builds_get_processing_state(buildId: String) async
     GET /v1/builds/{buildId}
     Query: fields[builds]=processingState,uploadedDate
-    Returns: JSON со статусом обработки
+    Returns: JSON with processing state
 
-// ✅ РЕАЛИЗОВАНО через BuildProcessingWorker
-// 6. Ожидание завершения обработки
+// ✅ IMPLEMENTED via BuildProcessingWorker
+// 6. Wait for processing completion
 func builds_wait_for_processing(buildId: String, maxWaitSeconds: Int, pollIntervalSeconds: Int) async
-    Периодические запросы GET /v1/builds/{buildId}
-    Returns: JSON с финальным статусом
+    Periodic requests GET /v1/builds/{buildId}
+    Returns: JSON with final state
 
-// ✅ РЕАЛИЗОВАНО через BuildProcessingWorker
-// 7. Проверка готовности билда
+// ✅ IMPLEMENTED via BuildProcessingWorker
+// 7. Check build readiness
 func builds_check_readiness(buildId: String) async
-    GET /v1/builds/{buildId} + комплексная проверка
-    Returns: JSON со статусом готовности
+    GET /v1/builds/{buildId} + comprehensive check
+    Returns: JSON with readiness status
 
-// ✅ РЕАЛИЗОВАНО через BuildProcessingWorker
-// 8. Обновление информации о шифровании
+// ✅ IMPLEMENTED via BuildProcessingWorker
+// 8. Update encryption information
 func builds_update_encryption(buildId: String, usesNonExemptEncryption: Bool) async
     PATCH /v1/builds/{buildId}
     Body: {
@@ -219,10 +219,10 @@ func builds_update_encryption(buildId: String, usesNonExemptEncryption: Bool) as
             }
         }
     }
-    Returns: JSON с обновленным билдом
+    Returns: JSON with updated build
 
-// ✅ РЕАЛИЗОВАНО через BuildProcessingWorker
-// 9. Установка срока действия билда
+// ✅ IMPLEMENTED via BuildProcessingWorker
+// 9. Set build expiration
 func builds_set_expiration(buildId: String, expireBuild: Bool) async
     PATCH /v1/builds/{buildId}
     Body: {
@@ -234,24 +234,24 @@ func builds_set_expiration(buildId: String, expireBuild: Bool) async
             }
         }
     }
-    Returns: JSON с результатом
+    Returns: JSON with result
 ```
 
-## 🔴 BuildBetaDetailsWorker ✅ РЕАЛИЗОВАН
+## 🔴 BuildBetaDetailsWorker ✅ IMPLEMENTED
 
-Управление TestFlight настройками билдов.
+Management of TestFlight build settings.
 
-### Методы и API Endpoints
+### Methods and API Endpoints
 
 ```swift
-// ✅ РЕАЛИЗОВАНО
-// 1. Получение бета-деталей билда
+// ✅ IMPLEMENTED
+// 1. Get beta details of a build
 func builds_get_beta_detail(buildId: String) async
     GET /v1/builds/{buildId}/buildBetaDetail
-    Returns: JSON с настройками TestFlight
+    Returns: JSON with TestFlight settings
 
-// ✅ РЕАЛИЗОВАНО
-// 2. Обновление бета-деталей
+// ✅ IMPLEMENTED
+// 2. Update beta details
 func builds_update_beta_detail(betaDetailId: String, autoNotifyEnabled?: Bool) async
     PATCH /v1/buildBetaDetails/{betaDetailId}
     Body: {
@@ -263,66 +263,66 @@ func builds_update_beta_detail(betaDetailId: String, autoNotifyEnabled?: Bool) a
             }
         }
     }
-    Returns: JSON с обновленными настройками
+    Returns: JSON with updated settings
 
-// ✅ РЕАЛИЗОВАНО
-// 3. Получение локализаций билда для TestFlight
+// ✅ IMPLEMENTED
+// 3. Get build localizations for TestFlight
 func builds_list_beta_localizations(buildId: String) async
     GET /v1/builds/{buildId}/betaBuildLocalizations
-    Returns: JSON с массивом локализаций
+    Returns: JSON with array of localizations
 
-// ✅ РЕАЛИЗОВАНО
-// 4. Установка What's New для TestFlight
+// ✅ IMPLEMENTED
+// 4. Set What's New for TestFlight
 func builds_set_beta_localization(buildId: String, locale: String, whatsNew: String) async
-    GET /v1/builds/{buildId}/betaBuildLocalizations (поиск существующей)
-    POST /v1/betaBuildLocalizations (создание) или PATCH (обновление)
-    Returns: JSON с результатом
+    GET /v1/builds/{buildId}/betaBuildLocalizations (search for existing)
+    POST /v1/betaBuildLocalizations (create) or PATCH (update)
+    Returns: JSON with result
 
-// ✅ РЕАЛИЗОВАНО (исправлен API endpoint)
-// 5. Получение бета-групп для билда
+// ✅ IMPLEMENTED (fixed API endpoint)
+// 5. Get beta groups for a build
 func builds_get_beta_groups(buildId: String) async
     GET /v1/betaGroups?filter[builds]={buildId}
-    Returns: JSON с массивом бета-групп
+    Returns: JSON with array of beta groups
 
-// ✅ РЕАЛИЗОВАНО
-// 6. Получение бета-тестеров для билда
+// ✅ IMPLEMENTED
+// 6. Get beta testers for a build
 func builds_get_beta_testers(buildId: String) async
     GET /v1/builds/{buildId}/betaTesters
-    Returns: JSON с массивом тестеров
+    Returns: JSON with array of testers
 
-// ✅ РЕАЛИЗОВАНО
-// 7. Отправка уведомления тестерам
+// ✅ IMPLEMENTED
+// 7. Send notification to testers
 func builds_send_beta_notification(betaDetailId: String, locale?: String) async
-    PATCH /v1/buildBetaDetails/{betaDetailId} + уведомление
-    Returns: JSON с результатом
+    PATCH /v1/buildBetaDetails/{betaDetailId} + notification
+    Returns: JSON with result
 ```
 
-## 🔴 BuildProcessingWorker ✅ РЕАЛИЗОВАН
+## 🔴 BuildProcessingWorker ✅ IMPLEMENTED
 
-Управление состояниями обработки билдов.
+Management of build processing states.
 
-### Методы и API Endpoints
+### Methods and API Endpoints
 
 ```swift
-// ✅ РЕАЛИЗОВАНО
-// Все методы доступны через builds_* префикс в BuildsWorker
-// Внутренняя логика в BuildProcessingWorker включает:
+// ✅ IMPLEMENTED
+// All methods are accessible via the builds_* prefix in BuildsWorker
+// Internal logic in BuildProcessingWorker includes:
 
-// 1. Мониторинг статуса обработки
-// 2. Проверку готовности для submission
-// 3. Управление encryption compliance
-// 4. Контроль expiration dates
-// 5. Валидацию состояний билда
+// 1. Processing state monitoring
+// 2. Submission readiness check
+// 3. Encryption compliance management
+// 4. Expiration date control
+// 5. Build state validation
 ```
 
 ## 🔴 TestFlightWorker
 
-Управление бета-тестированием через TestFlight.
+Management of beta testing through TestFlight.
 
-### Методы и API Endpoints
+### Methods and API Endpoints
 
 ```swift
-// 1. Создание бета-группы
+// 1. Create a beta group
 func createBetaGroup(appId: String, name: String, isInternalGroup: Bool) async
     POST /v1/betaGroups
     Body: {
@@ -341,13 +341,13 @@ func createBetaGroup(appId: String, name: String, isInternalGroup: Bool) async
     }
     Returns: BetaGroup
 
-// 2. Получение списка групп
+// 2. Get list of groups
 func listBetaGroups(appId: String) async
     GET /v1/apps/{appId}/betaGroups
     Query: include=betaTesters,builds
     Returns: [BetaGroup]
 
-// 3. Добавление тестеров в группу
+// 3. Add testers to a group
 func addTestersToGroup(groupId: String, testerIds: [String]) async
     POST /v1/betaGroups/{groupId}/relationships/betaTesters
     Body: {
@@ -358,7 +358,7 @@ func addTestersToGroup(groupId: String, testerIds: [String]) async
     }
     Returns: Success
 
-// 4. Создание бета-тестера
+// 4. Create a beta tester
 func createBetaTester(email: String, firstName: String, lastName: String) async
     POST /v1/betaTesters
     Body: {
@@ -373,7 +373,7 @@ func createBetaTester(email: String, firstName: String, lastName: String) async
     }
     Returns: BetaTester
 
-// 5. Приглашение тестеров
+// 5. Invite testers
 func inviteTesters(groupId: String) async
     POST /v1/betaTesterInvitations
     Body: {
@@ -387,7 +387,7 @@ func inviteTesters(groupId: String) async
     }
     Returns: BetaTesterInvitation
 
-// 6. Привязка билда к группе
+// 6. Assign a build to a group
 func assignBuildToGroup(groupId: String, buildId: String) async
     POST /v1/betaGroups/{groupId}/relationships/builds
     Body: {
@@ -397,7 +397,7 @@ func assignBuildToGroup(groupId: String, buildId: String) async
     }
     Returns: Success
 
-// 7. Удаление тестера из группы
+// 7. Remove a tester from a group
 func removeTesterFromGroup(groupId: String, testerId: String) async
     DELETE /v1/betaGroups/{groupId}/relationships/betaTesters
     Body: {
@@ -407,7 +407,7 @@ func removeTesterFromGroup(groupId: String, testerId: String) async
     }
     Returns: Success
 
-// 8. Подача на внешнее бета-тестирование
+// 8. Submit for external beta testing
 func submitForBetaReview(buildId: String) async
     POST /v1/betaAppReviewSubmissions
     Body: {
@@ -420,12 +420,12 @@ func submitForBetaReview(buildId: String) async
     }
     Returns: BetaAppReviewSubmission
 
-// 9. Получение статуса бета-ревью
+// 9. Get beta review status
 func getBetaReviewStatus(submissionId: String) async
     GET /v1/betaAppReviewSubmissions/{submissionId}
     Returns: BetaAppReviewSubmission
 
-// 10. Создание публичной ссылки
+// 10. Create a public link
 func createPublicLink(groupId: String, limit: Int) async
     PATCH /v1/betaGroups/{groupId}
     Body: {
@@ -441,7 +441,7 @@ func createPublicLink(groupId: String, limit: Int) async
     }
     Returns: BetaGroup
 
-// 11. Установка локализации для билда
+// 11. Set build localization
 func setBuildLocalization(buildId: String, locale: String, whatsNew: String) async
     POST /v1/betaBuildLocalizations
     Body: {
@@ -461,12 +461,12 @@ func setBuildLocalization(buildId: String, locale: String, whatsNew: String) asy
 
 ## 🔴 ProvisioningWorker
 
-Управление сертификатами, профилями и устройствами.
+Management of certificates, profiles, and devices.
 
-### Методы и API Endpoints
+### Methods and API Endpoints
 
 ```swift
-// 1. Регистрация устройства
+// 1. Register a device
 func registerDevice(name: String, udid: String, platform: Platform) async
     POST /v1/devices
     Body: {
@@ -481,13 +481,13 @@ func registerDevice(name: String, udid: String, platform: Platform) async
     }
     Returns: Device
 
-// 2. Получение списка устройств
+// 2. Get list of devices
 func listDevices(status: DeviceStatus?, platform: Platform?) async
     GET /v1/devices
     Query: filter[status], filter[platform], limit=200
     Returns: [Device]
 
-// 3. Обновление устройства
+// 3. Update a device
 func updateDevice(deviceId: String, name: String?, status: DeviceStatus?) async
     PATCH /v1/devices/{deviceId}
     Body: {
@@ -502,7 +502,7 @@ func updateDevice(deviceId: String, name: String?, status: DeviceStatus?) async
     }
     Returns: Device
 
-// 4. Создание сертификата
+// 4. Create a certificate
 func createCertificate(csrContent: String, certificateType: CertificateType) async
     POST /v1/certificates
     Body: {
@@ -516,18 +516,18 @@ func createCertificate(csrContent: String, certificateType: CertificateType) asy
     }
     Returns: Certificate
 
-// 5. Получение списка сертификатов
+// 5. Get list of certificates
 func listCertificates(types: [CertificateType]?) async
     GET /v1/certificates
     Query: filter[certificateType], filter[serialNumber]
     Returns: [Certificate]
 
-// 6. Ревокация сертификата
+// 6. Revoke a certificate
 func revokeCertificate(certificateId: String) async
     DELETE /v1/certificates/{certificateId}
     Returns: Success
 
-// 7. Создание профиля
+// 7. Create a profile
 func createProfile(name: String, type: ProfileType, bundleId: String, certificateIds: [String], deviceIds: [String]?) async
     POST /v1/profiles
     Body: {
@@ -546,18 +546,18 @@ func createProfile(name: String, type: ProfileType, bundleId: String, certificat
     }
     Returns: Profile
 
-// 8. Получение списка профилей
+// 8. Get list of profiles
 func listProfiles(profileState: ProfileState?, profileType: ProfileType?) async
     GET /v1/profiles
     Query: filter[profileState], filter[profileType], include=bundleId,certificates,devices
     Returns: [Profile]
 
-// 9. Удаление профиля
+// 9. Delete a profile
 func deleteProfile(profileId: String) async
     DELETE /v1/profiles/{profileId}
     Returns: Success
 
-// 10. Создание Bundle ID
+// 10. Create a Bundle ID
 func createBundleId(identifier: String, name: String, platform: Platform) async
     POST /v1/bundleIds
     Body: {
@@ -572,7 +572,7 @@ func createBundleId(identifier: String, name: String, platform: Platform) async
     }
     Returns: BundleId
 
-// 11. Управление capabilities
+// 11. Manage capabilities
 func updateCapabilities(bundleIdId: String, capabilities: [Capability]) async
     POST /v1/bundleIdCapabilities
     Body: {
@@ -589,7 +589,7 @@ func updateCapabilities(bundleIdId: String, capabilities: [Capability]) async
     }
     Returns: BundleIdCapability
 
-// 12. Удаление capability
+// 12. Delete a capability
 func deleteCapability(capabilityId: String) async
     DELETE /v1/bundleIdCapabilities/{capabilityId}
     Returns: Success
@@ -597,24 +597,24 @@ func deleteCapability(capabilityId: String) async
 
 ## 🟡 ReviewsWorker
 
-Управление отзывами пользователей.
+Management of user reviews.
 
-### Методы и API Endpoints
+### Methods and API Endpoints
 
 ```swift
-// 1. Получение отзывов
+// 1. Get reviews
 func listReviews(appId: String, rating?: Int, territory?: String) async
     GET /v1/apps/{appId}/customerReviews
     Query: filter[rating], filter[territory], include=response, sort=-createdDate
     Returns: [CustomerReview]
 
-// 2. Получение конкретного отзыва
+// 2. Get a specific review
 func getReview(reviewId: String) async
     GET /v1/customerReviews/{reviewId}
     Query: include=response
     Returns: CustomerReview
 
-// 3. Создание ответа на отзыв
+// 3. Create a response to a review
 func createResponse(reviewId: String, responseBody: String) async
     POST /v1/customerReviewResponses
     Body: {
@@ -630,7 +630,7 @@ func createResponse(reviewId: String, responseBody: String) async
     }
     Returns: CustomerReviewResponse
 
-// 4. Обновление ответа
+// 4. Update a response
 func updateResponse(responseId: String, responseBody: String) async
     PATCH /v1/customerReviewResponses/{responseId}
     Body: {
@@ -644,12 +644,12 @@ func updateResponse(responseId: String, responseBody: String) async
     }
     Returns: CustomerReviewResponse
 
-// 5. Удаление ответа
+// 5. Delete a response
 func deleteResponse(responseId: String) async
     DELETE /v1/customerReviewResponses/{responseId}
     Returns: Success
 
-// 6. Получение статистики отзывов
+// 6. Get review statistics
 func getReviewSummary(appId: String) async
     GET /v1/apps/{appId}/customerReviewSummarizations
     Returns: CustomerReviewSummarization
@@ -657,18 +657,18 @@ func getReviewSummary(appId: String) async
 
 ## 🟡 PricingWorker
 
-Управление ценами и доступностью.
+Management of pricing and availability.
 
-### Методы и API Endpoints
+### Methods and API Endpoints
 
 ```swift
-// 1. Получение цен приложения
+// 1. Get app pricing
 func getAppPricing(appId: String) async
     GET /v1/apps/{appId}/appPriceSchedule
     Query: include=appPrices,baseTerritory,manualPrices
     Returns: AppPriceSchedule
 
-// 2. Установка цены
+// 2. Set price
 func setAppPrice(appId: String, priceTier: String, startDate: Date?) async
     POST /v1/appPriceSchedules
     Body: {
@@ -695,13 +695,13 @@ func setAppPrice(appId: String, priceTier: String, startDate: Date?) async
     }
     Returns: AppPriceSchedule
 
-// 3. Получение ценовых точек
+// 3. Get price points
 func listPricePoints(territory: String) async
     GET /v1/appPricePoints
     Query: filter[territory], include=priceTier,territory
     Returns: [AppPricePoint]
 
-// 4. Управление доступностью по территориям
+// 4. Manage territory availability
 func updateTerritoryAvailability(appId: String, availableTerritories: [String], preOrderTerritories: [String]?) async
     PATCH /v1/apps/{appId}/appAvailabilities
     Body: {
@@ -722,7 +722,7 @@ func updateTerritoryAvailability(appId: String, availableTerritories: [String], 
     }
     Returns: AppAvailability
 
-// 5. Получение списка территорий
+// 5. Get list of territories
 func listTerritories() async
     GET /v1/territories
     Returns: [Territory]
@@ -730,12 +730,12 @@ func listTerritories() async
 
 ## 🟡 IAPWorker
 
-Управление внутренними покупками и подписками.
+Management of in-app purchases and subscriptions.
 
-### Методы и API Endpoints
+### Methods and API Endpoints
 
 ```swift
-// 1. Создание внутренней покупки
+// 1. Create an in-app purchase
 func createInAppPurchase(appId: String, productId: String, type: IAPType, referenceName: String) async
     POST /v1/inAppPurchasesV2
     Body: {
@@ -753,13 +753,13 @@ func createInAppPurchase(appId: String, productId: String, type: IAPType, refere
     }
     Returns: InAppPurchase
 
-// 2. Получение списка покупок
+// 2. Get list of purchases
 func listInAppPurchases(appId: String) async
     GET /v1/apps/{appId}/inAppPurchasesV2
     Query: include=appStoreReviewScreenshot,pricePoints
     Returns: [InAppPurchase]
 
-// 3. Создание группы подписок
+// 3. Create a subscription group
 func createSubscriptionGroup(appId: String, referenceName: String) async
     POST /v1/subscriptionGroups
     Body: {
@@ -775,7 +775,7 @@ func createSubscriptionGroup(appId: String, referenceName: String) async
     }
     Returns: SubscriptionGroup
 
-// 4. Создание подписки
+// 4. Create a subscription
 func createSubscription(groupId: String, productId: String, referenceName: String) async
     POST /v1/subscriptions
     Body: {
@@ -792,7 +792,7 @@ func createSubscription(groupId: String, productId: String, referenceName: Strin
     }
     Returns: Subscription
 
-// 5. Установка цен на подписку
+// 5. Set subscription pricing
 func setSubscriptionPricing(subscriptionId: String, pricePointId: String, territory: String) async
     POST /v1/subscriptionPrices
     Body: {
@@ -810,7 +810,7 @@ func setSubscriptionPricing(subscriptionId: String, pricePointId: String, territ
     }
     Returns: SubscriptionPrice
 
-// 6. Создание промо-предложения
+// 6. Create a promotional offer
 func createPromotionalOffer(subscriptionId: String, offerCode: String, duration: String, numberOfPeriods: Int) async
     POST /v1/subscriptionPromotionalOffers
     Body: {
@@ -829,7 +829,7 @@ func createPromotionalOffer(subscriptionId: String, offerCode: String, duration:
     }
     Returns: SubscriptionPromotionalOffer
 
-// 7. Локализация IAP
+// 7. Localize an IAP
 func localizeInAppPurchase(iapId: String, locale: String, name: String, description: String) async
     POST /v1/inAppPurchaseLocalizations
     Body: {
@@ -847,7 +847,7 @@ func localizeInAppPurchase(iapId: String, locale: String, name: String, descript
     }
     Returns: InAppPurchaseLocalization
 
-// 8. Отправка IAP на ревью
+// 8. Submit IAP for review
 func submitIAPForReview(iapId: String) async
     POST /v1/inAppPurchaseSubmissions
     Body: {
@@ -863,12 +863,12 @@ func submitIAPForReview(iapId: String) async
 
 ## 🔴 MediaUploadWorker
 
-Загрузка медиа-контента (скриншоты, превью).
+Uploading media content (screenshots, previews).
 
-### Методы и API Endpoints
+### Methods and API Endpoints
 
 ```swift
-// 1. Создание набора скриншотов
+// 1. Create a screenshot set
 func createScreenshotSet(versionLocalizationId: String, displayType: ScreenshotDisplayType) async
     POST /v1/appScreenshotSets
     Body: {
@@ -886,7 +886,7 @@ func createScreenshotSet(versionLocalizationId: String, displayType: ScreenshotD
     }
     Returns: AppScreenshotSet
 
-// 2. Инициализация загрузки скриншота
+// 2. Initialize screenshot upload
 func initializeScreenshotUpload(screenshotSetId: String, fileName: String, fileSize: Int) async
     POST /v1/appScreenshots
     Body: {
@@ -905,17 +905,17 @@ func initializeScreenshotUpload(screenshotSetId: String, fileName: String, fileS
     }
     Returns: AppScreenshot (with uploadOperations)
 
-// 3. Загрузка файла на S3
+// 3. Upload file to S3
 func uploadToS3(uploadOperation: UploadOperation, fileData: Data) async
     PUT {uploadOperation.url}
     Headers: {
         "Content-Type": "{uploadOperation.requestHeaders.Content-Type}",
-        // другие headers из uploadOperation.requestHeaders
+        // other headers from uploadOperation.requestHeaders
     }
     Body: fileData
     Returns: Success
 
-// 4. Подтверждение загрузки
+// 4. Confirm upload
 func commitScreenshotUpload(screenshotId: String, uploaded: Bool, sourceFileChecksum: String) async
     PATCH /v1/appScreenshots/{screenshotId}
     Body: {
@@ -930,7 +930,7 @@ func commitScreenshotUpload(screenshotId: String, uploaded: Bool, sourceFileChec
     }
     Returns: AppScreenshot
 
-// 5. Создание набора превью
+// 5. Create a preview set
 func createPreviewSet(versionLocalizationId: String, previewType: PreviewType) async
     POST /v1/appPreviewSets
     Body: {
@@ -948,7 +948,7 @@ func createPreviewSet(versionLocalizationId: String, previewType: PreviewType) a
     }
     Returns: AppPreviewSet
 
-// 6. Загрузка превью видео
+// 6. Upload preview video
 func uploadPreview(previewSetId: String, fileName: String, fileSize: Int) async
     POST /v1/appPreviews
     Body: {
@@ -968,12 +968,12 @@ func uploadPreview(previewSetId: String, fileName: String, fileSize: Int) async
     }
     Returns: AppPreview (with uploadOperations)
 
-// 7. Удаление скриншота
+// 7. Delete a screenshot
 func deleteScreenshot(screenshotId: String) async
     DELETE /v1/appScreenshots/{screenshotId}
     Returns: Success
 
-// 8. Изменение порядка скриншотов
+// 8. Reorder screenshots
 func reorderScreenshots(screenshotSetId: String, screenshotIds: [String]) async
     PATCH /v1/appScreenshotSets/{screenshotSetId}/relationships/appScreenshots
     Body: {
@@ -987,12 +987,12 @@ func reorderScreenshots(screenshotSetId: String, screenshotIds: [String]) async
 
 ## 🟡 AppMetadataWorker
 
-Управление метаданными приложения.
+Management of application metadata.
 
-### Методы и API Endpoints
+### Methods and API Endpoints
 
 ```swift
-// 1. Создание локализации версии
+// 1. Create a version localization
 func createVersionLocalization(versionId: String, locale: String) async
     POST /v1/appStoreVersionLocalizations
     Body: {
@@ -1010,7 +1010,7 @@ func createVersionLocalization(versionId: String, locale: String) async
     }
     Returns: AppStoreVersionLocalization
 
-// 2. Обновление локализации
+// 2. Update a localization
 func updateLocalization(localizationId: String, attributes: LocalizationAttributes) async
     PATCH /v1/appStoreVersionLocalizations/{localizationId}
     Body: {
@@ -1029,13 +1029,13 @@ func updateLocalization(localizationId: String, attributes: LocalizationAttribut
     }
     Returns: AppStoreVersionLocalization
 
-// 3. Получение информации о приложении
+// 3. Get app information
 func getAppInfo(appId: String) async
     GET /v1/apps/{appId}/appInfos
     Query: include=primaryCategory,secondaryCategory,primarySubcategoryOne
     Returns: AppInfo
 
-// 4. Обновление категорий
+// 4. Update categories
 func updateCategories(appInfoId: String, primaryCategoryId: String, secondaryCategoryId?: String) async
     PATCH /v1/appInfos/{appInfoId}/relationships/primaryCategory
     Body: {
@@ -1043,7 +1043,7 @@ func updateCategories(appInfoId: String, primaryCategoryId: String, secondaryCat
     }
     Returns: Success
 
-// 5. Локализация информации о приложении
+// 5. Localize app information
 func updateAppInfoLocalization(appInfoLocalizationId: String, name: String, subtitle: String, privacyText: String) async
     PATCH /v1/appInfoLocalizations/{appInfoLocalizationId}
     Body: {
@@ -1061,59 +1061,59 @@ func updateAppInfoLocalization(appInfoLocalizationId: String, name: String, subt
     Returns: AppInfoLocalization
 ```
 
-## Общие параметры и фильтры
+## Common Parameters and Filters
 
-### Query Parameters (для GET запросов)
-- `include`: Включить связанные ресурсы (например, `include=app,build`)
-- `fields[resource]`: Ограничить поля ресурса (например, `fields[apps]=name,bundleId`)
-- `filter[attribute]`: Фильтрация по атрибуту (например, `filter[platform]=IOS`)
-- `sort`: Сортировка результатов (например, `sort=-uploadedDate`)
-- `limit`: Ограничение количества результатов (максимум 200)
-- `cursor`: Курсор для пагинации
+### Query Parameters (for GET requests)
+- `include`: Include related resources (e.g., `include=app,build`)
+- `fields[resource]`: Limit resource fields (e.g., `fields[apps]=name,bundleId`)
+- `filter[attribute]`: Filter by attribute (e.g., `filter[platform]=IOS`)
+- `sort`: Sort results (e.g., `sort=-uploadedDate`)
+- `limit`: Limit the number of results (maximum 200)
+- `cursor`: Cursor for pagination
 
-### Общие HTTP Headers
+### Common HTTP Headers
 ```
 Authorization: Bearer {JWT_TOKEN}
 Content-Type: application/json
 Accept: application/json
 ```
 
-### Статус коды
-- `200 OK`: Успешный GET/PATCH
-- `201 Created`: Успешный POST
-- `204 No Content`: Успешный DELETE
-- `400 Bad Request`: Неверные параметры
-- `401 Unauthorized`: Неверный или истекший токен
-- `403 Forbidden`: Нет прав доступа
-- `404 Not Found`: Ресурс не найден
-- `409 Conflict`: Конфликт состояния
-- `422 Unprocessable Entity`: Валидация не пройдена
-- `429 Too Many Requests`: Превышен лимит запросов
+### Status Codes
+- `200 OK`: Successful GET/PATCH
+- `201 Created`: Successful POST
+- `204 No Content`: Successful DELETE
+- `400 Bad Request`: Invalid parameters
+- `401 Unauthorized`: Invalid or expired token
+- `403 Forbidden`: Access denied
+- `404 Not Found`: Resource not found
+- `409 Conflict`: State conflict
+- `422 Unprocessable Entity`: Validation failed
+- `429 Too Many Requests`: Rate limit exceeded
 
 ### Rate Limiting
-- Лимит: 3600 запросов в час на ключ
+- Limit: 3600 requests per hour per key
 - Headers: `X-Rate-Limit-Remaining`, `X-Rate-Limit-Reset`
-- При превышении: экспоненциальный backoff с jitter
+- On exceeding: exponential backoff with jitter
 
-## Примеры использования
+## Usage Examples
 
 ### One-click release workflow
 ```swift
-// 1. Найти последний билд
+// 1. Find the latest build
 let builds = await buildWorker.listBuilds(appId: appId, processingState: .valid)
 let latestBuild = builds.first!
 
-// 2. Создать новую версию
+// 2. Create a new version
 let version = await lifecycleWorker.createVersion(
     appId: appId,
     platform: .ios,
     versionString: "1.2.0"
 )
 
-// 3. Привязать билд
+// 3. Attach the build
 await lifecycleWorker.attachBuild(versionId: version.id, buildId: latestBuild.id)
 
-// 4. Установить метаданные
+// 4. Set metadata
 let localization = await metadataWorker.updateLocalization(
     localizationId: version.localizationId,
     attributes: LocalizationAttributes(
@@ -1122,16 +1122,16 @@ let localization = await metadataWorker.updateLocalization(
     )
 )
 
-// 5. Загрузить скриншоты
+// 5. Upload screenshots
 let screenshotSet = await mediaWorker.createScreenshotSet(
     versionLocalizationId: localization.id,
     displayType: .iPhone65
 )
 await mediaWorker.uploadScreenshot(setId: screenshotSet.id, file: screenshotFile)
 
-// 6. Отправить на ревью
+// 6. Submit for review
 let submission = await lifecycleWorker.submitForReview(versionId: version.id)
 
-// 7. После одобрения - релиз
+// 7. After approval - release
 await lifecycleWorker.releaseVersion(versionId: version.id)
 ```

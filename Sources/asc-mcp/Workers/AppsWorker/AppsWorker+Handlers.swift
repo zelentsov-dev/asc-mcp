@@ -16,7 +16,7 @@ extension AppsWorker {
                let parsed = parsePaginationUrl(nextUrl) {
                 response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCAppsResponse.self)
             } else {
-                // Извлекаем параметры
+                // Extract parameters
                 var queryParams: [String: String] = [:]
 
                 if let arguments = params.arguments {
@@ -41,7 +41,7 @@ extension AppsWorker {
                 response = try await httpClient.get("/v1/apps", parameters: queryParams, as: ASCAppsResponse.self)
             }
 
-            // Форматируем результат
+            // Format result
             let apps = response.data.map { app in
                 [
                     "id": app.id,
@@ -79,7 +79,7 @@ extension AppsWorker {
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Ошибка получения списка приложений: \(error.localizedDescription)")],
+                content: [.text("Error: Failed to list apps: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -93,13 +93,13 @@ extension AppsWorker {
               let appIdValue = arguments["app_id"],
               let appId = appIdValue.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Требуется параметр 'app_id'")],
+                content: [.text("Error: Required parameter 'app_id' is missing")],
                 isError: true
             )
         }
         
         do {
-            // Параметры для включения дополнительной информации
+            // Parameters for including additional information
             var queryParams: [String: String] = [:]
             
             if let arguments = params.arguments,
@@ -108,14 +108,14 @@ extension AppsWorker {
                 queryParams["include"] = include
             }
             
-            // Выполняем запрос
+            // Execute request
             let response: ASCAppResponse = try await httpClient.get("/v1/apps/\(appId)", parameters: queryParams, as: ASCAppResponse.self)
             let app = response.data
             
-            // Формируем детальный ответ
+            // Format detailed response
             var relationships: [String: Any] = [:]
             
-            // Безопасно обрабатываем relationships
+            // Safely process relationships
             if let appRelationships = app.relationships {
                 if let appInfos = appRelationships.appInfos {
                     relationships["appInfos"] = formatRelationship(appInfos)
@@ -163,7 +163,7 @@ extension AppsWorker {
             
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Ошибка получения деталей приложения: \(error.localizedDescription)")],
+                content: [.text("Error: Failed to get app details: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -177,20 +177,20 @@ extension AppsWorker {
               let queryValue = arguments["query"],
               let query = queryValue.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Требуется параметр 'query' для поиска")],
+                content: [.text("Error: Required parameter 'query' is missing")],
                 isError: true
             )
         }
         
         do {
-            // Поиск по имени и Bundle ID
+            // Search by name and Bundle ID
             let nameResults: ASCAppsResponse = try await httpClient.get("/v1/apps", 
                 parameters: ["filter[name]": query], as: ASCAppsResponse.self)
             
             let bundleIdResults: ASCAppsResponse = try await httpClient.get("/v1/apps", 
                 parameters: ["filter[bundleId]": query], as: ASCAppsResponse.self)
             
-            // Объединяем результаты и убираем дубликаты
+            // Merge results and remove duplicates
             let allApps = Array(Set(nameResults.data + bundleIdResults.data))
             
             let apps = allApps.map { app in
@@ -216,7 +216,7 @@ extension AppsWorker {
             
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Ошибка поиска приложений: \(error.localizedDescription)")],
+                content: [.text("Error: Failed to search apps: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -230,7 +230,7 @@ extension AppsWorker {
               let appIdValue = arguments["app_id"],
               let appId = appIdValue.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Требуется параметр 'app_id'")],
+                content: [.text("Error: Required parameter 'app_id' is missing")],
                 isError: true
             )
         }
@@ -278,7 +278,7 @@ extension AppsWorker {
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Ошибка получения версий: \(error.localizedDescription)")],
+                content: [.text("Error: Failed to list versions: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -293,7 +293,7 @@ extension AppsWorker {
               let appIdValue = arguments["app_id"],
               let appId = appIdValue.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Требуется параметр 'app_id'")],
+                content: [.text("Error: Required parameter 'app_id' is missing")],
                 isError: true
             )
         }
@@ -332,7 +332,7 @@ extension AppsWorker {
                     return CallTool.Result(
                         content: [.text(JSONFormatter.formatJSON([
                             "success": false,
-                            "error": "У приложения \(appId) нет версий"
+                            "error": "App \(appId) has no versions"
                         ] as [String: Any]))],
                         isError: true
                     )
@@ -348,7 +348,7 @@ extension AppsWorker {
                         return CallTool.Result(
                             content: [.text(JSONFormatter.formatJSON([
                                 "success": false,
-                                "error": "Версия в состоянии '\(stateFilter)' не найдена. Доступные: \(available)"
+                                "error": "Version with state '\(stateFilter)' not found. Available: \(available)"
                             ] as [String: Any]))],
                             isError: true
                         )
@@ -407,7 +407,7 @@ extension AppsWorker {
                 return CallTool.Result(
                     content: [.text(JSONFormatter.formatJSON([
                         "success": false,
-                        "error": "Локализация '\(locale)' не найдена для версии \(resolvedVersion.versionString)"
+                        "error": "Localization '\(locale)' not found for version \(resolvedVersion.versionString)"
                     ] as [String: Any]))],
                     isError: true
                 )
@@ -460,7 +460,7 @@ extension AppsWorker {
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Ошибка получения метаданных: \(error.localizedDescription)")],
+                content: [.text("Error: Failed to get metadata: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -565,19 +565,19 @@ extension AppsWorker {
     public func updateMetadata(_ params: CallTool.Parameters) async throws -> CallTool.Result {
         guard let arguments = params.arguments,
               let appIdValue = arguments["app_id"],
-              let _ = appIdValue.stringValue, // проверяем наличие, но app_id нужен только для проверки
+              let _ = appIdValue.stringValue, // validate presence, app_id is only needed for validation
               let versionIdValue = arguments["version_id"],
               let versionId = versionIdValue.stringValue,
               let localeValue = arguments["locale"],
               let locale = localeValue.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Требуются параметры 'app_id', 'version_id' и 'locale'")],
+                content: [.text("Error: Required parameters 'app_id', 'version_id' and 'locale' are missing")],
                 isError: true
             )
         }
         
         do {
-            // 1. Сначала проверяем, что версия в редактируемом состоянии
+            // 1. First check that version is in editable state
             let versionResponse: ASCAppStoreVersionResponse = try await httpClient.get(
                 "/v1/appStoreVersions/\(versionId)",
                 as: ASCAppStoreVersionResponse.self
@@ -586,12 +586,12 @@ extension AppsWorker {
             let version = versionResponse.data
             guard version.attributes?.appStoreState == "PREPARE_FOR_SUBMISSION" else {
                 return CallTool.Result(
-                    content: [.text("Error: Версия должна быть в состоянии PREPARE_FOR_SUBMISSION для редактирования.\nТекущее состояние: \(version.attributes?.appStoreState ?? "Unknown")")],
+                    content: [.text("Error: Version must be in PREPARE_FOR_SUBMISSION state for editing.\nCurrent state: \(version.attributes?.appStoreState ?? "Unknown")")],
                     isError: true
                 )
             }
             
-            // 2. Получаем ID локализации для указанной локали
+            // 2. Get localization ID for the specified locale
             let localizationsResponse: ASCAppStoreVersionLocalizationsResponse = try await httpClient.get(
                 "/v1/appStoreVersions/\(versionId)/appStoreVersionLocalizations",
                 parameters: ["filter[locale]": locale],
@@ -600,12 +600,12 @@ extension AppsWorker {
             
             guard let localization = localizationsResponse.data.first else {
                 return CallTool.Result(
-                    content: [.text("Error: Локализация '\(locale)' не найдена для версии \(version.version)")],
+                    content: [.text("Error: Localization '\(locale)' not found for version \(version.version)")],
                     isError: true
                 )
             }
             
-            // 3. Собираем атрибуты для обновления (только переданные поля)
+            // 3. Collect attributes for update (only provided fields)
             let attributes = ASCAppStoreVersionLocalizationUpdateRequest.Data.Attributes(
                 description: arguments["description"]?.stringValue,
                 whatsNew: arguments["whats_new"]?.stringValue,
@@ -615,7 +615,7 @@ extension AppsWorker {
                 marketingUrl: arguments["marketing_url"]?.stringValue
             )
             
-            // Проверяем, что хотя бы одно поле передано
+            // Check that at least one field is provided
             let hasUpdates = attributes.description != nil ||
                            attributes.whatsNew != nil ||
                            attributes.keywords != nil ||
@@ -625,12 +625,12 @@ extension AppsWorker {
             
             guard hasUpdates else {
                 return CallTool.Result(
-                    content: [.text("Warning: Не указаны поля для обновления")],
+                    content: [.text("Warning: No fields specified for update")],
                     isError: true
                 )
             }
             
-            // 4. Отправляем PATCH запрос
+            // 4. Send PATCH request
             let updateRequest = ASCAppStoreVersionLocalizationUpdateRequest(
                 id: localization.id,
                 attributes: attributes
@@ -642,36 +642,36 @@ extension AppsWorker {
                 as: ASCAppStoreVersionLocalizationUpdateResponse.self
             )
             
-            // 5. Формируем результат
-            var result = "**Метаданные успешно обновлены**\n\n"
-            result += "Версия: \(version.version)\n"
-            result += "Локаль: \(locale)\n\n"
-            result += "**Обновленные поля:**\n"
+            // 5. Format result
+            var result = "**Metadata updated successfully**\n\n"
+            result += "Version: \(version.version)\n"
+            result += "Locale: \(locale)\n\n"
+            result += "**Updated fields:**\n"
 
             if attributes.description != nil {
-                result += "- Описание\n"
+                result += "- Description\n"
             }
             if attributes.whatsNew != nil {
                 result += "- What's New\n"
             }
             if attributes.keywords != nil {
-                result += "- Ключевые слова\n"
+                result += "- Keywords\n"
             }
             if attributes.promotionalText != nil {
-                result += "- Промо-текст\n"
+                result += "- Promotional text\n"
             }
             if attributes.supportUrl != nil {
-                result += "- URL поддержки\n"
+                result += "- Support URL\n"
             }
             if attributes.marketingUrl != nil {
-                result += "- Маркетинговый URL\n"
+                result += "- Marketing URL\n"
             }
             
             return CallTool.Result(content: [.text(result)])
             
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Ошибка обновления метаданных: \(error.localizedDescription)")],
+                content: [.text("Error: Failed to update metadata: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -687,7 +687,7 @@ extension AppsWorker {
               let localeValue = arguments["locale"],
               let locale = localeValue.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Требуются параметры 'version_id' и 'locale'")],
+                content: [.text("Error: Required parameters 'version_id' and 'locale' are missing")],
                 isError: true
             )
         }
@@ -735,7 +735,7 @@ extension AppsWorker {
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Ошибка создания локализации: \(error.localizedDescription)")],
+                content: [.text("Error: Failed to create localization: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -749,7 +749,7 @@ extension AppsWorker {
               let localizationIdValue = arguments["localization_id"],
               let localizationId = localizationIdValue.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Требуется параметр 'localization_id'")],
+                content: [.text("Error: Required parameter 'localization_id' is missing")],
                 isError: true
             )
         }
@@ -766,7 +766,7 @@ extension AppsWorker {
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Ошибка удаления локализации: \(error.localizedDescription)")],
+                content: [.text("Error: Failed to delete localization: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -823,7 +823,7 @@ extension AppsWorker {
               let versionIdValue = arguments["version_id"],
               let versionId = versionIdValue.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Требуются параметры 'app_id' и 'version_id'\n\nИспользуйте apps_list_versions для получения ID версии")],
+                content: [.text("Error: Required parameters 'app_id' and 'version_id' are missing\n\nUse apps_list_versions to get version ID")],
                 isError: true
             )
         }
@@ -843,7 +843,7 @@ extension AppsWorker {
                 )
             }
 
-            // Форматируем результат
+            // Format result
             var localizations: [[String: Any]] = []
 
             for localization in localizationsResponse.data {
@@ -874,7 +874,7 @@ extension AppsWorker {
                 localizations.append(localizationData)
             }
 
-            // Сортируем по locale для удобства
+            // Sort by locale for convenience
             localizations.sort { ($0["locale"] as? String ?? "") < ($1["locale"] as? String ?? "") }
 
             var result: [String: Any] = [
