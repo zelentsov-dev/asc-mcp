@@ -11,6 +11,7 @@
   <a href="https://developer.apple.com/macos/"><img src="https://img.shields.io/badge/macOS-14.0+-000000.svg?style=flat&logo=apple&logoColor=white" alt="macOS 14.0+"></a>
   <a href="https://modelcontextprotocol.io"><img src="https://img.shields.io/badge/MCP-compatible-4A90D9.svg?style=flat" alt="MCP Compatible"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-yellow.svg?style=flat" alt="MIT License"></a>
+  <a href="https://github.com/zelentsov-dev/asc-mcp/actions"><img src="https://github.com/zelentsov-dev/asc-mcp/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
 </p>
 
 <p align="center">
@@ -49,7 +50,7 @@
 ```bash
 # 1. Install via Mint
 brew install mint
-mint install zelentsov-dev/asc-mcp@1.2.0
+mint install zelentsov-dev/asc-mcp@1.4.0
 
 # 2. Add to Claude Code with env vars (simplest setup)
 claude mcp add asc-mcp \
@@ -81,7 +82,7 @@ Or use a JSON config file — see [Configuration](#configuration) below.
 brew install mint
 
 # Install asc-mcp from GitHub
-mint install zelentsov-dev/asc-mcp@1.2.0
+mint install zelentsov-dev/asc-mcp@1.4.0
 
 # Register in Claude Code
 claude mcp add asc-mcp -- ~/.mint/bin/asc-mcp
@@ -92,13 +93,13 @@ To install a specific branch or tag:
 ```bash
 mint install zelentsov-dev/asc-mcp@main      # main branch
 mint install zelentsov-dev/asc-mcp@develop    # develop branch
-mint install zelentsov-dev/asc-mcp@1.2.0      # specific tag
+mint install zelentsov-dev/asc-mcp@1.4.0      # specific tag
 ```
 
 To update to the latest version:
 
 ```bash
-mint install zelentsov-dev/asc-mcp@1.2.0 --force
+mint install zelentsov-dev/asc-mcp@1.4.0 --force
 ```
 
 ### Option B: Build from Source
@@ -143,6 +144,7 @@ export ASC_PRIVATE_KEY_PATH=/path/to/AuthKey.p8
 # export ASC_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\nMIGT..."
 # optional:
 # export ASC_COMPANY_NAME="My Company"
+# export ASC_VENDOR_NUMBER=YOUR_VENDOR_NUMBER          # for analytics
 ```
 
 **Multiple companies** — numbered variables:
@@ -152,6 +154,7 @@ export ASC_COMPANY_1_NAME="My Company"
 export ASC_COMPANY_1_KEY_ID=XXXXXXXXXX
 export ASC_COMPANY_1_ISSUER_ID=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
 export ASC_COMPANY_1_KEY_PATH=/path/to/AuthKey1.p8
+export ASC_COMPANY_1_VENDOR_NUMBER=YOUR_VENDOR_NUMBER   # optional, for analytics
 
 export ASC_COMPANY_2_NAME="Client Corp"
 export ASC_COMPANY_2_KEY_ID=YYYYYYYYYY
@@ -173,18 +176,22 @@ Create `~/.config/asc-mcp/companies.json`:
       "name": "My Company",
       "key_id": "XXXXXXXXXX",
       "issuer_id": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
-      "key_path": "/Users/you/.keys/AuthKey_XXXXXXXXXX.p8"
+      "key_path": "/Users/you/.keys/AuthKey_XXXXXXXXXX.p8",
+      "vendor_number": "YOUR_VENDOR_NUMBER"
     },
     {
       "id": "client-company",
       "name": "Client Corp",
       "key_id": "YYYYYYYYYY",
       "issuer_id": "yyyyyyyy-yyyy-yyyy-yyyy-yyyyyyyyyyyy",
-      "key_path": "/Users/you/.keys/AuthKey_YYYYYYYYYY.p8"
+      "key_path": "/Users/you/.keys/AuthKey_YYYYYYYYYY.p8",
+      "vendor_number": "YOUR_VENDOR_NUMBER"
     }
   ]
 }
 ```
+
+> **Note:** `vendor_number` is required for analytics tools (`analytics_sales_report`, `analytics_financial_report`, `analytics_app_summary`). Find it in [App Store Connect → Sales and Trends → Reports](https://appstoreconnect.apple.com/trends/reports).
 
 #### Configuration Priority
 
@@ -395,15 +402,15 @@ When `builds` is enabled, it automatically includes `build_processing` and `buil
 | `offer_codes` | `offer_codes_` | 7 | Subscription offer codes, one-time codes |
 | `winback` | `winback_` | 5 | Win-back offers for subscriptions |
 | `provisioning` | `provisioning_` | 17 | Bundle IDs, devices, certificates |
-| `app_info` | `app_info_` | 6 | App info, categories |
+| `app_info` | `app_info_` | 7 | App info, categories |
 | `pricing` | `pricing_` | 6 | Territories, pricing |
 | `users` | `users_` | 7 | Team members, roles |
 | `app_events` | `app_events_` | 9 | In-app events, localizations |
-| `analytics` | `analytics_` | 9 | Sales/financial reports, analytics |
+| `analytics` | `analytics_` | 11 | Sales/financial reports, analytics |
 | `screenshots` | `screenshots_` | 12 | Screenshots, previews, sets |
 | `custom_pages` | `custom_pages_` | 10 | Custom product pages |
 | `ppo` | `ppo_` | 9 | Product page optimization (A/B tests) |
-| `promoted` | `promoted_` | 6 | Promoted in-app purchases |
+| `promoted` | `promoted_` | 5 | Promoted in-app purchases |
 | `metrics` | `metrics_` | 4 | Performance metrics, diagnostics |
 
 ### Token Cost
@@ -414,7 +421,7 @@ When connected to an LLM client, tool definitions consume context tokens. Here's
 |---|---:|---:|
 | All workers (default) | 208 | **~24,000** |
 | Release workflow: `apps,builds,versions,reviews` | ~40 | ~5,500 |
-| Monetization: `apps,iap,subscriptions,pricing` | ~47 | ~6,000 |
+| Monetization: `apps,iap,subscriptions,pricing` | ~54 | ~6,500 |
 | TestFlight: `apps,builds,beta_groups,beta_testers` | ~34 | ~4,500 |
 | Marketing: `apps,screenshots,custom_pages,ppo,promoted` | ~46 | ~5,800 |
 | `--workers apps` | 16 | ~1,850 |
@@ -525,7 +532,7 @@ For Claude (200K context) ~22K tokens is ~5–7% — negligible. For clients wit
 </details>
 
 <details>
-<summary><strong>App Version Lifecycle</strong> — 12 tools</summary>
+<summary><strong>App Version Lifecycle</strong> — 13 tools</summary>
 
 | Tool | Description |
 |------|-------------|
@@ -717,7 +724,7 @@ For Claude (200K context) ~22K tokens is ~5–7% — negligible. For clients wit
 </details>
 
 <details>
-<summary><strong>Promoted Purchases</strong> — 6 tools</summary>
+<summary><strong>Promoted Purchases</strong> — 5 tools</summary>
 
 | Tool | Description |
 |------|-------------|
@@ -726,7 +733,6 @@ For Claude (200K context) ~22K tokens is ~5–7% — negligible. For clients wit
 | `promoted_create` | Create a promotion |
 | `promoted_update` | Update promotion (visibility/order) |
 | `promoted_delete` | Delete a promotion |
-| `promoted_list_images` | List promotion images |
 
 </details>
 
@@ -939,11 +945,7 @@ swift package clean      # Clean build artifacts
 
 ## Contributing
 
-1. Fork the repository
-2. Create a feature branch: `git checkout -b feature/amazing-feature`
-3. Commit your changes: `git commit -m 'Add amazing feature'`
-4. Push to the branch: `git push origin feature/amazing-feature`
-5. Open a Pull Request
+We welcome contributions! See [Contributing Guide](CONTRIBUTING.md) for details.
 
 ## License
 

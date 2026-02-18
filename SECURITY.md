@@ -12,7 +12,7 @@
 If you discover a security vulnerability, please report it responsibly:
 
 1. **Do NOT open a public issue**
-2. Email: **zelentsov.aleksey@gmail.com**
+2. Email: **fullback.94@gmail.com**
 3. Include: description, reproduction steps, and impact assessment
 4. You will receive a response within 48 hours
 
