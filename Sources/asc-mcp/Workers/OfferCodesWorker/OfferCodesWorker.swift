@@ -19,7 +19,10 @@ public final class OfferCodesWorker: Sendable {
             deactivateOfferCodeTool(),
             listOfferCodePricesTool(),
             generateOneTimeCodesTool(),
-            listOneTimeCodesTool()
+            listOneTimeCodesTool(),
+            createCustomCodeTool(),
+            getCustomCodeTool(),
+            deactivateCustomCodeTool()
         ]
     }
 
@@ -40,6 +43,12 @@ public final class OfferCodesWorker: Sendable {
             return try await generateOneTimeCodes(params)
         case "offer_codes_list_one_time":
             return try await listOneTimeCodes(params)
+        case "offer_codes_create_custom_code":
+            return try await createCustomCode(params)
+        case "offer_codes_get_custom_code":
+            return try await getCustomCode(params)
+        case "offer_codes_deactivate_custom_code":
+            return try await deactivateCustomCode(params)
         default:
             throw MCPError.methodNotFound("Unknown tool: \(params.name)")
         }

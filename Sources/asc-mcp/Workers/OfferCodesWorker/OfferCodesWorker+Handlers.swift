@@ -442,6 +442,139 @@ extension OfferCodesWorker {
         }
     }
 
+    // MARK: - Custom Codes
+
+    /// Creates a custom (reusable) code for an offer code
+    /// - Returns: JSON with created custom code details
+    func createCustomCode(_ params: CallTool.Parameters) async throws -> CallTool.Result {
+        guard let arguments = params.arguments,
+              let offerCodeId = arguments["offer_code_id"]?.stringValue,
+              let customCode = arguments["custom_code"]?.stringValue,
+              let numberOfCodes = arguments["number_of_codes"]?.intValue else {
+            return CallTool.Result(
+                content: [.text("Error: Required parameters: offer_code_id, custom_code, number_of_codes")],
+                isError: true
+            )
+        }
+
+        do {
+            let request = CreateOfferCodeCustomCodeRequest(
+                data: CreateOfferCodeCustomCodeRequest.CreateData(
+                    attributes: CreateOfferCodeCustomCodeRequest.Attributes(
+                        customCode: customCode,
+                        numberOfCodes: numberOfCodes,
+                        expirationDate: arguments["expiration_date"]?.stringValue
+                    ),
+                    relationships: CreateOfferCodeCustomCodeRequest.Relationships(
+                        offerCode: CreateOfferCodeCustomCodeRequest.OfferCodeRelationship(
+                            data: ASCResourceIdentifier(type: "subscriptionOfferCodes", id: offerCodeId)
+                        )
+                    )
+                )
+            )
+
+            let response: ASCOfferCodeCustomCodeResponse = try await httpClient.post(
+                "/v1/subscriptionOfferCodeCustomCodes",
+                body: request,
+                as: ASCOfferCodeCustomCodeResponse.self
+            )
+
+            let code = formatCustomCode(response.data)
+
+            let result = [
+                "success": true,
+                "custom_code": code
+            ] as [String: Any]
+
+            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+
+        } catch {
+            return CallTool.Result(
+                content: [.text("Error: Failed to create custom code: \(error.localizedDescription)")],
+                isError: true
+            )
+        }
+    }
+
+    /// Gets details of a custom code
+    /// - Returns: JSON with custom code details
+    func getCustomCode(_ params: CallTool.Parameters) async throws -> CallTool.Result {
+        guard let arguments = params.arguments,
+              let customCodeId = arguments["custom_code_id"]?.stringValue else {
+            return CallTool.Result(
+                content: [.text("Error: Required parameter 'custom_code_id' is missing")],
+                isError: true
+            )
+        }
+
+        do {
+            let response: ASCOfferCodeCustomCodeResponse = try await httpClient.get(
+                "/v1/subscriptionOfferCodeCustomCodes/\(customCodeId)",
+                as: ASCOfferCodeCustomCodeResponse.self
+            )
+
+            let code = formatCustomCode(response.data)
+
+            let result = [
+                "success": true,
+                "custom_code": code
+            ] as [String: Any]
+
+            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+
+        } catch {
+            return CallTool.Result(
+                content: [.text("Error: Failed to get custom code: \(error.localizedDescription)")],
+                isError: true
+            )
+        }
+    }
+
+    /// Deactivates a custom code
+    /// - Returns: JSON with deactivated custom code details
+    func deactivateCustomCode(_ params: CallTool.Parameters) async throws -> CallTool.Result {
+        guard let arguments = params.arguments,
+              let customCodeId = arguments["custom_code_id"]?.stringValue else {
+            return CallTool.Result(
+                content: [.text("Error: Required parameter 'custom_code_id' is missing")],
+                isError: true
+            )
+        }
+
+        do {
+            let request = UpdateOfferCodeCustomCodeRequest(
+                data: UpdateOfferCodeCustomCodeRequest.UpdateData(
+                    id: customCodeId,
+                    attributes: UpdateOfferCodeCustomCodeRequest.Attributes(
+                        active: false
+                    )
+                )
+            )
+
+            let response: ASCOfferCodeCustomCodeResponse = try await httpClient.patch(
+                "/v1/subscriptionOfferCodeCustomCodes/\(customCodeId)",
+                body: request,
+                as: ASCOfferCodeCustomCodeResponse.self
+            )
+
+            let code = formatCustomCode(response.data)
+
+            let result = [
+                "success": true,
+                "custom_code": code,
+                "message": "Custom code '\(customCodeId)' deactivated"
+            ] as [String: Any]
+
+            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+
+        } catch {
+            return CallTool.Result(
+                content: [.text("Error: Failed to deactivate custom code: \(error.localizedDescription)")],
+                isError: true
+            )
+        }
+    }
+
     // MARK: - Formatting
 
     private func formatOfferCode(_ code: ASCOfferCode) -> [String: Any] {
@@ -463,6 +596,19 @@ extension OfferCodesWorker {
         return [
             "id": price.id,
             "type": price.type
+        ]
+    }
+
+    private func formatCustomCode(_ code: ASCOfferCodeCustomCode) -> [String: Any] {
+        return [
+            "id": code.id,
+            "type": code.type,
+            "customCode": code.attributes?.customCode.jsonSafe ?? NSNull(),
+            "numberOfCodes": code.attributes?.numberOfCodes.jsonSafe ?? NSNull(),
+            "totalNumberOfCodes": code.attributes?.totalNumberOfCodes.jsonSafe ?? NSNull(),
+            "active": code.attributes?.active.jsonSafe ?? NSNull(),
+            "expirationDate": code.attributes?.expirationDate.jsonSafe ?? NSNull(),
+            "createdDate": code.attributes?.createdDate.jsonSafe ?? NSNull()
         ]
     }
 

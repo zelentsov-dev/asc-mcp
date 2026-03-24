@@ -302,6 +302,54 @@ public struct ASCAssetDeliveryErrorSimple: Codable, Sendable {
     public let description: String?
 }
 
+// MARK: - IAP Availability Models
+
+/// IAP availability response
+public struct ASCIAPAvailabilityResponse: Codable, Sendable {
+    public let data: ASCIAPAvailability
+    public let included: [ASCTerritory]?
+}
+
+/// IAP availability resource
+public struct ASCIAPAvailability: Codable, Sendable {
+    public let type: String
+    public let id: String
+    public let attributes: IAPAvailabilityAttributes?
+}
+
+/// IAP availability attributes
+public struct IAPAvailabilityAttributes: Codable, Sendable {
+    public let availableInNewTerritories: Bool?
+}
+
+/// Create IAP availability request
+public struct CreateIAPAvailabilityRequest: Codable, Sendable {
+    public let data: CreateData
+
+    public struct CreateData: Codable, Sendable {
+        public let type: String = "inAppPurchaseAvailabilities"
+        public let attributes: Attributes
+        public let relationships: Relationships
+    }
+
+    public struct Attributes: Codable, Sendable {
+        public let availableInNewTerritories: Bool
+    }
+
+    public struct Relationships: Codable, Sendable {
+        public let inAppPurchase: InAppPurchaseRelationship
+        public let availableTerritories: TerritoriesRelationship
+    }
+
+    public struct InAppPurchaseRelationship: Codable, Sendable {
+        public let data: ASCResourceIdentifier
+    }
+
+    public struct TerritoriesRelationship: Codable, Sendable {
+        public let data: [ASCResourceIdentifier]
+    }
+}
+
 // MARK: - Create IAP Review Screenshot Request
 
 /// Create IAP review screenshot request

@@ -17,7 +17,13 @@ public final class BetaTestersWorker: Sendable {
             getBetaTesterTool(),
             createBetaTesterTool(),
             deleteBetaTesterTool(),
-            listBetaTesterAppsTool()
+            listBetaTesterAppsTool(),
+            sendInvitationTool(),
+            addToGroupsTool(),
+            removeFromGroupsTool(),
+            addToBuildsTool(),
+            removeFromBuildsTool(),
+            removeFromAppTool()
         ]
     }
 
@@ -36,6 +42,18 @@ public final class BetaTestersWorker: Sendable {
             return try await deleteBetaTester(params)
         case "beta_testers_list_apps":
             return try await listBetaTesterApps(params)
+        case "beta_testers_send_invitation":
+            return try await sendInvitation(params)
+        case "beta_testers_add_to_groups":
+            return try await addToGroups(params)
+        case "beta_testers_remove_from_groups":
+            return try await removeFromGroups(params)
+        case "beta_testers_add_to_builds":
+            return try await addToBuilds(params)
+        case "beta_testers_remove_from_builds":
+            return try await removeFromBuilds(params)
+        case "beta_testers_remove_from_app":
+            return try await removeFromApp(params)
         default:
             throw MCPError.methodNotFound("Unknown tool: \(params.name)")
         }

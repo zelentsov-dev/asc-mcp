@@ -451,6 +451,23 @@ extension SubscriptionsWorker {
         )
     }
 
+    func deleteSubscriptionPriceTool() -> Tool {
+        return Tool(
+            name: "subscriptions_delete_price",
+            description: "Delete a scheduled price change for a subscription",
+            inputSchema: .object([
+                "type": .string("object"),
+                "properties": .object([
+                    "subscription_price_id": .object([
+                        "type": .string("string"),
+                        "description": .string("Subscription price ID to delete")
+                    ])
+                ]),
+                "required": .array([.string("subscription_price_id")])
+            ])
+        )
+    }
+
     func submitSubscriptionTool() -> Tool {
         return Tool(
             name: "subscriptions_submit",

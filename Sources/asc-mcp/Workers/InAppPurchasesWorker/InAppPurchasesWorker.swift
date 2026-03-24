@@ -28,7 +28,9 @@ public final class InAppPurchasesWorker: Sendable {
             getIAPPriceScheduleTool(),
             setIAPPriceScheduleTool(),
             getIAPReviewScreenshotTool(),
-            createIAPReviewScreenshotTool()
+            createIAPReviewScreenshotTool(),
+            setIAPAvailabilityTool(),
+            getIAPAvailabilityTool()
         ]
     }
 
@@ -69,6 +71,10 @@ public final class InAppPurchasesWorker: Sendable {
             return try await getIAPReviewScreenshot(params)
         case "iap_create_review_screenshot":
             return try await createIAPReviewScreenshot(params)
+        case "iap_set_availability":
+            return try await setIAPAvailability(params)
+        case "iap_get_availability":
+            return try await getIAPAvailability(params)
         default:
             throw MCPError.methodNotFound("Unknown tool: \(params.name)")
         }

@@ -70,6 +70,8 @@ public actor WorkerManager {
     private var promotionalOffersWorker: PromotionalOffersWorker
     private var sandboxTestersWorker: SandboxTestersWorker
     private var betaAppWorker: BetaAppWorker
+    private var preReleaseVersionsWorker: PreReleaseVersionsWorker
+    private var betaLicenseAgreementsWorker: BetaLicenseAgreementsWorker
     private var screenshotsWorker: ScreenshotsWorker
     private var customProductPagesWorker: CustomProductPagesWorker
     private var productPageOptimizationWorker: ProductPageOptimizationWorker
@@ -107,6 +109,8 @@ public actor WorkerManager {
         self.promotionalOffersWorker = await PromotionalOffersWorker(httpClient: dependencies.httpClient)
         self.sandboxTestersWorker = await SandboxTestersWorker(httpClient: dependencies.httpClient)
         self.betaAppWorker = await BetaAppWorker(httpClient: dependencies.httpClient)
+        self.preReleaseVersionsWorker = await PreReleaseVersionsWorker(httpClient: dependencies.httpClient)
+        self.betaLicenseAgreementsWorker = await BetaLicenseAgreementsWorker(httpClient: dependencies.httpClient)
         self.screenshotsWorker = await ScreenshotsWorker(httpClient: dependencies.httpClient)
         self.customProductPagesWorker = await CustomProductPagesWorker(httpClient: dependencies.httpClient)
         self.productPageOptimizationWorker = await ProductPageOptimizationWorker(httpClient: dependencies.httpClient)
@@ -225,6 +229,12 @@ public actor WorkerManager {
             if self.isWorkerEnabled("beta_app") {
                 allTools += await self.getBetaAppTools()
             }
+            if self.isWorkerEnabled("pre_release") {
+                allTools += await self.getPreReleaseVersionsTools()
+            }
+            if self.isWorkerEnabled("beta_license") {
+                allTools += await self.getBetaLicenseAgreementsTools()
+            }
             if self.isWorkerEnabled("screenshots") {
                 allTools += await self.getScreenshotsTools()
             }
@@ -277,7 +287,10 @@ public actor WorkerManager {
                        params.name.hasPrefix("builds_set_beta_") ||
                        params.name.hasPrefix("builds_list_beta_") ||
                        params.name.hasPrefix("builds_send_beta_") ||
-                       params.name.hasPrefix("builds_add_to_beta_") {
+                       params.name.hasPrefix("builds_add_to_beta_") ||
+                       params.name.hasPrefix("builds_add_individual_") ||
+                       params.name.hasPrefix("builds_remove_individual_") ||
+                       params.name.hasPrefix("builds_list_individual_") {
                         guard self.isWorkerEnabled("build_beta") || self.isWorkerEnabled("builds") else { return self.disabledWorkerResult("build_beta") }
                         return try await self.buildBetaDetailsWorker.handleTool(params)
                     } else if params.name.hasPrefix("builds_get_processing_") ||
@@ -381,6 +394,16 @@ public actor WorkerManager {
                     return try await self.betaAppWorker.handleTool(params)
                 }
 
+                if params.name.hasPrefix("pre_release_") {
+                    guard self.isWorkerEnabled("pre_release") else { return self.disabledWorkerResult("pre_release") }
+                    return try await self.preReleaseVersionsWorker.handleTool(params)
+                }
+
+                if params.name.hasPrefix("beta_license_") {
+                    guard self.isWorkerEnabled("beta_license") else { return self.disabledWorkerResult("beta_license") }
+                    return try await self.betaLicenseAgreementsWorker.handleTool(params)
+                }
+
                 if params.name.hasPrefix("screenshots_") {
                     guard self.isWorkerEnabled("screenshots") else { return self.disabledWorkerResult("screenshots") }
                     return try await self.screenshotsWorker.handleTool(params)
@@ -448,6 +471,8 @@ public actor WorkerManager {
         self.promotionalOffersWorker = await PromotionalOffersWorker(httpClient: dependencies.httpClient)
         self.sandboxTestersWorker = await SandboxTestersWorker(httpClient: dependencies.httpClient)
         self.betaAppWorker = await BetaAppWorker(httpClient: dependencies.httpClient)
+        self.preReleaseVersionsWorker = await PreReleaseVersionsWorker(httpClient: dependencies.httpClient)
+        self.betaLicenseAgreementsWorker = await BetaLicenseAgreementsWorker(httpClient: dependencies.httpClient)
         self.screenshotsWorker = await ScreenshotsWorker(httpClient: dependencies.httpClient)
         self.customProductPagesWorker = await CustomProductPagesWorker(httpClient: dependencies.httpClient)
         self.productPageOptimizationWorker = await ProductPageOptimizationWorker(httpClient: dependencies.httpClient)
@@ -578,6 +603,14 @@ public actor WorkerManager {
 
     private func getBetaAppTools() async -> [Tool] {
         return await betaAppWorker.getTools()
+    }
+
+    private func getPreReleaseVersionsTools() async -> [Tool] {
+        return await preReleaseVersionsWorker.getTools()
+    }
+
+    private func getBetaLicenseAgreementsTools() async -> [Tool] {
+        return await betaLicenseAgreementsWorker.getTools()
     }
 
     private func getScreenshotsTools() async -> [Tool] {

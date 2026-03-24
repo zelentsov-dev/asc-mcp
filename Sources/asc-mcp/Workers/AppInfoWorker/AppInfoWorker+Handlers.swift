@@ -354,6 +354,152 @@ extension AppInfoWorker {
         }
     }
 
+    // MARK: - EULA Handlers
+
+    /// Gets the current EULA for an app
+    /// - Returns: JSON with EULA details or message if none exists
+    func getEula(_ params: CallTool.Parameters) async throws -> CallTool.Result {
+        guard let arguments = params.arguments,
+              let appIdValue = arguments["app_id"],
+              let appId = appIdValue.stringValue else {
+            return CallTool.Result(
+                content: [.text("Required parameter 'app_id' is missing")],
+                isError: true
+            )
+        }
+
+        do {
+            let responseData = try await httpClient.get(
+                "/v1/apps/\(appId)/endUserLicenseAgreement",
+                parameters: [:]
+            )
+
+            let response = try JSONDecoder().decode(ASCEULAResponse.self, from: responseData)
+
+            let result: [String: Any] = [
+                "success": true,
+                "eula": formatEula(response.data)
+            ]
+
+            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+
+        } catch {
+            return CallTool.Result(
+                content: [.text("Error: Failed to get EULA (app may not have a EULA configured): \(error.localizedDescription)")],
+                isError: true
+            )
+        }
+    }
+
+    /// Creates a EULA for an app
+    /// - Returns: JSON with created EULA details
+    func createEula(_ params: CallTool.Parameters) async throws -> CallTool.Result {
+        guard let arguments = params.arguments,
+              let appIdValue = arguments["app_id"],
+              let appId = appIdValue.stringValue,
+              let textValue = arguments["agreement_text"],
+              let agreementText = textValue.stringValue,
+              let territoryIdsValue = arguments["territory_ids"],
+              let territoryIdsArray = territoryIdsValue.arrayValue else {
+            return CallTool.Result(
+                content: [.text("Required parameters: app_id, agreement_text, territory_ids")],
+                isError: true
+            )
+        }
+
+        let territoryIds = territoryIdsArray.compactMap { $0.stringValue }
+        guard !territoryIds.isEmpty else {
+            return CallTool.Result(
+                content: [.text("'territory_ids' must contain at least one territory ID")],
+                isError: true
+            )
+        }
+
+        do {
+            let request = CreateEULARequest(
+                data: CreateEULARequest.CreateEULAData(
+                    attributes: CreateEULARequest.CreateEULAAttributes(
+                        agreementText: agreementText
+                    ),
+                    relationships: CreateEULARequest.CreateEULARelationships(
+                        app: CreateEULARequest.AppRelationship(
+                            data: ASCResourceIdentifier(type: "apps", id: appId)
+                        ),
+                        territories: CreateEULARequest.TerritoriesRelationship(
+                            data: territoryIds.map { ASCResourceIdentifier(type: "territories", id: $0) }
+                        )
+                    )
+                )
+            )
+
+            let bodyData = try JSONEncoder().encode(request)
+            let responseData = try await httpClient.post(
+                "/v1/endUserLicenseAgreements",
+                body: bodyData
+            )
+            let response = try JSONDecoder().decode(ASCEULAResponse.self, from: responseData)
+
+            let result: [String: Any] = [
+                "success": true,
+                "eula": formatEula(response.data),
+                "message": "EULA created successfully"
+            ]
+
+            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+
+        } catch {
+            return CallTool.Result(
+                content: [.text("Failed to create EULA: \(error.localizedDescription)")],
+                isError: true
+            )
+        }
+    }
+
+    /// Updates an existing EULA
+    /// - Returns: JSON with updated EULA details
+    func updateEula(_ params: CallTool.Parameters) async throws -> CallTool.Result {
+        guard let arguments = params.arguments,
+              let eulaIdValue = arguments["eula_id"],
+              let eulaId = eulaIdValue.stringValue else {
+            return CallTool.Result(
+                content: [.text("Required parameter 'eula_id' is missing")],
+                isError: true
+            )
+        }
+
+        do {
+            let request = UpdateEULARequest(
+                data: UpdateEULARequest.UpdateEULAData(
+                    id: eulaId,
+                    attributes: UpdateEULARequest.UpdateEULAAttributes(
+                        agreementText: arguments["agreement_text"]?.stringValue
+                    )
+                )
+            )
+
+            let bodyData = try JSONEncoder().encode(request)
+            let responseData = try await httpClient.patch(
+                "/v1/endUserLicenseAgreements/\(eulaId)",
+                body: bodyData
+            )
+            let response = try JSONDecoder().decode(ASCEULAResponse.self, from: responseData)
+
+            let result: [String: Any] = [
+                "success": true,
+                "eula": formatEula(response.data),
+                "message": "EULA updated successfully"
+            ]
+
+            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+
+        } catch {
+            return CallTool.Result(
+                content: [.text("Failed to update EULA: \(error.localizedDescription)")],
+                isError: true
+            )
+        }
+    }
+
     // MARK: - Formatting
 
     private func formatAppInfo(_ info: ASCAppInfo) -> [String: Any] {
@@ -403,6 +549,14 @@ extension AppInfoWorker {
             "privacyPolicyUrl": loc.attributes?.privacyPolicyUrl.jsonSafe,
             "privacyChoicesUrl": loc.attributes?.privacyChoicesUrl.jsonSafe,
             "privacyPolicyText": loc.attributes?.privacyPolicyText.jsonSafe
+        ]
+    }
+
+    private func formatEula(_ eula: ASCEULA) -> [String: Any] {
+        return [
+            "id": eula.id,
+            "type": eula.type,
+            "agreementText": eula.attributes?.agreementText.jsonSafe ?? NSNull()
         ]
     }
 

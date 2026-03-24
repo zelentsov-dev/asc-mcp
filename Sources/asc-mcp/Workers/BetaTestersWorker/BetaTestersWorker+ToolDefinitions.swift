@@ -143,4 +143,142 @@ extension BetaTestersWorker {
             ])
         )
     }
+
+    func sendInvitationTool() -> Tool {
+        return Tool(
+            name: "beta_testers_send_invitation",
+            description: "Send or resend a TestFlight invitation to a beta tester for a specific app",
+            inputSchema: .object([
+                "type": .string("object"),
+                "properties": .object([
+                    "beta_tester_id": .object([
+                        "type": .string("string"),
+                        "description": .string("Beta tester ID to send invitation to")
+                    ]),
+                    "app_id": .object([
+                        "type": .string("string"),
+                        "description": .string("App ID to invite the tester to")
+                    ])
+                ]),
+                "required": .array([.string("beta_tester_id"), .string("app_id")])
+            ])
+        )
+    }
+
+    func addToGroupsTool() -> Tool {
+        return Tool(
+            name: "beta_testers_add_to_groups",
+            description: "Add a beta tester to one or more beta groups",
+            inputSchema: .object([
+                "type": .string("object"),
+                "properties": .object([
+                    "beta_tester_id": .object([
+                        "type": .string("string"),
+                        "description": .string("Beta tester ID")
+                    ]),
+                    "group_ids": .object([
+                        "type": .string("array"),
+                        "description": .string("Array of beta group IDs to add the tester to"),
+                        "items": .object([
+                            "type": .string("string")
+                        ])
+                    ])
+                ]),
+                "required": .array([.string("beta_tester_id"), .string("group_ids")])
+            ])
+        )
+    }
+
+    func removeFromGroupsTool() -> Tool {
+        return Tool(
+            name: "beta_testers_remove_from_groups",
+            description: "Remove a beta tester from one or more beta groups",
+            inputSchema: .object([
+                "type": .string("object"),
+                "properties": .object([
+                    "beta_tester_id": .object([
+                        "type": .string("string"),
+                        "description": .string("Beta tester ID")
+                    ]),
+                    "group_ids": .object([
+                        "type": .string("array"),
+                        "description": .string("Array of beta group IDs to remove the tester from"),
+                        "items": .object([
+                            "type": .string("string")
+                        ])
+                    ])
+                ]),
+                "required": .array([.string("beta_tester_id"), .string("group_ids")])
+            ])
+        )
+    }
+
+    func addToBuildsTool() -> Tool {
+        return Tool(
+            name: "beta_testers_add_to_builds",
+            description: "Assign one or more builds to a beta tester for individual testing",
+            inputSchema: .object([
+                "type": .string("object"),
+                "properties": .object([
+                    "beta_tester_id": .object([
+                        "type": .string("string"),
+                        "description": .string("Beta tester ID")
+                    ]),
+                    "build_ids": .object([
+                        "type": .string("array"),
+                        "description": .string("Array of build IDs to assign to the tester"),
+                        "items": .object([
+                            "type": .string("string")
+                        ])
+                    ])
+                ]),
+                "required": .array([.string("beta_tester_id"), .string("build_ids")])
+            ])
+        )
+    }
+
+    func removeFromBuildsTool() -> Tool {
+        return Tool(
+            name: "beta_testers_remove_from_builds",
+            description: "Remove build access from a beta tester",
+            inputSchema: .object([
+                "type": .string("object"),
+                "properties": .object([
+                    "beta_tester_id": .object([
+                        "type": .string("string"),
+                        "description": .string("Beta tester ID")
+                    ]),
+                    "build_ids": .object([
+                        "type": .string("array"),
+                        "description": .string("Array of build IDs to remove from the tester"),
+                        "items": .object([
+                            "type": .string("string")
+                        ])
+                    ])
+                ]),
+                "required": .array([.string("beta_tester_id"), .string("build_ids")])
+            ])
+        )
+    }
+
+    func removeFromAppTool() -> Tool {
+        return Tool(
+            name: "beta_testers_remove_from_app",
+            description: "Remove a beta tester's access to an app entirely",
+            inputSchema: .object([
+                "type": .string("object"),
+                "properties": .object([
+                    "beta_tester_id": .object([
+                        "type": .string("string"),
+                        "description": .string("Beta tester ID")
+                    ]),
+                    "app_id": .object([
+                        "type": .string("string"),
+                        "description": .string("App ID to remove tester access from")
+                    ])
+                ]),
+                "required": .array([.string("beta_tester_id"), .string("app_id")])
+            ])
+        )
+    }
 }

@@ -282,6 +282,30 @@ struct WorkerRoutingTests {
         }
     }
 
+    // MARK: - PreReleaseVersionsWorker
+
+    @Test("PreReleaseVersionsWorker throws MCPError.methodNotFound for unknown tool")
+    func preReleaseVersionsWorkerUnknownTool() async throws {
+        let client = try await TestFactory.makeHTTPClient()
+        let worker = PreReleaseVersionsWorker(httpClient: client)
+        let params = CallTool.Parameters(name: "pre_release_nonexistent", arguments: nil)
+        await #expect(throws: MCPError.self) {
+            _ = try await worker.handleTool(params)
+        }
+    }
+
+    // MARK: - BetaLicenseAgreementsWorker
+
+    @Test("BetaLicenseAgreementsWorker throws MCPError.methodNotFound for unknown tool")
+    func betaLicenseAgreementsWorkerUnknownTool() async throws {
+        let client = try await TestFactory.makeHTTPClient()
+        let worker = BetaLicenseAgreementsWorker(httpClient: client)
+        let params = CallTool.Parameters(name: "beta_license_nonexistent", arguments: nil)
+        await #expect(throws: MCPError.self) {
+            _ = try await worker.handleTool(params)
+        }
+    }
+
     // MARK: - ScreenshotsWorker
 
     @Test("ScreenshotsWorker throws MCPError.methodNotFound for unknown tool")

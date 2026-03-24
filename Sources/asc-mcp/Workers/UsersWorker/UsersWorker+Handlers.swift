@@ -346,6 +346,158 @@ extension UsersWorker {
         }
     }
 
+    /// Lists apps visible to a specific user
+    /// - Returns: JSON array of app objects with pagination
+    func listVisibleApps(_ params: CallTool.Parameters) async throws -> CallTool.Result {
+        guard let arguments = params.arguments,
+              let idValue = arguments["user_id"],
+              let userId = idValue.stringValue else {
+            return CallTool.Result(
+                content: [.text("Required parameter 'user_id' is missing")],
+                isError: true
+            )
+        }
+
+        do {
+            let response: ASCAppsResponse
+
+            if let nextUrl = arguments["next_url"]?.stringValue,
+               let parsed = parsePaginationUrl(nextUrl) {
+                response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCAppsResponse.self)
+            } else {
+                var queryParams: [String: String] = [:]
+
+                if let limitValue = arguments["limit"],
+                   let limit = limitValue.intValue {
+                    queryParams["limit"] = String(min(max(limit, 1), 200))
+                } else {
+                    queryParams["limit"] = "25"
+                }
+
+                response = try await httpClient.get(
+                    "/v1/users/\(userId)/visibleApps",
+                    parameters: queryParams,
+                    as: ASCAppsResponse.self
+                )
+            }
+
+            let apps = response.data.map { formatApp($0) }
+
+            var result: [String: Any] = [
+                "success": true,
+                "apps": apps,
+                "count": apps.count
+            ]
+            if let next = response.links.next {
+                result["next_url"] = next
+            }
+
+            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+
+        } catch {
+            return CallTool.Result(
+                content: [.text("Failed to list visible apps: \(error.localizedDescription)")],
+                isError: true
+            )
+        }
+    }
+
+    /// Grants user access to specific apps
+    /// - Returns: JSON confirmation
+    func addVisibleApps(_ params: CallTool.Parameters) async throws -> CallTool.Result {
+        guard let arguments = params.arguments,
+              let idValue = arguments["user_id"],
+              let userId = idValue.stringValue,
+              let appIdsValue = arguments["app_ids"],
+              let appIdsArray = appIdsValue.arrayValue else {
+            return CallTool.Result(
+                content: [.text("Required parameters: user_id, app_ids")],
+                isError: true
+            )
+        }
+
+        let appIds = appIdsArray.compactMap { $0.stringValue }
+        guard !appIds.isEmpty else {
+            return CallTool.Result(
+                content: [.text("'app_ids' must contain at least one app ID")],
+                isError: true
+            )
+        }
+
+        do {
+            let request = BetaGroupRelationshipRequest(
+                data: appIds.map { ASCResourceIdentifier(type: "apps", id: $0) }
+            )
+
+            let bodyData = try JSONEncoder().encode(request)
+            _ = try await httpClient.post(
+                "/v1/users/\(userId)/relationships/visibleApps",
+                body: bodyData
+            )
+
+            let result = [
+                "success": true,
+                "message": "Added \(appIds.count) app(s) to user '\(userId)' visible apps"
+            ] as [String: Any]
+
+            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+
+        } catch {
+            return CallTool.Result(
+                content: [.text("Failed to add visible apps: \(error.localizedDescription)")],
+                isError: true
+            )
+        }
+    }
+
+    /// Removes user's access to specific apps
+    /// - Returns: JSON confirmation
+    func removeVisibleApps(_ params: CallTool.Parameters) async throws -> CallTool.Result {
+        guard let arguments = params.arguments,
+              let idValue = arguments["user_id"],
+              let userId = idValue.stringValue,
+              let appIdsValue = arguments["app_ids"],
+              let appIdsArray = appIdsValue.arrayValue else {
+            return CallTool.Result(
+                content: [.text("Required parameters: user_id, app_ids")],
+                isError: true
+            )
+        }
+
+        let appIds = appIdsArray.compactMap { $0.stringValue }
+        guard !appIds.isEmpty else {
+            return CallTool.Result(
+                content: [.text("'app_ids' must contain at least one app ID")],
+                isError: true
+            )
+        }
+
+        do {
+            let request = BetaGroupRelationshipRequest(
+                data: appIds.map { ASCResourceIdentifier(type: "apps", id: $0) }
+            )
+
+            let bodyData = try JSONEncoder().encode(request)
+            _ = try await httpClient.delete(
+                "/v1/users/\(userId)/relationships/visibleApps",
+                body: bodyData
+            )
+
+            let result = [
+                "success": true,
+                "message": "Removed \(appIds.count) app(s) from user '\(userId)' visible apps"
+            ] as [String: Any]
+
+            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+
+        } catch {
+            return CallTool.Result(
+                content: [.text("Failed to remove visible apps: \(error.localizedDescription)")],
+                isError: true
+            )
+        }
+    }
+
     // MARK: - Formatting
 
     private func formatUser(_ user: ASCUser) -> [String: Any] {
@@ -359,6 +511,17 @@ extension UsersWorker {
             "allAppsVisible": user.attributes?.allAppsVisible.jsonSafe ?? NSNull(),
             "provisioningAllowed": user.attributes?.provisioningAllowed.jsonSafe ?? NSNull(),
             "expirationDate": user.attributes?.expirationDate.jsonSafe ?? NSNull()
+        ]
+    }
+
+    private func formatApp(_ app: ASCApp) -> [String: Any] {
+        return [
+            "id": app.id,
+            "type": app.type,
+            "name": app.attributes?.name.jsonSafe ?? NSNull(),
+            "bundleId": app.attributes?.bundleId.jsonSafe ?? NSNull(),
+            "sku": app.attributes?.sku.jsonSafe ?? NSNull(),
+            "primaryLocale": app.attributes?.primaryLocale.jsonSafe ?? NSNull()
         ]
     }
 

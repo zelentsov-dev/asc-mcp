@@ -380,4 +380,54 @@ extension ReviewsWorker {
             )
         }
     }
+
+    /// Gets AI-generated summaries of customer reviews
+    /// - Returns: JSON with review summarizations
+    func handleReviewsSummarizations(_ params: CallTool.Parameters) async throws -> CallTool.Result {
+        guard let arguments = params.arguments,
+              let appIdValue = arguments["app_id"],
+              let appId = appIdValue.stringValue else {
+            return CallTool.Result(
+                content: [.text("Error: Required parameter 'app_id' is missing")],
+                isError: true
+            )
+        }
+
+        do {
+            var queryParams: [String: String] = [
+                "filter[platform]": arguments["platform"]?.stringValue ?? "IOS"
+            ]
+
+            if let limit = arguments["limit"]?.intValue {
+                queryParams["limit"] = String(min(max(limit, 1), 200))
+            } else {
+                queryParams["limit"] = "25"
+            }
+
+            let responseData = try await httpClient.get(
+                "/v1/apps/\(appId)/customerReviewSummarizations",
+                parameters: queryParams
+            )
+
+            let response = try JSONDecoder().decode(PassthroughAPIResponse.self, from: responseData)
+
+            var result: [String: Any] = [
+                "success": true,
+                "summarizations": response.data.asAny
+            ]
+
+            if case .object(let linksObj) = response.links,
+               case .string(let nextUrl) = linksObj["next"] {
+                result["next_url"] = nextUrl
+            }
+
+            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+
+        } catch {
+            return CallTool.Result(
+                content: [.text("Error: Failed to get review summarizations: \(error.localizedDescription)")],
+                isError: true
+            )
+        }
+    }
 }

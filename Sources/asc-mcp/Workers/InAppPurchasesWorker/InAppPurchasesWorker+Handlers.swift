@@ -722,6 +722,120 @@ extension InAppPurchasesWorker {
         }
     }
 
+    // MARK: - Availability
+
+    /// Sets territorial availability for an in-app purchase
+    /// - Returns: JSON with availability details
+    func setIAPAvailability(_ params: CallTool.Parameters) async throws -> CallTool.Result {
+        guard let arguments = params.arguments,
+              let iapId = arguments["iap_id"]?.stringValue,
+              let availableInNewTerritories = arguments["available_in_new_territories"]?.boolValue else {
+            return CallTool.Result(
+                content: [.text("Error: Required parameters: iap_id, available_in_new_territories")],
+                isError: true
+            )
+        }
+
+        let territoryIds = arguments["territory_ids"]?.arrayValue?.compactMap { $0.stringValue } ?? []
+
+        do {
+            let territories = territoryIds.map { ASCResourceIdentifier(type: "territories", id: $0) }
+
+            let request = CreateIAPAvailabilityRequest(
+                data: CreateIAPAvailabilityRequest.CreateData(
+                    attributes: CreateIAPAvailabilityRequest.Attributes(
+                        availableInNewTerritories: availableInNewTerritories
+                    ),
+                    relationships: CreateIAPAvailabilityRequest.Relationships(
+                        inAppPurchase: CreateIAPAvailabilityRequest.InAppPurchaseRelationship(
+                            data: ASCResourceIdentifier(type: "inAppPurchases", id: iapId)
+                        ),
+                        availableTerritories: CreateIAPAvailabilityRequest.TerritoriesRelationship(
+                            data: territories
+                        )
+                    )
+                )
+            )
+
+            let response: ASCIAPAvailabilityResponse = try await httpClient.post(
+                "/v1/inAppPurchaseAvailabilities",
+                body: request,
+                as: ASCIAPAvailabilityResponse.self
+            )
+
+            let result: [String: Any] = [
+                "success": true,
+                "availability": formatAvailability(response.data)
+            ]
+
+            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+
+        } catch {
+            return CallTool.Result(
+                content: [.text("Error: Failed to set IAP availability: \(error.localizedDescription)")],
+                isError: true
+            )
+        }
+    }
+
+    /// Gets availability details for an in-app purchase
+    /// - Returns: JSON with availability details and territories
+    func getIAPAvailability(_ params: CallTool.Parameters) async throws -> CallTool.Result {
+        guard let arguments = params.arguments,
+              let availabilityId = arguments["availability_id"]?.stringValue else {
+            return CallTool.Result(
+                content: [.text("Error: Required parameter 'availability_id' is missing")],
+                isError: true
+            )
+        }
+
+        do {
+            let includeTerritories = arguments["include_territories"]?.boolValue ?? true
+
+            var queryParams: [String: String] = [:]
+            if includeTerritories {
+                queryParams["include"] = "availableTerritories"
+            }
+
+            let response: ASCIAPAvailabilityResponse = try await httpClient.get(
+                "/v1/inAppPurchaseAvailabilities/\(availabilityId)",
+                parameters: queryParams,
+                as: ASCIAPAvailabilityResponse.self
+            )
+
+            var resultDict: [String: Any] = [
+                "success": true,
+                "availability": formatAvailability(response.data)
+            ]
+
+            if let included = response.included {
+                let territories = included.map { [
+                    "id": $0.id,
+                    "type": $0.type,
+                    "currency": $0.attributes?.currency.jsonSafe ?? NSNull()
+                ] as [String: Any] }
+                resultDict["territories"] = territories
+                resultDict["territory_count"] = territories.count
+            }
+
+            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(resultDict))])
+
+        } catch {
+            return CallTool.Result(
+                content: [.text("Error: Failed to get IAP availability: \(error.localizedDescription)")],
+                isError: true
+            )
+        }
+    }
+
+    private func formatAvailability(_ availability: ASCIAPAvailability) -> [String: Any] {
+        return [
+            "id": availability.id,
+            "type": availability.type,
+            "availableInNewTerritories": availability.attributes?.availableInNewTerritories.jsonSafe ?? NSNull()
+        ]
+    }
+
     // MARK: - Review Screenshots
 
     /// Gets the App Store Review screenshot for an in-app purchase

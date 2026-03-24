@@ -380,6 +380,55 @@ extension InAppPurchasesWorker {
         )
     }
 
+    func setIAPAvailabilityTool() -> Tool {
+        return Tool(
+            name: "iap_set_availability",
+            description: "Set territorial availability for an in-app purchase",
+            inputSchema: .object([
+                "type": .string("object"),
+                "properties": .object([
+                    "iap_id": .object([
+                        "type": .string("string"),
+                        "description": .string("In-app purchase ID")
+                    ]),
+                    "available_in_new_territories": .object([
+                        "type": .string("boolean"),
+                        "description": .string("Automatically available in new territories")
+                    ]),
+                    "territory_ids": .object([
+                        "type": .string("array"),
+                        "description": .string("Array of territory IDs (e.g. [\"USA\", \"GBR\", \"DEU\"])"),
+                        "items": .object([
+                            "type": .string("string")
+                        ])
+                    ])
+                ]),
+                "required": .array([.string("iap_id"), .string("available_in_new_territories"), .string("territory_ids")])
+            ])
+        )
+    }
+
+    func getIAPAvailabilityTool() -> Tool {
+        return Tool(
+            name: "iap_get_availability",
+            description: "Get availability details for an in-app purchase",
+            inputSchema: .object([
+                "type": .string("object"),
+                "properties": .object([
+                    "availability_id": .object([
+                        "type": .string("string"),
+                        "description": .string("In-app purchase availability ID")
+                    ]),
+                    "include_territories": .object([
+                        "type": .string("boolean"),
+                        "description": .string("Include available territories (default: true)")
+                    ])
+                ]),
+                "required": .array([.string("availability_id")])
+            ])
+        )
+    }
+
     func createIAPReviewScreenshotTool() -> Tool {
         return Tool(
             name: "iap_create_review_screenshot",

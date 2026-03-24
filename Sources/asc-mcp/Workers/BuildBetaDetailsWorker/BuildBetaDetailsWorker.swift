@@ -19,10 +19,13 @@ public final class BuildBetaDetailsWorker: Sendable {
             getBetaGroupsTool(),
             getBetaTestersTool(),
             addToBetaGroupsTool(),
-            sendBetaNotificationTool()
+            sendBetaNotificationTool(),
+            addIndividualTestersTool(),
+            removeIndividualTestersTool(),
+            listIndividualTestersTool()
         ]
     }
-    
+
     /// Handle tool calls (for WorkerManager)
     public func handleTool(_ params: CallTool.Parameters) async throws -> CallTool.Result {
         switch params.name {
@@ -42,6 +45,12 @@ public final class BuildBetaDetailsWorker: Sendable {
             return try await addToBetaGroups(params)
         case "builds_send_beta_notification":
             return try await sendBetaNotification(params)
+        case "builds_add_individual_testers":
+            return try await addIndividualTesters(params)
+        case "builds_remove_individual_testers":
+            return try await removeIndividualTesters(params)
+        case "builds_list_individual_testers":
+            return try await listIndividualTesters(params)
         default:
             throw MCPError.methodNotFound("Unknown tool: \(params.name)")
         }

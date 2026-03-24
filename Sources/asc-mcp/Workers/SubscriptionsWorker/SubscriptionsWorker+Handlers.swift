@@ -679,6 +679,37 @@ extension SubscriptionsWorker {
         }
     }
 
+    // MARK: - Subscription Prices
+
+    /// Deletes a scheduled price change for a subscription
+    /// - Returns: JSON confirmation
+    func deleteSubscriptionPrice(_ params: CallTool.Parameters) async throws -> CallTool.Result {
+        guard let arguments = params.arguments,
+              let priceId = arguments["subscription_price_id"]?.stringValue else {
+            return CallTool.Result(
+                content: [.text("Error: Required parameter 'subscription_price_id' is missing")],
+                isError: true
+            )
+        }
+
+        do {
+            _ = try await httpClient.delete("/v1/subscriptionPrices/\(priceId)")
+
+            let result = [
+                "success": true,
+                "message": "Subscription price '\(priceId)' deleted"
+            ] as [String: Any]
+
+            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+
+        } catch {
+            return CallTool.Result(
+                content: [.text("Error: Failed to delete subscription price: \(error.localizedDescription)")],
+                isError: true
+            )
+        }
+    }
+
     // MARK: - Subscription Group Localizations
 
     /// Lists localizations for a subscription group

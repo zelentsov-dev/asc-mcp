@@ -857,6 +857,37 @@ struct ParameterValidationTests {
         #expect(result.isError == true)
     }
 
+    // MARK: - PreReleaseVersionsWorker
+
+    @Test("pre_release_get without pre_release_version_id returns isError")
+    func preReleaseGetMissing() async throws {
+        let client = try await TestFactory.makeHTTPClient()
+        let worker = PreReleaseVersionsWorker(httpClient: client)
+        let params = CallTool.Parameters(name: "pre_release_get", arguments: nil)
+        let result = try await worker.handleTool(params)
+        #expect(result.isError == true)
+    }
+
+    // MARK: - BetaLicenseAgreementsWorker
+
+    @Test("beta_license_get without beta_license_agreement_id returns isError")
+    func betaLicenseGetMissing() async throws {
+        let client = try await TestFactory.makeHTTPClient()
+        let worker = BetaLicenseAgreementsWorker(httpClient: client)
+        let params = CallTool.Parameters(name: "beta_license_get", arguments: nil)
+        let result = try await worker.handleTool(params)
+        #expect(result.isError == true)
+    }
+
+    @Test("beta_license_update without beta_license_agreement_id returns isError")
+    func betaLicenseUpdateMissing() async throws {
+        let client = try await TestFactory.makeHTTPClient()
+        let worker = BetaLicenseAgreementsWorker(httpClient: client)
+        let params = CallTool.Parameters(name: "beta_license_update", arguments: nil)
+        let result = try await worker.handleTool(params)
+        #expect(result.isError == true)
+    }
+
     // MARK: - ScreenshotsWorker
 
     @Test("screenshots_list_sets without localization_id returns isError")

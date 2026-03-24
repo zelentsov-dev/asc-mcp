@@ -61,6 +61,8 @@ public func runApplication(enabledWorkers: Set<String>? = nil) async throws {
         - promo_offers_* -- subscription promotional offers (discounts for current/former subscribers)
         - sandbox_* -- sandbox testers management (list, update, clear purchase history)
         - beta_app_* -- beta app localizations, review submissions, review details
+        - pre_release_* -- pre-release versions (list, get, builds)
+        - beta_license_* -- beta license agreements (list, get, update)
         - screenshots_* -- screenshots and app previews management
         - custom_pages_* -- custom product pages
         - ppo_* -- product page optimization (A/B testing)

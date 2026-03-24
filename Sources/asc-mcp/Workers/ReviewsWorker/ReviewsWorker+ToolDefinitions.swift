@@ -194,4 +194,31 @@ extension ReviewsWorker {
             ])
         )
     }
+
+    /// Creates tool definition for getting AI-generated review summarizations
+    func createReviewsSummarizationsTool() -> Tool {
+        return Tool(
+            name: "reviews_summarizations",
+            description: "Get AI-generated summaries of customer reviews for an app",
+            inputSchema: .object([
+                "type": .string("object"),
+                "properties": .object([
+                    "app_id": .object([
+                        "type": .string("string"),
+                        "description": .string("App Store Connect app ID")
+                    ]),
+                    "platform": .object([
+                        "type": .string("string"),
+                        "description": .string("Platform (default: IOS)"),
+                        "enum": .array([.string("IOS"), .string("MAC_OS"), .string("TV_OS"), .string("VISION_OS")])
+                    ]),
+                    "limit": .object([
+                        "type": .string("integer"),
+                        "description": .string("Maximum number of summarizations to return (default: 25)")
+                    ])
+                ]),
+                "required": .array([.string("app_id")])
+            ])
+        )
+    }
 }

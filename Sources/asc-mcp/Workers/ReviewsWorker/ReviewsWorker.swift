@@ -25,7 +25,8 @@ public final class ReviewsWorker: Sendable {
             createReviewsStatsTool(),
             createReviewsCreateResponseTool(),
             createReviewsDeleteResponseTool(),
-            createReviewsGetResponseTool()
+            createReviewsGetResponseTool(),
+            createReviewsSummarizationsTool()
         ]
     }
     
@@ -46,6 +47,8 @@ public final class ReviewsWorker: Sendable {
             return try await handleReviewsDeleteResponse(params)
         case "reviews_get_response":
             return try await handleReviewsGetResponse(params)
+        case "reviews_summarizations":
+            return try await handleReviewsSummarizations(params)
         default:
             throw MCPError.methodNotFound("Unknown tool: \(params.name)")
         }

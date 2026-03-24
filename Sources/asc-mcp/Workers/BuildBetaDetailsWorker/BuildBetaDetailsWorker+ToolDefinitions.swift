@@ -208,4 +208,77 @@ extension BuildBetaDetailsWorker {
             ])
         )
     }
+
+    func addIndividualTestersTool() -> Tool {
+        Tool(
+            name: "builds_add_individual_testers",
+            description: "Add individual beta testers to a specific build",
+            inputSchema: .object([
+                "type": .string("object"),
+                "properties": .object([
+                    "build_id": .object([
+                        "type": .string("string"),
+                        "description": .string("Build ID in App Store Connect")
+                    ]),
+                    "beta_tester_ids": .object([
+                        "type": .string("array"),
+                        "description": .string("Array of beta tester IDs to add to the build"),
+                        "items": .object([
+                            "type": .string("string")
+                        ])
+                    ])
+                ]),
+                "required": .array([.string("build_id"), .string("beta_tester_ids")])
+            ])
+        )
+    }
+
+    func removeIndividualTestersTool() -> Tool {
+        Tool(
+            name: "builds_remove_individual_testers",
+            description: "Remove individual beta testers from a specific build",
+            inputSchema: .object([
+                "type": .string("object"),
+                "properties": .object([
+                    "build_id": .object([
+                        "type": .string("string"),
+                        "description": .string("Build ID in App Store Connect")
+                    ]),
+                    "beta_tester_ids": .object([
+                        "type": .string("array"),
+                        "description": .string("Array of beta tester IDs to remove from the build"),
+                        "items": .object([
+                            "type": .string("string")
+                        ])
+                    ])
+                ]),
+                "required": .array([.string("build_id"), .string("beta_tester_ids")])
+            ])
+        )
+    }
+
+    func listIndividualTestersTool() -> Tool {
+        Tool(
+            name: "builds_list_individual_testers",
+            description: "List individual beta testers assigned to a specific build",
+            inputSchema: .object([
+                "type": .string("object"),
+                "properties": .object([
+                    "build_id": .object([
+                        "type": .string("string"),
+                        "description": .string("Build ID in App Store Connect")
+                    ]),
+                    "limit": .object([
+                        "type": .string("integer"),
+                        "description": .string("Maximum number of testers to return (1-200)")
+                    ]),
+                    "next_url": .object([
+                        "type": .string("string"),
+                        "description": .string("Pagination URL from previous response to get next page")
+                    ])
+                ]),
+                "required": .array([.string("build_id")])
+            ])
+        )
+    }
 }

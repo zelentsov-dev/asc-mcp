@@ -16,7 +16,7 @@ MCP (Model Context Protocol) server for App Store Connect API integration, desig
 # Build the project
 swift build
 
-# Run all unit tests (416 tests)
+# Run all unit tests (423 tests)
 swift test
 
 # Run the MCP server (requires environment variables or companies.json)
@@ -49,7 +49,7 @@ Each company needs: `keyID`, `issuerID`, `privateKeyPath` (path to `.p8` file).
 
 **WorkerManager** (`Workers/MainWorker/WorkerManager.swift`) — central registry, routes tool calls by prefix.
 
-**Workers** (29 workers, 236 tools):
+**Workers** (31 workers, 265 tools):
 
 | Worker | Prefix | Tools | Domain |
 |--------|--------|-------|--------|
@@ -57,26 +57,28 @@ Each company needs: `keyID`, `issuerID`, `privateKeyPath` (path to `.p8` file).
 | AuthWorker | `auth_` | 4 | JWT tokens |
 | AppsWorker | `apps_` | 9 | App listing, metadata, localizations |
 | BuildsWorker | `builds_` | 4 | Build management |
-| BuildBetaDetailsWorker | `builds_*_beta_` | 8 | TestFlight localizations, notifications, beta groups |
+| BuildBetaDetailsWorker | `builds_*_beta_` | 11 | TestFlight localizations, notifications, beta groups, individual testers |
 | BuildProcessingWorker | `builds_*_processing_` | 4 | Build states, encryption |
-| AppLifecycleWorker | `app_versions_` | 13 | Versions, submit, release, phased rollout |
-| ReviewsWorker | `reviews_` | 7 | Customer reviews and responses |
+| AppLifecycleWorker | `app_versions_` | 14 | Versions, submit, release, phased rollout, delete |
+| ReviewsWorker | `reviews_` | 8 | Customer reviews, responses, AI summarizations |
 | BetaGroupsWorker | `beta_groups_` | 9 | TestFlight groups CRUD, testers, builds |
-| InAppPurchasesWorker | `iap_` | 17 | IAP, subscriptions, localizations, prices, screenshots |
+| InAppPurchasesWorker | `iap_` | 19 | IAP, subscriptions, localizations, prices, screenshots, availability |
 | ProvisioningWorker | `provisioning_` | 17 | Bundle IDs, devices, certificates, profiles, capabilities |
-| BetaTestersWorker | `beta_testers_` | 6 | Tester management, search, invite |
-| AppInfoWorker | `app_info_` | 7 | App info, categories, localizations |
+| BetaTestersWorker | `beta_testers_` | 12 | Tester management, search, invite, relationships, invitations |
+| AppInfoWorker | `app_info_` | 10 | App info, categories, localizations, EULA |
 | PricingWorker | `pricing_` | 6 | Territories, availability, price points/schedule |
-| UsersWorker | `users_` | 7 | Team members, roles, invitations |
+| UsersWorker | `users_` | 10 | Team members, roles, invitations, visible apps |
 | AppEventsWorker | `app_events_` | 9 | In-app events CRUD, localizations |
 | AnalyticsWorker | `analytics_` | 11 | Sales/financial reports, app summary, analytics reports/instances/segments, snapshot status |
-| SubscriptionsWorker | `subscriptions_` | 20 | Subscription CRUD, groups, localizations, prices, submit, group localizations |
-| OfferCodesWorker | `offer_codes_` | 7 | Subscription offer codes, one-time codes |
+| SubscriptionsWorker | `subscriptions_` | 21 | Subscription CRUD, groups, localizations, prices, submit, group localizations, price delete |
+| OfferCodesWorker | `offer_codes_` | 10 | Subscription offer codes, one-time codes, custom codes |
 | WinBackOffersWorker | `winback_` | 5 | Win-back offers for subscriptions |
 | IntroductoryOffersWorker | `intro_offers_` | 4 | Introductory offers (free trial, pay-as-you-go, pay-up-front) |
 | PromotionalOffersWorker | `promo_offers_` | 6 | Promotional offers for subscriptions |
 | SandboxTestersWorker | `sandbox_` | 3 | Sandbox testers (list, update, clear purchase history) |
 | BetaAppWorker | `beta_app_` | 10 | Beta app localizations, review submissions, review details |
+| PreReleaseVersionsWorker | `pre_release_` | 3 | Pre-release versions (list, get, builds) |
+| BetaLicenseAgreementsWorker | `beta_license_` | 3 | Beta license agreements (list, get, update) |
 | ScreenshotsWorker | `screenshots_` | 12 | Screenshots, previews, sets, reorder |
 | CustomProductPagesWorker | `custom_pages_` | 10 | Custom product pages, versions, localizations |
 | ProductPageOptimizationWorker | `ppo_` | 9 | A/B test experiments, treatments |
@@ -107,7 +109,7 @@ Each company needs: `keyID`, `issuerID`, `privateKeyPath` (path to `.p8` file).
 ### Unit Tests (Swift Testing)
 
 ```bash
-swift test    # Run all 416 tests across 31 suites
+swift test    # Run all 423 tests across 31 suites
 ```
 
 Test categories:

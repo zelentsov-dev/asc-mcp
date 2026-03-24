@@ -18,7 +18,10 @@ public final class UsersWorker: Sendable {
             removeUserTool(),
             inviteUserTool(),
             listInvitationsTool(),
-            cancelInvitationTool()
+            cancelInvitationTool(),
+            listVisibleAppsTool(),
+            addVisibleAppsTool(),
+            removeVisibleAppsTool()
         ]
     }
 
@@ -39,6 +42,12 @@ public final class UsersWorker: Sendable {
             return try await listInvitations(params)
         case "users_cancel_invitation":
             return try await cancelInvitation(params)
+        case "users_list_visible_apps":
+            return try await listVisibleApps(params)
+        case "users_add_visible_apps":
+            return try await addVisibleApps(params)
+        case "users_remove_visible_apps":
+            return try await removeVisibleApps(params)
         default:
             throw MCPError.methodNotFound("Unknown tool: \(params.name)")
         }

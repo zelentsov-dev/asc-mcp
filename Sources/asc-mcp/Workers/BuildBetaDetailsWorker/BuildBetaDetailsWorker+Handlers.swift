@@ -496,6 +496,164 @@ extension BuildBetaDetailsWorker {
         }
     }
 
+    /// Adds individual beta testers to a specific build
+    /// - Returns: JSON confirmation of the operation
+    /// - Throws: CallTool.Result with error if required parameters missing or API call fails
+    func addIndividualTesters(_ params: CallTool.Parameters) async throws -> CallTool.Result {
+        guard let arguments = params.arguments,
+              let buildIdValue = arguments["build_id"],
+              let buildId = buildIdValue.stringValue,
+              let testerIdsValue = arguments["beta_tester_ids"],
+              let testerIdsArray = testerIdsValue.arrayValue else {
+            return CallTool.Result(
+                content: [.text("Error: Required parameters 'build_id' and 'beta_tester_ids' are missing")],
+                isError: true
+            )
+        }
+
+        let testerIds = testerIdsArray.compactMap { $0.stringValue }
+        guard !testerIds.isEmpty else {
+            return CallTool.Result(
+                content: [.text("Error: 'beta_tester_ids' must contain at least one tester ID")],
+                isError: true
+            )
+        }
+
+        do {
+            let request = BetaGroupRelationshipRequest(
+                data: testerIds.map { ASCResourceIdentifier(type: "betaTesters", id: $0) }
+            )
+
+            let bodyData = try JSONEncoder().encode(request)
+            _ = try await httpClient.post(
+                "/v1/builds/\(buildId)/relationships/individualTesters",
+                body: bodyData
+            )
+
+            let result = [
+                "success": true,
+                "message": "Added \(testerIds.count) individual tester(s) to build '\(buildId)'"
+            ] as [String: Any]
+
+            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+
+        } catch {
+            return CallTool.Result(
+                content: [.text("Error: Failed to add individual testers: \(error.localizedDescription)")],
+                isError: true
+            )
+        }
+    }
+
+    /// Removes individual beta testers from a specific build
+    /// - Returns: JSON confirmation of the operation
+    /// - Throws: CallTool.Result with error if required parameters missing or API call fails
+    func removeIndividualTesters(_ params: CallTool.Parameters) async throws -> CallTool.Result {
+        guard let arguments = params.arguments,
+              let buildIdValue = arguments["build_id"],
+              let buildId = buildIdValue.stringValue,
+              let testerIdsValue = arguments["beta_tester_ids"],
+              let testerIdsArray = testerIdsValue.arrayValue else {
+            return CallTool.Result(
+                content: [.text("Error: Required parameters 'build_id' and 'beta_tester_ids' are missing")],
+                isError: true
+            )
+        }
+
+        let testerIds = testerIdsArray.compactMap { $0.stringValue }
+        guard !testerIds.isEmpty else {
+            return CallTool.Result(
+                content: [.text("Error: 'beta_tester_ids' must contain at least one tester ID")],
+                isError: true
+            )
+        }
+
+        do {
+            let request = BetaGroupRelationshipRequest(
+                data: testerIds.map { ASCResourceIdentifier(type: "betaTesters", id: $0) }
+            )
+
+            let bodyData = try JSONEncoder().encode(request)
+            _ = try await httpClient.delete(
+                "/v1/builds/\(buildId)/relationships/individualTesters",
+                body: bodyData
+            )
+
+            let result = [
+                "success": true,
+                "message": "Removed \(testerIds.count) individual tester(s) from build '\(buildId)'"
+            ] as [String: Any]
+
+            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+
+        } catch {
+            return CallTool.Result(
+                content: [.text("Error: Failed to remove individual testers: \(error.localizedDescription)")],
+                isError: true
+            )
+        }
+    }
+
+    /// Lists individual beta testers assigned to a specific build
+    /// - Returns: JSON array of individual testers with pagination
+    /// - Throws: CallTool.Result with error if build_id missing or API call fails
+    func listIndividualTesters(_ params: CallTool.Parameters) async throws -> CallTool.Result {
+        guard let arguments = params.arguments,
+              let buildIdValue = arguments["build_id"],
+              let buildId = buildIdValue.stringValue else {
+            return CallTool.Result(
+                content: [.text("Error: Required parameter 'build_id' is missing")],
+                isError: true
+            )
+        }
+
+        do {
+            let response: ASCBetaTestersResponse
+
+            // Check for pagination URL
+            if let nextUrlValue = arguments["next_url"],
+               let nextUrl = nextUrlValue.stringValue,
+               let parsed = parsePaginationUrl(nextUrl) {
+                response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCBetaTestersResponse.self)
+            } else {
+                var queryParams: [String: String] = [:]
+
+                if let limitValue = arguments["limit"],
+                   let limit = limitValue.intValue {
+                    queryParams["limit"] = String(min(max(limit, 1), 200))
+                } else {
+                    queryParams["limit"] = "50"
+                }
+
+                response = try await httpClient.get(
+                    "/v1/builds/\(buildId)/individualTesters",
+                    parameters: queryParams,
+                    as: ASCBetaTestersResponse.self
+                )
+            }
+
+            let testers = response.data.map { formatBetaTester($0) }
+
+            var result: [String: Any] = [
+                "success": true,
+                "individualTesters": testers,
+                "count": testers.count
+            ]
+
+            if let nextUrl = response.links?.next {
+                result["next_url"] = nextUrl
+            }
+
+            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+
+        } catch {
+            return CallTool.Result(
+                content: [.text("Error: Failed to list individual testers: \(error.localizedDescription)")],
+                isError: true
+            )
+        }
+    }
+
     /// Sends TestFlight notification to all beta testers about a new build
     /// - Returns: JSON with success status and confirmation message
     /// - Throws: CallTool.Result with error if build_id missing or notification fails
