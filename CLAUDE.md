@@ -16,7 +16,7 @@ MCP (Model Context Protocol) server for App Store Connect API integration, desig
 # Build the project
 swift build
 
-# Run all unit tests (393 tests)
+# Run all unit tests (416 tests)
 swift test
 
 # Run the MCP server (requires environment variables or companies.json)
@@ -49,7 +49,7 @@ Each company needs: `keyID`, `issuerID`, `privateKeyPath` (path to `.p8` file).
 
 **WorkerManager** (`Workers/MainWorker/WorkerManager.swift`) — central registry, routes tool calls by prefix.
 
-**Workers** (25 workers, 208 tools):
+**Workers** (29 workers, 236 tools):
 
 | Worker | Prefix | Tools | Domain |
 |--------|--------|-------|--------|
@@ -70,9 +70,13 @@ Each company needs: `keyID`, `issuerID`, `privateKeyPath` (path to `.p8` file).
 | UsersWorker | `users_` | 7 | Team members, roles, invitations |
 | AppEventsWorker | `app_events_` | 9 | In-app events CRUD, localizations |
 | AnalyticsWorker | `analytics_` | 11 | Sales/financial reports, app summary, analytics reports/instances/segments, snapshot status |
-| SubscriptionsWorker | `subscriptions_` | 15 | Subscription CRUD, groups, localizations, prices, submit |
+| SubscriptionsWorker | `subscriptions_` | 20 | Subscription CRUD, groups, localizations, prices, submit, group localizations |
 | OfferCodesWorker | `offer_codes_` | 7 | Subscription offer codes, one-time codes |
 | WinBackOffersWorker | `winback_` | 5 | Win-back offers for subscriptions |
+| IntroductoryOffersWorker | `intro_offers_` | 4 | Introductory offers (free trial, pay-as-you-go, pay-up-front) |
+| PromotionalOffersWorker | `promo_offers_` | 6 | Promotional offers for subscriptions |
+| SandboxTestersWorker | `sandbox_` | 3 | Sandbox testers (list, update, clear purchase history) |
+| BetaAppWorker | `beta_app_` | 10 | Beta app localizations, review submissions, review details |
 | ScreenshotsWorker | `screenshots_` | 12 | Screenshots, previews, sets, reorder |
 | CustomProductPagesWorker | `custom_pages_` | 10 | Custom product pages, versions, localizations |
 | ProductPageOptimizationWorker | `ppo_` | 9 | A/B test experiments, treatments |
@@ -103,7 +107,7 @@ Each company needs: `keyID`, `issuerID`, `privateKeyPath` (path to `.p8` file).
 ### Unit Tests (Swift Testing)
 
 ```bash
-swift test    # Run all 393 tests across 28 suites
+swift test    # Run all 416 tests across 31 suites
 ```
 
 Test categories:

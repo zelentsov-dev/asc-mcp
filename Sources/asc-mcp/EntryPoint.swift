@@ -48,7 +48,8 @@ struct ASCMCPApp {
             "company", "auth", "apps", "builds", "build_processing", "build_beta",
             "versions", "reviews", "beta_groups", "beta_testers", "iap",
             "provisioning", "app_info", "pricing", "users", "app_events", "analytics",
-            "subscriptions", "offer_codes", "winback", "screenshots", "custom_pages",
+            "subscriptions", "offer_codes", "winback", "intro_offers", "promo_offers",
+            "sandbox", "beta_app", "screenshots", "custom_pages",
             "ppo", "promoted", "metrics"
         ]
 

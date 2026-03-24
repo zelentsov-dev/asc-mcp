@@ -234,6 +234,54 @@ struct WorkerRoutingTests {
         }
     }
 
+    // MARK: - IntroductoryOffersWorker
+
+    @Test("IntroductoryOffersWorker throws MCPError.methodNotFound for unknown tool")
+    func introductoryOffersWorkerUnknownTool() async throws {
+        let client = try await TestFactory.makeHTTPClient()
+        let worker = IntroductoryOffersWorker(httpClient: client)
+        let params = CallTool.Parameters(name: "intro_offers_nonexistent", arguments: nil)
+        await #expect(throws: MCPError.self) {
+            _ = try await worker.handleTool(params)
+        }
+    }
+
+    // MARK: - PromotionalOffersWorker
+
+    @Test("PromotionalOffersWorker throws MCPError.methodNotFound for unknown tool")
+    func promotionalOffersWorkerUnknownTool() async throws {
+        let client = try await TestFactory.makeHTTPClient()
+        let worker = PromotionalOffersWorker(httpClient: client)
+        let params = CallTool.Parameters(name: "promo_offers_nonexistent", arguments: nil)
+        await #expect(throws: MCPError.self) {
+            _ = try await worker.handleTool(params)
+        }
+    }
+
+    // MARK: - SandboxTestersWorker
+
+    @Test("SandboxTestersWorker throws MCPError.methodNotFound for unknown tool")
+    func sandboxTestersWorkerUnknownTool() async throws {
+        let client = try await TestFactory.makeHTTPClient()
+        let worker = SandboxTestersWorker(httpClient: client)
+        let params = CallTool.Parameters(name: "sandbox_nonexistent", arguments: nil)
+        await #expect(throws: MCPError.self) {
+            _ = try await worker.handleTool(params)
+        }
+    }
+
+    // MARK: - BetaAppWorker
+
+    @Test("BetaAppWorker throws MCPError.methodNotFound for unknown tool")
+    func betaAppWorkerUnknownTool() async throws {
+        let client = try await TestFactory.makeHTTPClient()
+        let worker = BetaAppWorker(httpClient: client)
+        let params = CallTool.Parameters(name: "beta_app_nonexistent", arguments: nil)
+        await #expect(throws: MCPError.self) {
+            _ = try await worker.handleTool(params)
+        }
+    }
+
     // MARK: - ScreenshotsWorker
 
     @Test("ScreenshotsWorker throws MCPError.methodNotFound for unknown tool")

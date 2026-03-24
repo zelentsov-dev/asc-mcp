@@ -27,7 +27,12 @@ public final class SubscriptionsWorker: Sendable {
             createSubscriptionGroupTool(),
             updateSubscriptionGroupTool(),
             deleteSubscriptionGroupTool(),
-            submitSubscriptionTool()
+            submitSubscriptionTool(),
+            listSubscriptionGroupLocalizationsTool(),
+            createSubscriptionGroupLocalizationTool(),
+            getSubscriptionGroupLocalizationTool(),
+            updateSubscriptionGroupLocalizationTool(),
+            deleteSubscriptionGroupLocalizationTool()
         ]
     }
 
@@ -64,6 +69,16 @@ public final class SubscriptionsWorker: Sendable {
             return try await deleteSubscriptionGroup(params)
         case "subscriptions_submit":
             return try await submitSubscription(params)
+        case "subscriptions_list_group_localizations":
+            return try await listSubscriptionGroupLocalizations(params)
+        case "subscriptions_create_group_localization":
+            return try await createSubscriptionGroupLocalization(params)
+        case "subscriptions_get_group_localization":
+            return try await getSubscriptionGroupLocalization(params)
+        case "subscriptions_update_group_localization":
+            return try await updateSubscriptionGroupLocalization(params)
+        case "subscriptions_delete_group_localization":
+            return try await deleteSubscriptionGroupLocalization(params)
         default:
             throw MCPError.methodNotFound("Unknown tool: \(params.name)")
         }

@@ -679,6 +679,222 @@ extension SubscriptionsWorker {
         }
     }
 
+    // MARK: - Subscription Group Localizations
+
+    /// Lists localizations for a subscription group
+    /// - Returns: JSON array of group localizations with name, locale, custom app name
+    func listSubscriptionGroupLocalizations(_ params: CallTool.Parameters) async throws -> CallTool.Result {
+        guard let arguments = params.arguments,
+              let groupId = arguments["subscription_group_id"]?.stringValue else {
+            return CallTool.Result(
+                content: [.text("Error: Required parameter 'subscription_group_id' is missing")],
+                isError: true
+            )
+        }
+
+        do {
+            let response: ASCSubscriptionGroupLocalizationsResponse
+
+            if let nextUrl = arguments["next_url"]?.stringValue,
+               let parsed = parsePaginationUrl(nextUrl) {
+                response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCSubscriptionGroupLocalizationsResponse.self)
+            } else {
+                var queryParams: [String: String] = [:]
+
+                if let limit = arguments["limit"]?.intValue {
+                    queryParams["limit"] = String(min(max(limit, 1), 200))
+                } else {
+                    queryParams["limit"] = "25"
+                }
+
+                response = try await httpClient.get(
+                    "/v1/subscriptionGroups/\(groupId)/subscriptionGroupLocalizations",
+                    parameters: queryParams,
+                    as: ASCSubscriptionGroupLocalizationsResponse.self
+                )
+            }
+
+            let localizations = response.data.map { formatSubscriptionGroupLocalization($0) }
+
+            var result: [String: Any] = [
+                "success": true,
+                "localizations": localizations,
+                "count": localizations.count
+            ]
+            if let next = response.links?.next {
+                result["next_url"] = next
+            }
+
+            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+
+        } catch {
+            return CallTool.Result(
+                content: [.text("Error: Failed to list subscription group localizations: \(error.localizedDescription)")],
+                isError: true
+            )
+        }
+    }
+
+    /// Creates a localization for a subscription group
+    /// - Returns: JSON with created group localization details
+    func createSubscriptionGroupLocalization(_ params: CallTool.Parameters) async throws -> CallTool.Result {
+        guard let arguments = params.arguments,
+              let groupId = arguments["subscription_group_id"]?.stringValue,
+              let name = arguments["name"]?.stringValue,
+              let locale = arguments["locale"]?.stringValue else {
+            return CallTool.Result(
+                content: [.text("Error: Required parameters: subscription_group_id, name, locale")],
+                isError: true
+            )
+        }
+
+        do {
+            let request = CreateSubscriptionGroupLocalizationRequest(
+                data: CreateSubscriptionGroupLocalizationRequest.CreateData(
+                    attributes: CreateSubscriptionGroupLocalizationRequest.Attributes(
+                        name: name,
+                        locale: locale,
+                        customAppName: arguments["custom_app_name"]?.stringValue
+                    ),
+                    relationships: CreateSubscriptionGroupLocalizationRequest.Relationships(
+                        subscriptionGroup: CreateSubscriptionGroupLocalizationRequest.SubscriptionGroupRelationship(
+                            data: ASCResourceIdentifier(type: "subscriptionGroups", id: groupId)
+                        )
+                    )
+                )
+            )
+
+            let response: ASCSubscriptionGroupLocalizationResponse = try await httpClient.post(
+                "/v1/subscriptionGroupLocalizations",
+                body: request,
+                as: ASCSubscriptionGroupLocalizationResponse.self
+            )
+
+            let localization = formatSubscriptionGroupLocalization(response.data)
+
+            let result = [
+                "success": true,
+                "localization": localization
+            ] as [String: Any]
+
+            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+
+        } catch {
+            return CallTool.Result(
+                content: [.text("Error: Failed to create subscription group localization: \(error.localizedDescription)")],
+                isError: true
+            )
+        }
+    }
+
+    /// Gets details of a specific subscription group localization
+    /// - Returns: JSON with group localization details
+    func getSubscriptionGroupLocalization(_ params: CallTool.Parameters) async throws -> CallTool.Result {
+        guard let arguments = params.arguments,
+              let localizationId = arguments["group_localization_id"]?.stringValue else {
+            return CallTool.Result(
+                content: [.text("Error: Required parameter 'group_localization_id' is missing")],
+                isError: true
+            )
+        }
+
+        do {
+            let response: ASCSubscriptionGroupLocalizationResponse = try await httpClient.get(
+                "/v1/subscriptionGroupLocalizations/\(localizationId)",
+                as: ASCSubscriptionGroupLocalizationResponse.self
+            )
+
+            let localization = formatSubscriptionGroupLocalization(response.data)
+
+            let result = [
+                "success": true,
+                "localization": localization
+            ] as [String: Any]
+
+            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+
+        } catch {
+            return CallTool.Result(
+                content: [.text("Error: Failed to get subscription group localization: \(error.localizedDescription)")],
+                isError: true
+            )
+        }
+    }
+
+    /// Updates a subscription group localization
+    /// - Returns: JSON with updated group localization details
+    func updateSubscriptionGroupLocalization(_ params: CallTool.Parameters) async throws -> CallTool.Result {
+        guard let arguments = params.arguments,
+              let localizationId = arguments["group_localization_id"]?.stringValue else {
+            return CallTool.Result(
+                content: [.text("Error: Required parameter 'group_localization_id' is missing")],
+                isError: true
+            )
+        }
+
+        do {
+            let request = UpdateSubscriptionGroupLocalizationRequest(
+                data: UpdateSubscriptionGroupLocalizationRequest.UpdateData(
+                    id: localizationId,
+                    attributes: UpdateSubscriptionGroupLocalizationRequest.Attributes(
+                        name: arguments["name"]?.stringValue,
+                        customAppName: arguments["custom_app_name"]?.stringValue
+                    )
+                )
+            )
+
+            let response: ASCSubscriptionGroupLocalizationResponse = try await httpClient.patch(
+                "/v1/subscriptionGroupLocalizations/\(localizationId)",
+                body: request,
+                as: ASCSubscriptionGroupLocalizationResponse.self
+            )
+
+            let localization = formatSubscriptionGroupLocalization(response.data)
+
+            let result = [
+                "success": true,
+                "localization": localization
+            ] as [String: Any]
+
+            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+
+        } catch {
+            return CallTool.Result(
+                content: [.text("Error: Failed to update subscription group localization: \(error.localizedDescription)")],
+                isError: true
+            )
+        }
+    }
+
+    /// Deletes a subscription group localization
+    /// - Returns: JSON confirmation
+    func deleteSubscriptionGroupLocalization(_ params: CallTool.Parameters) async throws -> CallTool.Result {
+        guard let arguments = params.arguments,
+              let localizationId = arguments["group_localization_id"]?.stringValue else {
+            return CallTool.Result(
+                content: [.text("Error: Required parameter 'group_localization_id' is missing")],
+                isError: true
+            )
+        }
+
+        do {
+            _ = try await httpClient.delete("/v1/subscriptionGroupLocalizations/\(localizationId)")
+
+            let result = [
+                "success": true,
+                "message": "Subscription group localization '\(localizationId)' deleted"
+            ] as [String: Any]
+
+            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+
+        } catch {
+            return CallTool.Result(
+                content: [.text("Error: Failed to delete subscription group localization: \(error.localizedDescription)")],
+                isError: true
+            )
+        }
+    }
+
     // MARK: - Formatting
 
     private func formatSubscription(_ sub: ASCSubscription) -> [String: Any] {
@@ -730,6 +946,17 @@ extension SubscriptionsWorker {
             "customerPrice": point.attributes?.customerPrice.jsonSafe ?? NSNull(),
             "proceeds": point.attributes?.proceeds.jsonSafe ?? NSNull(),
             "proceedsYear2": point.attributes?.proceedsYear2.jsonSafe ?? NSNull()
+        ]
+    }
+
+    private func formatSubscriptionGroupLocalization(_ loc: ASCSubscriptionGroupLocalization) -> [String: Any] {
+        return [
+            "id": loc.id,
+            "type": loc.type,
+            "locale": loc.attributes.locale.jsonSafe,
+            "name": loc.attributes.name.jsonSafe,
+            "customAppName": loc.attributes.customAppName.jsonSafe,
+            "state": loc.attributes.state.jsonSafe
         ]
     }
 

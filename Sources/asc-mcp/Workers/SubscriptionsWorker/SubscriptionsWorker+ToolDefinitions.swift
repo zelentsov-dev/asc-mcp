@@ -338,6 +338,119 @@ extension SubscriptionsWorker {
         )
     }
 
+    func listSubscriptionGroupLocalizationsTool() -> Tool {
+        return Tool(
+            name: "subscriptions_list_group_localizations",
+            description: "List localizations for a subscription group (display name, custom app name per locale)",
+            inputSchema: .object([
+                "type": .string("object"),
+                "properties": .object([
+                    "subscription_group_id": .object([
+                        "type": .string("string"),
+                        "description": .string("Subscription group ID")
+                    ]),
+                    "limit": .object([
+                        "type": .string("integer"),
+                        "description": .string("Max results (default: 25, max: 200)")
+                    ]),
+                    "next_url": .object([
+                        "type": .string("string"),
+                        "description": .string("Pagination URL from previous response to fetch next page")
+                    ])
+                ]),
+                "required": .array([.string("subscription_group_id")])
+            ])
+        )
+    }
+
+    func createSubscriptionGroupLocalizationTool() -> Tool {
+        return Tool(
+            name: "subscriptions_create_group_localization",
+            description: "Create a localization for a subscription group (display name and optional custom app name for a locale)",
+            inputSchema: .object([
+                "type": .string("object"),
+                "properties": .object([
+                    "subscription_group_id": .object([
+                        "type": .string("string"),
+                        "description": .string("Subscription group ID")
+                    ]),
+                    "name": .object([
+                        "type": .string("string"),
+                        "description": .string("Display name of the subscription group for this locale")
+                    ]),
+                    "locale": .object([
+                        "type": .string("string"),
+                        "description": .string("Locale code (e.g. en-US, ru-RU, de-DE, ja, zh-Hans)")
+                    ]),
+                    "custom_app_name": .object([
+                        "type": .string("string"),
+                        "description": .string("Custom app name for this locale (optional)")
+                    ])
+                ]),
+                "required": .array([.string("subscription_group_id"), .string("name"), .string("locale")])
+            ])
+        )
+    }
+
+    func getSubscriptionGroupLocalizationTool() -> Tool {
+        return Tool(
+            name: "subscriptions_get_group_localization",
+            description: "Get details of a specific subscription group localization",
+            inputSchema: .object([
+                "type": .string("object"),
+                "properties": .object([
+                    "group_localization_id": .object([
+                        "type": .string("string"),
+                        "description": .string("Subscription group localization ID")
+                    ])
+                ]),
+                "required": .array([.string("group_localization_id")])
+            ])
+        )
+    }
+
+    func updateSubscriptionGroupLocalizationTool() -> Tool {
+        return Tool(
+            name: "subscriptions_update_group_localization",
+            description: "Update a subscription group localization (name and/or custom app name)",
+            inputSchema: .object([
+                "type": .string("object"),
+                "properties": .object([
+                    "group_localization_id": .object([
+                        "type": .string("string"),
+                        "description": .string("Subscription group localization ID")
+                    ]),
+                    "name": .object([
+                        "type": .string("string"),
+                        "description": .string("New display name")
+                    ]),
+                    "custom_app_name": .object([
+                        "type": .string("string"),
+                        "description": .string("New custom app name")
+                    ])
+                ]),
+                "required": .array([.string("group_localization_id")])
+            ])
+        )
+    }
+
+    func deleteSubscriptionGroupLocalizationTool() -> Tool {
+        return Tool(
+            name: "subscriptions_delete_group_localization",
+            description: "Delete a subscription group localization",
+            inputSchema: .object([
+                "type": .string("object"),
+                "properties": .object([
+                    "group_localization_id": .object([
+                        "type": .string("string"),
+                        "description": .string("Subscription group localization ID to delete")
+                    ])
+                ]),
+                "required": .array([.string("group_localization_id")])
+            ])
+        )
+    }
+
     func submitSubscriptionTool() -> Tool {
         return Tool(
             name: "subscriptions_submit",

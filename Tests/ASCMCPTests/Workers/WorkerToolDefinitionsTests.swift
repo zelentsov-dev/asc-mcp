@@ -297,14 +297,14 @@ struct WorkerToolDefinitionsTests {
         #expect(names.contains("analytics_check_snapshot_status"))
     }
 
-    // MARK: - SubscriptionsWorker (15 tools)
+    // MARK: - SubscriptionsWorker (20 tools)
 
-    @Test("SubscriptionsWorker returns 15 tools with correct names")
+    @Test("SubscriptionsWorker returns 20 tools with correct names")
     func subscriptionsWorkerTools() async throws {
         let client = try await TestFactory.makeHTTPClient()
         let worker = SubscriptionsWorker(httpClient: client)
         let tools = await worker.getTools()
-        #expect(tools.count == 15)
+        #expect(tools.count == 20)
         let names = Set(tools.map(\.name))
         #expect(names.contains("subscriptions_list"))
         #expect(names.contains("subscriptions_get"))
@@ -321,6 +321,11 @@ struct WorkerToolDefinitionsTests {
         #expect(names.contains("subscriptions_update_group"))
         #expect(names.contains("subscriptions_delete_group"))
         #expect(names.contains("subscriptions_submit"))
+        #expect(names.contains("subscriptions_list_group_localizations"))
+        #expect(names.contains("subscriptions_create_group_localization"))
+        #expect(names.contains("subscriptions_get_group_localization"))
+        #expect(names.contains("subscriptions_update_group_localization"))
+        #expect(names.contains("subscriptions_delete_group_localization"))
     }
 
     // MARK: - OfferCodesWorker (7 tools)
@@ -355,6 +360,73 @@ struct WorkerToolDefinitionsTests {
         #expect(names.contains("winback_update"))
         #expect(names.contains("winback_delete"))
         #expect(names.contains("winback_list_prices"))
+    }
+
+    // MARK: - IntroductoryOffersWorker (4 tools)
+
+    @Test("IntroductoryOffersWorker returns 4 tools with correct names")
+    func introductoryOffersWorkerTools() async throws {
+        let client = try await TestFactory.makeHTTPClient()
+        let worker = IntroductoryOffersWorker(httpClient: client)
+        let tools = await worker.getTools()
+        #expect(tools.count == 4)
+        let names = Set(tools.map(\.name))
+        #expect(names.contains("intro_offers_list"))
+        #expect(names.contains("intro_offers_create"))
+        #expect(names.contains("intro_offers_update"))
+        #expect(names.contains("intro_offers_delete"))
+    }
+
+    // MARK: - PromotionalOffersWorker (6 tools)
+
+    @Test("PromotionalOffersWorker returns 6 tools with correct names")
+    func promotionalOffersWorkerTools() async throws {
+        let client = try await TestFactory.makeHTTPClient()
+        let worker = PromotionalOffersWorker(httpClient: client)
+        let tools = await worker.getTools()
+        #expect(tools.count == 6)
+        let names = Set(tools.map(\.name))
+        #expect(names.contains("promo_offers_list"))
+        #expect(names.contains("promo_offers_get"))
+        #expect(names.contains("promo_offers_create"))
+        #expect(names.contains("promo_offers_update"))
+        #expect(names.contains("promo_offers_delete"))
+        #expect(names.contains("promo_offers_list_prices"))
+    }
+
+    // MARK: - SandboxTestersWorker (3 tools)
+
+    @Test("SandboxTestersWorker returns 3 tools with correct names")
+    func sandboxTestersWorkerTools() async throws {
+        let client = try await TestFactory.makeHTTPClient()
+        let worker = SandboxTestersWorker(httpClient: client)
+        let tools = await worker.getTools()
+        #expect(tools.count == 3)
+        let names = Set(tools.map(\.name))
+        #expect(names.contains("sandbox_list"))
+        #expect(names.contains("sandbox_update"))
+        #expect(names.contains("sandbox_clear_purchase_history"))
+    }
+
+    // MARK: - BetaAppWorker (10 tools)
+
+    @Test("BetaAppWorker returns 10 tools with correct names")
+    func betaAppWorkerTools() async throws {
+        let client = try await TestFactory.makeHTTPClient()
+        let worker = BetaAppWorker(httpClient: client)
+        let tools = await worker.getTools()
+        #expect(tools.count == 10)
+        let names = Set(tools.map(\.name))
+        #expect(names.contains("beta_app_list_localizations"))
+        #expect(names.contains("beta_app_create_localization"))
+        #expect(names.contains("beta_app_get_localization"))
+        #expect(names.contains("beta_app_update_localization"))
+        #expect(names.contains("beta_app_delete_localization"))
+        #expect(names.contains("beta_app_submit_for_review"))
+        #expect(names.contains("beta_app_list_submissions"))
+        #expect(names.contains("beta_app_get_submission"))
+        #expect(names.contains("beta_app_get_review_details"))
+        #expect(names.contains("beta_app_update_review_details"))
     }
 
     // MARK: - ScreenshotsWorker (12 tools)
@@ -477,6 +549,10 @@ struct WorkerToolDefinitionsTests {
         allNames += (await SubscriptionsWorker(httpClient: client).getTools()).map(\.name)
         allNames += (await OfferCodesWorker(httpClient: client).getTools()).map(\.name)
         allNames += (await WinBackOffersWorker(httpClient: client).getTools()).map(\.name)
+        allNames += (await IntroductoryOffersWorker(httpClient: client).getTools()).map(\.name)
+        allNames += (await PromotionalOffersWorker(httpClient: client).getTools()).map(\.name)
+        allNames += (await SandboxTestersWorker(httpClient: client).getTools()).map(\.name)
+        allNames += (await BetaAppWorker(httpClient: client).getTools()).map(\.name)
         allNames += (await ScreenshotsWorker(httpClient: client).getTools()).map(\.name)
         allNames += (await CustomProductPagesWorker(httpClient: client).getTools()).map(\.name)
         allNames += (await ProductPageOptimizationWorker(httpClient: client).getTools()).map(\.name)
@@ -512,6 +588,10 @@ struct WorkerToolDefinitionsTests {
             tools += await SubscriptionsWorker(httpClient: client).getTools()
             tools += await OfferCodesWorker(httpClient: client).getTools()
             tools += await WinBackOffersWorker(httpClient: client).getTools()
+            tools += await IntroductoryOffersWorker(httpClient: client).getTools()
+            tools += await PromotionalOffersWorker(httpClient: client).getTools()
+            tools += await SandboxTestersWorker(httpClient: client).getTools()
+            tools += await BetaAppWorker(httpClient: client).getTools()
             tools += await ScreenshotsWorker(httpClient: client).getTools()
             tools += await CustomProductPagesWorker(httpClient: client).getTools()
             tools += await ProductPageOptimizationWorker(httpClient: client).getTools()
