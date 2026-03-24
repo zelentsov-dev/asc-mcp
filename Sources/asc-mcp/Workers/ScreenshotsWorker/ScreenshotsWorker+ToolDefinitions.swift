@@ -298,6 +298,30 @@ extension ScreenshotsWorker {
         )
     }
 
+    func uploadScreenshotBatchTool() -> Tool {
+        return Tool(
+            name: "screenshots_upload_batch",
+            description: "Upload multiple screenshots to a screenshot set in one call. Each file goes through the full upload cycle (reserve, upload, commit). Returns results for each file.",
+            inputSchema: .object([
+                "type": .string("object"),
+                "properties": .object([
+                    "set_id": .object([
+                        "type": .string("string"),
+                        "description": .string("Screenshot set ID")
+                    ]),
+                    "file_paths": .object([
+                        "type": .string("array"),
+                        "description": .string("Array of absolute paths to screenshot files on disk"),
+                        "items": .object([
+                            "type": .string("string")
+                        ])
+                    ])
+                ]),
+                "required": .array([.string("set_id"), .string("file_paths")])
+            ])
+        )
+    }
+
     func deletePreviewTool() -> Tool {
         return Tool(
             name: "screenshots_delete_preview",

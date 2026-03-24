@@ -483,7 +483,7 @@ struct WorkerToolDefinitionsTests {
         let client = try await TestFactory.makeHTTPClient()
         let worker = ScreenshotsWorker(httpClient: client, uploadService: UploadService())
         let tools = await worker.getTools()
-        #expect(tools.count == 15)
+        #expect(tools.count == 16)
         let names = Set(tools.map(\.name))
         #expect(names.contains("screenshots_list_sets"))
         #expect(names.contains("screenshots_create_set"))
@@ -500,6 +500,7 @@ struct WorkerToolDefinitionsTests {
         #expect(names.contains("screenshots_get_preview"))
         #expect(names.contains("screenshots_list_previews"))
         #expect(names.contains("screenshots_delete_preview"))
+        #expect(names.contains("screenshots_upload_batch"))
     }
 
     // MARK: - CustomProductPagesWorker (10 tools)

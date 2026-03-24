@@ -16,7 +16,7 @@ MCP (Model Context Protocol) server for App Store Connect API integration, desig
 # Build the project
 swift build
 
-# Run all unit tests (435 tests)
+# Run all unit tests (436 tests)
 swift test
 
 # Run the MCP server (requires environment variables or companies.json)
@@ -49,7 +49,7 @@ Each company needs: `keyID`, `issuerID`, `privateKeyPath` (path to `.p8` file).
 
 **WorkerManager** (`Workers/MainWorker/WorkerManager.swift`) — central registry, routes tool calls by prefix.
 
-**Workers** (33 workers, 292 tools):
+**Workers** (33 workers, 293 tools):
 
 | Worker | Prefix | Tools | Domain |
 |--------|--------|-------|--------|
@@ -79,7 +79,7 @@ Each company needs: `keyID`, `issuerID`, `privateKeyPath` (path to `.p8` file).
 | BetaAppWorker | `beta_app_` | 10 | Beta app localizations, review submissions, review details |
 | PreReleaseVersionsWorker | `pre_release_` | 3 | Pre-release versions (list, get, builds) |
 | BetaLicenseAgreementsWorker | `beta_license_` | 3 | Beta license agreements (list, get, update) |
-| ScreenshotsWorker | `screenshots_` | 15 | Screenshots, previews, sets, reorder, full upload |
+| ScreenshotsWorker | `screenshots_` | 16 | Screenshots, previews, sets, reorder, full upload, batch upload |
 | CustomProductPagesWorker | `custom_pages_` | 10 | Custom product pages, versions, localizations |
 | ProductPageOptimizationWorker | `ppo_` | 9 | A/B test experiments, treatments |
 | PromotedPurchasesWorker | `promoted_` | 9 | Promoted in-app purchases, images upload |
@@ -110,7 +110,7 @@ Each company needs: `keyID`, `issuerID`, `privateKeyPath` (path to `.p8` file).
 ### Unit Tests (Swift Testing)
 
 ```bash
-swift test    # Run all 435 tests across 31 suites
+swift test    # Run all 436 tests across 31 suites
 ```
 
 Test categories:

@@ -273,6 +273,100 @@ extension ScreenshotsWorker {
         }
     }
 
+    /// Uploads multiple screenshots to a set sequentially
+    /// - Returns: JSON array with results for each file (success or error)
+    func uploadScreenshotBatch(_ params: CallTool.Parameters) async throws -> CallTool.Result {
+        guard let arguments = params.arguments,
+              let setId = arguments["set_id"]?.stringValue,
+              let filePaths = arguments["file_paths"]?.arrayValue?.compactMap({ $0.stringValue }),
+              !filePaths.isEmpty else {
+            return CallTool.Result(
+                content: [.text("Error: Required parameters: set_id, file_paths (non-empty array)")],
+                isError: true
+            )
+        }
+
+        var results: [[String: Any]] = []
+        var successCount = 0
+        var failCount = 0
+
+        for filePath in filePaths {
+            do {
+                // Step 1: Get file info
+                let fileSize = try await uploadService.fileSize(at: filePath)
+                let fileName = await uploadService.fileName(at: filePath)
+
+                // Step 2: Reserve
+                let createRequest = CreateScreenshotRequest(
+                    data: CreateScreenshotRequest.CreateData(
+                        attributes: CreateScreenshotRequest.Attributes(
+                            fileName: fileName,
+                            fileSize: fileSize
+                        ),
+                        relationships: CreateScreenshotRequest.Relationships(
+                            appScreenshotSet: CreateScreenshotRequest.ScreenshotSetRelationship(
+                                data: ASCResourceIdentifier(type: "appScreenshotSets", id: setId)
+                            )
+                        )
+                    )
+                )
+
+                let encoder = JSONEncoder()
+                let bodyData = try encoder.encode(createRequest)
+                let reserveData = try await httpClient.post("/v1/appScreenshots", body: bodyData)
+                let reserveResponse = try JSONDecoder().decode(ASCScreenshotResponse.self, from: reserveData)
+
+                let screenshotId = reserveResponse.data.id
+                guard let uploadOperations = reserveResponse.data.attributes?.uploadOperations, !uploadOperations.isEmpty else {
+                    results.append(["file": fileName, "success": false, "error": "No upload operations returned"])
+                    failCount += 1
+                    continue
+                }
+
+                // Step 3: Upload chunks
+                let md5 = try await uploadService.uploadFile(filePath: filePath, uploadOperations: uploadOperations)
+
+                // Step 4: Commit
+                let commitRequest = CommitScreenshotRequest(
+                    data: CommitScreenshotRequest.CommitData(
+                        id: screenshotId,
+                        attributes: CommitScreenshotRequest.Attributes(
+                            sourceFileChecksum: md5,
+                            uploaded: true
+                        )
+                    )
+                )
+
+                let commitBody = try encoder.encode(commitRequest)
+                let commitData = try await httpClient.patch("/v1/appScreenshots/\(screenshotId)", body: commitBody)
+                let commitResponse = try JSONDecoder().decode(ASCScreenshotResponse.self, from: commitData)
+
+                results.append([
+                    "file": fileName,
+                    "success": true,
+                    "screenshot_id": commitResponse.data.id,
+                    "state": commitResponse.data.attributes?.assetDeliveryState?.state ?? "unknown"
+                ] as [String: Any])
+                successCount += 1
+
+            } catch {
+                let fileName = URL(fileURLWithPath: filePath).lastPathComponent
+                results.append(["file": fileName, "success": false, "error": error.localizedDescription] as [String: Any])
+                failCount += 1
+            }
+        }
+
+        let response: [String: Any] = [
+            "success": failCount == 0,
+            "total": filePaths.count,
+            "uploaded": successCount,
+            "failed": failCount,
+            "results": results
+        ]
+
+        return CallTool.Result(content: [.text(JSONFormatter.formatJSON(response))])
+    }
+
     /// Gets details of a specific screenshot
     /// - Returns: JSON with screenshot details
     func getScreenshot(_ params: CallTool.Parameters) async throws -> CallTool.Result {

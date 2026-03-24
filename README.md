@@ -29,7 +29,7 @@
 
 ## Overview
 
-**asc-mcp** is a Swift-based MCP server that bridges [Claude](https://claude.ai) (or any MCP-compatible host) with the [App Store Connect API](https://developer.apple.com/documentation/appstoreconnectapi). It exposes **292 tools** across 33 workers, enabling you to automate your entire iOS/macOS release workflow through natural language.
+**asc-mcp** is a Swift-based MCP server that bridges [Claude](https://claude.ai) (or any MCP-compatible host) with the [App Store Connect API](https://developer.apple.com/documentation/appstoreconnectapi). It exposes **293 tools** across 33 workers, enabling you to automate your entire iOS/macOS release workflow through natural language.
 
 ### Key capabilities
 
@@ -368,7 +368,7 @@ Add to `~/.codeium/windsurf/mcp_config.json`:
 
 ### Worker Filtering
 
-The server exposes **292 tools** across 33 workers. Some MCP clients impose a tool limit (e.g., Windsurf caps at 100). Use `--workers` to enable only the workers you need:
+The server exposes **293 tools** across 33 workers. Some MCP clients impose a tool limit (e.g., Windsurf caps at 100). Use `--workers` to enable only the workers you need:
 
 ```bash
 # Only load apps, builds, and version lifecycle tools
@@ -432,7 +432,7 @@ For Claude (200K context) ~22K tokens is ~5–7% — negligible. For clients wit
 
 ## Available Tools
 
-**292 tools** organized across 33 workers (use `--workers` to filter — see [Worker Filtering](#worker-filtering)):
+**293 tools** organized across 33 workers (use `--workers` to filter — see [Worker Filtering](#worker-filtering)):
 
 <details>
 <summary><strong>Company Management</strong> — 3 tools</summary>
