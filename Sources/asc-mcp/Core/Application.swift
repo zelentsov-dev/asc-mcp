@@ -68,6 +68,7 @@ public func runApplication(enabledWorkers: Set<String>? = nil) async throws {
         - ppo_* -- product page optimization (A/B testing)
         - promoted_* -- promoted in-app purchases
         - metrics_* -- performance metrics and diagnostics
+        - review_attachments_* -- app store review attachments (upload, get, delete, list)
         """,
         capabilities: Server.Capabilities(
             tools: Server.Capabilities.Tools(listChanged: true)

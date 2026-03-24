@@ -129,14 +129,14 @@ struct WorkerToolDefinitionsTests {
         #expect(names.contains("beta_groups_remove_builds"))
     }
 
-    // MARK: - InAppPurchasesWorker (17 tools)
+    // MARK: - InAppPurchasesWorker (22 tools)
 
-    @Test("InAppPurchasesWorker returns 17 tools with correct names")
+    @Test("InAppPurchasesWorker returns 22 tools with correct names")
     func inAppPurchasesWorkerTools() async throws {
         let client = try await TestFactory.makeHTTPClient()
-        let worker = InAppPurchasesWorker(httpClient: client)
+        let worker = InAppPurchasesWorker(httpClient: client, uploadService: UploadService())
         let tools = await worker.getTools()
-        #expect(tools.count == 19)
+        #expect(tools.count == 22)
         let names = Set(tools.map(\.name))
         #expect(names.contains("iap_list"))
         #expect(names.contains("iap_get"))
@@ -155,6 +155,11 @@ struct WorkerToolDefinitionsTests {
         #expect(names.contains("iap_set_price_schedule"))
         #expect(names.contains("iap_get_review_screenshot"))
         #expect(names.contains("iap_create_review_screenshot"))
+        #expect(names.contains("iap_set_availability"))
+        #expect(names.contains("iap_get_availability"))
+        #expect(names.contains("iap_upload_image"))
+        #expect(names.contains("iap_get_image"))
+        #expect(names.contains("iap_delete_image"))
     }
 
     // MARK: - ProvisioningWorker (17 tools)
@@ -220,14 +225,14 @@ struct WorkerToolDefinitionsTests {
         #expect(names.contains("app_info_delete_localization"))
     }
 
-    // MARK: - PricingWorker (6 tools)
+    // MARK: - PricingWorker (9 tools)
 
-    @Test("PricingWorker returns 6 tools with correct names")
+    @Test("PricingWorker returns 9 tools with correct names")
     func pricingWorkerTools() async throws {
         let client = try await TestFactory.makeHTTPClient()
         let worker = PricingWorker(httpClient: client)
         let tools = await worker.getTools()
-        #expect(tools.count == 6)
+        #expect(tools.count == 9)
         let names = Set(tools.map(\.name))
         #expect(names.contains("pricing_list_territories"))
         #expect(names.contains("pricing_get_availability"))
@@ -235,6 +240,9 @@ struct WorkerToolDefinitionsTests {
         #expect(names.contains("pricing_get_price_schedule"))
         #expect(names.contains("pricing_set_price_schedule"))
         #expect(names.contains("pricing_list_territory_availability"))
+        #expect(names.contains("pricing_create_availability"))
+        #expect(names.contains("pricing_get_availability_v2"))
+        #expect(names.contains("pricing_list_territory_availabilities"))
     }
 
     // MARK: - UsersWorker (7 tools)
@@ -297,14 +305,14 @@ struct WorkerToolDefinitionsTests {
         #expect(names.contains("analytics_check_snapshot_status"))
     }
 
-    // MARK: - SubscriptionsWorker (20 tools)
+    // MARK: - SubscriptionsWorker (27 tools)
 
-    @Test("SubscriptionsWorker returns 20 tools with correct names")
+    @Test("SubscriptionsWorker returns 27 tools with correct names")
     func subscriptionsWorkerTools() async throws {
         let client = try await TestFactory.makeHTTPClient()
-        let worker = SubscriptionsWorker(httpClient: client)
+        let worker = SubscriptionsWorker(httpClient: client, uploadService: UploadService())
         let tools = await worker.getTools()
-        #expect(tools.count == 21)
+        #expect(tools.count == 27)
         let names = Set(tools.map(\.name))
         #expect(names.contains("subscriptions_list"))
         #expect(names.contains("subscriptions_get"))
@@ -326,6 +334,13 @@ struct WorkerToolDefinitionsTests {
         #expect(names.contains("subscriptions_get_group_localization"))
         #expect(names.contains("subscriptions_update_group_localization"))
         #expect(names.contains("subscriptions_delete_group_localization"))
+        #expect(names.contains("subscriptions_delete_price"))
+        #expect(names.contains("subscriptions_upload_image"))
+        #expect(names.contains("subscriptions_get_image"))
+        #expect(names.contains("subscriptions_delete_image"))
+        #expect(names.contains("subscriptions_upload_review_screenshot"))
+        #expect(names.contains("subscriptions_get_review_screenshot"))
+        #expect(names.contains("subscriptions_delete_review_screenshot"))
     }
 
     // MARK: - OfferCodesWorker (7 tools)
@@ -521,20 +536,23 @@ struct WorkerToolDefinitionsTests {
         #expect(names.contains("ppo_create_treatment_localization"))
     }
 
-    // MARK: - PromotedPurchasesWorker (5 tools)
+    // MARK: - PromotedPurchasesWorker (8 tools)
 
-    @Test("PromotedPurchasesWorker returns 5 tools with correct names")
+    @Test("PromotedPurchasesWorker returns 8 tools with correct names")
     func promotedPurchasesWorkerTools() async throws {
         let client = try await TestFactory.makeHTTPClient()
-        let worker = PromotedPurchasesWorker(httpClient: client)
+        let worker = PromotedPurchasesWorker(httpClient: client, uploadService: UploadService())
         let tools = await worker.getTools()
-        #expect(tools.count == 5)
+        #expect(tools.count == 8)
         let names = Set(tools.map(\.name))
         #expect(names.contains("promoted_list"))
         #expect(names.contains("promoted_get"))
         #expect(names.contains("promoted_create"))
         #expect(names.contains("promoted_update"))
         #expect(names.contains("promoted_delete"))
+        #expect(names.contains("promoted_upload_image"))
+        #expect(names.contains("promoted_get_image"))
+        #expect(names.contains("promoted_delete_image"))
     }
 
     // MARK: - MetricsWorker (4 tools)
@@ -566,7 +584,7 @@ struct WorkerToolDefinitionsTests {
         allNames += (await AppLifecycleWorker(httpClient: client).getTools()).map(\.name)
         allNames += (await ReviewsWorker(httpClient: client).getTools()).map(\.name)
         allNames += (await BetaGroupsWorker(httpClient: client).getTools()).map(\.name)
-        allNames += (await InAppPurchasesWorker(httpClient: client).getTools()).map(\.name)
+        allNames += (await InAppPurchasesWorker(httpClient: client, uploadService: UploadService()).getTools()).map(\.name)
         allNames += (await ProvisioningWorker(httpClient: client).getTools()).map(\.name)
         allNames += (await BetaTestersWorker(httpClient: client).getTools()).map(\.name)
         allNames += (await AppInfoWorker(httpClient: client).getTools()).map(\.name)
@@ -574,7 +592,7 @@ struct WorkerToolDefinitionsTests {
         allNames += (await UsersWorker(httpClient: client).getTools()).map(\.name)
         allNames += (await AppEventsWorker(httpClient: client).getTools()).map(\.name)
         allNames += (await AnalyticsWorker(httpClient: client).getTools()).map(\.name)
-        allNames += (await SubscriptionsWorker(httpClient: client).getTools()).map(\.name)
+        allNames += (await SubscriptionsWorker(httpClient: client, uploadService: UploadService()).getTools()).map(\.name)
         allNames += (await OfferCodesWorker(httpClient: client).getTools()).map(\.name)
         allNames += (await WinBackOffersWorker(httpClient: client).getTools()).map(\.name)
         allNames += (await IntroductoryOffersWorker(httpClient: client).getTools()).map(\.name)
@@ -586,7 +604,7 @@ struct WorkerToolDefinitionsTests {
         allNames += (await ScreenshotsWorker(httpClient: client).getTools()).map(\.name)
         allNames += (await CustomProductPagesWorker(httpClient: client).getTools()).map(\.name)
         allNames += (await ProductPageOptimizationWorker(httpClient: client).getTools()).map(\.name)
-        allNames += (await PromotedPurchasesWorker(httpClient: client).getTools()).map(\.name)
+        allNames += (await PromotedPurchasesWorker(httpClient: client, uploadService: UploadService()).getTools()).map(\.name)
         allNames += (await MetricsWorker(httpClient: client).getTools()).map(\.name)
 
         let uniqueNames = Set(allNames)
@@ -607,7 +625,7 @@ struct WorkerToolDefinitionsTests {
             tools += await AppLifecycleWorker(httpClient: client).getTools()
             tools += await ReviewsWorker(httpClient: client).getTools()
             tools += await BetaGroupsWorker(httpClient: client).getTools()
-            tools += await InAppPurchasesWorker(httpClient: client).getTools()
+            tools += await InAppPurchasesWorker(httpClient: client, uploadService: UploadService()).getTools()
             tools += await ProvisioningWorker(httpClient: client).getTools()
             tools += await BetaTestersWorker(httpClient: client).getTools()
             tools += await AppInfoWorker(httpClient: client).getTools()
@@ -615,7 +633,7 @@ struct WorkerToolDefinitionsTests {
             tools += await UsersWorker(httpClient: client).getTools()
             tools += await AppEventsWorker(httpClient: client).getTools()
             tools += await AnalyticsWorker(httpClient: client).getTools()
-            tools += await SubscriptionsWorker(httpClient: client).getTools()
+            tools += await SubscriptionsWorker(httpClient: client, uploadService: UploadService()).getTools()
             tools += await OfferCodesWorker(httpClient: client).getTools()
             tools += await WinBackOffersWorker(httpClient: client).getTools()
             tools += await IntroductoryOffersWorker(httpClient: client).getTools()
@@ -627,8 +645,9 @@ struct WorkerToolDefinitionsTests {
             tools += await ScreenshotsWorker(httpClient: client).getTools()
             tools += await CustomProductPagesWorker(httpClient: client).getTools()
             tools += await ProductPageOptimizationWorker(httpClient: client).getTools()
-            tools += await PromotedPurchasesWorker(httpClient: client).getTools()
+            tools += await PromotedPurchasesWorker(httpClient: client, uploadService: UploadService()).getTools()
             tools += await MetricsWorker(httpClient: client).getTools()
+            tools += await ReviewAttachmentsWorker(httpClient: client, uploadService: UploadService()).getTools()
             return tools
         }()
 
@@ -636,5 +655,20 @@ struct WorkerToolDefinitionsTests {
             let desc = "\(tool.description)" // Works with both String and String?
             #expect(!desc.isEmpty && desc != "nil", "Tool '\(tool.name)' has empty description")
         }
+    }
+
+    // MARK: - ReviewAttachmentsWorker (4 tools)
+
+    @Test("ReviewAttachmentsWorker returns 4 tools with correct names")
+    func reviewAttachmentsWorkerTools() async throws {
+        let client = try await TestFactory.makeHTTPClient()
+        let worker = ReviewAttachmentsWorker(httpClient: client, uploadService: UploadService())
+        let tools = await worker.getTools()
+        #expect(tools.count == 4)
+        let names = Set(tools.map(\.name))
+        #expect(names.contains("review_attachments_upload"))
+        #expect(names.contains("review_attachments_get"))
+        #expect(names.contains("review_attachments_delete"))
+        #expect(names.contains("review_attachments_list"))
     }
 }

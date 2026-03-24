@@ -150,4 +150,79 @@ extension PricingWorker {
             ])
         )
     }
+
+    // MARK: - App Availability v2 Tools
+
+    /// Tool definition for creating app availability via v2 endpoint
+    func createAvailabilityV2Tool() -> Tool {
+        return Tool(
+            name: "pricing_create_availability",
+            description: "Create app availability configuration (v2). Sets which territories the app is available in and whether it auto-publishes to new territories.",
+            inputSchema: .object([
+                "type": .string("object"),
+                "properties": .object([
+                    "app_id": .object([
+                        "type": .string("string"),
+                        "description": .string("App Store Connect app ID")
+                    ]),
+                    "available_in_new_territories": .object([
+                        "type": .string("boolean"),
+                        "description": .string("Whether the app should automatically be available in new territories")
+                    ]),
+                    "territory_ids": .object([
+                        "type": .string("array"),
+                        "description": .string("Array of territory availability IDs to include"),
+                        "items": .object([
+                            "type": .string("string")
+                        ])
+                    ])
+                ]),
+                "required": .array([.string("app_id"), .string("available_in_new_territories"), .string("territory_ids")])
+            ])
+        )
+    }
+
+    /// Tool definition for getting app availability by ID via v2 endpoint
+    func getAvailabilityV2Tool() -> Tool {
+        return Tool(
+            name: "pricing_get_availability_v2",
+            description: "Get app availability by availability ID (v2 endpoint). Use pricing_get_availability with app_id or this with availability_id.",
+            inputSchema: .object([
+                "type": .string("object"),
+                "properties": .object([
+                    "availability_id": .object([
+                        "type": .string("string"),
+                        "description": .string("App availability resource ID")
+                    ])
+                ]),
+                "required": .array([.string("availability_id")])
+            ])
+        )
+    }
+
+    /// Tool definition for listing territory availabilities via v2 endpoint
+    func listTerritoryAvailabilitiesV2Tool() -> Tool {
+        return Tool(
+            name: "pricing_list_territory_availabilities",
+            description: "List territory availabilities for an app availability (v2). Returns per-territory availability, release date, and pre-order status.",
+            inputSchema: .object([
+                "type": .string("object"),
+                "properties": .object([
+                    "availability_id": .object([
+                        "type": .string("string"),
+                        "description": .string("App availability resource ID")
+                    ]),
+                    "limit": .object([
+                        "type": .string("integer"),
+                        "description": .string("Max results (default: 50, max: 200)")
+                    ]),
+                    "next_url": .object([
+                        "type": .string("string"),
+                        "description": .string("Pagination URL from previous response to fetch next page")
+                    ])
+                ]),
+                "required": .array([.string("availability_id")])
+            ])
+        )
+    }
 }

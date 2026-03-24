@@ -926,6 +926,324 @@ extension SubscriptionsWorker {
         }
     }
 
+    // MARK: - Subscription Images
+
+    /// Uploads a subscription image (full cycle: reserve -> upload -> commit)
+    /// - Returns: JSON with final image info
+    func uploadSubscriptionImage(_ params: CallTool.Parameters) async throws -> CallTool.Result {
+        guard let arguments = params.arguments,
+              let subscriptionId = arguments["subscription_id"]?.stringValue,
+              let filePath = arguments["file_path"]?.stringValue else {
+            return CallTool.Result(
+                content: [.text("Error: Required parameters: subscription_id, file_path")],
+                isError: true
+            )
+        }
+
+        do {
+            let fileSize = try await uploadService.fileSize(at: filePath)
+            let fileName = await uploadService.fileName(at: filePath)
+
+            let createRequest = CreateSubscriptionImageRequest(
+                data: CreateSubscriptionImageRequest.CreateData(
+                    attributes: CreateSubscriptionImageRequest.Attributes(
+                        fileSize: fileSize,
+                        fileName: fileName
+                    ),
+                    relationships: CreateSubscriptionImageRequest.Relationships(
+                        subscription: CreateSubscriptionImageRequest.SubscriptionRelationship(
+                            data: ASCResourceIdentifier(type: "subscriptions", id: subscriptionId)
+                        )
+                    )
+                )
+            )
+
+            let encoder = JSONEncoder()
+            let bodyData = try encoder.encode(createRequest)
+            let reserveData = try await httpClient.post("/v1/subscriptionImages", body: bodyData)
+            let reserveResponse = try JSONDecoder().decode(ASCSubscriptionImageResponse.self, from: reserveData)
+
+            let imageId = reserveResponse.data.id
+            guard let uploadOperations = reserveResponse.data.attributes?.uploadOperations, !uploadOperations.isEmpty else {
+                return CallTool.Result(
+                    content: [.text("Error: No upload operations returned from reservation")],
+                    isError: true
+                )
+            }
+
+            let md5 = try await uploadService.uploadFile(filePath: filePath, uploadOperations: uploadOperations)
+
+            let commitRequest = CommitSubscriptionImageRequest(
+                data: CommitSubscriptionImageRequest.CommitData(
+                    id: imageId,
+                    attributes: CommitSubscriptionImageRequest.Attributes(
+                        sourceFileChecksum: md5,
+                        uploaded: true
+                    )
+                )
+            )
+
+            let commitBody = try encoder.encode(commitRequest)
+            let commitData = try await httpClient.patch("/v1/subscriptionImages/\(imageId)", body: commitBody)
+            let commitResponse = try JSONDecoder().decode(ASCSubscriptionImageResponse.self, from: commitData)
+
+            let result = [
+                "success": true,
+                "image": formatSubscriptionImage(commitResponse.data)
+            ] as [String: Any]
+
+            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+
+        } catch {
+            return CallTool.Result(
+                content: [.text("Error: Failed to upload subscription image: \(error.localizedDescription)")],
+                isError: true
+            )
+        }
+    }
+
+    /// Gets details of a subscription image
+    /// - Returns: JSON with image details
+    func getSubscriptionImage(_ params: CallTool.Parameters) async throws -> CallTool.Result {
+        guard let arguments = params.arguments,
+              let imageId = arguments["image_id"]?.stringValue else {
+            return CallTool.Result(
+                content: [.text("Error: Required parameter 'image_id' is missing")],
+                isError: true
+            )
+        }
+
+        do {
+            let data = try await httpClient.get("/v1/subscriptionImages/\(imageId)")
+            let response = try JSONDecoder().decode(ASCSubscriptionImageResponse.self, from: data)
+
+            let result = [
+                "success": true,
+                "image": formatSubscriptionImage(response.data)
+            ] as [String: Any]
+
+            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+
+        } catch {
+            return CallTool.Result(
+                content: [.text("Error: Failed to get subscription image: \(error.localizedDescription)")],
+                isError: true
+            )
+        }
+    }
+
+    /// Deletes a subscription image
+    /// - Returns: JSON confirmation
+    func deleteSubscriptionImage(_ params: CallTool.Parameters) async throws -> CallTool.Result {
+        guard let arguments = params.arguments,
+              let imageId = arguments["image_id"]?.stringValue else {
+            return CallTool.Result(
+                content: [.text("Error: Required parameter 'image_id' is missing")],
+                isError: true
+            )
+        }
+
+        do {
+            _ = try await httpClient.delete("/v1/subscriptionImages/\(imageId)")
+
+            let result = [
+                "success": true,
+                "message": "Subscription image '\(imageId)' deleted"
+            ] as [String: Any]
+
+            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+
+        } catch {
+            return CallTool.Result(
+                content: [.text("Error: Failed to delete subscription image: \(error.localizedDescription)")],
+                isError: true
+            )
+        }
+    }
+
+    // MARK: - Subscription Review Screenshots
+
+    /// Uploads a subscription review screenshot (full cycle: reserve -> upload -> commit)
+    /// - Returns: JSON with final screenshot info
+    func uploadSubscriptionReviewScreenshot(_ params: CallTool.Parameters) async throws -> CallTool.Result {
+        guard let arguments = params.arguments,
+              let subscriptionId = arguments["subscription_id"]?.stringValue,
+              let filePath = arguments["file_path"]?.stringValue else {
+            return CallTool.Result(
+                content: [.text("Error: Required parameters: subscription_id, file_path")],
+                isError: true
+            )
+        }
+
+        do {
+            let fileSize = try await uploadService.fileSize(at: filePath)
+            let fileName = await uploadService.fileName(at: filePath)
+
+            let createRequest = CreateSubReviewScreenshotRequest(
+                data: CreateSubReviewScreenshotRequest.CreateData(
+                    attributes: CreateSubReviewScreenshotRequest.Attributes(
+                        fileSize: fileSize,
+                        fileName: fileName
+                    ),
+                    relationships: CreateSubReviewScreenshotRequest.Relationships(
+                        subscription: CreateSubReviewScreenshotRequest.SubscriptionRelationship(
+                            data: ASCResourceIdentifier(type: "subscriptions", id: subscriptionId)
+                        )
+                    )
+                )
+            )
+
+            let encoder = JSONEncoder()
+            let bodyData = try encoder.encode(createRequest)
+            let reserveData = try await httpClient.post("/v1/subscriptionAppStoreReviewScreenshots", body: bodyData)
+            let reserveResponse = try JSONDecoder().decode(ASCSubReviewScreenshotResponse.self, from: reserveData)
+
+            let screenshotId = reserveResponse.data.id
+            guard let uploadOperations = reserveResponse.data.attributes?.uploadOperations, !uploadOperations.isEmpty else {
+                return CallTool.Result(
+                    content: [.text("Error: No upload operations returned from reservation")],
+                    isError: true
+                )
+            }
+
+            let md5 = try await uploadService.uploadFile(filePath: filePath, uploadOperations: uploadOperations)
+
+            let commitRequest = CommitSubReviewScreenshotRequest(
+                data: CommitSubReviewScreenshotRequest.CommitData(
+                    id: screenshotId,
+                    attributes: CommitSubReviewScreenshotRequest.Attributes(
+                        sourceFileChecksum: md5,
+                        uploaded: true
+                    )
+                )
+            )
+
+            let commitBody = try encoder.encode(commitRequest)
+            let commitData = try await httpClient.patch("/v1/subscriptionAppStoreReviewScreenshots/\(screenshotId)", body: commitBody)
+            let commitResponse = try JSONDecoder().decode(ASCSubReviewScreenshotResponse.self, from: commitData)
+
+            let result = [
+                "success": true,
+                "screenshot": formatSubReviewScreenshot(commitResponse.data)
+            ] as [String: Any]
+
+            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+
+        } catch {
+            return CallTool.Result(
+                content: [.text("Error: Failed to upload subscription review screenshot: \(error.localizedDescription)")],
+                isError: true
+            )
+        }
+    }
+
+    /// Gets details of a subscription review screenshot
+    /// - Returns: JSON with screenshot details
+    func getSubscriptionReviewScreenshot(_ params: CallTool.Parameters) async throws -> CallTool.Result {
+        guard let arguments = params.arguments,
+              let screenshotId = arguments["screenshot_id"]?.stringValue else {
+            return CallTool.Result(
+                content: [.text("Error: Required parameter 'screenshot_id' is missing")],
+                isError: true
+            )
+        }
+
+        do {
+            let data = try await httpClient.get("/v1/subscriptionAppStoreReviewScreenshots/\(screenshotId)")
+            let response = try JSONDecoder().decode(ASCSubReviewScreenshotResponse.self, from: data)
+
+            let result = [
+                "success": true,
+                "screenshot": formatSubReviewScreenshot(response.data)
+            ] as [String: Any]
+
+            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+
+        } catch {
+            return CallTool.Result(
+                content: [.text("Error: Failed to get subscription review screenshot: \(error.localizedDescription)")],
+                isError: true
+            )
+        }
+    }
+
+    /// Deletes a subscription review screenshot
+    /// - Returns: JSON confirmation
+    func deleteSubscriptionReviewScreenshot(_ params: CallTool.Parameters) async throws -> CallTool.Result {
+        guard let arguments = params.arguments,
+              let screenshotId = arguments["screenshot_id"]?.stringValue else {
+            return CallTool.Result(
+                content: [.text("Error: Required parameter 'screenshot_id' is missing")],
+                isError: true
+            )
+        }
+
+        do {
+            _ = try await httpClient.delete("/v1/subscriptionAppStoreReviewScreenshots/\(screenshotId)")
+
+            let result = [
+                "success": true,
+                "message": "Subscription review screenshot '\(screenshotId)' deleted"
+            ] as [String: Any]
+
+            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+
+        } catch {
+            return CallTool.Result(
+                content: [.text("Error: Failed to delete subscription review screenshot: \(error.localizedDescription)")],
+                isError: true
+            )
+        }
+    }
+
+    private func formatSubscriptionImage(_ image: ASCSubscriptionImage) -> [String: Any] {
+        var result: [String: Any] = [
+            "id": image.id,
+            "type": image.type,
+            "fileName": image.attributes?.fileName.jsonSafe,
+            "fileSize": image.attributes?.fileSize.jsonSafe,
+            "sourceFileChecksum": image.attributes?.sourceFileChecksum.jsonSafe,
+            "state": image.attributes?.state.jsonSafe
+        ]
+
+        if let imageAsset = image.attributes?.imageAsset {
+            result["imageAsset"] = [
+                "templateUrl": imageAsset.templateUrl.jsonSafe,
+                "width": imageAsset.width.jsonSafe,
+                "height": imageAsset.height.jsonSafe
+            ]
+        }
+
+        return result
+    }
+
+    private func formatSubReviewScreenshot(_ screenshot: ASCSubReviewScreenshot) -> [String: Any] {
+        var result: [String: Any] = [
+            "id": screenshot.id,
+            "type": screenshot.type,
+            "fileName": screenshot.attributes?.fileName.jsonSafe,
+            "fileSize": screenshot.attributes?.fileSize.jsonSafe,
+            "sourceFileChecksum": screenshot.attributes?.sourceFileChecksum.jsonSafe
+        ]
+
+        if let imageAsset = screenshot.attributes?.imageAsset {
+            result["imageAsset"] = [
+                "templateUrl": imageAsset.templateUrl.jsonSafe,
+                "width": imageAsset.width.jsonSafe,
+                "height": imageAsset.height.jsonSafe
+            ]
+        }
+
+        if let deliveryState = screenshot.attributes?.assetDeliveryState {
+            result["assetDeliveryState"] = [
+                "state": deliveryState.state.jsonSafe,
+                "errors": deliveryState.errors?.map { ["code": $0.code.jsonSafe, "description": $0.description.jsonSafe] } ?? []
+            ]
+        }
+
+        return result
+    }
+
     // MARK: - Formatting
 
     private func formatSubscription(_ sub: ASCSubscription) -> [String: Any] {

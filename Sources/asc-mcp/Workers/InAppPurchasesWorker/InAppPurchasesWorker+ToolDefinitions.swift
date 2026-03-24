@@ -429,6 +429,61 @@ extension InAppPurchasesWorker {
         )
     }
 
+    func uploadIAPImageTool() -> Tool {
+        return Tool(
+            name: "iap_upload_image",
+            description: "Upload an image for an in-app purchase (full cycle: reserve, upload, commit). Used for promotional images displayed on the App Store.",
+            inputSchema: .object([
+                "type": .string("object"),
+                "properties": .object([
+                    "iap_id": .object([
+                        "type": .string("string"),
+                        "description": .string("In-app purchase ID")
+                    ]),
+                    "file_path": .object([
+                        "type": .string("string"),
+                        "description": .string("Absolute path to the image file on disk")
+                    ])
+                ]),
+                "required": .array([.string("iap_id"), .string("file_path")])
+            ])
+        )
+    }
+
+    func getIAPImageTool() -> Tool {
+        return Tool(
+            name: "iap_get_image",
+            description: "Get details of an in-app purchase image",
+            inputSchema: .object([
+                "type": .string("object"),
+                "properties": .object([
+                    "image_id": .object([
+                        "type": .string("string"),
+                        "description": .string("In-app purchase image ID")
+                    ])
+                ]),
+                "required": .array([.string("image_id")])
+            ])
+        )
+    }
+
+    func deleteIAPImageTool() -> Tool {
+        return Tool(
+            name: "iap_delete_image",
+            description: "Delete an in-app purchase image",
+            inputSchema: .object([
+                "type": .string("object"),
+                "properties": .object([
+                    "image_id": .object([
+                        "type": .string("string"),
+                        "description": .string("In-app purchase image ID to delete")
+                    ])
+                ]),
+                "required": .array([.string("image_id")])
+            ])
+        )
+    }
+
     func createIAPReviewScreenshotTool() -> Tool {
         return Tool(
             name: "iap_create_review_screenshot",

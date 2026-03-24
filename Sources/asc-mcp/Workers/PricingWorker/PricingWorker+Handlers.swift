@@ -400,6 +400,176 @@ extension PricingWorker {
         }
     }
 
+    // MARK: - App Availability v2
+
+    /// Creates app availability configuration via v2 endpoint
+    /// - Returns: JSON with created availability details
+    /// - Throws: On network or encoding errors
+    func createAvailabilityV2(_ params: CallTool.Parameters) async throws -> CallTool.Result {
+        guard let arguments = params.arguments,
+              let appId = arguments["app_id"]?.stringValue,
+              let availableInNew = arguments["available_in_new_territories"]?.boolValue else {
+            return CallTool.Result(
+                content: [.text("Required parameters: app_id, available_in_new_territories, territory_ids")],
+                isError: true
+            )
+        }
+
+        // Parse territory_ids array
+        guard let territoryIdsValue = arguments["territory_ids"],
+              case .array(let territoryArray) = territoryIdsValue else {
+            return CallTool.Result(
+                content: [.text("Required parameter 'territory_ids' must be an array of strings")],
+                isError: true
+            )
+        }
+
+        let territoryIds = territoryArray.compactMap { value -> String? in
+            if case .string(let s) = value { return s }
+            return nil
+        }
+
+        guard !territoryIds.isEmpty else {
+            return CallTool.Result(
+                content: [.text("Required parameter 'territory_ids' must contain at least one territory ID")],
+                isError: true
+            )
+        }
+
+        do {
+            let request = CreateAppAvailabilityV2Request(
+                data: CreateAppAvailabilityV2Request.CreateData(
+                    attributes: CreateAppAvailabilityV2Request.Attributes(
+                        availableInNewTerritories: availableInNew
+                    ),
+                    relationships: CreateAppAvailabilityV2Request.Relationships(
+                        app: CreateAppAvailabilityV2Request.AppRelationship(
+                            data: ASCResourceIdentifier(type: "apps", id: appId)
+                        ),
+                        territoryAvailabilities: CreateAppAvailabilityV2Request.TerritoryAvailabilitiesRelationship(
+                            data: territoryIds.map { ASCResourceIdentifier(type: "territoryAvailabilities", id: $0) }
+                        )
+                    )
+                )
+            )
+
+            let response: ASCAppAvailabilityV2Response = try await httpClient.post(
+                "/v2/appAvailabilities",
+                body: request,
+                as: ASCAppAvailabilityV2Response.self
+            )
+
+            let result: [String: Any] = [
+                "success": true,
+                "availability": [
+                    "id": response.data.id,
+                    "type": response.data.type,
+                    "availableInNewTerritories": response.data.attributes?.availableInNewTerritories.jsonSafe
+                ] as [String: Any]
+            ]
+
+            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+
+        } catch {
+            return CallTool.Result(
+                content: [.text("Failed to create app availability: \(error.localizedDescription)")],
+                isError: true
+            )
+        }
+    }
+
+    /// Gets app availability by availability ID via v2 endpoint
+    /// - Returns: JSON with availability details
+    /// - Throws: On network or decoding errors
+    func getAvailabilityV2(_ params: CallTool.Parameters) async throws -> CallTool.Result {
+        guard let arguments = params.arguments,
+              let availabilityId = arguments["availability_id"]?.stringValue else {
+            return CallTool.Result(
+                content: [.text("Required parameter 'availability_id' is missing")],
+                isError: true
+            )
+        }
+
+        do {
+            let response: ASCAppAvailabilityV2Response = try await httpClient.get(
+                "/v2/appAvailabilities/\(availabilityId)",
+                as: ASCAppAvailabilityV2Response.self
+            )
+
+            let result: [String: Any] = [
+                "success": true,
+                "availability": [
+                    "id": response.data.id,
+                    "type": response.data.type,
+                    "availableInNewTerritories": response.data.attributes?.availableInNewTerritories.jsonSafe
+                ] as [String: Any]
+            ]
+
+            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+
+        } catch {
+            return CallTool.Result(
+                content: [.text("Failed to get app availability: \(error.localizedDescription)")],
+                isError: true
+            )
+        }
+    }
+
+    /// Lists territory availabilities for an app availability via v2 endpoint
+    /// - Returns: JSON array of territory availabilities with pagination
+    /// - Throws: On network or decoding errors
+    func listTerritoryAvailabilitiesV2(_ params: CallTool.Parameters) async throws -> CallTool.Result {
+        guard let arguments = params.arguments,
+              let availabilityId = arguments["availability_id"]?.stringValue else {
+            return CallTool.Result(
+                content: [.text("Required parameter 'availability_id' is missing")],
+                isError: true
+            )
+        }
+
+        do {
+            let response: ASCTerritoryAvailabilitiesResponse
+
+            if let nextUrl = arguments["next_url"]?.stringValue,
+               let parsed = parsePaginationUrl(nextUrl) {
+                response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCTerritoryAvailabilitiesResponse.self)
+            } else {
+                var queryParams: [String: String] = [:]
+
+                if let limit = arguments["limit"]?.intValue {
+                    queryParams["limit"] = String(min(max(limit, 1), 200))
+                } else {
+                    queryParams["limit"] = "50"
+                }
+
+                response = try await httpClient.get(
+                    "/v2/appAvailabilities/\(availabilityId)/territoryAvailabilities",
+                    parameters: queryParams,
+                    as: ASCTerritoryAvailabilitiesResponse.self
+                )
+            }
+
+            let availabilities = response.data.map { formatTerritoryAvailability($0) }
+
+            var result: [String: Any] = [
+                "success": true,
+                "territory_availabilities": availabilities,
+                "count": availabilities.count
+            ]
+            if let next = response.links?.next {
+                result["next_url"] = next
+            }
+
+            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+
+        } catch {
+            return CallTool.Result(
+                content: [.text("Failed to list territory availabilities: \(error.localizedDescription)")],
+                isError: true
+            )
+        }
+    }
+
     // MARK: - Formatting
 
     /// Format territory as a dictionary for JSON output

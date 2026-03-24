@@ -4,20 +4,25 @@ import MCP
 /// PromotedPurchasesWorker manages promoted in-app purchases and subscriptions visibility in the App Store
 public final class PromotedPurchasesWorker: Sendable {
     let httpClient: HTTPClient
+    let uploadService: UploadService
 
-    public init(httpClient: HTTPClient) {
+    public init(httpClient: HTTPClient, uploadService: UploadService) {
         self.httpClient = httpClient
+        self.uploadService = uploadService
     }
 
     /// Get list of available tools
-    /// - Returns: Array of 5 promoted purchase tools
+    /// - Returns: Array of 8 promoted purchase tools
     public func getTools() async -> [Tool] {
         return [
             listPromotedPurchasesTool(),
             getPromotedPurchaseTool(),
             createPromotedPurchaseTool(),
             updatePromotedPurchaseTool(),
-            deletePromotedPurchaseTool()
+            deletePromotedPurchaseTool(),
+            uploadPromotedPurchaseImageTool(),
+            getPromotedPurchaseImageTool(),
+            deletePromotedPurchaseImageTool()
         ]
     }
 
@@ -36,6 +41,12 @@ public final class PromotedPurchasesWorker: Sendable {
             return try await updatePromotedPurchase(params)
         case "promoted_delete":
             return try await deletePromotedPurchase(params)
+        case "promoted_upload_image":
+            return try await uploadPromotedPurchaseImage(params)
+        case "promoted_get_image":
+            return try await getPromotedPurchaseImage(params)
+        case "promoted_delete_image":
+            return try await deletePromotedPurchaseImage(params)
         default:
             throw MCPError.methodNotFound("Unknown tool: \(params.name)")
         }

@@ -4,9 +4,11 @@ import MCP
 /// InAppPurchasesWorker manages IAP and subscriptions in App Store Connect
 public final class InAppPurchasesWorker: Sendable {
     let httpClient: HTTPClient
+    let uploadService: UploadService
 
-    public init(httpClient: HTTPClient) {
+    public init(httpClient: HTTPClient, uploadService: UploadService) {
         self.httpClient = httpClient
+        self.uploadService = uploadService
     }
 
     /// Get list of available tools
@@ -30,7 +32,10 @@ public final class InAppPurchasesWorker: Sendable {
             getIAPReviewScreenshotTool(),
             createIAPReviewScreenshotTool(),
             setIAPAvailabilityTool(),
-            getIAPAvailabilityTool()
+            getIAPAvailabilityTool(),
+            uploadIAPImageTool(),
+            getIAPImageTool(),
+            deleteIAPImageTool()
         ]
     }
 
@@ -75,6 +80,12 @@ public final class InAppPurchasesWorker: Sendable {
             return try await setIAPAvailability(params)
         case "iap_get_availability":
             return try await getIAPAvailability(params)
+        case "iap_upload_image":
+            return try await uploadIAPImage(params)
+        case "iap_get_image":
+            return try await getIAPImage(params)
+        case "iap_delete_image":
+            return try await deleteIAPImage(params)
         default:
             throw MCPError.methodNotFound("Unknown tool: \(params.name)")
         }

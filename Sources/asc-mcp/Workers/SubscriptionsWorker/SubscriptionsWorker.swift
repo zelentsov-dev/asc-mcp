@@ -5,9 +5,11 @@ import MCP
 /// localizations, prices, and submission in App Store Connect
 public final class SubscriptionsWorker: Sendable {
     let httpClient: HTTPClient
+    let uploadService: UploadService
 
-    public init(httpClient: HTTPClient) {
+    public init(httpClient: HTTPClient, uploadService: UploadService) {
         self.httpClient = httpClient
+        self.uploadService = uploadService
     }
 
     /// Get list of available tools
@@ -33,7 +35,13 @@ public final class SubscriptionsWorker: Sendable {
             getSubscriptionGroupLocalizationTool(),
             updateSubscriptionGroupLocalizationTool(),
             deleteSubscriptionGroupLocalizationTool(),
-            deleteSubscriptionPriceTool()
+            deleteSubscriptionPriceTool(),
+            uploadSubscriptionImageTool(),
+            getSubscriptionImageTool(),
+            deleteSubscriptionImageTool(),
+            uploadSubscriptionReviewScreenshotTool(),
+            getSubscriptionReviewScreenshotTool(),
+            deleteSubscriptionReviewScreenshotTool()
         ]
     }
 
@@ -82,6 +90,18 @@ public final class SubscriptionsWorker: Sendable {
             return try await deleteSubscriptionGroupLocalization(params)
         case "subscriptions_delete_price":
             return try await deleteSubscriptionPrice(params)
+        case "subscriptions_upload_image":
+            return try await uploadSubscriptionImage(params)
+        case "subscriptions_get_image":
+            return try await getSubscriptionImage(params)
+        case "subscriptions_delete_image":
+            return try await deleteSubscriptionImage(params)
+        case "subscriptions_upload_review_screenshot":
+            return try await uploadSubscriptionReviewScreenshot(params)
+        case "subscriptions_get_review_screenshot":
+            return try await getSubscriptionReviewScreenshot(params)
+        case "subscriptions_delete_review_screenshot":
+            return try await deleteSubscriptionReviewScreenshot(params)
         default:
             throw MCPError.methodNotFound("Unknown tool: \(params.name)")
         }

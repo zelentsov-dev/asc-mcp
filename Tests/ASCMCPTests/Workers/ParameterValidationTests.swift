@@ -223,7 +223,7 @@ struct ParameterValidationTests {
     @Test("iap_list without app_id returns isError")
     func iapListMissingAppId() async throws {
         let client = try await TestFactory.makeHTTPClient()
-        let worker = InAppPurchasesWorker(httpClient: client)
+        let worker = InAppPurchasesWorker(httpClient: client, uploadService: UploadService())
         let params = CallTool.Parameters(name: "iap_list", arguments: nil)
         let result = try await worker.handleTool(params)
         #expect(result.isError == true)
@@ -232,7 +232,7 @@ struct ParameterValidationTests {
     @Test("iap_get without iap_id returns isError")
     func iapGetMissingId() async throws {
         let client = try await TestFactory.makeHTTPClient()
-        let worker = InAppPurchasesWorker(httpClient: client)
+        let worker = InAppPurchasesWorker(httpClient: client, uploadService: UploadService())
         let params = CallTool.Parameters(name: "iap_get", arguments: nil)
         let result = try await worker.handleTool(params)
         #expect(result.isError == true)
@@ -241,7 +241,7 @@ struct ParameterValidationTests {
     @Test("iap_create without required params returns isError")
     func iapCreateMissingParams() async throws {
         let client = try await TestFactory.makeHTTPClient()
-        let worker = InAppPurchasesWorker(httpClient: client)
+        let worker = InAppPurchasesWorker(httpClient: client, uploadService: UploadService())
         let params = CallTool.Parameters(name: "iap_create", arguments: nil)
         let result = try await worker.handleTool(params)
         #expect(result.isError == true)
@@ -250,7 +250,7 @@ struct ParameterValidationTests {
     @Test("iap_delete without iap_id returns isError")
     func iapDeleteMissingId() async throws {
         let client = try await TestFactory.makeHTTPClient()
-        let worker = InAppPurchasesWorker(httpClient: client)
+        let worker = InAppPurchasesWorker(httpClient: client, uploadService: UploadService())
         let params = CallTool.Parameters(name: "iap_delete", arguments: nil)
         let result = try await worker.handleTool(params)
         #expect(result.isError == true)
@@ -386,6 +386,33 @@ struct ParameterValidationTests {
         let client = try await TestFactory.makeHTTPClient()
         let worker = PricingWorker(httpClient: client)
         let params = CallTool.Parameters(name: "pricing_get_price_schedule", arguments: nil)
+        let result = try await worker.handleTool(params)
+        #expect(result.isError == true)
+    }
+
+    @Test("pricing_create_availability without required params returns isError")
+    func pricingCreateAvailabilityMissing() async throws {
+        let client = try await TestFactory.makeHTTPClient()
+        let worker = PricingWorker(httpClient: client)
+        let params = CallTool.Parameters(name: "pricing_create_availability", arguments: nil)
+        let result = try await worker.handleTool(params)
+        #expect(result.isError == true)
+    }
+
+    @Test("pricing_get_availability_v2 without availability_id returns isError")
+    func pricingGetAvailabilityV2Missing() async throws {
+        let client = try await TestFactory.makeHTTPClient()
+        let worker = PricingWorker(httpClient: client)
+        let params = CallTool.Parameters(name: "pricing_get_availability_v2", arguments: nil)
+        let result = try await worker.handleTool(params)
+        #expect(result.isError == true)
+    }
+
+    @Test("pricing_list_territory_availabilities without availability_id returns isError")
+    func pricingListTerritoryAvailabilitiesMissing() async throws {
+        let client = try await TestFactory.makeHTTPClient()
+        let worker = PricingWorker(httpClient: client)
+        let params = CallTool.Parameters(name: "pricing_list_territory_availabilities", arguments: nil)
         let result = try await worker.handleTool(params)
         #expect(result.isError == true)
     }
@@ -572,7 +599,7 @@ struct ParameterValidationTests {
     @Test("iap_list_price_points without iap_id returns isError")
     func iapListPricePointsMissing() async throws {
         let client = try await TestFactory.makeHTTPClient()
-        let worker = InAppPurchasesWorker(httpClient: client)
+        let worker = InAppPurchasesWorker(httpClient: client, uploadService: UploadService())
         let params = CallTool.Parameters(name: "iap_list_price_points", arguments: nil)
         let result = try await worker.handleTool(params)
         #expect(result.isError == true)
@@ -581,7 +608,7 @@ struct ParameterValidationTests {
     @Test("iap_get_price_schedule without iap_id returns isError")
     func iapGetPriceScheduleMissing() async throws {
         let client = try await TestFactory.makeHTTPClient()
-        let worker = InAppPurchasesWorker(httpClient: client)
+        let worker = InAppPurchasesWorker(httpClient: client, uploadService: UploadService())
         let params = CallTool.Parameters(name: "iap_get_price_schedule", arguments: nil)
         let result = try await worker.handleTool(params)
         #expect(result.isError == true)
@@ -590,7 +617,7 @@ struct ParameterValidationTests {
     @Test("iap_create_review_screenshot without required params returns isError")
     func iapCreateReviewScreenshotMissing() async throws {
         let client = try await TestFactory.makeHTTPClient()
-        let worker = InAppPurchasesWorker(httpClient: client)
+        let worker = InAppPurchasesWorker(httpClient: client, uploadService: UploadService())
         let params = CallTool.Parameters(name: "iap_create_review_screenshot", arguments: nil)
         let result = try await worker.handleTool(params)
         #expect(result.isError == true)
@@ -630,7 +657,7 @@ struct ParameterValidationTests {
     @Test("subscriptions_list without group_id returns isError")
     func subscriptionsListMissing() async throws {
         let client = try await TestFactory.makeHTTPClient()
-        let worker = SubscriptionsWorker(httpClient: client)
+        let worker = SubscriptionsWorker(httpClient: client, uploadService: UploadService())
         let params = CallTool.Parameters(name: "subscriptions_list", arguments: nil)
         let result = try await worker.handleTool(params)
         #expect(result.isError == true)
@@ -639,7 +666,7 @@ struct ParameterValidationTests {
     @Test("subscriptions_get without subscription_id returns isError")
     func subscriptionsGetMissing() async throws {
         let client = try await TestFactory.makeHTTPClient()
-        let worker = SubscriptionsWorker(httpClient: client)
+        let worker = SubscriptionsWorker(httpClient: client, uploadService: UploadService())
         let params = CallTool.Parameters(name: "subscriptions_get", arguments: nil)
         let result = try await worker.handleTool(params)
         #expect(result.isError == true)
@@ -648,7 +675,7 @@ struct ParameterValidationTests {
     @Test("subscriptions_create without required params returns isError")
     func subscriptionsCreateMissing() async throws {
         let client = try await TestFactory.makeHTTPClient()
-        let worker = SubscriptionsWorker(httpClient: client)
+        let worker = SubscriptionsWorker(httpClient: client, uploadService: UploadService())
         let params = CallTool.Parameters(name: "subscriptions_create", arguments: nil)
         let result = try await worker.handleTool(params)
         #expect(result.isError == true)
@@ -657,7 +684,7 @@ struct ParameterValidationTests {
     @Test("subscriptions_delete without subscription_id returns isError")
     func subscriptionsDeleteMissing() async throws {
         let client = try await TestFactory.makeHTTPClient()
-        let worker = SubscriptionsWorker(httpClient: client)
+        let worker = SubscriptionsWorker(httpClient: client, uploadService: UploadService())
         let params = CallTool.Parameters(name: "subscriptions_delete", arguments: nil)
         let result = try await worker.handleTool(params)
         #expect(result.isError == true)
@@ -842,7 +869,7 @@ struct ParameterValidationTests {
     @Test("subscriptions_list_group_localizations without subscription_group_id returns isError")
     func subscriptionsListGroupLocMissing() async throws {
         let client = try await TestFactory.makeHTTPClient()
-        let worker = SubscriptionsWorker(httpClient: client)
+        let worker = SubscriptionsWorker(httpClient: client, uploadService: UploadService())
         let params = CallTool.Parameters(name: "subscriptions_list_group_localizations", arguments: nil)
         let result = try await worker.handleTool(params)
         #expect(result.isError == true)
@@ -851,7 +878,7 @@ struct ParameterValidationTests {
     @Test("subscriptions_create_group_localization without required params returns isError")
     func subscriptionsCreateGroupLocMissing() async throws {
         let client = try await TestFactory.makeHTTPClient()
-        let worker = SubscriptionsWorker(httpClient: client)
+        let worker = SubscriptionsWorker(httpClient: client, uploadService: UploadService())
         let params = CallTool.Parameters(name: "subscriptions_create_group_localization", arguments: nil)
         let result = try await worker.handleTool(params)
         #expect(result.isError == true)
@@ -980,7 +1007,7 @@ struct ParameterValidationTests {
     @Test("promoted_list without app_id returns isError")
     func promotedListMissing() async throws {
         let client = try await TestFactory.makeHTTPClient()
-        let worker = PromotedPurchasesWorker(httpClient: client)
+        let worker = PromotedPurchasesWorker(httpClient: client, uploadService: UploadService())
         let params = CallTool.Parameters(name: "promoted_list", arguments: nil)
         let result = try await worker.handleTool(params)
         #expect(result.isError == true)
@@ -989,7 +1016,7 @@ struct ParameterValidationTests {
     @Test("promoted_create without required params returns isError")
     func promotedCreateMissing() async throws {
         let client = try await TestFactory.makeHTTPClient()
-        let worker = PromotedPurchasesWorker(httpClient: client)
+        let worker = PromotedPurchasesWorker(httpClient: client, uploadService: UploadService())
         let params = CallTool.Parameters(name: "promoted_create", arguments: nil)
         let result = try await worker.handleTool(params)
         #expect(result.isError == true)
@@ -998,8 +1025,35 @@ struct ParameterValidationTests {
     @Test("promoted_delete without promoted_purchase_id returns isError")
     func promotedDeleteMissing() async throws {
         let client = try await TestFactory.makeHTTPClient()
-        let worker = PromotedPurchasesWorker(httpClient: client)
+        let worker = PromotedPurchasesWorker(httpClient: client, uploadService: UploadService())
         let params = CallTool.Parameters(name: "promoted_delete", arguments: nil)
+        let result = try await worker.handleTool(params)
+        #expect(result.isError == true)
+    }
+
+    @Test("promoted_upload_image without required params returns isError")
+    func promotedUploadImageMissing() async throws {
+        let client = try await TestFactory.makeHTTPClient()
+        let worker = PromotedPurchasesWorker(httpClient: client, uploadService: UploadService())
+        let params = CallTool.Parameters(name: "promoted_upload_image", arguments: nil)
+        let result = try await worker.handleTool(params)
+        #expect(result.isError == true)
+    }
+
+    @Test("promoted_get_image without image_id returns isError")
+    func promotedGetImageMissing() async throws {
+        let client = try await TestFactory.makeHTTPClient()
+        let worker = PromotedPurchasesWorker(httpClient: client, uploadService: UploadService())
+        let params = CallTool.Parameters(name: "promoted_get_image", arguments: nil)
+        let result = try await worker.handleTool(params)
+        #expect(result.isError == true)
+    }
+
+    @Test("promoted_delete_image without image_id returns isError")
+    func promotedDeleteImageMissing() async throws {
+        let client = try await TestFactory.makeHTTPClient()
+        let worker = PromotedPurchasesWorker(httpClient: client, uploadService: UploadService())
+        let params = CallTool.Parameters(name: "promoted_delete_image", arguments: nil)
         let result = try await worker.handleTool(params)
         #expect(result.isError == true)
     }
@@ -1020,6 +1074,44 @@ struct ParameterValidationTests {
         let client = try await TestFactory.makeHTTPClient()
         let worker = MetricsWorker(httpClient: client)
         let params = CallTool.Parameters(name: "metrics_get_diagnostic_logs", arguments: nil)
+        let result = try await worker.handleTool(params)
+        #expect(result.isError == true)
+    }
+
+    // MARK: - ReviewAttachmentsWorker
+
+    @Test("review_attachments_upload without required params returns isError")
+    func reviewAttachmentsUploadMissing() async throws {
+        let client = try await TestFactory.makeHTTPClient()
+        let worker = ReviewAttachmentsWorker(httpClient: client, uploadService: UploadService())
+        let params = CallTool.Parameters(name: "review_attachments_upload", arguments: nil)
+        let result = try await worker.handleTool(params)
+        #expect(result.isError == true)
+    }
+
+    @Test("review_attachments_get without attachment_id returns isError")
+    func reviewAttachmentsGetMissing() async throws {
+        let client = try await TestFactory.makeHTTPClient()
+        let worker = ReviewAttachmentsWorker(httpClient: client, uploadService: UploadService())
+        let params = CallTool.Parameters(name: "review_attachments_get", arguments: nil)
+        let result = try await worker.handleTool(params)
+        #expect(result.isError == true)
+    }
+
+    @Test("review_attachments_delete without attachment_id returns isError")
+    func reviewAttachmentsDeleteMissing() async throws {
+        let client = try await TestFactory.makeHTTPClient()
+        let worker = ReviewAttachmentsWorker(httpClient: client, uploadService: UploadService())
+        let params = CallTool.Parameters(name: "review_attachments_delete", arguments: nil)
+        let result = try await worker.handleTool(params)
+        #expect(result.isError == true)
+    }
+
+    @Test("review_attachments_list without review_detail_id returns isError")
+    func reviewAttachmentsListMissing() async throws {
+        let client = try await TestFactory.makeHTTPClient()
+        let worker = ReviewAttachmentsWorker(httpClient: client, uploadService: UploadService())
+        let params = CallTool.Parameters(name: "review_attachments_list", arguments: nil)
         let result = try await worker.handleTool(params)
         #expect(result.isError == true)
     }

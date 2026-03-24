@@ -16,7 +16,7 @@ MCP (Model Context Protocol) server for App Store Connect API integration, desig
 # Build the project
 swift build
 
-# Run all unit tests (423 tests)
+# Run all unit tests (435 tests)
 swift test
 
 # Run the MCP server (requires environment variables or companies.json)
@@ -49,7 +49,7 @@ Each company needs: `keyID`, `issuerID`, `privateKeyPath` (path to `.p8` file).
 
 **WorkerManager** (`Workers/MainWorker/WorkerManager.swift`) — central registry, routes tool calls by prefix.
 
-**Workers** (31 workers, 265 tools):
+**Workers** (33 workers, 284 tools):
 
 | Worker | Prefix | Tools | Domain |
 |--------|--------|-------|--------|
@@ -62,15 +62,15 @@ Each company needs: `keyID`, `issuerID`, `privateKeyPath` (path to `.p8` file).
 | AppLifecycleWorker | `app_versions_` | 14 | Versions, submit, release, phased rollout, delete |
 | ReviewsWorker | `reviews_` | 8 | Customer reviews, responses, AI summarizations |
 | BetaGroupsWorker | `beta_groups_` | 9 | TestFlight groups CRUD, testers, builds |
-| InAppPurchasesWorker | `iap_` | 19 | IAP, subscriptions, localizations, prices, screenshots, availability |
+| InAppPurchasesWorker | `iap_` | 22 | IAP, subscriptions, localizations, prices, screenshots, availability, images |
 | ProvisioningWorker | `provisioning_` | 17 | Bundle IDs, devices, certificates, profiles, capabilities |
 | BetaTestersWorker | `beta_testers_` | 12 | Tester management, search, invite, relationships, invitations |
 | AppInfoWorker | `app_info_` | 10 | App info, categories, localizations, EULA |
-| PricingWorker | `pricing_` | 6 | Territories, availability, price points/schedule |
+| PricingWorker | `pricing_` | 9 | Territories, availability, price points/schedule, app availabilities v2 |
 | UsersWorker | `users_` | 10 | Team members, roles, invitations, visible apps |
 | AppEventsWorker | `app_events_` | 9 | In-app events CRUD, localizations |
 | AnalyticsWorker | `analytics_` | 11 | Sales/financial reports, app summary, analytics reports/instances/segments, snapshot status |
-| SubscriptionsWorker | `subscriptions_` | 21 | Subscription CRUD, groups, localizations, prices, submit, group localizations, price delete |
+| SubscriptionsWorker | `subscriptions_` | 27 | Subscription CRUD, groups, localizations, prices, submit, group localizations, images, review screenshots |
 | OfferCodesWorker | `offer_codes_` | 10 | Subscription offer codes, one-time codes, custom codes |
 | WinBackOffersWorker | `winback_` | 5 | Win-back offers for subscriptions |
 | IntroductoryOffersWorker | `intro_offers_` | 4 | Introductory offers (free trial, pay-as-you-go, pay-up-front) |
@@ -82,7 +82,8 @@ Each company needs: `keyID`, `issuerID`, `privateKeyPath` (path to `.p8` file).
 | ScreenshotsWorker | `screenshots_` | 12 | Screenshots, previews, sets, reorder |
 | CustomProductPagesWorker | `custom_pages_` | 10 | Custom product pages, versions, localizations |
 | ProductPageOptimizationWorker | `ppo_` | 9 | A/B test experiments, treatments |
-| PromotedPurchasesWorker | `promoted_` | 5 | Promoted in-app purchases, images |
+| PromotedPurchasesWorker | `promoted_` | 8 | Promoted in-app purchases, images upload |
+| ReviewAttachmentsWorker | `review_attachments_` | 4 | App Store review attachments (upload, get, delete, list) |
 | MetricsWorker | `metrics_` | 4 | Performance/power metrics, diagnostics |
 
 **Services**: HTTPClient (actor, GET/POST/PATCH/PUT/DELETE + retry with 429), JWTService (ES256), CompaniesManager
@@ -109,7 +110,7 @@ Each company needs: `keyID`, `issuerID`, `privateKeyPath` (path to `.p8` file).
 ### Unit Tests (Swift Testing)
 
 ```bash
-swift test    # Run all 423 tests across 31 suites
+swift test    # Run all 435 tests across 31 suites
 ```
 
 Test categories:

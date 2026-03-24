@@ -95,7 +95,7 @@ struct WorkerRoutingTests {
     @Test("InAppPurchasesWorker throws MCPError.methodNotFound for unknown tool")
     func inAppPurchasesWorkerUnknownTool() async throws {
         let client = try await TestFactory.makeHTTPClient()
-        let worker = InAppPurchasesWorker(httpClient: client)
+        let worker = InAppPurchasesWorker(httpClient: client, uploadService: UploadService())
         let params = CallTool.Parameters(name: "iap_nonexistent", arguments: nil)
         await #expect(throws: MCPError.self) {
             _ = try await worker.handleTool(params)
@@ -203,7 +203,7 @@ struct WorkerRoutingTests {
     @Test("SubscriptionsWorker throws MCPError.methodNotFound for unknown tool")
     func subscriptionsWorkerUnknownTool() async throws {
         let client = try await TestFactory.makeHTTPClient()
-        let worker = SubscriptionsWorker(httpClient: client)
+        let worker = SubscriptionsWorker(httpClient: client, uploadService: UploadService())
         let params = CallTool.Parameters(name: "subscriptions_nonexistent", arguments: nil)
         await #expect(throws: MCPError.self) {
             _ = try await worker.handleTool(params)
@@ -347,7 +347,7 @@ struct WorkerRoutingTests {
     @Test("PromotedPurchasesWorker throws MCPError.methodNotFound for unknown tool")
     func promotedPurchasesWorkerUnknownTool() async throws {
         let client = try await TestFactory.makeHTTPClient()
-        let worker = PromotedPurchasesWorker(httpClient: client)
+        let worker = PromotedPurchasesWorker(httpClient: client, uploadService: UploadService())
         let params = CallTool.Parameters(name: "promoted_nonexistent", arguments: nil)
         await #expect(throws: MCPError.self) {
             _ = try await worker.handleTool(params)
@@ -361,6 +361,18 @@ struct WorkerRoutingTests {
         let client = try await TestFactory.makeHTTPClient()
         let worker = MetricsWorker(httpClient: client)
         let params = CallTool.Parameters(name: "metrics_nonexistent", arguments: nil)
+        await #expect(throws: MCPError.self) {
+            _ = try await worker.handleTool(params)
+        }
+    }
+
+    // MARK: - ReviewAttachmentsWorker
+
+    @Test("ReviewAttachmentsWorker throws MCPError.methodNotFound for unknown tool")
+    func reviewAttachmentsWorkerUnknownTool() async throws {
+        let client = try await TestFactory.makeHTTPClient()
+        let worker = ReviewAttachmentsWorker(httpClient: client, uploadService: UploadService())
+        let params = CallTool.Parameters(name: "review_attachments_nonexistent", arguments: nil)
         await #expect(throws: MCPError.self) {
             _ = try await worker.handleTool(params)
         }

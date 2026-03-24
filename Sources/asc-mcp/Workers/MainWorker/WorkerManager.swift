@@ -76,13 +76,16 @@ public actor WorkerManager {
     private var customProductPagesWorker: CustomProductPagesWorker
     private var productPageOptimizationWorker: ProductPageOptimizationWorker
     private var promotedPurchasesWorker: PromotedPurchasesWorker
+    private let uploadService: UploadService
     private var metricsWorker: MetricsWorker
+    private var reviewAttachmentsWorker: ReviewAttachmentsWorker
 
     /// Direct initialization with dependencies (for testing and flexibility)
     /// - Parameter enabledWorkers: Set of worker names to enable, nil = all
     public init(dependencies: WorkerDependencies, enabledWorkers: Set<String>? = nil) async {
         self.dependencies = dependencies
         self.enabledWorkers = enabledWorkers
+        self.uploadService = UploadService()
 
         self.appsWorker = await AppsWorker(client: dependencies.httpClient)
         self.buildsWorker = await BuildsWorker(httpClient: dependencies.httpClient)
@@ -91,7 +94,7 @@ public actor WorkerManager {
         self.appLifecycleWorker = await AppLifecycleWorker(httpClient: dependencies.httpClient)
         self.reviewsWorker = await ReviewsWorker(httpClient: dependencies.httpClient)
         self.betaGroupsWorker = await BetaGroupsWorker(httpClient: dependencies.httpClient)
-        self.inAppPurchasesWorker = await InAppPurchasesWorker(httpClient: dependencies.httpClient)
+        self.inAppPurchasesWorker = await InAppPurchasesWorker(httpClient: dependencies.httpClient, uploadService: self.uploadService)
         self.provisioningWorker = await ProvisioningWorker(httpClient: dependencies.httpClient)
         self.betaTestersWorker = await BetaTestersWorker(httpClient: dependencies.httpClient)
         self.appInfoWorker = await AppInfoWorker(httpClient: dependencies.httpClient)
@@ -102,7 +105,7 @@ public actor WorkerManager {
             httpClient: dependencies.httpClient,
             companiesManager: dependencies.companiesWorker.manager
         )
-        self.subscriptionsWorker = await SubscriptionsWorker(httpClient: dependencies.httpClient)
+        self.subscriptionsWorker = await SubscriptionsWorker(httpClient: dependencies.httpClient, uploadService: self.uploadService)
         self.offerCodesWorker = await OfferCodesWorker(httpClient: dependencies.httpClient)
         self.winBackOffersWorker = await WinBackOffersWorker(httpClient: dependencies.httpClient)
         self.introductoryOffersWorker = await IntroductoryOffersWorker(httpClient: dependencies.httpClient)
@@ -114,8 +117,9 @@ public actor WorkerManager {
         self.screenshotsWorker = await ScreenshotsWorker(httpClient: dependencies.httpClient)
         self.customProductPagesWorker = await CustomProductPagesWorker(httpClient: dependencies.httpClient)
         self.productPageOptimizationWorker = await ProductPageOptimizationWorker(httpClient: dependencies.httpClient)
-        self.promotedPurchasesWorker = await PromotedPurchasesWorker(httpClient: dependencies.httpClient)
+        self.promotedPurchasesWorker = await PromotedPurchasesWorker(httpClient: dependencies.httpClient, uploadService: self.uploadService)
         self.metricsWorker = await MetricsWorker(httpClient: dependencies.httpClient)
+        self.reviewAttachmentsWorker = await ReviewAttachmentsWorker(httpClient: dependencies.httpClient, uploadService: self.uploadService)
     }
 
     /// Convenience factory method for production use
@@ -249,6 +253,9 @@ public actor WorkerManager {
             }
             if self.isWorkerEnabled("metrics") {
                 allTools += await self.getMetricsTools()
+            }
+            if self.isWorkerEnabled("review_attachments") {
+                allTools += await self.getReviewAttachmentsTools()
             }
 
             return ListTools.Result(tools: allTools)
@@ -429,6 +436,11 @@ public actor WorkerManager {
                     return try await self.metricsWorker.handleTool(params)
                 }
 
+                if params.name.hasPrefix("review_attachments_") {
+                    guard self.isWorkerEnabled("review_attachments") else { return self.disabledWorkerResult("review_attachments") }
+                    return try await self.reviewAttachmentsWorker.handleTool(params)
+                }
+
                 return CallTool.Result(
                     content: [.text("Error: Unknown tool: \(params.name)")],
                     isError: true
@@ -453,7 +465,7 @@ public actor WorkerManager {
         self.appLifecycleWorker = await AppLifecycleWorker(httpClient: dependencies.httpClient)
         self.reviewsWorker = await ReviewsWorker(httpClient: dependencies.httpClient)
         self.betaGroupsWorker = await BetaGroupsWorker(httpClient: dependencies.httpClient)
-        self.inAppPurchasesWorker = await InAppPurchasesWorker(httpClient: dependencies.httpClient)
+        self.inAppPurchasesWorker = await InAppPurchasesWorker(httpClient: dependencies.httpClient, uploadService: self.uploadService)
         self.provisioningWorker = await ProvisioningWorker(httpClient: dependencies.httpClient)
         self.betaTestersWorker = await BetaTestersWorker(httpClient: dependencies.httpClient)
         self.appInfoWorker = await AppInfoWorker(httpClient: dependencies.httpClient)
@@ -464,7 +476,7 @@ public actor WorkerManager {
             httpClient: dependencies.httpClient,
             companiesManager: dependencies.companiesWorker.manager
         )
-        self.subscriptionsWorker = await SubscriptionsWorker(httpClient: dependencies.httpClient)
+        self.subscriptionsWorker = await SubscriptionsWorker(httpClient: dependencies.httpClient, uploadService: self.uploadService)
         self.offerCodesWorker = await OfferCodesWorker(httpClient: dependencies.httpClient)
         self.winBackOffersWorker = await WinBackOffersWorker(httpClient: dependencies.httpClient)
         self.introductoryOffersWorker = await IntroductoryOffersWorker(httpClient: dependencies.httpClient)
@@ -476,8 +488,9 @@ public actor WorkerManager {
         self.screenshotsWorker = await ScreenshotsWorker(httpClient: dependencies.httpClient)
         self.customProductPagesWorker = await CustomProductPagesWorker(httpClient: dependencies.httpClient)
         self.productPageOptimizationWorker = await ProductPageOptimizationWorker(httpClient: dependencies.httpClient)
-        self.promotedPurchasesWorker = await PromotedPurchasesWorker(httpClient: dependencies.httpClient)
+        self.promotedPurchasesWorker = await PromotedPurchasesWorker(httpClient: dependencies.httpClient, uploadService: self.uploadService)
         self.metricsWorker = await MetricsWorker(httpClient: dependencies.httpClient)
+        self.reviewAttachmentsWorker = await ReviewAttachmentsWorker(httpClient: dependencies.httpClient, uploadService: self.uploadService)
 
         print("✅ Workers reinitialized successfully", to: &standardError)
     }
@@ -631,6 +644,10 @@ public actor WorkerManager {
 
     private func getMetricsTools() async -> [Tool] {
         return await metricsWorker.getTools()
+    }
+
+    private func getReviewAttachmentsTools() async -> [Tool] {
+        return await reviewAttachmentsWorker.getTools()
     }
 }
 

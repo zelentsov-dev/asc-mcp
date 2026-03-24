@@ -121,4 +121,61 @@ extension PromotedPurchasesWorker {
         )
     }
 
+    // MARK: - Image Tools
+
+    func uploadPromotedPurchaseImageTool() -> Tool {
+        return Tool(
+            name: "promoted_upload_image",
+            description: "Upload a promotional image for a promoted purchase (full cycle: reserve, upload, commit)",
+            inputSchema: .object([
+                "type": .string("object"),
+                "properties": .object([
+                    "promoted_purchase_id": .object([
+                        "type": .string("string"),
+                        "description": .string("Promoted purchase ID to upload image for")
+                    ]),
+                    "file_path": .object([
+                        "type": .string("string"),
+                        "description": .string("Absolute path to the image file on disk")
+                    ])
+                ]),
+                "required": .array([.string("promoted_purchase_id"), .string("file_path")])
+            ])
+        )
+    }
+
+    func getPromotedPurchaseImageTool() -> Tool {
+        return Tool(
+            name: "promoted_get_image",
+            description: "Get details of a promoted purchase image",
+            inputSchema: .object([
+                "type": .string("object"),
+                "properties": .object([
+                    "image_id": .object([
+                        "type": .string("string"),
+                        "description": .string("Promoted purchase image ID")
+                    ])
+                ]),
+                "required": .array([.string("image_id")])
+            ])
+        )
+    }
+
+    func deletePromotedPurchaseImageTool() -> Tool {
+        return Tool(
+            name: "promoted_delete_image",
+            description: "Delete a promoted purchase image",
+            inputSchema: .object([
+                "type": .string("object"),
+                "properties": .object([
+                    "image_id": .object([
+                        "type": .string("string"),
+                        "description": .string("Promoted purchase image ID to delete")
+                    ])
+                ]),
+                "required": .array([.string("image_id")])
+            ])
+        )
+    }
+
 }

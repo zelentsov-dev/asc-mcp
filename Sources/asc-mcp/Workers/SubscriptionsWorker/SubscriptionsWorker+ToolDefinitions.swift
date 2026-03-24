@@ -484,4 +484,118 @@ extension SubscriptionsWorker {
             ])
         )
     }
+
+    // MARK: - Subscription Image Tools
+
+    func uploadSubscriptionImageTool() -> Tool {
+        return Tool(
+            name: "subscriptions_upload_image",
+            description: "Upload a promotional image for a subscription (full cycle: reserve, upload, commit)",
+            inputSchema: .object([
+                "type": .string("object"),
+                "properties": .object([
+                    "subscription_id": .object([
+                        "type": .string("string"),
+                        "description": .string("Subscription ID")
+                    ]),
+                    "file_path": .object([
+                        "type": .string("string"),
+                        "description": .string("Absolute path to the image file on disk")
+                    ])
+                ]),
+                "required": .array([.string("subscription_id"), .string("file_path")])
+            ])
+        )
+    }
+
+    func getSubscriptionImageTool() -> Tool {
+        return Tool(
+            name: "subscriptions_get_image",
+            description: "Get details of a subscription image",
+            inputSchema: .object([
+                "type": .string("object"),
+                "properties": .object([
+                    "image_id": .object([
+                        "type": .string("string"),
+                        "description": .string("Subscription image ID")
+                    ])
+                ]),
+                "required": .array([.string("image_id")])
+            ])
+        )
+    }
+
+    func deleteSubscriptionImageTool() -> Tool {
+        return Tool(
+            name: "subscriptions_delete_image",
+            description: "Delete a subscription image",
+            inputSchema: .object([
+                "type": .string("object"),
+                "properties": .object([
+                    "image_id": .object([
+                        "type": .string("string"),
+                        "description": .string("Subscription image ID to delete")
+                    ])
+                ]),
+                "required": .array([.string("image_id")])
+            ])
+        )
+    }
+
+    // MARK: - Subscription Review Screenshot Tools
+
+    func uploadSubscriptionReviewScreenshotTool() -> Tool {
+        return Tool(
+            name: "subscriptions_upload_review_screenshot",
+            description: "Upload a review screenshot for a subscription (full cycle: reserve, upload, commit). Used for App Store review.",
+            inputSchema: .object([
+                "type": .string("object"),
+                "properties": .object([
+                    "subscription_id": .object([
+                        "type": .string("string"),
+                        "description": .string("Subscription ID")
+                    ]),
+                    "file_path": .object([
+                        "type": .string("string"),
+                        "description": .string("Absolute path to the image file on disk")
+                    ])
+                ]),
+                "required": .array([.string("subscription_id"), .string("file_path")])
+            ])
+        )
+    }
+
+    func getSubscriptionReviewScreenshotTool() -> Tool {
+        return Tool(
+            name: "subscriptions_get_review_screenshot",
+            description: "Get details of a subscription review screenshot",
+            inputSchema: .object([
+                "type": .string("object"),
+                "properties": .object([
+                    "screenshot_id": .object([
+                        "type": .string("string"),
+                        "description": .string("Subscription review screenshot ID")
+                    ])
+                ]),
+                "required": .array([.string("screenshot_id")])
+            ])
+        )
+    }
+
+    func deleteSubscriptionReviewScreenshotTool() -> Tool {
+        return Tool(
+            name: "subscriptions_delete_review_screenshot",
+            description: "Delete a subscription review screenshot",
+            inputSchema: .object([
+                "type": .string("object"),
+                "properties": .object([
+                    "screenshot_id": .object([
+                        "type": .string("string"),
+                        "description": .string("Subscription review screenshot ID to delete")
+                    ])
+                ]),
+                "required": .array([.string("screenshot_id")])
+            ])
+        )
+    }
 }
