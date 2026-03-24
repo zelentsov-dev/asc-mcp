@@ -380,10 +380,10 @@ extension InAppPurchasesWorker {
         )
     }
 
-    func createIAPReviewScreenshotTool() -> Tool {
+    func setIAPAvailabilityTool() -> Tool {
         return Tool(
-            name: "iap_create_review_screenshot",
-            description: "Reserve a screenshot for App Store Review of an in-app purchase. Returns upload operations.",
+            name: "iap_set_availability",
+            description: "Set territorial availability for an in-app purchase",
             inputSchema: .object([
                 "type": .string("object"),
                 "properties": .object([
@@ -391,16 +391,158 @@ extension InAppPurchasesWorker {
                         "type": .string("string"),
                         "description": .string("In-app purchase ID")
                     ]),
-                    "file_name": .object([
-                        "type": .string("string"),
-                        "description": .string("Screenshot file name (e.g. screenshot.png)")
+                    "available_in_new_territories": .object([
+                        "type": .string("boolean"),
+                        "description": .string("Automatically available in new territories")
                     ]),
-                    "file_size": .object([
-                        "type": .string("integer"),
-                        "description": .string("Screenshot file size in bytes")
+                    "territory_ids": .object([
+                        "type": .string("array"),
+                        "description": .string("Array of territory IDs (e.g. [\"USA\", \"GBR\", \"DEU\"])"),
+                        "items": .object([
+                            "type": .string("string")
+                        ])
                     ])
                 ]),
-                "required": .array([.string("iap_id"), .string("file_name"), .string("file_size")])
+                "required": .array([.string("iap_id"), .string("available_in_new_territories"), .string("territory_ids")])
+            ])
+        )
+    }
+
+    func getIAPAvailabilityTool() -> Tool {
+        return Tool(
+            name: "iap_get_availability",
+            description: "Get availability details for an in-app purchase",
+            inputSchema: .object([
+                "type": .string("object"),
+                "properties": .object([
+                    "availability_id": .object([
+                        "type": .string("string"),
+                        "description": .string("In-app purchase availability ID")
+                    ]),
+                    "include_territories": .object([
+                        "type": .string("boolean"),
+                        "description": .string("Include available territories (default: true)")
+                    ])
+                ]),
+                "required": .array([.string("availability_id")])
+            ])
+        )
+    }
+
+    func uploadIAPImageTool() -> Tool {
+        return Tool(
+            name: "iap_upload_image",
+            description: "Upload an image for an in-app purchase (full cycle: reserve, upload, commit). Used for promotional images displayed on the App Store.",
+            inputSchema: .object([
+                "type": .string("object"),
+                "properties": .object([
+                    "iap_id": .object([
+                        "type": .string("string"),
+                        "description": .string("In-app purchase ID")
+                    ]),
+                    "file_path": .object([
+                        "type": .string("string"),
+                        "description": .string("Absolute path to the image file on disk")
+                    ])
+                ]),
+                "required": .array([.string("iap_id"), .string("file_path")])
+            ])
+        )
+    }
+
+    func getIAPImageTool() -> Tool {
+        return Tool(
+            name: "iap_get_image",
+            description: "Get details of an in-app purchase image",
+            inputSchema: .object([
+                "type": .string("object"),
+                "properties": .object([
+                    "image_id": .object([
+                        "type": .string("string"),
+                        "description": .string("In-app purchase image ID")
+                    ])
+                ]),
+                "required": .array([.string("image_id")])
+            ])
+        )
+    }
+
+    func deleteIAPImageTool() -> Tool {
+        return Tool(
+            name: "iap_delete_image",
+            description: "Delete an in-app purchase image",
+            inputSchema: .object([
+                "type": .string("object"),
+                "properties": .object([
+                    "image_id": .object([
+                        "type": .string("string"),
+                        "description": .string("In-app purchase image ID to delete")
+                    ])
+                ]),
+                "required": .array([.string("image_id")])
+            ])
+        )
+    }
+
+    func uploadIAPReviewScreenshotTool() -> Tool {
+        return Tool(
+            name: "iap_upload_review_screenshot",
+            description: "Upload a screenshot for App Store Review of an in-app purchase (full cycle: reserve, upload, commit)",
+            inputSchema: .object([
+                "type": .string("object"),
+                "properties": .object([
+                    "iap_id": .object([
+                        "type": .string("string"),
+                        "description": .string("In-app purchase ID")
+                    ]),
+                    "file_path": .object([
+                        "type": .string("string"),
+                        "description": .string("Absolute path to the screenshot file on disk")
+                    ])
+                ]),
+                "required": .array([.string("iap_id"), .string("file_path")])
+            ])
+        )
+    }
+
+    func deleteIAPReviewScreenshotTool() -> Tool {
+        return Tool(
+            name: "iap_delete_review_screenshot",
+            description: "Delete an App Store Review screenshot for an in-app purchase",
+            inputSchema: .object([
+                "type": .string("object"),
+                "properties": .object([
+                    "screenshot_id": .object([
+                        "type": .string("string"),
+                        "description": .string("IAP review screenshot ID to delete")
+                    ])
+                ]),
+                "required": .array([.string("screenshot_id")])
+            ])
+        )
+    }
+
+    func listIAPImagesTool() -> Tool {
+        return Tool(
+            name: "iap_list_images",
+            description: "List images for an in-app purchase",
+            inputSchema: .object([
+                "type": .string("object"),
+                "properties": .object([
+                    "iap_id": .object([
+                        "type": .string("string"),
+                        "description": .string("In-app purchase ID")
+                    ]),
+                    "limit": .object([
+                        "type": .string("integer"),
+                        "description": .string("Max results (default: 25, max: 200)")
+                    ]),
+                    "next_url": .object([
+                        "type": .string("string"),
+                        "description": .string("Pagination URL from previous response to fetch next page")
+                    ])
+                ]),
+                "required": .array([.string("iap_id")])
             ])
         )
     }

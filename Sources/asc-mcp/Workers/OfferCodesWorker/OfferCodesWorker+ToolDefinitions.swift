@@ -202,4 +202,67 @@ extension OfferCodesWorker {
             ])
         )
     }
+
+    func createCustomCodeTool() -> Tool {
+        return Tool(
+            name: "offer_codes_create_custom_code",
+            description: "Create a custom (reusable) code for an offer code",
+            inputSchema: .object([
+                "type": .string("object"),
+                "properties": .object([
+                    "offer_code_id": .object([
+                        "type": .string("string"),
+                        "description": .string("Offer code ID")
+                    ]),
+                    "custom_code": .object([
+                        "type": .string("string"),
+                        "description": .string("Custom code string (reusable code)")
+                    ]),
+                    "number_of_codes": .object([
+                        "type": .string("integer"),
+                        "description": .string("Number of redemptions allowed")
+                    ]),
+                    "expiration_date": .object([
+                        "type": .string("string"),
+                        "description": .string("Expiration date (ISO 8601 format, e.g. 2026-12-31)")
+                    ])
+                ]),
+                "required": .array([.string("offer_code_id"), .string("custom_code"), .string("number_of_codes")])
+            ])
+        )
+    }
+
+    func getCustomCodeTool() -> Tool {
+        return Tool(
+            name: "offer_codes_get_custom_code",
+            description: "Get details of a custom code",
+            inputSchema: .object([
+                "type": .string("object"),
+                "properties": .object([
+                    "custom_code_id": .object([
+                        "type": .string("string"),
+                        "description": .string("Custom code ID")
+                    ])
+                ]),
+                "required": .array([.string("custom_code_id")])
+            ])
+        )
+    }
+
+    func deactivateCustomCodeTool() -> Tool {
+        return Tool(
+            name: "offer_codes_deactivate_custom_code",
+            description: "Deactivate a custom code",
+            inputSchema: .object([
+                "type": .string("object"),
+                "properties": .object([
+                    "custom_code_id": .object([
+                        "type": .string("string"),
+                        "description": .string("Custom code ID to deactivate")
+                    ])
+                ]),
+                "required": .array([.string("custom_code_id")])
+            ])
+        )
+    }
 }

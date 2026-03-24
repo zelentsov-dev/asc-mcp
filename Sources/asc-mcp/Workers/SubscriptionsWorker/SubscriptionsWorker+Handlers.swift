@@ -679,6 +679,659 @@ extension SubscriptionsWorker {
         }
     }
 
+    // MARK: - Subscription Prices
+
+    /// Deletes a scheduled price change for a subscription
+    /// - Returns: JSON confirmation
+    func deleteSubscriptionPrice(_ params: CallTool.Parameters) async throws -> CallTool.Result {
+        guard let arguments = params.arguments,
+              let priceId = arguments["subscription_price_id"]?.stringValue else {
+            return CallTool.Result(
+                content: [.text("Error: Required parameter 'subscription_price_id' is missing")],
+                isError: true
+            )
+        }
+
+        do {
+            _ = try await httpClient.delete("/v1/subscriptionPrices/\(priceId)")
+
+            let result = [
+                "success": true,
+                "message": "Subscription price '\(priceId)' deleted"
+            ] as [String: Any]
+
+            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+
+        } catch {
+            return CallTool.Result(
+                content: [.text("Error: Failed to delete subscription price: \(error.localizedDescription)")],
+                isError: true
+            )
+        }
+    }
+
+    // MARK: - Subscription Group Localizations
+
+    /// Lists localizations for a subscription group
+    /// - Returns: JSON array of group localizations with name, locale, custom app name
+    func listSubscriptionGroupLocalizations(_ params: CallTool.Parameters) async throws -> CallTool.Result {
+        guard let arguments = params.arguments,
+              let groupId = arguments["subscription_group_id"]?.stringValue else {
+            return CallTool.Result(
+                content: [.text("Error: Required parameter 'subscription_group_id' is missing")],
+                isError: true
+            )
+        }
+
+        do {
+            let response: ASCSubscriptionGroupLocalizationsResponse
+
+            if let nextUrl = arguments["next_url"]?.stringValue,
+               let parsed = parsePaginationUrl(nextUrl) {
+                response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCSubscriptionGroupLocalizationsResponse.self)
+            } else {
+                var queryParams: [String: String] = [:]
+
+                if let limit = arguments["limit"]?.intValue {
+                    queryParams["limit"] = String(min(max(limit, 1), 200))
+                } else {
+                    queryParams["limit"] = "25"
+                }
+
+                response = try await httpClient.get(
+                    "/v1/subscriptionGroups/\(groupId)/subscriptionGroupLocalizations",
+                    parameters: queryParams,
+                    as: ASCSubscriptionGroupLocalizationsResponse.self
+                )
+            }
+
+            let localizations = response.data.map { formatSubscriptionGroupLocalization($0) }
+
+            var result: [String: Any] = [
+                "success": true,
+                "localizations": localizations,
+                "count": localizations.count
+            ]
+            if let next = response.links?.next {
+                result["next_url"] = next
+            }
+
+            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+
+        } catch {
+            return CallTool.Result(
+                content: [.text("Error: Failed to list subscription group localizations: \(error.localizedDescription)")],
+                isError: true
+            )
+        }
+    }
+
+    /// Creates a localization for a subscription group
+    /// - Returns: JSON with created group localization details
+    func createSubscriptionGroupLocalization(_ params: CallTool.Parameters) async throws -> CallTool.Result {
+        guard let arguments = params.arguments,
+              let groupId = arguments["subscription_group_id"]?.stringValue,
+              let name = arguments["name"]?.stringValue,
+              let locale = arguments["locale"]?.stringValue else {
+            return CallTool.Result(
+                content: [.text("Error: Required parameters: subscription_group_id, name, locale")],
+                isError: true
+            )
+        }
+
+        do {
+            let request = CreateSubscriptionGroupLocalizationRequest(
+                data: CreateSubscriptionGroupLocalizationRequest.CreateData(
+                    attributes: CreateSubscriptionGroupLocalizationRequest.Attributes(
+                        name: name,
+                        locale: locale,
+                        customAppName: arguments["custom_app_name"]?.stringValue
+                    ),
+                    relationships: CreateSubscriptionGroupLocalizationRequest.Relationships(
+                        subscriptionGroup: CreateSubscriptionGroupLocalizationRequest.SubscriptionGroupRelationship(
+                            data: ASCResourceIdentifier(type: "subscriptionGroups", id: groupId)
+                        )
+                    )
+                )
+            )
+
+            let response: ASCSubscriptionGroupLocalizationResponse = try await httpClient.post(
+                "/v1/subscriptionGroupLocalizations",
+                body: request,
+                as: ASCSubscriptionGroupLocalizationResponse.self
+            )
+
+            let localization = formatSubscriptionGroupLocalization(response.data)
+
+            let result = [
+                "success": true,
+                "localization": localization
+            ] as [String: Any]
+
+            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+
+        } catch {
+            return CallTool.Result(
+                content: [.text("Error: Failed to create subscription group localization: \(error.localizedDescription)")],
+                isError: true
+            )
+        }
+    }
+
+    /// Gets details of a specific subscription group localization
+    /// - Returns: JSON with group localization details
+    func getSubscriptionGroupLocalization(_ params: CallTool.Parameters) async throws -> CallTool.Result {
+        guard let arguments = params.arguments,
+              let localizationId = arguments["group_localization_id"]?.stringValue else {
+            return CallTool.Result(
+                content: [.text("Error: Required parameter 'group_localization_id' is missing")],
+                isError: true
+            )
+        }
+
+        do {
+            let response: ASCSubscriptionGroupLocalizationResponse = try await httpClient.get(
+                "/v1/subscriptionGroupLocalizations/\(localizationId)",
+                as: ASCSubscriptionGroupLocalizationResponse.self
+            )
+
+            let localization = formatSubscriptionGroupLocalization(response.data)
+
+            let result = [
+                "success": true,
+                "localization": localization
+            ] as [String: Any]
+
+            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+
+        } catch {
+            return CallTool.Result(
+                content: [.text("Error: Failed to get subscription group localization: \(error.localizedDescription)")],
+                isError: true
+            )
+        }
+    }
+
+    /// Updates a subscription group localization
+    /// - Returns: JSON with updated group localization details
+    func updateSubscriptionGroupLocalization(_ params: CallTool.Parameters) async throws -> CallTool.Result {
+        guard let arguments = params.arguments,
+              let localizationId = arguments["group_localization_id"]?.stringValue else {
+            return CallTool.Result(
+                content: [.text("Error: Required parameter 'group_localization_id' is missing")],
+                isError: true
+            )
+        }
+
+        do {
+            let request = UpdateSubscriptionGroupLocalizationRequest(
+                data: UpdateSubscriptionGroupLocalizationRequest.UpdateData(
+                    id: localizationId,
+                    attributes: UpdateSubscriptionGroupLocalizationRequest.Attributes(
+                        name: arguments["name"]?.stringValue,
+                        customAppName: arguments["custom_app_name"]?.stringValue
+                    )
+                )
+            )
+
+            let response: ASCSubscriptionGroupLocalizationResponse = try await httpClient.patch(
+                "/v1/subscriptionGroupLocalizations/\(localizationId)",
+                body: request,
+                as: ASCSubscriptionGroupLocalizationResponse.self
+            )
+
+            let localization = formatSubscriptionGroupLocalization(response.data)
+
+            let result = [
+                "success": true,
+                "localization": localization
+            ] as [String: Any]
+
+            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+
+        } catch {
+            return CallTool.Result(
+                content: [.text("Error: Failed to update subscription group localization: \(error.localizedDescription)")],
+                isError: true
+            )
+        }
+    }
+
+    /// Deletes a subscription group localization
+    /// - Returns: JSON confirmation
+    func deleteSubscriptionGroupLocalization(_ params: CallTool.Parameters) async throws -> CallTool.Result {
+        guard let arguments = params.arguments,
+              let localizationId = arguments["group_localization_id"]?.stringValue else {
+            return CallTool.Result(
+                content: [.text("Error: Required parameter 'group_localization_id' is missing")],
+                isError: true
+            )
+        }
+
+        do {
+            _ = try await httpClient.delete("/v1/subscriptionGroupLocalizations/\(localizationId)")
+
+            let result = [
+                "success": true,
+                "message": "Subscription group localization '\(localizationId)' deleted"
+            ] as [String: Any]
+
+            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+
+        } catch {
+            return CallTool.Result(
+                content: [.text("Error: Failed to delete subscription group localization: \(error.localizedDescription)")],
+                isError: true
+            )
+        }
+    }
+
+    // MARK: - Subscription Images
+
+    /// Uploads a subscription image (full cycle: reserve -> upload -> commit)
+    /// - Returns: JSON with final image info
+    func uploadSubscriptionImage(_ params: CallTool.Parameters) async throws -> CallTool.Result {
+        guard let arguments = params.arguments,
+              let subscriptionId = arguments["subscription_id"]?.stringValue,
+              let filePath = arguments["file_path"]?.stringValue else {
+            return CallTool.Result(
+                content: [.text("Error: Required parameters: subscription_id, file_path")],
+                isError: true
+            )
+        }
+
+        do {
+            let fileSize = try await uploadService.fileSize(at: filePath)
+            let fileName = await uploadService.fileName(at: filePath)
+
+            let createRequest = CreateSubscriptionImageRequest(
+                data: CreateSubscriptionImageRequest.CreateData(
+                    attributes: CreateSubscriptionImageRequest.Attributes(
+                        fileSize: fileSize,
+                        fileName: fileName
+                    ),
+                    relationships: CreateSubscriptionImageRequest.Relationships(
+                        subscription: CreateSubscriptionImageRequest.SubscriptionRelationship(
+                            data: ASCResourceIdentifier(type: "subscriptions", id: subscriptionId)
+                        )
+                    )
+                )
+            )
+
+            let encoder = JSONEncoder()
+            let bodyData = try encoder.encode(createRequest)
+            let reserveData = try await httpClient.post("/v1/subscriptionImages", body: bodyData)
+            let reserveResponse = try JSONDecoder().decode(ASCSubscriptionImageResponse.self, from: reserveData)
+
+            let imageId = reserveResponse.data.id
+            guard let uploadOperations = reserveResponse.data.attributes?.uploadOperations, !uploadOperations.isEmpty else {
+                return CallTool.Result(
+                    content: [.text("Error: No upload operations returned from reservation")],
+                    isError: true
+                )
+            }
+
+            let md5 = try await uploadService.uploadFile(filePath: filePath, uploadOperations: uploadOperations)
+
+            let commitRequest = CommitSubscriptionImageRequest(
+                data: CommitSubscriptionImageRequest.CommitData(
+                    id: imageId,
+                    attributes: CommitSubscriptionImageRequest.Attributes(
+                        sourceFileChecksum: md5,
+                        uploaded: true
+                    )
+                )
+            )
+
+            let commitBody = try encoder.encode(commitRequest)
+            let commitData = try await httpClient.patch("/v1/subscriptionImages/\(imageId)", body: commitBody)
+            let commitResponse = try JSONDecoder().decode(ASCSubscriptionImageResponse.self, from: commitData)
+
+            let result = [
+                "success": true,
+                "image": formatSubscriptionImage(commitResponse.data)
+            ] as [String: Any]
+
+            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+
+        } catch {
+            return CallTool.Result(
+                content: [.text("Error: Failed to upload subscription image: \(error.localizedDescription)")],
+                isError: true
+            )
+        }
+    }
+
+    /// Gets details of a subscription image
+    /// - Returns: JSON with image details
+    func getSubscriptionImage(_ params: CallTool.Parameters) async throws -> CallTool.Result {
+        guard let arguments = params.arguments,
+              let imageId = arguments["image_id"]?.stringValue else {
+            return CallTool.Result(
+                content: [.text("Error: Required parameter 'image_id' is missing")],
+                isError: true
+            )
+        }
+
+        do {
+            let data = try await httpClient.get("/v1/subscriptionImages/\(imageId)")
+            let response = try JSONDecoder().decode(ASCSubscriptionImageResponse.self, from: data)
+
+            let result = [
+                "success": true,
+                "image": formatSubscriptionImage(response.data)
+            ] as [String: Any]
+
+            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+
+        } catch {
+            return CallTool.Result(
+                content: [.text("Error: Failed to get subscription image: \(error.localizedDescription)")],
+                isError: true
+            )
+        }
+    }
+
+    /// Deletes a subscription image
+    /// - Returns: JSON confirmation
+    func deleteSubscriptionImage(_ params: CallTool.Parameters) async throws -> CallTool.Result {
+        guard let arguments = params.arguments,
+              let imageId = arguments["image_id"]?.stringValue else {
+            return CallTool.Result(
+                content: [.text("Error: Required parameter 'image_id' is missing")],
+                isError: true
+            )
+        }
+
+        do {
+            _ = try await httpClient.delete("/v1/subscriptionImages/\(imageId)")
+
+            let result = [
+                "success": true,
+                "message": "Subscription image '\(imageId)' deleted"
+            ] as [String: Any]
+
+            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+
+        } catch {
+            return CallTool.Result(
+                content: [.text("Error: Failed to delete subscription image: \(error.localizedDescription)")],
+                isError: true
+            )
+        }
+    }
+
+    // MARK: - Subscription Review Screenshots
+
+    /// Uploads a subscription review screenshot (full cycle: reserve -> upload -> commit)
+    /// - Returns: JSON with final screenshot info
+    func uploadSubscriptionReviewScreenshot(_ params: CallTool.Parameters) async throws -> CallTool.Result {
+        guard let arguments = params.arguments,
+              let subscriptionId = arguments["subscription_id"]?.stringValue,
+              let filePath = arguments["file_path"]?.stringValue else {
+            return CallTool.Result(
+                content: [.text("Error: Required parameters: subscription_id, file_path")],
+                isError: true
+            )
+        }
+
+        do {
+            let fileSize = try await uploadService.fileSize(at: filePath)
+            let fileName = await uploadService.fileName(at: filePath)
+
+            let createRequest = CreateSubReviewScreenshotRequest(
+                data: CreateSubReviewScreenshotRequest.CreateData(
+                    attributes: CreateSubReviewScreenshotRequest.Attributes(
+                        fileSize: fileSize,
+                        fileName: fileName
+                    ),
+                    relationships: CreateSubReviewScreenshotRequest.Relationships(
+                        subscription: CreateSubReviewScreenshotRequest.SubscriptionRelationship(
+                            data: ASCResourceIdentifier(type: "subscriptions", id: subscriptionId)
+                        )
+                    )
+                )
+            )
+
+            let encoder = JSONEncoder()
+            let bodyData = try encoder.encode(createRequest)
+            let reserveData = try await httpClient.post("/v1/subscriptionAppStoreReviewScreenshots", body: bodyData)
+            let reserveResponse = try JSONDecoder().decode(ASCSubReviewScreenshotResponse.self, from: reserveData)
+
+            let screenshotId = reserveResponse.data.id
+            guard let uploadOperations = reserveResponse.data.attributes?.uploadOperations, !uploadOperations.isEmpty else {
+                return CallTool.Result(
+                    content: [.text("Error: No upload operations returned from reservation")],
+                    isError: true
+                )
+            }
+
+            let md5 = try await uploadService.uploadFile(filePath: filePath, uploadOperations: uploadOperations)
+
+            let commitRequest = CommitSubReviewScreenshotRequest(
+                data: CommitSubReviewScreenshotRequest.CommitData(
+                    id: screenshotId,
+                    attributes: CommitSubReviewScreenshotRequest.Attributes(
+                        sourceFileChecksum: md5,
+                        uploaded: true
+                    )
+                )
+            )
+
+            let commitBody = try encoder.encode(commitRequest)
+            let commitData = try await httpClient.patch("/v1/subscriptionAppStoreReviewScreenshots/\(screenshotId)", body: commitBody)
+            let commitResponse = try JSONDecoder().decode(ASCSubReviewScreenshotResponse.self, from: commitData)
+
+            let result = [
+                "success": true,
+                "screenshot": formatSubReviewScreenshot(commitResponse.data)
+            ] as [String: Any]
+
+            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+
+        } catch {
+            return CallTool.Result(
+                content: [.text("Error: Failed to upload subscription review screenshot: \(error.localizedDescription)")],
+                isError: true
+            )
+        }
+    }
+
+    /// Gets details of a subscription review screenshot
+    /// - Returns: JSON with screenshot details
+    func getSubscriptionReviewScreenshot(_ params: CallTool.Parameters) async throws -> CallTool.Result {
+        guard let arguments = params.arguments,
+              let screenshotId = arguments["screenshot_id"]?.stringValue else {
+            return CallTool.Result(
+                content: [.text("Error: Required parameter 'screenshot_id' is missing")],
+                isError: true
+            )
+        }
+
+        do {
+            let data = try await httpClient.get("/v1/subscriptionAppStoreReviewScreenshots/\(screenshotId)")
+            let response = try JSONDecoder().decode(ASCSubReviewScreenshotResponse.self, from: data)
+
+            let result = [
+                "success": true,
+                "screenshot": formatSubReviewScreenshot(response.data)
+            ] as [String: Any]
+
+            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+
+        } catch {
+            return CallTool.Result(
+                content: [.text("Error: Failed to get subscription review screenshot: \(error.localizedDescription)")],
+                isError: true
+            )
+        }
+    }
+
+    /// Deletes a subscription review screenshot
+    /// - Returns: JSON confirmation
+    func deleteSubscriptionReviewScreenshot(_ params: CallTool.Parameters) async throws -> CallTool.Result {
+        guard let arguments = params.arguments,
+              let screenshotId = arguments["screenshot_id"]?.stringValue else {
+            return CallTool.Result(
+                content: [.text("Error: Required parameter 'screenshot_id' is missing")],
+                isError: true
+            )
+        }
+
+        do {
+            _ = try await httpClient.delete("/v1/subscriptionAppStoreReviewScreenshots/\(screenshotId)")
+
+            let result = [
+                "success": true,
+                "message": "Subscription review screenshot '\(screenshotId)' deleted"
+            ] as [String: Any]
+
+            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+
+        } catch {
+            return CallTool.Result(
+                content: [.text("Error: Failed to delete subscription review screenshot: \(error.localizedDescription)")],
+                isError: true
+            )
+        }
+    }
+
+    // MARK: - List/Get-by-Parent Handlers
+
+    /// Lists images for a subscription
+    /// - Returns: JSON array of subscription images
+    /// - Throws: On network or decoding errors
+    func listSubscriptionImages(_ params: CallTool.Parameters) async throws -> CallTool.Result {
+        guard let arguments = params.arguments,
+              let subscriptionId = arguments["subscription_id"]?.stringValue else {
+            return CallTool.Result(
+                content: [.text("Error: Required parameter 'subscription_id' is missing")],
+                isError: true
+            )
+        }
+
+        do {
+            let response: ASCSubscriptionImagesResponse
+
+            if let nextUrl = arguments["next_url"]?.stringValue,
+               let parsed = parsePaginationUrl(nextUrl) {
+                response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCSubscriptionImagesResponse.self)
+            } else {
+                var queryParams: [String: String] = [:]
+
+                if let limit = arguments["limit"]?.intValue {
+                    queryParams["limit"] = String(min(max(limit, 1), 200))
+                } else {
+                    queryParams["limit"] = "25"
+                }
+
+                response = try await httpClient.get(
+                    "/v1/subscriptions/\(subscriptionId)/subscriptionImages",
+                    parameters: queryParams,
+                    as: ASCSubscriptionImagesResponse.self
+                )
+            }
+
+            let images = response.data.map { formatSubscriptionImage($0) }
+
+            var result: [String: Any] = [
+                "success": true,
+                "images": images,
+                "count": images.count
+            ]
+            if let next = response.links?.next {
+                result["next_url"] = next
+            }
+
+            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+
+        } catch {
+            return CallTool.Result(
+                content: [.text("Error: Failed to list subscription images: \(error.localizedDescription)")],
+                isError: true
+            )
+        }
+    }
+
+    /// Gets the review screenshot for a subscription by subscription ID (singular resource)
+    /// - Returns: JSON with screenshot details
+    /// - Throws: On network or decoding errors
+    func getSubscriptionReviewScreenshotForSubscription(_ params: CallTool.Parameters) async throws -> CallTool.Result {
+        guard let arguments = params.arguments,
+              let subscriptionId = arguments["subscription_id"]?.stringValue else {
+            return CallTool.Result(
+                content: [.text("Error: Required parameter 'subscription_id' is missing")],
+                isError: true
+            )
+        }
+
+        do {
+            let data = try await httpClient.get("/v1/subscriptions/\(subscriptionId)/appStoreReviewScreenshot")
+            let response = try JSONDecoder().decode(ASCSubReviewScreenshotResponse.self, from: data)
+
+            let result = [
+                "success": true,
+                "screenshot": formatSubReviewScreenshot(response.data)
+            ] as [String: Any]
+
+            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+
+        } catch {
+            return CallTool.Result(
+                content: [.text("Error: Failed to get subscription review screenshot: \(error.localizedDescription)")],
+                isError: true
+            )
+        }
+    }
+
+    private func formatSubscriptionImage(_ image: ASCSubscriptionImage) -> [String: Any] {
+        var result: [String: Any] = [
+            "id": image.id,
+            "type": image.type,
+            "fileName": image.attributes?.fileName.jsonSafe,
+            "fileSize": image.attributes?.fileSize.jsonSafe,
+            "sourceFileChecksum": image.attributes?.sourceFileChecksum.jsonSafe,
+            "state": image.attributes?.state.jsonSafe
+        ]
+
+        if let imageAsset = image.attributes?.imageAsset {
+            result["imageAsset"] = [
+                "templateUrl": imageAsset.templateUrl.jsonSafe,
+                "width": imageAsset.width.jsonSafe,
+                "height": imageAsset.height.jsonSafe
+            ]
+        }
+
+        return result
+    }
+
+    private func formatSubReviewScreenshot(_ screenshot: ASCSubReviewScreenshot) -> [String: Any] {
+        var result: [String: Any] = [
+            "id": screenshot.id,
+            "type": screenshot.type,
+            "fileName": screenshot.attributes?.fileName.jsonSafe,
+            "fileSize": screenshot.attributes?.fileSize.jsonSafe,
+            "sourceFileChecksum": screenshot.attributes?.sourceFileChecksum.jsonSafe
+        ]
+
+        if let imageAsset = screenshot.attributes?.imageAsset {
+            result["imageAsset"] = [
+                "templateUrl": imageAsset.templateUrl.jsonSafe,
+                "width": imageAsset.width.jsonSafe,
+                "height": imageAsset.height.jsonSafe
+            ]
+        }
+
+        if let deliveryState = screenshot.attributes?.assetDeliveryState {
+            result["assetDeliveryState"] = [
+                "state": deliveryState.state.jsonSafe,
+                "errors": deliveryState.errors?.map { ["code": $0.code.jsonSafe, "description": $0.description.jsonSafe] } ?? []
+            ]
+        }
+
+        return result
+    }
+
     // MARK: - Formatting
 
     private func formatSubscription(_ sub: ASCSubscription) -> [String: Any] {
@@ -730,6 +1383,17 @@ extension SubscriptionsWorker {
             "customerPrice": point.attributes?.customerPrice.jsonSafe ?? NSNull(),
             "proceeds": point.attributes?.proceeds.jsonSafe ?? NSNull(),
             "proceedsYear2": point.attributes?.proceedsYear2.jsonSafe ?? NSNull()
+        ]
+    }
+
+    private func formatSubscriptionGroupLocalization(_ loc: ASCSubscriptionGroupLocalization) -> [String: Any] {
+        return [
+            "id": loc.id,
+            "type": loc.type,
+            "locale": loc.attributes.locale.jsonSafe,
+            "name": loc.attributes.name.jsonSafe,
+            "customAppName": loc.attributes.customAppName.jsonSafe,
+            "state": loc.attributes.state.jsonSafe
         ]
     }
 

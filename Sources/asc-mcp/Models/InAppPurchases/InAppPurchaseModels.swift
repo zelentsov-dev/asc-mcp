@@ -281,6 +281,7 @@ public struct IAPReviewScreenshotAttributes: Codable, Sendable {
     public let assetToken: String?
     public let sourceFileChecksum: String?
     public let assetDeliveryState: ASCAssetDeliveryStateSimple?
+    public let uploadOperations: [ASCUploadOperation]?
 }
 
 /// Simple image asset model
@@ -302,7 +303,119 @@ public struct ASCAssetDeliveryErrorSimple: Codable, Sendable {
     public let description: String?
 }
 
-// MARK: - Create IAP Review Screenshot Request
+// MARK: - IAP Availability Models
+
+/// IAP availability response
+public struct ASCIAPAvailabilityResponse: Codable, Sendable {
+    public let data: ASCIAPAvailability
+    public let included: [ASCTerritory]?
+}
+
+/// IAP availability resource
+public struct ASCIAPAvailability: Codable, Sendable {
+    public let type: String
+    public let id: String
+    public let attributes: IAPAvailabilityAttributes?
+}
+
+/// IAP availability attributes
+public struct IAPAvailabilityAttributes: Codable, Sendable {
+    public let availableInNewTerritories: Bool?
+}
+
+/// Create IAP availability request
+public struct CreateIAPAvailabilityRequest: Codable, Sendable {
+    public let data: CreateData
+
+    public struct CreateData: Codable, Sendable {
+        public let type: String = "inAppPurchaseAvailabilities"
+        public let attributes: Attributes
+        public let relationships: Relationships
+    }
+
+    public struct Attributes: Codable, Sendable {
+        public let availableInNewTerritories: Bool
+    }
+
+    public struct Relationships: Codable, Sendable {
+        public let inAppPurchase: InAppPurchaseRelationship
+        public let availableTerritories: TerritoriesRelationship
+    }
+
+    public struct InAppPurchaseRelationship: Codable, Sendable {
+        public let data: ASCResourceIdentifier
+    }
+
+    public struct TerritoriesRelationship: Codable, Sendable {
+        public let data: [ASCResourceIdentifier]
+    }
+}
+
+// MARK: - IAP Image Models
+
+/// IAP image single response
+public struct ASCIAPImageResponse: Codable, Sendable {
+    public let data: ASCIAPImage
+}
+
+/// IAP image resource
+public struct ASCIAPImage: Codable, Sendable {
+    public let type: String
+    public let id: String
+    public let attributes: IAPImageAttributes?
+}
+
+/// IAP image attributes
+public struct IAPImageAttributes: Codable, Sendable {
+    public let fileSize: Int?
+    public let fileName: String?
+    public let sourceFileChecksum: String?
+    public let imageAsset: ASCImageAsset?
+    public let uploadOperations: [ASCUploadOperation]?
+    public let state: String?
+}
+
+/// Create IAP image reservation request
+public struct CreateIAPImageRequest: Codable, Sendable {
+    public let data: CreateData
+
+    public struct CreateData: Codable, Sendable {
+        public let type: String = "inAppPurchaseImages"
+        public let attributes: Attributes
+        public let relationships: Relationships
+    }
+
+    public struct Attributes: Codable, Sendable {
+        public let fileSize: Int
+        public let fileName: String
+    }
+
+    public struct Relationships: Codable, Sendable {
+        public let inAppPurchase: IAPImageRelationship
+    }
+
+    public struct IAPImageRelationship: Codable, Sendable {
+        public let data: ASCResourceIdentifier
+    }
+}
+
+/// Commit IAP image request
+public struct CommitIAPImageRequest: Codable, Sendable {
+    public let data: CommitData
+
+    public struct CommitData: Codable, Sendable {
+        public let type: String = "inAppPurchaseImages"
+        public let id: String
+        public let attributes: Attributes
+    }
+
+    public struct Attributes: Codable, Sendable {
+        public let sourceFileChecksum: String?
+        public let uploaded: Bool?
+    }
+}
+
+// MARK: - IAP Review Screenshot Request Models
 
 /// Create IAP review screenshot request
 public struct CreateIAPReviewScreenshotRequest: Codable, Sendable {
@@ -326,4 +439,28 @@ public struct CreateIAPReviewScreenshotRequest: Codable, Sendable {
     public struct InAppPurchaseRelationship: Codable, Sendable {
         public let data: ASCResourceIdentifier
     }
+}
+
+/// Commit IAP review screenshot request
+public struct CommitIAPReviewScreenshotRequest: Codable, Sendable {
+    public let data: CommitData
+
+    public struct CommitData: Codable, Sendable {
+        public let type: String = "inAppPurchaseAppStoreReviewScreenshots"
+        public let id: String
+        public let attributes: Attributes
+    }
+
+    public struct Attributes: Codable, Sendable {
+        public let sourceFileChecksum: String?
+        public let uploaded: Bool?
+    }
+}
+
+// MARK: - IAP Images List Response
+
+/// IAP images list response
+public struct ASCIAPImagesResponse: Codable, Sendable {
+    public let data: [ASCIAPImage]
+    public let links: ASCPagedDocumentLinks?
 }

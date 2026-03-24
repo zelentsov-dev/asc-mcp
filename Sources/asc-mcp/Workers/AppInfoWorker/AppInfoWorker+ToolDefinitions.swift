@@ -208,4 +208,73 @@ extension AppInfoWorker {
             ])
         )
     }
+
+    /// Creates tool definition for getting EULA
+    func getEulaTool() -> Tool {
+        return Tool(
+            name: "app_info_get_eula",
+            description: "Get the current End User License Agreement (EULA) for an app",
+            inputSchema: .object([
+                "type": .string("object"),
+                "properties": .object([
+                    "app_id": .object([
+                        "type": .string("string"),
+                        "description": .string("App Store Connect app ID")
+                    ])
+                ]),
+                "required": .array([.string("app_id")])
+            ])
+        )
+    }
+
+    /// Creates tool definition for creating EULA
+    func createEulaTool() -> Tool {
+        return Tool(
+            name: "app_info_create_eula",
+            description: "Create an End User License Agreement (EULA) for an app",
+            inputSchema: .object([
+                "type": .string("object"),
+                "properties": .object([
+                    "app_id": .object([
+                        "type": .string("string"),
+                        "description": .string("App Store Connect app ID")
+                    ]),
+                    "agreement_text": .object([
+                        "type": .string("string"),
+                        "description": .string("EULA agreement text")
+                    ]),
+                    "territory_ids": .object([
+                        "type": .string("array"),
+                        "description": .string("Array of territory IDs where EULA applies (e.g. [\"USA\", \"GBR\", \"RUS\"])"),
+                        "items": .object([
+                            "type": .string("string")
+                        ])
+                    ])
+                ]),
+                "required": .array([.string("app_id"), .string("agreement_text"), .string("territory_ids")])
+            ])
+        )
+    }
+
+    /// Creates tool definition for updating EULA
+    func updateEulaTool() -> Tool {
+        return Tool(
+            name: "app_info_update_eula",
+            description: "Update an existing End User License Agreement (EULA)",
+            inputSchema: .object([
+                "type": .string("object"),
+                "properties": .object([
+                    "eula_id": .object([
+                        "type": .string("string"),
+                        "description": .string("EULA resource ID")
+                    ]),
+                    "agreement_text": .object([
+                        "type": .string("string"),
+                        "description": .string("Updated EULA agreement text")
+                    ])
+                ]),
+                "required": .array([.string("eula_id")])
+            ])
+        )
+    }
 }

@@ -776,6 +776,36 @@ extension AppLifecycleWorker {
             )
         }
     }
+
+    /// Deletes an app store version (only PREPARE_FOR_SUBMISSION state)
+    /// - Returns: JSON with success confirmation
+    /// - Throws: CallTool.Result with error if version_id missing or API call fails
+    func deleteVersion(_ params: CallTool.Parameters) async throws -> CallTool.Result {
+        guard let arguments = params.arguments,
+              let versionId = arguments["version_id"]?.stringValue else {
+            return CallTool.Result(
+                content: [.text("Error: Required parameter 'version_id' is missing")],
+                isError: true
+            )
+        }
+
+        do {
+            _ = try await httpClient.delete("/v1/appStoreVersions/\(versionId)")
+
+            let result: [String: Any] = [
+                "success": true,
+                "message": "Version '\(versionId)' deleted successfully"
+            ]
+
+            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+
+        } catch {
+            return CallTool.Result(
+                content: [.text("Error: Failed to delete version: \(error.localizedDescription)")],
+                isError: true
+            )
+        }
+    }
 }
 
 // MARK: - Private Helpers

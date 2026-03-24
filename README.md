@@ -29,7 +29,7 @@
 
 ## Overview
 
-**asc-mcp** is a Swift-based MCP server that bridges [Claude](https://claude.ai) (or any MCP-compatible host) with the [App Store Connect API](https://developer.apple.com/documentation/appstoreconnectapi). It exposes **208 tools** across 25 workers, enabling you to automate your entire iOS/macOS release workflow through natural language.
+**asc-mcp** is a Swift-based MCP server that bridges [Claude](https://claude.ai) (or any MCP-compatible host) with the [App Store Connect API](https://developer.apple.com/documentation/appstoreconnectapi). It exposes **293 tools** across 33 workers, enabling you to automate your entire iOS/macOS release workflow through natural language.
 
 ### Key capabilities
 
@@ -368,7 +368,7 @@ Add to `~/.codeium/windsurf/mcp_config.json`:
 
 ### Worker Filtering
 
-The server exposes **208 tools** across 25 workers. Some MCP clients impose a tool limit (e.g., Windsurf caps at 100). Use `--workers` to enable only the workers you need:
+The server exposes **293 tools** across 33 workers. Some MCP clients impose a tool limit (e.g., Windsurf caps at 100). Use `--workers` to enable only the workers you need:
 
 ```bash
 # Only load apps, builds, and version lifecycle tools
@@ -432,7 +432,7 @@ For Claude (200K context) ~22K tokens is ~5–7% — negligible. For clients wit
 
 ## Available Tools
 
-**208 tools** organized across 25 workers (use `--workers` to filter — see [Worker Filtering](#worker-filtering)):
+**293 tools** organized across 33 workers (use `--workers` to filter — see [Worker Filtering](#worker-filtering)):
 
 <details>
 <summary><strong>Company Management</strong> — 3 tools</summary>
@@ -644,6 +644,61 @@ For Claude (200K context) ~22K tokens is ~5–7% — negligible. For clients wit
 </details>
 
 <details>
+<summary><strong>Introductory Offers</strong> — 4 tools</summary>
+
+| Tool | Description |
+|------|-------------|
+| `intro_offers_list` | List introductory offers for a subscription |
+| `intro_offers_create` | Create an introductory offer |
+| `intro_offers_update` | Update an introductory offer (end date only) |
+| `intro_offers_delete` | Delete an introductory offer |
+
+</details>
+
+<details>
+<summary><strong>Promotional Offers</strong> — 6 tools</summary>
+
+| Tool | Description |
+|------|-------------|
+| `promo_offers_list` | List promotional offers for a subscription |
+| `promo_offers_get` | Get a promotional offer |
+| `promo_offers_create` | Create a promotional offer |
+| `promo_offers_update` | Update promotional offer prices |
+| `promo_offers_delete` | Delete a promotional offer |
+| `promo_offers_list_prices` | List prices for a promotional offer |
+
+</details>
+
+<details>
+<summary><strong>Sandbox Testers</strong> — 3 tools</summary>
+
+| Tool | Description |
+|------|-------------|
+| `sandbox_list` | List sandbox testers |
+| `sandbox_update` | Update sandbox tester settings |
+| `sandbox_clear_purchase_history` | Clear purchase history for sandbox testers |
+
+</details>
+
+<details>
+<summary><strong>Beta App</strong> — 10 tools</summary>
+
+| Tool | Description |
+|------|-------------|
+| `beta_app_list_localizations` | List beta app localizations |
+| `beta_app_create_localization` | Create beta app localization |
+| `beta_app_get_localization` | Get beta app localization |
+| `beta_app_update_localization` | Update beta app localization |
+| `beta_app_delete_localization` | Delete beta app localization |
+| `beta_app_submit_for_review` | Submit build for beta review |
+| `beta_app_list_submissions` | List beta review submissions |
+| `beta_app_get_submission` | Get beta review submission |
+| `beta_app_get_review_details` | Get beta app review details |
+| `beta_app_update_review_details` | Update beta app review details |
+
+</details>
+
+<details>
 <summary><strong>Provisioning</strong> — 17 tools</summary>
 
 | Tool | Description |
@@ -832,7 +887,7 @@ Sources/asc-mcp/
 │   ├── HTTPClient.swift            #   Actor-based HTTP with retry logic
 │   ├── JWTService.swift            #   ES256 JWT token generation
 │   └── CompaniesManager.swift      #   Multi-account management
-└── Workers/                        # MCP tool implementations (25 workers)
+└── Workers/                        # MCP tool implementations (33 workers)
     ├── MainWorker/WorkerManager    #   Central tool registry & routing
     ├── CompaniesWorker/            #   company_* tools
     ├── AuthWorker/                 #   auth_* tools
@@ -848,6 +903,10 @@ Sources/asc-mcp/
     ├── SubscriptionsWorker/        #   subscriptions_* tools
     ├── OfferCodesWorker/           #   offer_codes_* tools
     ├── WinBackOffersWorker/        #   winback_* tools
+    ├── IntroductoryOffersWorker/   #   intro_offers_* tools
+    ├── PromotionalOffersWorker/   #   promo_offers_* tools
+    ├── SandboxTestersWorker/      #   sandbox_* tools
+    ├── BetaAppWorker/             #   beta_app_* tools
     ├── ProvisioningWorker/         #   provisioning_* tools
     ├── AppInfoWorker/              #   app_info_* tools
     ├── PricingWorker/              #   pricing_* tools

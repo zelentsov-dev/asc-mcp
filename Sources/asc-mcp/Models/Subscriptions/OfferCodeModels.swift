@@ -74,6 +74,70 @@ public struct OneTimeUseCodeAttributes: Codable, Sendable {
     public let active: Bool?
 }
 
+// MARK: - Offer Code Custom Code Models
+
+/// Custom code single response
+public struct ASCOfferCodeCustomCodeResponse: Codable, Sendable {
+    public let data: ASCOfferCodeCustomCode
+}
+
+/// Custom code resource
+public struct ASCOfferCodeCustomCode: Codable, Sendable {
+    public let type: String
+    public let id: String
+    public let attributes: OfferCodeCustomCodeAttributes?
+}
+
+/// Custom code attributes
+public struct OfferCodeCustomCodeAttributes: Codable, Sendable {
+    public let customCode: String?
+    public let numberOfCodes: Int?
+    public let totalNumberOfCodes: Int?
+    public let active: Bool?
+    public let expirationDate: String?
+    public let createdDate: String?
+}
+
+/// Create custom code request
+public struct CreateOfferCodeCustomCodeRequest: Codable, Sendable {
+    public let data: CreateData
+
+    public struct CreateData: Codable, Sendable {
+        public let type: String = "subscriptionOfferCodeCustomCodes"
+        public let attributes: Attributes
+        public let relationships: Relationships
+    }
+
+    public struct Attributes: Codable, Sendable {
+        public let customCode: String
+        public let numberOfCodes: Int
+        public let expirationDate: String?
+    }
+
+    public struct Relationships: Codable, Sendable {
+        public let offerCode: OfferCodeRelationship
+    }
+
+    public struct OfferCodeRelationship: Codable, Sendable {
+        public let data: ASCResourceIdentifier
+    }
+}
+
+/// Update custom code request
+public struct UpdateOfferCodeCustomCodeRequest: Codable, Sendable {
+    public let data: UpdateData
+
+    public struct UpdateData: Codable, Sendable {
+        public let type: String = "subscriptionOfferCodeCustomCodes"
+        public let id: String
+        public let attributes: Attributes
+    }
+
+    public struct Attributes: Codable, Sendable {
+        public let active: Bool?
+    }
+}
+
 // MARK: - Offer Code Price Inline Create
 
 /// Inline create for offer code price (used in included[] when creating offer codes)

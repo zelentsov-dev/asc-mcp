@@ -202,3 +202,65 @@ public struct ASCAppCategory: Codable, Sendable {
 public struct AppCategoryAttributes: Codable, Sendable {
     public let platforms: [String]?
 }
+
+// MARK: - EULA Models
+
+/// EULA response
+public struct ASCEULAResponse: Codable, Sendable {
+    public let data: ASCEULA
+}
+
+/// EULA data
+public struct ASCEULA: Codable, Sendable {
+    public let type: String
+    public let id: String
+    public let attributes: EULAAttributes?
+}
+
+/// EULA attributes
+public struct EULAAttributes: Codable, Sendable {
+    public let agreementText: String?
+}
+
+/// Create EULA request
+public struct CreateEULARequest: Encodable, Sendable {
+    public let data: CreateEULAData
+
+    public struct CreateEULAData: Encodable, Sendable {
+        public let type = "endUserLicenseAgreements"
+        public let attributes: CreateEULAAttributes
+        public let relationships: CreateEULARelationships
+    }
+
+    public struct CreateEULAAttributes: Encodable, Sendable {
+        public let agreementText: String
+    }
+
+    public struct CreateEULARelationships: Encodable, Sendable {
+        public let app: AppRelationship
+        public let territories: TerritoriesRelationship
+    }
+
+    public struct AppRelationship: Encodable, Sendable {
+        public let data: ASCResourceIdentifier
+    }
+
+    public struct TerritoriesRelationship: Encodable, Sendable {
+        public let data: [ASCResourceIdentifier]
+    }
+}
+
+/// Update EULA request
+public struct UpdateEULARequest: Encodable, Sendable {
+    public let data: UpdateEULAData
+
+    public struct UpdateEULAData: Encodable, Sendable {
+        public let type = "endUserLicenseAgreements"
+        public let id: String
+        public let attributes: UpdateEULAAttributes
+    }
+
+    public struct UpdateEULAAttributes: Encodable, Sendable {
+        public let agreementText: String?
+    }
+}

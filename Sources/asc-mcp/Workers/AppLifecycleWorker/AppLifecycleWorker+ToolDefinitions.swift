@@ -478,4 +478,21 @@ extension AppLifecycleWorker {
             ])
         )
     }
+
+    func deleteVersionTool() -> Tool {
+        Tool(
+            name: "app_versions_delete",
+            description: "Delete an app store version. Only versions in PREPARE_FOR_SUBMISSION state can be deleted.",
+            inputSchema: .object([
+                "type": .string("object"),
+                "properties": .object([
+                    "version_id": .object([
+                        "type": .string("string"),
+                        "description": .string("Version ID to delete")
+                    ])
+                ]),
+                "required": .array([.string("version_id")])
+            ])
+        )
+    }
 }

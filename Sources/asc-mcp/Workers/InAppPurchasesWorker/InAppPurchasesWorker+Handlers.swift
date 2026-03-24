@@ -722,6 +722,120 @@ extension InAppPurchasesWorker {
         }
     }
 
+    // MARK: - Availability
+
+    /// Sets territorial availability for an in-app purchase
+    /// - Returns: JSON with availability details
+    func setIAPAvailability(_ params: CallTool.Parameters) async throws -> CallTool.Result {
+        guard let arguments = params.arguments,
+              let iapId = arguments["iap_id"]?.stringValue,
+              let availableInNewTerritories = arguments["available_in_new_territories"]?.boolValue else {
+            return CallTool.Result(
+                content: [.text("Error: Required parameters: iap_id, available_in_new_territories")],
+                isError: true
+            )
+        }
+
+        let territoryIds = arguments["territory_ids"]?.arrayValue?.compactMap { $0.stringValue } ?? []
+
+        do {
+            let territories = territoryIds.map { ASCResourceIdentifier(type: "territories", id: $0) }
+
+            let request = CreateIAPAvailabilityRequest(
+                data: CreateIAPAvailabilityRequest.CreateData(
+                    attributes: CreateIAPAvailabilityRequest.Attributes(
+                        availableInNewTerritories: availableInNewTerritories
+                    ),
+                    relationships: CreateIAPAvailabilityRequest.Relationships(
+                        inAppPurchase: CreateIAPAvailabilityRequest.InAppPurchaseRelationship(
+                            data: ASCResourceIdentifier(type: "inAppPurchases", id: iapId)
+                        ),
+                        availableTerritories: CreateIAPAvailabilityRequest.TerritoriesRelationship(
+                            data: territories
+                        )
+                    )
+                )
+            )
+
+            let response: ASCIAPAvailabilityResponse = try await httpClient.post(
+                "/v1/inAppPurchaseAvailabilities",
+                body: request,
+                as: ASCIAPAvailabilityResponse.self
+            )
+
+            let result: [String: Any] = [
+                "success": true,
+                "availability": formatAvailability(response.data)
+            ]
+
+            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+
+        } catch {
+            return CallTool.Result(
+                content: [.text("Error: Failed to set IAP availability: \(error.localizedDescription)")],
+                isError: true
+            )
+        }
+    }
+
+    /// Gets availability details for an in-app purchase
+    /// - Returns: JSON with availability details and territories
+    func getIAPAvailability(_ params: CallTool.Parameters) async throws -> CallTool.Result {
+        guard let arguments = params.arguments,
+              let availabilityId = arguments["availability_id"]?.stringValue else {
+            return CallTool.Result(
+                content: [.text("Error: Required parameter 'availability_id' is missing")],
+                isError: true
+            )
+        }
+
+        do {
+            let includeTerritories = arguments["include_territories"]?.boolValue ?? true
+
+            var queryParams: [String: String] = [:]
+            if includeTerritories {
+                queryParams["include"] = "availableTerritories"
+            }
+
+            let response: ASCIAPAvailabilityResponse = try await httpClient.get(
+                "/v1/inAppPurchaseAvailabilities/\(availabilityId)",
+                parameters: queryParams,
+                as: ASCIAPAvailabilityResponse.self
+            )
+
+            var resultDict: [String: Any] = [
+                "success": true,
+                "availability": formatAvailability(response.data)
+            ]
+
+            if let included = response.included {
+                let territories = included.map { [
+                    "id": $0.id,
+                    "type": $0.type,
+                    "currency": $0.attributes?.currency.jsonSafe ?? NSNull()
+                ] as [String: Any] }
+                resultDict["territories"] = territories
+                resultDict["territory_count"] = territories.count
+            }
+
+            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(resultDict))])
+
+        } catch {
+            return CallTool.Result(
+                content: [.text("Error: Failed to get IAP availability: \(error.localizedDescription)")],
+                isError: true
+            )
+        }
+    }
+
+    private func formatAvailability(_ availability: ASCIAPAvailability) -> [String: Any] {
+        return [
+            "id": availability.id,
+            "type": availability.type,
+            "availableInNewTerritories": availability.attributes?.availableInNewTerritories.jsonSafe ?? NSNull()
+        ]
+    }
+
     // MARK: - Review Screenshots
 
     /// Gets the App Store Review screenshot for an in-app purchase
@@ -759,25 +873,26 @@ extension InAppPurchasesWorker {
         }
     }
 
-    /// Reserves a screenshot for App Store Review of an in-app purchase
-    /// - Returns: JSON with screenshot reservation details and upload operations
-    /// - Throws: Error if required parameters are missing
-    func createIAPReviewScreenshot(_ params: CallTool.Parameters) async throws -> CallTool.Result {
+    /// Uploads a review screenshot for an in-app purchase (full cycle: reserve -> upload -> commit)
+    /// - Returns: JSON with final screenshot info
+    /// - Throws: On file read, upload, or API errors
+    func uploadIAPReviewScreenshot(_ params: CallTool.Parameters) async throws -> CallTool.Result {
         guard let arguments = params.arguments,
-              let iapIdValue = arguments["iap_id"],
-              let iapId = iapIdValue.stringValue,
-              let fileNameValue = arguments["file_name"],
-              let fileName = fileNameValue.stringValue,
-              let fileSizeValue = arguments["file_size"],
-              let fileSize = fileSizeValue.intValue else {
+              let iapId = arguments["iap_id"]?.stringValue,
+              let filePath = arguments["file_path"]?.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameters: iap_id, file_name, file_size")],
+                content: [.text("Error: Required parameters: iap_id, file_path")],
                 isError: true
             )
         }
 
         do {
-            let request = CreateIAPReviewScreenshotRequest(
+            // Step 1: Get file info
+            let fileSize = try await uploadService.fileSize(at: filePath)
+            let fileName = await uploadService.fileName(at: filePath)
+
+            // Step 2: Reserve
+            let createRequest = CreateIAPReviewScreenshotRequest(
                 data: CreateIAPReviewScreenshotRequest.CreateData(
                     attributes: CreateIAPReviewScreenshotRequest.Attributes(
                         fileName: fileName,
@@ -791,27 +906,295 @@ extension InAppPurchasesWorker {
                 )
             )
 
-            let response: ASCIAPReviewScreenshotResponse = try await httpClient.post(
-                "/v1/inAppPurchaseAppStoreReviewScreenshots",
-                body: request,
-                as: ASCIAPReviewScreenshotResponse.self
+            let encoder = JSONEncoder()
+            let bodyData = try encoder.encode(createRequest)
+            let reserveData = try await httpClient.post("/v1/inAppPurchaseAppStoreReviewScreenshots", body: bodyData)
+            let reserveResponse = try JSONDecoder().decode(ASCIAPReviewScreenshotResponse.self, from: reserveData)
+
+            let screenshotId = reserveResponse.data.id
+            guard let uploadOperations = reserveResponse.data.attributes?.uploadOperations, !uploadOperations.isEmpty else {
+                return CallTool.Result(
+                    content: [.text("Error: No upload operations returned from reservation")],
+                    isError: true
+                )
+            }
+
+            // Step 3: Upload file chunks
+            let md5 = try await uploadService.uploadFile(filePath: filePath, uploadOperations: uploadOperations)
+
+            // Step 4: Commit
+            let commitRequest = CommitIAPReviewScreenshotRequest(
+                data: CommitIAPReviewScreenshotRequest.CommitData(
+                    id: screenshotId,
+                    attributes: CommitIAPReviewScreenshotRequest.Attributes(
+                        sourceFileChecksum: md5,
+                        uploaded: true
+                    )
+                )
             )
 
-            let screenshot = formatReviewScreenshot(response.data)
+            let commitBody = try encoder.encode(commitRequest)
+            let commitData = try await httpClient.patch("/v1/inAppPurchaseAppStoreReviewScreenshots/\(screenshotId)", body: commitBody)
+            let commitResponse = try JSONDecoder().decode(ASCIAPReviewScreenshotResponse.self, from: commitData)
 
             let result: [String: Any] = [
                 "success": true,
-                "review_screenshot": screenshot
+                "review_screenshot": formatReviewScreenshot(commitResponse.data)
             ]
 
             return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to create IAP review screenshot: \(error.localizedDescription)")],
+                content: [.text("Error: Failed to upload IAP review screenshot: \(error.localizedDescription)")],
                 isError: true
             )
         }
+    }
+
+    /// Deletes an IAP review screenshot
+    /// - Returns: JSON confirmation
+    /// - Throws: On network errors
+    func deleteIAPReviewScreenshot(_ params: CallTool.Parameters) async throws -> CallTool.Result {
+        guard let arguments = params.arguments,
+              let screenshotId = arguments["screenshot_id"]?.stringValue else {
+            return CallTool.Result(
+                content: [.text("Error: Required parameter 'screenshot_id' is missing")],
+                isError: true
+            )
+        }
+
+        do {
+            _ = try await httpClient.delete("/v1/inAppPurchaseAppStoreReviewScreenshots/\(screenshotId)")
+
+            let result = [
+                "success": true,
+                "message": "IAP review screenshot '\(screenshotId)' deleted"
+            ] as [String: Any]
+
+            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+
+        } catch {
+            return CallTool.Result(
+                content: [.text("Error: Failed to delete IAP review screenshot: \(error.localizedDescription)")],
+                isError: true
+            )
+        }
+    }
+
+    // MARK: - IAP Images
+
+    /// Uploads an IAP image (full cycle: reserve -> upload -> commit)
+    /// - Returns: JSON with final image info
+    func uploadIAPImage(_ params: CallTool.Parameters) async throws -> CallTool.Result {
+        guard let arguments = params.arguments,
+              let iapId = arguments["iap_id"]?.stringValue,
+              let filePath = arguments["file_path"]?.stringValue else {
+            return CallTool.Result(
+                content: [.text("Error: Required parameters: iap_id, file_path")],
+                isError: true
+            )
+        }
+
+        do {
+            // Step 1: Get file info
+            let fileSize = try await uploadService.fileSize(at: filePath)
+            let fileName = await uploadService.fileName(at: filePath)
+
+            // Step 2: Reserve
+            let createRequest = CreateIAPImageRequest(
+                data: CreateIAPImageRequest.CreateData(
+                    attributes: CreateIAPImageRequest.Attributes(
+                        fileSize: fileSize,
+                        fileName: fileName
+                    ),
+                    relationships: CreateIAPImageRequest.Relationships(
+                        inAppPurchase: CreateIAPImageRequest.IAPImageRelationship(
+                            data: ASCResourceIdentifier(type: "inAppPurchases", id: iapId)
+                        )
+                    )
+                )
+            )
+
+            let encoder = JSONEncoder()
+            let bodyData = try encoder.encode(createRequest)
+            let reserveData = try await httpClient.post("/v1/inAppPurchaseImages", body: bodyData)
+            let reserveResponse = try JSONDecoder().decode(ASCIAPImageResponse.self, from: reserveData)
+
+            let imageId = reserveResponse.data.id
+            guard let uploadOperations = reserveResponse.data.attributes?.uploadOperations, !uploadOperations.isEmpty else {
+                return CallTool.Result(
+                    content: [.text("Error: No upload operations returned from reservation")],
+                    isError: true
+                )
+            }
+
+            // Step 3: Upload file chunks
+            let md5 = try await uploadService.uploadFile(filePath: filePath, uploadOperations: uploadOperations)
+
+            // Step 4: Commit
+            let commitRequest = CommitIAPImageRequest(
+                data: CommitIAPImageRequest.CommitData(
+                    id: imageId,
+                    attributes: CommitIAPImageRequest.Attributes(
+                        sourceFileChecksum: md5,
+                        uploaded: true
+                    )
+                )
+            )
+
+            let commitBody = try encoder.encode(commitRequest)
+            let commitData = try await httpClient.patch("/v1/inAppPurchaseImages/\(imageId)", body: commitBody)
+            let commitResponse = try JSONDecoder().decode(ASCIAPImageResponse.self, from: commitData)
+
+            let result = [
+                "success": true,
+                "image": formatIAPImage(commitResponse.data)
+            ] as [String: Any]
+
+            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+
+        } catch {
+            return CallTool.Result(
+                content: [.text("Error: Failed to upload IAP image: \(error.localizedDescription)")],
+                isError: true
+            )
+        }
+    }
+
+    /// Gets details of an IAP image
+    /// - Returns: JSON with image details
+    func getIAPImage(_ params: CallTool.Parameters) async throws -> CallTool.Result {
+        guard let arguments = params.arguments,
+              let imageId = arguments["image_id"]?.stringValue else {
+            return CallTool.Result(
+                content: [.text("Error: Required parameter 'image_id' is missing")],
+                isError: true
+            )
+        }
+
+        do {
+            let data = try await httpClient.get("/v1/inAppPurchaseImages/\(imageId)")
+            let response = try JSONDecoder().decode(ASCIAPImageResponse.self, from: data)
+
+            let result = [
+                "success": true,
+                "image": formatIAPImage(response.data)
+            ] as [String: Any]
+
+            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+
+        } catch {
+            return CallTool.Result(
+                content: [.text("Error: Failed to get IAP image: \(error.localizedDescription)")],
+                isError: true
+            )
+        }
+    }
+
+    /// Deletes an IAP image
+    /// - Returns: JSON confirmation
+    func deleteIAPImage(_ params: CallTool.Parameters) async throws -> CallTool.Result {
+        guard let arguments = params.arguments,
+              let imageId = arguments["image_id"]?.stringValue else {
+            return CallTool.Result(
+                content: [.text("Error: Required parameter 'image_id' is missing")],
+                isError: true
+            )
+        }
+
+        do {
+            _ = try await httpClient.delete("/v1/inAppPurchaseImages/\(imageId)")
+
+            let result = [
+                "success": true,
+                "message": "IAP image '\(imageId)' deleted"
+            ] as [String: Any]
+
+            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+
+        } catch {
+            return CallTool.Result(
+                content: [.text("Error: Failed to delete IAP image: \(error.localizedDescription)")],
+                isError: true
+            )
+        }
+    }
+
+    /// Lists images for an in-app purchase
+    /// - Returns: JSON array of IAP images
+    /// - Throws: On network or decoding errors
+    func listIAPImages(_ params: CallTool.Parameters) async throws -> CallTool.Result {
+        guard let arguments = params.arguments,
+              let iapId = arguments["iap_id"]?.stringValue else {
+            return CallTool.Result(
+                content: [.text("Error: Required parameter 'iap_id' is missing")],
+                isError: true
+            )
+        }
+
+        do {
+            let response: ASCIAPImagesResponse
+
+            if let nextUrl = arguments["next_url"]?.stringValue,
+               let parsed = parsePaginationUrl(nextUrl) {
+                response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCIAPImagesResponse.self)
+            } else {
+                var queryParams: [String: String] = [:]
+
+                if let limit = arguments["limit"]?.intValue {
+                    queryParams["limit"] = String(min(max(limit, 1), 200))
+                } else {
+                    queryParams["limit"] = "25"
+                }
+
+                response = try await httpClient.get(
+                    "/v2/inAppPurchases/\(iapId)/inAppPurchaseImages",
+                    parameters: queryParams,
+                    as: ASCIAPImagesResponse.self
+                )
+            }
+
+            let images = response.data.map { formatIAPImage($0) }
+
+            var result: [String: Any] = [
+                "success": true,
+                "images": images,
+                "count": images.count
+            ]
+            if let next = response.links?.next {
+                result["next_url"] = next
+            }
+
+            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+
+        } catch {
+            return CallTool.Result(
+                content: [.text("Error: Failed to list IAP images: \(error.localizedDescription)")],
+                isError: true
+            )
+        }
+    }
+
+    private func formatIAPImage(_ image: ASCIAPImage) -> [String: Any] {
+        var result: [String: Any] = [
+            "id": image.id,
+            "type": image.type,
+            "fileName": image.attributes?.fileName.jsonSafe,
+            "fileSize": image.attributes?.fileSize.jsonSafe,
+            "sourceFileChecksum": image.attributes?.sourceFileChecksum.jsonSafe,
+            "state": image.attributes?.state.jsonSafe
+        ]
+
+        if let imageAsset = image.attributes?.imageAsset {
+            result["imageAsset"] = [
+                "templateUrl": imageAsset.templateUrl.jsonSafe,
+                "width": imageAsset.width.jsonSafe,
+                "height": imageAsset.height.jsonSafe
+            ]
+        }
+
+        return result
     }
 
     // MARK: - Formatting

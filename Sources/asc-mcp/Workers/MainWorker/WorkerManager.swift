@@ -66,17 +66,26 @@ public actor WorkerManager {
     private var subscriptionsWorker: SubscriptionsWorker
     private var offerCodesWorker: OfferCodesWorker
     private var winBackOffersWorker: WinBackOffersWorker
+    private var introductoryOffersWorker: IntroductoryOffersWorker
+    private var promotionalOffersWorker: PromotionalOffersWorker
+    private var sandboxTestersWorker: SandboxTestersWorker
+    private var betaAppWorker: BetaAppWorker
+    private var preReleaseVersionsWorker: PreReleaseVersionsWorker
+    private var betaLicenseAgreementsWorker: BetaLicenseAgreementsWorker
     private var screenshotsWorker: ScreenshotsWorker
     private var customProductPagesWorker: CustomProductPagesWorker
     private var productPageOptimizationWorker: ProductPageOptimizationWorker
     private var promotedPurchasesWorker: PromotedPurchasesWorker
+    private let uploadService: UploadService
     private var metricsWorker: MetricsWorker
+    private var reviewAttachmentsWorker: ReviewAttachmentsWorker
 
     /// Direct initialization with dependencies (for testing and flexibility)
     /// - Parameter enabledWorkers: Set of worker names to enable, nil = all
     public init(dependencies: WorkerDependencies, enabledWorkers: Set<String>? = nil) async {
         self.dependencies = dependencies
         self.enabledWorkers = enabledWorkers
+        self.uploadService = UploadService()
 
         self.appsWorker = await AppsWorker(client: dependencies.httpClient)
         self.buildsWorker = await BuildsWorker(httpClient: dependencies.httpClient)
@@ -85,7 +94,7 @@ public actor WorkerManager {
         self.appLifecycleWorker = await AppLifecycleWorker(httpClient: dependencies.httpClient)
         self.reviewsWorker = await ReviewsWorker(httpClient: dependencies.httpClient)
         self.betaGroupsWorker = await BetaGroupsWorker(httpClient: dependencies.httpClient)
-        self.inAppPurchasesWorker = await InAppPurchasesWorker(httpClient: dependencies.httpClient)
+        self.inAppPurchasesWorker = await InAppPurchasesWorker(httpClient: dependencies.httpClient, uploadService: self.uploadService)
         self.provisioningWorker = await ProvisioningWorker(httpClient: dependencies.httpClient)
         self.betaTestersWorker = await BetaTestersWorker(httpClient: dependencies.httpClient)
         self.appInfoWorker = await AppInfoWorker(httpClient: dependencies.httpClient)
@@ -96,14 +105,21 @@ public actor WorkerManager {
             httpClient: dependencies.httpClient,
             companiesManager: dependencies.companiesWorker.manager
         )
-        self.subscriptionsWorker = await SubscriptionsWorker(httpClient: dependencies.httpClient)
+        self.subscriptionsWorker = await SubscriptionsWorker(httpClient: dependencies.httpClient, uploadService: self.uploadService)
         self.offerCodesWorker = await OfferCodesWorker(httpClient: dependencies.httpClient)
         self.winBackOffersWorker = await WinBackOffersWorker(httpClient: dependencies.httpClient)
-        self.screenshotsWorker = await ScreenshotsWorker(httpClient: dependencies.httpClient)
+        self.introductoryOffersWorker = await IntroductoryOffersWorker(httpClient: dependencies.httpClient)
+        self.promotionalOffersWorker = await PromotionalOffersWorker(httpClient: dependencies.httpClient)
+        self.sandboxTestersWorker = await SandboxTestersWorker(httpClient: dependencies.httpClient)
+        self.betaAppWorker = await BetaAppWorker(httpClient: dependencies.httpClient)
+        self.preReleaseVersionsWorker = await PreReleaseVersionsWorker(httpClient: dependencies.httpClient)
+        self.betaLicenseAgreementsWorker = await BetaLicenseAgreementsWorker(httpClient: dependencies.httpClient)
+        self.screenshotsWorker = await ScreenshotsWorker(httpClient: dependencies.httpClient, uploadService: self.uploadService)
         self.customProductPagesWorker = await CustomProductPagesWorker(httpClient: dependencies.httpClient)
         self.productPageOptimizationWorker = await ProductPageOptimizationWorker(httpClient: dependencies.httpClient)
-        self.promotedPurchasesWorker = await PromotedPurchasesWorker(httpClient: dependencies.httpClient)
+        self.promotedPurchasesWorker = await PromotedPurchasesWorker(httpClient: dependencies.httpClient, uploadService: self.uploadService)
         self.metricsWorker = await MetricsWorker(httpClient: dependencies.httpClient)
+        self.reviewAttachmentsWorker = await ReviewAttachmentsWorker(httpClient: dependencies.httpClient, uploadService: self.uploadService)
     }
 
     /// Convenience factory method for production use
@@ -205,6 +221,24 @@ public actor WorkerManager {
             if self.isWorkerEnabled("winback") {
                 allTools += await self.getWinBackOffersTools()
             }
+            if self.isWorkerEnabled("intro_offers") {
+                allTools += await self.getIntroductoryOffersTools()
+            }
+            if self.isWorkerEnabled("promo_offers") {
+                allTools += await self.getPromotionalOffersTools()
+            }
+            if self.isWorkerEnabled("sandbox") {
+                allTools += await self.getSandboxTestersTools()
+            }
+            if self.isWorkerEnabled("beta_app") {
+                allTools += await self.getBetaAppTools()
+            }
+            if self.isWorkerEnabled("pre_release") {
+                allTools += await self.getPreReleaseVersionsTools()
+            }
+            if self.isWorkerEnabled("beta_license") {
+                allTools += await self.getBetaLicenseAgreementsTools()
+            }
             if self.isWorkerEnabled("screenshots") {
                 allTools += await self.getScreenshotsTools()
             }
@@ -219,6 +253,9 @@ public actor WorkerManager {
             }
             if self.isWorkerEnabled("metrics") {
                 allTools += await self.getMetricsTools()
+            }
+            if self.isWorkerEnabled("review_attachments") {
+                allTools += await self.getReviewAttachmentsTools()
             }
 
             return ListTools.Result(tools: allTools)
@@ -257,7 +294,10 @@ public actor WorkerManager {
                        params.name.hasPrefix("builds_set_beta_") ||
                        params.name.hasPrefix("builds_list_beta_") ||
                        params.name.hasPrefix("builds_send_beta_") ||
-                       params.name.hasPrefix("builds_add_to_beta_") {
+                       params.name.hasPrefix("builds_add_to_beta_") ||
+                       params.name.hasPrefix("builds_add_individual_") ||
+                       params.name.hasPrefix("builds_remove_individual_") ||
+                       params.name.hasPrefix("builds_list_individual_") {
                         guard self.isWorkerEnabled("build_beta") || self.isWorkerEnabled("builds") else { return self.disabledWorkerResult("build_beta") }
                         return try await self.buildBetaDetailsWorker.handleTool(params)
                     } else if params.name.hasPrefix("builds_get_processing_") ||
@@ -341,6 +381,36 @@ public actor WorkerManager {
                     return try await self.winBackOffersWorker.handleTool(params)
                 }
 
+                if params.name.hasPrefix("intro_offers_") {
+                    guard self.isWorkerEnabled("intro_offers") else { return self.disabledWorkerResult("intro_offers") }
+                    return try await self.introductoryOffersWorker.handleTool(params)
+                }
+
+                if params.name.hasPrefix("promo_offers_") {
+                    guard self.isWorkerEnabled("promo_offers") else { return self.disabledWorkerResult("promo_offers") }
+                    return try await self.promotionalOffersWorker.handleTool(params)
+                }
+
+                if params.name.hasPrefix("sandbox_") {
+                    guard self.isWorkerEnabled("sandbox") else { return self.disabledWorkerResult("sandbox") }
+                    return try await self.sandboxTestersWorker.handleTool(params)
+                }
+
+                if params.name.hasPrefix("beta_app_") {
+                    guard self.isWorkerEnabled("beta_app") else { return self.disabledWorkerResult("beta_app") }
+                    return try await self.betaAppWorker.handleTool(params)
+                }
+
+                if params.name.hasPrefix("pre_release_") {
+                    guard self.isWorkerEnabled("pre_release") else { return self.disabledWorkerResult("pre_release") }
+                    return try await self.preReleaseVersionsWorker.handleTool(params)
+                }
+
+                if params.name.hasPrefix("beta_license_") {
+                    guard self.isWorkerEnabled("beta_license") else { return self.disabledWorkerResult("beta_license") }
+                    return try await self.betaLicenseAgreementsWorker.handleTool(params)
+                }
+
                 if params.name.hasPrefix("screenshots_") {
                     guard self.isWorkerEnabled("screenshots") else { return self.disabledWorkerResult("screenshots") }
                     return try await self.screenshotsWorker.handleTool(params)
@@ -364,6 +434,11 @@ public actor WorkerManager {
                 if params.name.hasPrefix("metrics_") {
                     guard self.isWorkerEnabled("metrics") else { return self.disabledWorkerResult("metrics") }
                     return try await self.metricsWorker.handleTool(params)
+                }
+
+                if params.name.hasPrefix("review_attachments_") {
+                    guard self.isWorkerEnabled("review_attachments") else { return self.disabledWorkerResult("review_attachments") }
+                    return try await self.reviewAttachmentsWorker.handleTool(params)
                 }
 
                 return CallTool.Result(
@@ -390,7 +465,7 @@ public actor WorkerManager {
         self.appLifecycleWorker = await AppLifecycleWorker(httpClient: dependencies.httpClient)
         self.reviewsWorker = await ReviewsWorker(httpClient: dependencies.httpClient)
         self.betaGroupsWorker = await BetaGroupsWorker(httpClient: dependencies.httpClient)
-        self.inAppPurchasesWorker = await InAppPurchasesWorker(httpClient: dependencies.httpClient)
+        self.inAppPurchasesWorker = await InAppPurchasesWorker(httpClient: dependencies.httpClient, uploadService: self.uploadService)
         self.provisioningWorker = await ProvisioningWorker(httpClient: dependencies.httpClient)
         self.betaTestersWorker = await BetaTestersWorker(httpClient: dependencies.httpClient)
         self.appInfoWorker = await AppInfoWorker(httpClient: dependencies.httpClient)
@@ -401,14 +476,21 @@ public actor WorkerManager {
             httpClient: dependencies.httpClient,
             companiesManager: dependencies.companiesWorker.manager
         )
-        self.subscriptionsWorker = await SubscriptionsWorker(httpClient: dependencies.httpClient)
+        self.subscriptionsWorker = await SubscriptionsWorker(httpClient: dependencies.httpClient, uploadService: self.uploadService)
         self.offerCodesWorker = await OfferCodesWorker(httpClient: dependencies.httpClient)
         self.winBackOffersWorker = await WinBackOffersWorker(httpClient: dependencies.httpClient)
-        self.screenshotsWorker = await ScreenshotsWorker(httpClient: dependencies.httpClient)
+        self.introductoryOffersWorker = await IntroductoryOffersWorker(httpClient: dependencies.httpClient)
+        self.promotionalOffersWorker = await PromotionalOffersWorker(httpClient: dependencies.httpClient)
+        self.sandboxTestersWorker = await SandboxTestersWorker(httpClient: dependencies.httpClient)
+        self.betaAppWorker = await BetaAppWorker(httpClient: dependencies.httpClient)
+        self.preReleaseVersionsWorker = await PreReleaseVersionsWorker(httpClient: dependencies.httpClient)
+        self.betaLicenseAgreementsWorker = await BetaLicenseAgreementsWorker(httpClient: dependencies.httpClient)
+        self.screenshotsWorker = await ScreenshotsWorker(httpClient: dependencies.httpClient, uploadService: self.uploadService)
         self.customProductPagesWorker = await CustomProductPagesWorker(httpClient: dependencies.httpClient)
         self.productPageOptimizationWorker = await ProductPageOptimizationWorker(httpClient: dependencies.httpClient)
-        self.promotedPurchasesWorker = await PromotedPurchasesWorker(httpClient: dependencies.httpClient)
+        self.promotedPurchasesWorker = await PromotedPurchasesWorker(httpClient: dependencies.httpClient, uploadService: self.uploadService)
         self.metricsWorker = await MetricsWorker(httpClient: dependencies.httpClient)
+        self.reviewAttachmentsWorker = await ReviewAttachmentsWorker(httpClient: dependencies.httpClient, uploadService: self.uploadService)
 
         print("✅ Workers reinitialized successfully", to: &standardError)
     }
@@ -520,6 +602,30 @@ public actor WorkerManager {
         return await winBackOffersWorker.getTools()
     }
 
+    private func getIntroductoryOffersTools() async -> [Tool] {
+        return await introductoryOffersWorker.getTools()
+    }
+
+    private func getPromotionalOffersTools() async -> [Tool] {
+        return await promotionalOffersWorker.getTools()
+    }
+
+    private func getSandboxTestersTools() async -> [Tool] {
+        return await sandboxTestersWorker.getTools()
+    }
+
+    private func getBetaAppTools() async -> [Tool] {
+        return await betaAppWorker.getTools()
+    }
+
+    private func getPreReleaseVersionsTools() async -> [Tool] {
+        return await preReleaseVersionsWorker.getTools()
+    }
+
+    private func getBetaLicenseAgreementsTools() async -> [Tool] {
+        return await betaLicenseAgreementsWorker.getTools()
+    }
+
     private func getScreenshotsTools() async -> [Tool] {
         return await screenshotsWorker.getTools()
     }
@@ -538,6 +644,10 @@ public actor WorkerManager {
 
     private func getMetricsTools() async -> [Tool] {
         return await metricsWorker.getTools()
+    }
+
+    private func getReviewAttachmentsTools() async -> [Tool] {
+        return await reviewAttachmentsWorker.getTools()
     }
 }
 

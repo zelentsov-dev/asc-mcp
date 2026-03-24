@@ -165,4 +165,77 @@ extension UsersWorker {
             ])
         )
     }
+
+    func listVisibleAppsTool() -> Tool {
+        return Tool(
+            name: "users_list_visible_apps",
+            description: "List apps visible to a specific user",
+            inputSchema: .object([
+                "type": .string("object"),
+                "properties": .object([
+                    "user_id": .object([
+                        "type": .string("string"),
+                        "description": .string("User resource ID")
+                    ]),
+                    "limit": .object([
+                        "type": .string("integer"),
+                        "description": .string("Max results (default: 25, max: 200)")
+                    ]),
+                    "next_url": .object([
+                        "type": .string("string"),
+                        "description": .string("Pagination URL from previous response to fetch next page")
+                    ])
+                ]),
+                "required": .array([.string("user_id")])
+            ])
+        )
+    }
+
+    func addVisibleAppsTool() -> Tool {
+        return Tool(
+            name: "users_add_visible_apps",
+            description: "Grant user access to specific apps",
+            inputSchema: .object([
+                "type": .string("object"),
+                "properties": .object([
+                    "user_id": .object([
+                        "type": .string("string"),
+                        "description": .string("User resource ID")
+                    ]),
+                    "app_ids": .object([
+                        "type": .string("array"),
+                        "description": .string("Array of app IDs to grant access to"),
+                        "items": .object([
+                            "type": .string("string")
+                        ])
+                    ])
+                ]),
+                "required": .array([.string("user_id"), .string("app_ids")])
+            ])
+        )
+    }
+
+    func removeVisibleAppsTool() -> Tool {
+        return Tool(
+            name: "users_remove_visible_apps",
+            description: "Remove user's access to specific apps",
+            inputSchema: .object([
+                "type": .string("object"),
+                "properties": .object([
+                    "user_id": .object([
+                        "type": .string("string"),
+                        "description": .string("User resource ID")
+                    ]),
+                    "app_ids": .object([
+                        "type": .string("array"),
+                        "description": .string("Array of app IDs to remove access from"),
+                        "items": .object([
+                            "type": .string("string")
+                        ])
+                    ])
+                ]),
+                "required": .array([.string("user_id"), .string("app_ids")])
+            ])
+        )
+    }
 }

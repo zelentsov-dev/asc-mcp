@@ -5,6 +5,113 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.0] - 2026-03-24
+
+### Breaking Changes
+
+- **Renamed upload tools** — reserve-only tools replaced with full-cycle uploads:
+  - `screenshots_create` → `screenshots_upload` (now accepts `file_path` instead of `file_name`/`file_size`)
+  - `screenshots_create_preview` → `screenshots_upload_preview` (same)
+  - `iap_create_review_screenshot` → `iap_upload_review_screenshot` (same)
+- All upload tools now perform the complete 3-step cycle (reserve → upload chunks → commit) instead of returning raw `uploadOperations`
+
+### Added
+
+#### New Infrastructure
+
+- **UploadService** — universal file upload engine for App Store Connect assets
+  - Reads files from disk, computes MD5 checksums
+  - Uploads chunks in parallel via `TaskGroup` to presigned URLs (no JWT required)
+  - Handles the full reserve → upload → commit lifecycle
+
+#### New Workers (8)
+
+- **IntroductoryOffersWorker** (`intro_offers_*`, 4 tools) — subscription introductory offers (free trial, pay-as-you-go, pay-up-front) CRUD
+- **PromotionalOffersWorker** (`promo_offers_*`, 6 tools) — subscription promotional offers with inline price creation
+- **SandboxTestersWorker** (`sandbox_*`, 3 tools) — sandbox tester management (list, update renewal rate, clear purchase history)
+- **BetaAppWorker** (`beta_app_*`, 10 tools) — beta app localizations (5), beta review submissions (3), beta review details (2)
+- **PreReleaseVersionsWorker** (`pre_release_*`, 3 tools) — pre-release version listing, details, associated builds
+- **BetaLicenseAgreementsWorker** (`beta_license_*`, 3 tools) — TestFlight license agreement text management
+- **ReviewAttachmentsWorker** (`review_attachments_*`, 4 tools) — App Store review attachments with full upload support
+
+#### Extended Workers (12)
+
+- **SubscriptionsWorker** (15 → 29 tools):
+  - +5 subscription group localizations (CRUD)
+  - +1 subscription price deletion
+  - +3 subscription image upload/get/delete (full cycle)
+  - +3 subscription review screenshot upload/get/delete (full cycle)
+  - +2 list images, get review screenshot by subscription
+- **InAppPurchasesWorker** (17 → 24 tools):
+  - +2 IAP availability (set/get)
+  - +3 IAP image upload/get/delete (full cycle)
+  - +1 IAP review screenshot upload (full cycle, renamed)
+  - +1 IAP review screenshot delete
+  - +1 IAP list images
+- **BetaTestersWorker** (6 → 12 tools):
+  - +1 send/resend TestFlight invitation
+  - +2 add/remove tester from beta groups
+  - +2 add/remove tester from builds
+  - +1 remove tester from app
+- **BuildBetaDetailsWorker** (8 → 11 tools):
+  - +3 individual testers (add/remove/list per build)
+- **ScreenshotsWorker** (12 → 16 tools):
+  - Replaced reserve-only uploads with full-cycle uploads
+  - +1 get screenshot details
+  - +1 get preview details
+  - +1 list previews in a set
+  - +1 batch upload (multiple screenshots in one call)
+- **PromotedPurchasesWorker** (5 → 9 tools):
+  - +3 promoted purchase image upload/get/delete (full cycle)
+  - +1 get image by promoted purchase ID
+- **AppLifecycleWorker** (13 → 14 tools):
+  - +1 version deletion (PREPARE_FOR_SUBMISSION state only)
+- **ReviewsWorker** (7 → 8 tools):
+  - +1 AI-generated customer review summarizations
+- **UsersWorker** (7 → 10 tools):
+  - +3 visible apps (list/add/remove per user)
+- **AppInfoWorker** (7 → 10 tools):
+  - +3 EULA management (get/create/update)
+- **OfferCodesWorker** (7 → 10 tools):
+  - +3 custom codes (create/get/deactivate)
+- **PricingWorker** (6 → 9 tools):
+  - +3 App Availabilities v2 (create, get, list territory availabilities)
+
+#### Upload Support (8 asset types, all full-cycle)
+
+| Asset Type | Upload | Get | Delete | List |
+|------------|--------|-----|--------|------|
+| App Screenshots | `screenshots_upload` | `screenshots_get` | `screenshots_delete` | `screenshots_list` |
+| App Previews | `screenshots_upload_preview` | `screenshots_get_preview` | `screenshots_delete_preview` | `screenshots_list_previews` |
+| IAP Images | `iap_upload_image` | `iap_get_image` | `iap_delete_image` | `iap_list_images` |
+| IAP Review Screenshots | `iap_upload_review_screenshot` | `iap_get_review_screenshot` | `iap_delete_review_screenshot` | — |
+| Subscription Images | `subscriptions_upload_image` | `subscriptions_get_image` | `subscriptions_delete_image` | `subscriptions_list_images` |
+| Sub Review Screenshots | `subscriptions_upload_review_screenshot` | `subscriptions_get_review_screenshot` | `subscriptions_delete_review_screenshot` | — |
+| Promoted Purchase Images | `promoted_upload_image` | `promoted_get_image` | `promoted_delete_image` | — |
+| Review Attachments | `review_attachments_upload` | `review_attachments_get` | `review_attachments_delete` | `review_attachments_list` |
+
+### Fixed
+
+- `beta_app_list_submissions` now requires `build_id` (Apple API requires `filter[build]`)
+- `reviews_summarizations` now sends required `filter[platform]` parameter
+- `builds_list_individual_testers` routing in WorkerManager (was falling through to BuildsWorker)
+- `intro_offers_create` description now warns about MISSING_METADATA state requirement
+- `app_info_get_eula` returns clear error message when no EULA is configured
+
+### Testing
+
+- **436 tests** across 31 suites (up from 393)
+- Added tool definition, routing, and parameter validation tests for all new workers
+- Updated aggregate uniqueness and description tests
+
+### Summary
+
+| Metric | v1.4.0 | v2.0.0 | Change |
+|--------|--------|--------|--------|
+| Workers | 25 | 33 | +8 |
+| Tools | 208 | 293 | +85 (+41%) |
+| Tests | 393 | 436 | +43 |
+
 ## [1.4.0] - 2025-02-18
 
 ### Changed

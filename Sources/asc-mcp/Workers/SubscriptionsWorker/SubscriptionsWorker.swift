@@ -5,9 +5,11 @@ import MCP
 /// localizations, prices, and submission in App Store Connect
 public final class SubscriptionsWorker: Sendable {
     let httpClient: HTTPClient
+    let uploadService: UploadService
 
-    public init(httpClient: HTTPClient) {
+    public init(httpClient: HTTPClient, uploadService: UploadService) {
         self.httpClient = httpClient
+        self.uploadService = uploadService
     }
 
     /// Get list of available tools
@@ -27,7 +29,21 @@ public final class SubscriptionsWorker: Sendable {
             createSubscriptionGroupTool(),
             updateSubscriptionGroupTool(),
             deleteSubscriptionGroupTool(),
-            submitSubscriptionTool()
+            submitSubscriptionTool(),
+            listSubscriptionGroupLocalizationsTool(),
+            createSubscriptionGroupLocalizationTool(),
+            getSubscriptionGroupLocalizationTool(),
+            updateSubscriptionGroupLocalizationTool(),
+            deleteSubscriptionGroupLocalizationTool(),
+            deleteSubscriptionPriceTool(),
+            uploadSubscriptionImageTool(),
+            getSubscriptionImageTool(),
+            deleteSubscriptionImageTool(),
+            uploadSubscriptionReviewScreenshotTool(),
+            getSubscriptionReviewScreenshotTool(),
+            deleteSubscriptionReviewScreenshotTool(),
+            listSubscriptionImagesTool(),
+            getSubscriptionReviewScreenshotForSubscriptionTool()
         ]
     }
 
@@ -64,6 +80,34 @@ public final class SubscriptionsWorker: Sendable {
             return try await deleteSubscriptionGroup(params)
         case "subscriptions_submit":
             return try await submitSubscription(params)
+        case "subscriptions_list_group_localizations":
+            return try await listSubscriptionGroupLocalizations(params)
+        case "subscriptions_create_group_localization":
+            return try await createSubscriptionGroupLocalization(params)
+        case "subscriptions_get_group_localization":
+            return try await getSubscriptionGroupLocalization(params)
+        case "subscriptions_update_group_localization":
+            return try await updateSubscriptionGroupLocalization(params)
+        case "subscriptions_delete_group_localization":
+            return try await deleteSubscriptionGroupLocalization(params)
+        case "subscriptions_delete_price":
+            return try await deleteSubscriptionPrice(params)
+        case "subscriptions_upload_image":
+            return try await uploadSubscriptionImage(params)
+        case "subscriptions_get_image":
+            return try await getSubscriptionImage(params)
+        case "subscriptions_delete_image":
+            return try await deleteSubscriptionImage(params)
+        case "subscriptions_upload_review_screenshot":
+            return try await uploadSubscriptionReviewScreenshot(params)
+        case "subscriptions_get_review_screenshot":
+            return try await getSubscriptionReviewScreenshot(params)
+        case "subscriptions_delete_review_screenshot":
+            return try await deleteSubscriptionReviewScreenshot(params)
+        case "subscriptions_list_images":
+            return try await listSubscriptionImages(params)
+        case "subscriptions_get_review_screenshot_for_subscription":
+            return try await getSubscriptionReviewScreenshotForSubscription(params)
         default:
             throw MCPError.methodNotFound("Unknown tool: \(params.name)")
         }

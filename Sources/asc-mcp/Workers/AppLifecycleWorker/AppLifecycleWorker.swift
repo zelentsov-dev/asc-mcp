@@ -24,7 +24,8 @@ public final class AppLifecycleWorker: Sendable {
             updatePhasedReleaseTool(),
             releaseVersionTool(),
             setReviewDetailsTool(),
-            updateAgeRatingTool()
+            updateAgeRatingTool(),
+            deleteVersionTool()
         ]
     }
     
@@ -57,6 +58,8 @@ public final class AppLifecycleWorker: Sendable {
             return try await setReviewDetails(params)
         case "app_versions_update_age_rating":
             return try await updateAgeRating(params)
+        case "app_versions_delete":
+            return try await deleteVersion(params)
         default:
             throw MCPError.methodNotFound("Unknown tool: \(params.name)")
         }

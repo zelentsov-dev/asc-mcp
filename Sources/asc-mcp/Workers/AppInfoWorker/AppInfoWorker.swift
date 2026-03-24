@@ -25,7 +25,10 @@ public final class AppInfoWorker: Sendable {
             listAppInfoLocalizationsTool(),
             updateAppInfoLocalizationTool(),
             createAppInfoLocalizationTool(),
-            deleteAppInfoLocalizationTool()
+            deleteAppInfoLocalizationTool(),
+            getEulaTool(),
+            createEulaTool(),
+            updateEulaTool()
         ]
     }
 
@@ -46,6 +49,12 @@ public final class AppInfoWorker: Sendable {
             return try await createAppInfoLocalization(params)
         case "app_info_delete_localization":
             return try await deleteAppInfoLocalization(params)
+        case "app_info_get_eula":
+            return try await getEula(params)
+        case "app_info_create_eula":
+            return try await createEula(params)
+        case "app_info_update_eula":
+            return try await updateEula(params)
         default:
             throw MCPError.methodNotFound("Unknown tool: \(params.name)")
         }

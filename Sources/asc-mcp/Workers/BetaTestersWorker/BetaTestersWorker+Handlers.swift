@@ -332,6 +332,294 @@ extension BetaTestersWorker {
         }
     }
 
+    /// Sends or resends a TestFlight invitation to a beta tester
+    /// - Returns: JSON confirmation of invitation sent
+    func sendInvitation(_ params: CallTool.Parameters) async throws -> CallTool.Result {
+        guard let arguments = params.arguments,
+              let betaTesterIdValue = arguments["beta_tester_id"],
+              let betaTesterId = betaTesterIdValue.stringValue,
+              let appIdValue = arguments["app_id"],
+              let appId = appIdValue.stringValue else {
+            return CallTool.Result(
+                content: [.text("Required parameters 'beta_tester_id' and 'app_id' are missing")],
+                isError: true
+            )
+        }
+
+        do {
+            let body: [String: Any] = [
+                "data": [
+                    "type": "betaTesterInvitations",
+                    "relationships": [
+                        "betaTester": [
+                            "data": [
+                                "type": "betaTesters",
+                                "id": betaTesterId
+                            ]
+                        ],
+                        "app": [
+                            "data": [
+                                "type": "apps",
+                                "id": appId
+                            ]
+                        ]
+                    ]
+                ]
+            ]
+
+            let bodyData = try JSONSerialization.data(withJSONObject: body, options: [])
+            _ = try await httpClient.post(
+                "/v1/betaTesterInvitations",
+                body: bodyData
+            )
+
+            let result: [String: Any] = [
+                "success": true,
+                "message": "Invitation sent to beta tester '\(betaTesterId)' for app '\(appId)'"
+            ]
+
+            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+
+        } catch {
+            return CallTool.Result(
+                content: [.text("Failed to send invitation: \(error.localizedDescription)")],
+                isError: true
+            )
+        }
+    }
+
+    /// Adds a beta tester to one or more beta groups
+    /// - Returns: JSON confirmation of the operation
+    func addToGroups(_ params: CallTool.Parameters) async throws -> CallTool.Result {
+        guard let arguments = params.arguments,
+              let betaTesterIdValue = arguments["beta_tester_id"],
+              let betaTesterId = betaTesterIdValue.stringValue,
+              let groupIdsValue = arguments["group_ids"],
+              let groupIdsArray = groupIdsValue.arrayValue else {
+            return CallTool.Result(
+                content: [.text("Required parameters 'beta_tester_id' and 'group_ids' are missing")],
+                isError: true
+            )
+        }
+
+        let groupIds = groupIdsArray.compactMap { $0.stringValue }
+        guard !groupIds.isEmpty else {
+            return CallTool.Result(
+                content: [.text("'group_ids' must contain at least one group ID")],
+                isError: true
+            )
+        }
+
+        do {
+            let request = BetaGroupRelationshipRequest(
+                data: groupIds.map { ASCResourceIdentifier(type: "betaGroups", id: $0) }
+            )
+
+            let bodyData = try JSONEncoder().encode(request)
+            _ = try await httpClient.post(
+                "/v1/betaTesters/\(betaTesterId)/relationships/betaGroups",
+                body: bodyData
+            )
+
+            let result: [String: Any] = [
+                "success": true,
+                "message": "Added tester '\(betaTesterId)' to \(groupIds.count) group(s)"
+            ]
+
+            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+
+        } catch {
+            return CallTool.Result(
+                content: [.text("Failed to add tester to groups: \(error.localizedDescription)")],
+                isError: true
+            )
+        }
+    }
+
+    /// Removes a beta tester from one or more beta groups
+    /// - Returns: JSON confirmation of the operation
+    func removeFromGroups(_ params: CallTool.Parameters) async throws -> CallTool.Result {
+        guard let arguments = params.arguments,
+              let betaTesterIdValue = arguments["beta_tester_id"],
+              let betaTesterId = betaTesterIdValue.stringValue,
+              let groupIdsValue = arguments["group_ids"],
+              let groupIdsArray = groupIdsValue.arrayValue else {
+            return CallTool.Result(
+                content: [.text("Required parameters 'beta_tester_id' and 'group_ids' are missing")],
+                isError: true
+            )
+        }
+
+        let groupIds = groupIdsArray.compactMap { $0.stringValue }
+        guard !groupIds.isEmpty else {
+            return CallTool.Result(
+                content: [.text("'group_ids' must contain at least one group ID")],
+                isError: true
+            )
+        }
+
+        do {
+            let request = BetaGroupRelationshipRequest(
+                data: groupIds.map { ASCResourceIdentifier(type: "betaGroups", id: $0) }
+            )
+
+            let bodyData = try JSONEncoder().encode(request)
+            _ = try await httpClient.delete(
+                "/v1/betaTesters/\(betaTesterId)/relationships/betaGroups",
+                body: bodyData
+            )
+
+            let result: [String: Any] = [
+                "success": true,
+                "message": "Removed tester '\(betaTesterId)' from \(groupIds.count) group(s)"
+            ]
+
+            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+
+        } catch {
+            return CallTool.Result(
+                content: [.text("Failed to remove tester from groups: \(error.localizedDescription)")],
+                isError: true
+            )
+        }
+    }
+
+    /// Assigns builds to a beta tester for individual testing
+    /// - Returns: JSON confirmation of the operation
+    func addToBuilds(_ params: CallTool.Parameters) async throws -> CallTool.Result {
+        guard let arguments = params.arguments,
+              let betaTesterIdValue = arguments["beta_tester_id"],
+              let betaTesterId = betaTesterIdValue.stringValue,
+              let buildIdsValue = arguments["build_ids"],
+              let buildIdsArray = buildIdsValue.arrayValue else {
+            return CallTool.Result(
+                content: [.text("Required parameters 'beta_tester_id' and 'build_ids' are missing")],
+                isError: true
+            )
+        }
+
+        let buildIds = buildIdsArray.compactMap { $0.stringValue }
+        guard !buildIds.isEmpty else {
+            return CallTool.Result(
+                content: [.text("'build_ids' must contain at least one build ID")],
+                isError: true
+            )
+        }
+
+        do {
+            let request = BetaGroupRelationshipRequest(
+                data: buildIds.map { ASCResourceIdentifier(type: "builds", id: $0) }
+            )
+
+            let bodyData = try JSONEncoder().encode(request)
+            _ = try await httpClient.post(
+                "/v1/betaTesters/\(betaTesterId)/relationships/builds",
+                body: bodyData
+            )
+
+            let result: [String: Any] = [
+                "success": true,
+                "message": "Added \(buildIds.count) build(s) to tester '\(betaTesterId)'"
+            ]
+
+            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+
+        } catch {
+            return CallTool.Result(
+                content: [.text("Failed to add builds to tester: \(error.localizedDescription)")],
+                isError: true
+            )
+        }
+    }
+
+    /// Removes build access from a beta tester
+    /// - Returns: JSON confirmation of the operation
+    func removeFromBuilds(_ params: CallTool.Parameters) async throws -> CallTool.Result {
+        guard let arguments = params.arguments,
+              let betaTesterIdValue = arguments["beta_tester_id"],
+              let betaTesterId = betaTesterIdValue.stringValue,
+              let buildIdsValue = arguments["build_ids"],
+              let buildIdsArray = buildIdsValue.arrayValue else {
+            return CallTool.Result(
+                content: [.text("Required parameters 'beta_tester_id' and 'build_ids' are missing")],
+                isError: true
+            )
+        }
+
+        let buildIds = buildIdsArray.compactMap { $0.stringValue }
+        guard !buildIds.isEmpty else {
+            return CallTool.Result(
+                content: [.text("'build_ids' must contain at least one build ID")],
+                isError: true
+            )
+        }
+
+        do {
+            let request = BetaGroupRelationshipRequest(
+                data: buildIds.map { ASCResourceIdentifier(type: "builds", id: $0) }
+            )
+
+            let bodyData = try JSONEncoder().encode(request)
+            _ = try await httpClient.delete(
+                "/v1/betaTesters/\(betaTesterId)/relationships/builds",
+                body: bodyData
+            )
+
+            let result: [String: Any] = [
+                "success": true,
+                "message": "Removed \(buildIds.count) build(s) from tester '\(betaTesterId)'"
+            ]
+
+            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+
+        } catch {
+            return CallTool.Result(
+                content: [.text("Failed to remove builds from tester: \(error.localizedDescription)")],
+                isError: true
+            )
+        }
+    }
+
+    /// Removes a beta tester's access to an app entirely
+    /// - Returns: JSON confirmation of the operation
+    func removeFromApp(_ params: CallTool.Parameters) async throws -> CallTool.Result {
+        guard let arguments = params.arguments,
+              let betaTesterIdValue = arguments["beta_tester_id"],
+              let betaTesterId = betaTesterIdValue.stringValue,
+              let appIdValue = arguments["app_id"],
+              let appId = appIdValue.stringValue else {
+            return CallTool.Result(
+                content: [.text("Required parameters 'beta_tester_id' and 'app_id' are missing")],
+                isError: true
+            )
+        }
+
+        do {
+            let request = BetaGroupRelationshipRequest(
+                data: [ASCResourceIdentifier(type: "apps", id: appId)]
+            )
+
+            let bodyData = try JSONEncoder().encode(request)
+            _ = try await httpClient.delete(
+                "/v1/betaTesters/\(betaTesterId)/relationships/apps",
+                body: bodyData
+            )
+
+            let result: [String: Any] = [
+                "success": true,
+                "message": "Removed tester '\(betaTesterId)' from app '\(appId)'"
+            ]
+
+            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+
+        } catch {
+            return CallTool.Result(
+                content: [.text("Failed to remove tester from app: \(error.localizedDescription)")],
+                isError: true
+            )
+        }
+    }
+
     // MARK: - Formatting
 
     private func formatBetaTester(_ tester: ASCBetaTester) -> [String: Any] {

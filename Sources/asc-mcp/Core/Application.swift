@@ -57,11 +57,18 @@ public func runApplication(enabledWorkers: Set<String>? = nil) async throws {
         - subscriptions_* -- subscription management (CRUD, localizations, prices, groups)
         - offer_codes_* -- subscription offer codes
         - winback_* -- win-back offers for subscriptions
+        - intro_offers_* -- subscription introductory offers (free trials, pay-as-you-go, pay-up-front)
+        - promo_offers_* -- subscription promotional offers (discounts for current/former subscribers)
+        - sandbox_* -- sandbox testers management (list, update, clear purchase history)
+        - beta_app_* -- beta app localizations, review submissions, review details
+        - pre_release_* -- pre-release versions (list, get, builds)
+        - beta_license_* -- beta license agreements (list, get, update)
         - screenshots_* -- screenshots and app previews management
         - custom_pages_* -- custom product pages
         - ppo_* -- product page optimization (A/B testing)
         - promoted_* -- promoted in-app purchases
         - metrics_* -- performance metrics and diagnostics
+        - review_attachments_* -- app store review attachments (upload, get, delete, list)
         """,
         capabilities: Server.Capabilities(
             tools: Server.Capabilities.Tools(listChanged: true)

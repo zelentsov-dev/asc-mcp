@@ -24,7 +24,10 @@ public final class PricingWorker: Sendable {
             listPricePointsTool(),
             getAppPriceScheduleTool(),
             setAppPriceScheduleTool(),
-            listTerritoryAvailabilityTool()
+            listTerritoryAvailabilityTool(),
+            createAvailabilityV2Tool(),
+            getAvailabilityV2Tool(),
+            listTerritoryAvailabilitiesV2Tool()
         ]
     }
 
@@ -43,6 +46,12 @@ public final class PricingWorker: Sendable {
             return try await setAppPriceSchedule(params)
         case "pricing_list_territory_availability":
             return try await listTerritoryAvailability(params)
+        case "pricing_create_availability":
+            return try await createAvailabilityV2(params)
+        case "pricing_get_availability_v2":
+            return try await getAvailabilityV2(params)
+        case "pricing_list_territory_availabilities":
+            return try await listTerritoryAvailabilitiesV2(params)
         default:
             throw MCPError.methodNotFound("Unknown tool: \(params.name)")
         }
