@@ -281,6 +281,7 @@ public struct IAPReviewScreenshotAttributes: Codable, Sendable {
     public let assetToken: String?
     public let sourceFileChecksum: String?
     public let assetDeliveryState: ASCAssetDeliveryStateSimple?
+    public let uploadOperations: [ASCUploadOperation]?
 }
 
 /// Simple image asset model
@@ -414,7 +415,7 @@ public struct CommitIAPImageRequest: Codable, Sendable {
     }
 }
 
-// MARK: - Create IAP Review Screenshot Request
+// MARK: - IAP Review Screenshot Request Models
 
 /// Create IAP review screenshot request
 public struct CreateIAPReviewScreenshotRequest: Codable, Sendable {
@@ -438,4 +439,28 @@ public struct CreateIAPReviewScreenshotRequest: Codable, Sendable {
     public struct InAppPurchaseRelationship: Codable, Sendable {
         public let data: ASCResourceIdentifier
     }
+}
+
+/// Commit IAP review screenshot request
+public struct CommitIAPReviewScreenshotRequest: Codable, Sendable {
+    public let data: CommitData
+
+    public struct CommitData: Codable, Sendable {
+        public let type: String = "inAppPurchaseAppStoreReviewScreenshots"
+        public let id: String
+        public let attributes: Attributes
+    }
+
+    public struct Attributes: Codable, Sendable {
+        public let sourceFileChecksum: String?
+        public let uploaded: Bool?
+    }
+}
+
+// MARK: - IAP Images List Response
+
+/// IAP images list response
+public struct ASCIAPImagesResponse: Codable, Sendable {
+    public let data: [ASCIAPImage]
+    public let links: ASCPagedDocumentLinks?
 }

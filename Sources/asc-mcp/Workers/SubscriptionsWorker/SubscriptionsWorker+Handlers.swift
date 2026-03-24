@@ -1196,6 +1196,94 @@ extension SubscriptionsWorker {
         }
     }
 
+    // MARK: - List/Get-by-Parent Handlers
+
+    /// Lists images for a subscription
+    /// - Returns: JSON array of subscription images
+    /// - Throws: On network or decoding errors
+    func listSubscriptionImages(_ params: CallTool.Parameters) async throws -> CallTool.Result {
+        guard let arguments = params.arguments,
+              let subscriptionId = arguments["subscription_id"]?.stringValue else {
+            return CallTool.Result(
+                content: [.text("Error: Required parameter 'subscription_id' is missing")],
+                isError: true
+            )
+        }
+
+        do {
+            let response: ASCSubscriptionImagesResponse
+
+            if let nextUrl = arguments["next_url"]?.stringValue,
+               let parsed = parsePaginationUrl(nextUrl) {
+                response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCSubscriptionImagesResponse.self)
+            } else {
+                var queryParams: [String: String] = [:]
+
+                if let limit = arguments["limit"]?.intValue {
+                    queryParams["limit"] = String(min(max(limit, 1), 200))
+                } else {
+                    queryParams["limit"] = "25"
+                }
+
+                response = try await httpClient.get(
+                    "/v1/subscriptions/\(subscriptionId)/subscriptionImages",
+                    parameters: queryParams,
+                    as: ASCSubscriptionImagesResponse.self
+                )
+            }
+
+            let images = response.data.map { formatSubscriptionImage($0) }
+
+            var result: [String: Any] = [
+                "success": true,
+                "images": images,
+                "count": images.count
+            ]
+            if let next = response.links?.next {
+                result["next_url"] = next
+            }
+
+            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+
+        } catch {
+            return CallTool.Result(
+                content: [.text("Error: Failed to list subscription images: \(error.localizedDescription)")],
+                isError: true
+            )
+        }
+    }
+
+    /// Gets the review screenshot for a subscription by subscription ID (singular resource)
+    /// - Returns: JSON with screenshot details
+    /// - Throws: On network or decoding errors
+    func getSubscriptionReviewScreenshotForSubscription(_ params: CallTool.Parameters) async throws -> CallTool.Result {
+        guard let arguments = params.arguments,
+              let subscriptionId = arguments["subscription_id"]?.stringValue else {
+            return CallTool.Result(
+                content: [.text("Error: Required parameter 'subscription_id' is missing")],
+                isError: true
+            )
+        }
+
+        do {
+            let data = try await httpClient.get("/v1/subscriptions/\(subscriptionId)/appStoreReviewScreenshot")
+            let response = try JSONDecoder().decode(ASCSubReviewScreenshotResponse.self, from: data)
+
+            let result = [
+                "success": true,
+                "screenshot": formatSubReviewScreenshot(response.data)
+            ] as [String: Any]
+
+            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+
+        } catch {
+            return CallTool.Result(
+                content: [.text("Error: Failed to get subscription review screenshot: \(error.localizedDescription)")],
+                isError: true
+            )
+        }
+    }
+
     private func formatSubscriptionImage(_ image: ASCSubscriptionImage) -> [String: Any] {
         var result: [String: Any] = [
             "id": image.id,

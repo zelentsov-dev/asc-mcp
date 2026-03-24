@@ -188,6 +188,40 @@ public struct CreatePreviewSetRequest: Codable, Sendable {
     }
 }
 
+/// Previews list response
+public struct ASCPreviewsResponse: Codable, Sendable {
+    public let data: [ASCPreview]
+    public let links: ASCPagedDocumentLinks?
+}
+
+/// Commit screenshot upload request
+public struct CommitScreenshotRequest: Codable, Sendable {
+    public let data: CommitData
+    public struct CommitData: Codable, Sendable {
+        public let type: String = "appScreenshots"
+        public let id: String
+        public let attributes: Attributes
+    }
+    public struct Attributes: Codable, Sendable {
+        public let sourceFileChecksum: String?
+        public let uploaded: Bool?
+    }
+}
+
+/// Commit preview upload request
+public struct CommitPreviewRequest: Codable, Sendable {
+    public let data: CommitData
+    public struct CommitData: Codable, Sendable {
+        public let type: String = "appPreviews"
+        public let id: String
+        public let attributes: Attributes
+    }
+    public struct Attributes: Codable, Sendable {
+        public let sourceFileChecksum: String?
+        public let uploaded: Bool?
+    }
+}
+
 /// Create preview reservation request
 public struct CreatePreviewRequest: Codable, Sendable {
     public let data: CreateData

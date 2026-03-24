@@ -4,9 +4,11 @@ import MCP
 /// ScreenshotsWorker manages screenshots and app previews in App Store Connect
 public final class ScreenshotsWorker: Sendable {
     let httpClient: HTTPClient
+    let uploadService: UploadService
 
-    public init(httpClient: HTTPClient) {
+    public init(httpClient: HTTPClient, uploadService: UploadService) {
         self.httpClient = httpClient
+        self.uploadService = uploadService
     }
 
     /// Get list of available tools
@@ -16,13 +18,16 @@ public final class ScreenshotsWorker: Sendable {
             createScreenshotSetTool(),
             deleteScreenshotSetTool(),
             listScreenshotsTool(),
-            createScreenshotTool(),
+            uploadScreenshotTool(),
+            getScreenshotTool(),
             deleteScreenshotTool(),
             reorderScreenshotsTool(),
             listPreviewSetsTool(),
             createPreviewSetTool(),
             deletePreviewSetTool(),
-            createPreviewTool(),
+            uploadPreviewTool(),
+            getPreviewTool(),
+            listPreviewsTool(),
             deletePreviewTool()
         ]
     }
@@ -38,8 +43,10 @@ public final class ScreenshotsWorker: Sendable {
             return try await deleteScreenshotSet(params)
         case "screenshots_list":
             return try await listScreenshots(params)
-        case "screenshots_create":
-            return try await createScreenshot(params)
+        case "screenshots_upload":
+            return try await uploadScreenshot(params)
+        case "screenshots_get":
+            return try await getScreenshot(params)
         case "screenshots_delete":
             return try await deleteScreenshot(params)
         case "screenshots_reorder":
@@ -50,8 +57,12 @@ public final class ScreenshotsWorker: Sendable {
             return try await createPreviewSet(params)
         case "screenshots_delete_preview_set":
             return try await deletePreviewSet(params)
-        case "screenshots_create_preview":
-            return try await createPreview(params)
+        case "screenshots_upload_preview":
+            return try await uploadPreview(params)
+        case "screenshots_get_preview":
+            return try await getPreview(params)
+        case "screenshots_list_previews":
+            return try await listPreviews(params)
         case "screenshots_delete_preview":
             return try await deletePreview(params)
         default:

@@ -401,6 +401,39 @@ extension PromotedPurchasesWorker {
         }
     }
 
+    /// Gets the promotional image for a promoted purchase by parent ID (singular resource)
+    /// - Returns: JSON with image details
+    /// - Throws: On network or decoding errors
+    func getPromotedPurchaseImageForPurchase(_ params: CallTool.Parameters) async throws -> CallTool.Result {
+        guard let arguments = params.arguments,
+              let promotedPurchaseId = arguments["promoted_purchase_id"]?.stringValue else {
+            return CallTool.Result(
+                content: [.text("Error: Required parameter 'promoted_purchase_id' is missing")],
+                isError: true
+            )
+        }
+
+        do {
+            let response: ASCPromotedPurchaseImageResponse = try await httpClient.get(
+                "/v1/promotedPurchases/\(promotedPurchaseId)/promotionImage",
+                as: ASCPromotedPurchaseImageResponse.self
+            )
+
+            let result: [String: Any] = [
+                "success": true,
+                "image": formatPromotedPurchaseImage(response.data)
+            ]
+
+            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+
+        } catch {
+            return CallTool.Result(
+                content: [.text("Error: Failed to get promoted purchase image: \(error.localizedDescription)")],
+                isError: true
+            )
+        }
+    }
+
     // MARK: - Formatting
 
     private func formatPromotedPurchaseImage(_ image: ASCPromotedPurchaseImage) -> [String: Any] {

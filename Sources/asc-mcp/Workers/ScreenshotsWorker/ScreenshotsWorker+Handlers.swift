@@ -195,24 +195,25 @@ extension ScreenshotsWorker {
         }
     }
 
-    /// Creates a screenshot reservation for upload
-    /// - Returns: JSON with screenshot details and upload operations
-    func createScreenshot(_ params: CallTool.Parameters) async throws -> CallTool.Result {
+    /// Uploads a screenshot (full cycle: reserve, upload file, commit)
+    /// - Returns: JSON with final screenshot info
+    func uploadScreenshot(_ params: CallTool.Parameters) async throws -> CallTool.Result {
         guard let arguments = params.arguments,
-              let setIdValue = arguments["set_id"],
-              let setId = setIdValue.stringValue,
-              let fileNameValue = arguments["file_name"],
-              let fileName = fileNameValue.stringValue,
-              let fileSizeValue = arguments["file_size"],
-              let fileSize = fileSizeValue.intValue else {
+              let setId = arguments["set_id"]?.stringValue,
+              let filePath = arguments["file_path"]?.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameters: set_id, file_name, file_size")],
+                content: [.text("Error: Required parameters: set_id, file_path")],
                 isError: true
             )
         }
 
         do {
-            let request = CreateScreenshotRequest(
+            // Step 1: Get file info
+            let fileSize = try await uploadService.fileSize(at: filePath)
+            let fileName = await uploadService.fileName(at: filePath)
+
+            // Step 2: Reserve — POST to create screenshot reservation
+            let createRequest = CreateScreenshotRequest(
                 data: CreateScreenshotRequest.CreateData(
                     attributes: CreateScreenshotRequest.Attributes(
                         fileName: fileName,
@@ -226,24 +227,77 @@ extension ScreenshotsWorker {
                 )
             )
 
-            let response: ASCScreenshotResponse = try await httpClient.post(
-                "/v1/appScreenshots",
-                body: request,
-                as: ASCScreenshotResponse.self
+            let encoder = JSONEncoder()
+            let bodyData = try encoder.encode(createRequest)
+            let reserveData = try await httpClient.post("/v1/appScreenshots", body: bodyData)
+            let reserveResponse = try JSONDecoder().decode(ASCScreenshotResponse.self, from: reserveData)
+
+            let screenshotId = reserveResponse.data.id
+            guard let uploadOperations = reserveResponse.data.attributes?.uploadOperations, !uploadOperations.isEmpty else {
+                return CallTool.Result(
+                    content: [.text("Error: No upload operations returned from reservation")],
+                    isError: true
+                )
+            }
+
+            // Step 3: Upload file chunks
+            let md5 = try await uploadService.uploadFile(filePath: filePath, uploadOperations: uploadOperations)
+
+            // Step 4: Commit — PATCH to finalize upload
+            let commitRequest = CommitScreenshotRequest(
+                data: CommitScreenshotRequest.CommitData(
+                    id: screenshotId,
+                    attributes: CommitScreenshotRequest.Attributes(
+                        sourceFileChecksum: md5,
+                        uploaded: true
+                    )
+                )
             )
 
-            let screenshot = formatScreenshot(response.data)
+            let commitBody = try encoder.encode(commitRequest)
+            let commitData = try await httpClient.patch("/v1/appScreenshots/\(screenshotId)", body: commitBody)
+            let commitResponse = try JSONDecoder().decode(ASCScreenshotResponse.self, from: commitData)
 
             let result = [
                 "success": true,
-                "screenshot": screenshot
+                "screenshot": formatScreenshot(commitResponse.data)
             ] as [String: Any]
 
             return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to create screenshot: \(error.localizedDescription)")],
+                content: [.text("Error: Failed to upload screenshot: \(error.localizedDescription)")],
+                isError: true
+            )
+        }
+    }
+
+    /// Gets details of a specific screenshot
+    /// - Returns: JSON with screenshot details
+    func getScreenshot(_ params: CallTool.Parameters) async throws -> CallTool.Result {
+        guard let arguments = params.arguments,
+              let screenshotId = arguments["screenshot_id"]?.stringValue else {
+            return CallTool.Result(
+                content: [.text("Error: Required parameter 'screenshot_id' is missing")],
+                isError: true
+            )
+        }
+
+        do {
+            let data = try await httpClient.get("/v1/appScreenshots/\(screenshotId)")
+            let response = try JSONDecoder().decode(ASCScreenshotResponse.self, from: data)
+
+            let result = [
+                "success": true,
+                "screenshot": formatScreenshot(response.data)
+            ] as [String: Any]
+
+            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+
+        } catch {
+            return CallTool.Result(
+                content: [.text("Error: Failed to get screenshot: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -456,26 +510,27 @@ extension ScreenshotsWorker {
         }
     }
 
-    /// Creates an app preview reservation for upload
-    /// - Returns: JSON with preview details and upload operations
-    func createPreview(_ params: CallTool.Parameters) async throws -> CallTool.Result {
+    /// Uploads an app preview (full cycle: reserve, upload file, commit)
+    /// - Returns: JSON with final preview info
+    func uploadPreview(_ params: CallTool.Parameters) async throws -> CallTool.Result {
         guard let arguments = params.arguments,
-              let setIdValue = arguments["set_id"],
-              let setId = setIdValue.stringValue,
-              let fileNameValue = arguments["file_name"],
-              let fileName = fileNameValue.stringValue,
-              let fileSizeValue = arguments["file_size"],
-              let fileSize = fileSizeValue.intValue,
-              let mimeTypeValue = arguments["mime_type"],
-              let mimeType = mimeTypeValue.stringValue else {
+              let setId = arguments["set_id"]?.stringValue,
+              let filePath = arguments["file_path"]?.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameters: set_id, file_name, file_size, mime_type")],
+                content: [.text("Error: Required parameters: set_id, file_path")],
                 isError: true
             )
         }
 
+        let mimeType = arguments["mime_type"]?.stringValue ?? "video/mp4"
+
         do {
-            let request = CreatePreviewRequest(
+            // Step 1: Get file info
+            let fileSize = try await uploadService.fileSize(at: filePath)
+            let fileName = await uploadService.fileName(at: filePath)
+
+            // Step 2: Reserve — POST to create preview reservation
+            let createRequest = CreatePreviewRequest(
                 data: CreatePreviewRequest.CreateData(
                     attributes: CreatePreviewRequest.Attributes(
                         fileName: fileName,
@@ -490,24 +545,131 @@ extension ScreenshotsWorker {
                 )
             )
 
-            let response: ASCPreviewResponse = try await httpClient.post(
-                "/v1/appPreviews",
-                body: request,
-                as: ASCPreviewResponse.self
+            let encoder = JSONEncoder()
+            let bodyData = try encoder.encode(createRequest)
+            let reserveData = try await httpClient.post("/v1/appPreviews", body: bodyData)
+            let reserveResponse = try JSONDecoder().decode(ASCPreviewResponse.self, from: reserveData)
+
+            let previewId = reserveResponse.data.id
+            guard let uploadOperations = reserveResponse.data.attributes?.uploadOperations, !uploadOperations.isEmpty else {
+                return CallTool.Result(
+                    content: [.text("Error: No upload operations returned from reservation")],
+                    isError: true
+                )
+            }
+
+            // Step 3: Upload file chunks
+            let md5 = try await uploadService.uploadFile(filePath: filePath, uploadOperations: uploadOperations)
+
+            // Step 4: Commit — PATCH to finalize upload
+            let commitRequest = CommitPreviewRequest(
+                data: CommitPreviewRequest.CommitData(
+                    id: previewId,
+                    attributes: CommitPreviewRequest.Attributes(
+                        sourceFileChecksum: md5,
+                        uploaded: true
+                    )
+                )
             )
 
-            let preview = formatPreview(response.data)
+            let commitBody = try encoder.encode(commitRequest)
+            let commitData = try await httpClient.patch("/v1/appPreviews/\(previewId)", body: commitBody)
+            let commitResponse = try JSONDecoder().decode(ASCPreviewResponse.self, from: commitData)
 
             let result = [
                 "success": true,
-                "preview": preview
+                "preview": formatPreview(commitResponse.data)
             ] as [String: Any]
 
             return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to create preview: \(error.localizedDescription)")],
+                content: [.text("Error: Failed to upload preview: \(error.localizedDescription)")],
+                isError: true
+            )
+        }
+    }
+
+    /// Gets details of a specific app preview
+    /// - Returns: JSON with preview details
+    func getPreview(_ params: CallTool.Parameters) async throws -> CallTool.Result {
+        guard let arguments = params.arguments,
+              let previewId = arguments["preview_id"]?.stringValue else {
+            return CallTool.Result(
+                content: [.text("Error: Required parameter 'preview_id' is missing")],
+                isError: true
+            )
+        }
+
+        do {
+            let data = try await httpClient.get("/v1/appPreviews/\(previewId)")
+            let response = try JSONDecoder().decode(ASCPreviewResponse.self, from: data)
+
+            let result = [
+                "success": true,
+                "preview": formatPreview(response.data)
+            ] as [String: Any]
+
+            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+
+        } catch {
+            return CallTool.Result(
+                content: [.text("Error: Failed to get preview: \(error.localizedDescription)")],
+                isError: true
+            )
+        }
+    }
+
+    /// Lists app previews in a preview set
+    /// - Returns: JSON array of previews with file info and upload status
+    func listPreviews(_ params: CallTool.Parameters) async throws -> CallTool.Result {
+        guard let arguments = params.arguments,
+              let setId = arguments["set_id"]?.stringValue else {
+            return CallTool.Result(
+                content: [.text("Error: Required parameter 'set_id' is missing")],
+                isError: true
+            )
+        }
+
+        do {
+            let response: ASCPreviewsResponse
+
+            if let nextUrl = arguments["next_url"]?.stringValue,
+               let parsed = parsePaginationUrl(nextUrl) {
+                response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCPreviewsResponse.self)
+            } else {
+                var queryParams: [String: String] = [:]
+
+                if let limit = arguments["limit"]?.intValue {
+                    queryParams["limit"] = String(min(max(limit, 1), 200))
+                } else {
+                    queryParams["limit"] = "25"
+                }
+
+                response = try await httpClient.get(
+                    "/v1/appPreviewSets/\(setId)/appPreviews",
+                    parameters: queryParams,
+                    as: ASCPreviewsResponse.self
+                )
+            }
+
+            let previews = response.data.map { formatPreview($0) }
+
+            var result: [String: Any] = [
+                "success": true,
+                "previews": previews,
+                "count": previews.count
+            ]
+            if let next = response.links?.next {
+                result["next_url"] = next
+            }
+
+            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+
+        } catch {
+            return CallTool.Result(
+                content: [.text("Error: Failed to list previews: \(error.localizedDescription)")],
                 isError: true
             )
         }

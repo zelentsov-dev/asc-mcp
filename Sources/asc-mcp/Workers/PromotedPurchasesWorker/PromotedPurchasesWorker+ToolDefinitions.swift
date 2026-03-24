@@ -178,4 +178,21 @@ extension PromotedPurchasesWorker {
         )
     }
 
+    func getPromotedPurchaseImageForPurchaseTool() -> Tool {
+        return Tool(
+            name: "promoted_get_image_for_purchase",
+            description: "Get the promotional image for a promoted purchase by promoted purchase ID (singular resource — one per purchase)",
+            inputSchema: .object([
+                "type": .string("object"),
+                "properties": .object([
+                    "promoted_purchase_id": .object([
+                        "type": .string("string"),
+                        "description": .string("Promoted purchase ID")
+                    ])
+                ]),
+                "required": .array([.string("promoted_purchase_id")])
+            ])
+        )
+    }
+
 }

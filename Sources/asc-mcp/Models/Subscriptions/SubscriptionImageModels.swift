@@ -2,6 +2,12 @@ import Foundation
 
 // MARK: - Subscription Image Models
 
+/// Subscription images list response
+public struct ASCSubscriptionImagesResponse: Codable, Sendable {
+    public let data: [ASCSubscriptionImage]
+    public let links: ASCPagedDocumentLinks?
+}
+
 /// Subscription image single response
 public struct ASCSubscriptionImageResponse: Codable, Sendable {
     public let data: ASCSubscriptionImage

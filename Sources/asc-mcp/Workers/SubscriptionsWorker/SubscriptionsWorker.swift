@@ -41,7 +41,9 @@ public final class SubscriptionsWorker: Sendable {
             deleteSubscriptionImageTool(),
             uploadSubscriptionReviewScreenshotTool(),
             getSubscriptionReviewScreenshotTool(),
-            deleteSubscriptionReviewScreenshotTool()
+            deleteSubscriptionReviewScreenshotTool(),
+            listSubscriptionImagesTool(),
+            getSubscriptionReviewScreenshotForSubscriptionTool()
         ]
     }
 
@@ -102,6 +104,10 @@ public final class SubscriptionsWorker: Sendable {
             return try await getSubscriptionReviewScreenshot(params)
         case "subscriptions_delete_review_screenshot":
             return try await deleteSubscriptionReviewScreenshot(params)
+        case "subscriptions_list_images":
+            return try await listSubscriptionImages(params)
+        case "subscriptions_get_review_screenshot_for_subscription":
+            return try await getSubscriptionReviewScreenshotForSubscription(params)
         default:
             throw MCPError.methodNotFound("Unknown tool: \(params.name)")
         }

@@ -614,11 +614,11 @@ struct ParameterValidationTests {
         #expect(result.isError == true)
     }
 
-    @Test("iap_create_review_screenshot without required params returns isError")
-    func iapCreateReviewScreenshotMissing() async throws {
+    @Test("iap_upload_review_screenshot without required params returns isError")
+    func iapUploadReviewScreenshotMissing() async throws {
         let client = try await TestFactory.makeHTTPClient()
         let worker = InAppPurchasesWorker(httpClient: client, uploadService: UploadService())
-        let params = CallTool.Parameters(name: "iap_create_review_screenshot", arguments: nil)
+        let params = CallTool.Parameters(name: "iap_upload_review_screenshot", arguments: nil)
         let result = try await worker.handleTool(params)
         #expect(result.isError == true)
     }
@@ -920,17 +920,17 @@ struct ParameterValidationTests {
     @Test("screenshots_list_sets without localization_id returns isError")
     func screenshotsListSetsMissing() async throws {
         let client = try await TestFactory.makeHTTPClient()
-        let worker = ScreenshotsWorker(httpClient: client)
+        let worker = ScreenshotsWorker(httpClient: client, uploadService: UploadService())
         let params = CallTool.Parameters(name: "screenshots_list_sets", arguments: nil)
         let result = try await worker.handleTool(params)
         #expect(result.isError == true)
     }
 
-    @Test("screenshots_create without required params returns isError")
-    func screenshotsCreateMissing() async throws {
+    @Test("screenshots_upload without required params returns isError")
+    func screenshotsUploadMissing() async throws {
         let client = try await TestFactory.makeHTTPClient()
-        let worker = ScreenshotsWorker(httpClient: client)
-        let params = CallTool.Parameters(name: "screenshots_create", arguments: nil)
+        let worker = ScreenshotsWorker(httpClient: client, uploadService: UploadService())
+        let params = CallTool.Parameters(name: "screenshots_upload", arguments: nil)
         let result = try await worker.handleTool(params)
         #expect(result.isError == true)
     }
@@ -938,7 +938,7 @@ struct ParameterValidationTests {
     @Test("screenshots_delete without screenshot_id returns isError")
     func screenshotsDeleteMissing() async throws {
         let client = try await TestFactory.makeHTTPClient()
-        let worker = ScreenshotsWorker(httpClient: client)
+        let worker = ScreenshotsWorker(httpClient: client, uploadService: UploadService())
         let params = CallTool.Parameters(name: "screenshots_delete", arguments: nil)
         let result = try await worker.handleTool(params)
         #expect(result.isError == true)

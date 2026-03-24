@@ -22,7 +22,8 @@ public final class PromotedPurchasesWorker: Sendable {
             deletePromotedPurchaseTool(),
             uploadPromotedPurchaseImageTool(),
             getPromotedPurchaseImageTool(),
-            deletePromotedPurchaseImageTool()
+            deletePromotedPurchaseImageTool(),
+            getPromotedPurchaseImageForPurchaseTool()
         ]
     }
 
@@ -47,6 +48,8 @@ public final class PromotedPurchasesWorker: Sendable {
             return try await getPromotedPurchaseImage(params)
         case "promoted_delete_image":
             return try await deletePromotedPurchaseImage(params)
+        case "promoted_get_image_for_purchase":
+            return try await getPromotedPurchaseImageForPurchase(params)
         default:
             throw MCPError.methodNotFound("Unknown tool: \(params.name)")
         }

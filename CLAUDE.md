@@ -49,7 +49,7 @@ Each company needs: `keyID`, `issuerID`, `privateKeyPath` (path to `.p8` file).
 
 **WorkerManager** (`Workers/MainWorker/WorkerManager.swift`) — central registry, routes tool calls by prefix.
 
-**Workers** (33 workers, 284 tools):
+**Workers** (33 workers, 292 tools):
 
 | Worker | Prefix | Tools | Domain |
 |--------|--------|-------|--------|
@@ -62,7 +62,7 @@ Each company needs: `keyID`, `issuerID`, `privateKeyPath` (path to `.p8` file).
 | AppLifecycleWorker | `app_versions_` | 14 | Versions, submit, release, phased rollout, delete |
 | ReviewsWorker | `reviews_` | 8 | Customer reviews, responses, AI summarizations |
 | BetaGroupsWorker | `beta_groups_` | 9 | TestFlight groups CRUD, testers, builds |
-| InAppPurchasesWorker | `iap_` | 22 | IAP, subscriptions, localizations, prices, screenshots, availability, images |
+| InAppPurchasesWorker | `iap_` | 24 | IAP, subscriptions, localizations, prices, screenshots, availability, images |
 | ProvisioningWorker | `provisioning_` | 17 | Bundle IDs, devices, certificates, profiles, capabilities |
 | BetaTestersWorker | `beta_testers_` | 12 | Tester management, search, invite, relationships, invitations |
 | AppInfoWorker | `app_info_` | 10 | App info, categories, localizations, EULA |
@@ -70,7 +70,7 @@ Each company needs: `keyID`, `issuerID`, `privateKeyPath` (path to `.p8` file).
 | UsersWorker | `users_` | 10 | Team members, roles, invitations, visible apps |
 | AppEventsWorker | `app_events_` | 9 | In-app events CRUD, localizations |
 | AnalyticsWorker | `analytics_` | 11 | Sales/financial reports, app summary, analytics reports/instances/segments, snapshot status |
-| SubscriptionsWorker | `subscriptions_` | 27 | Subscription CRUD, groups, localizations, prices, submit, group localizations, images, review screenshots |
+| SubscriptionsWorker | `subscriptions_` | 29 | Subscription CRUD, groups, localizations, prices, submit, group localizations, images, review screenshots |
 | OfferCodesWorker | `offer_codes_` | 10 | Subscription offer codes, one-time codes, custom codes |
 | WinBackOffersWorker | `winback_` | 5 | Win-back offers for subscriptions |
 | IntroductoryOffersWorker | `intro_offers_` | 4 | Introductory offers (free trial, pay-as-you-go, pay-up-front) |
@@ -79,10 +79,10 @@ Each company needs: `keyID`, `issuerID`, `privateKeyPath` (path to `.p8` file).
 | BetaAppWorker | `beta_app_` | 10 | Beta app localizations, review submissions, review details |
 | PreReleaseVersionsWorker | `pre_release_` | 3 | Pre-release versions (list, get, builds) |
 | BetaLicenseAgreementsWorker | `beta_license_` | 3 | Beta license agreements (list, get, update) |
-| ScreenshotsWorker | `screenshots_` | 12 | Screenshots, previews, sets, reorder |
+| ScreenshotsWorker | `screenshots_` | 15 | Screenshots, previews, sets, reorder, full upload |
 | CustomProductPagesWorker | `custom_pages_` | 10 | Custom product pages, versions, localizations |
 | ProductPageOptimizationWorker | `ppo_` | 9 | A/B test experiments, treatments |
-| PromotedPurchasesWorker | `promoted_` | 8 | Promoted in-app purchases, images upload |
+| PromotedPurchasesWorker | `promoted_` | 9 | Promoted in-app purchases, images upload |
 | ReviewAttachmentsWorker | `review_attachments_` | 4 | App Store review attachments (upload, get, delete, list) |
 | MetricsWorker | `metrics_` | 4 | Performance/power metrics, diagnostics |
 

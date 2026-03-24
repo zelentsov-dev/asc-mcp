@@ -92,10 +92,10 @@ extension ScreenshotsWorker {
         )
     }
 
-    func createScreenshotTool() -> Tool {
+    func uploadScreenshotTool() -> Tool {
         return Tool(
-            name: "screenshots_create",
-            description: "Reserve a screenshot upload in a screenshot set. Returns upload operations with URLs for uploading the image file.",
+            name: "screenshots_upload",
+            description: "Upload a screenshot to a screenshot set (full cycle: reserve, upload file, commit). Provide the local file path and the set ID.",
             inputSchema: .object([
                 "type": .string("object"),
                 "properties": .object([
@@ -103,16 +103,29 @@ extension ScreenshotsWorker {
                         "type": .string("string"),
                         "description": .string("Screenshot set ID")
                     ]),
-                    "file_name": .object([
+                    "file_path": .object([
                         "type": .string("string"),
-                        "description": .string("Screenshot file name (e.g. screenshot_1.png)")
-                    ]),
-                    "file_size": .object([
-                        "type": .string("integer"),
-                        "description": .string("File size in bytes")
+                        "description": .string("Absolute path to the screenshot file on disk (e.g. /path/to/screenshot.png)")
                     ])
                 ]),
-                "required": .array([.string("set_id"), .string("file_name"), .string("file_size")])
+                "required": .array([.string("set_id"), .string("file_path")])
+            ])
+        )
+    }
+
+    func getScreenshotTool() -> Tool {
+        return Tool(
+            name: "screenshots_get",
+            description: "Get details of a specific screenshot. Returns fileName, fileSize, imageAsset, assetDeliveryState, etc.",
+            inputSchema: .object([
+                "type": .string("object"),
+                "properties": .object([
+                    "screenshot_id": .object([
+                        "type": .string("string"),
+                        "description": .string("Screenshot ID")
+                    ])
+                ]),
+                "required": .array([.string("screenshot_id")])
             ])
         )
     }
@@ -218,10 +231,10 @@ extension ScreenshotsWorker {
         )
     }
 
-    func createPreviewTool() -> Tool {
+    func uploadPreviewTool() -> Tool {
         return Tool(
-            name: "screenshots_create_preview",
-            description: "Reserve an app preview upload in a preview set. Returns upload operations with URLs for uploading the video file.",
+            name: "screenshots_upload_preview",
+            description: "Upload an app preview to a preview set (full cycle: reserve, upload file, commit). Provide the local file path and the set ID.",
             inputSchema: .object([
                 "type": .string("object"),
                 "properties": .object([
@@ -229,20 +242,58 @@ extension ScreenshotsWorker {
                         "type": .string("string"),
                         "description": .string("Preview set ID")
                     ]),
-                    "file_name": .object([
+                    "file_path": .object([
                         "type": .string("string"),
-                        "description": .string("Preview file name (e.g. preview.mp4)")
-                    ]),
-                    "file_size": .object([
-                        "type": .string("integer"),
-                        "description": .string("File size in bytes")
+                        "description": .string("Absolute path to the preview file on disk (e.g. /path/to/preview.mp4)")
                     ]),
                     "mime_type": .object([
                         "type": .string("string"),
-                        "description": .string("MIME type (e.g. video/mp4, video/quicktime)")
+                        "description": .string("MIME type (default: video/mp4). Options: video/mp4, video/quicktime")
                     ])
                 ]),
-                "required": .array([.string("set_id"), .string("file_name"), .string("file_size"), .string("mime_type")])
+                "required": .array([.string("set_id"), .string("file_path")])
+            ])
+        )
+    }
+
+    func getPreviewTool() -> Tool {
+        return Tool(
+            name: "screenshots_get_preview",
+            description: "Get details of a specific app preview. Returns fileName, fileSize, mimeType, videoUrl, previewImage, assetDeliveryState, etc.",
+            inputSchema: .object([
+                "type": .string("object"),
+                "properties": .object([
+                    "preview_id": .object([
+                        "type": .string("string"),
+                        "description": .string("Preview ID")
+                    ])
+                ]),
+                "required": .array([.string("preview_id")])
+            ])
+        )
+    }
+
+    func listPreviewsTool() -> Tool {
+        return Tool(
+            name: "screenshots_list_previews",
+            description: "List app previews in a preview set. Returns file info, upload status, and video details.",
+            inputSchema: .object([
+                "type": .string("object"),
+                "properties": .object([
+                    "set_id": .object([
+                        "type": .string("string"),
+                        "description": .string("Preview set ID")
+                    ]),
+                    "limit": .object([
+                        "type": .string("integer"),
+                        "description": .string("Max results (default: 25, max: 200)")
+                    ]),
+                    "next_url": .object([
+                        "type": .string("string"),
+                        "description": .string("Pagination URL from previous response to fetch next page")
+                    ])
+                ]),
+                "required": .array([.string("set_id")])
             ])
         )
     }

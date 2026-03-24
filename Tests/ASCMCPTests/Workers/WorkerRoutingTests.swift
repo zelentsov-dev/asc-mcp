@@ -311,7 +311,7 @@ struct WorkerRoutingTests {
     @Test("ScreenshotsWorker throws MCPError.methodNotFound for unknown tool")
     func screenshotsWorkerUnknownTool() async throws {
         let client = try await TestFactory.makeHTTPClient()
-        let worker = ScreenshotsWorker(httpClient: client)
+        let worker = ScreenshotsWorker(httpClient: client, uploadService: UploadService())
         let params = CallTool.Parameters(name: "screenshots_nonexistent", arguments: nil)
         await #expect(throws: MCPError.self) {
             _ = try await worker.handleTool(params)

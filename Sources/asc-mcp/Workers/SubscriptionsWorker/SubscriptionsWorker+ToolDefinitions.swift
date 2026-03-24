@@ -598,4 +598,48 @@ extension SubscriptionsWorker {
             ])
         )
     }
+
+    // MARK: - List Tools
+
+    func listSubscriptionImagesTool() -> Tool {
+        return Tool(
+            name: "subscriptions_list_images",
+            description: "List promotional images for a subscription",
+            inputSchema: .object([
+                "type": .string("object"),
+                "properties": .object([
+                    "subscription_id": .object([
+                        "type": .string("string"),
+                        "description": .string("Subscription ID")
+                    ]),
+                    "limit": .object([
+                        "type": .string("integer"),
+                        "description": .string("Max results (default: 25, max: 200)")
+                    ]),
+                    "next_url": .object([
+                        "type": .string("string"),
+                        "description": .string("Pagination URL from previous response to fetch next page")
+                    ])
+                ]),
+                "required": .array([.string("subscription_id")])
+            ])
+        )
+    }
+
+    func getSubscriptionReviewScreenshotForSubscriptionTool() -> Tool {
+        return Tool(
+            name: "subscriptions_get_review_screenshot_for_subscription",
+            description: "Get the review screenshot for a subscription by subscription ID (singular resource — one per subscription)",
+            inputSchema: .object([
+                "type": .string("object"),
+                "properties": .object([
+                    "subscription_id": .object([
+                        "type": .string("string"),
+                        "description": .string("Subscription ID")
+                    ])
+                ]),
+                "required": .array([.string("subscription_id")])
+            ])
+        )
+    }
 }
