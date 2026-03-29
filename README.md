@@ -27,6 +27,10 @@
 
 ---
 
+## Hosted deployment
+
+A hosted deployment is available on [Fronteir AI](https://fronteir.ai/mcp/zelentsov-dev-asc-mcp).
+
 ## Overview
 
 **asc-mcp** is a Swift-based MCP server that bridges [Claude](https://claude.ai) (or any MCP-compatible host) with the [App Store Connect API](https://developer.apple.com/documentation/appstoreconnectapi). It exposes **293 tools** across 33 workers, enabling you to automate your entire iOS/macOS release workflow through natural language.
