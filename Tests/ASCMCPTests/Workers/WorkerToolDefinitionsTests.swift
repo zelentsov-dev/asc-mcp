@@ -309,12 +309,12 @@ struct WorkerToolDefinitionsTests {
 
     // MARK: - SubscriptionsWorker (27 tools)
 
-    @Test("SubscriptionsWorker returns 29 tools with correct names")
+    @Test("SubscriptionsWorker returns 31 tools with correct names")
     func subscriptionsWorkerTools() async throws {
         let client = try await TestFactory.makeHTTPClient()
         let worker = SubscriptionsWorker(httpClient: client, uploadService: UploadService())
         let tools = await worker.getTools()
-        #expect(tools.count == 29)
+        #expect(tools.count == 31)
         let names = Set(tools.map(\.name))
         #expect(names.contains("subscriptions_list"))
         #expect(names.contains("subscriptions_get"))
@@ -337,6 +337,8 @@ struct WorkerToolDefinitionsTests {
         #expect(names.contains("subscriptions_update_group_localization"))
         #expect(names.contains("subscriptions_delete_group_localization"))
         #expect(names.contains("subscriptions_delete_price"))
+        #expect(names.contains("subscriptions_set_price"))
+        #expect(names.contains("subscriptions_set_availability"))
         #expect(names.contains("subscriptions_upload_image"))
         #expect(names.contains("subscriptions_get_image"))
         #expect(names.contains("subscriptions_delete_image"))
@@ -381,17 +383,18 @@ struct WorkerToolDefinitionsTests {
         #expect(names.contains("winback_list_prices"))
     }
 
-    // MARK: - IntroductoryOffersWorker (4 tools)
+    // MARK: - IntroductoryOffersWorker (5 tools)
 
-    @Test("IntroductoryOffersWorker returns 4 tools with correct names")
+    @Test("IntroductoryOffersWorker returns 5 tools with correct names")
     func introductoryOffersWorkerTools() async throws {
         let client = try await TestFactory.makeHTTPClient()
         let worker = IntroductoryOffersWorker(httpClient: client)
         let tools = await worker.getTools()
-        #expect(tools.count == 4)
+        #expect(tools.count == 5)
         let names = Set(tools.map(\.name))
         #expect(names.contains("intro_offers_list"))
         #expect(names.contains("intro_offers_create"))
+        #expect(names.contains("intro_offers_set_all_territories"))
         #expect(names.contains("intro_offers_update"))
         #expect(names.contains("intro_offers_delete"))
     }
@@ -476,14 +479,14 @@ struct WorkerToolDefinitionsTests {
         #expect(names.contains("beta_license_update"))
     }
 
-    // MARK: - ScreenshotsWorker (15 tools)
+    // MARK: - ScreenshotsWorker (17 tools)
 
-    @Test("ScreenshotsWorker returns 15 tools with correct names")
+    @Test("ScreenshotsWorker returns 17 tools with correct names")
     func screenshotsWorkerTools() async throws {
         let client = try await TestFactory.makeHTTPClient()
         let worker = ScreenshotsWorker(httpClient: client, uploadService: UploadService())
         let tools = await worker.getTools()
-        #expect(tools.count == 16)
+        #expect(tools.count == 17)
         let names = Set(tools.map(\.name))
         #expect(names.contains("screenshots_list_sets"))
         #expect(names.contains("screenshots_create_set"))
@@ -501,6 +504,7 @@ struct WorkerToolDefinitionsTests {
         #expect(names.contains("screenshots_list_previews"))
         #expect(names.contains("screenshots_delete_preview"))
         #expect(names.contains("screenshots_upload_batch"))
+        #expect(names.contains("screenshots_update_preview"))
     }
 
     // MARK: - CustomProductPagesWorker (10 tools)

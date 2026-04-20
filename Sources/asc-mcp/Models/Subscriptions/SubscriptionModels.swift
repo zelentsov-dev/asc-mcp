@@ -58,6 +58,54 @@ public struct SubscriptionLocalizationAttributes: Codable, Sendable {
     public let description: String?
 }
 
+// MARK: - Set All Subscription Prices (PATCH /v1/subscriptions/{id})
+
+/// Request to set prices for all territories via PATCH subscription.
+/// Uses GET /v1/subscriptionPricePoints/{id}/equalizations to get all territory price points,
+/// then PATCHes the subscription with all of them in a single request.
+public struct SetAllSubscriptionPricesRequest: Encodable, Sendable {
+    public let data: UpdateData
+    public let included: [InlinePrice]
+
+    public struct UpdateData: Encodable, Sendable {
+        public let type: String = "subscriptions"
+        public let id: String
+        public let relationships: Relationships
+    }
+
+    public struct Relationships: Encodable, Sendable {
+        public let prices: PricesData
+    }
+
+    public struct PricesData: Encodable, Sendable {
+        public let data: [PriceRef]
+    }
+
+    public struct PriceRef: Encodable, Sendable {
+        public let id: String
+        public let type: String = "subscriptionPrices"
+    }
+
+    public struct InlinePrice: Encodable, Sendable {
+        public let id: String
+        public let type: String = "subscriptionPrices"
+        public let attributes: PriceAttrs
+        public let relationships: InlinePriceRels
+    }
+
+    public struct PriceAttrs: Encodable, Sendable {
+        public let preserveCurrentPrice: Bool
+    }
+
+    public struct InlinePriceRels: Encodable, Sendable {
+        public let subscriptionPricePoint: PointRef
+    }
+
+    public struct PointRef: Encodable, Sendable {
+        public let data: ASCResourceIdentifier
+    }
+}
+
 // MARK: - Subscription Price Models
 
 /// Subscription prices list response
@@ -65,6 +113,34 @@ public struct ASCSubscriptionPricesResponse: Codable, Sendable {
     public let data: [ASCSubscriptionPrice]
     public let included: [ASCSubscriptionPricePoint]?
     public let links: ASCPagedDocumentLinks?
+}
+
+/// Single subscription price response
+public struct ASCSubscriptionPriceResponse: Codable, Sendable {
+    public let data: ASCSubscriptionPrice
+}
+
+/// Create subscription price request
+public struct CreateSubscriptionPriceRequest: Codable, Sendable {
+    public let data: CreateData
+
+    public struct CreateData: Codable, Sendable {
+        public let type: String = "subscriptionPrices"
+        public let relationships: Relationships
+    }
+
+    public struct Relationships: Codable, Sendable {
+        public let subscription: SubscriptionRelationship
+        public let subscriptionPricePoint: SubscriptionPricePointRelationship
+    }
+
+    public struct SubscriptionRelationship: Codable, Sendable {
+        public let data: ASCResourceIdentifier
+    }
+
+    public struct SubscriptionPricePointRelationship: Codable, Sendable {
+        public let data: ASCResourceIdentifier
+    }
 }
 
 /// Subscription price resource
@@ -254,5 +330,56 @@ public struct CreateSubscriptionSubmissionRequest: Codable, Sendable {
 
     public struct SubscriptionRelationship: Codable, Sendable {
         public let data: ASCResourceIdentifier
+    }
+}
+
+// MARK: - Subscription Availability Models
+
+/// Create subscription availability request (enables subscription in all territories)
+public struct CreateSubscriptionAvailabilityRequest: Codable, Sendable {
+    public let data: CreateData
+    public let included: [TerritoryResource]?
+
+    public struct CreateData: Codable, Sendable {
+        public let type: String = "subscriptionAvailabilities"
+        public let attributes: Attributes
+        public let relationships: Relationships
+    }
+
+    public struct Attributes: Codable, Sendable {
+        public let availableInNewTerritories: Bool
+    }
+
+    public struct Relationships: Codable, Sendable {
+        public let subscription: SubscriptionRelationship2
+        public let availableTerritories: TerritoriesRelationship
+    }
+
+    public struct SubscriptionRelationship2: Codable, Sendable {
+        public let data: ASCResourceIdentifier
+    }
+
+    public struct TerritoriesRelationship: Codable, Sendable {
+        public let data: [ASCResourceIdentifier]
+    }
+
+    public struct TerritoryResource: Codable, Sendable {
+        public let type: String
+        public let id: String
+    }
+}
+
+/// Subscription availability response
+public struct ASCSubscriptionAvailabilityResponse: Codable, Sendable {
+    public let data: ASCSubscriptionAvailability
+}
+
+public struct ASCSubscriptionAvailability: Codable, Sendable {
+    public let type: String
+    public let id: String
+    public let attributes: AvailabilityAttributes?
+
+    public struct AvailabilityAttributes: Codable, Sendable {
+        public let availableInNewTerritories: Bool?
     }
 }

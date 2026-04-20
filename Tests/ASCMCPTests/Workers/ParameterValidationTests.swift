@@ -953,6 +953,15 @@ struct ParameterValidationTests {
         #expect(result.isError == true)
     }
 
+    @Test("screenshots_update_preview without required params returns isError")
+    func screenshotsUpdatePreviewMissing() async throws {
+        let client = try await TestFactory.makeHTTPClient()
+        let worker = ScreenshotsWorker(httpClient: client, uploadService: UploadService())
+        let params = CallTool.Parameters(name: "screenshots_update_preview", arguments: nil)
+        let result = try await worker.handleTool(params)
+        #expect(result.isError == true)
+    }
+
     // MARK: - CustomProductPagesWorker
 
     @Test("custom_pages_list without app_id returns isError")

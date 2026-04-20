@@ -29,7 +29,8 @@ public final class ScreenshotsWorker: Sendable {
             getPreviewTool(),
             listPreviewsTool(),
             deletePreviewTool(),
-            uploadScreenshotBatchTool()
+            uploadScreenshotBatchTool(),
+            updatePreviewTool()
         ]
     }
 
@@ -68,6 +69,8 @@ public final class ScreenshotsWorker: Sendable {
             return try await deletePreview(params)
         case "screenshots_upload_batch":
             return try await uploadScreenshotBatch(params)
+        case "screenshots_update_preview":
+            return try await updatePreview(params)
         default:
             throw MCPError.methodNotFound("Unknown tool: \(params.name)")
         }

@@ -15,6 +15,7 @@ public final class IntroductoryOffersWorker: Sendable {
         return [
             listIntroductoryOffersTool(),
             createIntroductoryOfferTool(),
+            createIntroductoryOffersAllTerritoresTool(),
             updateIntroductoryOfferTool(),
             deleteIntroductoryOfferTool()
         ]
@@ -27,6 +28,8 @@ public final class IntroductoryOffersWorker: Sendable {
             return try await listIntroductoryOffers(params)
         case "intro_offers_create":
             return try await createIntroductoryOffer(params)
+        case "intro_offers_set_all_territories":
+            return try await createIntroductoryOffersAllTerritories(params)
         case "intro_offers_update":
             return try await updateIntroductoryOffer(params)
         case "intro_offers_delete":

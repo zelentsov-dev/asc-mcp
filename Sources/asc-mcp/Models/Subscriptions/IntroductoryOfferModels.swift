@@ -68,6 +68,55 @@ public struct CreateIntroductoryOfferRequest: Codable, Sendable {
     }
 }
 
+// MARK: - Set All Territories Introductory Offer (PATCH /v1/subscriptions/{id})
+
+/// Request to set FREE_TRIAL intro offer for all territories in one PATCH.
+/// Uses relationships.introductoryOffers + included array with ${N} local IDs.
+public struct SetAllIntroductoryOffersRequest: Encodable, Sendable {
+    public let data: UpdateData
+    public let included: [InlineOffer]
+
+    public struct UpdateData: Encodable, Sendable {
+        public let type: String = "subscriptions"
+        public let id: String
+        public let relationships: Relationships
+    }
+
+    public struct Relationships: Encodable, Sendable {
+        public let introductoryOffers: OffersData
+    }
+
+    public struct OffersData: Encodable, Sendable {
+        public let data: [OfferRef]
+    }
+
+    public struct OfferRef: Encodable, Sendable {
+        public let id: String
+        public let type: String = "subscriptionIntroductoryOffers"
+    }
+
+    public struct InlineOffer: Encodable, Sendable {
+        public let id: String
+        public let type: String = "subscriptionIntroductoryOffers"
+        public let attributes: OfferAttrs
+        public let relationships: InlineOfferRels
+    }
+
+    public struct OfferAttrs: Encodable, Sendable {
+        public let duration: String
+        public let offerMode: String
+        public let numberOfPeriods: Int
+    }
+
+    public struct InlineOfferRels: Encodable, Sendable {
+        public let territory: TerritoryRef
+    }
+
+    public struct TerritoryRef: Encodable, Sendable {
+        public let data: ASCResourceIdentifier
+    }
+}
+
 /// Update introductory offer request
 public struct UpdateIntroductoryOfferRequest: Codable, Sendable {
     public let data: UpdateData

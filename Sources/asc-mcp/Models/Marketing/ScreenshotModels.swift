@@ -222,6 +222,19 @@ public struct CommitPreviewRequest: Codable, Sendable {
     }
 }
 
+/// Update preview timecode request
+public struct UpdatePreviewRequest: Codable, Sendable {
+    public let data: UpdateData
+    public struct UpdateData: Codable, Sendable {
+        public let type: String = "appPreviews"
+        public let id: String
+        public let attributes: Attributes
+    }
+    public struct Attributes: Codable, Sendable {
+        public let previewFrameTimeCode: String
+    }
+}
+
 /// Create preview reservation request
 public struct CreatePreviewRequest: Codable, Sendable {
     public let data: CreateData

@@ -218,6 +218,90 @@ extension IntroductoryOffersWorker {
         }
     }
 
+    /// Sets a FREE_TRIAL introductory offer for all territories in one PATCH request.
+    /// Uses PATCH /v1/subscriptions/{id} with introductoryOffers relationship + included array.
+    /// - Returns: JSON with subscription state and territories count
+    func createIntroductoryOffersAllTerritories(_ params: CallTool.Parameters) async throws -> CallTool.Result {
+        guard let arguments = params.arguments,
+              let subscriptionId = arguments["subscription_id"]?.stringValue,
+              let duration = arguments["duration"]?.stringValue else {
+            return CallTool.Result(
+                content: [.text("Error: Required parameters: subscription_id, duration")],
+                isError: true
+            )
+        }
+
+        let offerMode = arguments["offer_mode"]?.stringValue ?? "FREE_TRIAL"
+        let numberOfPeriods = arguments["number_of_periods"]?.intValue ?? 1
+
+        do {
+            // Step 1: Get all territories
+            let territoriesResponse: ASCTerritoriesResponse = try await httpClient.get(
+                "/v1/territories",
+                parameters: ["limit": "200"],
+                as: ASCTerritoriesResponse.self
+            )
+            let territories = territoriesResponse.data
+
+            // Step 2: Build PATCH body with ${N} local IDs
+            let refs = territories.enumerated().map { (i, _) in
+                SetAllIntroductoryOffersRequest.OfferRef(id: "${\(i)}")
+            }
+            let included = territories.enumerated().map { (i, territory) in
+                SetAllIntroductoryOffersRequest.InlineOffer(
+                    id: "${\(i)}",
+                    attributes: SetAllIntroductoryOffersRequest.OfferAttrs(
+                        duration: duration,
+                        offerMode: offerMode,
+                        numberOfPeriods: numberOfPeriods
+                    ),
+                    relationships: SetAllIntroductoryOffersRequest.InlineOfferRels(
+                        territory: SetAllIntroductoryOffersRequest.TerritoryRef(
+                            data: ASCResourceIdentifier(type: "territories", id: territory.id)
+                        )
+                    )
+                )
+            }
+
+            let request = SetAllIntroductoryOffersRequest(
+                data: SetAllIntroductoryOffersRequest.UpdateData(
+                    id: subscriptionId,
+                    relationships: SetAllIntroductoryOffersRequest.Relationships(
+                        introductoryOffers: SetAllIntroductoryOffersRequest.OffersData(data: refs)
+                    )
+                ),
+                included: included
+            )
+
+            // Step 3: Single PATCH sets all territories at once
+            let response: ASCSubscriptionResponse = try await httpClient.patch(
+                "/v1/subscriptions/\(subscriptionId)",
+                body: request,
+                as: ASCSubscriptionResponse.self
+            )
+
+            let result: [String: Any] = [
+                "success": true,
+                "subscription": [
+                    "id": response.data.id,
+                    "state": response.data.attributes.state as Any,
+                    "name": response.data.attributes.name as Any
+                ],
+                "offer_mode": offerMode,
+                "duration": duration,
+                "territories_set": territories.count
+            ]
+
+            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+
+        } catch {
+            return CallTool.Result(
+                content: [.text("Error: Failed to set introductory offers: \(error.localizedDescription)")],
+                isError: true
+            )
+        }
+    }
+
     // MARK: - Formatting
 
     private func formatIntroductoryOffer(_ offer: ASCIntroductoryOffer) -> [String: Any] {

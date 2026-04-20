@@ -387,7 +387,7 @@ extension AppsWorker {
                 )
             }
 
-            // Step 2: Fetch localizations
+            // Step 2: Fetch version localizations (description, keywords, whatsNew)
             var localizationParams: [String: String] = [
                 "fields[appStoreVersionLocalizations]": "description,locale,keywords,marketingUrl,promotionalText,supportUrl,whatsNew",
                 "limit": "200"
@@ -401,6 +401,39 @@ extension AppsWorker {
                 parameters: localizationParams,
                 as: ASCAppStoreVersionLocalizationsResponse.self
             )
+
+            // Step 2b: Fetch appInfo localizations (name, subtitle) — these live on appInfo, not version
+            let appInfosResponse: ASCAppInfosResponse = try await httpClient.get(
+                "/v1/apps/\(appId)/appInfos",
+                parameters: ["fields[appInfos]": "appStoreState"],
+                as: ASCAppInfosResponse.self
+            )
+
+            // Match appInfo by state: prefer same state as resolved version, fallback to first
+            let matchingAppInfo = appInfosResponse.data.first(where: {
+                $0.attributes?.appStoreState == resolvedVersion.state
+            }) ?? appInfosResponse.data.first
+
+            var appInfoLocalizationsByLocale: [String: ASCAppInfoLocalization] = [:]
+            if let appInfoId = matchingAppInfo?.id {
+                var infoLocParams: [String: String] = [
+                    "fields[appInfoLocalizations]": "locale,name,subtitle",
+                    "limit": "200"
+                ]
+                if let locale = locale {
+                    infoLocParams["filter[locale]"] = locale
+                }
+                let infoLocsResponse: ASCAppInfoLocalizationsResponse = try await httpClient.get(
+                    "/v1/appInfos/\(appInfoId)/appInfoLocalizations",
+                    parameters: infoLocParams,
+                    as: ASCAppInfoLocalizationsResponse.self
+                )
+                for infoLoc in infoLocsResponse.data {
+                    if let loc = infoLoc.attributes?.locale {
+                        appInfoLocalizationsByLocale[loc] = infoLoc
+                    }
+                }
+            }
 
             // Check if locale filter returned empty results
             if let locale = locale, localizationsResponse.data.isEmpty {
@@ -419,18 +452,90 @@ extension AppsWorker {
                 "appStoreState": resolvedVersion.state
             ]
 
-            // Helper to format a single localization
+            // Step 2c: Fetch IAP and subscription display names by locale (indexed by Apple for search)
+            var iapNamesByLocale: [String: [[String: String]]] = [:]
+
+            // Fetch subscriptions via subscription groups
+            if let subGroupsData = try? await httpClient.get(
+                "/v1/apps/\(appId)/subscriptionGroups",
+                parameters: ["limit": "10"]
+            ) {
+                if let subGroupsResponse = try? JSONDecoder().decode(ASCSubscriptionGroupsResponse.self, from: subGroupsData) {
+                    for group in subGroupsResponse.data {
+                        if let subsData = try? await httpClient.get(
+                            "/v1/subscriptionGroups/\(group.id)/subscriptions",
+                            parameters: ["limit": "20"]
+                        ) {
+                            if let subsResponse = try? JSONDecoder().decode(ASCSubscriptionsResponse.self, from: subsData) {
+                                for sub in subsResponse.data {
+                                    if let locsData = try? await httpClient.get(
+                                        "/v1/subscriptions/\(sub.id)/subscriptionLocalizations",
+                                        parameters: ["fields[subscriptionLocalizations]": "locale,name", "limit": "200"]
+                                    ) {
+                                        if let locsResponse = try? JSONDecoder().decode(ASCSubscriptionLocalizationsResponse.self, from: locsData) {
+                                            for subLoc in locsResponse.data {
+                                                if let localeStr = subLoc.attributes.locale, let name = subLoc.attributes.name {
+                                                    var arr = iapNamesByLocale[localeStr, default: []]
+                                                    arr.append(["type": "subscription", "productId": sub.attributes.productId ?? sub.id, "name": name])
+                                                    iapNamesByLocale[localeStr] = arr
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Fetch non-subscription IAPs
+            if let iapsData = try? await httpClient.get(
+                "/v1/apps/\(appId)/inAppPurchasesV2",
+                parameters: ["limit": "20"]
+            ) {
+                if let iapsResponse = try? JSONDecoder().decode(ASCInAppPurchasesV2Response.self, from: iapsData) {
+                    for iap in iapsResponse.data {
+                        if let locsData = try? await httpClient.get(
+                            "/v1/inAppPurchases/\(iap.id)/inAppPurchaseLocalizations",
+                            parameters: ["fields[inAppPurchaseLocalizations]": "locale,name", "limit": "200"]
+                        ) {
+                            if let locsResponse = try? JSONDecoder().decode(ASCInAppPurchaseLocalizationsResponse.self, from: locsData) {
+                                for iapLoc in locsResponse.data {
+                                    if let localeStr = iapLoc.attributes.locale, let name = iapLoc.attributes.name {
+                                        var arr = iapNamesByLocale[localeStr, default: []]
+                                        arr.append(["type": "iap", "productId": iap.attributes.productId ?? iap.id, "name": name])
+                                        iapNamesByLocale[localeStr] = arr
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Helper to format a single localization, merging version + appInfo data
             func formatLocalization(_ loc: ASCAppStoreVersionLocalization) -> [String: Any] {
                 var data: [String: Any] = [
                     "id": loc.id,
                     "locale": loc.locale
                 ]
+                // From appStoreVersionLocalizations
                 if let v = loc.attributes?.description { data["description"] = v }
                 if let v = loc.attributes?.whatsNew { data["whatsNew"] = v }
                 if let v = loc.attributes?.keywords { data["keywords"] = v }
                 if let v = loc.attributes?.promotionalText { data["promotionalText"] = v }
                 if let v = loc.attributes?.supportUrl { data["supportUrl"] = v }
                 if let v = loc.attributes?.marketingUrl { data["marketingUrl"] = v }
+                // From appInfoLocalizations (name, subtitle)
+                if let infoLoc = appInfoLocalizationsByLocale[loc.locale] {
+                    if let name = infoLoc.attributes?.name { data["name"] = name }
+                    if let subtitle = infoLoc.attributes?.subtitle { data["subtitle"] = subtitle }
+                }
+                // From IAP/subscription localizations (indexed by Apple for search)
+                if let iapNames = iapNamesByLocale[loc.locale], !iapNames.isEmpty {
+                    data["iapNames"] = iapNames
+                }
                 return data
             }
 
@@ -584,9 +689,10 @@ extension AppsWorker {
             )
             
             let version = versionResponse.data
-            guard version.attributes?.appStoreState == "PREPARE_FOR_SUBMISSION" else {
+            let editableStates = ["PREPARE_FOR_SUBMISSION", "DEVELOPER_REJECTED"]
+            guard let state = version.attributes?.appStoreState, editableStates.contains(state) else {
                 return CallTool.Result(
-                    content: [.text("Error: Version must be in PREPARE_FOR_SUBMISSION state for editing.\nCurrent state: \(version.attributes?.appStoreState ?? "Unknown")")],
+                    content: [.text("Error: Version must be in PREPARE_FOR_SUBMISSION or DEVELOPER_REJECTED state for editing.\nCurrent state: \(version.attributes?.appStoreState ?? "Unknown")")],
                     isError: true
                 )
             }
@@ -615,58 +721,101 @@ extension AppsWorker {
                 marketingUrl: arguments["marketing_url"]?.stringValue
             )
             
-            // Check that at least one field is provided
-            let hasUpdates = attributes.description != nil ||
+            // Check what needs updating
+            let nameParam = arguments["name"]?.stringValue
+            let subtitleParam = arguments["subtitle"]?.stringValue
+
+            let hasVersionUpdates = attributes.description != nil ||
                            attributes.whatsNew != nil ||
                            attributes.keywords != nil ||
                            attributes.promotionalText != nil ||
                            attributes.supportUrl != nil ||
                            attributes.marketingUrl != nil
-            
-            guard hasUpdates else {
+            let hasAppInfoUpdates = nameParam != nil || subtitleParam != nil
+
+            guard hasVersionUpdates || hasAppInfoUpdates else {
                 return CallTool.Result(
                     content: [.text("Warning: No fields specified for update")],
                     isError: true
                 )
             }
-            
-            // 4. Send PATCH request
-            let updateRequest = ASCAppStoreVersionLocalizationUpdateRequest(
-                id: localization.id,
-                attributes: attributes
-            )
-            
-            let _: ASCAppStoreVersionLocalizationUpdateResponse = try await httpClient.patch(
-                "/v1/appStoreVersionLocalizations/\(localization.id)",
-                body: updateRequest,
-                as: ASCAppStoreVersionLocalizationUpdateResponse.self
-            )
-            
-            // 5. Format result
+
             var result = "**Metadata updated successfully**\n\n"
             result += "Version: \(version.version)\n"
             result += "Locale: \(locale)\n\n"
             result += "**Updated fields:**\n"
 
-            if attributes.description != nil {
-                result += "- Description\n"
+            // 4a. Update version-level fields (description, keywords, whatsNew, etc.)
+            if hasVersionUpdates {
+                let updateRequest = ASCAppStoreVersionLocalizationUpdateRequest(
+                    id: localization.id,
+                    attributes: attributes
+                )
+
+                let _: ASCAppStoreVersionLocalizationUpdateResponse = try await httpClient.patch(
+                    "/v1/appStoreVersionLocalizations/\(localization.id)",
+                    body: updateRequest,
+                    as: ASCAppStoreVersionLocalizationUpdateResponse.self
+                )
+
+                if attributes.description != nil { result += "- Description\n" }
+                if attributes.whatsNew != nil { result += "- What's New\n" }
+                if attributes.keywords != nil { result += "- Keywords\n" }
+                if attributes.promotionalText != nil { result += "- Promotional text\n" }
+                if attributes.supportUrl != nil { result += "- Support URL\n" }
+                if attributes.marketingUrl != nil { result += "- Marketing URL\n" }
             }
-            if attributes.whatsNew != nil {
-                result += "- What's New\n"
+
+            // 4b. Update app-info-level fields (name, subtitle) if provided
+            if hasAppInfoUpdates {
+                guard let appId = appIdValue.stringValue else {
+                    return CallTool.Result(content: [.text("Error: app_id required for name/subtitle update")], isError: true)
+                }
+                // Find matching appInfo by version state
+                let appInfosResponse: ASCAppInfosResponse = try await httpClient.get(
+                    "/v1/apps/\(appId)/appInfos",
+                    parameters: ["fields[appInfos]": "appStoreState"],
+                    as: ASCAppInfosResponse.self
+                )
+                let matchingAppInfo = appInfosResponse.data.first(where: {
+                    $0.attributes?.appStoreState == state
+                }) ?? appInfosResponse.data.first
+
+                guard let appInfoId = matchingAppInfo?.id else {
+                    return CallTool.Result(content: [.text("Error: Could not find appInfo for state \(state)")], isError: true)
+                }
+
+                // Find appInfoLocalization for this locale
+                let infoLocsResponse: ASCAppInfoLocalizationsResponse = try await httpClient.get(
+                    "/v1/appInfos/\(appInfoId)/appInfoLocalizations",
+                    parameters: ["filter[locale]": locale],
+                    as: ASCAppInfoLocalizationsResponse.self
+                )
+
+                guard let infoLoc = infoLocsResponse.data.first else {
+                    return CallTool.Result(content: [.text("Error: appInfoLocalization not found for locale \(locale)")], isError: true)
+                }
+
+                // Build PATCH body for appInfoLocalization
+                var infoAttrs: [String: Any] = [:]
+                if let name = nameParam { infoAttrs["name"] = name }
+                if let subtitle = subtitleParam { infoAttrs["subtitle"] = subtitle }
+
+                let patchBody: [String: Any] = [
+                    "data": [
+                        "type": "appInfoLocalizations",
+                        "id": infoLoc.id,
+                        "attributes": infoAttrs
+                    ] as [String: Any]
+                ]
+
+                let bodyData = try JSONSerialization.data(withJSONObject: patchBody)
+                _ = try await httpClient.patch("/v1/appInfoLocalizations/\(infoLoc.id)", body: bodyData)
+
+                if nameParam != nil { result += "- Name (title)\n" }
+                if subtitleParam != nil { result += "- Subtitle\n" }
             }
-            if attributes.keywords != nil {
-                result += "- Keywords\n"
-            }
-            if attributes.promotionalText != nil {
-                result += "- Promotional text\n"
-            }
-            if attributes.supportUrl != nil {
-                result += "- Support URL\n"
-            }
-            if attributes.marketingUrl != nil {
-                result += "- Marketing URL\n"
-            }
-            
+
             return CallTool.Result(content: [.text(result)])
             
         } catch {
