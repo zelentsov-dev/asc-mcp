@@ -265,6 +265,10 @@ extension SubscriptionsWorker {
                         "type": .string("string"),
                         "description": .string("Subscription ID")
                     ]),
+                    "territory": .object([
+                        "type": .string("string"),
+                        "description": .string("Filter by territory code (e.g. USA, GBR, DEU). Returns price points for that territory only.")
+                    ]),
                     "limit": .object([
                         "type": .string("integer"),
                         "description": .string("Max results (default: 25, max: 200)")
@@ -639,6 +643,48 @@ extension SubscriptionsWorker {
                     ])
                 ]),
                 "required": .array([.string("subscription_id")])
+            ])
+        )
+    }
+
+    func setSubscriptionAvailabilityTool() -> Tool {
+        return Tool(
+            name: "subscriptions_set_availability",
+            description: "Enable a subscription in all 175 App Store territories. Must be called before subscriptions_set_price. Creates the subscriptionAvailability resource with availableInNewTerritories=true.",
+            inputSchema: .object([
+                "type": .string("object"),
+                "properties": .object([
+                    "subscription_id": .object([
+                        "type": .string("string"),
+                        "description": .string("Subscription ID")
+                    ])
+                ]),
+                "required": .array([.string("subscription_id")])
+            ])
+        )
+    }
+
+    func setSubscriptionPriceScheduleTool() -> Tool {
+        return Tool(
+            name: "subscriptions_set_price",
+            description: "Set price for a subscription in all territories at once. Gets equalized price points for all ~175 territories from the base USD price point, then updates subscription in a single PATCH request. Use subscriptions_list_price_points with territory=USA to find price_point_id. Prerequisite: call subscriptions_set_availability first.",
+            inputSchema: .object([
+                "type": .string("object"),
+                "properties": .object([
+                    "subscription_id": .object([
+                        "type": .string("string"),
+                        "description": .string("Subscription ID")
+                    ]),
+                    "price_point_id": .object([
+                        "type": .string("string"),
+                        "description": .string("Subscription price point ID from subscriptions_list_price_points (use territory=USA filter)")
+                    ]),
+                    "base_territory_id": .object([
+                        "type": .string("string"),
+                        "description": .string("Base territory ISO code for price calculation (default: USA). Apple propagates prices to all other territories from this base.")
+                    ])
+                ]),
+                "required": .array([.string("subscription_id"), .string("price_point_id")])
             ])
         )
     }

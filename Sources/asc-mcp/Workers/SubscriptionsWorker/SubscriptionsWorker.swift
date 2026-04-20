@@ -36,6 +36,7 @@ public final class SubscriptionsWorker: Sendable {
             updateSubscriptionGroupLocalizationTool(),
             deleteSubscriptionGroupLocalizationTool(),
             deleteSubscriptionPriceTool(),
+            setSubscriptionPriceScheduleTool(),
             uploadSubscriptionImageTool(),
             getSubscriptionImageTool(),
             deleteSubscriptionImageTool(),
@@ -43,7 +44,8 @@ public final class SubscriptionsWorker: Sendable {
             getSubscriptionReviewScreenshotTool(),
             deleteSubscriptionReviewScreenshotTool(),
             listSubscriptionImagesTool(),
-            getSubscriptionReviewScreenshotForSubscriptionTool()
+            getSubscriptionReviewScreenshotForSubscriptionTool(),
+            setSubscriptionAvailabilityTool()
         ]
     }
 
@@ -92,6 +94,8 @@ public final class SubscriptionsWorker: Sendable {
             return try await deleteSubscriptionGroupLocalization(params)
         case "subscriptions_delete_price":
             return try await deleteSubscriptionPrice(params)
+        case "subscriptions_set_price":
+            return try await setSubscriptionPriceSchedule(params)
         case "subscriptions_upload_image":
             return try await uploadSubscriptionImage(params)
         case "subscriptions_get_image":
@@ -108,6 +112,8 @@ public final class SubscriptionsWorker: Sendable {
             return try await listSubscriptionImages(params)
         case "subscriptions_get_review_screenshot_for_subscription":
             return try await getSubscriptionReviewScreenshotForSubscription(params)
+        case "subscriptions_set_availability":
+            return try await setSubscriptionAvailability(params)
         default:
             throw MCPError.methodNotFound("Unknown tool: \(params.name)")
         }

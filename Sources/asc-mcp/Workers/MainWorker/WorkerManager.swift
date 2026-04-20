@@ -258,9 +258,31 @@ public actor WorkerManager {
                 allTools += await self.getReviewAttachmentsTools()
             }
 
-            return ListTools.Result(tools: allTools)
+            // Annotate tools with maxResultSizeChars for Claude Code
+            let analyticsTools: Set<String> = [
+                "analytics_sales_report", "analytics_financial_report",
+                "analytics_get_report", "analytics_app_summary"
+            ]
+
+            let annotatedTools = allTools.map { tool -> Tool in
+                var modified = tool
+                let maxChars: Int
+                if analyticsTools.contains(tool.name) {
+                    maxChars = 500_000
+                } else if tool.name.contains("_list") || tool.name.contains("_search") {
+                    maxChars = 200_000
+                } else {
+                    maxChars = 100_000
+                }
+                modified._meta = Metadata(additionalFields: [
+                    "anthropic/maxResultSizeChars": .int(maxChars)
+                ])
+                return modified
+            }
+
+            return ListTools.Result(tools: annotatedTools)
         }
-        
+
         // Handler for all tool calls
         await server.withMethodHandler(CallTool.self) { params in
             do {

@@ -139,7 +139,7 @@ extension AppsWorker {
     func updateMetadataTool() -> Tool {
         return Tool(
             name: "apps_update_metadata",
-            description: "Update app version metadata for a specific localization (version must be in PREPARE_FOR_SUBMISSION state)",
+            description: "Update ALL app metadata for a locale in one call: name, subtitle (from appInfo) + keywords, description, whatsNew (from version). Version must be editable (PREPARE_FOR_SUBMISSION or DEVELOPER_REJECTED).",
             inputSchema: .object([
                 "type": .string("object"),
                 "properties": .object([
@@ -154,6 +154,14 @@ extension AppsWorker {
                     "locale": .object([
                         "type": .string("string"),
                         "description": .string("Locale code (e.g. 'en-US', 'ru-RU', 'de-DE', 'fr-FR', 'ja', 'zh-Hans')")
+                    ]),
+                    "name": .object([
+                        "type": .string("string"),
+                        "description": .string("App name/title for this locale (max 30 characters). Stored in appInfoLocalizations.")
+                    ]),
+                    "subtitle": .object([
+                        "type": .string("string"),
+                        "description": .string("App subtitle for this locale (max 30 characters). Stored in appInfoLocalizations.")
                     ]),
                     "description": .object([
                         "type": .string("string"),

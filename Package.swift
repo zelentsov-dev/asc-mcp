@@ -12,7 +12,7 @@ let package = Package(
         .executable(name: "asc-mcp", targets: ["asc-mcp"])
     ],
     dependencies: [
-        .package(url: "https://github.com/modelcontextprotocol/swift-sdk.git", from: "0.3.0")
+        .package(url: "https://github.com/modelcontextprotocol/swift-sdk.git", from: "0.12.0")
     ],
     targets: [
         .executableTarget(

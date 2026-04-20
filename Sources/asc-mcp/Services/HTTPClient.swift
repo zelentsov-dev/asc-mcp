@@ -243,7 +243,7 @@ extension HTTPClient {
     }
 
     /// PATCH request for updating resources
-    public func patch<T: Codable & Sendable, R: Codable & Sendable>(_ endpoint: String, body: T, as responseType: R.Type) async throws -> R {
+    public func patch<T: Encodable & Sendable, R: Codable & Sendable>(_ endpoint: String, body: T, as responseType: R.Type) async throws -> R {
         let bodyData: Data
         do {
             bodyData = try JSONEncoder().encode(body)

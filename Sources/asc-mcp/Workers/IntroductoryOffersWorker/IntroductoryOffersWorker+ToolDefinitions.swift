@@ -103,6 +103,36 @@ extension IntroductoryOffersWorker {
         )
     }
 
+    func createIntroductoryOffersAllTerritoresTool() -> Tool {
+        return Tool(
+            name: "intro_offers_set_all_territories",
+            description: "Set a FREE_TRIAL introductory offer for all 175 territories in a single PATCH request. Uses PATCH /v1/subscriptions/{id} with introductoryOffers in included array. Replaces any existing intro offers.",
+            inputSchema: .object([
+                "type": .string("object"),
+                "properties": .object([
+                    "subscription_id": .object([
+                        "type": .string("string"),
+                        "description": .string("Subscription ID")
+                    ]),
+                    "duration": .object([
+                        "type": .string("string"),
+                        "description": .string("Offer duration: THREE_DAYS, ONE_WEEK, TWO_WEEKS, ONE_MONTH, TWO_MONTHS, THREE_MONTHS, SIX_MONTHS, ONE_YEAR")
+                    ]),
+                    "offer_mode": .object([
+                        "type": .string("string"),
+                        "description": .string("Offer mode (default: FREE_TRIAL)"),
+                        "enum": .array([.string("FREE_TRIAL"), .string("PAY_AS_YOU_GO"), .string("PAY_UP_FRONT")])
+                    ]),
+                    "number_of_periods": .object([
+                        "type": .string("integer"),
+                        "description": .string("Number of periods (default: 1)")
+                    ])
+                ]),
+                "required": .array([.string("subscription_id"), .string("duration")])
+            ])
+        )
+    }
+
     func deleteIntroductoryOfferTool() -> Tool {
         return Tool(
             name: "intro_offers_delete",

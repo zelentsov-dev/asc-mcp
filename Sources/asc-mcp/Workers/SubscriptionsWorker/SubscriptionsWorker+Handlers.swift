@@ -487,6 +487,10 @@ extension SubscriptionsWorker {
                     queryParams["limit"] = "25"
                 }
 
+                if let territory = arguments["territory"]?.stringValue {
+                    queryParams["filter[territory]"] = territory
+                }
+
                 response = try await httpClient.get(
                     "/v1/subscriptions/\(subscriptionId)/pricePoints",
                     parameters: queryParams,
@@ -705,6 +709,151 @@ extension SubscriptionsWorker {
         } catch {
             return CallTool.Result(
                 content: [.text("Error: Failed to delete subscription price: \(error.localizedDescription)")],
+                isError: true
+            )
+        }
+    }
+
+    /// Sets prices for all 175 territories at once via PATCH /v1/subscriptions/{id}.
+    /// Gets equalized price points for all territories from the base USD price point,
+    /// then PATCHes the subscription with all of them in a single request.
+    /// - Returns: JSON with subscription state after update
+    func setSubscriptionPriceSchedule(_ params: CallTool.Parameters) async throws -> CallTool.Result {
+        guard let arguments = params.arguments,
+              let subscriptionId = arguments["subscription_id"]?.stringValue,
+              let pricePointId = arguments["price_point_id"]?.stringValue else {
+            return CallTool.Result(
+                content: [.text("Error: Required parameters: subscription_id, price_point_id")],
+                isError: true
+            )
+        }
+
+        do {
+            // Step 1: Get all equalized price points for all territories (excludes base/USA territory)
+            let equalizations: ASCSubscriptionPricePointsResponse = try await httpClient.get(
+                "/v1/subscriptionPricePoints/\(pricePointId)/equalizations",
+                parameters: ["limit": "200"],
+                as: ASCSubscriptionPricePointsResponse.self
+            )
+
+            // Step 2: Build combined list — base price point (USA) first, then all equalized territories
+            // equalizations returns ~174 non-base territories; prepend base to cover all 175
+            let allPricePointIds = [pricePointId] + equalizations.data.map { $0.id }
+
+            let priceRefs = allPricePointIds.enumerated().map { (i, _) in
+                SetAllSubscriptionPricesRequest.PriceRef(id: "${\(i)}")
+            }
+            let inlinePrices = allPricePointIds.enumerated().map { (i, ppId) in
+                SetAllSubscriptionPricesRequest.InlinePrice(
+                    id: "${\(i)}",
+                    attributes: SetAllSubscriptionPricesRequest.PriceAttrs(preserveCurrentPrice: false),
+                    relationships: SetAllSubscriptionPricesRequest.InlinePriceRels(
+                        subscriptionPricePoint: SetAllSubscriptionPricesRequest.PointRef(
+                            data: ASCResourceIdentifier(type: "subscriptionPricePoints", id: ppId)
+                        )
+                    )
+                )
+            }
+
+            let request = SetAllSubscriptionPricesRequest(
+                data: SetAllSubscriptionPricesRequest.UpdateData(
+                    id: subscriptionId,
+                    relationships: SetAllSubscriptionPricesRequest.Relationships(
+                        prices: SetAllSubscriptionPricesRequest.PricesData(data: priceRefs)
+                    )
+                ),
+                included: inlinePrices
+            )
+
+            // Step 3: PATCH subscription with all territory prices
+            let response: ASCSubscriptionResponse = try await httpClient.patch(
+                "/v1/subscriptions/\(subscriptionId)",
+                body: request,
+                as: ASCSubscriptionResponse.self
+            )
+
+            let result: [String: Any] = [
+                "success": true,
+                "subscription": [
+                    "id": response.data.id,
+                    "state": response.data.attributes.state as Any,
+                    "name": response.data.attributes.name as Any
+                ],
+                "territories_set": allPricePointIds.count
+            ]
+
+            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+
+        } catch {
+            return CallTool.Result(
+                content: [.text("Error: Failed to set subscription prices: \(error.localizedDescription)")],
+                isError: true
+            )
+        }
+    }
+
+    // MARK: - Subscription Availability
+
+    /// Enables a subscription in all 175 App Store territories.
+    /// Must be called before subscriptions_set_price.
+    func setSubscriptionAvailability(_ params: CallTool.Parameters) async throws -> CallTool.Result {
+        guard let arguments = params.arguments,
+              let subscriptionId = arguments["subscription_id"]?.stringValue else {
+            return CallTool.Result(
+                content: [.text("Error: Required parameter 'subscription_id' is missing")],
+                isError: true
+            )
+        }
+
+        do {
+            // Fetch all territories
+            let territoriesResponse: ASCTerritoriesResponse = try await httpClient.get(
+                "/v1/territories",
+                parameters: ["limit": "200"],
+                as: ASCTerritoriesResponse.self
+            )
+
+            let territoryIdentifiers = territoriesResponse.data.map {
+                ASCResourceIdentifier(type: "territories", id: $0.id)
+            }
+
+            let request = CreateSubscriptionAvailabilityRequest(
+                data: CreateSubscriptionAvailabilityRequest.CreateData(
+                    attributes: CreateSubscriptionAvailabilityRequest.Attributes(
+                        availableInNewTerritories: true
+                    ),
+                    relationships: CreateSubscriptionAvailabilityRequest.Relationships(
+                        subscription: CreateSubscriptionAvailabilityRequest.SubscriptionRelationship2(
+                            data: ASCResourceIdentifier(type: "subscriptions", id: subscriptionId)
+                        ),
+                        availableTerritories: CreateSubscriptionAvailabilityRequest.TerritoriesRelationship(
+                            data: territoryIdentifiers
+                        )
+                    )
+                ),
+                included: nil
+            )
+
+            let response: ASCSubscriptionAvailabilityResponse = try await httpClient.post(
+                "/v1/subscriptionAvailabilities",
+                body: request,
+                as: ASCSubscriptionAvailabilityResponse.self
+            )
+
+            let result: [String: Any] = [
+                "success": true,
+                "availability": [
+                    "id": response.data.id,
+                    "availableInNewTerritories": response.data.attributes?.availableInNewTerritories as Any,
+                    "territories_count": territoryIdentifiers.count
+                ]
+            ]
+
+            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+
+        } catch {
+            return CallTool.Result(
+                content: [.text("Error: Failed to set subscription availability: \(error.localizedDescription)")],
                 isError: true
             )
         }
