@@ -479,14 +479,14 @@ struct WorkerToolDefinitionsTests {
         #expect(names.contains("beta_license_update"))
     }
 
-    // MARK: - ScreenshotsWorker (15 tools)
+    // MARK: - ScreenshotsWorker (17 tools)
 
-    @Test("ScreenshotsWorker returns 15 tools with correct names")
+    @Test("ScreenshotsWorker returns 17 tools with correct names")
     func screenshotsWorkerTools() async throws {
         let client = try await TestFactory.makeHTTPClient()
         let worker = ScreenshotsWorker(httpClient: client, uploadService: UploadService())
         let tools = await worker.getTools()
-        #expect(tools.count == 16)
+        #expect(tools.count == 17)
         let names = Set(tools.map(\.name))
         #expect(names.contains("screenshots_list_sets"))
         #expect(names.contains("screenshots_create_set"))
@@ -504,6 +504,7 @@ struct WorkerToolDefinitionsTests {
         #expect(names.contains("screenshots_list_previews"))
         #expect(names.contains("screenshots_delete_preview"))
         #expect(names.contains("screenshots_upload_batch"))
+        #expect(names.contains("screenshots_update_preview"))
     }
 
     // MARK: - CustomProductPagesWorker (10 tools)

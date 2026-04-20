@@ -322,6 +322,27 @@ extension ScreenshotsWorker {
         )
     }
 
+    func updatePreviewTool() -> Tool {
+        return Tool(
+            name: "screenshots_update_preview",
+            description: "Update the preview frame timecode of an app preview. Use this after uploading a preview to set the thumbnail frame (e.g. '00:00:02:00' for the 2-second frame).",
+            inputSchema: .object([
+                "type": .string("object"),
+                "properties": .object([
+                    "preview_id": .object([
+                        "type": .string("string"),
+                        "description": .string("Preview ID to update")
+                    ]),
+                    "preview_frame_timecode": .object([
+                        "type": .string("string"),
+                        "description": .string("Timecode for the thumbnail frame in HH:MM:SS:FF format, e.g. '00:00:02:00'")
+                    ])
+                ]),
+                "required": .array([.string("preview_id"), .string("preview_frame_timecode")])
+            ])
+        )
+    }
+
     func deletePreviewTool() -> Tool {
         return Tool(
             name: "screenshots_delete_preview",

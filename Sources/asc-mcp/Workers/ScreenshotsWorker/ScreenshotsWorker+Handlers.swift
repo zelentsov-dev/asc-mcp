@@ -849,6 +849,30 @@ extension ScreenshotsWorker {
         return result
     }
 
+    func updatePreview(_ params: CallTool.Parameters) async throws -> CallTool.Result {
+        guard let previewId = params.arguments?["preview_id"]?.stringValue else {
+            return .init(content: [.text("Missing required parameter: preview_id")], isError: true)
+        }
+        guard let timecode = params.arguments?["preview_frame_timecode"]?.stringValue else {
+            return .init(content: [.text("Missing required parameter: preview_frame_timecode")], isError: true)
+        }
+
+        let request = UpdatePreviewRequest(
+            data: .init(
+                id: previewId,
+                attributes: .init(previewFrameTimeCode: timecode)
+            )
+        )
+
+        let encoder = JSONEncoder()
+        let bodyData = try encoder.encode(request)
+        let responseData = try await httpClient.patch("/v1/appPreviews/\(previewId)", body: bodyData)
+        let response = try JSONDecoder().decode(ASCPreviewResponse.self, from: responseData)
+
+        let result = formatPreview(response.data)
+        return .init(content: [.text(JSONFormatter.formatJSON(result))])
+    }
+
     private func formatPreviewSet(_ set: ASCPreviewSet) -> [String: Any] {
         return [
             "id": set.id,
