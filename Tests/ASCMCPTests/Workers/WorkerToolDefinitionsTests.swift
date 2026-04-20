@@ -383,17 +383,18 @@ struct WorkerToolDefinitionsTests {
         #expect(names.contains("winback_list_prices"))
     }
 
-    // MARK: - IntroductoryOffersWorker (4 tools)
+    // MARK: - IntroductoryOffersWorker (5 tools)
 
-    @Test("IntroductoryOffersWorker returns 4 tools with correct names")
+    @Test("IntroductoryOffersWorker returns 5 tools with correct names")
     func introductoryOffersWorkerTools() async throws {
         let client = try await TestFactory.makeHTTPClient()
         let worker = IntroductoryOffersWorker(httpClient: client)
         let tools = await worker.getTools()
-        #expect(tools.count == 4)
+        #expect(tools.count == 5)
         let names = Set(tools.map(\.name))
         #expect(names.contains("intro_offers_list"))
         #expect(names.contains("intro_offers_create"))
+        #expect(names.contains("intro_offers_set_all_territories"))
         #expect(names.contains("intro_offers_update"))
         #expect(names.contains("intro_offers_delete"))
     }
