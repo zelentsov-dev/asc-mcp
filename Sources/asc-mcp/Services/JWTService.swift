@@ -15,6 +15,7 @@ private struct DecodedJWTPayload: Decodable {
     let exp: Int  // Unix timestamp
     let iat: Int?
     let iss: String?
+    let sub: String?
 }
 
 /// JWT token service for App Store Connect API
@@ -140,13 +141,17 @@ public actor JWTService {
         )
 
         // Payload
-        // TODO: handle Individual Key in Wave 2
-        let payload = JWTPayload(
-            iss: company.issuerID ?? "",
-            iat: Int(now.timeIntervalSince1970),
-            exp: Int(expiration.timeIntervalSince1970),
-            aud: "appstoreconnect-v1"
-        )
+        let iat = Int(now.timeIntervalSince1970)
+        let exp = Int(expiration.timeIntervalSince1970)
+        let payload: JWTPayload
+        if let issuerID = company.issuerID {
+            // Team Key: use iss claim
+            payload = JWTPayload(iss: issuerID, sub: nil, iat: iat, exp: exp, aud: "appstoreconnect-v1")
+        } else {
+            // Individual Key: use sub="user" per Apple spec
+            // https://developer.apple.com/documentation/appstoreconnectapi/generating-tokens-for-api-requests
+            payload = JWTPayload(iss: nil, sub: "user", iat: iat, exp: exp, aud: "appstoreconnect-v1")
+        }
 
         // Encode header and payload as Base64URL
         let headerData = try JSONEncoder().encode(header)
@@ -216,10 +221,22 @@ private struct JWTHeader: Codable {
 }
 
 private struct JWTPayload: Codable {
-    let iss: String
+    let iss: String?
+    let sub: String?
     let iat: Int
     let exp: Int
     let aud: String
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encodeIfPresent(iss, forKey: .iss)
+        try container.encodeIfPresent(sub, forKey: .sub)
+        try container.encode(iat, forKey: .iat)
+        try container.encode(exp, forKey: .exp)
+        try container.encode(aud, forKey: .aud)
+    }
+
+    private enum CodingKeys: String, CodingKey { case iss, sub, iat, exp, aud }
 }
 
 // MARK: - Base64URL Extension

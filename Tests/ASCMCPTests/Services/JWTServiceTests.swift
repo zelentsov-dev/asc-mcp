@@ -70,6 +70,83 @@ struct JWTServiceTests {
         #expect(payload["iat"] is Int)
     }
 
+    @Test("Individual key payload has sub user and no iss")
+    func individualKey_payloadHasSubUser_noIss() async throws {
+        let individual = TestFactory.makeIndividualCompany()
+        let company = Company(
+            id: individual.id,
+            name: individual.name,
+            keyID: individual.keyID,
+            issuerID: individual.issuerID,
+            privateKeyPath: individual.privateKeyPath,
+            privateKeyContent: TestFactory.testPEM
+        )
+        let service = try JWTService(company: company)
+        let token = try await service.getToken()
+
+        let payload = try decodeJWTPayload(token)
+        let rawPayload = try decodePayloadRawString(token)
+
+        #expect(payload["sub"] as? String == "user")
+        #expect(rawPayload.contains("\"iss\"") == false)
+        #expect(payload["aud"] as? String == "appstoreconnect-v1")
+    }
+
+    @Test("Individual key header remains unchanged")
+    func individualKey_headerUnchanged() async throws {
+        let individual = TestFactory.makeIndividualCompany()
+        let company = Company(
+            id: individual.id,
+            name: individual.name,
+            keyID: individual.keyID,
+            issuerID: individual.issuerID,
+            privateKeyPath: individual.privateKeyPath,
+            privateKeyContent: TestFactory.testPEM
+        )
+        let service = try JWTService(company: company)
+        let token = try await service.getToken()
+
+        let header = try decodeJWTHeader(token)
+
+        #expect(header["alg"] as? String == "ES256")
+        #expect(header["typ"] as? String == "JWT")
+        #expect(header["kid"] as? String == company.keyID)
+    }
+
+    @Test("Individual key token duration is 1200 seconds")
+    func individualKey_duration1200() async throws {
+        let individual = TestFactory.makeIndividualCompany()
+        let company = Company(
+            id: individual.id,
+            name: individual.name,
+            keyID: individual.keyID,
+            issuerID: individual.issuerID,
+            privateKeyPath: individual.privateKeyPath,
+            privateKeyContent: TestFactory.testPEM
+        )
+        let service = try JWTService(company: company)
+        let token = try await service.getToken()
+
+        let payload = try decodeJWTPayload(token)
+
+        let exp = try #require(payload["exp"] as? Int)
+        let iat = try #require(payload["iat"] as? Int)
+        #expect(exp - iat == 1200)
+    }
+
+    @Test("Team key payload has iss and no sub")
+    func teamKey_payloadHasIss_noSub() async throws {
+        let company = makeCompany()
+        let service = try JWTService(company: company)
+        let token = try await service.getToken()
+
+        let payload = try decodeJWTPayload(token)
+        let rawPayload = try decodePayloadRawString(token)
+
+        #expect(payload["iss"] as? String == company.issuerID)
+        #expect(rawPayload.contains("\"sub\"") == false)
+    }
+
     @Test("Token expires in exactly 20 minutes (1200 seconds)")
     func tokenExpiration() async throws {
         let service = try JWTService(company: makeCompany())
@@ -168,6 +245,37 @@ struct JWTServiceTests {
             try JSONSerialization.jsonObject(with: payloadData) as? [String: Any]
         )
         return payload
+    }
+
+    private func decodeJWTHeader(_ token: String) throws -> [String: Any] {
+        let parts = token.split(separator: ".")
+        guard parts.count == 3 else {
+            throw TestError(message: "Invalid JWT format")
+        }
+        var headerBase64 = String(parts[0])
+            .replacingOccurrences(of: "-", with: "+")
+            .replacingOccurrences(of: "_", with: "/")
+        while headerBase64.count % 4 != 0 { headerBase64 += "=" }
+
+        let headerData = try #require(Data(base64Encoded: headerBase64))
+        let header = try #require(
+            try JSONSerialization.jsonObject(with: headerData) as? [String: Any]
+        )
+        return header
+    }
+
+    private func decodePayloadRawString(_ token: String) throws -> String {
+        let parts = token.split(separator: ".")
+        guard parts.count == 3 else {
+            throw TestError(message: "Invalid JWT format")
+        }
+        var payloadBase64 = String(parts[1])
+            .replacingOccurrences(of: "-", with: "+")
+            .replacingOccurrences(of: "_", with: "/")
+        while payloadBase64.count % 4 != 0 { payloadBase64 += "=" }
+
+        let payloadData = try #require(Data(base64Encoded: payloadBase64))
+        return try #require(String(data: payloadData, encoding: .utf8))
     }
 }
 
