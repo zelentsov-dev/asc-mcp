@@ -5,12 +5,16 @@ public struct Company: Codable, Sendable, Identifiable, Equatable {
     public let id: String
     public let name: String
     public let keyID: String
-    public let issuerID: String
+    public let issuerID: String?
     public let privateKeyPath: String
     /// Private key content (PEM string). If set, takes priority over `privateKeyPath`.
     public let privateKeyContent: String?
     /// Vendor number for sales/financial reports (found in ASC Sales and Trends)
     public let vendorNumber: String?
+
+    /// True if this company uses an Individual API Key (no issuer ID).
+    /// Individual keys cannot access Provisioning, Sales/Finance, or notarytool endpoints.
+    public var isIndividualKey: Bool { issuerID == nil }
 
     enum CodingKeys: String, CodingKey {
         case id
@@ -27,7 +31,7 @@ public struct Company: Codable, Sendable, Identifiable, Equatable {
         id = try container.decode(String.self, forKey: .id)
         name = try container.decode(String.self, forKey: .name)
         keyID = try container.decode(String.self, forKey: .keyID)
-        issuerID = try container.decode(String.self, forKey: .issuerID)
+        issuerID = try container.decodeIfPresent(String.self, forKey: .issuerID)
         privateKeyPath = try container.decodeIfPresent(String.self, forKey: .privateKeyPath) ?? ""
         privateKeyContent = try container.decodeIfPresent(String.self, forKey: .privateKeyContent)
         vendorNumber = try container.decodeIfPresent(String.self, forKey: .vendorNumber)
@@ -35,7 +39,7 @@ public struct Company: Codable, Sendable, Identifiable, Equatable {
 
     public init(
         id: String, name: String,
-        keyID: String, issuerID: String,
+        keyID: String, issuerID: String? = nil,
         privateKeyPath: String = "",
         privateKeyContent: String? = nil,
         vendorNumber: String? = nil
@@ -47,6 +51,17 @@ public struct Company: Codable, Sendable, Identifiable, Equatable {
         self.privateKeyPath = privateKeyPath
         self.privateKeyContent = privateKeyContent
         self.vendorNumber = vendorNumber
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var c = encoder.container(keyedBy: CodingKeys.self)
+        try c.encode(id, forKey: .id)
+        try c.encode(name, forKey: .name)
+        try c.encode(keyID, forKey: .keyID)
+        try c.encodeIfPresent(issuerID, forKey: .issuerID)
+        try c.encode(privateKeyPath, forKey: .privateKeyPath)
+        try c.encodeIfPresent(privateKeyContent, forKey: .privateKeyContent)
+        try c.encodeIfPresent(vendorNumber, forKey: .vendorNumber)
     }
 }
 

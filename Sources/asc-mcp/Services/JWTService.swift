@@ -140,8 +140,9 @@ public actor JWTService {
         )
 
         // Payload
+        // TODO: handle Individual Key in Wave 2
         let payload = JWTPayload(
-            iss: company.issuerID,
+            iss: company.issuerID ?? "",
             iat: Int(now.timeIntervalSince1970),
             exp: Int(expiration.timeIntervalSince1970),
             aud: "appstoreconnect-v1"

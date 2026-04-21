@@ -26,7 +26,7 @@ public func testCompanySwitching() async throws {
         let company1 = companies[0]
         print("✅ Active company: \(company1.name)", to: &standardError)
         print("   Key ID: \(company1.keyID)", to: &standardError)
-        print("   Issuer ID: \(company1.issuerID)", to: &standardError)
+        print("   Issuer ID: \(company1.issuerID ?? "(Individual Key)")", to: &standardError)
         
         // Create AuthWorker for first company
         let jwtService1 = try JWTService(company: company1)
@@ -56,7 +56,7 @@ public func testCompanySwitching() async throws {
         let company2 = try await companiesWorker.manager.getCurrentCompany()
         print("✅ Active company: \(company2.name)", to: &standardError)
         print("   Key ID: \(company2.keyID)", to: &standardError)
-        print("   Issuer ID: \(company2.issuerID)", to: &standardError)
+        print("   Issuer ID: \(company2.issuerID ?? "(Individual Key)")", to: &standardError)
         
         // Create AuthWorker for second company
         let jwtService2 = try JWTService(company: company2)
@@ -103,4 +103,3 @@ public func testCompanySwitching() async throws {
     
     print("\n✅ ALL TESTS COMPLETED", to: &standardError)
 }
-

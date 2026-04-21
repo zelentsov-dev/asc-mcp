@@ -17,7 +17,7 @@ enum TestFactory {
         id: String = "test-company",
         name: String = "Test Company",
         keyID: String = "TEST_KEY_ID",
-        issuerID: String = "TEST_ISSUER_ID"
+        issuerID: String? = "TEST_ISSUER_ID"
     ) -> Company {
         Company(
             id: id,
@@ -26,6 +26,17 @@ enum TestFactory {
             issuerID: issuerID,
             privateKeyContent: testPEM
         )
+    }
+
+    /// Create a test Company with an Individual API Key
+    static func makeIndividualCompany(
+        id: String = "test-individual",
+        name: String = "Test Individual",
+        keyID: String = "TESTKEY999",
+        privateKeyPath: String = "/tmp/test.p8"
+    ) -> Company {
+        Company(id: id, name: name, keyID: keyID, issuerID: nil,
+                privateKeyPath: privateKeyPath)
     }
 
     /// Create a JWTService with in-memory key (no file access)

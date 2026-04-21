@@ -28,7 +28,7 @@ public actor WorkerDependencies: Sendable {
 
         print("🔄 Reinitializing workers for company: \(company.name)", to: &standardError)
         print("  Key ID: \(company.keyID)", to: &standardError)
-        print("  Issuer ID: \(company.issuerID)", to: &standardError)
+        print("  Issuer ID: \(company.issuerID ?? "(Individual Key)")", to: &standardError)
 
         self.jwtService = try JWTService(company: company)
 
@@ -672,4 +672,3 @@ public actor WorkerManager {
         return await reviewAttachmentsWorker.getTools()
     }
 }
-

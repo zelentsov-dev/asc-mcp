@@ -28,12 +28,12 @@ extension CompaniesWorker {
         for (index, company) in companies.enumerated() {
             let isCurrent = company.id == current?.id
             let status = isCurrent ? " **[ACTIVE]**" : ""
+            let keyType = company.isIndividualKey ? "Individual" : "Team"
 
             result += "\(index + 1). **\(company.name)**\(status)\n"
             result += "   • ID: `\(company.id)`\n"
             result += "   • Key ID: \(company.keyID)\n"
-
-
+            result += "   • Key Type: \(keyType)\n"
             result += "\n"
         }
 
@@ -70,7 +70,7 @@ extension CompaniesWorker {
             **\(company.name)**
             • ID: `\(company.id)`
             • Key ID: \(company.keyID)
-            • Issuer ID: \(masked(company.issuerID))
+            • Issuer ID: \(company.issuerID.map { masked($0) } ?? "(Individual Key)")
 
             All subsequent API calls will use this company's credentials.
             """
@@ -102,7 +102,7 @@ extension CompaniesWorker {
         • ID: `\(company.id)`
         • NAME: \(company.name)
         • Key ID: \(company.keyID)
-        • Issuer ID: \(masked(company.issuerID))
+        • Issuer ID: \(company.issuerID.map { masked($0) } ?? "(Individual Key)")
         """
 
         return CallTool.Result(content: [.text(result)])
