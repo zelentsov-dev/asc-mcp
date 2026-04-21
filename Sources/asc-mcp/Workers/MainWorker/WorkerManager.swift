@@ -28,7 +28,12 @@ public actor WorkerDependencies: Sendable {
 
         print("🔄 Reinitializing workers for company: \(company.name)", to: &standardError)
         print("  Key ID: \(company.keyID)", to: &standardError)
-        print("  Issuer ID: \(company.issuerID ?? "(Individual Key)")", to: &standardError)
+        if let issuerID = company.issuerID {
+            print("  Key Type: Team Key", to: &standardError)
+            print("  Issuer ID: \(issuerID)", to: &standardError)
+        } else {
+            print("  Key Type: Individual Key", to: &standardError)
+        }
 
         self.jwtService = try JWTService(company: company)
 
@@ -464,13 +469,13 @@ public actor WorkerManager {
                 }
 
                 return CallTool.Result(
-                    content: [.text("Error: Unknown tool: \(params.name)")],
+                    content: [.text(text: "Error: Unknown tool: \(params.name)", annotations: nil, _meta: nil)],
                     isError: true
                 )
             } catch {
                 // Catch all errors and return them as Result
                 return CallTool.Result(
-                    content: [.text("Error: \(error.localizedDescription)")],
+                    content: [.text(text: "Error: \(error.localizedDescription)", annotations: nil, _meta: nil)],
                     isError: true
                 )
             }
@@ -520,7 +525,7 @@ public actor WorkerManager {
     /// Returns error result for disabled worker
     private nonisolated func disabledWorkerResult(_ workerName: String) -> CallTool.Result {
         CallTool.Result(
-            content: [.text("Error: Worker '\(workerName)' is disabled. Enable it with --workers \(workerName)")],
+            content: [.text(text: "Error: Worker '\(workerName)' is disabled. Enable it with --workers \(workerName)", annotations: nil, _meta: nil)],
             isError: true
         )
     }

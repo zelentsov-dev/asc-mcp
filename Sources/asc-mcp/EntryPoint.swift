@@ -8,12 +8,16 @@ struct ASCMCPApp {
         if CommandLine.arguments.contains("--test") {
             print("Test mode activated", to: &standardError)
 
-            if CommandLine.arguments.contains("--test-metadata") {
-                try await testAppMetadata()
-            } else if CommandLine.arguments.contains("--test-switch") {
-                try await testCompanySwitching()
-            } else {
-                try await testCompanySwitching()
+            do {
+                if CommandLine.arguments.contains("--test-metadata") {
+                    try await testAppMetadata()
+                } else if CommandLine.arguments.contains("--test-switch") {
+                    try await testCompanySwitching()
+                } else {
+                    try await testCompanySwitching()
+                }
+            } catch {
+                print("\n⚠️ Test mode exited early: \(error.localizedDescription)", to: &standardError)
             }
             return
         }
