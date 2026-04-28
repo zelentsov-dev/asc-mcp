@@ -41,3 +41,4 @@ jobs:
           files: |
             ${{ steps.pkg.outputs.name }}
             ${{ steps.pkg.outputs.name }}.sha256
+            scripts/asc-mcp-launcher.sh
