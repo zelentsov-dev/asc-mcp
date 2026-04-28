@@ -52,6 +52,22 @@ struct CompaniesConfigModelTests {
         #expect(config.companies[1].name == "B")
     }
 
+    @Test func decodeConfigWithMixedKeyTypes() throws {
+        let json = """
+        {
+          "companies": [
+            {"id":"team","name":"Team","key_id":"k1","issuer_id":"i1"},
+            {"id":"individual","name":"Individual","key_id":"k2"}
+          ]
+        }
+        """.data(using: .utf8)!
+        let config = try JSONDecoder().decode(CompaniesConfig.self, from: json)
+        #expect(config.companies.count == 2)
+        #expect(config.companies[0].isIndividualKey == false)
+        #expect(config.companies[1].isIndividualKey == true)
+        #expect(config.companies[1].issuerID == nil)
+    }
+
     @Test func decodeEmptyCompanies() throws {
         let json = """
         {"companies":[]}

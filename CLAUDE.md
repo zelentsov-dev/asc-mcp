@@ -41,8 +41,9 @@ Three config methods (checked in priority order):
 4. `ASC_COMPANY_1_KEY_ID`, `ASC_COMPANY_2_KEY_ID`... (multi-company env vars)
 5. `ASC_KEY_ID` + `ASC_ISSUER_ID` + `ASC_PRIVATE_KEY_PATH` (single company env vars)
 
-Each company needs: `keyID`, `issuerID`, `privateKeyPath` (path to `.p8` file).
+Each company needs: `keyID`, `privateKeyPath` (or `privateKeyContent`); `issuerID` is required for Team Keys and omitted for Individual Keys.
 
+**Individual API Keys**: Omit `ASC_ISSUER_ID` / `ASC_COMPANY_N_ISSUER_ID` (env) or `issuer_id` (JSON) to configure an Individual API Key. Such companies have `Company.issuerID == nil` and `Company.isIndividualKey == true`. JWTService emits `sub: "user"` instead of `iss` per Apple's spec. Individual keys cannot access Provisioning, Sales/Finance, or notaryTool endpoints — calls will fail with 403 at the API level (no pre-validation).
 ## Architecture
 
 ### Core Components

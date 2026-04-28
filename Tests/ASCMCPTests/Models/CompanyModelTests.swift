@@ -18,6 +18,24 @@ struct CompanyModelTests {
         #expect(company.vendorNumber == nil)
     }
 
+    @Test func decodeWithoutIssuerID() throws {
+        let json = """
+        {"id":"c1","name":"Corp","key_id":"K1","key_path":"/tmp/k.p8"}
+        """.data(using: .utf8)!
+        let company = try JSONDecoder().decode(Company.self, from: json)
+        #expect(company.issuerID == nil)
+        #expect(company.isIndividualKey == true)
+    }
+
+    @Test func decodeWithIssuerID_isIndividualKeyFalse() throws {
+        let json = """
+        {"id":"c1","name":"Corp","key_id":"K1","issuer_id":"I1"}
+        """.data(using: .utf8)!
+        let company = try JSONDecoder().decode(Company.self, from: json)
+        #expect(company.issuerID == "I1")
+        #expect(company.isIndividualKey == false)
+    }
+
     @Test func decodeWithVendorNumber() throws {
         let json = """
         {"id":"c1","name":"Corp","key_id":"K1","issuer_id":"I1","vendor_number":"87654321"}
@@ -45,6 +63,11 @@ struct CompanyModelTests {
         #expect(company.privateKeyPath == "/p")
         #expect(company.privateKeyContent == "c")
         #expect(company.vendorNumber == "12345")
+    }
+
+    @Test func memberwiseInit_individualKey() {
+        let company = Company(id: "x", name: "X", keyID: "k", issuerID: nil)
+        #expect(company.isIndividualKey == true)
     }
 
     @Test func memberwiseInitDefaults() {
@@ -84,6 +107,28 @@ struct CompanyModelTests {
         let decoded = try JSONDecoder().decode(Company.self, from: data)
         #expect(decoded == original)
         #expect(decoded.privateKeyPath == "/path/key.p8")
+    }
+
+    @Test func encodeIndividualKey_omitsIssuerID() throws {
+        let original = Company(id: "rt", name: "RT", keyID: "k", issuerID: nil, privateKeyPath: "/path/key.p8")
+        let data = try JSONEncoder().encode(original)
+        let json = String(decoding: data, as: UTF8.self)
+        #expect(json.contains("issuer_id") == false)
+        #expect(json.contains("\"issuer_id\":null") == false)
+    }
+
+    @Test func roundtripIndividualKey() throws {
+        let original = Company(id: "rt", name: "RT", keyID: "k", issuerID: nil, privateKeyPath: "/path/key.p8")
+        let data = try JSONEncoder().encode(original)
+        let decoded = try JSONDecoder().decode(Company.self, from: data)
+        #expect(decoded.issuerID == nil)
+        #expect(decoded.isIndividualKey == true)
+    }
+
+    @Test func decodeIndividualFromFixture() throws {
+        let company = try decodeFixture("company_individual", as: Company.self)
+        #expect(company.issuerID == nil)
+        #expect(company.isIndividualKey == true)
     }
 
     @Test func decodeMissingRequiredField() {

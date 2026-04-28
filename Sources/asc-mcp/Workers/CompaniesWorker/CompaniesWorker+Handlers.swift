@@ -9,6 +9,15 @@ extension CompaniesWorker {
         guard value.count > visibleSuffix else { return value }
         return "****" + value.suffix(visibleSuffix)
     }
+
+    /// Human-readable description of the API key type for display.
+    private func keyTypeDescription(_ company: Company) -> String {
+        if let issuerID = company.issuerID {
+            return "Team Key (Issuer: \(masked(issuerID)))"
+        } else {
+            return "Individual Key"
+        }
+    }
     
     /// Lists all available companies configured in the MCP server
     /// - Returns: Formatted list of companies with their IDs, names, and active status
@@ -19,7 +28,7 @@ extension CompaniesWorker {
 
         if companies.isEmpty {
             return CallTool.Result(content: [
-                .text("Error: No companies found. Please configure companies.json file.")
+                .text(text: "Error: No companies found. Please configure companies.json file.", annotations: nil, _meta: nil)
             ])
         }
 
@@ -32,8 +41,7 @@ extension CompaniesWorker {
             result += "\(index + 1). **\(company.name)**\(status)\n"
             result += "   • ID: `\(company.id)`\n"
             result += "   • Key ID: \(company.keyID)\n"
-
-
+            result += "   • Type: \(keyTypeDescription(company))\n"
             result += "\n"
         }
 
@@ -45,7 +53,7 @@ extension CompaniesWorker {
             result += "Warning: No company selected. Use `company_switch` to select one.\n"
         }
 
-        return CallTool.Result(content: [.text(result)])
+        return CallTool.Result(content: [.text(text: result, annotations: nil, _meta: nil)])
     }
 
     /// Switches to a different company for all subsequent API operations
@@ -56,7 +64,7 @@ extension CompaniesWorker {
               let companyValue = arguments["company"],
               let companyIdOrName = companyValue.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameter 'company' (ID or name)")],
+                content: [.text(text: "Error: Required parameter 'company' (ID or name)", annotations: nil, _meta: nil)],
                 isError: true
             )
         }
@@ -70,16 +78,16 @@ extension CompaniesWorker {
             **\(company.name)**
             • ID: `\(company.id)`
             • Key ID: \(company.keyID)
-            • Issuer ID: \(masked(company.issuerID))
+            • Type: \(keyTypeDescription(company))
 
             All subsequent API calls will use this company's credentials.
             """
 
-            return CallTool.Result(content: [.text(result)])
+            return CallTool.Result(content: [.text(text: result, annotations: nil, _meta: nil)])
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Error switching company: \(error.localizedDescription)")],
+                content: [.text(text: "Error: Error switching company: \(error.localizedDescription)", annotations: nil, _meta: nil)],
                 isError: true
             )
         }
@@ -91,7 +99,7 @@ extension CompaniesWorker {
     func getCurrentCompany(_ params: CallTool.Parameters) async throws -> CallTool.Result {
         guard let company = try? await manager.getCurrentCompany() else {
             return CallTool.Result(content: [
-                .text("Warning: No company currently selected.\n\nUse `company_list` to see available companies and `company_switch` to select one.")
+                .text(text: "Warning: No company currently selected.\n\nUse `company_list` to see available companies and `company_switch` to select one.", annotations: nil, _meta: nil)
             ])
         }
 
@@ -102,9 +110,9 @@ extension CompaniesWorker {
         • ID: `\(company.id)`
         • NAME: \(company.name)
         • Key ID: \(company.keyID)
-        • Issuer ID: \(masked(company.issuerID))
+        • Type: \(keyTypeDescription(company))
         """
 
-        return CallTool.Result(content: [.text(result)])
+        return CallTool.Result(content: [.text(text: result, annotations: nil, _meta: nil)])
     }
 }

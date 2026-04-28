@@ -15,6 +15,12 @@
       "issuer_id": "ANOTHER_ISSUER_ID",
       "key_path": "/path/to/another/AuthKey.p8",
       "vendor_number": "YOUR_VENDOR_NUMBER"
+    },
+    {
+      "id": "company3",
+      "name": "Your Individual Account (no issuer_id)",
+      "key_id": "YOUR_INDIVIDUAL_KEY_ID",
+      "key_path": "/path/to/your/IndividualKey.p8"
     }
   ]
 }

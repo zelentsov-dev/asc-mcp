@@ -61,9 +61,9 @@ public actor CompaniesManager {
         }
         print("You can configure asc-mcp using:", to: &standardError)
         print("  1. Environment variables (single company):", to: &standardError)
-        print("     ASC_KEY_ID, ASC_ISSUER_ID, ASC_PRIVATE_KEY_PATH (or ASC_PRIVATE_KEY)", to: &standardError)
+        print("     ASC_KEY_ID, ASC_ISSUER_ID (optional for Individual API Keys), ASC_PRIVATE_KEY_PATH (or ASC_PRIVATE_KEY)", to: &standardError)
         print("  2. Environment variables (multiple companies):", to: &standardError)
-        print("     ASC_COMPANY_1_KEY_ID, ASC_COMPANY_1_ISSUER_ID, ASC_COMPANY_1_KEY_PATH, ...", to: &standardError)
+        print("     ASC_COMPANY_1_KEY_ID, ASC_COMPANY_1_ISSUER_ID (optional for Individual API Keys), ASC_COMPANY_1_KEY_PATH, ...", to: &standardError)
         print("  3. Config file: --companies /path/to/companies.json", to: &standardError)
         print("  4. Environment: ASC_MCP_COMPANIES=/path/to/companies.json", to: &standardError)
         print("  5. Default path: ~/.config/asc-mcp/companies.json", to: &standardError)
@@ -107,14 +107,14 @@ public actor CompaniesManager {
     /// 1. Multi-company: ASC_COMPANY_1_KEY_ID, ASC_COMPANY_2_KEY_ID, ...
     /// 2. Single-company: ASC_KEY_ID, ASC_ISSUER_ID
     /// - Returns: CompaniesConfig if env vars found, nil otherwise
-    private static func loadFromEnvironment() -> CompaniesConfig? {
-        let env = ProcessInfo.processInfo.environment
-
+    static func loadFromEnvironment(
+        env: [String: String] = ProcessInfo.processInfo.environment
+    ) -> CompaniesConfig? {
         // Multi-company mode: ASC_COMPANY_N_KEY_ID
         var companies: [Company] = []
         var index = 1
-        while let keyID = env["ASC_COMPANY_\(index)_KEY_ID"],
-              let issuerID = env["ASC_COMPANY_\(index)_ISSUER_ID"] {
+        while let keyID = env["ASC_COMPANY_\(index)_KEY_ID"] {
+            let issuerID = env["ASC_COMPANY_\(index)_ISSUER_ID"]
             let keyPath = env["ASC_COMPANY_\(index)_KEY_PATH"] ?? ""
             let keyContent = env["ASC_COMPANY_\(index)_KEY"]
             let name = env["ASC_COMPANY_\(index)_NAME"] ?? "Company \(index)"
@@ -138,9 +138,9 @@ public actor CompaniesManager {
             return CompaniesConfig(companies: companies)
         }
 
-        // Single-company mode: ASC_KEY_ID, ASC_ISSUER_ID
-        guard let keyID = env["ASC_KEY_ID"],
-              let issuerID = env["ASC_ISSUER_ID"] else { return nil }
+        // Single-company mode: ASC_KEY_ID, optional ASC_ISSUER_ID
+        guard let keyID = env["ASC_KEY_ID"] else { return nil }
+        let issuerID = env["ASC_ISSUER_ID"]
         let keyPath = env["ASC_PRIVATE_KEY_PATH"] ?? ""
         let keyContent = env["ASC_PRIVATE_KEY"]
         guard !keyPath.isEmpty || keyContent != nil else { return nil }
@@ -209,4 +209,3 @@ public enum CompanyError: LocalizedError, Sendable {
         }
     }
 }
-

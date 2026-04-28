@@ -204,6 +204,54 @@ The server resolves configuration in this order:
 5. `ASC_COMPANY_1_KEY_ID` ... (multi-company env vars)
 6. `ASC_KEY_ID` + `ASC_ISSUER_ID` (single-company env vars)
 
+### Individual API Keys
+
+App Store Connect supports two types of API keys:
+
+- **Team Keys** — created under *Users and Access → Integrations → Team Keys* (requires Admin role). Access scoped to the team with the key's assigned role.
+- **Individual Keys** — created under *user profile → Individual API Key* (available to any team member). Access scoped to the user's own role.
+
+Individual Keys use a different JWT payload per [Apple's specification](https://developer.apple.com/documentation/appstoreconnectapi/generating-tokens-for-api-requests): they send `sub: "user"` instead of `iss: <issuerID>`. This server handles the difference transparently — just omit the issuer ID in your configuration.
+
+#### Configure via environment variables
+
+```bash
+# Single Individual Key (no ASC_ISSUER_ID)
+export ASC_KEY_ID=ABC123DEF4
+export ASC_PRIVATE_KEY_PATH=/path/to/AuthKey_ABC123DEF4.p8
+
+# Multi-company: Team + Individual
+export ASC_COMPANY_1_KEY_ID=TEAM_KEY_ID
+export ASC_COMPANY_1_ISSUER_ID=57246542-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+export ASC_COMPANY_1_KEY_PATH=/path/to/TeamKey.p8
+
+export ASC_COMPANY_2_KEY_ID=INDIVIDUAL_KEY_ID
+# No ASC_COMPANY_2_ISSUER_ID → treated as Individual Key
+export ASC_COMPANY_2_KEY_PATH=/path/to/IndividualKey.p8
+```
+
+#### Configure via `companies.json`
+
+Simply omit the `issuer_id` field:
+
+```json
+{
+  "id": "my-individual",
+  "name": "My Personal Account",
+  "key_id": "ABC123DEF4",
+  "key_path": "/path/to/AuthKey_ABC123DEF4.p8"
+}
+```
+
+#### Limitations of Individual Keys
+
+Per Apple's documentation, Individual Keys **cannot** access:
+
+- Provisioning endpoints (Bundle IDs, Certificates, Profiles, Devices) → `provisioning_*` tools
+- Sales and Finance reports → `analytics_*` tools that fetch sales/finance data
+- `notaryTool` endpoints
+
+Calls to these endpoints with an Individual Key will fail with HTTP 403 from Apple. Use a Team Key for workflows that require them. This server does not pre-validate — errors surface from the App Store Connect API directly.
 ### 3. MCP Host Configuration
 
 <details>
