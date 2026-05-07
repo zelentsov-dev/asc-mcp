@@ -10,7 +10,7 @@ extension OfferCodesWorker {
         guard let arguments = params.arguments,
               let subscriptionId = arguments["subscription_id"]?.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameter 'subscription_id' is missing")],
+                content: [MCPContent.text("Error: Required parameter 'subscription_id' is missing")],
                 isError: true
             )
         }
@@ -48,11 +48,11 @@ extension OfferCodesWorker {
                 result["next_url"] = next
             }
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to list offer codes: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to list offer codes: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -69,7 +69,7 @@ extension OfferCodesWorker {
               let duration = arguments["duration"]?.stringValue,
               let numberOfPeriods = arguments["number_of_periods"]?.intValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameters: subscription_id, name, offer_eligibility, offer_mode, duration, number_of_periods")],
+                content: [MCPContent.text("Error: Required parameters: subscription_id, name, offer_eligibility, offer_mode, duration, number_of_periods")],
                 isError: true
             )
         }
@@ -120,7 +120,7 @@ extension OfferCodesWorker {
                     if !ids.isEmpty {
                         guard ids.count == territoryIds.count else {
                             return CallTool.Result(
-                                content: [.text("Error: price_point_ids and territory_ids must have the same count (got \(ids.count) vs \(territoryIds.count))")],
+                                content: [MCPContent.text("Error: price_point_ids and territory_ids must have the same count (got \(ids.count) vs \(territoryIds.count))")],
                                 isError: true
                             )
                         }
@@ -183,11 +183,11 @@ extension OfferCodesWorker {
                 "offer_code": offerCode
             ] as [String: Any]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to create offer code: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to create offer code: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -199,7 +199,7 @@ extension OfferCodesWorker {
         guard let arguments = params.arguments,
               let offerCodeId = arguments["offer_code_id"]?.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameter 'offer_code_id' is missing")],
+                content: [MCPContent.text("Error: Required parameter 'offer_code_id' is missing")],
                 isError: true
             )
         }
@@ -227,11 +227,11 @@ extension OfferCodesWorker {
                 "offer_code": offerCode
             ] as [String: Any]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to update offer code: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to update offer code: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -243,7 +243,7 @@ extension OfferCodesWorker {
         guard let arguments = params.arguments,
               let offerCodeId = arguments["offer_code_id"]?.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameter 'offer_code_id' is missing")],
+                content: [MCPContent.text("Error: Required parameter 'offer_code_id' is missing")],
                 isError: true
             )
         }
@@ -272,11 +272,11 @@ extension OfferCodesWorker {
                 "message": "Offer code '\(offerCodeId)' deactivated"
             ] as [String: Any]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to deactivate offer code: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to deactivate offer code: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -288,7 +288,7 @@ extension OfferCodesWorker {
         guard let arguments = params.arguments,
               let offerCodeId = arguments["offer_code_id"]?.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameter 'offer_code_id' is missing")],
+                content: [MCPContent.text("Error: Required parameter 'offer_code_id' is missing")],
                 isError: true
             )
         }
@@ -326,11 +326,11 @@ extension OfferCodesWorker {
                 result["next_url"] = next
             }
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to list offer code prices: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to list offer code prices: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -344,7 +344,7 @@ extension OfferCodesWorker {
               let numberOfCodes = arguments["number_of_codes"]?.intValue,
               let expirationDate = arguments["expiration_date"]?.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameters: offer_code_id, number_of_codes, expiration_date")],
+                content: [MCPContent.text("Error: Required parameters: offer_code_id, number_of_codes, expiration_date")],
                 isError: true
             )
         }
@@ -378,11 +378,11 @@ extension OfferCodesWorker {
                 "message": "Generated \(numberOfCodes) one-time use codes"
             ] as [String: Any]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to generate one-time codes: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to generate one-time codes: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -394,7 +394,7 @@ extension OfferCodesWorker {
         guard let arguments = params.arguments,
               let offerCodeId = arguments["offer_code_id"]?.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameter 'offer_code_id' is missing")],
+                content: [MCPContent.text("Error: Required parameter 'offer_code_id' is missing")],
                 isError: true
             )
         }
@@ -432,11 +432,11 @@ extension OfferCodesWorker {
                 result["next_url"] = next
             }
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to list one-time codes: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to list one-time codes: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -452,7 +452,7 @@ extension OfferCodesWorker {
               let customCode = arguments["custom_code"]?.stringValue,
               let numberOfCodes = arguments["number_of_codes"]?.intValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameters: offer_code_id, custom_code, number_of_codes")],
+                content: [MCPContent.text("Error: Required parameters: offer_code_id, custom_code, number_of_codes")],
                 isError: true
             )
         }
@@ -486,11 +486,11 @@ extension OfferCodesWorker {
                 "custom_code": code
             ] as [String: Any]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to create custom code: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to create custom code: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -502,7 +502,7 @@ extension OfferCodesWorker {
         guard let arguments = params.arguments,
               let customCodeId = arguments["custom_code_id"]?.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameter 'custom_code_id' is missing")],
+                content: [MCPContent.text("Error: Required parameter 'custom_code_id' is missing")],
                 isError: true
             )
         }
@@ -520,11 +520,11 @@ extension OfferCodesWorker {
                 "custom_code": code
             ] as [String: Any]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to get custom code: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to get custom code: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -536,7 +536,7 @@ extension OfferCodesWorker {
         guard let arguments = params.arguments,
               let customCodeId = arguments["custom_code_id"]?.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameter 'custom_code_id' is missing")],
+                content: [MCPContent.text("Error: Required parameter 'custom_code_id' is missing")],
                 isError: true
             )
         }
@@ -565,11 +565,11 @@ extension OfferCodesWorker {
                 "message": "Custom code '\(customCodeId)' deactivated"
             ] as [String: Any]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to deactivate custom code: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to deactivate custom code: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -603,12 +603,12 @@ extension OfferCodesWorker {
         return [
             "id": code.id,
             "type": code.type,
-            "customCode": code.attributes?.customCode.jsonSafe ?? NSNull(),
-            "numberOfCodes": code.attributes?.numberOfCodes.jsonSafe ?? NSNull(),
-            "totalNumberOfCodes": code.attributes?.totalNumberOfCodes.jsonSafe ?? NSNull(),
-            "active": code.attributes?.active.jsonSafe ?? NSNull(),
-            "expirationDate": code.attributes?.expirationDate.jsonSafe ?? NSNull(),
-            "createdDate": code.attributes?.createdDate.jsonSafe ?? NSNull()
+            "customCode": (code.attributes?.customCode).jsonSafe,
+            "numberOfCodes": (code.attributes?.numberOfCodes).jsonSafe,
+            "totalNumberOfCodes": (code.attributes?.totalNumberOfCodes).jsonSafe,
+            "active": (code.attributes?.active).jsonSafe,
+            "expirationDate": (code.attributes?.expirationDate).jsonSafe,
+            "createdDate": (code.attributes?.createdDate).jsonSafe
         ]
     }
 
@@ -616,10 +616,10 @@ extension OfferCodesWorker {
         return [
             "id": code.id,
             "type": code.type,
-            "numberOfCodes": code.attributes?.numberOfCodes.jsonSafe ?? NSNull(),
-            "createdDate": code.attributes?.createdDate.jsonSafe ?? NSNull(),
-            "expirationDate": code.attributes?.expirationDate.jsonSafe ?? NSNull(),
-            "active": code.attributes?.active.jsonSafe ?? NSNull()
+            "numberOfCodes": (code.attributes?.numberOfCodes).jsonSafe,
+            "createdDate": (code.attributes?.createdDate).jsonSafe,
+            "expirationDate": (code.attributes?.expirationDate).jsonSafe,
+            "active": (code.attributes?.active).jsonSafe
         ]
     }
 }

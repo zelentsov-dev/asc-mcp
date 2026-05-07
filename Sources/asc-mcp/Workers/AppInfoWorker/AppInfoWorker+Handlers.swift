@@ -10,6 +10,39 @@ import MCP
 
 // MARK: - Tool Handlers
 extension AppInfoWorker {
+    private func validateAppInfoLocalizationArguments(
+        _ arguments: [String: Value],
+        locale: String? = nil
+    ) -> [ASCMetadataValidator.FieldError] {
+        var errors: [ASCMetadataValidator.FieldError] = []
+        if let locale {
+            errors += ASCMetadataValidator.validateLocale(locale)
+        }
+
+        var textFields: [String: String] = [:]
+        for key in ["name", "subtitle", "privacy_policy_text"] {
+            if let value = arguments[key]?.stringValue {
+                textFields[key] = value
+            }
+        }
+
+        errors += ASCMetadataValidator.validateTextFields(
+            textFields,
+            limits: [
+                "name": 30,
+                "subtitle": 30
+            ]
+        )
+
+        for key in ["privacy_policy_url", "privacy_choices_url"] {
+            if let value = arguments[key]?.stringValue, !value.isEmpty {
+                errors += ASCMetadataValidator.validateHTTPURL(value, field: key)
+            }
+        }
+
+        return errors
+    }
+
 
     /// Lists app info objects for an app
     /// - Returns: JSON array of app infos with attributes and relationship data
@@ -18,7 +51,7 @@ extension AppInfoWorker {
               let appIdValue = arguments["app_id"],
               let appId = appIdValue.stringValue else {
             return CallTool.Result(
-                content: [.text("Required parameter 'app_id' is missing")],
+                content: [MCPContent.text("Required parameter 'app_id' is missing")],
                 isError: true
             )
         }
@@ -41,11 +74,11 @@ extension AppInfoWorker {
                 result["next_url"] = next
             }
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Failed to list app infos: \(error.localizedDescription)")],
+                content: [MCPContent.text("Failed to list app infos: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -58,7 +91,7 @@ extension AppInfoWorker {
               let infoIdValue = arguments["info_id"],
               let infoId = infoIdValue.stringValue else {
             return CallTool.Result(
-                content: [.text("Required parameter 'info_id' is missing")],
+                content: [MCPContent.text("Required parameter 'info_id' is missing")],
                 isError: true
             )
         }
@@ -103,11 +136,11 @@ extension AppInfoWorker {
                 }
             }
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Failed to get app info: \(error.localizedDescription)")],
+                content: [MCPContent.text("Failed to get app info: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -120,7 +153,7 @@ extension AppInfoWorker {
               let infoIdValue = arguments["info_id"],
               let infoId = infoIdValue.stringValue else {
             return CallTool.Result(
-                content: [.text("Required parameter 'info_id' is missing")],
+                content: [MCPContent.text("Required parameter 'info_id' is missing")],
                 isError: true
             )
         }
@@ -167,11 +200,11 @@ extension AppInfoWorker {
                 "app_info": formatAppInfo(response.data)
             ] as [String: Any]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Failed to update app info: \(error.localizedDescription)")],
+                content: [MCPContent.text("Failed to update app info: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -184,7 +217,7 @@ extension AppInfoWorker {
               let infoIdValue = arguments["info_id"],
               let infoId = infoIdValue.stringValue else {
             return CallTool.Result(
-                content: [.text("Required parameter 'info_id' is missing")],
+                content: [MCPContent.text("Required parameter 'info_id' is missing")],
                 isError: true
             )
         }
@@ -208,11 +241,11 @@ extension AppInfoWorker {
                 result["next_url"] = next
             }
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Failed to list app info localizations: \(error.localizedDescription)")],
+                content: [MCPContent.text("Failed to list app info localizations: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -224,10 +257,12 @@ extension AppInfoWorker {
         guard let arguments = params.arguments,
               let locIdValue = arguments["localization_id"],
               let localizationId = locIdValue.stringValue else {
-            return CallTool.Result(
-                content: [.text("Required parameter 'localization_id' is missing")],
-                isError: true
-            )
+            return MCPResult.error("Required parameter 'localization_id' is missing")
+        }
+
+        let validationErrors = validateAppInfoLocalizationArguments(arguments)
+        if !validationErrors.isEmpty {
+            return ASCMetadataValidator.errorResult(validationErrors)
         }
 
         do {
@@ -257,13 +292,10 @@ extension AppInfoWorker {
                 "localization": localization
             ] as [String: Any]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
-            return CallTool.Result(
-                content: [.text("Failed to update app info localization: \(error.localizedDescription)")],
-                isError: true
-            )
+            return MCPResult.error("Failed to update app info localization: \(error.localizedDescription)")
         }
     }
 
@@ -275,10 +307,12 @@ extension AppInfoWorker {
               let infoId = infoIdValue.stringValue,
               let localeValue = arguments["locale"],
               let locale = localeValue.stringValue else {
-            return CallTool.Result(
-                content: [.text("Required parameters: info_id, locale")],
-                isError: true
-            )
+            return MCPResult.error("Required parameters: info_id, locale")
+        }
+
+        let validationErrors = validateAppInfoLocalizationArguments(arguments, locale: locale)
+        if !validationErrors.isEmpty {
+            return ASCMetadataValidator.errorResult(validationErrors)
         }
 
         do {
@@ -313,13 +347,10 @@ extension AppInfoWorker {
                 "localization": localization
             ] as [String: Any]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
-            return CallTool.Result(
-                content: [.text("Failed to create app info localization: \(error.localizedDescription)")],
-                isError: true
-            )
+            return MCPResult.error("Failed to create app info localization: \(error.localizedDescription)")
         }
     }
 
@@ -331,7 +362,7 @@ extension AppInfoWorker {
               let locIdValue = arguments["localization_id"],
               let localizationId = locIdValue.stringValue else {
             return CallTool.Result(
-                content: [.text("Required parameter 'localization_id' is missing")],
+                content: [MCPContent.text("Required parameter 'localization_id' is missing")],
                 isError: true
             )
         }
@@ -344,11 +375,11 @@ extension AppInfoWorker {
                 "message": "App info localization '\(localizationId)' deleted"
             ] as [String: Any]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Failed to delete app info localization: \(error.localizedDescription)")],
+                content: [MCPContent.text("Failed to delete app info localization: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -363,7 +394,7 @@ extension AppInfoWorker {
               let appIdValue = arguments["app_id"],
               let appId = appIdValue.stringValue else {
             return CallTool.Result(
-                content: [.text("Required parameter 'app_id' is missing")],
+                content: [MCPContent.text("Required parameter 'app_id' is missing")],
                 isError: true
             )
         }
@@ -381,11 +412,11 @@ extension AppInfoWorker {
                 "eula": formatEula(response.data)
             ]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to get EULA (app may not have a EULA configured): \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to get EULA (app may not have a EULA configured): \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -402,7 +433,7 @@ extension AppInfoWorker {
               let territoryIdsValue = arguments["territory_ids"],
               let territoryIdsArray = territoryIdsValue.arrayValue else {
             return CallTool.Result(
-                content: [.text("Required parameters: app_id, agreement_text, territory_ids")],
+                content: [MCPContent.text("Required parameters: app_id, agreement_text, territory_ids")],
                 isError: true
             )
         }
@@ -410,7 +441,7 @@ extension AppInfoWorker {
         let territoryIds = territoryIdsArray.compactMap { $0.stringValue }
         guard !territoryIds.isEmpty else {
             return CallTool.Result(
-                content: [.text("'territory_ids' must contain at least one territory ID")],
+                content: [MCPContent.text("'territory_ids' must contain at least one territory ID")],
                 isError: true
             )
         }
@@ -445,11 +476,11 @@ extension AppInfoWorker {
                 "message": "EULA created successfully"
             ]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Failed to create EULA: \(error.localizedDescription)")],
+                content: [MCPContent.text("Failed to create EULA: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -462,7 +493,7 @@ extension AppInfoWorker {
               let eulaIdValue = arguments["eula_id"],
               let eulaId = eulaIdValue.stringValue else {
             return CallTool.Result(
-                content: [.text("Required parameter 'eula_id' is missing")],
+                content: [MCPContent.text("Required parameter 'eula_id' is missing")],
                 isError: true
             )
         }
@@ -490,11 +521,11 @@ extension AppInfoWorker {
                 "message": "EULA updated successfully"
             ]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Failed to update EULA: \(error.localizedDescription)")],
+                content: [MCPContent.text("Failed to update EULA: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -506,12 +537,12 @@ extension AppInfoWorker {
         var dict: [String: Any] = [
             "id": info.id,
             "type": info.type,
-            "appStoreState": info.attributes?.appStoreState.jsonSafe,
-            "appStoreAgeRating": info.attributes?.appStoreAgeRating.jsonSafe,
-            "brazilAgeRating": info.attributes?.brazilAgeRating.jsonSafe,
-            "brazilAgeRatingV2": info.attributes?.brazilAgeRatingV2.jsonSafe,
-            "kidsAgeBand": info.attributes?.kidsAgeBand.jsonSafe,
-            "state": info.attributes?.state.jsonSafe
+            "appStoreState": (info.attributes?.appStoreState).jsonSafe,
+            "appStoreAgeRating": (info.attributes?.appStoreAgeRating).jsonSafe,
+            "brazilAgeRating": (info.attributes?.brazilAgeRating).jsonSafe,
+            "brazilAgeRatingV2": (info.attributes?.brazilAgeRatingV2).jsonSafe,
+            "kidsAgeBand": (info.attributes?.kidsAgeBand).jsonSafe,
+            "state": (info.attributes?.state).jsonSafe
         ]
 
         // Include relationship IDs if available
@@ -543,12 +574,12 @@ extension AppInfoWorker {
         return [
             "id": loc.id,
             "type": loc.type,
-            "locale": loc.attributes?.locale.jsonSafe,
-            "name": loc.attributes?.name.jsonSafe,
-            "subtitle": loc.attributes?.subtitle.jsonSafe,
-            "privacyPolicyUrl": loc.attributes?.privacyPolicyUrl.jsonSafe,
-            "privacyChoicesUrl": loc.attributes?.privacyChoicesUrl.jsonSafe,
-            "privacyPolicyText": loc.attributes?.privacyPolicyText.jsonSafe
+            "locale": (loc.attributes?.locale).jsonSafe,
+            "name": (loc.attributes?.name).jsonSafe,
+            "subtitle": (loc.attributes?.subtitle).jsonSafe,
+            "privacyPolicyUrl": (loc.attributes?.privacyPolicyUrl).jsonSafe,
+            "privacyChoicesUrl": (loc.attributes?.privacyChoicesUrl).jsonSafe,
+            "privacyPolicyText": (loc.attributes?.privacyPolicyText).jsonSafe
         ]
     }
 
@@ -556,7 +587,7 @@ extension AppInfoWorker {
         return [
             "id": eula.id,
             "type": eula.type,
-            "agreementText": eula.attributes?.agreementText.jsonSafe ?? NSNull()
+            "agreementText": (eula.attributes?.agreementText).jsonSafe
         ]
     }
 
@@ -564,7 +595,7 @@ extension AppInfoWorker {
         return [
             "id": category.id,
             "type": category.type,
-            "platforms": category.attributes?.platforms.jsonSafe
+            "platforms": (category.attributes?.platforms).jsonSafe
         ]
     }
 }

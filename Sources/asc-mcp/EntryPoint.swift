@@ -19,11 +19,11 @@ struct ASCMCPApp {
         }
         #endif
 
-        // Parse --workers flag for tool filtering (e.g. --workers apps,builds,versions)
-        let enabledWorkers = parseWorkersFlag()
+        // Parse runtime flags for tool filtering and safe read-only operation.
+        let runtimeOptions = parseRuntimeOptions()
 
         do {
-            try await runApplication(enabledWorkers: enabledWorkers)
+            try await runApplication(options: runtimeOptions)
         } catch let error as CompanyError {
             print("Error loading companies: \(error.errorDescription ?? error.localizedDescription)", to: &standardError)
             exit(1)
@@ -36,8 +36,21 @@ struct ASCMCPApp {
         }
     }
 
-    /// Parse --workers flag from command line arguments
-    /// - Returns: Set of enabled worker names, or nil if flag not provided (all workers enabled)
+    /// Parse supported command line runtime options.
+    /// - Returns: Runtime options used to configure the MCP server.
+    private static func parseRuntimeOptions() -> AppRuntimeOptions {
+        let enabledWorkers = parseWorkersFlag()
+        let readOnlyMode = CommandLine.arguments.contains("--read-only")
+
+        if readOnlyMode {
+            print("🔒 Read-only mode enabled: App Store Connect mutation tools will be blocked", to: &standardError)
+        }
+
+        return AppRuntimeOptions(enabledWorkers: enabledWorkers, readOnlyMode: readOnlyMode)
+    }
+
+    /// Parse --workers flag from command line arguments.
+    /// - Returns: Set of enabled worker names, or nil if flag not provided (all workers enabled).
     private static func parseWorkersFlag() -> Set<String>? {
         guard let index = CommandLine.arguments.firstIndex(of: "--workers"),
               index + 1 < CommandLine.arguments.count else {
@@ -45,8 +58,8 @@ struct ASCMCPApp {
         }
 
         let validWorkers: Set<String> = [
-            "company", "auth", "apps", "builds", "build_processing", "build_beta",
-            "versions", "reviews", "beta_groups", "beta_testers", "iap",
+            "company", "auth", "apps", "webhooks", "xcode_cloud", "builds", "build_processing", "build_beta",
+            "versions", "reviews", "beta_groups", "beta_feedback", "beta_testers", "iap",
             "provisioning", "app_info", "pricing", "users", "app_events", "analytics",
             "subscriptions", "offer_codes", "winback", "intro_offers", "promo_offers",
             "sandbox", "beta_app", "pre_release", "beta_license",

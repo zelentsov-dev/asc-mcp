@@ -18,7 +18,7 @@ extension MetricsWorker {
               let appId = arguments["app_id"]?.stringValue,
               let metricType = arguments["metric_type"]?.stringValue else {
             return CallTool.Result(
-                content: [.text("Required parameters: app_id, metric_type")],
+                content: [MCPContent.text("Required parameters: app_id, metric_type")],
                 isError: true
             )
         }
@@ -47,11 +47,11 @@ extension MetricsWorker {
                 "product_data": productData
             ]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Failed to get app performance metrics: \(error.localizedDescription)")],
+                content: [MCPContent.text("Failed to get app performance metrics: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -65,7 +65,7 @@ extension MetricsWorker {
               let buildId = arguments["build_id"]?.stringValue,
               let metricType = arguments["metric_type"]?.stringValue else {
             return CallTool.Result(
-                content: [.text("Required parameters: build_id, metric_type")],
+                content: [MCPContent.text("Required parameters: build_id, metric_type")],
                 isError: true
             )
         }
@@ -94,11 +94,11 @@ extension MetricsWorker {
                 "product_data": productData
             ]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Failed to get build performance metrics: \(error.localizedDescription)")],
+                content: [MCPContent.text("Failed to get build performance metrics: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -111,7 +111,7 @@ extension MetricsWorker {
         guard let arguments = params.arguments,
               let buildId = arguments["build_id"]?.stringValue else {
             return CallTool.Result(
-                content: [.text("Required parameter 'build_id' is missing")],
+                content: [MCPContent.text("Required parameter 'build_id' is missing")],
                 isError: true
             )
         }
@@ -154,11 +154,11 @@ extension MetricsWorker {
                 result["next_url"] = nextUrl
             }
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Failed to list build diagnostic signatures: \(error.localizedDescription)")],
+                content: [MCPContent.text("Failed to list build diagnostic signatures: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -171,7 +171,7 @@ extension MetricsWorker {
         guard let arguments = params.arguments,
               let signatureId = arguments["signature_id"]?.stringValue else {
             return CallTool.Result(
-                content: [.text("Required parameter 'signature_id' is missing")],
+                content: [MCPContent.text("Required parameter 'signature_id' is missing")],
                 isError: true
             )
         }
@@ -197,11 +197,11 @@ extension MetricsWorker {
                 "diagnostic_logs": logs
             ]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Failed to get diagnostic logs: \(error.localizedDescription)")],
+                content: [MCPContent.text("Failed to get diagnostic logs: \(error.localizedDescription)")],
                 isError: true
             )
         }

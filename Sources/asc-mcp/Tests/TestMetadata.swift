@@ -92,7 +92,7 @@ public func testAppMetadata() async throws {
         )
         
         let updateResult = try await appsWorker.updateMetadata(updateParams)
-        if case .text(let text) = updateResult.content.first {
+        if case .text(let text, _, _) = updateResult.content.first {
             print(text, to: &standardError)
         }
         
@@ -113,7 +113,7 @@ public func testAppMetadata() async throws {
             )
             
             let metadataResult = try await appsWorker.getAppMetadata(metadataParams)
-            if case .text(let text) = metadataResult.content.first {
+            if case .text(let text, _, _) = metadataResult.content.first {
                 print(text, to: &standardError)
             }
         }
@@ -121,4 +121,3 @@ public func testAppMetadata() async throws {
     
     print("\n✅ METADATA TEST COMPLETED", to: &standardError)
 }
-

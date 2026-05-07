@@ -3,6 +3,51 @@ import MCP
 
 // MARK: - Tool Handlers
 extension AppsWorker {
+    private func validateAppStoreMetadataArguments(
+        _ arguments: [String: Value],
+        locale: String
+    ) -> [ASCMetadataValidator.FieldError] {
+        var errors = ASCMetadataValidator.validateLocale(locale)
+
+        var textFields: [String: String] = [:]
+        for key in ["description", "whats_new", "keywords", "promotional_text"] {
+            if let value = arguments[key]?.stringValue {
+                textFields[key] = value
+            }
+        }
+
+        errors += ASCMetadataValidator.validateTextFields(
+            textFields,
+            limits: [
+                "description": 4_000,
+                "whats_new": 4_000,
+                "keywords": 100,
+                "promotional_text": 170
+            ]
+        )
+
+        for key in ["support_url", "marketing_url"] {
+            if let value = arguments[key]?.stringValue, !value.isEmpty {
+                errors += ASCMetadataValidator.validateHTTPURL(value, field: key)
+            }
+        }
+
+        return errors
+    }
+
+    private func updatedMetadataFieldNames(
+        _ attributes: ASCAppStoreVersionLocalizationUpdateRequest.Data.Attributes
+    ) -> [String] {
+        var fields: [String] = []
+        if attributes.description != nil { fields.append("description") }
+        if attributes.whatsNew != nil { fields.append("whats_new") }
+        if attributes.keywords != nil { fields.append("keywords") }
+        if attributes.promotionalText != nil { fields.append("promotional_text") }
+        if attributes.supportUrl != nil { fields.append("support_url") }
+        if attributes.marketingUrl != nil { fields.append("marketing_url") }
+        return fields
+    }
+
     
     /// Lists all apps from App Store Connect with optional filtering
     /// - Returns: JSON array of apps with their IDs, names, bundle IDs, and metadata
@@ -51,9 +96,9 @@ extension AppsWorker {
                     "primaryLocale": app.locale,
                     "type": app.type,
                     "attributes": [
-                        "availableInNewTerritories": app.attributes?.availableInNewTerritories.jsonSafe,
-                        "contentRightsDeclaration": app.attributes?.contentRightsDeclaration.jsonSafe,
-                        "isOrEverWasMadeForKids": app.attributes?.isOrEverWasMadeForKids.jsonSafe
+                        "availableInNewTerritories": (app.attributes?.availableInNewTerritories).jsonSafe,
+                        "contentRightsDeclaration": (app.attributes?.contentRightsDeclaration).jsonSafe,
+                        "isOrEverWasMadeForKids": (app.attributes?.isOrEverWasMadeForKids).jsonSafe
                     ]
                 ] as [String: Any]
             }
@@ -75,11 +120,11 @@ extension AppsWorker {
                 result["next_url"] = nextUrl
             }
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to list apps: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to list apps: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -93,7 +138,7 @@ extension AppsWorker {
               let appIdValue = arguments["app_id"],
               let appId = appIdValue.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameter 'app_id' is missing")],
+                content: [MCPContent.text("Error: Required parameter 'app_id' is missing")],
                 isError: true
             )
         }
@@ -147,23 +192,23 @@ extension AppsWorker {
                     "sku": app.appSKU,
                     "primaryLocale": app.locale,
                     "attributes": [
-                        "availableInNewTerritories": app.attributes?.availableInNewTerritories.jsonSafe,
-                        "contentRightsDeclaration": app.attributes?.contentRightsDeclaration.jsonSafe,
-                        "isOrEverWasMadeForKids": app.attributes?.isOrEverWasMadeForKids.jsonSafe,
-                        "subscriptionStatusUrl": app.attributes?.subscriptionStatusUrl.jsonSafe,
-                        "subscriptionStatusUrlVersion": app.attributes?.subscriptionStatusUrlVersion.jsonSafe,
-                        "subscriptionStatusUrlForSandbox": app.attributes?.subscriptionStatusUrlForSandbox.jsonSafe,
-                        "subscriptionStatusUrlVersionForSandbox": app.attributes?.subscriptionStatusUrlVersionForSandbox.jsonSafe
+                        "availableInNewTerritories": (app.attributes?.availableInNewTerritories).jsonSafe,
+                        "contentRightsDeclaration": (app.attributes?.contentRightsDeclaration).jsonSafe,
+                        "isOrEverWasMadeForKids": (app.attributes?.isOrEverWasMadeForKids).jsonSafe,
+                        "subscriptionStatusUrl": (app.attributes?.subscriptionStatusUrl).jsonSafe,
+                        "subscriptionStatusUrlVersion": (app.attributes?.subscriptionStatusUrlVersion).jsonSafe,
+                        "subscriptionStatusUrlForSandbox": (app.attributes?.subscriptionStatusUrlForSandbox).jsonSafe,
+                        "subscriptionStatusUrlVersionForSandbox": (app.attributes?.subscriptionStatusUrlVersionForSandbox).jsonSafe
                     ],
                     "relationships": relationships
                 ]
             ]
             
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
             
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to get app details: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to get app details: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -177,7 +222,7 @@ extension AppsWorker {
               let queryValue = arguments["query"],
               let query = queryValue.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameter 'query' is missing")],
+                content: [MCPContent.text("Error: Required parameter 'query' is missing")],
                 isError: true
             )
         }
@@ -212,11 +257,11 @@ extension AppsWorker {
                 "searchedIn": ["name", "bundleId"]
             ]
             
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
             
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to search apps: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to search apps: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -230,7 +275,7 @@ extension AppsWorker {
               let appIdValue = arguments["app_id"],
               let appId = appIdValue.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameter 'app_id' is missing")],
+                content: [MCPContent.text("Error: Required parameter 'app_id' is missing")],
                 isError: true
             )
         }
@@ -274,11 +319,11 @@ extension AppsWorker {
                 result["next_url"] = nextUrl
             }
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to list versions: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to list versions: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -293,7 +338,7 @@ extension AppsWorker {
               let appIdValue = arguments["app_id"],
               let appId = appIdValue.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameter 'app_id' is missing")],
+                content: [MCPContent.text("Error: Required parameter 'app_id' is missing")],
                 isError: true
             )
         }
@@ -330,7 +375,7 @@ extension AppsWorker {
 
                 guard !versionsResponse.data.isEmpty else {
                     return CallTool.Result(
-                        content: [.text(JSONFormatter.formatJSON([
+                        content: [MCPContent.text(JSONFormatter.formatJSON([
                             "success": false,
                             "error": "App \(appId) has no versions"
                         ] as [String: Any]))],
@@ -346,7 +391,7 @@ extension AppsWorker {
                     guard let match = versions.first(where: { $0.attributes?.appStoreState == stateFilter }) else {
                         let available = versions.compactMap { $0.attributes?.appStoreState }.joined(separator: ", ")
                         return CallTool.Result(
-                            content: [.text(JSONFormatter.formatJSON([
+                            content: [MCPContent.text(JSONFormatter.formatJSON([
                                 "success": false,
                                 "error": "Version with state '\(stateFilter)' not found. Available: \(available)"
                             ] as [String: Any]))],
@@ -405,7 +450,7 @@ extension AppsWorker {
             // Check if locale filter returned empty results
             if let locale = locale, localizationsResponse.data.isEmpty {
                 return CallTool.Result(
-                    content: [.text(JSONFormatter.formatJSON([
+                    content: [MCPContent.text(JSONFormatter.formatJSON([
                         "success": false,
                         "error": "Localization '\(locale)' not found for version \(resolvedVersion.versionString)"
                     ] as [String: Any]))],
@@ -456,11 +501,11 @@ extension AppsWorker {
                 result["localizations"] = formatted
             }
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to get metadata: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to get metadata: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -570,10 +615,12 @@ extension AppsWorker {
               let versionId = versionIdValue.stringValue,
               let localeValue = arguments["locale"],
               let locale = localeValue.stringValue else {
-            return CallTool.Result(
-                content: [.text("Error: Required parameters 'app_id', 'version_id' and 'locale' are missing")],
-                isError: true
-            )
+            return MCPResult.error("Required parameters 'app_id', 'version_id' and 'locale' are missing")
+        }
+
+        let validationErrors = validateAppStoreMetadataArguments(arguments, locale: locale)
+        if !validationErrors.isEmpty {
+            return ASCMetadataValidator.errorResult(validationErrors)
         }
         
         do {
@@ -585,10 +632,7 @@ extension AppsWorker {
             
             let version = versionResponse.data
             guard version.attributes?.appStoreState == "PREPARE_FOR_SUBMISSION" else {
-                return CallTool.Result(
-                    content: [.text("Error: Version must be in PREPARE_FOR_SUBMISSION state for editing.\nCurrent state: \(version.attributes?.appStoreState ?? "Unknown")")],
-                    isError: true
-                )
+                return MCPResult.error("Version must be in PREPARE_FOR_SUBMISSION state for editing. Current state: \(version.attributes?.appStoreState ?? "Unknown")")
             }
             
             // 2. Get localization ID for the specified locale
@@ -599,10 +643,7 @@ extension AppsWorker {
             )
             
             guard let localization = localizationsResponse.data.first else {
-                return CallTool.Result(
-                    content: [.text("Error: Localization '\(locale)' not found for version \(version.version)")],
-                    isError: true
-                )
+                return MCPResult.error("Localization '\(locale)' not found for version \(version.version)")
             }
             
             // 3. Collect attributes for update (only provided fields)
@@ -624,10 +665,7 @@ extension AppsWorker {
                            attributes.marketingUrl != nil
             
             guard hasUpdates else {
-                return CallTool.Result(
-                    content: [.text("Warning: No fields specified for update")],
-                    isError: true
-                )
+                return MCPResult.error("No fields specified for update")
             }
             
             // 4. Send PATCH request
@@ -667,13 +705,20 @@ extension AppsWorker {
                 result += "- Marketing URL\n"
             }
             
-            return CallTool.Result(content: [.text(result)])
+            return MCPResult.json(
+                .object([
+                    "success": .bool(true),
+                    "versionId": .string(versionId),
+                    "version": .string(version.version),
+                    "locale": .string(locale),
+                    "localizationId": .string(localization.id),
+                    "updatedFields": .array(updatedMetadataFieldNames(attributes).map(Value.string))
+                ]),
+                text: result
+            )
             
         } catch {
-            return CallTool.Result(
-                content: [.text("Error: Failed to update metadata: \(error.localizedDescription)")],
-                isError: true
-            )
+            return MCPResult.error("Failed to update metadata: \(error.localizedDescription)")
         }
     }
     
@@ -686,10 +731,12 @@ extension AppsWorker {
               let versionId = versionIdValue.stringValue,
               let localeValue = arguments["locale"],
               let locale = localeValue.stringValue else {
-            return CallTool.Result(
-                content: [.text("Error: Required parameters 'version_id' and 'locale' are missing")],
-                isError: true
-            )
+            return MCPResult.error("Required parameters 'version_id' and 'locale' are missing")
+        }
+
+        let validationErrors = validateAppStoreMetadataArguments(arguments, locale: locale)
+        if !validationErrors.isEmpty {
+            return ASCMetadataValidator.errorResult(validationErrors)
         }
 
         do {
@@ -731,11 +778,11 @@ extension AppsWorker {
                 "localization": locData
             ]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to create localization: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to create localization: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -749,7 +796,7 @@ extension AppsWorker {
               let localizationIdValue = arguments["localization_id"],
               let localizationId = localizationIdValue.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameter 'localization_id' is missing")],
+                content: [MCPContent.text("Error: Required parameter 'localization_id' is missing")],
                 isError: true
             )
         }
@@ -762,11 +809,11 @@ extension AppsWorker {
                 "message": "Localization '\(localizationId)' deleted"
             ]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to delete localization: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to delete localization: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -823,7 +870,7 @@ extension AppsWorker {
               let versionIdValue = arguments["version_id"],
               let versionId = versionIdValue.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameters 'app_id' and 'version_id' are missing\n\nUse apps_list_versions to get version ID")],
+                content: [MCPContent.text("Error: Required parameters 'app_id' and 'version_id' are missing\n\nUse apps_list_versions to get version ID")],
                 isError: true
             )
         }
@@ -889,14 +936,14 @@ extension AppsWorker {
                 result["next_url"] = nextUrl
             }
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             let result: [String: Any] = [
                 "success": false,
                 "error": error.localizedDescription
             ]
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))], isError: true)
+            return MCPResult.jsonObject(result, isError: true)
         }
     }
 }

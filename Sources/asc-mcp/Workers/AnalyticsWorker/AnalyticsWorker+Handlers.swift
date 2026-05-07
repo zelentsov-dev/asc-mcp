@@ -91,14 +91,14 @@ extension AnalyticsWorker {
               let frequency = arguments["frequency"]?.stringValue,
               let reportDate = arguments["report_date"]?.stringValue else {
             return CallTool.Result(
-                content: [.text("Missing required parameters: report_type, report_sub_type, frequency, report_date")],
+                content: [MCPContent.text("Missing required parameters: report_type, report_sub_type, frequency, report_date")],
                 isError: true
             )
         }
 
         guard let vendorNumber = await resolveVendorNumber(from: arguments) else {
             return CallTool.Result(
-                content: [.text("Missing vendor_number: provide it as parameter or set vendor_number in company config")],
+                content: [MCPContent.text("Missing vendor_number: provide it as parameter or set vendor_number in company config")],
                 isError: true
             )
         }
@@ -167,10 +167,10 @@ extension AnalyticsWorker {
                 }
             }
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
         } catch {
             return CallTool.Result(
-                content: [.text("Failed to get sales report: \(error.localizedDescription)")],
+                content: [MCPContent.text("Failed to get sales report: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -183,14 +183,14 @@ extension AnalyticsWorker {
         guard let arguments = params.arguments,
               let reportDate = arguments["report_date"]?.stringValue else {
             return CallTool.Result(
-                content: [.text("Missing required parameter: report_date")],
+                content: [MCPContent.text("Missing required parameter: report_date")],
                 isError: true
             )
         }
 
         guard let vendorNumber = await resolveVendorNumber(from: arguments) else {
             return CallTool.Result(
-                content: [.text("Missing vendor_number: provide it as parameter or set vendor_number in company config")],
+                content: [MCPContent.text("Missing vendor_number: provide it as parameter or set vendor_number in company config")],
                 isError: true
             )
         }
@@ -246,7 +246,7 @@ extension AnalyticsWorker {
             result["app_id_filter"] = appId
         }
 
-        return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+        return MCPResult.jsonObject(result)
     }
 
     /// Fetches a single report section, returning success or error dict
@@ -290,14 +290,14 @@ extension AnalyticsWorker {
               let reportDate = arguments["report_date"]?.stringValue,
               let reportType = arguments["report_type"]?.stringValue else {
             return CallTool.Result(
-                content: [.text("Missing required parameters: region_code, report_date, report_type")],
+                content: [MCPContent.text("Missing required parameters: region_code, report_date, report_type")],
                 isError: true
             )
         }
 
         guard let vendorNumber = await resolveVendorNumber(from: arguments) else {
             return CallTool.Result(
-                content: [.text("Missing vendor_number: provide it as parameter or set vendor_number in company config")],
+                content: [MCPContent.text("Missing vendor_number: provide it as parameter or set vendor_number in company config")],
                 isError: true
             )
         }
@@ -318,7 +318,7 @@ extension AnalyticsWorker {
 
             guard let tsvString else {
                 return CallTool.Result(
-                    content: [.text("Failed to decode report data: not valid UTF-8 or gzip")],
+                    content: [MCPContent.text("Failed to decode report data: not valid UTF-8 or gzip")],
                     isError: true
                 )
             }
@@ -342,10 +342,10 @@ extension AnalyticsWorker {
                 result["rows"] = limitedParsed.rows
             }
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
         } catch {
             return CallTool.Result(
-                content: [.text("Failed to get financial report: \(error.localizedDescription)")],
+                content: [MCPContent.text("Failed to get financial report: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -358,7 +358,7 @@ extension AnalyticsWorker {
               let appIdValue = arguments["app_id"],
               let appId = appIdValue.stringValue else {
             return CallTool.Result(
-                content: [.text("Required parameter 'app_id' is missing")],
+                content: [MCPContent.text("Required parameter 'app_id' is missing")],
                 isError: true
             )
         }
@@ -400,11 +400,11 @@ extension AnalyticsWorker {
                 result["next_url"] = nextUrl
             }
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Failed to list analytics report requests: \(error.localizedDescription)")],
+                content: [MCPContent.text("Failed to list analytics report requests: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -419,7 +419,7 @@ extension AnalyticsWorker {
               let accessTypeValue = arguments["access_type"],
               let accessType = accessTypeValue.stringValue else {
             return CallTool.Result(
-                content: [.text("Required parameters 'app_id' and 'access_type' are missing")],
+                content: [MCPContent.text("Required parameters 'app_id' and 'access_type' are missing")],
                 isError: true
             )
         }
@@ -451,11 +451,11 @@ extension AnalyticsWorker {
                 "report_request": reportRequest
             ]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Failed to create analytics report request: \(error.localizedDescription)")],
+                content: [MCPContent.text("Failed to create analytics report request: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -470,7 +470,7 @@ extension AnalyticsWorker {
         guard let arguments = params.arguments,
               let requestId = arguments["request_id"]?.stringValue else {
             return CallTool.Result(
-                content: [.text("Required parameter 'request_id' is missing")],
+                content: [MCPContent.text("Required parameter 'request_id' is missing")],
                 isError: true
             )
         }
@@ -509,11 +509,11 @@ extension AnalyticsWorker {
                 result["next_url"] = nextUrl
             }
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Failed to list analytics reports: \(error.localizedDescription)")],
+                content: [MCPContent.text("Failed to list analytics reports: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -526,7 +526,7 @@ extension AnalyticsWorker {
         guard let arguments = params.arguments,
               let reportId = arguments["report_id"]?.stringValue else {
             return CallTool.Result(
-                content: [.text("Required parameter 'report_id' is missing")],
+                content: [MCPContent.text("Required parameter 'report_id' is missing")],
                 isError: true
             )
         }
@@ -543,11 +543,11 @@ extension AnalyticsWorker {
                 "report": formatReport(response.data)
             ]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Failed to get analytics report: \(error.localizedDescription)")],
+                content: [MCPContent.text("Failed to get analytics report: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -560,7 +560,7 @@ extension AnalyticsWorker {
         guard let arguments = params.arguments,
               let reportId = arguments["report_id"]?.stringValue else {
             return CallTool.Result(
-                content: [.text("Required parameter 'report_id' is missing")],
+                content: [MCPContent.text("Required parameter 'report_id' is missing")],
                 isError: true
             )
         }
@@ -599,11 +599,11 @@ extension AnalyticsWorker {
                 result["next_url"] = nextUrl
             }
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Failed to list analytics report instances: \(error.localizedDescription)")],
+                content: [MCPContent.text("Failed to list analytics report instances: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -616,7 +616,7 @@ extension AnalyticsWorker {
         guard let arguments = params.arguments,
               let instanceId = arguments["instance_id"]?.stringValue else {
             return CallTool.Result(
-                content: [.text("Required parameter 'instance_id' is missing")],
+                content: [MCPContent.text("Required parameter 'instance_id' is missing")],
                 isError: true
             )
         }
@@ -633,11 +633,11 @@ extension AnalyticsWorker {
                 "instance": formatReportInstance(response.data)
             ]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Failed to get analytics report instance: \(error.localizedDescription)")],
+                content: [MCPContent.text("Failed to get analytics report instance: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -650,7 +650,7 @@ extension AnalyticsWorker {
         guard let arguments = params.arguments,
               let instanceId = arguments["instance_id"]?.stringValue else {
             return CallTool.Result(
-                content: [.text("Required parameter 'instance_id' is missing")],
+                content: [MCPContent.text("Required parameter 'instance_id' is missing")],
                 isError: true
             )
         }
@@ -689,11 +689,11 @@ extension AnalyticsWorker {
                 result["next_url"] = nextUrl
             }
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Failed to list analytics report segments: \(error.localizedDescription)")],
+                content: [MCPContent.text("Failed to list analytics report segments: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -708,7 +708,7 @@ extension AnalyticsWorker {
         guard let arguments = params.arguments,
               let requestId = arguments["request_id"]?.stringValue else {
             return CallTool.Result(
-                content: [.text("Required parameter 'request_id' is missing")],
+                content: [MCPContent.text("Required parameter 'request_id' is missing")],
                 isError: true
             )
         }
@@ -794,11 +794,11 @@ extension AnalyticsWorker {
                 result["category_filter"] = category
             }
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Failed to check snapshot status: \(error.localizedDescription)")],
+                content: [MCPContent.text("Failed to check snapshot status: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -845,8 +845,8 @@ extension AnalyticsWorker {
             "id": report.id,
             "type": report.type
         ]
-        dict["category"] = report.attributes?.category.jsonSafe ?? NSNull()
-        dict["name"] = report.attributes?.name.jsonSafe ?? NSNull()
+        dict["category"] = (report.attributes?.category).jsonSafe
+        dict["name"] = (report.attributes?.name).jsonSafe
         return dict
     }
 
@@ -856,8 +856,8 @@ extension AnalyticsWorker {
             "id": instance.id,
             "type": instance.type
         ]
-        dict["granularity"] = instance.attributes?.granularity.jsonSafe ?? NSNull()
-        dict["processing_date"] = instance.attributes?.processingDate.jsonSafe ?? NSNull()
+        dict["granularity"] = (instance.attributes?.granularity).jsonSafe
+        dict["processing_date"] = (instance.attributes?.processingDate).jsonSafe
         return dict
     }
 
@@ -867,9 +867,9 @@ extension AnalyticsWorker {
             "id": segment.id,
             "type": segment.type
         ]
-        dict["checksum"] = segment.attributes?.checksum.jsonSafe ?? NSNull()
-        dict["size_in_bytes"] = segment.attributes?.sizeInBytes.jsonSafe ?? NSNull()
-        dict["url"] = segment.attributes?.url.jsonSafe ?? NSNull()
+        dict["checksum"] = (segment.attributes?.checksum).jsonSafe
+        dict["size_in_bytes"] = (segment.attributes?.sizeInBytes).jsonSafe
+        dict["url"] = (segment.attributes?.url).jsonSafe
         return dict
     }
 }

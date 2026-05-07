@@ -3,6 +3,32 @@ import MCP
 
 // MARK: - Tool Handlers
 extension InAppPurchasesWorker {
+    private func validateIAPLocalizationArguments(
+        _ arguments: [String: Value],
+        locale: String? = nil
+    ) -> [ASCMetadataValidator.FieldError] {
+        var errors: [ASCMetadataValidator.FieldError] = []
+        if let locale {
+            errors += ASCMetadataValidator.validateLocale(locale)
+        }
+
+        var textFields: [String: String] = [:]
+        for key in ["name", "description"] {
+            if let value = arguments[key]?.stringValue {
+                textFields[key] = value
+            }
+        }
+
+        errors += ASCMetadataValidator.validateTextFields(
+            textFields,
+            limits: [
+                "name": 30,
+                "description": 45
+            ]
+        )
+        return errors
+    }
+
 
     /// Lists in-app purchases for an app
     /// - Returns: JSON array of IAPs with attributes
@@ -11,7 +37,7 @@ extension InAppPurchasesWorker {
               let appIdValue = arguments["app_id"],
               let appId = appIdValue.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameter 'app_id' is missing")],
+                content: [MCPContent.text("Error: Required parameter 'app_id' is missing")],
                 isError: true
             )
         }
@@ -60,11 +86,11 @@ extension InAppPurchasesWorker {
                 result["next_url"] = next
             }
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to list IAPs: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to list IAPs: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -77,7 +103,7 @@ extension InAppPurchasesWorker {
               let iapIdValue = arguments["iap_id"],
               let iapId = iapIdValue.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameter 'iap_id' is missing")],
+                content: [MCPContent.text("Error: Required parameter 'iap_id' is missing")],
                 isError: true
             )
         }
@@ -95,11 +121,11 @@ extension InAppPurchasesWorker {
                 "in_app_purchase": iap
             ] as [String: Any]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to get IAP: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to get IAP: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -118,7 +144,7 @@ extension InAppPurchasesWorker {
               let iapTypeValue = arguments["iap_type"],
               let iapType = iapTypeValue.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameters: app_id, name, product_id, iap_type")],
+                content: [MCPContent.text("Error: Required parameters: app_id, name, product_id, iap_type")],
                 isError: true
             )
         }
@@ -154,11 +180,11 @@ extension InAppPurchasesWorker {
                 "in_app_purchase": iap
             ] as [String: Any]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to create IAP: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to create IAP: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -171,7 +197,7 @@ extension InAppPurchasesWorker {
               let iapIdValue = arguments["iap_id"],
               let iapId = iapIdValue.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameter 'iap_id' is missing")],
+                content: [MCPContent.text("Error: Required parameter 'iap_id' is missing")],
                 isError: true
             )
         }
@@ -201,11 +227,11 @@ extension InAppPurchasesWorker {
                 "in_app_purchase": iap
             ] as [String: Any]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to update IAP: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to update IAP: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -218,7 +244,7 @@ extension InAppPurchasesWorker {
               let iapIdValue = arguments["iap_id"],
               let iapId = iapIdValue.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameter 'iap_id' is missing")],
+                content: [MCPContent.text("Error: Required parameter 'iap_id' is missing")],
                 isError: true
             )
         }
@@ -231,11 +257,11 @@ extension InAppPurchasesWorker {
                 "message": "IAP '\(iapId)' deleted"
             ] as [String: Any]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to delete IAP: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to delete IAP: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -248,7 +274,7 @@ extension InAppPurchasesWorker {
               let iapIdValue = arguments["iap_id"],
               let iapId = iapIdValue.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameter 'iap_id' is missing")],
+                content: [MCPContent.text("Error: Required parameter 'iap_id' is missing")],
                 isError: true
             )
         }
@@ -278,11 +304,11 @@ extension InAppPurchasesWorker {
                 result["next_url"] = next
             }
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to list IAP localizations: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to list IAP localizations: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -295,7 +321,7 @@ extension InAppPurchasesWorker {
               let appIdValue = arguments["app_id"],
               let appId = appIdValue.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameter 'app_id' is missing")],
+                content: [MCPContent.text("Error: Required parameter 'app_id' is missing")],
                 isError: true
             )
         }
@@ -334,11 +360,11 @@ extension InAppPurchasesWorker {
                 result["next_url"] = next
             }
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to list subscription groups: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to list subscription groups: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -351,7 +377,7 @@ extension InAppPurchasesWorker {
               let groupIdValue = arguments["group_id"],
               let groupId = groupIdValue.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameter 'group_id' is missing")],
+                content: [MCPContent.text("Error: Required parameter 'group_id' is missing")],
                 isError: true
             )
         }
@@ -377,11 +403,11 @@ extension InAppPurchasesWorker {
                 "subscription_group": group
             ] as [String: Any]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to get subscription group: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to get subscription group: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -397,10 +423,12 @@ extension InAppPurchasesWorker {
               let locale = localeValue.stringValue,
               let nameValue = arguments["name"],
               let name = nameValue.stringValue else {
-            return CallTool.Result(
-                content: [.text("Required parameters: iap_id, locale, name")],
-                isError: true
-            )
+            return MCPResult.error("Required parameters: iap_id, locale, name")
+        }
+
+        let validationErrors = validateIAPLocalizationArguments(arguments, locale: locale)
+        if !validationErrors.isEmpty {
+            return ASCMetadataValidator.errorResult(validationErrors)
         }
 
         do {
@@ -432,13 +460,10 @@ extension InAppPurchasesWorker {
                 "localization": localization
             ] as [String: Any]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
-            return CallTool.Result(
-                content: [.text("Failed to create IAP localization: \(error.localizedDescription)")],
-                isError: true
-            )
+            return MCPResult.error("Failed to create IAP localization: \(error.localizedDescription)")
         }
     }
 
@@ -448,10 +473,12 @@ extension InAppPurchasesWorker {
         guard let arguments = params.arguments,
               let locIdValue = arguments["localization_id"],
               let localizationId = locIdValue.stringValue else {
-            return CallTool.Result(
-                content: [.text("Required parameter 'localization_id' is missing")],
-                isError: true
-            )
+            return MCPResult.error("Required parameter 'localization_id' is missing")
+        }
+
+        let validationErrors = validateIAPLocalizationArguments(arguments)
+        if !validationErrors.isEmpty {
+            return ASCMetadataValidator.errorResult(validationErrors)
         }
 
         do {
@@ -478,13 +505,10 @@ extension InAppPurchasesWorker {
                 "localization": localization
             ] as [String: Any]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
-            return CallTool.Result(
-                content: [.text("Failed to update IAP localization: \(error.localizedDescription)")],
-                isError: true
-            )
+            return MCPResult.error("Failed to update IAP localization: \(error.localizedDescription)")
         }
     }
 
@@ -495,7 +519,7 @@ extension InAppPurchasesWorker {
               let locIdValue = arguments["localization_id"],
               let localizationId = locIdValue.stringValue else {
             return CallTool.Result(
-                content: [.text("Required parameter 'localization_id' is missing")],
+                content: [MCPContent.text("Required parameter 'localization_id' is missing")],
                 isError: true
             )
         }
@@ -508,11 +532,11 @@ extension InAppPurchasesWorker {
                 "message": "IAP localization '\(localizationId)' deleted"
             ] as [String: Any]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Failed to delete IAP localization: \(error.localizedDescription)")],
+                content: [MCPContent.text("Failed to delete IAP localization: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -525,7 +549,7 @@ extension InAppPurchasesWorker {
               let iapIdValue = arguments["iap_id"],
               let iapId = iapIdValue.stringValue else {
             return CallTool.Result(
-                content: [.text("Required parameter 'iap_id' is missing")],
+                content: [MCPContent.text("Required parameter 'iap_id' is missing")],
                 isError: true
             )
         }
@@ -550,11 +574,11 @@ extension InAppPurchasesWorker {
                 "message": "IAP '\(iapId)' submitted for review"
             ] as [String: Any]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Failed to submit IAP for review: \(error.localizedDescription)")],
+                content: [MCPContent.text("Failed to submit IAP for review: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -569,7 +593,7 @@ extension InAppPurchasesWorker {
               let iapIdValue = arguments["iap_id"],
               let iapId = iapIdValue.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameter 'iap_id' is missing")],
+                content: [MCPContent.text("Error: Required parameter 'iap_id' is missing")],
                 isError: true
             )
         }
@@ -612,11 +636,11 @@ extension InAppPurchasesWorker {
                 result["next_url"] = next
             }
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to list IAP price points: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to list IAP price points: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -629,7 +653,7 @@ extension InAppPurchasesWorker {
               let iapIdValue = arguments["iap_id"],
               let iapId = iapIdValue.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameter 'iap_id' is missing")],
+                content: [MCPContent.text("Error: Required parameter 'iap_id' is missing")],
                 isError: true
             )
         }
@@ -648,11 +672,11 @@ extension InAppPurchasesWorker {
                 ]
             ]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to get IAP price schedule: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to get IAP price schedule: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -668,7 +692,7 @@ extension InAppPurchasesWorker {
               let baseTerritoryIdValue = arguments["base_territory_id"],
               let baseTerritoryId = baseTerritoryIdValue.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameters: iap_id, base_territory_id")],
+                content: [MCPContent.text("Error: Required parameters: iap_id, base_territory_id")],
                 isError: true
             )
         }
@@ -712,11 +736,11 @@ extension InAppPurchasesWorker {
                 ]
             ]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to set IAP price schedule: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to set IAP price schedule: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -731,7 +755,7 @@ extension InAppPurchasesWorker {
               let iapId = arguments["iap_id"]?.stringValue,
               let availableInNewTerritories = arguments["available_in_new_territories"]?.boolValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameters: iap_id, available_in_new_territories")],
+                content: [MCPContent.text("Error: Required parameters: iap_id, available_in_new_territories")],
                 isError: true
             )
         }
@@ -768,11 +792,11 @@ extension InAppPurchasesWorker {
                 "availability": formatAvailability(response.data)
             ]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to set IAP availability: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to set IAP availability: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -784,7 +808,7 @@ extension InAppPurchasesWorker {
         guard let arguments = params.arguments,
               let availabilityId = arguments["availability_id"]?.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameter 'availability_id' is missing")],
+                content: [MCPContent.text("Error: Required parameter 'availability_id' is missing")],
                 isError: true
             )
         }
@@ -812,17 +836,17 @@ extension InAppPurchasesWorker {
                 let territories = included.map { [
                     "id": $0.id,
                     "type": $0.type,
-                    "currency": $0.attributes?.currency.jsonSafe ?? NSNull()
+                    "currency": ($0.attributes?.currency).jsonSafe
                 ] as [String: Any] }
                 resultDict["territories"] = territories
                 resultDict["territory_count"] = territories.count
             }
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(resultDict))])
+            return MCPResult.jsonObject(resultDict)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to get IAP availability: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to get IAP availability: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -832,7 +856,7 @@ extension InAppPurchasesWorker {
         return [
             "id": availability.id,
             "type": availability.type,
-            "availableInNewTerritories": availability.attributes?.availableInNewTerritories.jsonSafe ?? NSNull()
+            "availableInNewTerritories": (availability.attributes?.availableInNewTerritories).jsonSafe
         ]
     }
 
@@ -845,7 +869,7 @@ extension InAppPurchasesWorker {
               let iapIdValue = arguments["iap_id"],
               let iapId = iapIdValue.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameter 'iap_id' is missing")],
+                content: [MCPContent.text("Error: Required parameter 'iap_id' is missing")],
                 isError: true
             )
         }
@@ -863,11 +887,11 @@ extension InAppPurchasesWorker {
                 "review_screenshot": screenshot
             ]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to get IAP review screenshot: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to get IAP review screenshot: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -881,7 +905,7 @@ extension InAppPurchasesWorker {
               let iapId = arguments["iap_id"]?.stringValue,
               let filePath = arguments["file_path"]?.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameters: iap_id, file_path")],
+                content: [MCPContent.text("Error: Required parameters: iap_id, file_path")],
                 isError: true
             )
         }
@@ -914,7 +938,7 @@ extension InAppPurchasesWorker {
             let screenshotId = reserveResponse.data.id
             guard let uploadOperations = reserveResponse.data.attributes?.uploadOperations, !uploadOperations.isEmpty else {
                 return CallTool.Result(
-                    content: [.text("Error: No upload operations returned from reservation")],
+                    content: [MCPContent.text("Error: No upload operations returned from reservation")],
                     isError: true
                 )
             }
@@ -942,11 +966,11 @@ extension InAppPurchasesWorker {
                 "review_screenshot": formatReviewScreenshot(commitResponse.data)
             ]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to upload IAP review screenshot: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to upload IAP review screenshot: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -959,7 +983,7 @@ extension InAppPurchasesWorker {
         guard let arguments = params.arguments,
               let screenshotId = arguments["screenshot_id"]?.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameter 'screenshot_id' is missing")],
+                content: [MCPContent.text("Error: Required parameter 'screenshot_id' is missing")],
                 isError: true
             )
         }
@@ -972,11 +996,11 @@ extension InAppPurchasesWorker {
                 "message": "IAP review screenshot '\(screenshotId)' deleted"
             ] as [String: Any]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to delete IAP review screenshot: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to delete IAP review screenshot: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -991,7 +1015,7 @@ extension InAppPurchasesWorker {
               let iapId = arguments["iap_id"]?.stringValue,
               let filePath = arguments["file_path"]?.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameters: iap_id, file_path")],
+                content: [MCPContent.text("Error: Required parameters: iap_id, file_path")],
                 isError: true
             )
         }
@@ -1024,7 +1048,7 @@ extension InAppPurchasesWorker {
             let imageId = reserveResponse.data.id
             guard let uploadOperations = reserveResponse.data.attributes?.uploadOperations, !uploadOperations.isEmpty else {
                 return CallTool.Result(
-                    content: [.text("Error: No upload operations returned from reservation")],
+                    content: [MCPContent.text("Error: No upload operations returned from reservation")],
                     isError: true
                 )
             }
@@ -1052,11 +1076,11 @@ extension InAppPurchasesWorker {
                 "image": formatIAPImage(commitResponse.data)
             ] as [String: Any]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to upload IAP image: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to upload IAP image: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -1068,7 +1092,7 @@ extension InAppPurchasesWorker {
         guard let arguments = params.arguments,
               let imageId = arguments["image_id"]?.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameter 'image_id' is missing")],
+                content: [MCPContent.text("Error: Required parameter 'image_id' is missing")],
                 isError: true
             )
         }
@@ -1082,11 +1106,11 @@ extension InAppPurchasesWorker {
                 "image": formatIAPImage(response.data)
             ] as [String: Any]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to get IAP image: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to get IAP image: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -1098,7 +1122,7 @@ extension InAppPurchasesWorker {
         guard let arguments = params.arguments,
               let imageId = arguments["image_id"]?.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameter 'image_id' is missing")],
+                content: [MCPContent.text("Error: Required parameter 'image_id' is missing")],
                 isError: true
             )
         }
@@ -1111,11 +1135,11 @@ extension InAppPurchasesWorker {
                 "message": "IAP image '\(imageId)' deleted"
             ] as [String: Any]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to delete IAP image: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to delete IAP image: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -1128,7 +1152,7 @@ extension InAppPurchasesWorker {
         guard let arguments = params.arguments,
               let iapId = arguments["iap_id"]?.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameter 'iap_id' is missing")],
+                content: [MCPContent.text("Error: Required parameter 'iap_id' is missing")],
                 isError: true
             )
         }
@@ -1166,11 +1190,11 @@ extension InAppPurchasesWorker {
                 result["next_url"] = next
             }
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to list IAP images: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to list IAP images: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -1180,10 +1204,10 @@ extension InAppPurchasesWorker {
         var result: [String: Any] = [
             "id": image.id,
             "type": image.type,
-            "fileName": image.attributes?.fileName.jsonSafe,
-            "fileSize": image.attributes?.fileSize.jsonSafe,
-            "sourceFileChecksum": image.attributes?.sourceFileChecksum.jsonSafe,
-            "state": image.attributes?.state.jsonSafe
+            "fileName": (image.attributes?.fileName).jsonSafe,
+            "fileSize": (image.attributes?.fileSize).jsonSafe,
+            "sourceFileChecksum": (image.attributes?.sourceFileChecksum).jsonSafe,
+            "state": (image.attributes?.state).jsonSafe
         ]
 
         if let imageAsset = image.attributes?.imageAsset {
@@ -1235,9 +1259,9 @@ extension InAppPurchasesWorker {
         return [
             "id": pricePoint.id,
             "type": pricePoint.type,
-            "customerPrice": pricePoint.attributes?.customerPrice.jsonSafe as Any,
-            "proceeds": pricePoint.attributes?.proceeds.jsonSafe as Any,
-            "priceTier": pricePoint.attributes?.priceTier.jsonSafe as Any
+            "customerPrice": (pricePoint.attributes?.customerPrice).jsonSafe as Any,
+            "proceeds": (pricePoint.attributes?.proceeds).jsonSafe as Any,
+            "priceTier": (pricePoint.attributes?.priceTier).jsonSafe as Any
         ]
     }
 

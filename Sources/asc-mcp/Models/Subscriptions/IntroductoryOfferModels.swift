@@ -36,7 +36,7 @@ public struct CreateIntroductoryOfferRequest: Codable, Sendable {
     public let data: CreateData
 
     public struct CreateData: Codable, Sendable {
-        public let type: String = "subscriptionIntroductoryOffers"
+        public var type: String = "subscriptionIntroductoryOffers"
         public let attributes: Attributes
         public let relationships: Relationships
     }
@@ -73,7 +73,7 @@ public struct UpdateIntroductoryOfferRequest: Codable, Sendable {
     public let data: UpdateData
 
     public struct UpdateData: Codable, Sendable {
-        public let type: String = "subscriptionIntroductoryOffers"
+        public var type: String = "subscriptionIntroductoryOffers"
         public let id: String
         public let attributes: Attributes
     }

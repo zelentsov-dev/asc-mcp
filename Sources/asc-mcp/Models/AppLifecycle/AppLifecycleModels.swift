@@ -408,7 +408,7 @@ struct SingleResourceResponse: Codable, Sendable {
 }
 
 /// Type-erased JSON value for passthrough responses
-enum JSONValue: Codable, Sendable {
+public enum JSONValue: Codable, Sendable {
     case string(String)
     case int(Int)
     case double(Double)
@@ -417,7 +417,7 @@ enum JSONValue: Codable, Sendable {
     case array([JSONValue])
     case null
 
-    init(from decoder: Decoder) throws {
+    public init(from decoder: Decoder) throws {
         let container = try decoder.singleValueContainer()
         if container.decodeNil() {
             self = .null
@@ -438,7 +438,7 @@ enum JSONValue: Codable, Sendable {
         }
     }
 
-    func encode(to encoder: Encoder) throws {
+    public func encode(to encoder: Encoder) throws {
         var container = encoder.singleValueContainer()
         switch self {
         case .string(let v): try container.encode(v)
@@ -452,7 +452,7 @@ enum JSONValue: Codable, Sendable {
     }
 
     /// Convert to Any for JSONFormatter
-    var asAny: Any {
+    public var asAny: Any {
         switch self {
         case .string(let v): return v
         case .int(let v): return v

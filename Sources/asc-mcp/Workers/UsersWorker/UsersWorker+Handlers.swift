@@ -48,11 +48,11 @@ extension UsersWorker {
                 result["next_url"] = next
             }
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Failed to list users: \(error.localizedDescription)")],
+                content: [MCPContent.text("Failed to list users: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -65,7 +65,7 @@ extension UsersWorker {
               let idValue = arguments["user_id"],
               let userId = idValue.stringValue else {
             return CallTool.Result(
-                content: [.text("Required parameter 'user_id' is missing")],
+                content: [MCPContent.text("Required parameter 'user_id' is missing")],
                 isError: true
             )
         }
@@ -91,11 +91,11 @@ extension UsersWorker {
                 "user": user
             ] as [String: Any]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Failed to get user: \(error.localizedDescription)")],
+                content: [MCPContent.text("Failed to get user: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -110,7 +110,7 @@ extension UsersWorker {
               let rolesValue = arguments["roles"],
               let rolesArray = rolesValue.arrayValue else {
             return CallTool.Result(
-                content: [.text("Required parameters: user_id, roles")],
+                content: [MCPContent.text("Required parameters: user_id, roles")],
                 isError: true
             )
         }
@@ -118,7 +118,7 @@ extension UsersWorker {
         let roles = rolesArray.compactMap { $0.stringValue }
         guard !roles.isEmpty else {
             return CallTool.Result(
-                content: [.text("'roles' must contain at least one role")],
+                content: [MCPContent.text("'roles' must contain at least one role")],
                 isError: true
             )
         }
@@ -147,11 +147,11 @@ extension UsersWorker {
                 "user": user
             ] as [String: Any]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Failed to update user: \(error.localizedDescription)")],
+                content: [MCPContent.text("Failed to update user: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -164,7 +164,7 @@ extension UsersWorker {
               let idValue = arguments["user_id"],
               let userId = idValue.stringValue else {
             return CallTool.Result(
-                content: [.text("Required parameter 'user_id' is missing")],
+                content: [MCPContent.text("Required parameter 'user_id' is missing")],
                 isError: true
             )
         }
@@ -177,11 +177,11 @@ extension UsersWorker {
                 "message": "User '\(userId)' removed from team"
             ] as [String: Any]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Failed to remove user: \(error.localizedDescription)")],
+                content: [MCPContent.text("Failed to remove user: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -200,7 +200,7 @@ extension UsersWorker {
               let rolesValue = arguments["roles"],
               let rolesArray = rolesValue.arrayValue else {
             return CallTool.Result(
-                content: [.text("Required parameters: email, first_name, last_name, roles")],
+                content: [MCPContent.text("Required parameters: email, first_name, last_name, roles")],
                 isError: true
             )
         }
@@ -208,7 +208,7 @@ extension UsersWorker {
         let roles = rolesArray.compactMap { $0.stringValue }
         guard !roles.isEmpty else {
             return CallTool.Result(
-                content: [.text("'roles' must contain at least one role")],
+                content: [MCPContent.text("'roles' must contain at least one role")],
                 isError: true
             )
         }
@@ -257,11 +257,11 @@ extension UsersWorker {
                 "invitation": invitation
             ] as [String: Any]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Failed to invite user: \(error.localizedDescription)")],
+                content: [MCPContent.text("Failed to invite user: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -306,11 +306,11 @@ extension UsersWorker {
                 result["next_url"] = next
             }
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Failed to list invitations: \(error.localizedDescription)")],
+                content: [MCPContent.text("Failed to list invitations: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -323,7 +323,7 @@ extension UsersWorker {
               let idValue = arguments["invitation_id"],
               let invitationId = idValue.stringValue else {
             return CallTool.Result(
-                content: [.text("Required parameter 'invitation_id' is missing")],
+                content: [MCPContent.text("Required parameter 'invitation_id' is missing")],
                 isError: true
             )
         }
@@ -336,11 +336,11 @@ extension UsersWorker {
                 "message": "Invitation '\(invitationId)' cancelled"
             ] as [String: Any]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Failed to cancel invitation: \(error.localizedDescription)")],
+                content: [MCPContent.text("Failed to cancel invitation: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -353,7 +353,7 @@ extension UsersWorker {
               let idValue = arguments["user_id"],
               let userId = idValue.stringValue else {
             return CallTool.Result(
-                content: [.text("Required parameter 'user_id' is missing")],
+                content: [MCPContent.text("Required parameter 'user_id' is missing")],
                 isError: true
             )
         }
@@ -392,11 +392,11 @@ extension UsersWorker {
                 result["next_url"] = next
             }
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Failed to list visible apps: \(error.localizedDescription)")],
+                content: [MCPContent.text("Failed to list visible apps: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -411,7 +411,7 @@ extension UsersWorker {
               let appIdsValue = arguments["app_ids"],
               let appIdsArray = appIdsValue.arrayValue else {
             return CallTool.Result(
-                content: [.text("Required parameters: user_id, app_ids")],
+                content: [MCPContent.text("Required parameters: user_id, app_ids")],
                 isError: true
             )
         }
@@ -419,7 +419,7 @@ extension UsersWorker {
         let appIds = appIdsArray.compactMap { $0.stringValue }
         guard !appIds.isEmpty else {
             return CallTool.Result(
-                content: [.text("'app_ids' must contain at least one app ID")],
+                content: [MCPContent.text("'app_ids' must contain at least one app ID")],
                 isError: true
             )
         }
@@ -440,11 +440,11 @@ extension UsersWorker {
                 "message": "Added \(appIds.count) app(s) to user '\(userId)' visible apps"
             ] as [String: Any]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Failed to add visible apps: \(error.localizedDescription)")],
+                content: [MCPContent.text("Failed to add visible apps: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -459,7 +459,7 @@ extension UsersWorker {
               let appIdsValue = arguments["app_ids"],
               let appIdsArray = appIdsValue.arrayValue else {
             return CallTool.Result(
-                content: [.text("Required parameters: user_id, app_ids")],
+                content: [MCPContent.text("Required parameters: user_id, app_ids")],
                 isError: true
             )
         }
@@ -467,7 +467,7 @@ extension UsersWorker {
         let appIds = appIdsArray.compactMap { $0.stringValue }
         guard !appIds.isEmpty else {
             return CallTool.Result(
-                content: [.text("'app_ids' must contain at least one app ID")],
+                content: [MCPContent.text("'app_ids' must contain at least one app ID")],
                 isError: true
             )
         }
@@ -488,11 +488,11 @@ extension UsersWorker {
                 "message": "Removed \(appIds.count) app(s) from user '\(userId)' visible apps"
             ] as [String: Any]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Failed to remove visible apps: \(error.localizedDescription)")],
+                content: [MCPContent.text("Failed to remove visible apps: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -504,13 +504,13 @@ extension UsersWorker {
         return [
             "id": user.id,
             "type": user.type,
-            "username": user.attributes?.username.jsonSafe ?? NSNull(),
-            "firstName": user.attributes?.firstName.jsonSafe ?? NSNull(),
-            "lastName": user.attributes?.lastName.jsonSafe ?? NSNull(),
-            "roles": user.attributes?.roles.jsonSafe ?? NSNull(),
-            "allAppsVisible": user.attributes?.allAppsVisible.jsonSafe ?? NSNull(),
-            "provisioningAllowed": user.attributes?.provisioningAllowed.jsonSafe ?? NSNull(),
-            "expirationDate": user.attributes?.expirationDate.jsonSafe ?? NSNull()
+            "username": (user.attributes?.username).jsonSafe,
+            "firstName": (user.attributes?.firstName).jsonSafe,
+            "lastName": (user.attributes?.lastName).jsonSafe,
+            "roles": (user.attributes?.roles).jsonSafe,
+            "allAppsVisible": (user.attributes?.allAppsVisible).jsonSafe,
+            "provisioningAllowed": (user.attributes?.provisioningAllowed).jsonSafe,
+            "expirationDate": (user.attributes?.expirationDate).jsonSafe
         ]
     }
 
@@ -518,10 +518,10 @@ extension UsersWorker {
         return [
             "id": app.id,
             "type": app.type,
-            "name": app.attributes?.name.jsonSafe ?? NSNull(),
-            "bundleId": app.attributes?.bundleId.jsonSafe ?? NSNull(),
-            "sku": app.attributes?.sku.jsonSafe ?? NSNull(),
-            "primaryLocale": app.attributes?.primaryLocale.jsonSafe ?? NSNull()
+            "name": (app.attributes?.name).jsonSafe,
+            "bundleId": (app.attributes?.bundleId).jsonSafe,
+            "sku": (app.attributes?.sku).jsonSafe,
+            "primaryLocale": (app.attributes?.primaryLocale).jsonSafe
         ]
     }
 
@@ -529,12 +529,12 @@ extension UsersWorker {
         return [
             "id": invitation.id,
             "type": invitation.type,
-            "email": invitation.attributes?.email.jsonSafe ?? NSNull(),
-            "firstName": invitation.attributes?.firstName.jsonSafe ?? NSNull(),
-            "lastName": invitation.attributes?.lastName.jsonSafe ?? NSNull(),
-            "roles": invitation.attributes?.roles.jsonSafe ?? NSNull(),
-            "allAppsVisible": invitation.attributes?.allAppsVisible.jsonSafe ?? NSNull(),
-            "expirationDate": invitation.attributes?.expirationDate.jsonSafe ?? NSNull()
+            "email": (invitation.attributes?.email).jsonSafe,
+            "firstName": (invitation.attributes?.firstName).jsonSafe,
+            "lastName": (invitation.attributes?.lastName).jsonSafe,
+            "roles": (invitation.attributes?.roles).jsonSafe,
+            "allAppsVisible": (invitation.attributes?.allAppsVisible).jsonSafe,
+            "expirationDate": (invitation.attributes?.expirationDate).jsonSafe
         ]
     }
 }

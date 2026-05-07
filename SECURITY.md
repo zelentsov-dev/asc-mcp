@@ -4,7 +4,9 @@
 
 | Version | Supported |
 |---------|-----------|
-| 1.x     | Yes       |
+| 2.1.x   | Yes       |
+| 2.0.x   | Yes       |
+| 1.x     | Security fixes only |
 | < 1.0   | No        |
 
 ## Reporting a Vulnerability
@@ -24,3 +26,5 @@ If you discover a security vulnerability, please report it responsibly:
 - Rotate App Store Connect API keys periodically
 - Use `--workers` flag to limit exposed tools to only what you need
 - JWT tokens are held in memory only and expire after 20 minutes
+- Prefer read-only MCP smoke checks (`auth_generate_token`, `auth_token_status`, `apps_list limit=1`) after reloads
+- Review tool annotations before approving high-risk actions such as submit, release, delete, revoke, clear, or cancel

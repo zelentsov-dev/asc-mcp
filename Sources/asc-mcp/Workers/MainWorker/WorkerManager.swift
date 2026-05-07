@@ -26,9 +26,9 @@ public actor WorkerDependencies: Sendable {
         let company = try await companiesWorker.manager.getCurrentCompany()
         let defaultURL = await companiesWorker.manager.getDefaultURL()
 
-        print("🔄 Reinitializing workers for company: \(company.name)", to: &standardError)
-        print("  Key ID: \(company.keyID)", to: &standardError)
-        print("  Issuer ID: \(company.issuerID)", to: &standardError)
+        print("Reinitializing workers for company: \(company.name)", to: &standardError)
+        print("  Key ID: \(Redactor.maskIdentifier(company.keyID))", to: &standardError)
+        print("  Issuer ID: \(Redactor.maskIdentifier(company.issuerID))", to: &standardError)
 
         self.jwtService = try JWTService(company: company)
 
@@ -39,7 +39,7 @@ public actor WorkerDependencies: Sendable {
 
         self.authWorker = AuthWorker(jwtService: self.jwtService)
         
-        print("✅ Dependencies updated for company: \(company.name)", to: &standardError)
+        print("Dependencies updated for company: \(company.name)", to: &standardError)
     }
 }
 
@@ -48,13 +48,18 @@ public actor WorkerManager {
     private let dependencies: WorkerDependencies
     /// Set of enabled worker names. nil = all workers enabled.
     private let enabledWorkers: Set<String>?
+    /// Blocks App Store Connect mutation tools before they reach worker handlers.
+    private let readOnlyMode: Bool
     private var appsWorker: AppsWorker
+    private var webhooksWorker: WebhooksWorker
+    private var xcodeCloudWorker: XcodeCloudWorker
     private var buildsWorker: BuildsWorker
     private var buildProcessingWorker: BuildProcessingWorker
     private var buildBetaDetailsWorker: BuildBetaDetailsWorker
     private var appLifecycleWorker: AppLifecycleWorker
     private var reviewsWorker: ReviewsWorker
     private var betaGroupsWorker: BetaGroupsWorker
+    private var betaFeedbackWorker: BetaFeedbackWorker
     private var inAppPurchasesWorker: InAppPurchasesWorker
     private var provisioningWorker: ProvisioningWorker
     private var betaTestersWorker: BetaTestersWorker
@@ -80,20 +85,27 @@ public actor WorkerManager {
     private var metricsWorker: MetricsWorker
     private var reviewAttachmentsWorker: ReviewAttachmentsWorker
 
-    /// Direct initialization with dependencies (for testing and flexibility)
-    /// - Parameter enabledWorkers: Set of worker names to enable, nil = all
-    public init(dependencies: WorkerDependencies, enabledWorkers: Set<String>? = nil) async {
+    /// Direct initialization with dependencies for tests and custom embedding.
+    /// - Parameters:
+    ///   - dependencies: Shared worker dependencies.
+    ///   - enabledWorkers: Set of worker names to enable, nil = all workers.
+    ///   - readOnlyMode: Whether mutation tools should be blocked before handler execution.
+    public init(dependencies: WorkerDependencies, enabledWorkers: Set<String>? = nil, readOnlyMode: Bool = false) async {
         self.dependencies = dependencies
         self.enabledWorkers = enabledWorkers
+        self.readOnlyMode = readOnlyMode
         self.uploadService = UploadService()
 
         self.appsWorker = await AppsWorker(client: dependencies.httpClient)
+        self.webhooksWorker = await WebhooksWorker(httpClient: dependencies.httpClient)
+        self.xcodeCloudWorker = await XcodeCloudWorker(httpClient: dependencies.httpClient)
         self.buildsWorker = await BuildsWorker(httpClient: dependencies.httpClient)
         self.buildProcessingWorker = await BuildProcessingWorker(httpClient: dependencies.httpClient)
         self.buildBetaDetailsWorker = await BuildBetaDetailsWorker(httpClient: dependencies.httpClient)
         self.appLifecycleWorker = await AppLifecycleWorker(httpClient: dependencies.httpClient)
         self.reviewsWorker = await ReviewsWorker(httpClient: dependencies.httpClient)
         self.betaGroupsWorker = await BetaGroupsWorker(httpClient: dependencies.httpClient)
+        self.betaFeedbackWorker = await BetaFeedbackWorker(httpClient: dependencies.httpClient)
         self.inAppPurchasesWorker = await InAppPurchasesWorker(httpClient: dependencies.httpClient, uploadService: self.uploadService)
         self.provisioningWorker = await ProvisioningWorker(httpClient: dependencies.httpClient)
         self.betaTestersWorker = await BetaTestersWorker(httpClient: dependencies.httpClient)
@@ -122,11 +134,15 @@ public actor WorkerManager {
         self.reviewAttachmentsWorker = await ReviewAttachmentsWorker(httpClient: dependencies.httpClient, uploadService: self.uploadService)
     }
 
-    /// Convenience factory method for production use
-    /// - Parameter enabledWorkers: Set of worker names to enable, nil = all
+    /// Convenience factory method for production use.
+    /// - Parameters:
+    ///   - companiesWorker: Worker that owns company configuration and switching.
+    ///   - enabledWorkers: Set of worker names to enable, nil = all workers.
+    ///   - readOnlyMode: Whether mutation tools should be blocked before handler execution.
     public static func createForProduction(
         companiesWorker: CompaniesWorker,
-        enabledWorkers: Set<String>? = nil
+        enabledWorkers: Set<String>? = nil,
+        readOnlyMode: Bool = false
     ) async throws -> WorkerManager {
         let company = try await companiesWorker.manager.getCurrentCompany()
         let defaultURL = await companiesWorker.manager.getDefaultURL()
@@ -147,7 +163,7 @@ public actor WorkerManager {
             authWorker: authWorker
         )
         
-        return await WorkerManager(dependencies: dependencies, enabledWorkers: enabledWorkers)
+        return await WorkerManager(dependencies: dependencies, enabledWorkers: enabledWorkers, readOnlyMode: readOnlyMode)
     }
 
     /// Check if a worker is enabled (nonisolated since enabledWorkers is let)
@@ -155,338 +171,182 @@ public actor WorkerManager {
         guard let enabled = enabledWorkers else { return true }
         return enabled.contains(name)
     }
+
+    private nonisolated func isWorkerDescriptorEnabled(_ descriptor: WorkerDescriptor) -> Bool {
+        descriptor.enabledKeys.isEmpty || descriptor.enabledKeys.contains(where: isWorkerEnabled)
+    }
+
+    private struct WorkerDescriptor: Sendable {
+        let key: String
+        let enabledKeys: Set<String>
+        let prefixes: [String]
+        let getTools: @Sendable () async -> [Tool]
+        let handle: @Sendable (CallTool.Parameters) async throws -> CallTool.Result
+
+        func matches(_ toolName: String) -> Bool {
+            prefixes.contains { toolName.hasPrefix($0) }
+        }
+    }
+
+    private func workerDescriptors() -> [WorkerDescriptor] {
+        [
+            WorkerDescriptor(
+                key: "company",
+                enabledKeys: [],
+                prefixes: ["company_"],
+                getTools: { await self.getCompanyTools() },
+                handle: { try await self.dependencies.companiesWorker.handleTool($0) }
+            ),
+            WorkerDescriptor(
+                key: "auth",
+                enabledKeys: [],
+                prefixes: ["auth_"],
+                getTools: { await self.getAuthTools() },
+                handle: { try await self.dependencies.authWorker.handleTool($0) }
+            ),
+            WorkerDescriptor(key: "apps", enabledKeys: ["apps"], prefixes: ["apps_"], getTools: { await self.getAppsTools() }, handle: { try await self.appsWorker.handleTool($0) }),
+            WorkerDescriptor(key: "webhooks", enabledKeys: ["webhooks"], prefixes: ["webhooks_"], getTools: { await self.getWebhooksTools() }, handle: { try await self.webhooksWorker.handleTool($0) }),
+            WorkerDescriptor(key: "xcode_cloud", enabledKeys: ["xcode_cloud"], prefixes: ["xcode_cloud_"], getTools: { await self.getXcodeCloudTools() }, handle: { try await self.xcodeCloudWorker.handleTool($0) }),
+            WorkerDescriptor(
+                key: "build_beta",
+                enabledKeys: ["build_beta", "builds"],
+                prefixes: [
+                    "builds_get_beta_",
+                    "builds_update_beta_",
+                    "builds_set_beta_",
+                    "builds_list_beta_",
+                    "builds_send_beta_",
+                    "builds_add_to_beta_",
+                    "builds_add_individual_",
+                    "builds_remove_individual_",
+                    "builds_list_individual_"
+                ],
+                getTools: { await self.getBuildBetaDetailsTools() },
+                handle: { try await self.buildBetaDetailsWorker.handleTool($0) }
+            ),
+            WorkerDescriptor(
+                key: "build_processing",
+                enabledKeys: ["build_processing", "builds"],
+                prefixes: [
+                    "builds_get_processing_",
+                    "builds_update_encryption",
+                    "builds_check_readiness"
+                ],
+                getTools: { await self.getBuildProcessingTools() },
+                handle: { try await self.buildProcessingWorker.handleTool($0) }
+            ),
+            WorkerDescriptor(key: "builds", enabledKeys: ["builds"], prefixes: ["builds_"], getTools: { await self.getBuildsTools() }, handle: { try await self.buildsWorker.handleTool($0) }),
+            WorkerDescriptor(key: "versions", enabledKeys: ["versions"], prefixes: ["app_versions_"], getTools: { await self.getAppLifecycleTools() }, handle: { try await self.appLifecycleWorker.handleTool($0) }),
+            WorkerDescriptor(key: "reviews", enabledKeys: ["reviews"], prefixes: ["reviews_"], getTools: { await self.getReviewsTools() }, handle: { try await self.reviewsWorker.handleTool($0) }),
+            WorkerDescriptor(key: "beta_groups", enabledKeys: ["beta_groups"], prefixes: ["beta_groups_"], getTools: { await self.getBetaGroupsTools() }, handle: { try await self.betaGroupsWorker.handleTool($0) }),
+            WorkerDescriptor(key: "beta_feedback", enabledKeys: ["beta_feedback"], prefixes: ["beta_feedback_"], getTools: { await self.getBetaFeedbackTools() }, handle: { try await self.betaFeedbackWorker.handleTool($0) }),
+            WorkerDescriptor(key: "iap", enabledKeys: ["iap"], prefixes: ["iap_"], getTools: { await self.getIAPTools() }, handle: { try await self.inAppPurchasesWorker.handleTool($0) }),
+            WorkerDescriptor(key: "provisioning", enabledKeys: ["provisioning"], prefixes: ["provisioning_"], getTools: { await self.getProvisioningTools() }, handle: { try await self.provisioningWorker.handleTool($0) }),
+            WorkerDescriptor(key: "beta_testers", enabledKeys: ["beta_testers"], prefixes: ["beta_testers_"], getTools: { await self.getBetaTestersTools() }, handle: { try await self.betaTestersWorker.handleTool($0) }),
+            WorkerDescriptor(key: "app_info", enabledKeys: ["app_info"], prefixes: ["app_info_"], getTools: { await self.getAppInfoTools() }, handle: { try await self.appInfoWorker.handleTool($0) }),
+            WorkerDescriptor(key: "pricing", enabledKeys: ["pricing"], prefixes: ["pricing_"], getTools: { await self.getPricingTools() }, handle: { try await self.pricingWorker.handleTool($0) }),
+            WorkerDescriptor(key: "users", enabledKeys: ["users"], prefixes: ["users_"], getTools: { await self.getUsersTools() }, handle: { try await self.usersWorker.handleTool($0) }),
+            WorkerDescriptor(key: "app_events", enabledKeys: ["app_events"], prefixes: ["app_events_"], getTools: { await self.getAppEventsTools() }, handle: { try await self.appEventsWorker.handleTool($0) }),
+            WorkerDescriptor(key: "analytics", enabledKeys: ["analytics"], prefixes: ["analytics_"], getTools: { await self.getAnalyticsTools() }, handle: { try await self.analyticsWorker.handleTool($0) }),
+            WorkerDescriptor(key: "subscriptions", enabledKeys: ["subscriptions"], prefixes: ["subscriptions_"], getTools: { await self.getSubscriptionsTools() }, handle: { try await self.subscriptionsWorker.handleTool($0) }),
+            WorkerDescriptor(key: "offer_codes", enabledKeys: ["offer_codes"], prefixes: ["offer_codes_"], getTools: { await self.getOfferCodesTools() }, handle: { try await self.offerCodesWorker.handleTool($0) }),
+            WorkerDescriptor(key: "winback", enabledKeys: ["winback"], prefixes: ["winback_"], getTools: { await self.getWinBackOffersTools() }, handle: { try await self.winBackOffersWorker.handleTool($0) }),
+            WorkerDescriptor(key: "intro_offers", enabledKeys: ["intro_offers"], prefixes: ["intro_offers_"], getTools: { await self.getIntroductoryOffersTools() }, handle: { try await self.introductoryOffersWorker.handleTool($0) }),
+            WorkerDescriptor(key: "promo_offers", enabledKeys: ["promo_offers"], prefixes: ["promo_offers_"], getTools: { await self.getPromotionalOffersTools() }, handle: { try await self.promotionalOffersWorker.handleTool($0) }),
+            WorkerDescriptor(key: "sandbox", enabledKeys: ["sandbox"], prefixes: ["sandbox_"], getTools: { await self.getSandboxTestersTools() }, handle: { try await self.sandboxTestersWorker.handleTool($0) }),
+            WorkerDescriptor(key: "beta_app", enabledKeys: ["beta_app"], prefixes: ["beta_app_"], getTools: { await self.getBetaAppTools() }, handle: { try await self.betaAppWorker.handleTool($0) }),
+            WorkerDescriptor(key: "pre_release", enabledKeys: ["pre_release"], prefixes: ["pre_release_"], getTools: { await self.getPreReleaseVersionsTools() }, handle: { try await self.preReleaseVersionsWorker.handleTool($0) }),
+            WorkerDescriptor(key: "beta_license", enabledKeys: ["beta_license"], prefixes: ["beta_license_"], getTools: { await self.getBetaLicenseAgreementsTools() }, handle: { try await self.betaLicenseAgreementsWorker.handleTool($0) }),
+            WorkerDescriptor(key: "screenshots", enabledKeys: ["screenshots"], prefixes: ["screenshots_"], getTools: { await self.getScreenshotsTools() }, handle: { try await self.screenshotsWorker.handleTool($0) }),
+            WorkerDescriptor(key: "custom_pages", enabledKeys: ["custom_pages"], prefixes: ["custom_pages_"], getTools: { await self.getCustomProductPagesTools() }, handle: { try await self.customProductPagesWorker.handleTool($0) }),
+            WorkerDescriptor(key: "ppo", enabledKeys: ["ppo"], prefixes: ["ppo_"], getTools: { await self.getProductPageOptimizationTools() }, handle: { try await self.productPageOptimizationWorker.handleTool($0) }),
+            WorkerDescriptor(key: "promoted", enabledKeys: ["promoted"], prefixes: ["promoted_"], getTools: { await self.getPromotedPurchasesTools() }, handle: { try await self.promotedPurchasesWorker.handleTool($0) }),
+            WorkerDescriptor(key: "metrics", enabledKeys: ["metrics"], prefixes: ["metrics_"], getTools: { await self.getMetricsTools() }, handle: { try await self.metricsWorker.handleTool($0) }),
+            WorkerDescriptor(key: "review_attachments", enabledKeys: ["review_attachments"], prefixes: ["review_attachments_"], getTools: { await self.getReviewAttachmentsTools() }, handle: { try await self.reviewAttachmentsWorker.handleTool($0) })
+        ]
+    }
     
     /// Register all workers in MCP server
     public func registerWorkers(in server: Server) async {
         // Register unified handler for tool listing
         await server.withMethodHandler(ListTools.self) { _ in
-            // Company and auth are always included (core functionality)
-            async let companyTools = self.getCompanyTools()
-            async let authTools = self.getAuthTools()
-
-            var allTools = await companyTools + authTools
-
-            // Conditionally include other workers based on enabledWorkers filter
-            if self.isWorkerEnabled("apps") {
-                allTools += await self.getAppsTools()
-            }
-            if self.isWorkerEnabled("builds") {
-                allTools += await self.getBuildsTools()
-            }
-            if self.isWorkerEnabled("build_processing") || self.isWorkerEnabled("builds") {
-                allTools += await self.getBuildProcessingTools()
-            }
-            if self.isWorkerEnabled("build_beta") || self.isWorkerEnabled("builds") {
-                allTools += await self.getBuildBetaDetailsTools()
-            }
-            if self.isWorkerEnabled("versions") {
-                allTools += await self.getAppLifecycleTools()
-            }
-            if self.isWorkerEnabled("reviews") {
-                allTools += await self.getReviewsTools()
-            }
-            if self.isWorkerEnabled("beta_groups") {
-                allTools += await self.getBetaGroupsTools()
-            }
-            if self.isWorkerEnabled("iap") {
-                allTools += await self.getIAPTools()
-            }
-            if self.isWorkerEnabled("provisioning") {
-                allTools += await self.getProvisioningTools()
-            }
-            if self.isWorkerEnabled("beta_testers") {
-                allTools += await self.getBetaTestersTools()
-            }
-            if self.isWorkerEnabled("app_info") {
-                allTools += await self.getAppInfoTools()
-            }
-            if self.isWorkerEnabled("pricing") {
-                allTools += await self.getPricingTools()
-            }
-            if self.isWorkerEnabled("users") {
-                allTools += await self.getUsersTools()
-            }
-            if self.isWorkerEnabled("app_events") {
-                allTools += await self.getAppEventsTools()
-            }
-            if self.isWorkerEnabled("analytics") {
-                allTools += await self.getAnalyticsTools()
-            }
-            if self.isWorkerEnabled("subscriptions") {
-                allTools += await self.getSubscriptionsTools()
-            }
-            if self.isWorkerEnabled("offer_codes") {
-                allTools += await self.getOfferCodesTools()
-            }
-            if self.isWorkerEnabled("winback") {
-                allTools += await self.getWinBackOffersTools()
-            }
-            if self.isWorkerEnabled("intro_offers") {
-                allTools += await self.getIntroductoryOffersTools()
-            }
-            if self.isWorkerEnabled("promo_offers") {
-                allTools += await self.getPromotionalOffersTools()
-            }
-            if self.isWorkerEnabled("sandbox") {
-                allTools += await self.getSandboxTestersTools()
-            }
-            if self.isWorkerEnabled("beta_app") {
-                allTools += await self.getBetaAppTools()
-            }
-            if self.isWorkerEnabled("pre_release") {
-                allTools += await self.getPreReleaseVersionsTools()
-            }
-            if self.isWorkerEnabled("beta_license") {
-                allTools += await self.getBetaLicenseAgreementsTools()
-            }
-            if self.isWorkerEnabled("screenshots") {
-                allTools += await self.getScreenshotsTools()
-            }
-            if self.isWorkerEnabled("custom_pages") {
-                allTools += await self.getCustomProductPagesTools()
-            }
-            if self.isWorkerEnabled("ppo") {
-                allTools += await self.getProductPageOptimizationTools()
-            }
-            if self.isWorkerEnabled("promoted") {
-                allTools += await self.getPromotedPurchasesTools()
-            }
-            if self.isWorkerEnabled("metrics") {
-                allTools += await self.getMetricsTools()
-            }
-            if self.isWorkerEnabled("review_attachments") {
-                allTools += await self.getReviewAttachmentsTools()
+            var allTools: [Tool] = []
+            for descriptor in await self.workerDescriptors() where self.isWorkerDescriptorEnabled(descriptor) {
+                allTools += await descriptor.getTools()
             }
 
-            // Annotate tools with maxResultSizeChars for Claude Code
-            let analyticsTools: Set<String> = [
-                "analytics_sales_report", "analytics_financial_report",
-                "analytics_get_report", "analytics_app_summary"
-            ]
-
-            let annotatedTools = allTools.map { tool -> Tool in
-                var modified = tool
-                let maxChars: Int
-                if analyticsTools.contains(tool.name) {
-                    maxChars = 500_000
-                } else if tool.name.contains("_list") || tool.name.contains("_search") {
-                    maxChars = 200_000
-                } else {
-                    maxChars = 100_000
-                }
-                modified._meta = Metadata(additionalFields: [
-                    "anthropic/maxResultSizeChars": .int(maxChars)
-                ])
-                return modified
-            }
-
-            return ListTools.Result(tools: annotatedTools)
+            return ListTools.Result(tools: allTools.map(ToolMetadataPolicy.apply))
         }
 
         // Handler for all tool calls
         await server.withMethodHandler(CallTool.self) { params in
             do {
-                // Special handling for company_switch
-                if params.name == "company_switch" {
-                    let result = try await self.dependencies.companiesWorker.handleTool(params)
-                    // Reinitialize all workers with the new company
-                    try await self.reinitializeWorkers()
-                    return result
-                }
-
-                // Route calls to corresponding workers
-                // company_ and auth_ are always enabled
-                if params.name.hasPrefix("company_") {
-                    return try await self.dependencies.companiesWorker.handleTool(params)
-                }
-
-                if params.name.hasPrefix("auth_") {
-                    return try await self.dependencies.authWorker.handleTool(params)
-                }
-
-                if params.name.hasPrefix("apps_") {
-                    guard self.isWorkerEnabled("apps") else { return self.disabledWorkerResult("apps") }
-                    return try await self.appsWorker.handleTool(params)
-                }
-
-                if params.name.hasPrefix("builds_") {
-                    // Determine which builds worker to use based on the specific tool
-                    if params.name.hasPrefix("builds_get_beta_") ||
-                       params.name.hasPrefix("builds_update_beta_") ||
-                       params.name.hasPrefix("builds_set_beta_") ||
-                       params.name.hasPrefix("builds_list_beta_") ||
-                       params.name.hasPrefix("builds_send_beta_") ||
-                       params.name.hasPrefix("builds_add_to_beta_") ||
-                       params.name.hasPrefix("builds_add_individual_") ||
-                       params.name.hasPrefix("builds_remove_individual_") ||
-                       params.name.hasPrefix("builds_list_individual_") {
-                        guard self.isWorkerEnabled("build_beta") || self.isWorkerEnabled("builds") else { return self.disabledWorkerResult("build_beta") }
-                        return try await self.buildBetaDetailsWorker.handleTool(params)
-                    } else if params.name.hasPrefix("builds_get_processing_") ||
-                              params.name == "builds_update_encryption" ||
-                              params.name == "builds_check_readiness" {
-                        guard self.isWorkerEnabled("build_processing") || self.isWorkerEnabled("builds") else { return self.disabledWorkerResult("build_processing") }
-                        return try await self.buildProcessingWorker.handleTool(params)
-                    } else {
-                        guard self.isWorkerEnabled("builds") else { return self.disabledWorkerResult("builds") }
-                        return try await self.buildsWorker.handleTool(params)
-                    }
-                }
-
-                if params.name.hasPrefix("app_versions_") {
-                    guard self.isWorkerEnabled("versions") else { return self.disabledWorkerResult("versions") }
-                    return try await self.appLifecycleWorker.handleTool(params)
-                }
-
-                if params.name.hasPrefix("reviews_") {
-                    guard self.isWorkerEnabled("reviews") else { return self.disabledWorkerResult("reviews") }
-                    return try await self.reviewsWorker.handleTool(params)
-                }
-
-                if params.name.hasPrefix("beta_groups_") {
-                    guard self.isWorkerEnabled("beta_groups") else { return self.disabledWorkerResult("beta_groups") }
-                    return try await self.betaGroupsWorker.handleTool(params)
-                }
-
-                if params.name.hasPrefix("iap_") {
-                    guard self.isWorkerEnabled("iap") else { return self.disabledWorkerResult("iap") }
-                    return try await self.inAppPurchasesWorker.handleTool(params)
-                }
-
-                if params.name.hasPrefix("provisioning_") {
-                    guard self.isWorkerEnabled("provisioning") else { return self.disabledWorkerResult("provisioning") }
-                    return try await self.provisioningWorker.handleTool(params)
-                }
-
-                if params.name.hasPrefix("beta_testers_") {
-                    guard self.isWorkerEnabled("beta_testers") else { return self.disabledWorkerResult("beta_testers") }
-                    return try await self.betaTestersWorker.handleTool(params)
-                }
-
-                if params.name.hasPrefix("app_info_") {
-                    guard self.isWorkerEnabled("app_info") else { return self.disabledWorkerResult("app_info") }
-                    return try await self.appInfoWorker.handleTool(params)
-                }
-
-                if params.name.hasPrefix("pricing_") {
-                    guard self.isWorkerEnabled("pricing") else { return self.disabledWorkerResult("pricing") }
-                    return try await self.pricingWorker.handleTool(params)
-                }
-
-                if params.name.hasPrefix("users_") {
-                    guard self.isWorkerEnabled("users") else { return self.disabledWorkerResult("users") }
-                    return try await self.usersWorker.handleTool(params)
-                }
-
-                if params.name.hasPrefix("app_events_") {
-                    guard self.isWorkerEnabled("app_events") else { return self.disabledWorkerResult("app_events") }
-                    return try await self.appEventsWorker.handleTool(params)
-                }
-
-                if params.name.hasPrefix("analytics_") {
-                    guard self.isWorkerEnabled("analytics") else { return self.disabledWorkerResult("analytics") }
-                    return try await self.analyticsWorker.handleTool(params)
-                }
-
-                if params.name.hasPrefix("subscriptions_") {
-                    guard self.isWorkerEnabled("subscriptions") else { return self.disabledWorkerResult("subscriptions") }
-                    return try await self.subscriptionsWorker.handleTool(params)
-                }
-
-                if params.name.hasPrefix("offer_codes_") {
-                    guard self.isWorkerEnabled("offer_codes") else { return self.disabledWorkerResult("offer_codes") }
-                    return try await self.offerCodesWorker.handleTool(params)
-                }
-
-                if params.name.hasPrefix("winback_") {
-                    guard self.isWorkerEnabled("winback") else { return self.disabledWorkerResult("winback") }
-                    return try await self.winBackOffersWorker.handleTool(params)
-                }
-
-                if params.name.hasPrefix("intro_offers_") {
-                    guard self.isWorkerEnabled("intro_offers") else { return self.disabledWorkerResult("intro_offers") }
-                    return try await self.introductoryOffersWorker.handleTool(params)
-                }
-
-                if params.name.hasPrefix("promo_offers_") {
-                    guard self.isWorkerEnabled("promo_offers") else { return self.disabledWorkerResult("promo_offers") }
-                    return try await self.promotionalOffersWorker.handleTool(params)
-                }
-
-                if params.name.hasPrefix("sandbox_") {
-                    guard self.isWorkerEnabled("sandbox") else { return self.disabledWorkerResult("sandbox") }
-                    return try await self.sandboxTestersWorker.handleTool(params)
-                }
-
-                if params.name.hasPrefix("beta_app_") {
-                    guard self.isWorkerEnabled("beta_app") else { return self.disabledWorkerResult("beta_app") }
-                    return try await self.betaAppWorker.handleTool(params)
-                }
-
-                if params.name.hasPrefix("pre_release_") {
-                    guard self.isWorkerEnabled("pre_release") else { return self.disabledWorkerResult("pre_release") }
-                    return try await self.preReleaseVersionsWorker.handleTool(params)
-                }
-
-                if params.name.hasPrefix("beta_license_") {
-                    guard self.isWorkerEnabled("beta_license") else { return self.disabledWorkerResult("beta_license") }
-                    return try await self.betaLicenseAgreementsWorker.handleTool(params)
-                }
-
-                if params.name.hasPrefix("screenshots_") {
-                    guard self.isWorkerEnabled("screenshots") else { return self.disabledWorkerResult("screenshots") }
-                    return try await self.screenshotsWorker.handleTool(params)
-                }
-
-                if params.name.hasPrefix("custom_pages_") {
-                    guard self.isWorkerEnabled("custom_pages") else { return self.disabledWorkerResult("custom_pages") }
-                    return try await self.customProductPagesWorker.handleTool(params)
-                }
-
-                if params.name.hasPrefix("ppo_") {
-                    guard self.isWorkerEnabled("ppo") else { return self.disabledWorkerResult("ppo") }
-                    return try await self.productPageOptimizationWorker.handleTool(params)
-                }
-
-                if params.name.hasPrefix("promoted_") {
-                    guard self.isWorkerEnabled("promoted") else { return self.disabledWorkerResult("promoted") }
-                    return try await self.promotedPurchasesWorker.handleTool(params)
-                }
-
-                if params.name.hasPrefix("metrics_") {
-                    guard self.isWorkerEnabled("metrics") else { return self.disabledWorkerResult("metrics") }
-                    return try await self.metricsWorker.handleTool(params)
-                }
-
-                if params.name.hasPrefix("review_attachments_") {
-                    guard self.isWorkerEnabled("review_attachments") else { return self.disabledWorkerResult("review_attachments") }
-                    return try await self.reviewAttachmentsWorker.handleTool(params)
-                }
-
-                return CallTool.Result(
-                    content: [.text("Error: Unknown tool: \(params.name)")],
-                    isError: true
-                )
+                return await self.withRuntimeMetadata(try await self.routeTool(params))
             } catch {
                 // Catch all errors and return them as Result
-                return CallTool.Result(
-                    content: [.text("Error: \(error.localizedDescription)")],
-                    isError: true
-                )
+                if let ascError = error as? ASCError {
+                    return await self.withRuntimeMetadata(
+                        MCPResult.error(ascError.localizedDescription, details: ascError.structuredValue)
+                    )
+                }
+                return await self.withRuntimeMetadata(MCPResult.error(error.localizedDescription))
             }
         }
+    }
+
+    func routeTool(_ params: CallTool.Parameters) async throws -> CallTool.Result {
+        if readOnlyMode, isBlockedByReadOnlyMode(params.name) {
+            return readOnlyBlockedResult(params.name)
+        }
+
+        if params.name == "company_switch" {
+            let result = try await dependencies.companiesWorker.handleTool(params)
+            try await reinitializeWorkers()
+            return result
+        }
+
+        for descriptor in workerDescriptors() where descriptor.matches(params.name) {
+            guard isWorkerDescriptorEnabled(descriptor) else {
+                return disabledWorkerResult(descriptor.key)
+            }
+            return try await descriptor.handle(params)
+        }
+
+        return MCPResult.error("Unknown tool: \(params.name)")
+    }
+
+    private func withRuntimeMetadata(_ result: CallTool.Result) async -> CallTool.Result {
+        let httpClient = await dependencies.httpClient
+        guard let rateLimitInfo = await httpClient.getLastRateLimitInfo() else {
+            return result
+        }
+
+        var fields = result._meta?.fields ?? [:]
+        for (key, value) in rateLimitInfo.metadataFields {
+            fields[key] = value
+        }
+
+        return CallTool.Result(
+            content: result.content,
+            structuredContent: result.structuredContent,
+            isError: result.isError,
+            _meta: Metadata(additionalFields: fields)
+        )
     }
     
     /// Reinitialize workers with current company configuration
     public func reinitializeWorkers() async throws {
         try await dependencies.updateForCompany()
         self.appsWorker = await AppsWorker(client: dependencies.httpClient)
+        self.webhooksWorker = await WebhooksWorker(httpClient: dependencies.httpClient)
+        self.xcodeCloudWorker = await XcodeCloudWorker(httpClient: dependencies.httpClient)
         self.buildsWorker = await BuildsWorker(httpClient: dependencies.httpClient)
         self.buildProcessingWorker = await BuildProcessingWorker(httpClient: dependencies.httpClient)
         self.buildBetaDetailsWorker = await BuildBetaDetailsWorker(httpClient: dependencies.httpClient)
         self.appLifecycleWorker = await AppLifecycleWorker(httpClient: dependencies.httpClient)
         self.reviewsWorker = await ReviewsWorker(httpClient: dependencies.httpClient)
         self.betaGroupsWorker = await BetaGroupsWorker(httpClient: dependencies.httpClient)
+        self.betaFeedbackWorker = await BetaFeedbackWorker(httpClient: dependencies.httpClient)
         self.inAppPurchasesWorker = await InAppPurchasesWorker(httpClient: dependencies.httpClient, uploadService: self.uploadService)
         self.provisioningWorker = await ProvisioningWorker(httpClient: dependencies.httpClient)
         self.betaTestersWorker = await BetaTestersWorker(httpClient: dependencies.httpClient)
@@ -514,14 +374,33 @@ public actor WorkerManager {
         self.metricsWorker = await MetricsWorker(httpClient: dependencies.httpClient)
         self.reviewAttachmentsWorker = await ReviewAttachmentsWorker(httpClient: dependencies.httpClient, uploadService: self.uploadService)
 
-        print("✅ Workers reinitialized successfully", to: &standardError)
+        print("Workers reinitialized successfully", to: &standardError)
     }
     
     /// Returns error result for disabled worker
     private nonisolated func disabledWorkerResult(_ workerName: String) -> CallTool.Result {
-        CallTool.Result(
-            content: [.text("Error: Worker '\(workerName)' is disabled. Enable it with --workers \(workerName)")],
-            isError: true
+        MCPResult.error("Worker '\(workerName)' is disabled. Enable it with --workers \(workerName)")
+    }
+
+    private nonisolated func isBlockedByReadOnlyMode(_ toolName: String) -> Bool {
+        if toolName == "company_switch" {
+            return false
+        }
+        return !ToolMetadataPolicy.isReadOnly(toolName)
+    }
+
+    private nonisolated func readOnlyBlockedResult(_ toolName: String) -> CallTool.Result {
+        MCPResult.error(
+            "Read-only mode is enabled. Tool '\(toolName)' is blocked because it can mutate App Store Connect.",
+            details: .object([
+                "tool": .string(toolName),
+                "readOnlyMode": .bool(true),
+                "reason": .string("mutation_blocked")
+            ]),
+            _meta: Metadata(additionalFields: [
+                "asc/readOnlyMode": .bool(true),
+                "asc/blockedTool": .string(toolName)
+            ])
         )
     }
 
@@ -540,6 +419,16 @@ public actor WorkerManager {
     /// Get tools from apps worker  
     private func getAppsTools() async -> [Tool] {
         return await appsWorker.getTools()
+    }
+
+    /// Get tools from webhooks worker
+    private func getWebhooksTools() async -> [Tool] {
+        return await webhooksWorker.getTools()
+    }
+
+    /// Get tools from Xcode Cloud worker
+    private func getXcodeCloudTools() async -> [Tool] {
+        return await xcodeCloudWorker.getTools()
     }
     
     /// Get tools from builds worker
@@ -570,6 +459,11 @@ public actor WorkerManager {
     /// Get tools from beta groups worker
     private func getBetaGroupsTools() async -> [Tool] {
         return await betaGroupsWorker.getTools()
+    }
+
+    /// Get tools from beta feedback worker
+    private func getBetaFeedbackTools() async -> [Tool] {
+        return await betaFeedbackWorker.getTools()
     }
 
     /// Get tools from in-app purchases worker
@@ -672,4 +566,3 @@ public actor WorkerManager {
         return await reviewAttachmentsWorker.getTools()
     }
 }
-

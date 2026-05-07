@@ -1,9 +1,9 @@
 import Foundation
 import MCP
 
-/// Main application logic
-/// - Parameter enabledWorkers: Set of worker names to enable, nil = all workers
-public func runApplication(enabledWorkers: Set<String>? = nil) async throws {
+/// Main application logic.
+/// - Parameter options: Runtime options selected from command line arguments.
+public func runApplication(options: AppRuntimeOptions = AppRuntimeOptions()) async throws {
     print("🚀 Starting App Store Connect MCP Server...", to: &standardError)
 
     // 1. Create and load companies
@@ -27,7 +27,7 @@ public func runApplication(enabledWorkers: Set<String>? = nil) async throws {
     // 2. Create MCP server
     let server = Server(
         name: "app-store-connect-mcp",
-        version: "2.0.0",
+        version: ServerVersion.current,
         instructions: """
         MCP server for App Store Connect API with multi-company support.
 
@@ -39,13 +39,18 @@ public func runApplication(enabledWorkers: Set<String>? = nil) async throws {
         - company_switch — select a company to work with
         - company_current — show current active company
 
+        \(options.readOnlyMode ? "Read-only mode is enabled. Tools that can create, update, upload, submit, release, delete, revoke, clear, cancel, or otherwise mutate App Store Connect are blocked before execution.\n" : "")
+
         After selecting a company, use:
         - auth_* — authentication
         - apps_* — app management and metadata
+        - webhooks_* — webhook notifications and delivery diagnostics
+        - xcode_cloud_* — Xcode Cloud products, workflows, builds, artifacts, issues, test results, and SCM resources
         - builds_* — build management
         - app_versions_* — version lifecycle (create, submit, release)
         - reviews_* — customer reviews
         - beta_groups_* — TestFlight groups
+        - beta_feedback_* — TestFlight feedback screenshots, crash submissions, and crash logs
         - beta_testers_* — TestFlight testers
         - iap_* — in-app purchases and subscriptions
         - provisioning_* — bundle IDs, devices, certificates, profiles
@@ -78,7 +83,8 @@ public func runApplication(enabledWorkers: Set<String>? = nil) async throws {
     // 3. Create worker manager with loaded companies using factory method
     let workerManager = try await WorkerManager.createForProduction(
         companiesWorker: companiesWorker,
-        enabledWorkers: enabledWorkers
+        enabledWorkers: options.enabledWorkers,
+        readOnlyMode: options.readOnlyMode
     )
     print("✅ Workers initialized", to: &standardError)
 

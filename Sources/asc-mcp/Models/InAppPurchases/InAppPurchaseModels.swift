@@ -38,7 +38,7 @@ public struct CreateInAppPurchaseV2Request: Codable, Sendable {
     public let data: CreateIAPData
 
     public struct CreateIAPData: Codable, Sendable {
-        public let type: String = "inAppPurchases"
+        public var type: String = "inAppPurchases"
         public let attributes: CreateIAPAttributes
         public let relationships: CreateIAPRelationships
     }
@@ -65,7 +65,7 @@ public struct UpdateInAppPurchaseV2Request: Codable, Sendable {
     public let data: UpdateIAPData
 
     public struct UpdateIAPData: Codable, Sendable {
-        public let type: String = "inAppPurchases"
+        public var type: String = "inAppPurchases"
         public let id: String
         public let attributes: UpdateIAPAttributes
     }
@@ -138,7 +138,7 @@ public struct CreateInAppPurchaseLocalizationRequest: Codable, Sendable {
     public let data: CreateData
 
     public struct CreateData: Codable, Sendable {
-        public let type: String = "inAppPurchaseLocalizations"
+        public var type: String = "inAppPurchaseLocalizations"
         public let attributes: Attributes
         public let relationships: Relationships
     }
@@ -163,7 +163,7 @@ public struct UpdateInAppPurchaseLocalizationRequest: Codable, Sendable {
     public let data: UpdateData
 
     public struct UpdateData: Codable, Sendable {
-        public let type: String = "inAppPurchaseLocalizations"
+        public var type: String = "inAppPurchaseLocalizations"
         public let id: String
         public let attributes: Attributes
     }
@@ -181,7 +181,7 @@ public struct CreateInAppPurchaseSubmissionRequest: Codable, Sendable {
     public let data: CreateData
 
     public struct CreateData: Codable, Sendable {
-        public let type: String = "inAppPurchaseSubmissions"
+        public var type: String = "inAppPurchaseSubmissions"
         public let relationships: Relationships
     }
 
@@ -236,7 +236,7 @@ public struct CreateIAPPriceScheduleRequest: Codable, Sendable {
     public let data: CreateData
 
     public struct CreateData: Codable, Sendable {
-        public let type: String = "inAppPurchasePriceSchedules"
+        public var type: String = "inAppPurchasePriceSchedules"
         public let relationships: Relationships
     }
 
@@ -328,7 +328,7 @@ public struct CreateIAPAvailabilityRequest: Codable, Sendable {
     public let data: CreateData
 
     public struct CreateData: Codable, Sendable {
-        public let type: String = "inAppPurchaseAvailabilities"
+        public var type: String = "inAppPurchaseAvailabilities"
         public let attributes: Attributes
         public let relationships: Relationships
     }
@@ -380,7 +380,7 @@ public struct CreateIAPImageRequest: Codable, Sendable {
     public let data: CreateData
 
     public struct CreateData: Codable, Sendable {
-        public let type: String = "inAppPurchaseImages"
+        public var type: String = "inAppPurchaseImages"
         public let attributes: Attributes
         public let relationships: Relationships
     }
@@ -404,7 +404,7 @@ public struct CommitIAPImageRequest: Codable, Sendable {
     public let data: CommitData
 
     public struct CommitData: Codable, Sendable {
-        public let type: String = "inAppPurchaseImages"
+        public var type: String = "inAppPurchaseImages"
         public let id: String
         public let attributes: Attributes
     }
@@ -422,7 +422,7 @@ public struct CreateIAPReviewScreenshotRequest: Codable, Sendable {
     public let data: CreateData
 
     public struct CreateData: Codable, Sendable {
-        public let type: String = "inAppPurchaseAppStoreReviewScreenshots"
+        public var type: String = "inAppPurchaseAppStoreReviewScreenshots"
         public let attributes: Attributes
         public let relationships: Relationships
     }
@@ -446,7 +446,7 @@ public struct CommitIAPReviewScreenshotRequest: Codable, Sendable {
     public let data: CommitData
 
     public struct CommitData: Codable, Sendable {
-        public let type: String = "inAppPurchaseAppStoreReviewScreenshots"
+        public var type: String = "inAppPurchaseAppStoreReviewScreenshots"
         public let id: String
         public let attributes: Attributes
     }

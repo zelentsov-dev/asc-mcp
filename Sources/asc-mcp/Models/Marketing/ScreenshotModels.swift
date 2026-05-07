@@ -64,7 +64,7 @@ public struct CreateScreenshotSetRequest: Codable, Sendable {
     public let data: CreateData
 
     public struct CreateData: Codable, Sendable {
-        public let type: String = "appScreenshotSets"
+        public var type: String = "appScreenshotSets"
         public let attributes: Attributes
         public let relationships: Relationships
     }
@@ -87,7 +87,7 @@ public struct CreateScreenshotRequest: Codable, Sendable {
     public let data: CreateData
 
     public struct CreateData: Codable, Sendable {
-        public let type: String = "appScreenshots"
+        public var type: String = "appScreenshots"
         public let attributes: Attributes
         public let relationships: Relationships
     }
@@ -170,7 +170,7 @@ public struct CreatePreviewSetRequest: Codable, Sendable {
     public let data: CreateData
 
     public struct CreateData: Codable, Sendable {
-        public let type: String = "appPreviewSets"
+        public var type: String = "appPreviewSets"
         public let attributes: Attributes
         public let relationships: Relationships
     }
@@ -198,7 +198,7 @@ public struct ASCPreviewsResponse: Codable, Sendable {
 public struct CommitScreenshotRequest: Codable, Sendable {
     public let data: CommitData
     public struct CommitData: Codable, Sendable {
-        public let type: String = "appScreenshots"
+        public var type: String = "appScreenshots"
         public let id: String
         public let attributes: Attributes
     }
@@ -212,7 +212,7 @@ public struct CommitScreenshotRequest: Codable, Sendable {
 public struct CommitPreviewRequest: Codable, Sendable {
     public let data: CommitData
     public struct CommitData: Codable, Sendable {
-        public let type: String = "appPreviews"
+        public var type: String = "appPreviews"
         public let id: String
         public let attributes: Attributes
     }
@@ -227,7 +227,7 @@ public struct CreatePreviewRequest: Codable, Sendable {
     public let data: CreateData
 
     public struct CreateData: Codable, Sendable {
-        public let type: String = "appPreviews"
+        public var type: String = "appPreviews"
         public let attributes: Attributes
         public let relationships: Relationships
     }

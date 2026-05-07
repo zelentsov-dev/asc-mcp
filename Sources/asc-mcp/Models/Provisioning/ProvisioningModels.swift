@@ -33,7 +33,7 @@ public struct CreateBundleIdRequest: Codable, Sendable {
     public let data: CreateBundleIdData
 
     public struct CreateBundleIdData: Codable, Sendable {
-        public let type: String = "bundleIds"
+        public var type: String = "bundleIds"
         public let attributes: CreateBundleIdAttributes
     }
 
@@ -80,7 +80,7 @@ public struct RegisterDeviceRequest: Codable, Sendable {
     public let data: RegisterDeviceData
 
     public struct RegisterDeviceData: Codable, Sendable {
-        public let type: String = "devices"
+        public var type: String = "devices"
         public let attributes: RegisterDeviceAttributes
     }
 
@@ -96,7 +96,7 @@ public struct UpdateDeviceRequest: Codable, Sendable {
     public let data: UpdateDeviceData
 
     public struct UpdateDeviceData: Codable, Sendable {
-        public let type: String = "devices"
+        public var type: String = "devices"
         public let id: String
         public let attributes: UpdateDeviceAttributes
     }
@@ -180,7 +180,7 @@ public struct CreateProfileRequest: Codable, Sendable {
     public let data: CreateProfileData
 
     public struct CreateProfileData: Codable, Sendable {
-        public let type: String = "profiles"
+        public var type: String = "profiles"
         public let attributes: CreateProfileAttributes
         public let relationships: CreateProfileRelationships
     }
@@ -261,7 +261,7 @@ public struct EnableCapabilityRequest: Codable, Sendable {
     public let data: EnableCapabilityData
 
     public struct EnableCapabilityData: Codable, Sendable {
-        public let type: String = "bundleIdCapabilities"
+        public var type: String = "bundleIdCapabilities"
         public let attributes: EnableCapabilityAttributes
         public let relationships: EnableCapabilityRelationships
     }
@@ -280,7 +280,7 @@ public struct EnableCapabilityRequest: Codable, Sendable {
     }
 
     public struct EnableCapabilityBundleIdItem: Codable, Sendable {
-        public let type: String = "bundleIds"
+        public var type: String = "bundleIds"
         public let id: String
     }
 }

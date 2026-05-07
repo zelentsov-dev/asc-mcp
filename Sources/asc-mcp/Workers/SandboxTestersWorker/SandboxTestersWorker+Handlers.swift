@@ -42,11 +42,11 @@ extension SandboxTestersWorker {
                 result["next_url"] = next
             }
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to list sandbox testers: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to list sandbox testers: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -58,7 +58,7 @@ extension SandboxTestersWorker {
         guard let arguments = params.arguments,
               let sandboxTesterId = arguments["sandbox_tester_id"]?.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameter 'sandbox_tester_id' is missing")],
+                content: [MCPContent.text("Error: Required parameter 'sandbox_tester_id' is missing")],
                 isError: true
             )
         }
@@ -88,11 +88,11 @@ extension SandboxTestersWorker {
                 "sandbox_tester": tester
             ] as [String: Any]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to update sandbox tester: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to update sandbox tester: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -104,7 +104,7 @@ extension SandboxTestersWorker {
         guard let arguments = params.arguments,
               let testerIdsArray = arguments["sandbox_tester_ids"]?.arrayValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameter 'sandbox_tester_ids' is missing")],
+                content: [MCPContent.text("Error: Required parameter 'sandbox_tester_ids' is missing")],
                 isError: true
             )
         }
@@ -113,7 +113,7 @@ extension SandboxTestersWorker {
 
         guard !testerIds.isEmpty else {
             return CallTool.Result(
-                content: [.text("Error: 'sandbox_tester_ids' must contain at least one tester ID")],
+                content: [MCPContent.text("Error: 'sandbox_tester_ids' must contain at least one tester ID")],
                 isError: true
             )
         }
@@ -139,11 +139,11 @@ extension SandboxTestersWorker {
                 "message": "Purchase history cleared for \(testerIds.count) sandbox tester(s)"
             ] as [String: Any]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to clear purchase history: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to clear purchase history: \(error.localizedDescription)")],
                 isError: true
             )
         }

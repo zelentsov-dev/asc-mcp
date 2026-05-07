@@ -32,7 +32,7 @@ public struct UpdateBetaLicenseAgreementRequest: Codable, Sendable {
     public let data: UpdateData
 
     public struct UpdateData: Codable, Sendable {
-        public let type: String = "betaLicenseAgreements"
+        public var type: String = "betaLicenseAgreements"
         public let id: String
         public let attributes: Attributes
     }

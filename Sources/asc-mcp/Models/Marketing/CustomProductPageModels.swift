@@ -88,7 +88,7 @@ public struct CreateCustomProductPageRequest: Codable, Sendable {
     public let data: CreateData
 
     public struct CreateData: Codable, Sendable {
-        public let type: String = "appCustomProductPages"
+        public var type: String = "appCustomProductPages"
         public let attributes: Attributes
         public let relationships: Relationships
     }
@@ -111,7 +111,7 @@ public struct UpdateCustomProductPageRequest: Codable, Sendable {
     public let data: UpdateData
 
     public struct UpdateData: Codable, Sendable {
-        public let type: String = "appCustomProductPages"
+        public var type: String = "appCustomProductPages"
         public let id: String
         public let attributes: Attributes
     }
@@ -127,7 +127,7 @@ public struct CreateCustomProductPageVersionRequest: Codable, Sendable {
     public let data: CreateData
 
     public struct CreateData: Codable, Sendable {
-        public let type: String = "appCustomProductPageVersions"
+        public var type: String = "appCustomProductPageVersions"
         public let relationships: Relationships
     }
 
@@ -145,7 +145,7 @@ public struct CreateCustomProductPageLocalizationRequest: Codable, Sendable {
     public let data: CreateData
 
     public struct CreateData: Codable, Sendable {
-        public let type: String = "appCustomProductPageLocalizations"
+        public var type: String = "appCustomProductPageLocalizations"
         public let attributes: Attributes
         public let relationships: Relationships
     }
@@ -169,7 +169,7 @@ public struct UpdateCustomProductPageLocalizationRequest: Codable, Sendable {
     public let data: UpdateData
 
     public struct UpdateData: Codable, Sendable {
-        public let type: String = "appCustomProductPageLocalizations"
+        public var type: String = "appCustomProductPageLocalizations"
         public let id: String
         public let attributes: Attributes
     }

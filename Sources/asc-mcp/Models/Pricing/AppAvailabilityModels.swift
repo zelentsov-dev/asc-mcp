@@ -7,7 +7,7 @@ public struct CreateAppAvailabilityV2Request: Codable, Sendable {
     public let data: CreateData
 
     public struct CreateData: Codable, Sendable {
-        public let type: String = "appAvailabilities"
+        public var type: String = "appAvailabilities"
         public let attributes: Attributes
         public let relationships: Relationships
     }

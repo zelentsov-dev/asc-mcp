@@ -51,11 +51,11 @@ extension BetaTestersWorker {
                 result["next_url"] = nextUrl
             }
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Failed to list beta testers: \(error.localizedDescription)")],
+                content: [MCPContent.text("Failed to list beta testers: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -68,7 +68,7 @@ extension BetaTestersWorker {
               let emailValue = arguments["email"],
               let email = emailValue.stringValue else {
             return CallTool.Result(
-                content: [.text("Required parameter 'email' is missing")],
+                content: [MCPContent.text("Required parameter 'email' is missing")],
                 isError: true
             )
         }
@@ -97,11 +97,11 @@ extension BetaTestersWorker {
                 "count": testers.count
             ]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Failed to search beta testers: \(error.localizedDescription)")],
+                content: [MCPContent.text("Failed to search beta testers: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -114,7 +114,7 @@ extension BetaTestersWorker {
               let testerIdValue = arguments["tester_id"],
               let testerId = testerIdValue.stringValue else {
             return CallTool.Result(
-                content: [.text("Required parameter 'tester_id' is missing")],
+                content: [MCPContent.text("Required parameter 'tester_id' is missing")],
                 isError: true
             )
         }
@@ -145,7 +145,7 @@ extension BetaTestersWorker {
                     case .app(let app):
                         includedApps.append([
                             "id": app.id,
-                            "name": app.attributes?.name.jsonSafe ?? NSNull()
+                            "name": (app.attributes?.name).jsonSafe
                         ])
                     case .betaGroup(let group):
                         includedGroups.append([
@@ -168,11 +168,11 @@ extension BetaTestersWorker {
                 "beta_tester": testerDict
             ]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Failed to get beta tester: \(error.localizedDescription)")],
+                content: [MCPContent.text("Failed to get beta tester: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -187,7 +187,7 @@ extension BetaTestersWorker {
               let groupIdsValue = arguments["group_ids"],
               let groupIdsArray = groupIdsValue.arrayValue else {
             return CallTool.Result(
-                content: [.text("Required parameters 'email' and 'group_ids' are missing")],
+                content: [MCPContent.text("Required parameters 'email' and 'group_ids' are missing")],
                 isError: true
             )
         }
@@ -195,7 +195,7 @@ extension BetaTestersWorker {
         let groupIds = groupIdsArray.compactMap { $0.stringValue }
         guard !groupIds.isEmpty else {
             return CallTool.Result(
-                content: [.text("'group_ids' must contain at least one beta group ID")],
+                content: [MCPContent.text("'group_ids' must contain at least one beta group ID")],
                 isError: true
             )
         }
@@ -233,11 +233,11 @@ extension BetaTestersWorker {
                 "beta_tester": tester
             ]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Failed to create beta tester: \(error.localizedDescription)")],
+                content: [MCPContent.text("Failed to create beta tester: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -250,7 +250,7 @@ extension BetaTestersWorker {
               let testerIdValue = arguments["tester_id"],
               let testerId = testerIdValue.stringValue else {
             return CallTool.Result(
-                content: [.text("Required parameter 'tester_id' is missing")],
+                content: [MCPContent.text("Required parameter 'tester_id' is missing")],
                 isError: true
             )
         }
@@ -263,11 +263,11 @@ extension BetaTestersWorker {
                 "message": "Beta tester '\(testerId)' deleted"
             ]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Failed to delete beta tester: \(error.localizedDescription)")],
+                content: [MCPContent.text("Failed to delete beta tester: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -280,7 +280,7 @@ extension BetaTestersWorker {
               let testerIdValue = arguments["tester_id"],
               let testerId = testerIdValue.stringValue else {
             return CallTool.Result(
-                content: [.text("Required parameter 'tester_id' is missing")],
+                content: [MCPContent.text("Required parameter 'tester_id' is missing")],
                 isError: true
             )
         }
@@ -322,11 +322,11 @@ extension BetaTestersWorker {
                 result["next_url"] = nextUrl
             }
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Failed to list beta tester apps: \(error.localizedDescription)")],
+                content: [MCPContent.text("Failed to list beta tester apps: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -341,7 +341,7 @@ extension BetaTestersWorker {
               let appIdValue = arguments["app_id"],
               let appId = appIdValue.stringValue else {
             return CallTool.Result(
-                content: [.text("Required parameters 'beta_tester_id' and 'app_id' are missing")],
+                content: [MCPContent.text("Required parameters 'beta_tester_id' and 'app_id' are missing")],
                 isError: true
             )
         }
@@ -378,11 +378,11 @@ extension BetaTestersWorker {
                 "message": "Invitation sent to beta tester '\(betaTesterId)' for app '\(appId)'"
             ]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Failed to send invitation: \(error.localizedDescription)")],
+                content: [MCPContent.text("Failed to send invitation: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -397,7 +397,7 @@ extension BetaTestersWorker {
               let groupIdsValue = arguments["group_ids"],
               let groupIdsArray = groupIdsValue.arrayValue else {
             return CallTool.Result(
-                content: [.text("Required parameters 'beta_tester_id' and 'group_ids' are missing")],
+                content: [MCPContent.text("Required parameters 'beta_tester_id' and 'group_ids' are missing")],
                 isError: true
             )
         }
@@ -405,7 +405,7 @@ extension BetaTestersWorker {
         let groupIds = groupIdsArray.compactMap { $0.stringValue }
         guard !groupIds.isEmpty else {
             return CallTool.Result(
-                content: [.text("'group_ids' must contain at least one group ID")],
+                content: [MCPContent.text("'group_ids' must contain at least one group ID")],
                 isError: true
             )
         }
@@ -426,11 +426,11 @@ extension BetaTestersWorker {
                 "message": "Added tester '\(betaTesterId)' to \(groupIds.count) group(s)"
             ]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Failed to add tester to groups: \(error.localizedDescription)")],
+                content: [MCPContent.text("Failed to add tester to groups: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -445,7 +445,7 @@ extension BetaTestersWorker {
               let groupIdsValue = arguments["group_ids"],
               let groupIdsArray = groupIdsValue.arrayValue else {
             return CallTool.Result(
-                content: [.text("Required parameters 'beta_tester_id' and 'group_ids' are missing")],
+                content: [MCPContent.text("Required parameters 'beta_tester_id' and 'group_ids' are missing")],
                 isError: true
             )
         }
@@ -453,7 +453,7 @@ extension BetaTestersWorker {
         let groupIds = groupIdsArray.compactMap { $0.stringValue }
         guard !groupIds.isEmpty else {
             return CallTool.Result(
-                content: [.text("'group_ids' must contain at least one group ID")],
+                content: [MCPContent.text("'group_ids' must contain at least one group ID")],
                 isError: true
             )
         }
@@ -474,11 +474,11 @@ extension BetaTestersWorker {
                 "message": "Removed tester '\(betaTesterId)' from \(groupIds.count) group(s)"
             ]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Failed to remove tester from groups: \(error.localizedDescription)")],
+                content: [MCPContent.text("Failed to remove tester from groups: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -493,7 +493,7 @@ extension BetaTestersWorker {
               let buildIdsValue = arguments["build_ids"],
               let buildIdsArray = buildIdsValue.arrayValue else {
             return CallTool.Result(
-                content: [.text("Required parameters 'beta_tester_id' and 'build_ids' are missing")],
+                content: [MCPContent.text("Required parameters 'beta_tester_id' and 'build_ids' are missing")],
                 isError: true
             )
         }
@@ -501,7 +501,7 @@ extension BetaTestersWorker {
         let buildIds = buildIdsArray.compactMap { $0.stringValue }
         guard !buildIds.isEmpty else {
             return CallTool.Result(
-                content: [.text("'build_ids' must contain at least one build ID")],
+                content: [MCPContent.text("'build_ids' must contain at least one build ID")],
                 isError: true
             )
         }
@@ -522,11 +522,11 @@ extension BetaTestersWorker {
                 "message": "Added \(buildIds.count) build(s) to tester '\(betaTesterId)'"
             ]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Failed to add builds to tester: \(error.localizedDescription)")],
+                content: [MCPContent.text("Failed to add builds to tester: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -541,7 +541,7 @@ extension BetaTestersWorker {
               let buildIdsValue = arguments["build_ids"],
               let buildIdsArray = buildIdsValue.arrayValue else {
             return CallTool.Result(
-                content: [.text("Required parameters 'beta_tester_id' and 'build_ids' are missing")],
+                content: [MCPContent.text("Required parameters 'beta_tester_id' and 'build_ids' are missing")],
                 isError: true
             )
         }
@@ -549,7 +549,7 @@ extension BetaTestersWorker {
         let buildIds = buildIdsArray.compactMap { $0.stringValue }
         guard !buildIds.isEmpty else {
             return CallTool.Result(
-                content: [.text("'build_ids' must contain at least one build ID")],
+                content: [MCPContent.text("'build_ids' must contain at least one build ID")],
                 isError: true
             )
         }
@@ -570,11 +570,11 @@ extension BetaTestersWorker {
                 "message": "Removed \(buildIds.count) build(s) from tester '\(betaTesterId)'"
             ]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Failed to remove builds from tester: \(error.localizedDescription)")],
+                content: [MCPContent.text("Failed to remove builds from tester: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -589,7 +589,7 @@ extension BetaTestersWorker {
               let appIdValue = arguments["app_id"],
               let appId = appIdValue.stringValue else {
             return CallTool.Result(
-                content: [.text("Required parameters 'beta_tester_id' and 'app_id' are missing")],
+                content: [MCPContent.text("Required parameters 'beta_tester_id' and 'app_id' are missing")],
                 isError: true
             )
         }
@@ -610,11 +610,11 @@ extension BetaTestersWorker {
                 "message": "Removed tester '\(betaTesterId)' from app '\(appId)'"
             ]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Failed to remove tester from app: \(error.localizedDescription)")],
+                content: [MCPContent.text("Failed to remove tester from app: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -637,8 +637,8 @@ extension BetaTestersWorker {
     private func formatApp(_ app: ASCApp) -> [String: Any] {
         return [
             "id": app.id,
-            "name": app.attributes?.name.jsonSafe ?? NSNull(),
-            "bundleId": app.attributes?.bundleId.jsonSafe ?? NSNull()
+            "name": (app.attributes?.name).jsonSafe,
+            "bundleId": (app.attributes?.bundleId).jsonSafe
         ]
     }
 }

@@ -29,7 +29,7 @@
 
 ## Overview
 
-**asc-mcp** is a Swift-based MCP server that bridges [Claude](https://claude.ai) (or any MCP-compatible host) with the [App Store Connect API](https://developer.apple.com/documentation/appstoreconnectapi). It exposes **293 tools** across 33 workers, enabling you to automate your entire iOS/macOS release workflow through natural language.
+**asc-mcp** is a Swift-based MCP server that bridges [Claude](https://claude.ai) (or any MCP-compatible host) with the [App Store Connect API](https://developer.apple.com/documentation/appstoreconnectapi). It exposes **339 tools** across 35 worker domains, enabling you to automate your entire iOS/macOS release workflow through natural language.
 
 ### Key capabilities
 
@@ -44,13 +44,14 @@
 - **Marketing** — screenshots, app previews, custom product pages, A/B testing (PPO), promoted purchases
 - **Analytics & Metrics** — sales/financial reports, analytics reports, performance metrics, diagnostics
 - **Metadata management** — localized descriptions, keywords, What's New across all locales
+- **MCP 2025-11-25 surface** — tool annotations, output schemas for stable tools, structured JSON results, and safe result-size metadata
 
 ## Quick Start
 
 ```bash
 # 1. Install via Mint
 brew install mint
-mint install zelentsov-dev/asc-mcp@1.4.0
+mint install zelentsov-dev/asc-mcp@2.1.0
 
 # 2. Add to Claude Code with env vars (simplest setup)
 claude mcp add asc-mcp \
@@ -68,7 +69,7 @@ Or use a JSON config file — see [Configuration](#configuration) below.
 |-------------|---------|
 | macOS | 14.0+ (Sonoma) |
 | Swift | 6.2+ |
-| Xcode | 16.0+ (for building) |
+| Xcode | 26.0+ or a Swift 6.2 toolchain |
 | App Store Connect API Key | [Create one here](https://appstoreconnect.apple.com/access/integrations/api) |
 
 ## Installation
@@ -82,7 +83,7 @@ Or use a JSON config file — see [Configuration](#configuration) below.
 brew install mint
 
 # Install asc-mcp from GitHub
-mint install zelentsov-dev/asc-mcp@1.4.0
+mint install zelentsov-dev/asc-mcp@2.1.0
 
 # Register in Claude Code
 claude mcp add asc-mcp -- ~/.mint/bin/asc-mcp
@@ -93,13 +94,13 @@ To install a specific branch or tag:
 ```bash
 mint install zelentsov-dev/asc-mcp@main      # main branch
 mint install zelentsov-dev/asc-mcp@develop    # develop branch
-mint install zelentsov-dev/asc-mcp@1.4.0      # specific tag
+mint install zelentsov-dev/asc-mcp@2.1.0      # specific tag
 ```
 
 To update to the latest version:
 
 ```bash
-mint install zelentsov-dev/asc-mcp@1.4.0 --force
+mint install zelentsov-dev/asc-mcp@2.1.0 --force
 ```
 
 ### Option B: Build from Source
@@ -359,7 +360,7 @@ Add to `~/.codeium/windsurf/mcp_config.json`:
 }
 ```
 
-> **Note:** Windsurf has a 100-tool limit. The server exposes ~109 tools by default, so you must use `--workers` to select a subset. See [Worker Filtering](#worker-filtering) below.
+> **Note:** Windsurf has a 100-tool limit. The server exposes 339 tools by default, so you must use `--workers` to select a subset. See [Worker Filtering](#worker-filtering) below.
 
 </details>
 
@@ -368,7 +369,7 @@ Add to `~/.codeium/windsurf/mcp_config.json`:
 
 ### Worker Filtering
 
-The server exposes **293 tools** across 33 workers. Some MCP clients impose a tool limit (e.g., Windsurf caps at 100). Use `--workers` to enable only the workers you need:
+The server exposes **339 tools** across 35 worker domains. Some MCP clients impose a tool limit (e.g., Windsurf caps at 100). Use `--workers` to enable only the workers you need:
 
 ```bash
 # Only load apps, builds, and version lifecycle tools
@@ -385,32 +386,55 @@ asc-mcp --workers apps,iap,subscriptions,offer_codes,winback,pricing,promoted
 
 When `builds` is enabled, it automatically includes `build_processing` and `build_beta` sub-workers.
 
+### Read-Only Mode
+
+Use `--read-only` when you want safe inspection without App Store Connect mutations:
+
+```bash
+asc-mcp --read-only
+asc-mcp --read-only --workers apps,builds,reviews,analytics
+```
+
+In this mode, read tools such as `*_list`, `*_get`, `*_search`, `*_status`, `auth_*`, analytics, and metrics remain available. Tools that can create, update, upload, submit, release, delete, revoke, clear, cancel, or otherwise mutate App Store Connect are blocked before their worker handler runs. `company_switch` remains available because it changes only the local active company context.
+
 **Available worker names:**
 
 | Worker | Prefix | Tools | Description |
 |--------|--------|-------|-------------|
+| `company` | `company_` | 3 | Multi-account management |
+| `auth` | `auth_` | 4 | JWT token tools |
 | `apps` | `apps_` | 9 | App listing, metadata, localizations |
+| `webhooks` | `webhooks_` | 8 | Webhook notifications and deliveries |
+| `xcode_cloud` | `xcode_cloud_` | 30 | Xcode Cloud products, workflows, build runs, artifacts, issues, test results, and SCM |
 | `builds` | `builds_` | 4 | Build management |
-| `build_processing` | `builds_*_processing_` | 4 | Build states, encryption |
-| `build_beta` | `builds_*_beta_` | 8 | TestFlight localizations, notifications |
-| `versions` | `app_versions_` | 13 | Version lifecycle, submit, release |
-| `reviews` | `reviews_` | 7 | Customer reviews and responses |
+| `build_processing` | `builds_get_processing_*`, `builds_update_encryption`, `builds_check_readiness` | 4 | Build states, encryption |
+| `build_beta` | `builds_*_beta_*`, individual tester build tools | 11 | TestFlight localizations, notifications |
+| `versions` | `app_versions_` | 14 | Version lifecycle, submit, release |
+| `reviews` | `reviews_` | 8 | Customer reviews and responses |
 | `beta_groups` | `beta_groups_` | 9 | TestFlight groups |
-| `beta_testers` | `beta_testers_` | 6 | Tester management |
-| `iap` | `iap_` | 17 | In-app purchases, prices, review screenshots |
-| `subscriptions` | `subscriptions_` | 15 | Subscription CRUD, groups, localizations, prices |
-| `offer_codes` | `offer_codes_` | 7 | Subscription offer codes, one-time codes |
+| `beta_feedback` | `beta_feedback_` | 8 | TestFlight feedback screenshots, crash submissions, crash logs |
+| `beta_testers` | `beta_testers_` | 12 | Tester management |
+| `iap` | `iap_` | 24 | In-app purchases, prices, review screenshots |
+| `subscriptions` | `subscriptions_` | 29 | Subscription CRUD, groups, localizations, prices |
+| `offer_codes` | `offer_codes_` | 10 | Subscription offer codes, one-time codes |
 | `winback` | `winback_` | 5 | Win-back offers for subscriptions |
+| `intro_offers` | `intro_offers_` | 4 | Subscription introductory offers |
+| `promo_offers` | `promo_offers_` | 6 | Subscription promotional offers |
+| `sandbox` | `sandbox_` | 3 | Sandbox testers |
+| `beta_app` | `beta_app_` | 10 | Beta app localizations and review |
+| `pre_release` | `pre_release_` | 3 | Pre-release versions |
+| `beta_license` | `beta_license_` | 3 | Beta license agreements |
 | `provisioning` | `provisioning_` | 17 | Bundle IDs, devices, certificates |
-| `app_info` | `app_info_` | 7 | App info, categories |
-| `pricing` | `pricing_` | 6 | Territories, pricing |
-| `users` | `users_` | 7 | Team members, roles |
+| `app_info` | `app_info_` | 10 | App info, categories, EULA |
+| `pricing` | `pricing_` | 9 | Territories, pricing |
+| `users` | `users_` | 10 | Team members, roles |
 | `app_events` | `app_events_` | 9 | In-app events, localizations |
 | `analytics` | `analytics_` | 11 | Sales/financial reports, analytics |
-| `screenshots` | `screenshots_` | 12 | Screenshots, previews, sets |
+| `screenshots` | `screenshots_` | 16 | Screenshots, previews, sets |
 | `custom_pages` | `custom_pages_` | 10 | Custom product pages |
 | `ppo` | `ppo_` | 9 | Product page optimization (A/B tests) |
-| `promoted` | `promoted_` | 5 | Promoted in-app purchases |
+| `promoted` | `promoted_` | 9 | Promoted in-app purchases |
+| `review_attachments` | `review_attachments_` | 4 | App Store review attachments |
 | `metrics` | `metrics_` | 4 | Performance metrics, diagnostics |
 
 ### Token Cost
@@ -419,20 +443,20 @@ When connected to an LLM client, tool definitions consume context tokens. Here's
 
 | Configuration | Tools | ~Tokens |
 |---|---:|---:|
-| All workers (default) | 208 | **~24,000** |
-| Release workflow: `apps,builds,versions,reviews` | ~40 | ~5,500 |
-| Monetization: `apps,iap,subscriptions,pricing` | ~54 | ~6,500 |
-| TestFlight: `apps,builds,beta_groups,beta_testers` | ~34 | ~4,500 |
-| Marketing: `apps,screenshots,custom_pages,ppo,promoted` | ~46 | ~5,800 |
-| `--workers apps` | 16 | ~1,850 |
+| All workers (default) | 339 | **~38,000** |
+| Release workflow: `apps,builds,versions,reviews` | ~57 | ~7,000 |
+| Monetization: `apps,iap,subscriptions,pricing` | ~78 | ~9,000 |
+| TestFlight: `apps,builds,beta_groups,beta_testers` | ~56 | ~6,000 |
+| Marketing: `apps,screenshots,custom_pages,ppo,promoted` | ~60 | ~6,800 |
+| `--workers apps` | 16 | ~2,000 |
 
-**Heaviest workers:** Provisioning (17 tools), InAppPurchases (17 tools), Subscriptions (15 tools), AppLifecycle (13 tools), Screenshots (12 tools).
+**Heaviest workers:** Xcode Cloud (30 tools), Subscriptions (29 tools), InAppPurchases (24 tools), Provisioning (17 tools), Screenshots (16 tools).
 
-For Claude (200K context) ~22K tokens is ~5–7% — negligible. For clients with smaller context windows, use `--workers` to reduce the footprint.
+For Claude (200K context) ~38K tokens is about 19% of the window. For clients with smaller context windows, use `--workers` to reduce the footprint.
 
 ## Available Tools
 
-**293 tools** organized across 33 workers (use `--workers` to filter — see [Worker Filtering](#worker-filtering)):
+**339 tools** organized across 35 worker domains (use `--workers` to filter — see [Worker Filtering](#worker-filtering)):
 
 <details>
 <summary><strong>Company Management</strong> — 3 tools</summary>
@@ -475,6 +499,76 @@ For Claude (200K context) ~22K tokens is ~5–7% — negligible. For clients wit
 </details>
 
 <details>
+<summary><strong>Webhook Notifications</strong> — 8 tools</summary>
+
+| Tool | Description |
+|------|-------------|
+| `webhooks_list` | List webhooks for an app |
+| `webhooks_get` | Get a webhook by ID |
+| `webhooks_create` | Create a webhook configuration |
+| `webhooks_update` | Update webhook fields |
+| `webhooks_delete` | Delete a webhook |
+| `webhooks_list_deliveries` | List delivery attempts |
+| `webhooks_redeliver` | Redeliver an existing delivery |
+| `webhooks_ping` | Send a test ping |
+
+</details>
+
+<details>
+<summary><strong>Xcode Cloud</strong> — 30 tools</summary>
+
+| Tool | Description |
+|------|-------------|
+| `xcode_cloud_products_list` | List Xcode Cloud products |
+| `xcode_cloud_products_get` | Get an Xcode Cloud product |
+| `xcode_cloud_product_workflows_list` | List workflows for a product |
+| `xcode_cloud_product_build_runs_list` | List build runs for a product |
+| `xcode_cloud_workflows_get` | Get a workflow |
+| `xcode_cloud_workflow_build_runs_list` | List build runs for a workflow |
+| `xcode_cloud_build_runs_get` | Get a build run |
+| `xcode_cloud_build_runs_start` | Start or rebuild an Xcode Cloud build |
+| `xcode_cloud_build_run_actions_list` | List build actions for a run |
+| `xcode_cloud_build_run_builds_list` | List App Store Connect builds created by a run |
+| `xcode_cloud_actions_get` | Get a build action |
+| `xcode_cloud_action_artifacts_list` | List artifacts for an action |
+| `xcode_cloud_action_issues_list` | List issues for an action |
+| `xcode_cloud_action_test_results_list` | List test results for an action |
+| `xcode_cloud_artifacts_get` | Get an artifact |
+| `xcode_cloud_issues_get` | Get an issue |
+| `xcode_cloud_test_results_get` | Get a test result |
+| `xcode_cloud_xcode_versions_list` | List available Xcode versions |
+| `xcode_cloud_xcode_versions_get` | Get an Xcode version |
+| `xcode_cloud_macos_versions_list` | List available macOS versions |
+| `xcode_cloud_macos_versions_get` | Get a macOS version |
+| `xcode_cloud_scm_providers_list` | List SCM providers |
+| `xcode_cloud_scm_providers_get` | Get an SCM provider |
+| `xcode_cloud_scm_provider_repositories_list` | List repositories for an SCM provider |
+| `xcode_cloud_scm_repositories_list` | List SCM repositories |
+| `xcode_cloud_scm_repositories_get` | Get an SCM repository |
+| `xcode_cloud_scm_repository_git_references_list` | List repository git references |
+| `xcode_cloud_scm_repository_pull_requests_list` | List repository pull requests |
+| `xcode_cloud_scm_git_references_get` | Get a git reference |
+| `xcode_cloud_scm_pull_requests_get` | Get a pull request |
+
+</details>
+
+<details>
+<summary><strong>TestFlight Beta Feedback</strong> — 8 tools</summary>
+
+| Tool | Description |
+|------|-------------|
+| `beta_feedback_list_crashes` | List beta crash feedback submissions |
+| `beta_feedback_get_crash` | Get one beta crash feedback submission |
+| `beta_feedback_get_crash_log` | Read crash log for a submission |
+| `beta_feedback_get_crash_log_by_id` | Read crash log by crash log ID |
+| `beta_feedback_delete_crash` | Delete a beta crash feedback submission |
+| `beta_feedback_list_screenshots` | List beta screenshot feedback submissions |
+| `beta_feedback_get_screenshot` | Get one beta screenshot feedback submission |
+| `beta_feedback_delete_screenshot` | Delete a beta screenshot feedback submission |
+
+</details>
+
+<details>
 <summary><strong>Builds</strong> — 4 tools</summary>
 
 | Tool | Description |
@@ -499,7 +593,7 @@ For Claude (200K context) ~22K tokens is ~5–7% — negligible. For clients wit
 </details>
 
 <details>
-<summary><strong>TestFlight Beta Details</strong> — 8 tools</summary>
+<summary><strong>TestFlight Beta Details</strong> — 11 tools</summary>
 
 | Tool | Description |
 |------|-------------|
@@ -510,7 +604,10 @@ For Claude (200K context) ~22K tokens is ~5–7% — negligible. For clients wit
 | `builds_get_beta_groups` | Get beta groups for a build |
 | `builds_get_beta_testers` | Get individual testers for a build |
 | `builds_send_beta_notification` | Send notification to beta testers |
-| `builds_add_beta_group` | Add build to beta group |
+| `builds_add_to_beta_groups` | Add build to beta groups |
+| `builds_add_individual_testers` | Add individual testers to a build |
+| `builds_remove_individual_testers` | Remove individual testers from a build |
+| `builds_list_individual_testers` | List individual testers assigned to a build |
 
 </details>
 
@@ -532,7 +629,14 @@ For Claude (200K context) ~22K tokens is ~5–7% — negligible. For clients wit
 </details>
 
 <details>
-<summary><strong>App Version Lifecycle</strong> — 13 tools</summary>
+<summary><strong>TestFlight Beta Testers</strong> — 12 tools</summary>
+
+Includes tester list/search/get/create/delete, app relationships, invitations, beta group assignment, build assignment, and app removal tools.
+
+</details>
+
+<details>
+<summary><strong>App Version Lifecycle</strong> — 14 tools</summary>
 
 | Tool | Description |
 |------|-------------|
@@ -549,11 +653,12 @@ For Claude (200K context) ~22K tokens is ~5–7% — negligible. For clients wit
 | `app_versions_update_phased_release` | Pause/resume/complete rollout |
 | `app_versions_set_review_details` | Set reviewer contact info |
 | `app_versions_update_age_rating` | Configure age rating declaration |
+| `app_versions_delete` | Delete an editable app version |
 
 </details>
 
 <details>
-<summary><strong>Customer Reviews</strong> — 7 tools</summary>
+<summary><strong>Customer Reviews</strong> — 8 tools</summary>
 
 | Tool | Description |
 |------|-------------|
@@ -564,11 +669,12 @@ For Claude (200K context) ~22K tokens is ~5–7% — negligible. For clients wit
 | `reviews_create_response` | Respond to a customer review |
 | `reviews_delete_response` | Delete a response |
 | `reviews_get_response` | Get response for a review |
+| `reviews_summarizations` | Summarize review themes and ratings |
 
 </details>
 
 <details>
-<summary><strong>In-App Purchases</strong> — 17 tools</summary>
+<summary><strong>In-App Purchases</strong> — 24 tools</summary>
 
 | Tool | Description |
 |------|-------------|
@@ -588,12 +694,19 @@ For Claude (200K context) ~22K tokens is ~5–7% — negligible. For clients wit
 | `iap_get_price_schedule` | Get price schedule |
 | `iap_set_price_schedule` | Set price schedule |
 | `iap_get_review_screenshot` | Get review screenshot |
-| `iap_create_review_screenshot` | Create review screenshot |
+| `iap_set_availability` | Set territory availability |
+| `iap_get_availability` | Get territory availability |
+| `iap_upload_image` | Upload promotional image |
+| `iap_get_image` | Get promotional image |
+| `iap_delete_image` | Delete promotional image |
+| `iap_upload_review_screenshot` | Upload review screenshot |
+| `iap_delete_review_screenshot` | Delete review screenshot |
+| `iap_list_images` | List promotional images |
 
 </details>
 
 <details>
-<summary><strong>Subscriptions</strong> — 15 tools</summary>
+<summary><strong>Subscriptions</strong> — 29 tools</summary>
 
 | Tool | Description |
 |------|-------------|
@@ -611,12 +724,26 @@ For Claude (200K context) ~22K tokens is ~5–7% — negligible. For clients wit
 | `subscriptions_create_group` | Create subscription group |
 | `subscriptions_update_group` | Update subscription group |
 | `subscriptions_delete_group` | Delete subscription group |
+| `subscriptions_list_group_localizations` | List subscription group localizations |
+| `subscriptions_create_group_localization` | Create subscription group localization |
+| `subscriptions_get_group_localization` | Get subscription group localization |
+| `subscriptions_update_group_localization` | Update subscription group localization |
+| `subscriptions_delete_group_localization` | Delete subscription group localization |
+| `subscriptions_delete_price` | Delete subscription price |
 | `subscriptions_submit` | Submit subscription for review |
+| `subscriptions_upload_image` | Upload subscription image |
+| `subscriptions_get_image` | Get subscription image |
+| `subscriptions_delete_image` | Delete subscription image |
+| `subscriptions_upload_review_screenshot` | Upload review screenshot |
+| `subscriptions_get_review_screenshot` | Get review screenshot |
+| `subscriptions_delete_review_screenshot` | Delete review screenshot |
+| `subscriptions_list_images` | List subscription images |
+| `subscriptions_get_review_screenshot_for_subscription` | Get review screenshot for a subscription |
 
 </details>
 
 <details>
-<summary><strong>Offer Codes</strong> — 7 tools</summary>
+<summary><strong>Offer Codes</strong> — 10 tools</summary>
 
 | Tool | Description |
 |------|-------------|
@@ -627,6 +754,9 @@ For Claude (200K context) ~22K tokens is ~5–7% — negligible. For clients wit
 | `offer_codes_list_prices` | List prices for an offer code |
 | `offer_codes_generate_one_time` | Generate one-time use codes (up to 10K) |
 | `offer_codes_list_one_time` | List generated one-time codes |
+| `offer_codes_create_custom_code` | Create a custom offer code |
+| `offer_codes_get_custom_code` | Get custom offer code details |
+| `offer_codes_deactivate_custom_code` | Deactivate a custom offer code |
 
 </details>
 
@@ -699,6 +829,20 @@ For Claude (200K context) ~22K tokens is ~5–7% — negligible. For clients wit
 </details>
 
 <details>
+<summary><strong>Pre-Release Versions</strong> — 3 tools</summary>
+
+Includes pre-release version listing, details, and associated builds.
+
+</details>
+
+<details>
+<summary><strong>Beta License Agreements</strong> — 3 tools</summary>
+
+Includes beta license agreement list, get, and update.
+
+</details>
+
+<details>
 <summary><strong>Provisioning</strong> — 17 tools</summary>
 
 | Tool | Description |
@@ -724,7 +868,42 @@ For Claude (200K context) ~22K tokens is ~5–7% — negligible. For clients wit
 </details>
 
 <details>
-<summary><strong>Screenshots & Previews</strong> — 12 tools</summary>
+<summary><strong>App Info</strong> — 10 tools</summary>
+
+Includes app info list/get/update, app info localizations, and EULA get/create/update tools.
+
+</details>
+
+<details>
+<summary><strong>Pricing</strong> — 9 tools</summary>
+
+Includes territories, availability, price points, price schedules, and App Store availability v2 tools.
+
+</details>
+
+<details>
+<summary><strong>Users</strong> — 10 tools</summary>
+
+Includes team member list/get/update/remove, invitations, visible apps, and visible app relationship updates.
+
+</details>
+
+<details>
+<summary><strong>App Events</strong> — 9 tools</summary>
+
+Includes in-app event CRUD plus event localization list/create/update/delete.
+
+</details>
+
+<details>
+<summary><strong>Analytics</strong> — 11 tools</summary>
+
+Includes sales, financial, app summary, analytics report request, report, instance, snapshot, and segment tools.
+
+</details>
+
+<details>
+<summary><strong>Screenshots & Previews</strong> — 16 tools</summary>
 
 | Tool | Description |
 |------|-------------|
@@ -732,13 +911,17 @@ For Claude (200K context) ~22K tokens is ~5–7% — negligible. For clients wit
 | `screenshots_create_set` | Create a screenshot set |
 | `screenshots_delete_set` | Delete a screenshot set |
 | `screenshots_list` | List screenshots in a set |
-| `screenshots_create` | Reserve a screenshot upload |
+| `screenshots_upload` | Upload a screenshot |
+| `screenshots_get` | Get screenshot details |
 | `screenshots_delete` | Delete a screenshot |
 | `screenshots_reorder` | Reorder screenshots in a set |
 | `screenshots_list_preview_sets` | List app preview sets |
 | `screenshots_create_preview_set` | Create a preview set |
 | `screenshots_delete_preview_set` | Delete a preview set |
-| `screenshots_create_preview` | Reserve a preview upload |
+| `screenshots_upload_preview` | Upload an app preview |
+| `screenshots_get_preview` | Get preview details |
+| `screenshots_list_previews` | List previews in a preview set |
+| `screenshots_upload_batch` | Upload screenshots in a batch |
 | `screenshots_delete_preview` | Delete a preview |
 
 </details>
@@ -779,7 +962,7 @@ For Claude (200K context) ~22K tokens is ~5–7% — negligible. For clients wit
 </details>
 
 <details>
-<summary><strong>Promoted Purchases</strong> — 5 tools</summary>
+<summary><strong>Promoted Purchases</strong> — 9 tools</summary>
 
 | Tool | Description |
 |------|-------------|
@@ -788,6 +971,17 @@ For Claude (200K context) ~22K tokens is ~5–7% — negligible. For clients wit
 | `promoted_create` | Create a promotion |
 | `promoted_update` | Update promotion (visibility/order) |
 | `promoted_delete` | Delete a promotion |
+| `promoted_upload_image` | Upload promoted purchase image |
+| `promoted_get_image` | Get promoted purchase image |
+| `promoted_delete_image` | Delete promoted purchase image |
+| `promoted_get_image_for_purchase` | Get image for a promoted purchase |
+
+</details>
+
+<details>
+<summary><strong>Review Attachments</strong> — 4 tools</summary>
+
+Includes App Store review attachment upload, get, delete, and list tools.
 
 </details>
 
@@ -887,7 +1081,7 @@ Sources/asc-mcp/
 │   ├── HTTPClient.swift            #   Actor-based HTTP with retry logic
 │   ├── JWTService.swift            #   ES256 JWT token generation
 │   └── CompaniesManager.swift      #   Multi-account management
-└── Workers/                        # MCP tool implementations (33 workers)
+└── Workers/                        # MCP tool implementations (35 worker domains + MainWorker router)
     ├── MainWorker/WorkerManager    #   Central tool registry & routing
     ├── CompaniesWorker/            #   company_* tools
     ├── AuthWorker/                 #   auth_* tools

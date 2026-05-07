@@ -11,7 +11,7 @@ extension PromotedPurchasesWorker {
         guard let arguments = params.arguments,
               let appId = arguments["app_id"]?.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameter 'app_id' is missing")],
+                content: [MCPContent.text("Error: Required parameter 'app_id' is missing")],
                 isError: true
             )
         }
@@ -49,11 +49,11 @@ extension PromotedPurchasesWorker {
                 result["next_url"] = next
             }
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to list promoted purchases: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to list promoted purchases: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -66,7 +66,7 @@ extension PromotedPurchasesWorker {
         guard let arguments = params.arguments,
               let promotedPurchaseId = arguments["promoted_purchase_id"]?.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameter 'promoted_purchase_id' is missing")],
+                content: [MCPContent.text("Error: Required parameter 'promoted_purchase_id' is missing")],
                 isError: true
             )
         }
@@ -85,11 +85,11 @@ extension PromotedPurchasesWorker {
                 "promoted_purchase": purchase
             ] as [String: Any]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to get promoted purchase: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to get promoted purchase: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -104,7 +104,7 @@ extension PromotedPurchasesWorker {
               let visible = arguments["visible"]?.boolValue,
               let enabled = arguments["enabled"]?.boolValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameters: app_id, visible, enabled")],
+                content: [MCPContent.text("Error: Required parameters: app_id, visible, enabled")],
                 isError: true
             )
         }
@@ -114,7 +114,7 @@ extension PromotedPurchasesWorker {
 
         guard iapId != nil || subscriptionId != nil else {
             return CallTool.Result(
-                content: [.text("Error: Either 'iap_id' or 'subscription_id' must be provided")],
+                content: [MCPContent.text("Error: Either 'iap_id' or 'subscription_id' must be provided")],
                 isError: true
             )
         }
@@ -167,11 +167,11 @@ extension PromotedPurchasesWorker {
                 "promoted_purchase": purchase
             ] as [String: Any]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to create promoted purchase: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to create promoted purchase: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -184,7 +184,7 @@ extension PromotedPurchasesWorker {
         guard let arguments = params.arguments,
               let promotedPurchaseId = arguments["promoted_purchase_id"]?.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameter 'promoted_purchase_id' is missing")],
+                content: [MCPContent.text("Error: Required parameter 'promoted_purchase_id' is missing")],
                 isError: true
             )
         }
@@ -213,11 +213,11 @@ extension PromotedPurchasesWorker {
                 "promoted_purchase": purchase
             ] as [String: Any]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to update promoted purchase: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to update promoted purchase: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -230,7 +230,7 @@ extension PromotedPurchasesWorker {
         guard let arguments = params.arguments,
               let promotedPurchaseId = arguments["promoted_purchase_id"]?.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameter 'promoted_purchase_id' is missing")],
+                content: [MCPContent.text("Error: Required parameter 'promoted_purchase_id' is missing")],
                 isError: true
             )
         }
@@ -243,11 +243,11 @@ extension PromotedPurchasesWorker {
                 "message": "Promoted purchase '\(promotedPurchaseId)' deleted"
             ] as [String: Any]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to delete promoted purchase: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to delete promoted purchase: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -263,7 +263,7 @@ extension PromotedPurchasesWorker {
               let promotedPurchaseId = arguments["promoted_purchase_id"]?.stringValue,
               let filePath = arguments["file_path"]?.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameters: promoted_purchase_id, file_path")],
+                content: [MCPContent.text("Error: Required parameters: promoted_purchase_id, file_path")],
                 isError: true
             )
         }
@@ -298,7 +298,7 @@ extension PromotedPurchasesWorker {
             guard let uploadOperations = reserveResponse.data.attributes?.uploadOperations,
                   !uploadOperations.isEmpty else {
                 return CallTool.Result(
-                    content: [.text("Error: No upload operations returned for image '\(imageId)'")],
+                    content: [MCPContent.text("Error: No upload operations returned for image '\(imageId)'")],
                     isError: true
                 )
             }
@@ -328,11 +328,11 @@ extension PromotedPurchasesWorker {
                 "image": formatPromotedPurchaseImage(commitResponse.data)
             ]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to upload promoted purchase image: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to upload promoted purchase image: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -345,7 +345,7 @@ extension PromotedPurchasesWorker {
         guard let arguments = params.arguments,
               let imageId = arguments["image_id"]?.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameter 'image_id' is missing")],
+                content: [MCPContent.text("Error: Required parameter 'image_id' is missing")],
                 isError: true
             )
         }
@@ -361,11 +361,11 @@ extension PromotedPurchasesWorker {
                 "image": formatPromotedPurchaseImage(response.data)
             ]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to get promoted purchase image: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to get promoted purchase image: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -378,7 +378,7 @@ extension PromotedPurchasesWorker {
         guard let arguments = params.arguments,
               let imageId = arguments["image_id"]?.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameter 'image_id' is missing")],
+                content: [MCPContent.text("Error: Required parameter 'image_id' is missing")],
                 isError: true
             )
         }
@@ -391,11 +391,11 @@ extension PromotedPurchasesWorker {
                 "message": "Promoted purchase image '\(imageId)' deleted"
             ] as [String: Any]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to delete promoted purchase image: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to delete promoted purchase image: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -408,7 +408,7 @@ extension PromotedPurchasesWorker {
         guard let arguments = params.arguments,
               let promotedPurchaseId = arguments["promoted_purchase_id"]?.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameter 'promoted_purchase_id' is missing")],
+                content: [MCPContent.text("Error: Required parameter 'promoted_purchase_id' is missing")],
                 isError: true
             )
         }
@@ -424,11 +424,11 @@ extension PromotedPurchasesWorker {
                 "image": formatPromotedPurchaseImage(response.data)
             ]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to get promoted purchase image: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to get promoted purchase image: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -440,10 +440,10 @@ extension PromotedPurchasesWorker {
         var result: [String: Any] = [
             "id": image.id,
             "type": image.type,
-            "fileSize": image.attributes?.fileSize.jsonSafe ?? NSNull(),
-            "fileName": image.attributes?.fileName.jsonSafe ?? NSNull(),
-            "sourceFileChecksum": image.attributes?.sourceFileChecksum.jsonSafe ?? NSNull(),
-            "state": image.attributes?.state.jsonSafe ?? NSNull()
+            "fileSize": (image.attributes?.fileSize).jsonSafe,
+            "fileName": (image.attributes?.fileName).jsonSafe,
+            "sourceFileChecksum": (image.attributes?.sourceFileChecksum).jsonSafe,
+            "state": (image.attributes?.state).jsonSafe
         ]
 
         if let asset = image.attributes?.imageAsset {
@@ -461,9 +461,9 @@ extension PromotedPurchasesWorker {
         var result: [String: Any] = [
             "id": purchase.id,
             "type": purchase.type,
-            "visibleForAllUsers": purchase.attributes?.visibleForAllUsers.jsonSafe ?? NSNull(),
-            "enabled": purchase.attributes?.enabled.jsonSafe ?? NSNull(),
-            "state": purchase.attributes?.state.jsonSafe ?? NSNull()
+            "visibleForAllUsers": (purchase.attributes?.visibleForAllUsers).jsonSafe,
+            "enabled": (purchase.attributes?.enabled).jsonSafe,
+            "state": (purchase.attributes?.state).jsonSafe
         ]
 
         // Add linked product info from included resources
@@ -471,8 +471,8 @@ extension PromotedPurchasesWorker {
             result["linkedProduct"] = [
                 "type": resource.type,
                 "id": resource.id,
-                "name": resource.attributes?.name.jsonSafe ?? NSNull(),
-                "productId": resource.attributes?.productId.jsonSafe ?? NSNull()
+                "name": (resource.attributes?.name).jsonSafe,
+                "productId": (resource.attributes?.productId).jsonSafe
             ] as [String: Any]
         }
 

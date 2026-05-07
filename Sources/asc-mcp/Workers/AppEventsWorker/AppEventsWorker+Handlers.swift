@@ -12,7 +12,7 @@ extension AppEventsWorker {
               let appIdValue = arguments["app_id"],
               let appId = appIdValue.stringValue else {
             return CallTool.Result(
-                content: [.text("Required parameter 'app_id' is missing")],
+                content: [MCPContent.text("Required parameter 'app_id' is missing")],
                 isError: true
             )
         }
@@ -51,11 +51,11 @@ extension AppEventsWorker {
                 result["next_url"] = next
             }
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Failed to list app events: \(error.localizedDescription)")],
+                content: [MCPContent.text("Failed to list app events: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -69,7 +69,7 @@ extension AppEventsWorker {
               let eventIdValue = arguments["event_id"],
               let eventId = eventIdValue.stringValue else {
             return CallTool.Result(
-                content: [.text("Required parameter 'event_id' is missing")],
+                content: [MCPContent.text("Required parameter 'event_id' is missing")],
                 isError: true
             )
         }
@@ -105,11 +105,11 @@ extension AppEventsWorker {
                 }
             }
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Failed to get app event: \(error.localizedDescription)")],
+                content: [MCPContent.text("Failed to get app event: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -125,7 +125,7 @@ extension AppEventsWorker {
               let refNameValue = arguments["reference_name"],
               let referenceName = refNameValue.stringValue else {
             return CallTool.Result(
-                content: [.text("Required parameters: app_id, reference_name")],
+                content: [MCPContent.text("Required parameters: app_id, reference_name")],
                 isError: true
             )
         }
@@ -167,11 +167,11 @@ extension AppEventsWorker {
                 "app_event": formatAppEvent(response.data)
             ] as [String: Any]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Failed to create app event: \(error.localizedDescription)")],
+                content: [MCPContent.text("Failed to create app event: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -185,7 +185,7 @@ extension AppEventsWorker {
               let eventIdValue = arguments["event_id"],
               let eventId = eventIdValue.stringValue else {
             return CallTool.Result(
-                content: [.text("Required parameter 'event_id' is missing")],
+                content: [MCPContent.text("Required parameter 'event_id' is missing")],
                 isError: true
             )
         }
@@ -223,11 +223,11 @@ extension AppEventsWorker {
                 "app_event": formatAppEvent(response.data)
             ] as [String: Any]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Failed to update app event: \(error.localizedDescription)")],
+                content: [MCPContent.text("Failed to update app event: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -241,7 +241,7 @@ extension AppEventsWorker {
               let eventIdValue = arguments["event_id"],
               let eventId = eventIdValue.stringValue else {
             return CallTool.Result(
-                content: [.text("Required parameter 'event_id' is missing")],
+                content: [MCPContent.text("Required parameter 'event_id' is missing")],
                 isError: true
             )
         }
@@ -254,11 +254,11 @@ extension AppEventsWorker {
                 "message": "App event '\(eventId)' deleted"
             ] as [String: Any]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Failed to delete app event: \(error.localizedDescription)")],
+                content: [MCPContent.text("Failed to delete app event: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -272,7 +272,7 @@ extension AppEventsWorker {
               let eventIdValue = arguments["event_id"],
               let eventId = eventIdValue.stringValue else {
             return CallTool.Result(
-                content: [.text("Required parameter 'event_id' is missing")],
+                content: [MCPContent.text("Required parameter 'event_id' is missing")],
                 isError: true
             )
         }
@@ -295,11 +295,11 @@ extension AppEventsWorker {
                 result["next_url"] = next
             }
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Failed to list app event localizations: \(error.localizedDescription)")],
+                content: [MCPContent.text("Failed to list app event localizations: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -315,7 +315,7 @@ extension AppEventsWorker {
               let eventId = arguments["event_id"]?.stringValue,
               let locale = arguments["locale"]?.stringValue else {
             return CallTool.Result(
-                content: [.text("Required parameters: event_id, locale")],
+                content: [MCPContent.text("Required parameters: event_id, locale")],
                 isError: true
             )
         }
@@ -348,11 +348,11 @@ extension AppEventsWorker {
                 "localization": formatLocalization(response.data)
             ]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Failed to create app event localization: \(error.localizedDescription)")],
+                content: [MCPContent.text("Failed to create app event localization: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -365,7 +365,7 @@ extension AppEventsWorker {
         guard let arguments = params.arguments,
               let localizationId = arguments["localization_id"]?.stringValue else {
             return CallTool.Result(
-                content: [.text("Required parameter 'localization_id' is missing")],
+                content: [MCPContent.text("Required parameter 'localization_id' is missing")],
                 isError: true
             )
         }
@@ -393,11 +393,11 @@ extension AppEventsWorker {
                 "localization": formatLocalization(response.data)
             ]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Failed to update app event localization: \(error.localizedDescription)")],
+                content: [MCPContent.text("Failed to update app event localization: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -410,7 +410,7 @@ extension AppEventsWorker {
         guard let arguments = params.arguments,
               let localizationId = arguments["localization_id"]?.stringValue else {
             return CallTool.Result(
-                content: [.text("Required parameter 'localization_id' is missing")],
+                content: [MCPContent.text("Required parameter 'localization_id' is missing")],
                 isError: true
             )
         }
@@ -423,11 +423,11 @@ extension AppEventsWorker {
                 "message": "App event localization '\(localizationId)' deleted"
             ]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Failed to delete app event localization: \(error.localizedDescription)")],
+                content: [MCPContent.text("Failed to delete app event localization: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -470,10 +470,10 @@ extension AppEventsWorker {
         return [
             "id": loc.id,
             "type": loc.type,
-            "locale": loc.attributes?.locale.jsonSafe ?? NSNull(),
-            "name": loc.attributes?.name.jsonSafe ?? NSNull(),
-            "shortDescription": loc.attributes?.shortDescription.jsonSafe ?? NSNull(),
-            "longDescription": loc.attributes?.longDescription.jsonSafe ?? NSNull()
+            "locale": (loc.attributes?.locale).jsonSafe,
+            "name": (loc.attributes?.name).jsonSafe,
+            "shortDescription": (loc.attributes?.shortDescription).jsonSafe,
+            "longDescription": (loc.attributes?.longDescription).jsonSafe
         ]
     }
 }

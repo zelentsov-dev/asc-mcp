@@ -11,7 +11,7 @@ extension ProductPageOptimizationWorker {
         guard let arguments = params.arguments,
               let appId = arguments["app_id"]?.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameter 'app_id' is missing")],
+                content: [MCPContent.text("Error: Required parameter 'app_id' is missing")],
                 isError: true
             )
         }
@@ -49,11 +49,11 @@ extension ProductPageOptimizationWorker {
                 result["next_url"] = next
             }
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to list experiments: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to list experiments: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -66,7 +66,7 @@ extension ProductPageOptimizationWorker {
         guard let arguments = params.arguments,
               let experimentId = arguments["experiment_id"]?.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameter 'experiment_id' is missing")],
+                content: [MCPContent.text("Error: Required parameter 'experiment_id' is missing")],
                 isError: true
             )
         }
@@ -84,11 +84,11 @@ extension ProductPageOptimizationWorker {
                 "experiment": experiment
             ] as [String: Any]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to get experiment: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to get experiment: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -103,7 +103,7 @@ extension ProductPageOptimizationWorker {
               let name = arguments["name"]?.stringValue,
               let trafficProportion = arguments["traffic_proportion"]?.intValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameters: app_id, name, traffic_proportion")],
+                content: [MCPContent.text("Error: Required parameters: app_id, name, traffic_proportion")],
                 isError: true
             )
         }
@@ -139,11 +139,11 @@ extension ProductPageOptimizationWorker {
                 "experiment": experiment
             ] as [String: Any]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to create experiment: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to create experiment: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -156,7 +156,7 @@ extension ProductPageOptimizationWorker {
         guard let arguments = params.arguments,
               let experimentId = arguments["experiment_id"]?.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameter 'experiment_id' is missing")],
+                content: [MCPContent.text("Error: Required parameter 'experiment_id' is missing")],
                 isError: true
             )
         }
@@ -186,11 +186,11 @@ extension ProductPageOptimizationWorker {
                 "experiment": experiment
             ] as [String: Any]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to update experiment: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to update experiment: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -203,7 +203,7 @@ extension ProductPageOptimizationWorker {
         guard let arguments = params.arguments,
               let experimentId = arguments["experiment_id"]?.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameter 'experiment_id' is missing")],
+                content: [MCPContent.text("Error: Required parameter 'experiment_id' is missing")],
                 isError: true
             )
         }
@@ -216,11 +216,11 @@ extension ProductPageOptimizationWorker {
                 "message": "Experiment '\(experimentId)' deleted"
             ] as [String: Any]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to delete experiment: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to delete experiment: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -233,7 +233,7 @@ extension ProductPageOptimizationWorker {
         guard let arguments = params.arguments,
               let experimentId = arguments["experiment_id"]?.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameter 'experiment_id' is missing")],
+                content: [MCPContent.text("Error: Required parameter 'experiment_id' is missing")],
                 isError: true
             )
         }
@@ -271,11 +271,11 @@ extension ProductPageOptimizationWorker {
                 result["next_url"] = next
             }
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to list treatments: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to list treatments: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -289,7 +289,7 @@ extension ProductPageOptimizationWorker {
               let experimentId = arguments["experiment_id"]?.stringValue,
               let name = arguments["name"]?.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameters: experiment_id, name")],
+                content: [MCPContent.text("Error: Required parameters: experiment_id, name")],
                 isError: true
             )
         }
@@ -321,11 +321,11 @@ extension ProductPageOptimizationWorker {
                 "treatment": treatment
             ] as [String: Any]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to create treatment: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to create treatment: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -338,7 +338,7 @@ extension ProductPageOptimizationWorker {
         guard let arguments = params.arguments,
               let treatmentId = arguments["treatment_id"]?.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameter 'treatment_id' is missing")],
+                content: [MCPContent.text("Error: Required parameter 'treatment_id' is missing")],
                 isError: true
             )
         }
@@ -376,11 +376,11 @@ extension ProductPageOptimizationWorker {
                 result["next_url"] = next
             }
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to list treatment localizations: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to list treatment localizations: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -394,7 +394,7 @@ extension ProductPageOptimizationWorker {
               let treatmentId = arguments["treatment_id"]?.stringValue,
               let locale = arguments["locale"]?.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameters: treatment_id, locale")],
+                content: [MCPContent.text("Error: Required parameters: treatment_id, locale")],
                 isError: true
             )
         }
@@ -426,11 +426,11 @@ extension ProductPageOptimizationWorker {
                 "localization": localization
             ] as [String: Any]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to create treatment localization: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to create treatment localization: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -442,12 +442,12 @@ extension ProductPageOptimizationWorker {
         return [
             "id": experiment.id,
             "type": experiment.type,
-            "name": experiment.attributes?.name.jsonSafe ?? NSNull(),
-            "trafficProportion": experiment.attributes?.trafficProportion.jsonSafe ?? NSNull(),
-            "state": experiment.attributes?.state.jsonSafe ?? NSNull(),
-            "reviewRequired": experiment.attributes?.reviewRequired.jsonSafe ?? NSNull(),
-            "startDate": experiment.attributes?.startDate.jsonSafe ?? NSNull(),
-            "endDate": experiment.attributes?.endDate.jsonSafe ?? NSNull()
+            "name": (experiment.attributes?.name).jsonSafe,
+            "trafficProportion": (experiment.attributes?.trafficProportion).jsonSafe,
+            "state": (experiment.attributes?.state).jsonSafe,
+            "reviewRequired": (experiment.attributes?.reviewRequired).jsonSafe,
+            "startDate": (experiment.attributes?.startDate).jsonSafe,
+            "endDate": (experiment.attributes?.endDate).jsonSafe
         ]
     }
 
@@ -455,8 +455,8 @@ extension ProductPageOptimizationWorker {
         return [
             "id": treatment.id,
             "type": treatment.type,
-            "name": treatment.attributes?.name.jsonSafe ?? NSNull(),
-            "appIconName": treatment.attributes?.appIconName.jsonSafe ?? NSNull()
+            "name": (treatment.attributes?.name).jsonSafe,
+            "appIconName": (treatment.attributes?.appIconName).jsonSafe
         ]
     }
 
@@ -464,7 +464,7 @@ extension ProductPageOptimizationWorker {
         return [
             "id": localization.id,
             "type": localization.type,
-            "locale": localization.attributes?.locale.jsonSafe ?? NSNull()
+            "locale": (localization.attributes?.locale).jsonSafe
         ]
     }
 }

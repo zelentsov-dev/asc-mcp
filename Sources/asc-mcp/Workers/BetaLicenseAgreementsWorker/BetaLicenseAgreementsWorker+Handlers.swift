@@ -45,11 +45,11 @@ extension BetaLicenseAgreementsWorker {
                 result["next_url"] = next
             }
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to list beta license agreements: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to list beta license agreements: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -61,7 +61,7 @@ extension BetaLicenseAgreementsWorker {
         guard let arguments = params.arguments,
               let agreementId = arguments["beta_license_agreement_id"]?.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameter 'beta_license_agreement_id' is missing")],
+                content: [MCPContent.text("Error: Required parameter 'beta_license_agreement_id' is missing")],
                 isError: true
             )
         }
@@ -80,11 +80,11 @@ extension BetaLicenseAgreementsWorker {
                 "beta_license_agreement": agreement
             ] as [String: Any]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to get beta license agreement: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to get beta license agreement: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -96,7 +96,7 @@ extension BetaLicenseAgreementsWorker {
         guard let arguments = params.arguments,
               let agreementId = arguments["beta_license_agreement_id"]?.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameter 'beta_license_agreement_id' is missing")],
+                content: [MCPContent.text("Error: Required parameter 'beta_license_agreement_id' is missing")],
                 isError: true
             )
         }
@@ -124,11 +124,11 @@ extension BetaLicenseAgreementsWorker {
                 "beta_license_agreement": agreement
             ] as [String: Any]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to update beta license agreement: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to update beta license agreement: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -140,7 +140,7 @@ extension BetaLicenseAgreementsWorker {
         return [
             "id": agreement.id,
             "type": agreement.type,
-            "agreementText": agreement.attributes?.agreementText.jsonSafe ?? NSNull()
+            "agreementText": (agreement.attributes?.agreementText).jsonSafe
         ]
     }
 }

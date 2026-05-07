@@ -5,6 +5,34 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.0] - 2026-05-05
+
+### Added
+
+- MCP 2025-11-25 tool metadata policy for all 339 tools: standard annotations plus `anthropic/maxResultSizeChars`.
+- Webhook notification tools for listing, reading, creating, updating, deleting, delivery inspection, redelivery, and ping testing.
+- TestFlight beta feedback tools for crash submissions, screenshot submissions, crash log reads, and cleanup.
+- Xcode Cloud tools for products, workflows, build runs, actions, artifacts, issues, test results, Xcode/macOS versions, SCM providers, repositories, git references, pull requests, and starting builds.
+- `--read-only` runtime mode that blocks App Store Connect mutation tools before handler execution.
+- App Store Connect API coverage matrix for Apple 4.0+ documentation gaps and future worker planning.
+- Structured JSON results for JSON-producing handlers, with `outputSchema` on stable auth, company, apps, and selected analytics tools.
+- Structured App Store Connect error decoding and safe rate-limit metadata capture.
+- Metadata validation before key ASC mutations: locale, emoji, URL, and length checks.
+- HTTP and upload service tests, MCP result builder tests, metadata policy tests, and docs drift coverage.
+
+### Changed
+
+- Migrated deprecated MCP SDK `.text(...)` usage to current `Tool.Content.text(text:annotations:_meta:)` helpers.
+- Refactored `WorkerManager` routing into ordered descriptors for overlapping prefixes.
+- Refactored uploads to stream chunks from disk with bounded concurrency and streaming MD5.
+- Updated SwiftPM to Swift tools 6.2 and Swift language mode v6.
+- Release build is now warning-clean.
+
+### Security
+
+- Redacts sensitive identifiers and private-key paths in runtime diagnostic output.
+- Keeps ASC verification read-only for production smoke checks.
+
 ## [2.0.0] - 2026-03-24
 
 ### Breaking Changes

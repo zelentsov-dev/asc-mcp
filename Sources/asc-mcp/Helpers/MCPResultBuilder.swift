@@ -1,0 +1,151 @@
+import Foundation
+import MCP
+
+enum MCPContent {
+    static func text(_ text: String, _meta: Metadata? = nil) -> Tool.Content {
+        .text(text: text, annotations: nil, _meta: _meta)
+    }
+}
+
+enum MCPResult {
+    static func text(_ text: String, isError: Bool = false, _meta: Metadata? = nil) -> CallTool.Result {
+        CallTool.Result(
+            content: [MCPContent.text(text)],
+            isError: isError ? true : nil,
+            _meta: _meta
+        )
+    }
+
+    static func json(
+        _ value: Value,
+        text: String? = nil,
+        isError: Bool = false,
+        _meta: Metadata? = nil
+    ) -> CallTool.Result {
+        let textContent = text ?? (try? MCPValue.prettyJSONString(from: value)) ?? value.description
+        return CallTool.Result(
+            content: [MCPContent.text(textContent)],
+            structuredContent: Optional.some(value),
+            isError: isError ? true : nil,
+            _meta: _meta
+        )
+    }
+
+    static func jsonObject(
+        _ object: [String: Any],
+        text: String? = nil,
+        isError: Bool = false,
+        _meta: Metadata? = nil
+    ) -> CallTool.Result {
+        do {
+            return json(try MCPValue.fromAny(object), text: text, isError: isError, _meta: _meta)
+        } catch {
+            return self.text(
+                "Error: Failed to encode structured result: \(error.localizedDescription)",
+                isError: true,
+                _meta: _meta
+            )
+        }
+    }
+
+    static func error(_ message: String, details: Value? = nil, _meta: Metadata? = nil) -> CallTool.Result {
+        let structured: Value = .object([
+            "success": .bool(false),
+            "error": .string(message),
+            "details": details ?? .null
+        ])
+        return json(structured, text: "Error: \(message)", isError: true, _meta: _meta)
+    }
+}
+
+enum MCPValue {
+    static func fromAny(_ any: Any) throws -> Value {
+        switch any {
+        case let value as Value:
+            return value
+        case _ as NSNull:
+            return .null
+        case let value as String:
+            return .string(value)
+        case let value as Bool:
+            return .bool(value)
+        case let value as Int:
+            return .int(value)
+        case let value as Int8:
+            return .int(Int(value))
+        case let value as Int16:
+            return .int(Int(value))
+        case let value as Int32:
+            return .int(Int(value))
+        case let value as Int64:
+            guard value >= Int64(Int.min), value <= Int64(Int.max) else {
+                throw ASCError.parsing("Integer value is outside Swift Int range")
+            }
+            return .int(Int(value))
+        case let value as UInt:
+            guard value <= UInt(Int.max) else {
+                throw ASCError.parsing("Unsigned integer value is outside Swift Int range")
+            }
+            return .int(Int(value))
+        case let value as UInt8:
+            return .int(Int(value))
+        case let value as UInt16:
+            return .int(Int(value))
+        case let value as UInt32:
+            guard value <= UInt32(Int.max) else {
+                throw ASCError.parsing("Unsigned integer value is outside Swift Int range")
+            }
+            return .int(Int(value))
+        case let value as UInt64:
+            guard value <= UInt64(Int.max) else {
+                throw ASCError.parsing("Unsigned integer value is outside Swift Int range")
+            }
+            return .int(Int(value))
+        case let value as Float:
+            guard value.isFinite else {
+                throw ASCError.parsing("Non-finite floating point value cannot be encoded")
+            }
+            return .double(Double(value))
+        case let value as Double:
+            guard value.isFinite else {
+                throw ASCError.parsing("Non-finite floating point value cannot be encoded")
+            }
+            return .double(value)
+        case let value as Decimal:
+            return .string(NSDecimalNumber(decimal: value).stringValue)
+        case let value as NSNumber:
+            if CFGetTypeID(value) == CFBooleanGetTypeID() {
+                return .bool(value.boolValue)
+            }
+            let double = value.doubleValue
+            guard double.isFinite else {
+                throw ASCError.parsing("Non-finite numeric value cannot be encoded")
+            }
+            if floor(double) == double,
+               double >= Double(Int.min),
+               double <= Double(Int.max) {
+                return .int(value.intValue)
+            }
+            return .double(double)
+        case let value as Date:
+            return .string(ISO8601DateFormatter().string(from: value))
+        case let value as [Any]:
+            return .array(try value.map { try fromAny($0) })
+        case let value as [String: Any]:
+            var object: [String: Value] = [:]
+            for (key, child) in value {
+                object[key] = try fromAny(child)
+            }
+            return .object(object)
+        default:
+            throw ASCError.parsing("Unsupported structured value type: \(type(of: any))")
+        }
+    }
+
+    static func prettyJSONString(from value: Value) throws -> String {
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+        let data = try encoder.encode(value)
+        return String(data: data, encoding: .utf8) ?? "{}"
+    }
+}

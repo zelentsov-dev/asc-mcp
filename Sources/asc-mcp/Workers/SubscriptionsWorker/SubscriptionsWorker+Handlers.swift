@@ -3,6 +3,32 @@ import MCP
 
 // MARK: - Tool Handlers
 extension SubscriptionsWorker {
+    private func validateSubscriptionLocalizationArguments(
+        _ arguments: [String: Value],
+        locale: String? = nil
+    ) -> [ASCMetadataValidator.FieldError] {
+        var errors: [ASCMetadataValidator.FieldError] = []
+        if let locale {
+            errors += ASCMetadataValidator.validateLocale(locale)
+        }
+
+        var textFields: [String: String] = [:]
+        for key in ["name", "description"] {
+            if let value = arguments[key]?.stringValue {
+                textFields[key] = value
+            }
+        }
+
+        errors += ASCMetadataValidator.validateTextFields(
+            textFields,
+            limits: [
+                "name": 30,
+                "description": 45
+            ]
+        )
+        return errors
+    }
+
 
     /// Lists subscriptions in a subscription group
     /// - Returns: JSON array of subscriptions with attributes
@@ -10,7 +36,7 @@ extension SubscriptionsWorker {
         guard let arguments = params.arguments,
               let groupId = arguments["group_id"]?.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameter 'group_id' is missing")],
+                content: [MCPContent.text("Error: Required parameter 'group_id' is missing")],
                 isError: true
             )
         }
@@ -48,11 +74,11 @@ extension SubscriptionsWorker {
                 result["next_url"] = next
             }
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to list subscriptions: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to list subscriptions: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -64,7 +90,7 @@ extension SubscriptionsWorker {
         guard let arguments = params.arguments,
               let subscriptionId = arguments["subscription_id"]?.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameter 'subscription_id' is missing")],
+                content: [MCPContent.text("Error: Required parameter 'subscription_id' is missing")],
                 isError: true
             )
         }
@@ -82,11 +108,11 @@ extension SubscriptionsWorker {
                 "subscription": subscription
             ] as [String: Any]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to get subscription: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to get subscription: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -101,7 +127,7 @@ extension SubscriptionsWorker {
               let productId = arguments["product_id"]?.stringValue,
               let subscriptionPeriod = arguments["subscription_period"]?.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameters: group_id, name, product_id, subscription_period")],
+                content: [MCPContent.text("Error: Required parameters: group_id, name, product_id, subscription_period")],
                 isError: true
             )
         }
@@ -138,11 +164,11 @@ extension SubscriptionsWorker {
                 "subscription": subscription
             ] as [String: Any]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to create subscription: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to create subscription: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -154,7 +180,7 @@ extension SubscriptionsWorker {
         guard let arguments = params.arguments,
               let subscriptionId = arguments["subscription_id"]?.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameter 'subscription_id' is missing")],
+                content: [MCPContent.text("Error: Required parameter 'subscription_id' is missing")],
                 isError: true
             )
         }
@@ -185,11 +211,11 @@ extension SubscriptionsWorker {
                 "subscription": subscription
             ] as [String: Any]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to update subscription: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to update subscription: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -201,7 +227,7 @@ extension SubscriptionsWorker {
         guard let arguments = params.arguments,
               let subscriptionId = arguments["subscription_id"]?.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameter 'subscription_id' is missing")],
+                content: [MCPContent.text("Error: Required parameter 'subscription_id' is missing")],
                 isError: true
             )
         }
@@ -214,11 +240,11 @@ extension SubscriptionsWorker {
                 "message": "Subscription '\(subscriptionId)' deleted"
             ] as [String: Any]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to delete subscription: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to delete subscription: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -230,7 +256,7 @@ extension SubscriptionsWorker {
         guard let arguments = params.arguments,
               let subscriptionId = arguments["subscription_id"]?.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameter 'subscription_id' is missing")],
+                content: [MCPContent.text("Error: Required parameter 'subscription_id' is missing")],
                 isError: true
             )
         }
@@ -260,11 +286,11 @@ extension SubscriptionsWorker {
                 result["next_url"] = next
             }
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to list subscription localizations: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to list subscription localizations: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -277,10 +303,12 @@ extension SubscriptionsWorker {
               let subscriptionId = arguments["subscription_id"]?.stringValue,
               let locale = arguments["locale"]?.stringValue,
               let name = arguments["name"]?.stringValue else {
-            return CallTool.Result(
-                content: [.text("Error: Required parameters: subscription_id, locale, name")],
-                isError: true
-            )
+            return MCPResult.error("Required parameters: subscription_id, locale, name")
+        }
+
+        let validationErrors = validateSubscriptionLocalizationArguments(arguments, locale: locale)
+        if !validationErrors.isEmpty {
+            return ASCMetadataValidator.errorResult(validationErrors)
         }
 
         do {
@@ -312,13 +340,10 @@ extension SubscriptionsWorker {
                 "localization": localization
             ] as [String: Any]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
-            return CallTool.Result(
-                content: [.text("Error: Failed to create subscription localization: \(error.localizedDescription)")],
-                isError: true
-            )
+            return MCPResult.error("Failed to create subscription localization: \(error.localizedDescription)")
         }
     }
 
@@ -327,10 +352,12 @@ extension SubscriptionsWorker {
     func updateSubscriptionLocalization(_ params: CallTool.Parameters) async throws -> CallTool.Result {
         guard let arguments = params.arguments,
               let localizationId = arguments["localization_id"]?.stringValue else {
-            return CallTool.Result(
-                content: [.text("Error: Required parameter 'localization_id' is missing")],
-                isError: true
-            )
+            return MCPResult.error("Required parameter 'localization_id' is missing")
+        }
+
+        let validationErrors = validateSubscriptionLocalizationArguments(arguments)
+        if !validationErrors.isEmpty {
+            return ASCMetadataValidator.errorResult(validationErrors)
         }
 
         do {
@@ -357,13 +384,10 @@ extension SubscriptionsWorker {
                 "localization": localization
             ] as [String: Any]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
-            return CallTool.Result(
-                content: [.text("Error: Failed to update subscription localization: \(error.localizedDescription)")],
-                isError: true
-            )
+            return MCPResult.error("Failed to update subscription localization: \(error.localizedDescription)")
         }
     }
 
@@ -373,7 +397,7 @@ extension SubscriptionsWorker {
         guard let arguments = params.arguments,
               let localizationId = arguments["localization_id"]?.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameter 'localization_id' is missing")],
+                content: [MCPContent.text("Error: Required parameter 'localization_id' is missing")],
                 isError: true
             )
         }
@@ -386,11 +410,11 @@ extension SubscriptionsWorker {
                 "message": "Subscription localization '\(localizationId)' deleted"
             ] as [String: Any]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to delete subscription localization: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to delete subscription localization: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -402,7 +426,7 @@ extension SubscriptionsWorker {
         guard let arguments = params.arguments,
               let subscriptionId = arguments["subscription_id"]?.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameter 'subscription_id' is missing")],
+                content: [MCPContent.text("Error: Required parameter 'subscription_id' is missing")],
                 isError: true
             )
         }
@@ -451,11 +475,11 @@ extension SubscriptionsWorker {
                 result["next_url"] = next
             }
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to list subscription prices: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to list subscription prices: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -467,7 +491,7 @@ extension SubscriptionsWorker {
         guard let arguments = params.arguments,
               let subscriptionId = arguments["subscription_id"]?.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameter 'subscription_id' is missing")],
+                content: [MCPContent.text("Error: Required parameter 'subscription_id' is missing")],
                 isError: true
             )
         }
@@ -505,11 +529,11 @@ extension SubscriptionsWorker {
                 result["next_url"] = next
             }
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to list subscription price points: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to list subscription price points: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -522,7 +546,7 @@ extension SubscriptionsWorker {
               let appId = arguments["app_id"]?.stringValue,
               let referenceName = arguments["reference_name"]?.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameters: app_id, reference_name")],
+                content: [MCPContent.text("Error: Required parameters: app_id, reference_name")],
                 isError: true
             )
         }
@@ -554,11 +578,11 @@ extension SubscriptionsWorker {
                 "subscription_group": group
             ] as [String: Any]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to create subscription group: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to create subscription group: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -571,7 +595,7 @@ extension SubscriptionsWorker {
               let groupId = arguments["group_id"]?.stringValue,
               let referenceName = arguments["reference_name"]?.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameters: group_id, reference_name")],
+                content: [MCPContent.text("Error: Required parameters: group_id, reference_name")],
                 isError: true
             )
         }
@@ -599,11 +623,11 @@ extension SubscriptionsWorker {
                 "subscription_group": group
             ] as [String: Any]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to update subscription group: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to update subscription group: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -615,7 +639,7 @@ extension SubscriptionsWorker {
         guard let arguments = params.arguments,
               let groupId = arguments["group_id"]?.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameter 'group_id' is missing")],
+                content: [MCPContent.text("Error: Required parameter 'group_id' is missing")],
                 isError: true
             )
         }
@@ -628,11 +652,11 @@ extension SubscriptionsWorker {
                 "message": "Subscription group '\(groupId)' deleted"
             ] as [String: Any]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to delete subscription group: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to delete subscription group: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -644,7 +668,7 @@ extension SubscriptionsWorker {
         guard let arguments = params.arguments,
               let subscriptionId = arguments["subscription_id"]?.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameter 'subscription_id' is missing")],
+                content: [MCPContent.text("Error: Required parameter 'subscription_id' is missing")],
                 isError: true
             )
         }
@@ -669,11 +693,11 @@ extension SubscriptionsWorker {
                 "message": "Subscription '\(subscriptionId)' submitted for review"
             ] as [String: Any]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to submit subscription for review: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to submit subscription for review: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -687,7 +711,7 @@ extension SubscriptionsWorker {
         guard let arguments = params.arguments,
               let priceId = arguments["subscription_price_id"]?.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameter 'subscription_price_id' is missing")],
+                content: [MCPContent.text("Error: Required parameter 'subscription_price_id' is missing")],
                 isError: true
             )
         }
@@ -700,11 +724,11 @@ extension SubscriptionsWorker {
                 "message": "Subscription price '\(priceId)' deleted"
             ] as [String: Any]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to delete subscription price: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to delete subscription price: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -718,7 +742,7 @@ extension SubscriptionsWorker {
         guard let arguments = params.arguments,
               let groupId = arguments["subscription_group_id"]?.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameter 'subscription_group_id' is missing")],
+                content: [MCPContent.text("Error: Required parameter 'subscription_group_id' is missing")],
                 isError: true
             )
         }
@@ -756,11 +780,11 @@ extension SubscriptionsWorker {
                 result["next_url"] = next
             }
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to list subscription group localizations: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to list subscription group localizations: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -774,7 +798,7 @@ extension SubscriptionsWorker {
               let name = arguments["name"]?.stringValue,
               let locale = arguments["locale"]?.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameters: subscription_group_id, name, locale")],
+                content: [MCPContent.text("Error: Required parameters: subscription_group_id, name, locale")],
                 isError: true
             )
         }
@@ -808,11 +832,11 @@ extension SubscriptionsWorker {
                 "localization": localization
             ] as [String: Any]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to create subscription group localization: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to create subscription group localization: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -824,7 +848,7 @@ extension SubscriptionsWorker {
         guard let arguments = params.arguments,
               let localizationId = arguments["group_localization_id"]?.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameter 'group_localization_id' is missing")],
+                content: [MCPContent.text("Error: Required parameter 'group_localization_id' is missing")],
                 isError: true
             )
         }
@@ -842,11 +866,11 @@ extension SubscriptionsWorker {
                 "localization": localization
             ] as [String: Any]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to get subscription group localization: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to get subscription group localization: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -858,7 +882,7 @@ extension SubscriptionsWorker {
         guard let arguments = params.arguments,
               let localizationId = arguments["group_localization_id"]?.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameter 'group_localization_id' is missing")],
+                content: [MCPContent.text("Error: Required parameter 'group_localization_id' is missing")],
                 isError: true
             )
         }
@@ -887,11 +911,11 @@ extension SubscriptionsWorker {
                 "localization": localization
             ] as [String: Any]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to update subscription group localization: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to update subscription group localization: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -903,7 +927,7 @@ extension SubscriptionsWorker {
         guard let arguments = params.arguments,
               let localizationId = arguments["group_localization_id"]?.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameter 'group_localization_id' is missing")],
+                content: [MCPContent.text("Error: Required parameter 'group_localization_id' is missing")],
                 isError: true
             )
         }
@@ -916,11 +940,11 @@ extension SubscriptionsWorker {
                 "message": "Subscription group localization '\(localizationId)' deleted"
             ] as [String: Any]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to delete subscription group localization: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to delete subscription group localization: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -935,7 +959,7 @@ extension SubscriptionsWorker {
               let subscriptionId = arguments["subscription_id"]?.stringValue,
               let filePath = arguments["file_path"]?.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameters: subscription_id, file_path")],
+                content: [MCPContent.text("Error: Required parameters: subscription_id, file_path")],
                 isError: true
             )
         }
@@ -966,7 +990,7 @@ extension SubscriptionsWorker {
             let imageId = reserveResponse.data.id
             guard let uploadOperations = reserveResponse.data.attributes?.uploadOperations, !uploadOperations.isEmpty else {
                 return CallTool.Result(
-                    content: [.text("Error: No upload operations returned from reservation")],
+                    content: [MCPContent.text("Error: No upload operations returned from reservation")],
                     isError: true
                 )
             }
@@ -992,11 +1016,11 @@ extension SubscriptionsWorker {
                 "image": formatSubscriptionImage(commitResponse.data)
             ] as [String: Any]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to upload subscription image: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to upload subscription image: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -1008,7 +1032,7 @@ extension SubscriptionsWorker {
         guard let arguments = params.arguments,
               let imageId = arguments["image_id"]?.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameter 'image_id' is missing")],
+                content: [MCPContent.text("Error: Required parameter 'image_id' is missing")],
                 isError: true
             )
         }
@@ -1022,11 +1046,11 @@ extension SubscriptionsWorker {
                 "image": formatSubscriptionImage(response.data)
             ] as [String: Any]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to get subscription image: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to get subscription image: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -1038,7 +1062,7 @@ extension SubscriptionsWorker {
         guard let arguments = params.arguments,
               let imageId = arguments["image_id"]?.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameter 'image_id' is missing")],
+                content: [MCPContent.text("Error: Required parameter 'image_id' is missing")],
                 isError: true
             )
         }
@@ -1051,11 +1075,11 @@ extension SubscriptionsWorker {
                 "message": "Subscription image '\(imageId)' deleted"
             ] as [String: Any]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to delete subscription image: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to delete subscription image: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -1070,7 +1094,7 @@ extension SubscriptionsWorker {
               let subscriptionId = arguments["subscription_id"]?.stringValue,
               let filePath = arguments["file_path"]?.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameters: subscription_id, file_path")],
+                content: [MCPContent.text("Error: Required parameters: subscription_id, file_path")],
                 isError: true
             )
         }
@@ -1101,7 +1125,7 @@ extension SubscriptionsWorker {
             let screenshotId = reserveResponse.data.id
             guard let uploadOperations = reserveResponse.data.attributes?.uploadOperations, !uploadOperations.isEmpty else {
                 return CallTool.Result(
-                    content: [.text("Error: No upload operations returned from reservation")],
+                    content: [MCPContent.text("Error: No upload operations returned from reservation")],
                     isError: true
                 )
             }
@@ -1127,11 +1151,11 @@ extension SubscriptionsWorker {
                 "screenshot": formatSubReviewScreenshot(commitResponse.data)
             ] as [String: Any]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to upload subscription review screenshot: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to upload subscription review screenshot: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -1143,7 +1167,7 @@ extension SubscriptionsWorker {
         guard let arguments = params.arguments,
               let screenshotId = arguments["screenshot_id"]?.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameter 'screenshot_id' is missing")],
+                content: [MCPContent.text("Error: Required parameter 'screenshot_id' is missing")],
                 isError: true
             )
         }
@@ -1157,11 +1181,11 @@ extension SubscriptionsWorker {
                 "screenshot": formatSubReviewScreenshot(response.data)
             ] as [String: Any]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to get subscription review screenshot: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to get subscription review screenshot: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -1173,7 +1197,7 @@ extension SubscriptionsWorker {
         guard let arguments = params.arguments,
               let screenshotId = arguments["screenshot_id"]?.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameter 'screenshot_id' is missing")],
+                content: [MCPContent.text("Error: Required parameter 'screenshot_id' is missing")],
                 isError: true
             )
         }
@@ -1186,11 +1210,11 @@ extension SubscriptionsWorker {
                 "message": "Subscription review screenshot '\(screenshotId)' deleted"
             ] as [String: Any]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to delete subscription review screenshot: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to delete subscription review screenshot: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -1205,7 +1229,7 @@ extension SubscriptionsWorker {
         guard let arguments = params.arguments,
               let subscriptionId = arguments["subscription_id"]?.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameter 'subscription_id' is missing")],
+                content: [MCPContent.text("Error: Required parameter 'subscription_id' is missing")],
                 isError: true
             )
         }
@@ -1243,11 +1267,11 @@ extension SubscriptionsWorker {
                 result["next_url"] = next
             }
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to list subscription images: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to list subscription images: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -1260,7 +1284,7 @@ extension SubscriptionsWorker {
         guard let arguments = params.arguments,
               let subscriptionId = arguments["subscription_id"]?.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameter 'subscription_id' is missing")],
+                content: [MCPContent.text("Error: Required parameter 'subscription_id' is missing")],
                 isError: true
             )
         }
@@ -1274,11 +1298,11 @@ extension SubscriptionsWorker {
                 "screenshot": formatSubReviewScreenshot(response.data)
             ] as [String: Any]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to get subscription review screenshot: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to get subscription review screenshot: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -1288,10 +1312,10 @@ extension SubscriptionsWorker {
         var result: [String: Any] = [
             "id": image.id,
             "type": image.type,
-            "fileName": image.attributes?.fileName.jsonSafe,
-            "fileSize": image.attributes?.fileSize.jsonSafe,
-            "sourceFileChecksum": image.attributes?.sourceFileChecksum.jsonSafe,
-            "state": image.attributes?.state.jsonSafe
+            "fileName": (image.attributes?.fileName).jsonSafe,
+            "fileSize": (image.attributes?.fileSize).jsonSafe,
+            "sourceFileChecksum": (image.attributes?.sourceFileChecksum).jsonSafe,
+            "state": (image.attributes?.state).jsonSafe
         ]
 
         if let imageAsset = image.attributes?.imageAsset {
@@ -1309,9 +1333,9 @@ extension SubscriptionsWorker {
         var result: [String: Any] = [
             "id": screenshot.id,
             "type": screenshot.type,
-            "fileName": screenshot.attributes?.fileName.jsonSafe,
-            "fileSize": screenshot.attributes?.fileSize.jsonSafe,
-            "sourceFileChecksum": screenshot.attributes?.sourceFileChecksum.jsonSafe
+            "fileName": (screenshot.attributes?.fileName).jsonSafe,
+            "fileSize": (screenshot.attributes?.fileSize).jsonSafe,
+            "sourceFileChecksum": (screenshot.attributes?.sourceFileChecksum).jsonSafe
         ]
 
         if let imageAsset = screenshot.attributes?.imageAsset {
@@ -1362,15 +1386,15 @@ extension SubscriptionsWorker {
         var result: [String: Any] = [
             "id": price.id,
             "type": price.type,
-            "startDate": price.attributes?.startDate.jsonSafe ?? NSNull(),
-            "preserved": price.attributes?.preserved.jsonSafe ?? NSNull()
+            "startDate": (price.attributes?.startDate).jsonSafe,
+            "preserved": (price.attributes?.preserved).jsonSafe
         ]
 
         // Enrich with price point data if available
         if let pricePointId = price.relationships?.subscriptionPricePoint?.data?.id,
            let pricePoint = pricePointMap[pricePointId] {
-            result["customerPrice"] = pricePoint.attributes?.customerPrice.jsonSafe ?? NSNull()
-            result["proceeds"] = pricePoint.attributes?.proceeds.jsonSafe ?? NSNull()
+            result["customerPrice"] = (pricePoint.attributes?.customerPrice).jsonSafe
+            result["proceeds"] = (pricePoint.attributes?.proceeds).jsonSafe
         }
 
         return result
@@ -1380,9 +1404,9 @@ extension SubscriptionsWorker {
         return [
             "id": point.id,
             "type": point.type,
-            "customerPrice": point.attributes?.customerPrice.jsonSafe ?? NSNull(),
-            "proceeds": point.attributes?.proceeds.jsonSafe ?? NSNull(),
-            "proceedsYear2": point.attributes?.proceedsYear2.jsonSafe ?? NSNull()
+            "customerPrice": (point.attributes?.customerPrice).jsonSafe,
+            "proceeds": (point.attributes?.proceeds).jsonSafe,
+            "proceedsYear2": (point.attributes?.proceedsYear2).jsonSafe
         ]
     }
 

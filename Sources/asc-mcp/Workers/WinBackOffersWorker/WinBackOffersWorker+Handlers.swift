@@ -10,7 +10,7 @@ extension WinBackOffersWorker {
         guard let arguments = params.arguments,
               let subscriptionId = arguments["subscription_id"]?.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameter 'subscription_id' is missing")],
+                content: [MCPContent.text("Error: Required parameter 'subscription_id' is missing")],
                 isError: true
             )
         }
@@ -48,11 +48,11 @@ extension WinBackOffersWorker {
                 result["next_url"] = next
             }
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to list win-back offers: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to list win-back offers: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -76,7 +76,7 @@ extension WinBackOffersWorker {
               let eligibilityWaitBetweenMonths = arguments["eligibility_wait_between_months"]?.intValue,
               let startDate = arguments["start_date"]?.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameters: subscription_id, reference_name, offer_id, duration, offer_mode, period_count, priority, promotion_intent, eligibility_duration_months, eligibility_time_since_last_months_min, eligibility_time_since_last_months_max, eligibility_wait_between_months, start_date")],
+                content: [MCPContent.text("Error: Required parameters: subscription_id, reference_name, offer_id, duration, offer_mode, period_count, priority, promotion_intent, eligibility_duration_months, eligibility_time_since_last_months_min, eligibility_time_since_last_months_max, eligibility_wait_between_months, start_date")],
                 isError: true
             )
         }
@@ -84,7 +84,7 @@ extension WinBackOffersWorker {
         // Validate eligibility_wait_between_months range (Apple requires 2-24)
         guard eligibilityWaitBetweenMonths >= 2 && eligibilityWaitBetweenMonths <= 24 else {
             return CallTool.Result(
-                content: [.text("Error: eligibility_wait_between_months must be between 2 and 24 (got \(eligibilityWaitBetweenMonths))")],
+                content: [MCPContent.text("Error: eligibility_wait_between_months must be between 2 and 24 (got \(eligibilityWaitBetweenMonths))")],
                 isError: true
             )
         }
@@ -127,7 +127,7 @@ extension WinBackOffersWorker {
                     if !ids.isEmpty {
                         guard ids.count == territoryIds.count else {
                             return CallTool.Result(
-                                content: [.text("Error: price_point_ids and territory_ids must have the same count (got \(ids.count) vs \(territoryIds.count))")],
+                                content: [MCPContent.text("Error: price_point_ids and territory_ids must have the same count (got \(ids.count) vs \(territoryIds.count))")],
                                 isError: true
                             )
                         }
@@ -199,11 +199,11 @@ extension WinBackOffersWorker {
                 "win_back_offer": offer
             ] as [String: Any]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to create win-back offer: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to create win-back offer: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -215,7 +215,7 @@ extension WinBackOffersWorker {
         guard let arguments = params.arguments,
               let winbackOfferId = arguments["winback_offer_id"]?.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameter 'winback_offer_id' is missing")],
+                content: [MCPContent.text("Error: Required parameter 'winback_offer_id' is missing")],
                 isError: true
             )
         }
@@ -245,11 +245,11 @@ extension WinBackOffersWorker {
                 "win_back_offer": offer
             ] as [String: Any]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to update win-back offer: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to update win-back offer: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -261,7 +261,7 @@ extension WinBackOffersWorker {
         guard let arguments = params.arguments,
               let winbackOfferId = arguments["winback_offer_id"]?.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameter 'winback_offer_id' is missing")],
+                content: [MCPContent.text("Error: Required parameter 'winback_offer_id' is missing")],
                 isError: true
             )
         }
@@ -274,11 +274,11 @@ extension WinBackOffersWorker {
                 "message": "Win-back offer '\(winbackOfferId)' deleted"
             ] as [String: Any]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to delete win-back offer: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to delete win-back offer: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -290,7 +290,7 @@ extension WinBackOffersWorker {
         guard let arguments = params.arguments,
               let winbackOfferId = arguments["winback_offer_id"]?.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameter 'winback_offer_id' is missing")],
+                content: [MCPContent.text("Error: Required parameter 'winback_offer_id' is missing")],
                 isError: true
             )
         }
@@ -328,11 +328,11 @@ extension WinBackOffersWorker {
                 result["next_url"] = next
             }
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to list win-back offer prices: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to list win-back offer prices: \(error.localizedDescription)")],
                 isError: true
             )
         }

@@ -103,7 +103,7 @@ public struct CreateOfferCodeCustomCodeRequest: Codable, Sendable {
     public let data: CreateData
 
     public struct CreateData: Codable, Sendable {
-        public let type: String = "subscriptionOfferCodeCustomCodes"
+        public var type: String = "subscriptionOfferCodeCustomCodes"
         public let attributes: Attributes
         public let relationships: Relationships
     }
@@ -128,7 +128,7 @@ public struct UpdateOfferCodeCustomCodeRequest: Codable, Sendable {
     public let data: UpdateData
 
     public struct UpdateData: Codable, Sendable {
-        public let type: String = "subscriptionOfferCodeCustomCodes"
+        public var type: String = "subscriptionOfferCodeCustomCodes"
         public let id: String
         public let attributes: Attributes
     }
@@ -142,7 +142,7 @@ public struct UpdateOfferCodeCustomCodeRequest: Codable, Sendable {
 
 /// Inline create for offer code price (used in included[] when creating offer codes)
 public struct OfferCodePriceInlineCreate: Codable, Sendable {
-    public let type: String = "subscriptionOfferCodePrices"
+    public var type: String = "subscriptionOfferCodePrices"
     public let id: String
     public let relationships: Relationships?
 
@@ -168,7 +168,7 @@ public struct CreateOfferCodeRequest: Codable, Sendable {
     public let included: [OfferCodePriceInlineCreate]?
 
     public struct CreateData: Codable, Sendable {
-        public let type: String = "subscriptionOfferCodes"
+        public var type: String = "subscriptionOfferCodes"
         public let attributes: Attributes
         public let relationships: Relationships
     }
@@ -201,7 +201,7 @@ public struct UpdateOfferCodeRequest: Codable, Sendable {
     public let data: UpdateData
 
     public struct UpdateData: Codable, Sendable {
-        public let type: String = "subscriptionOfferCodes"
+        public var type: String = "subscriptionOfferCodes"
         public let id: String
         public let attributes: Attributes
     }
@@ -216,7 +216,7 @@ public struct GenerateOneTimeCodesRequest: Codable, Sendable {
     public let data: CreateData
 
     public struct CreateData: Codable, Sendable {
-        public let type: String = "subscriptionOfferCodeOneTimeUseCodes"
+        public var type: String = "subscriptionOfferCodeOneTimeUseCodes"
         public let attributes: Attributes
         public let relationships: Relationships
     }

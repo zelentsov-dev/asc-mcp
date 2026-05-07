@@ -13,7 +13,7 @@ extension AppLifecycleWorker {
               let platform = arguments["platform"]?.stringValue,
               let versionString = arguments["version_string"]?.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameters missing: app_id, platform, version_string")],
+                content: [MCPContent.text("Error: Required parameters missing: app_id, platform, version_string")],
                 isError: true
             )
         }
@@ -42,11 +42,11 @@ extension AppLifecycleWorker {
                 "message": "Version \(versionString) created successfully"
             ]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to create version: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to create version: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -59,7 +59,7 @@ extension AppLifecycleWorker {
         guard let arguments = params.arguments,
               let appId = arguments["app_id"]?.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameter 'app_id' is missing")],
+                content: [MCPContent.text("Error: Required parameter 'app_id' is missing")],
                 isError: true
             )
         }
@@ -120,11 +120,11 @@ extension AppLifecycleWorker {
                 result["included"] = included.map { $0.asAny }
             }
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to list versions: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to list versions: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -137,7 +137,7 @@ extension AppLifecycleWorker {
         guard let arguments = params.arguments,
               let versionId = arguments["version_id"]?.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameter 'version_id' is missing")],
+                content: [MCPContent.text("Error: Required parameter 'version_id' is missing")],
                 isError: true
             )
         }
@@ -158,11 +158,11 @@ extension AppLifecycleWorker {
                 "version": response.data.asAny
             ]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to get version: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to get version: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -175,7 +175,7 @@ extension AppLifecycleWorker {
         guard let arguments = params.arguments,
               let versionId = arguments["version_id"]?.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameter 'version_id' is missing")],
+                content: [MCPContent.text("Error: Required parameter 'version_id' is missing")],
                 isError: true
             )
         }
@@ -188,7 +188,7 @@ extension AppLifecycleWorker {
 
             guard releaseType != nil || earliestDate != nil || copyright != nil || versionString != nil else {
                 return CallTool.Result(
-                    content: [.text("Error: No attributes to update")],
+                    content: [MCPContent.text("Error: No attributes to update")],
                     isError: true
                 )
             }
@@ -212,19 +212,19 @@ extension AppLifecycleWorker {
                 "success": true,
                 "version": [
                     "id": v.id,
-                    "version_string": v.attributes?.versionString.jsonSafe ?? NSNull(),
-                    "state": v.attributes?.appStoreState.jsonSafe ?? NSNull(),
-                    "release_type": v.attributes?.releaseType.jsonSafe ?? NSNull(),
-                    "created_date": v.attributes?.createdDate.jsonSafe ?? NSNull()
+                    "version_string": (v.attributes?.versionString).jsonSafe,
+                    "state": (v.attributes?.appStoreState).jsonSafe,
+                    "release_type": (v.attributes?.releaseType).jsonSafe,
+                    "created_date": (v.attributes?.createdDate).jsonSafe
                 ] as [String: Any],
                 "message": "Version updated successfully"
             ]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to update version: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to update version: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -238,7 +238,7 @@ extension AppLifecycleWorker {
               let versionId = arguments["version_id"]?.stringValue,
               let buildId = arguments["build_id"]?.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameters missing: version_id, build_id")],
+                content: [MCPContent.text("Error: Required parameters missing: version_id, build_id")],
                 isError: true
             )
         }
@@ -257,11 +257,11 @@ extension AppLifecycleWorker {
                 "message": "Build \(buildId) attached to version \(versionId) successfully"
             ]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to attach build: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to attach build: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -274,7 +274,7 @@ extension AppLifecycleWorker {
         guard let arguments = params.arguments,
               let versionId = arguments["version_id"]?.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameter 'version_id' is missing")],
+                content: [MCPContent.text("Error: Required parameter 'version_id' is missing")],
                 isError: true
             )
         }
@@ -294,7 +294,7 @@ extension AppLifecycleWorker {
                 guard let appData = versionResponse.data.relationships?.app?.data,
                       case .single(let appRef) = appData else {
                     return CallTool.Result(
-                        content: [.text("Error: Could not resolve app ID from version. Provide 'app_id' explicitly.")],
+                        content: [MCPContent.text("Error: Could not resolve app ID from version. Provide 'app_id' explicitly.")],
                         isError: true
                     )
                 }
@@ -332,11 +332,11 @@ extension AppLifecycleWorker {
                 "message": "Version submitted for review successfully"
             ]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to submit for review: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to submit for review: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -349,7 +349,7 @@ extension AppLifecycleWorker {
         guard let arguments = params.arguments,
               let submissionId = arguments["review_submission_id"]?.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameter 'review_submission_id' is missing")],
+                content: [MCPContent.text("Error: Required parameter 'review_submission_id' is missing")],
                 isError: true
             )
         }
@@ -368,11 +368,11 @@ extension AppLifecycleWorker {
                 "message": "Review submission cancelled successfully"
             ]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to cancel review: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to cancel review: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -385,7 +385,7 @@ extension AppLifecycleWorker {
         guard let arguments = params.arguments,
               let versionId = arguments["version_id"]?.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameter 'version_id' is missing")],
+                content: [MCPContent.text("Error: Required parameter 'version_id' is missing")],
                 isError: true
             )
         }
@@ -406,11 +406,11 @@ extension AppLifecycleWorker {
                 "message": "Phased release created successfully"
             ]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to create phased release: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to create phased release: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -423,7 +423,7 @@ extension AppLifecycleWorker {
         guard let arguments = params.arguments,
               let versionId = arguments["version_id"]?.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameter 'version_id' is missing")],
+                content: [MCPContent.text("Error: Required parameter 'version_id' is missing")],
                 isError: true
             )
         }
@@ -440,11 +440,11 @@ extension AppLifecycleWorker {
                 "phased_release": response.data.asAny
             ]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to get phased release: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to get phased release: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -458,7 +458,7 @@ extension AppLifecycleWorker {
               let phasedReleaseId = arguments["phased_release_id"]?.stringValue,
               let state = arguments["phased_release_state"]?.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameters missing: phased_release_id, phased_release_state")],
+                content: [MCPContent.text("Error: Required parameters missing: phased_release_id, phased_release_state")],
                 isError: true
             )
         }
@@ -477,11 +477,11 @@ extension AppLifecycleWorker {
                 "message": "Phased release state updated to \(state)"
             ]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to update phased release: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to update phased release: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -494,7 +494,7 @@ extension AppLifecycleWorker {
         guard let arguments = params.arguments,
               let versionId = arguments["version_id"]?.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameter 'version_id' is missing")],
+                content: [MCPContent.text("Error: Required parameter 'version_id' is missing")],
                 isError: true
             )
         }
@@ -513,11 +513,11 @@ extension AppLifecycleWorker {
                 "message": "Version released to App Store successfully"
             ]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to release version: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to release version: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -530,7 +530,7 @@ extension AppLifecycleWorker {
         guard let arguments = params.arguments,
               let versionId = arguments["version_id"]?.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameter 'version_id' is missing")],
+                content: [MCPContent.text("Error: Required parameter 'version_id' is missing")],
                 isError: true
             )
         }
@@ -623,11 +623,11 @@ extension AppLifecycleWorker {
                 "action": existingReviewDetailId != nil ? "updated" : "created"
             ]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to set review details: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to set review details: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -640,7 +640,7 @@ extension AppLifecycleWorker {
         guard let arguments = params.arguments,
               let versionId = arguments["version_id"]?.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameter 'version_id' is missing")],
+                content: [MCPContent.text("Error: Required parameter 'version_id' is missing")],
                 isError: true
             )
         }
@@ -726,7 +726,7 @@ extension AppLifecycleWorker {
 
             if attributes.isEmpty {
                 return CallTool.Result(
-                    content: [.text("Error: No age rating attributes to update")],
+                    content: [MCPContent.text("Error: No age rating attributes to update")],
                     isError: true
                 )
             }
@@ -767,11 +767,11 @@ extension AppLifecycleWorker {
                 "action": existingAgeRatingId != nil ? "updated" : "created"
             ]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to update age rating: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to update age rating: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -784,7 +784,7 @@ extension AppLifecycleWorker {
         guard let arguments = params.arguments,
               let versionId = arguments["version_id"]?.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameter 'version_id' is missing")],
+                content: [MCPContent.text("Error: Required parameter 'version_id' is missing")],
                 isError: true
             )
         }
@@ -797,11 +797,11 @@ extension AppLifecycleWorker {
                 "message": "Version '\(versionId)' deleted successfully"
             ]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to delete version: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to delete version: \(error.localizedDescription)")],
                 isError: true
             )
         }
