@@ -58,7 +58,7 @@ public struct ASCWinBackOfferPrice: Codable, Sendable {
 
 /// Inline create for win-back offer price
 public struct WinBackOfferPriceInlineCreate: Codable, Sendable {
-    public let type: String = "winBackOfferPrices"
+    public var type: String = "winBackOfferPrices"
     public let id: String
     public let relationships: Relationships?
 
@@ -84,7 +84,7 @@ public struct CreateWinBackOfferRequest: Codable, Sendable {
     public let included: [WinBackOfferPriceInlineCreate]?
 
     public struct CreateData: Codable, Sendable {
-        public let type: String = "winBackOffers"
+        public var type: String = "winBackOffers"
         public let attributes: Attributes
         public let relationships: Relationships
     }
@@ -123,7 +123,7 @@ public struct UpdateWinBackOfferRequest: Codable, Sendable {
     public let data: UpdateData
 
     public struct UpdateData: Codable, Sendable {
-        public let type: String = "winBackOffers"
+        public var type: String = "winBackOffers"
         public let id: String
         public let attributes: Attributes
     }

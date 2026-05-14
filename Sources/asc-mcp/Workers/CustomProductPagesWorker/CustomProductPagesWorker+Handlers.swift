@@ -11,7 +11,7 @@ extension CustomProductPagesWorker {
               let appIdValue = arguments["app_id"],
               let appId = appIdValue.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameter 'app_id' is missing")],
+                content: [MCPContent.text("Error: Required parameter 'app_id' is missing")],
                 isError: true
             )
         }
@@ -50,11 +50,11 @@ extension CustomProductPagesWorker {
                 result["next_url"] = next
             }
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to list custom product pages: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to list custom product pages: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -67,7 +67,7 @@ extension CustomProductPagesWorker {
               let pageIdValue = arguments["page_id"],
               let pageId = pageIdValue.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameter 'page_id' is missing")],
+                content: [MCPContent.text("Error: Required parameter 'page_id' is missing")],
                 isError: true
             )
         }
@@ -85,11 +85,11 @@ extension CustomProductPagesWorker {
                 "custom_product_page": page
             ] as [String: Any]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to get custom product page: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to get custom product page: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -106,7 +106,7 @@ extension CustomProductPagesWorker {
               let localeValue = arguments["locale"],
               let locale = localeValue.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameters: app_id, name, locale")],
+                content: [MCPContent.text("Error: Required parameters: app_id, name, locale")],
                 isError: true
             )
         }
@@ -172,11 +172,11 @@ extension CustomProductPagesWorker {
                 "custom_product_page": page
             ] as [String: Any]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to create custom product page: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to create custom product page: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -189,7 +189,7 @@ extension CustomProductPagesWorker {
               let pageIdValue = arguments["page_id"],
               let pageId = pageIdValue.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameter 'page_id' is missing")],
+                content: [MCPContent.text("Error: Required parameter 'page_id' is missing")],
                 isError: true
             )
         }
@@ -218,11 +218,11 @@ extension CustomProductPagesWorker {
                 "custom_product_page": page
             ] as [String: Any]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to update custom product page: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to update custom product page: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -235,7 +235,7 @@ extension CustomProductPagesWorker {
               let pageIdValue = arguments["page_id"],
               let pageId = pageIdValue.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameter 'page_id' is missing")],
+                content: [MCPContent.text("Error: Required parameter 'page_id' is missing")],
                 isError: true
             )
         }
@@ -248,11 +248,11 @@ extension CustomProductPagesWorker {
                 "message": "Custom product page '\(pageId)' deleted"
             ] as [String: Any]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to delete custom product page: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to delete custom product page: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -265,7 +265,7 @@ extension CustomProductPagesWorker {
               let pageIdValue = arguments["page_id"],
               let pageId = pageIdValue.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameter 'page_id' is missing")],
+                content: [MCPContent.text("Error: Required parameter 'page_id' is missing")],
                 isError: true
             )
         }
@@ -304,11 +304,11 @@ extension CustomProductPagesWorker {
                 result["next_url"] = next
             }
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to list custom product page versions: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to list custom product page versions: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -321,7 +321,7 @@ extension CustomProductPagesWorker {
               let pageIdValue = arguments["page_id"],
               let pageId = pageIdValue.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameter 'page_id' is missing")],
+                content: [MCPContent.text("Error: Required parameter 'page_id' is missing")],
                 isError: true
             )
         }
@@ -350,11 +350,11 @@ extension CustomProductPagesWorker {
                 "version": version
             ] as [String: Any]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to create custom product page version: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to create custom product page version: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -367,7 +367,7 @@ extension CustomProductPagesWorker {
               let versionIdValue = arguments["version_id"],
               let versionId = versionIdValue.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameter 'version_id' is missing")],
+                content: [MCPContent.text("Error: Required parameter 'version_id' is missing")],
                 isError: true
             )
         }
@@ -406,11 +406,11 @@ extension CustomProductPagesWorker {
                 result["next_url"] = next
             }
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to list custom product page localizations: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to list custom product page localizations: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -425,7 +425,7 @@ extension CustomProductPagesWorker {
               let localeValue = arguments["locale"],
               let locale = localeValue.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameters: version_id, locale")],
+                content: [MCPContent.text("Error: Required parameters: version_id, locale")],
                 isError: true
             )
         }
@@ -458,11 +458,11 @@ extension CustomProductPagesWorker {
                 "localization": localization
             ] as [String: Any]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to create custom product page localization: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to create custom product page localization: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -475,7 +475,7 @@ extension CustomProductPagesWorker {
               let locIdValue = arguments["localization_id"],
               let localizationId = locIdValue.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameter 'localization_id' is missing")],
+                content: [MCPContent.text("Error: Required parameter 'localization_id' is missing")],
                 isError: true
             )
         }
@@ -503,11 +503,11 @@ extension CustomProductPagesWorker {
                 "localization": localization
             ] as [String: Any]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to update custom product page localization: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to update custom product page localization: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -519,10 +519,10 @@ extension CustomProductPagesWorker {
         return [
             "id": page.id,
             "type": page.type,
-            "name": page.attributes?.name.jsonSafe,
-            "url": page.attributes?.url.jsonSafe,
-            "visible": page.attributes?.visible.jsonSafe,
-            "state": page.attributes?.state.jsonSafe
+            "name": (page.attributes?.name).jsonSafe,
+            "url": (page.attributes?.url).jsonSafe,
+            "visible": (page.attributes?.visible).jsonSafe,
+            "state": (page.attributes?.state).jsonSafe
         ]
     }
 
@@ -530,9 +530,9 @@ extension CustomProductPagesWorker {
         return [
             "id": version.id,
             "type": version.type,
-            "version": version.attributes?.version.jsonSafe,
-            "state": version.attributes?.state.jsonSafe,
-            "deepLink": version.attributes?.deepLink.jsonSafe
+            "version": (version.attributes?.version).jsonSafe,
+            "state": (version.attributes?.state).jsonSafe,
+            "deepLink": (version.attributes?.deepLink).jsonSafe
         ]
     }
 
@@ -540,8 +540,8 @@ extension CustomProductPagesWorker {
         return [
             "id": loc.id,
             "type": loc.type,
-            "locale": loc.attributes?.locale.jsonSafe,
-            "promotionalText": loc.attributes?.promotionalText.jsonSafe
+            "locale": (loc.attributes?.locale).jsonSafe,
+            "promotionalText": (loc.attributes?.promotionalText).jsonSafe
         ]
     }
 }

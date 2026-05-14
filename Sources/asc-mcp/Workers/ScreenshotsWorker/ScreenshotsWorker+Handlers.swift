@@ -11,7 +11,7 @@ extension ScreenshotsWorker {
               let locIdValue = arguments["localization_id"],
               let localizationId = locIdValue.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameter 'localization_id' is missing")],
+                content: [MCPContent.text("Error: Required parameter 'localization_id' is missing")],
                 isError: true
             )
         }
@@ -50,11 +50,11 @@ extension ScreenshotsWorker {
                 result["next_url"] = next
             }
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to list screenshot sets: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to list screenshot sets: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -69,7 +69,7 @@ extension ScreenshotsWorker {
               let displayTypeValue = arguments["display_type"],
               let displayType = displayTypeValue.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameters: localization_id, display_type")],
+                content: [MCPContent.text("Error: Required parameters: localization_id, display_type")],
                 isError: true
             )
         }
@@ -99,11 +99,11 @@ extension ScreenshotsWorker {
                 "screenshot_set": formatScreenshotSet(response.data)
             ] as [String: Any]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to create screenshot set: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to create screenshot set: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -116,7 +116,7 @@ extension ScreenshotsWorker {
               let setIdValue = arguments["set_id"],
               let setId = setIdValue.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameter 'set_id' is missing")],
+                content: [MCPContent.text("Error: Required parameter 'set_id' is missing")],
                 isError: true
             )
         }
@@ -129,11 +129,11 @@ extension ScreenshotsWorker {
                 "message": "Screenshot set '\(setId)' deleted"
             ] as [String: Any]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to delete screenshot set: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to delete screenshot set: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -146,7 +146,7 @@ extension ScreenshotsWorker {
               let setIdValue = arguments["set_id"],
               let setId = setIdValue.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameter 'set_id' is missing")],
+                content: [MCPContent.text("Error: Required parameter 'set_id' is missing")],
                 isError: true
             )
         }
@@ -185,11 +185,11 @@ extension ScreenshotsWorker {
                 result["next_url"] = next
             }
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to list screenshots: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to list screenshots: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -202,7 +202,7 @@ extension ScreenshotsWorker {
               let setId = arguments["set_id"]?.stringValue,
               let filePath = arguments["file_path"]?.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameters: set_id, file_path")],
+                content: [MCPContent.text("Error: Required parameters: set_id, file_path")],
                 isError: true
             )
         }
@@ -235,7 +235,7 @@ extension ScreenshotsWorker {
             let screenshotId = reserveResponse.data.id
             guard let uploadOperations = reserveResponse.data.attributes?.uploadOperations, !uploadOperations.isEmpty else {
                 return CallTool.Result(
-                    content: [.text("Error: No upload operations returned from reservation")],
+                    content: [MCPContent.text("Error: No upload operations returned from reservation")],
                     isError: true
                 )
             }
@@ -263,11 +263,11 @@ extension ScreenshotsWorker {
                 "screenshot": formatScreenshot(commitResponse.data)
             ] as [String: Any]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to upload screenshot: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to upload screenshot: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -281,7 +281,7 @@ extension ScreenshotsWorker {
               let filePaths = arguments["file_paths"]?.arrayValue?.compactMap({ $0.stringValue }),
               !filePaths.isEmpty else {
             return CallTool.Result(
-                content: [.text("Error: Required parameters: set_id, file_paths (non-empty array)")],
+                content: [MCPContent.text("Error: Required parameters: set_id, file_paths (non-empty array)")],
                 isError: true
             )
         }
@@ -364,7 +364,7 @@ extension ScreenshotsWorker {
             "results": results
         ]
 
-        return CallTool.Result(content: [.text(JSONFormatter.formatJSON(response))])
+        return MCPResult.jsonObject(response)
     }
 
     /// Gets details of a specific screenshot
@@ -373,7 +373,7 @@ extension ScreenshotsWorker {
         guard let arguments = params.arguments,
               let screenshotId = arguments["screenshot_id"]?.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameter 'screenshot_id' is missing")],
+                content: [MCPContent.text("Error: Required parameter 'screenshot_id' is missing")],
                 isError: true
             )
         }
@@ -387,11 +387,11 @@ extension ScreenshotsWorker {
                 "screenshot": formatScreenshot(response.data)
             ] as [String: Any]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to get screenshot: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to get screenshot: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -404,7 +404,7 @@ extension ScreenshotsWorker {
               let screenshotIdValue = arguments["screenshot_id"],
               let screenshotId = screenshotIdValue.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameter 'screenshot_id' is missing")],
+                content: [MCPContent.text("Error: Required parameter 'screenshot_id' is missing")],
                 isError: true
             )
         }
@@ -417,11 +417,11 @@ extension ScreenshotsWorker {
                 "message": "Screenshot '\(screenshotId)' deleted"
             ] as [String: Any]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to delete screenshot: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to delete screenshot: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -436,7 +436,7 @@ extension ScreenshotsWorker {
               let idsValue = arguments["screenshot_ids"],
               let idsString = idsValue.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameters: set_id, screenshot_ids")],
+                content: [MCPContent.text("Error: Required parameters: set_id, screenshot_ids")],
                 isError: true
             )
         }
@@ -459,11 +459,11 @@ extension ScreenshotsWorker {
                 "order": ids
             ] as [String: Any]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to reorder screenshots: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to reorder screenshots: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -476,7 +476,7 @@ extension ScreenshotsWorker {
               let locIdValue = arguments["localization_id"],
               let localizationId = locIdValue.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameter 'localization_id' is missing")],
+                content: [MCPContent.text("Error: Required parameter 'localization_id' is missing")],
                 isError: true
             )
         }
@@ -515,11 +515,11 @@ extension ScreenshotsWorker {
                 result["next_url"] = next
             }
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to list preview sets: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to list preview sets: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -534,7 +534,7 @@ extension ScreenshotsWorker {
               let previewTypeValue = arguments["preview_type"],
               let previewType = previewTypeValue.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameters: localization_id, preview_type")],
+                content: [MCPContent.text("Error: Required parameters: localization_id, preview_type")],
                 isError: true
             )
         }
@@ -564,11 +564,11 @@ extension ScreenshotsWorker {
                 "preview_set": formatPreviewSet(response.data)
             ] as [String: Any]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to create preview set: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to create preview set: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -581,7 +581,7 @@ extension ScreenshotsWorker {
               let setIdValue = arguments["set_id"],
               let setId = setIdValue.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameter 'set_id' is missing")],
+                content: [MCPContent.text("Error: Required parameter 'set_id' is missing")],
                 isError: true
             )
         }
@@ -594,11 +594,11 @@ extension ScreenshotsWorker {
                 "message": "Preview set '\(setId)' deleted"
             ] as [String: Any]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to delete preview set: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to delete preview set: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -611,7 +611,7 @@ extension ScreenshotsWorker {
               let setId = arguments["set_id"]?.stringValue,
               let filePath = arguments["file_path"]?.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameters: set_id, file_path")],
+                content: [MCPContent.text("Error: Required parameters: set_id, file_path")],
                 isError: true
             )
         }
@@ -647,7 +647,7 @@ extension ScreenshotsWorker {
             let previewId = reserveResponse.data.id
             guard let uploadOperations = reserveResponse.data.attributes?.uploadOperations, !uploadOperations.isEmpty else {
                 return CallTool.Result(
-                    content: [.text("Error: No upload operations returned from reservation")],
+                    content: [MCPContent.text("Error: No upload operations returned from reservation")],
                     isError: true
                 )
             }
@@ -675,11 +675,11 @@ extension ScreenshotsWorker {
                 "preview": formatPreview(commitResponse.data)
             ] as [String: Any]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to upload preview: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to upload preview: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -691,7 +691,7 @@ extension ScreenshotsWorker {
         guard let arguments = params.arguments,
               let previewId = arguments["preview_id"]?.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameter 'preview_id' is missing")],
+                content: [MCPContent.text("Error: Required parameter 'preview_id' is missing")],
                 isError: true
             )
         }
@@ -705,11 +705,11 @@ extension ScreenshotsWorker {
                 "preview": formatPreview(response.data)
             ] as [String: Any]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to get preview: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to get preview: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -721,7 +721,7 @@ extension ScreenshotsWorker {
         guard let arguments = params.arguments,
               let setId = arguments["set_id"]?.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameter 'set_id' is missing")],
+                content: [MCPContent.text("Error: Required parameter 'set_id' is missing")],
                 isError: true
             )
         }
@@ -759,11 +759,11 @@ extension ScreenshotsWorker {
                 result["next_url"] = next
             }
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to list previews: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to list previews: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -776,7 +776,7 @@ extension ScreenshotsWorker {
               let previewIdValue = arguments["preview_id"],
               let previewId = previewIdValue.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameter 'preview_id' is missing")],
+                content: [MCPContent.text("Error: Required parameter 'preview_id' is missing")],
                 isError: true
             )
         }
@@ -789,11 +789,11 @@ extension ScreenshotsWorker {
                 "message": "Preview '\(previewId)' deleted"
             ] as [String: Any]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to delete preview: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to delete preview: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -805,7 +805,7 @@ extension ScreenshotsWorker {
         return [
             "id": set.id,
             "type": set.type,
-            "screenshotDisplayType": set.attributes?.screenshotDisplayType.jsonSafe
+            "screenshotDisplayType": (set.attributes?.screenshotDisplayType).jsonSafe
         ]
     }
 
@@ -813,11 +813,11 @@ extension ScreenshotsWorker {
         var result: [String: Any] = [
             "id": screenshot.id,
             "type": screenshot.type,
-            "fileName": screenshot.attributes?.fileName.jsonSafe,
-            "fileSize": screenshot.attributes?.fileSize.jsonSafe,
-            "sourceFileChecksum": screenshot.attributes?.sourceFileChecksum.jsonSafe,
-            "assetToken": screenshot.attributes?.assetToken.jsonSafe,
-            "assetType": screenshot.attributes?.assetType.jsonSafe
+            "fileName": (screenshot.attributes?.fileName).jsonSafe,
+            "fileSize": (screenshot.attributes?.fileSize).jsonSafe,
+            "sourceFileChecksum": (screenshot.attributes?.sourceFileChecksum).jsonSafe,
+            "assetToken": (screenshot.attributes?.assetToken).jsonSafe,
+            "assetType": (screenshot.attributes?.assetType).jsonSafe
         ]
 
         if let imageAsset = screenshot.attributes?.imageAsset {
@@ -853,7 +853,7 @@ extension ScreenshotsWorker {
         return [
             "id": set.id,
             "type": set.type,
-            "previewType": set.attributes?.previewType.jsonSafe
+            "previewType": (set.attributes?.previewType).jsonSafe
         ]
     }
 
@@ -861,12 +861,12 @@ extension ScreenshotsWorker {
         var result: [String: Any] = [
             "id": preview.id,
             "type": preview.type,
-            "fileName": preview.attributes?.fileName.jsonSafe,
-            "fileSize": preview.attributes?.fileSize.jsonSafe,
-            "sourceFileChecksum": preview.attributes?.sourceFileChecksum.jsonSafe,
-            "mimeType": preview.attributes?.mimeType.jsonSafe,
-            "videoUrl": preview.attributes?.videoUrl.jsonSafe,
-            "previewFrameTimeCode": preview.attributes?.previewFrameTimeCode.jsonSafe
+            "fileName": (preview.attributes?.fileName).jsonSafe,
+            "fileSize": (preview.attributes?.fileSize).jsonSafe,
+            "sourceFileChecksum": (preview.attributes?.sourceFileChecksum).jsonSafe,
+            "mimeType": (preview.attributes?.mimeType).jsonSafe,
+            "videoUrl": (preview.attributes?.videoUrl).jsonSafe,
+            "previewFrameTimeCode": (preview.attributes?.previewFrameTimeCode).jsonSafe
         ]
 
         if let previewImage = preview.attributes?.previewImage {

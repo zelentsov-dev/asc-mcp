@@ -36,7 +36,7 @@ public struct CreateReviewAttachmentRequest: Codable, Sendable {
     public let data: CreateData
 
     public struct CreateData: Codable, Sendable {
-        public let type: String = "appStoreReviewAttachments"
+        public var type: String = "appStoreReviewAttachments"
         public let attributes: Attributes
         public let relationships: Relationships
     }
@@ -60,7 +60,7 @@ public struct CommitReviewAttachmentRequest: Codable, Sendable {
     public let data: CommitData
 
     public struct CommitData: Codable, Sendable {
-        public let type: String = "appStoreReviewAttachments"
+        public var type: String = "appStoreReviewAttachments"
         public let id: String
         public let attributes: Attributes
     }

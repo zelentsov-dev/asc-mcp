@@ -45,7 +45,7 @@ public struct ASCPromotionalOfferPrice: Codable, Sendable {
 
 /// Inline create for promotional offer price
 public struct PromotionalOfferPriceInlineCreate: Codable, Sendable {
-    public let type: String = "subscriptionPromotionalOfferPrices"
+    public var type: String = "subscriptionPromotionalOfferPrices"
     public let id: String
     public let relationships: Relationships?
 
@@ -71,7 +71,7 @@ public struct CreatePromotionalOfferRequest: Codable, Sendable {
     public let included: [PromotionalOfferPriceInlineCreate]?
 
     public struct CreateData: Codable, Sendable {
-        public let type: String = "subscriptionPromotionalOffers"
+        public var type: String = "subscriptionPromotionalOffers"
         public let attributes: Attributes
         public let relationships: Relationships
     }
@@ -104,7 +104,7 @@ public struct UpdatePromotionalOfferRequest: Codable, Sendable {
     public let included: [PromotionalOfferPriceInlineCreate]?
 
     public struct UpdateData: Codable, Sendable {
-        public let type: String = "subscriptionPromotionalOffers"
+        public var type: String = "subscriptionPromotionalOffers"
         public let id: String
         public let relationships: Relationships?
     }

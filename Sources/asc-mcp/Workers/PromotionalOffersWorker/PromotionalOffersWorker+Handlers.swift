@@ -10,7 +10,7 @@ extension PromotionalOffersWorker {
         guard let arguments = params.arguments,
               let subscriptionId = arguments["subscription_id"]?.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameter 'subscription_id' is missing")],
+                content: [MCPContent.text("Error: Required parameter 'subscription_id' is missing")],
                 isError: true
             )
         }
@@ -48,11 +48,11 @@ extension PromotionalOffersWorker {
                 result["next_url"] = next
             }
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to list promotional offers: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to list promotional offers: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -64,7 +64,7 @@ extension PromotionalOffersWorker {
         guard let arguments = params.arguments,
               let promotionalOfferId = arguments["promotional_offer_id"]?.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameter 'promotional_offer_id' is missing")],
+                content: [MCPContent.text("Error: Required parameter 'promotional_offer_id' is missing")],
                 isError: true
             )
         }
@@ -83,11 +83,11 @@ extension PromotionalOffersWorker {
                 "promotional_offer": offer
             ] as [String: Any]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to get promotional offer: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to get promotional offer: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -104,7 +104,7 @@ extension PromotionalOffersWorker {
               let offerMode = arguments["offer_mode"]?.stringValue,
               let numberOfPeriods = arguments["number_of_periods"]?.intValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameters: subscription_id, name, offer_code, duration, offer_mode, number_of_periods")],
+                content: [MCPContent.text("Error: Required parameters: subscription_id, name, offer_code, duration, offer_mode, number_of_periods")],
                 isError: true
             )
         }
@@ -147,7 +147,7 @@ extension PromotionalOffersWorker {
                     if !ids.isEmpty {
                         guard ids.count == territoryIds.count else {
                             return CallTool.Result(
-                                content: [.text("Error: price_point_ids and territory_ids must have the same count (got \(ids.count) vs \(territoryIds.count))")],
+                                content: [MCPContent.text("Error: price_point_ids and territory_ids must have the same count (got \(ids.count) vs \(territoryIds.count))")],
                                 isError: true
                             )
                         }
@@ -209,11 +209,11 @@ extension PromotionalOffersWorker {
                 "promotional_offer": offer
             ] as [String: Any]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to create promotional offer: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to create promotional offer: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -225,7 +225,7 @@ extension PromotionalOffersWorker {
         guard let arguments = params.arguments,
               let promotionalOfferId = arguments["promotional_offer_id"]?.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameter 'promotional_offer_id' is missing")],
+                content: [MCPContent.text("Error: Required parameter 'promotional_offer_id' is missing")],
                 isError: true
             )
         }
@@ -244,7 +244,7 @@ extension PromotionalOffersWorker {
                 if !ids.isEmpty {
                     guard ids.count == territoryIds.count else {
                         return CallTool.Result(
-                            content: [.text("Error: price_point_ids and territory_ids must have the same count (got \(ids.count) vs \(territoryIds.count))")],
+                            content: [MCPContent.text("Error: price_point_ids and territory_ids must have the same count (got \(ids.count) vs \(territoryIds.count))")],
                             isError: true
                         )
                     }
@@ -320,11 +320,11 @@ extension PromotionalOffersWorker {
                 "promotional_offer": offer
             ] as [String: Any]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to update promotional offer: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to update promotional offer: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -336,7 +336,7 @@ extension PromotionalOffersWorker {
         guard let arguments = params.arguments,
               let promotionalOfferId = arguments["promotional_offer_id"]?.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameter 'promotional_offer_id' is missing")],
+                content: [MCPContent.text("Error: Required parameter 'promotional_offer_id' is missing")],
                 isError: true
             )
         }
@@ -349,11 +349,11 @@ extension PromotionalOffersWorker {
                 "message": "Promotional offer '\(promotionalOfferId)' deleted"
             ] as [String: Any]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to delete promotional offer: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to delete promotional offer: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -365,7 +365,7 @@ extension PromotionalOffersWorker {
         guard let arguments = params.arguments,
               let promotionalOfferId = arguments["promotional_offer_id"]?.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameter 'promotional_offer_id' is missing")],
+                content: [MCPContent.text("Error: Required parameter 'promotional_offer_id' is missing")],
                 isError: true
             )
         }
@@ -403,11 +403,11 @@ extension PromotionalOffersWorker {
                 result["next_url"] = next
             }
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to list promotional offer prices: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to list promotional offer prices: \(error.localizedDescription)")],
                 isError: true
             )
         }

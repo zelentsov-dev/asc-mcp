@@ -11,7 +11,7 @@ extension BetaGroupsWorker {
               let appIdValue = arguments["app_id"],
               let appId = appIdValue.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameter 'app_id' is missing")],
+                content: [MCPContent.text("Error: Required parameter 'app_id' is missing")],
                 isError: true
             )
         }
@@ -60,11 +60,11 @@ extension BetaGroupsWorker {
                 result["next_url"] = nextUrl
             }
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to list beta groups: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to list beta groups: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -79,7 +79,7 @@ extension BetaGroupsWorker {
               let nameValue = arguments["name"],
               let name = nameValue.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameters 'app_id' and 'name' are missing")],
+                content: [MCPContent.text("Error: Required parameters 'app_id' and 'name' are missing")],
                 isError: true
             )
         }
@@ -120,11 +120,11 @@ extension BetaGroupsWorker {
                 "beta_group": group
             ] as [String: Any]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to create beta group: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to create beta group: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -137,7 +137,7 @@ extension BetaGroupsWorker {
               let groupIdValue = arguments["group_id"],
               let groupId = groupIdValue.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameter 'group_id' is missing")],
+                content: [MCPContent.text("Error: Required parameter 'group_id' is missing")],
                 isError: true
             )
         }
@@ -168,11 +168,11 @@ extension BetaGroupsWorker {
                 "beta_group": group
             ] as [String: Any]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to update beta group: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to update beta group: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -185,7 +185,7 @@ extension BetaGroupsWorker {
               let groupIdValue = arguments["group_id"],
               let groupId = groupIdValue.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameter 'group_id' is missing")],
+                content: [MCPContent.text("Error: Required parameter 'group_id' is missing")],
                 isError: true
             )
         }
@@ -198,11 +198,11 @@ extension BetaGroupsWorker {
                 "message": "Beta group '\(groupId)' deleted"
             ] as [String: Any]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to delete beta group: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to delete beta group: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -217,7 +217,7 @@ extension BetaGroupsWorker {
               let testerIdsValue = arguments["tester_ids"],
               let testerIdsArray = testerIdsValue.arrayValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameters 'group_id' and 'tester_ids' are missing")],
+                content: [MCPContent.text("Error: Required parameters 'group_id' and 'tester_ids' are missing")],
                 isError: true
             )
         }
@@ -225,7 +225,7 @@ extension BetaGroupsWorker {
         let testerIds = testerIdsArray.compactMap { $0.stringValue }
         guard !testerIds.isEmpty else {
             return CallTool.Result(
-                content: [.text("Error: 'tester_ids' must contain at least one tester ID")],
+                content: [MCPContent.text("Error: 'tester_ids' must contain at least one tester ID")],
                 isError: true
             )
         }
@@ -246,11 +246,11 @@ extension BetaGroupsWorker {
                 "message": "Added \(testerIds.count) tester(s) to group '\(groupId)'"
             ] as [String: Any]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to add testers: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to add testers: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -265,7 +265,7 @@ extension BetaGroupsWorker {
               let testerIdsValue = arguments["tester_ids"],
               let testerIdsArray = testerIdsValue.arrayValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameters 'group_id' and 'tester_ids' are missing")],
+                content: [MCPContent.text("Error: Required parameters 'group_id' and 'tester_ids' are missing")],
                 isError: true
             )
         }
@@ -273,7 +273,7 @@ extension BetaGroupsWorker {
         let testerIds = testerIdsArray.compactMap { $0.stringValue }
         guard !testerIds.isEmpty else {
             return CallTool.Result(
-                content: [.text("Error: 'tester_ids' must contain at least one tester ID")],
+                content: [MCPContent.text("Error: 'tester_ids' must contain at least one tester ID")],
                 isError: true
             )
         }
@@ -294,11 +294,11 @@ extension BetaGroupsWorker {
                 "message": "Removed \(testerIds.count) tester(s) from group '\(groupId)'"
             ] as [String: Any]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to remove testers: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to remove testers: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -311,7 +311,7 @@ extension BetaGroupsWorker {
               let groupIdValue = arguments["group_id"],
               let groupId = groupIdValue.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameter 'group_id' is missing")],
+                content: [MCPContent.text("Error: Required parameter 'group_id' is missing")],
                 isError: true
             )
         }
@@ -353,11 +353,11 @@ extension BetaGroupsWorker {
                 result["next_url"] = nextUrl
             }
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to list testers: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to list testers: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -372,7 +372,7 @@ extension BetaGroupsWorker {
               let buildIdsValue = arguments["build_ids"],
               let buildIdsArray = buildIdsValue.arrayValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameters 'group_id' and 'build_ids' are missing")],
+                content: [MCPContent.text("Error: Required parameters 'group_id' and 'build_ids' are missing")],
                 isError: true
             )
         }
@@ -380,7 +380,7 @@ extension BetaGroupsWorker {
         let buildIds = buildIdsArray.compactMap { $0.stringValue }
         guard !buildIds.isEmpty else {
             return CallTool.Result(
-                content: [.text("Error: 'build_ids' must contain at least one build ID")],
+                content: [MCPContent.text("Error: 'build_ids' must contain at least one build ID")],
                 isError: true
             )
         }
@@ -401,11 +401,11 @@ extension BetaGroupsWorker {
                 "message": "Added \(buildIds.count) build(s) to group '\(groupId)'"
             ] as [String: Any]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to add builds: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to add builds: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -420,7 +420,7 @@ extension BetaGroupsWorker {
               let buildIdsValue = arguments["build_ids"],
               let buildIdsArray = buildIdsValue.arrayValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameters 'group_id' and 'build_ids' are missing")],
+                content: [MCPContent.text("Error: Required parameters 'group_id' and 'build_ids' are missing")],
                 isError: true
             )
         }
@@ -428,7 +428,7 @@ extension BetaGroupsWorker {
         let buildIds = buildIdsArray.compactMap { $0.stringValue }
         guard !buildIds.isEmpty else {
             return CallTool.Result(
-                content: [.text("Error: 'build_ids' must contain at least one build ID")],
+                content: [MCPContent.text("Error: 'build_ids' must contain at least one build ID")],
                 isError: true
             )
         }
@@ -449,11 +449,11 @@ extension BetaGroupsWorker {
                 "message": "Removed \(buildIds.count) build(s) from group '\(groupId)'"
             ] as [String: Any]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to remove builds: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to remove builds: \(error.localizedDescription)")],
                 isError: true
             )
         }

@@ -3,6 +3,28 @@ import MCP
 
 // MARK: - Tool Handlers
 extension BuildBetaDetailsWorker {
+    private func validateBetaLocalizationArguments(
+        _ arguments: [String: Value],
+        locale: String
+    ) -> [ASCMetadataValidator.FieldError] {
+        var errors = ASCMetadataValidator.validateLocale(locale)
+
+        if let whatsNew = arguments["whats_new"]?.stringValue {
+            errors += ASCMetadataValidator.validateTextFields(
+                ["whats_new": whatsNew],
+                limits: ["whats_new": 4_000]
+            )
+        }
+
+        for key in ["marketing_url", "privacy_policy_url", "tv_os_privacy_policy"] {
+            if let value = arguments[key]?.stringValue, !value.isEmpty {
+                errors += ASCMetadataValidator.validateHTTPURL(value, field: key)
+            }
+        }
+
+        return errors
+    }
+
     
     /// Gets TestFlight beta details for a specific build
     /// - Returns: JSON with beta detail including auto-notify settings and build states
@@ -12,7 +34,7 @@ extension BuildBetaDetailsWorker {
               let buildIdValue = arguments["build_id"],
               let buildId = buildIdValue.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameter 'build_id' is missing")],
+                content: [MCPContent.text("Error: Required parameter 'build_id' is missing")],
                 isError: true
             )
         }
@@ -27,7 +49,7 @@ extension BuildBetaDetailsWorker {
             
             guard let betaDetailId = buildResponse.data.relationships?.buildBetaDetail?.data?.id else {
                 return CallTool.Result(
-                    content: [.text("Error: No beta detail found for this build")],
+                    content: [MCPContent.text("Error: No beta detail found for this build")],
                     isError: true
                 )
             }
@@ -47,11 +69,11 @@ extension BuildBetaDetailsWorker {
                 "note": "Use builds_list_beta_localizations to get localizations for this build"
             ] as [String: Any]
             
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
             
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to get beta detail: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to get beta detail: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -65,7 +87,7 @@ extension BuildBetaDetailsWorker {
               let betaDetailIdValue = arguments["beta_detail_id"],
               let betaDetailId = betaDetailIdValue.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameter 'beta_detail_id' is missing")],
+                content: [MCPContent.text("Error: Required parameter 'beta_detail_id' is missing")],
                 isError: true
             )
         }
@@ -90,18 +112,10 @@ extension BuildBetaDetailsWorker {
             
             if attributes.isEmpty {
                 return CallTool.Result(
-                    content: [.text("Warning: No updates provided")],
+                    content: [MCPContent.text("Warning: No updates provided")],
                     isError: false
                 )
             }
-            
-            let body = [
-                "data": [
-                    "type": "buildBetaDetails",
-                    "id": betaDetailId,
-                    "attributes": attributes
-                ]
-            ] as [String: Any]
             
             let updateRequest = UpdateBuildBetaDetailRequest(
                 data: UpdateBuildBetaDetailRequest.UpdateBuildBetaDetailData(
@@ -127,11 +141,11 @@ extension BuildBetaDetailsWorker {
                 "betaDetail": betaDetail
             ] as [String: Any]
             
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
             
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to update beta detail: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to update beta detail: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -146,10 +160,12 @@ extension BuildBetaDetailsWorker {
               let buildId = buildIdValue.stringValue,
               let localeValue = arguments["locale"],
               let locale = localeValue.stringValue else {
-            return CallTool.Result(
-                content: [.text("Error: Required parameters 'build_id' and 'locale' are missing")],
-                isError: true
-            )
+            return MCPResult.error("Required parameters 'build_id' and 'locale' are missing")
+        }
+
+        let validationErrors = validateBetaLocalizationArguments(arguments, locale: locale)
+        if !validationErrors.isEmpty {
+            return ASCMetadataValidator.errorResult(validationErrors)
         }
         
         do {
@@ -197,15 +213,12 @@ extension BuildBetaDetailsWorker {
                     "localization": localization
                 ] as [String: Any]
                 
-                return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+                return MCPResult.jsonObject(result)
                 
             } else {
                 // Update existing localization
                 guard let localizationData = existingData.first else {
-                    return CallTool.Result(
-                        content: [.text("Error: Failed to get localization")],
-                        isError: true
-                    )
+                    return MCPResult.error("Failed to get localization")
                 }
                 
                 let localizationId = localizationData.id
@@ -226,10 +239,7 @@ extension BuildBetaDetailsWorker {
                                 updateAttributes.tvOsPrivacyPolicy != nil
                 
                 if !hasUpdates {
-                    return CallTool.Result(
-                        content: [.text("Warning: No updates provided")],
-                        isError: false
-                    )
+                    return MCPResult.text("Warning: No updates provided")
                 }
                 
                 let updateRequest = UpdateBetaBuildLocalizationRequest(
@@ -253,14 +263,11 @@ extension BuildBetaDetailsWorker {
                     "localization": localization
                 ] as [String: Any]
                 
-                return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+                return MCPResult.jsonObject(result)
             }
             
         } catch {
-            return CallTool.Result(
-                content: [.text("Error: Failed to set beta localization: \(error.localizedDescription)")],
-                isError: true
-            )
+            return MCPResult.error("Failed to set beta localization: \(error.localizedDescription)")
         }
     }
     
@@ -272,7 +279,7 @@ extension BuildBetaDetailsWorker {
               let buildIdValue = arguments["build_id"],
               let buildId = buildIdValue.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameter 'build_id' is missing")],
+                content: [MCPContent.text("Error: Required parameter 'build_id' is missing")],
                 isError: true
             )
         }
@@ -314,11 +321,11 @@ extension BuildBetaDetailsWorker {
                 result["next_url"] = nextUrl
             }
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to list beta localizations: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to list beta localizations: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -333,7 +340,7 @@ extension BuildBetaDetailsWorker {
               let buildIdValue = arguments["build_id"],
               let buildId = buildIdValue.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameter 'build_id' is missing")],
+                content: [MCPContent.text("Error: Required parameter 'build_id' is missing")],
                 isError: true
             )
         }
@@ -377,11 +384,11 @@ extension BuildBetaDetailsWorker {
                 result["next_url"] = nextUrl
             }
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to get beta groups: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to get beta groups: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -395,7 +402,7 @@ extension BuildBetaDetailsWorker {
               let buildIdValue = arguments["build_id"],
               let buildId = buildIdValue.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameter 'build_id' is missing")],
+                content: [MCPContent.text("Error: Required parameter 'build_id' is missing")],
                 isError: true
             )
         }
@@ -437,11 +444,11 @@ extension BuildBetaDetailsWorker {
                 result["next_url"] = nextUrl
             }
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to get beta testers: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to get beta testers: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -457,7 +464,7 @@ extension BuildBetaDetailsWorker {
               let groupIdsValue = arguments["group_ids"],
               let groupIdsArray = groupIdsValue.arrayValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameters 'build_id' and 'group_ids' are missing")],
+                content: [MCPContent.text("Error: Required parameters 'build_id' and 'group_ids' are missing")],
                 isError: true
             )
         }
@@ -465,7 +472,7 @@ extension BuildBetaDetailsWorker {
         let groupIds = groupIdsArray.compactMap { $0.stringValue }
         guard !groupIds.isEmpty else {
             return CallTool.Result(
-                content: [.text("Error: 'group_ids' must contain at least one group ID")],
+                content: [MCPContent.text("Error: 'group_ids' must contain at least one group ID")],
                 isError: true
             )
         }
@@ -486,11 +493,11 @@ extension BuildBetaDetailsWorker {
                 "message": "Added build '\(buildId)' to \(groupIds.count) beta group(s)"
             ] as [String: Any]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to add build to beta groups: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to add build to beta groups: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -506,7 +513,7 @@ extension BuildBetaDetailsWorker {
               let testerIdsValue = arguments["beta_tester_ids"],
               let testerIdsArray = testerIdsValue.arrayValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameters 'build_id' and 'beta_tester_ids' are missing")],
+                content: [MCPContent.text("Error: Required parameters 'build_id' and 'beta_tester_ids' are missing")],
                 isError: true
             )
         }
@@ -514,7 +521,7 @@ extension BuildBetaDetailsWorker {
         let testerIds = testerIdsArray.compactMap { $0.stringValue }
         guard !testerIds.isEmpty else {
             return CallTool.Result(
-                content: [.text("Error: 'beta_tester_ids' must contain at least one tester ID")],
+                content: [MCPContent.text("Error: 'beta_tester_ids' must contain at least one tester ID")],
                 isError: true
             )
         }
@@ -535,11 +542,11 @@ extension BuildBetaDetailsWorker {
                 "message": "Added \(testerIds.count) individual tester(s) to build '\(buildId)'"
             ] as [String: Any]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to add individual testers: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to add individual testers: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -555,7 +562,7 @@ extension BuildBetaDetailsWorker {
               let testerIdsValue = arguments["beta_tester_ids"],
               let testerIdsArray = testerIdsValue.arrayValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameters 'build_id' and 'beta_tester_ids' are missing")],
+                content: [MCPContent.text("Error: Required parameters 'build_id' and 'beta_tester_ids' are missing")],
                 isError: true
             )
         }
@@ -563,7 +570,7 @@ extension BuildBetaDetailsWorker {
         let testerIds = testerIdsArray.compactMap { $0.stringValue }
         guard !testerIds.isEmpty else {
             return CallTool.Result(
-                content: [.text("Error: 'beta_tester_ids' must contain at least one tester ID")],
+                content: [MCPContent.text("Error: 'beta_tester_ids' must contain at least one tester ID")],
                 isError: true
             )
         }
@@ -584,11 +591,11 @@ extension BuildBetaDetailsWorker {
                 "message": "Removed \(testerIds.count) individual tester(s) from build '\(buildId)'"
             ] as [String: Any]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to remove individual testers: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to remove individual testers: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -602,7 +609,7 @@ extension BuildBetaDetailsWorker {
               let buildIdValue = arguments["build_id"],
               let buildId = buildIdValue.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameter 'build_id' is missing")],
+                content: [MCPContent.text("Error: Required parameter 'build_id' is missing")],
                 isError: true
             )
         }
@@ -644,11 +651,11 @@ extension BuildBetaDetailsWorker {
                 result["next_url"] = nextUrl
             }
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to list individual testers: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to list individual testers: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -662,7 +669,7 @@ extension BuildBetaDetailsWorker {
               let buildIdValue = arguments["build_id"],
               let buildId = buildIdValue.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameter 'build_id' is missing")],
+                content: [MCPContent.text("Error: Required parameter 'build_id' is missing")],
                 isError: true
             )
         }
@@ -693,11 +700,11 @@ extension BuildBetaDetailsWorker {
                 "message": "Beta notification sent to all testers for build \(buildId)"
             ] as [String: Any]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to send beta notification: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to send beta notification: \(error.localizedDescription)")],
                 isError: true
             )
         }

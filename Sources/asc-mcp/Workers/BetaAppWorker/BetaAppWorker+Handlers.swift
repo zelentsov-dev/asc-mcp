@@ -12,7 +12,7 @@ extension BetaAppWorker {
         guard let arguments = params.arguments,
               let appId = arguments["app_id"]?.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameter 'app_id' is missing")],
+                content: [MCPContent.text("Error: Required parameter 'app_id' is missing")],
                 isError: true
             )
         }
@@ -50,11 +50,11 @@ extension BetaAppWorker {
                 result["next_url"] = next
             }
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to list beta app localizations: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to list beta app localizations: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -67,7 +67,7 @@ extension BetaAppWorker {
               let appId = arguments["app_id"]?.stringValue,
               let locale = arguments["locale"]?.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameters: app_id, locale")],
+                content: [MCPContent.text("Error: Required parameters: app_id, locale")],
                 isError: true
             )
         }
@@ -104,11 +104,11 @@ extension BetaAppWorker {
                 "localization": localization
             ] as [String: Any]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to create beta app localization: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to create beta app localization: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -120,7 +120,7 @@ extension BetaAppWorker {
         guard let arguments = params.arguments,
               let localizationId = arguments["localization_id"]?.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameter 'localization_id' is missing")],
+                content: [MCPContent.text("Error: Required parameter 'localization_id' is missing")],
                 isError: true
             )
         }
@@ -139,11 +139,11 @@ extension BetaAppWorker {
                 "localization": localization
             ] as [String: Any]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to get beta app localization: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to get beta app localization: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -155,7 +155,7 @@ extension BetaAppWorker {
         guard let arguments = params.arguments,
               let localizationId = arguments["localization_id"]?.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameter 'localization_id' is missing")],
+                content: [MCPContent.text("Error: Required parameter 'localization_id' is missing")],
                 isError: true
             )
         }
@@ -187,11 +187,11 @@ extension BetaAppWorker {
                 "localization": localization
             ] as [String: Any]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to update beta app localization: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to update beta app localization: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -203,7 +203,7 @@ extension BetaAppWorker {
         guard let arguments = params.arguments,
               let localizationId = arguments["localization_id"]?.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameter 'localization_id' is missing")],
+                content: [MCPContent.text("Error: Required parameter 'localization_id' is missing")],
                 isError: true
             )
         }
@@ -216,11 +216,11 @@ extension BetaAppWorker {
                 "message": "Beta app localization '\(localizationId)' deleted"
             ] as [String: Any]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to delete beta app localization: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to delete beta app localization: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -234,7 +234,7 @@ extension BetaAppWorker {
         guard let arguments = params.arguments,
               let buildId = arguments["build_id"]?.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameter 'build_id' is missing")],
+                content: [MCPContent.text("Error: Required parameter 'build_id' is missing")],
                 isError: true
             )
         }
@@ -263,11 +263,11 @@ extension BetaAppWorker {
                 "submission": submission
             ] as [String: Any]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to submit build for beta review: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to submit build for beta review: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -279,7 +279,7 @@ extension BetaAppWorker {
         guard let arguments = params.arguments,
               let buildId = arguments["build_id"]?.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameter 'build_id' is missing")],
+                content: [MCPContent.text("Error: Required parameter 'build_id' is missing")],
                 isError: true
             )
         }
@@ -322,11 +322,11 @@ extension BetaAppWorker {
                 result["next_url"] = next
             }
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to list beta app review submissions: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to list beta app review submissions: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -338,7 +338,7 @@ extension BetaAppWorker {
         guard let arguments = params.arguments,
               let submissionId = arguments["submission_id"]?.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameter 'submission_id' is missing")],
+                content: [MCPContent.text("Error: Required parameter 'submission_id' is missing")],
                 isError: true
             )
         }
@@ -357,11 +357,11 @@ extension BetaAppWorker {
                 "submission": submission
             ] as [String: Any]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to get beta app review submission: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to get beta app review submission: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -375,7 +375,7 @@ extension BetaAppWorker {
         guard let arguments = params.arguments,
               let appId = arguments["app_id"]?.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameter 'app_id' is missing")],
+                content: [MCPContent.text("Error: Required parameter 'app_id' is missing")],
                 isError: true
             )
         }
@@ -394,11 +394,11 @@ extension BetaAppWorker {
                 "review_detail": detail
             ] as [String: Any]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to get beta app review details: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to get beta app review details: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -410,7 +410,7 @@ extension BetaAppWorker {
         guard let arguments = params.arguments,
               let reviewDetailId = arguments["review_detail_id"]?.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameter 'review_detail_id' is missing")],
+                content: [MCPContent.text("Error: Required parameter 'review_detail_id' is missing")],
                 isError: true
             )
         }
@@ -445,11 +445,11 @@ extension BetaAppWorker {
                 "review_detail": detail
             ] as [String: Any]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to update beta app review details: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to update beta app review details: \(error.localizedDescription)")],
                 isError: true
             )
         }

@@ -7,7 +7,7 @@ public struct UpdateBuildProcessingRequest: Codable, Sendable {
     public let data: UpdateBuildProcessingData
     
     public struct UpdateBuildProcessingData: Codable, Sendable {
-        public let type: String = "builds"
+        public var type: String = "builds"
         public let id: String
         public let attributes: BuildProcessingAttributes
     }
@@ -68,7 +68,7 @@ public struct CreateAppEncryptionDeclarationRequest: Codable, Sendable {
     public let data: CreateAppEncryptionDeclarationData
     
     public struct CreateAppEncryptionDeclarationData: Codable, Sendable {
-        public let type: String = "appEncryptionDeclarations"
+        public var type: String = "appEncryptionDeclarations"
         public let attributes: CreateAppEncryptionDeclarationAttributes
         public let relationships: CreateAppEncryptionDeclarationRelationships
     }
@@ -105,7 +105,7 @@ public struct AttachEncryptionDeclarationRequest: Codable, Sendable {
     public let data: AttachEncryptionDeclarationData
     
     public struct AttachEncryptionDeclarationData: Codable, Sendable {
-        public let type: String = "builds"
+        public var type: String = "builds"
         public let id: String
         public let relationships: AttachEncryptionDeclarationRelationships
     }
@@ -126,7 +126,7 @@ public struct UpdateAppEncryptionDeclarationRequest: Codable, Sendable {
     public let data: UpdateData
 
     public struct UpdateData: Codable, Sendable {
-        public let type: String = "appEncryptionDeclarations"
+        public var type: String = "appEncryptionDeclarations"
         public let id: String
         public let attributes: UpdateAttributes
     }

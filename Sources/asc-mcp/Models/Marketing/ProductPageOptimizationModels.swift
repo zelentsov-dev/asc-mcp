@@ -88,7 +88,7 @@ public struct CreateExperimentRequest: Codable, Sendable {
     public let data: CreateData
 
     public struct CreateData: Codable, Sendable {
-        public let type: String = "appStoreVersionExperiments"
+        public var type: String = "appStoreVersionExperiments"
         public let attributes: Attributes
         public let relationships: Relationships
     }
@@ -113,7 +113,7 @@ public struct UpdateExperimentRequest: Codable, Sendable {
     public let data: UpdateData
 
     public struct UpdateData: Codable, Sendable {
-        public let type: String = "appStoreVersionExperiments"
+        public var type: String = "appStoreVersionExperiments"
         public let id: String
         public let attributes: Attributes
     }
@@ -130,7 +130,7 @@ public struct CreateTreatmentRequest: Codable, Sendable {
     public let data: CreateData
 
     public struct CreateData: Codable, Sendable {
-        public let type: String = "appStoreVersionExperimentTreatments"
+        public var type: String = "appStoreVersionExperimentTreatments"
         public let attributes: Attributes
         public let relationships: Relationships
     }
@@ -153,7 +153,7 @@ public struct CreateTreatmentLocalizationRequest: Codable, Sendable {
     public let data: CreateData
 
     public struct CreateData: Codable, Sendable {
-        public let type: String = "appStoreVersionExperimentTreatmentLocalizations"
+        public var type: String = "appStoreVersionExperimentTreatmentLocalizations"
         public let attributes: Attributes
         public let relationships: Relationships
     }

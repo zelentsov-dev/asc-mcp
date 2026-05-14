@@ -1,0 +1,59 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "App Store Connect API",
+    "version": "4.3-test"
+  },
+  "paths": {
+    "/v1/apps": {
+      "get": {
+        "operationId": "apps_getCollection",
+        "summary": "List Apps",
+        "tags": ["Apps"]
+      }
+    },
+    "/v1/apps/{id}": {
+      "get": {
+        "operationId": "apps_getInstance",
+        "summary": "Read App Information",
+        "tags": ["Apps"]
+      },
+      "patch": {
+        "operationId": "apps_updateInstance",
+        "summary": "Modify an App",
+        "tags": ["Apps"]
+      }
+    },
+    "/v1/gameCenterAchievements": {
+      "get": {
+        "operationId": "gameCenterAchievements_getCollection",
+        "summary": "List Game Center achievements",
+        "tags": ["Game Center Achievements"]
+      },
+      "post": {
+        "operationId": "gameCenterAchievements_createInstance",
+        "summary": "Create a Game Center achievement",
+        "tags": ["Game Center Achievements"]
+      }
+    },
+    "/v1/gameCenterAchievements/{id}": {
+      "get": {
+        "operationId": "gameCenterAchievements_getInstance",
+        "summary": "Read Game Center achievement information",
+        "tags": ["Game Center Achievements"]
+      },
+      "patch": {
+        "operationId": "gameCenterAchievements_updateInstance",
+        "summary": "Modify a Game Center achievement",
+        "tags": ["Game Center Achievements"]
+      }
+    },
+    "/v1/actors": {
+      "get": {
+        "operationId": "actors_getCollection",
+        "summary": "List Actors",
+        "tags": ["Actors"]
+      }
+    }
+  }
+}

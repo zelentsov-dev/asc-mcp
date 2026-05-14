@@ -38,7 +38,7 @@ public struct UpdateSandboxTesterRequest: Codable, Sendable {
     public let data: UpdateData
 
     public struct UpdateData: Codable, Sendable {
-        public let type: String = "sandboxTesters"
+        public var type: String = "sandboxTesters"
         public let id: String
         public let attributes: Attributes
     }
@@ -55,7 +55,7 @@ public struct ClearPurchaseHistoryRequest: Codable, Sendable {
     public let data: RequestData
 
     public struct RequestData: Codable, Sendable {
-        public let type: String = "sandboxTestersClearPurchaseHistoryRequest"
+        public var type: String = "sandboxTestersClearPurchaseHistoryRequest"
         public let relationships: Relationships
     }
 

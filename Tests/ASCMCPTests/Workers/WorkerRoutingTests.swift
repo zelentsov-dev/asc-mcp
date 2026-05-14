@@ -5,6 +5,60 @@ import MCP
 
 @Suite("Worker Routing Tests")
 struct WorkerRoutingTests {
+    @Test("WorkerManager routes overlapping builds prefixes correctly")
+    func workerManagerRoutesOverlappingBuildsPrefixes() async throws {
+        let manager = try await TestFactory.makeWorkerManager()
+
+        let beta = try await manager.routeTool(CallTool.Parameters(name: "builds_get_beta_detail", arguments: nil))
+        #expect(beta.isError == true)
+
+        let processing = try await manager.routeTool(CallTool.Parameters(name: "builds_get_processing_state", arguments: nil))
+        #expect(processing.isError == true)
+
+        let plain = try await manager.routeTool(CallTool.Parameters(name: "builds_find_by_number", arguments: nil))
+        #expect(plain.isError == true)
+    }
+
+    @Test("WorkerManager routes app versions and review attachments before fallback")
+    func workerManagerRoutesDistinctLongPrefixes() async throws {
+        let manager = try await TestFactory.makeWorkerManager()
+
+        let accessibility = try await manager.routeTool(CallTool.Parameters(name: "accessibility_get", arguments: nil))
+        #expect(accessibility.isError == true)
+
+        let version = try await manager.routeTool(CallTool.Parameters(name: "app_versions_get", arguments: nil))
+        #expect(version.isError == true)
+
+        let attachment = try await manager.routeTool(CallTool.Parameters(name: "review_attachments_get", arguments: nil))
+        #expect(attachment.isError == true)
+    }
+
+    @Test("WorkerManager read-only mode blocks mutation tools before handler execution")
+    func workerManagerReadOnlyBlocksMutationTools() async throws {
+        let manager = try await TestFactory.makeWorkerManager(readOnlyMode: true)
+
+        let result = try await manager.routeTool(CallTool.Parameters(name: "app_versions_release", arguments: nil))
+
+        #expect(result.isError == true)
+        #expect(result._meta?.fields["asc/readOnlyMode"] == .bool(true))
+        #expect(result._meta?.fields["asc/blockedTool"] == .string("app_versions_release"))
+
+        guard case .text(let text, _, _) = result.content.first else {
+            Issue.record("Expected text error content")
+            return
+        }
+        #expect(text.contains("Read-only mode is enabled"))
+    }
+
+    @Test("WorkerManager read-only mode allows read-only tools to reach handlers")
+    func workerManagerReadOnlyAllowsReadOnlyTools() async throws {
+        let manager = try await TestFactory.makeWorkerManager(readOnlyMode: true)
+
+        let result = try await manager.routeTool(CallTool.Parameters(name: "auth_token_status", arguments: nil))
+
+        #expect(result._meta?.fields["asc/blockedTool"] == nil)
+        #expect(result._meta?.fields["asc/readOnlyMode"] == nil)
+    }
 
     // MARK: - AppsWorker
 
@@ -13,6 +67,42 @@ struct WorkerRoutingTests {
         let client = try await TestFactory.makeHTTPClient()
         let worker = AppsWorker(client: client)
         let params = CallTool.Parameters(name: "apps_nonexistent", arguments: nil)
+        await #expect(throws: MCPError.self) {
+            _ = try await worker.handleTool(params)
+        }
+    }
+
+    // MARK: - AccessibilityWorker
+
+    @Test("AccessibilityWorker throws MCPError.methodNotFound for unknown tool")
+    func accessibilityWorkerUnknownTool() async throws {
+        let client = try await TestFactory.makeHTTPClient()
+        let worker = AccessibilityWorker(httpClient: client)
+        let params = CallTool.Parameters(name: "accessibility_nonexistent", arguments: nil)
+        await #expect(throws: MCPError.self) {
+            _ = try await worker.handleTool(params)
+        }
+    }
+
+    // MARK: - WebhooksWorker
+
+    @Test("WebhooksWorker throws MCPError.methodNotFound for unknown tool")
+    func webhooksWorkerUnknownTool() async throws {
+        let client = try await TestFactory.makeHTTPClient()
+        let worker = WebhooksWorker(httpClient: client)
+        let params = CallTool.Parameters(name: "webhooks_nonexistent", arguments: nil)
+        await #expect(throws: MCPError.self) {
+            _ = try await worker.handleTool(params)
+        }
+    }
+
+    // MARK: - XcodeCloudWorker
+
+    @Test("XcodeCloudWorker throws MCPError.methodNotFound for unknown tool")
+    func xcodeCloudWorkerUnknownTool() async throws {
+        let client = try await TestFactory.makeHTTPClient()
+        let worker = XcodeCloudWorker(httpClient: client)
+        let params = CallTool.Parameters(name: "xcode_cloud_nonexistent", arguments: nil)
         await #expect(throws: MCPError.self) {
             _ = try await worker.handleTool(params)
         }
@@ -85,6 +175,18 @@ struct WorkerRoutingTests {
         let client = try await TestFactory.makeHTTPClient()
         let worker = BetaGroupsWorker(httpClient: client)
         let params = CallTool.Parameters(name: "beta_groups_nonexistent", arguments: nil)
+        await #expect(throws: MCPError.self) {
+            _ = try await worker.handleTool(params)
+        }
+    }
+
+    // MARK: - BetaFeedbackWorker
+
+    @Test("BetaFeedbackWorker throws MCPError.methodNotFound for unknown tool")
+    func betaFeedbackWorkerUnknownTool() async throws {
+        let client = try await TestFactory.makeHTTPClient()
+        let worker = BetaFeedbackWorker(httpClient: client)
+        let params = CallTool.Parameters(name: "beta_feedback_nonexistent", arguments: nil)
         await #expect(throws: MCPError.self) {
             _ = try await worker.handleTool(params)
         }

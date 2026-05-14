@@ -3,30 +3,37 @@ import os
 
 /// HTTP client for App Store Connect API using URLSession
 public actor HTTPClient {
-    private let urlSession: URLSession
+    private let transport: any HTTPTransport
     private let jwtService: JWTService
     private let baseURL: String
     private let logger = Logger(subsystem: "com.asc-mcp", category: "HTTPClient")
+    private var lastRateLimitInfo: ASCRateLimitInfo?
 
     // Retry configuration
-    private let maxRetries = 3
+    private let maxRetries: Int
     private let retryableStatusCodes = Set([408, 429, 500, 502, 503, 504])
 
-    public init(jwtService: JWTService, baseURL: String) async {
+    public init(
+        jwtService: JWTService,
+        baseURL: String,
+        transport: (any HTTPTransport)? = nil,
+        maxRetries: Int = 3
+    ) async {
         self.jwtService = jwtService
         self.baseURL = baseURL
+        self.maxRetries = maxRetries
 
-        // Configure URLSession for Swift 6
         let config = URLSessionConfiguration.default
         config.timeoutIntervalForRequest = 30
         config.timeoutIntervalForResource = 60
         config.waitsForConnectivity = true
-        self.urlSession = URLSession(configuration: config)
+        self.transport = transport ?? URLSessionTransport(configuration: config)
     }
 
-    deinit {
-        // Properly invalidate URLSession to avoid leaks
-        urlSession.invalidateAndCancel()
+    /// Returns the last App Store Connect rate-limit state observed by this client.
+    /// - Returns: Last parsed rate-limit header values, or nil if no rate-limit headers were seen.
+    public func getLastRateLimitInfo() -> ASCRateLimitInfo? {
+        lastRateLimitInfo
     }
 
     /// Performs GET request to App Store Connect API
@@ -115,13 +122,10 @@ public actor HTTPClient {
                 logger.debug("[\(method.rawValue)] \(url.absoluteString) - Attempt \(attempt + 1)/\(maxAttempts)")
 
                 let startTime = Date()
-                let (data, response) = try await urlSession.data(for: request)
+                let (data, httpResponse) = try await transport.data(for: request)
                 let duration = Date().timeIntervalSince(startTime)
 
-                // Check HTTP status code
-                guard let httpResponse = response as? HTTPURLResponse else {
-                    throw ASCError.network("Invalid response format")
-                }
+                updateRateLimitInfo(from: httpResponse)
 
                 logger.debug("Response: \(httpResponse.statusCode) in \(String(format: "%.2f", duration))s")
 
@@ -131,7 +135,9 @@ public actor HTTPClient {
                 }
 
                 // Error handling
-                let errorMessage = String(data: data, encoding: .utf8) ?? "Unknown error"
+                let apiErrorResponse = decodeAPIErrorResponse(from: data)
+                let errorMessage = apiErrorResponse?.errors.map(\.safeDescription).joined(separator: "; ")
+                    ?? "Unknown App Store Connect API error"
 
                 // Handle 401 Unauthorized: refresh token and retry
                 if httpResponse.statusCode == 401 && attempt < maxAttempts - 1 {
@@ -161,7 +167,10 @@ public actor HTTPClient {
                 }
 
                 // Final error
-                logger.error("HTTP error \(httpResponse.statusCode): \(errorMessage)")
+                logger.error("HTTP error \(httpResponse.statusCode): \(Redactor.redact(errorMessage))")
+                if let apiErrorResponse {
+                    throw ASCError.apiResponse(apiErrorResponse, httpResponse.statusCode)
+                }
                 throw ASCError.api(errorMessage, httpResponse.statusCode)
 
             } catch let error as ASCError {
@@ -199,6 +208,27 @@ public actor HTTPClient {
         let jitter = Double.random(in: 0...1)
         return min(baseDelay + jitter, 30) // Maximum 30 seconds
     }
+
+    private func updateRateLimitInfo(from response: HTTPURLResponse) {
+        let limit = response.integerHeader("X-Rate-Limit-User-Hour-Limit")
+        let remaining = response.integerHeader("X-Rate-Limit-User-Hour-Remaining")
+        let retryAfter = response.doubleHeader("Retry-After")
+
+        guard limit != nil || remaining != nil || retryAfter != nil else {
+            return
+        }
+
+        lastRateLimitInfo = ASCRateLimitInfo(
+            userHourLimit: limit,
+            userHourRemaining: remaining,
+            retryAfterSeconds: retryAfter,
+            observedAt: Date()
+        )
+    }
+
+    private func decodeAPIErrorResponse(from data: Data) -> ASCAPIErrorResponse? {
+        try? JSONDecoder().decode(ASCAPIErrorResponse.self, from: data)
+    }
 }
 
 /// HTTP methods
@@ -208,6 +238,16 @@ private enum HTTPMethod: String {
     case PUT = "PUT"
     case PATCH = "PATCH"
     case DELETE = "DELETE"
+}
+
+private extension HTTPURLResponse {
+    func integerHeader(_ name: String) -> Int? {
+        value(forHTTPHeaderField: name).flatMap(Int.init)
+    }
+
+    func doubleHeader(_ name: String) -> Double? {
+        value(forHTTPHeaderField: name).flatMap(Double.init)
+    }
 }
 
 // MARK: - Convenience Methods

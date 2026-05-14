@@ -54,11 +54,11 @@ extension PreReleaseVersionsWorker {
                 result["next_url"] = next
             }
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to list pre-release versions: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to list pre-release versions: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -70,7 +70,7 @@ extension PreReleaseVersionsWorker {
         guard let arguments = params.arguments,
               let preReleaseVersionId = arguments["pre_release_version_id"]?.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameter 'pre_release_version_id' is missing")],
+                content: [MCPContent.text("Error: Required parameter 'pre_release_version_id' is missing")],
                 isError: true
             )
         }
@@ -89,11 +89,11 @@ extension PreReleaseVersionsWorker {
                 "pre_release_version": version
             ] as [String: Any]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to get pre-release version: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to get pre-release version: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -105,7 +105,7 @@ extension PreReleaseVersionsWorker {
         guard let arguments = params.arguments,
               let preReleaseVersionId = arguments["pre_release_version_id"]?.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameter 'pre_release_version_id' is missing")],
+                content: [MCPContent.text("Error: Required parameter 'pre_release_version_id' is missing")],
                 isError: true
             )
         }
@@ -143,11 +143,11 @@ extension PreReleaseVersionsWorker {
                 result["next_url"] = next
             }
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to list builds for pre-release version: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to list builds for pre-release version: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -159,8 +159,8 @@ extension PreReleaseVersionsWorker {
         return [
             "id": version.id,
             "type": version.type,
-            "version": version.attributes?.version.jsonSafe ?? NSNull(),
-            "platform": version.attributes?.platform.jsonSafe ?? NSNull()
+            "version": (version.attributes?.version).jsonSafe,
+            "platform": (version.attributes?.platform).jsonSafe
         ]
     }
 

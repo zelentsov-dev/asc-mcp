@@ -12,7 +12,7 @@ extension BuildsWorker {
               let appIdValue = arguments["app_id"],
               let appId = appIdValue.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameter 'app_id' is missing")],
+                content: [MCPContent.text("Error: Required parameter 'app_id' is missing")],
                 isError: true
             )
         }
@@ -74,11 +74,11 @@ extension BuildsWorker {
                 result["next_url"] = nextUrl
             }
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to list builds: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to list builds: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -92,7 +92,7 @@ extension BuildsWorker {
               let buildIdValue = arguments["build_id"],
               let buildId = buildIdValue.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameter 'build_id' is missing")],
+                content: [MCPContent.text("Error: Required parameter 'build_id' is missing")],
                 isError: true
             )
         }
@@ -154,11 +154,11 @@ extension BuildsWorker {
                 "included": includedData
             ] as [String: Any]
             
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
             
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to get build: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to get build: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -174,7 +174,7 @@ extension BuildsWorker {
               let buildNumberValue = arguments["build_number"],
               let buildNumber = buildNumberValue.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameters 'app_id' and 'build_number' are missing")],
+                content: [MCPContent.text("Error: Required parameters 'app_id' and 'build_number' are missing")],
                 isError: true
             )
         }
@@ -198,7 +198,7 @@ extension BuildsWorker {
                     "success": false,
                     "message": "Build with number '\(buildNumber)' not found for app '\(appId)'"
                 ] as [String: Any]
-                return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+                return MCPResult.jsonObject(result)
             }
             
             let build = formatBuild(response.data[0])
@@ -208,11 +208,11 @@ extension BuildsWorker {
                 "build": build
             ] as [String: Any]
             
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
             
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to find build: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to find build: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -226,7 +226,7 @@ extension BuildsWorker {
               let versionIdValue = arguments["version_id"],
               let versionId = versionIdValue.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameter 'version_id' is missing")],
+                content: [MCPContent.text("Error: Required parameter 'version_id' is missing")],
                 isError: true
             )
         }
@@ -251,11 +251,11 @@ extension BuildsWorker {
                 "build": build
             ] as [String: Any]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to get build for version: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to get build for version: \(error.localizedDescription)")],
                 isError: true
             )
         }

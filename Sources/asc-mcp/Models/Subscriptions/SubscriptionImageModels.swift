@@ -35,7 +35,7 @@ public struct CreateSubscriptionImageRequest: Codable, Sendable {
     public let data: CreateData
 
     public struct CreateData: Codable, Sendable {
-        public let type: String = "subscriptionImages"
+        public var type: String = "subscriptionImages"
         public let attributes: Attributes
         public let relationships: Relationships
     }
@@ -59,7 +59,7 @@ public struct CommitSubscriptionImageRequest: Codable, Sendable {
     public let data: CommitData
 
     public struct CommitData: Codable, Sendable {
-        public let type: String = "subscriptionImages"
+        public var type: String = "subscriptionImages"
         public let id: String
         public let attributes: Attributes
     }
@@ -99,7 +99,7 @@ public struct CreateSubReviewScreenshotRequest: Codable, Sendable {
     public let data: CreateData
 
     public struct CreateData: Codable, Sendable {
-        public let type: String = "subscriptionAppStoreReviewScreenshots"
+        public var type: String = "subscriptionAppStoreReviewScreenshots"
         public let attributes: Attributes
         public let relationships: Relationships
     }
@@ -123,7 +123,7 @@ public struct CommitSubReviewScreenshotRequest: Codable, Sendable {
     public let data: CommitData
 
     public struct CommitData: Codable, Sendable {
-        public let type: String = "subscriptionAppStoreReviewScreenshots"
+        public var type: String = "subscriptionAppStoreReviewScreenshots"
         public let id: String
         public let attributes: Attributes
     }

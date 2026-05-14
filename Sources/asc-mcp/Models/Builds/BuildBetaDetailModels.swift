@@ -186,7 +186,7 @@ public struct CreateBetaBuildLocalizationRequest: Codable, Sendable {
     public let data: CreateBetaBuildLocalizationData
     
     public struct CreateBetaBuildLocalizationData: Codable, Sendable {
-        public let type: String = "betaBuildLocalizations"
+        public var type: String = "betaBuildLocalizations"
         public let attributes: BetaBuildLocalizationAttributes
         public let relationships: CreateBetaBuildLocalizationRelationships
     }
@@ -205,7 +205,7 @@ public struct UpdateBetaBuildLocalizationRequest: Codable, Sendable {
     public let data: UpdateBetaBuildLocalizationData
     
     public struct UpdateBetaBuildLocalizationData: Codable, Sendable {
-        public let type: String = "betaBuildLocalizations"
+        public var type: String = "betaBuildLocalizations"
         public let id: String
         public let attributes: BetaBuildLocalizationUpdateAttributes
     }
@@ -231,7 +231,7 @@ public struct CreateBetaGroupRequest: Codable, Sendable {
     public let data: CreateBetaGroupData
 
     public struct CreateBetaGroupData: Codable, Sendable {
-        public let type: String = "betaGroups"
+        public var type: String = "betaGroups"
         public let attributes: CreateBetaGroupAttributes
         public let relationships: CreateBetaGroupRelationships
     }
@@ -258,7 +258,7 @@ public struct UpdateBetaGroupRequest: Codable, Sendable {
     public let data: UpdateBetaGroupData
 
     public struct UpdateBetaGroupData: Codable, Sendable {
-        public let type: String = "betaGroups"
+        public var type: String = "betaGroups"
         public let id: String
         public let attributes: UpdateBetaGroupAttributes
     }
@@ -281,7 +281,7 @@ public struct UpdateBuildBetaDetailRequest: Codable, Sendable {
     public let data: UpdateBuildBetaDetailData
     
     public struct UpdateBuildBetaDetailData: Codable, Sendable {
-        public let type: String = "buildBetaDetails"
+        public var type: String = "buildBetaDetails"
         public let id: String
         public let attributes: BuildBetaDetailUpdateAttributes
     }
@@ -347,7 +347,7 @@ public struct CreateBetaTesterRequest: Codable, Sendable {
     public let data: CreateBetaTesterData
 
     public struct CreateBetaTesterData: Codable, Sendable {
-        public let type: String = "betaTesters"
+        public var type: String = "betaTesters"
         public let attributes: CreateBetaTesterAttributes
         public let relationships: CreateBetaTesterRelationships?
     }

@@ -10,14 +10,15 @@ extension AuthWorker {
     func generateToken() async throws -> CallTool.Result {
         do {
             let _ = try await jwtService.getToken()
-            return CallTool.Result(content: [
-                .text("JWT token generated successfully")
-            ])
-        } catch {
-            return CallTool.Result(
-                content: [.text("Error: Token generation failed: \(error.localizedDescription)")],
-                isError: true
+            return MCPResult.json(
+                .object([
+                    "success": .bool(true),
+                    "message": .string("JWT token generated successfully")
+                ]),
+                text: "JWT token generated successfully"
             )
+        } catch {
+            return MCPResult.error("Token generation failed: \(error.localizedDescription)")
         }
     }
 
@@ -28,23 +29,18 @@ extension AuthWorker {
         guard let arguments = params.arguments,
               let tokenValue = arguments["token"],
               let token = tokenValue.stringValue else {
-            return CallTool.Result(
-                content: [.text("Error: Required parameter 'token' is missing")],
-                isError: true
-            )
+            return MCPResult.error("Required parameter 'token' is missing")
         }
 
         let isValid = await jwtService.validateToken(token)
 
-        if isValid {
-            return CallTool.Result(content: [
-                .text("JWT token is valid")
-            ])
-        } else {
-            return CallTool.Result(content: [
-                .text("JWT token is invalid or expired")
-            ])
-        }
+        return MCPResult.json(
+            .object([
+                "success": .bool(true),
+                "isValid": .bool(isValid)
+            ]),
+            text: isValid ? "JWT token is valid" : "JWT token is invalid or expired"
+        )
     }
 
     /// Forces refresh of the JWT token before expiration
@@ -53,14 +49,15 @@ extension AuthWorker {
     func refreshToken() async throws -> CallTool.Result {
         do {
             let _ = try await jwtService.refreshToken()
-            return CallTool.Result(content: [
-                .text("JWT token refreshed successfully")
-            ])
-        } catch {
-            return CallTool.Result(
-                content: [.text("Error: Token refresh failed: \(error.localizedDescription)")],
-                isError: true
+            return MCPResult.json(
+                .object([
+                    "success": .bool(true),
+                    "message": .string("JWT token refreshed successfully")
+                ]),
+                text: "JWT token refreshed successfully"
             )
+        } catch {
+            return MCPResult.error("Token refresh failed: \(error.localizedDescription)")
         }
     }
     
@@ -93,23 +90,18 @@ extension AuthWorker {
             statusMessage += "• Expiration: \(expirationDate)\n"
         }
         
-        // Also return JSON for programmatic access
         let jsonResult: [String: Any] = [
             "status": "success",
             "cacheInfo": [
                 "hasCachedToken": cacheInfo.hasCachedToken,
                 "refreshLeewaySeconds": cacheInfo.refreshLeewaySeconds,
-                "expiresInSeconds": cacheInfo.expiresInSeconds as Any,
-                "isValid": cacheInfo.isValid as Any,
-                "expirationDate": cacheInfo.expirationDate as Any
+                "expiresInSeconds": cacheInfo.expiresInSeconds.jsonSafe,
+                "isValid": cacheInfo.isValid.jsonSafe,
+                "expirationDate": cacheInfo.expirationDate.jsonSafe
             ]
         ]
         
-        return CallTool.Result(content: [
-            .text(statusMessage),
-            .text("\nJSON Response:"),
-            .text(JSONFormatter.formatJSON(jsonResult))
-        ])
+        return MCPResult.jsonObject(jsonResult, text: statusMessage)
     }
 
 }

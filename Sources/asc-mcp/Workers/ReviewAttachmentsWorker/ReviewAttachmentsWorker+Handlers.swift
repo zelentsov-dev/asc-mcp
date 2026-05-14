@@ -11,7 +11,7 @@ extension ReviewAttachmentsWorker {
               let reviewDetailId = arguments["review_detail_id"]?.stringValue,
               let filePath = arguments["file_path"]?.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameters: review_detail_id, file_path")],
+                content: [MCPContent.text("Error: Required parameters: review_detail_id, file_path")],
                 isError: true
             )
         }
@@ -44,7 +44,7 @@ extension ReviewAttachmentsWorker {
             let attachmentId = reserveResponse.data.id
             guard let uploadOperations = reserveResponse.data.attributes?.uploadOperations, !uploadOperations.isEmpty else {
                 return CallTool.Result(
-                    content: [.text("Error: No upload operations returned from reservation")],
+                    content: [MCPContent.text("Error: No upload operations returned from reservation")],
                     isError: true
                 )
             }
@@ -72,11 +72,11 @@ extension ReviewAttachmentsWorker {
                 "attachment": formatAttachment(commitResponse.data)
             ] as [String: Any]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to upload review attachment: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to upload review attachment: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -88,7 +88,7 @@ extension ReviewAttachmentsWorker {
         guard let arguments = params.arguments,
               let attachmentId = arguments["attachment_id"]?.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameter 'attachment_id' is missing")],
+                content: [MCPContent.text("Error: Required parameter 'attachment_id' is missing")],
                 isError: true
             )
         }
@@ -102,11 +102,11 @@ extension ReviewAttachmentsWorker {
                 "attachment": formatAttachment(response.data)
             ] as [String: Any]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to get review attachment: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to get review attachment: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -118,7 +118,7 @@ extension ReviewAttachmentsWorker {
         guard let arguments = params.arguments,
               let attachmentId = arguments["attachment_id"]?.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameter 'attachment_id' is missing")],
+                content: [MCPContent.text("Error: Required parameter 'attachment_id' is missing")],
                 isError: true
             )
         }
@@ -131,11 +131,11 @@ extension ReviewAttachmentsWorker {
                 "message": "Review attachment '\(attachmentId)' deleted"
             ] as [String: Any]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to delete review attachment: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to delete review attachment: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -147,7 +147,7 @@ extension ReviewAttachmentsWorker {
         guard let arguments = params.arguments,
               let reviewDetailId = arguments["review_detail_id"]?.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameter 'review_detail_id' is missing")],
+                content: [MCPContent.text("Error: Required parameter 'review_detail_id' is missing")],
                 isError: true
             )
         }
@@ -185,11 +185,11 @@ extension ReviewAttachmentsWorker {
                 result["next_url"] = next
             }
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to list review attachments: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to list review attachments: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -201,9 +201,9 @@ extension ReviewAttachmentsWorker {
         var result: [String: Any] = [
             "id": attachment.id,
             "type": attachment.type,
-            "fileName": attachment.attributes?.fileName.jsonSafe,
-            "fileSize": attachment.attributes?.fileSize.jsonSafe,
-            "sourceFileChecksum": attachment.attributes?.sourceFileChecksum.jsonSafe
+            "fileName": (attachment.attributes?.fileName).jsonSafe,
+            "fileSize": (attachment.attributes?.fileSize).jsonSafe,
+            "sourceFileChecksum": (attachment.attributes?.sourceFileChecksum).jsonSafe
         ]
 
         if let deliveryState = attachment.attributes?.assetDeliveryState {

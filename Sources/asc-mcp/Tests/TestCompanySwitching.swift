@@ -55,7 +55,7 @@ public func testCompanySwitching() async throws {
         )
         
         let result1 = try await appsWorker1.listApps(listParams1)
-        if case .text(text: let text, annotations: _, _meta: _) = result1.content.first {
+        if case .text(let text, _, _) = result1.content.first {
             print(text, to: &standardError)
         }
         
@@ -95,7 +95,7 @@ public func testCompanySwitching() async throws {
         )
         
         let result2 = try await appsWorker2.listApps(listParams2)
-        if case .text(text: let text, annotations: _, _meta: _) = result2.content.first {
+        if case .text(let text, _, _) = result2.content.first {
             print(text, to: &standardError)
         }
         

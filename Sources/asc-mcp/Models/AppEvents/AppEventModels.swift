@@ -112,7 +112,7 @@ public struct CreateAppEventRequest: Codable, Sendable {
     public let data: CreateAppEventData
 
     public struct CreateAppEventData: Codable, Sendable {
-        public let type: String = "appEvents"
+        public var type: String = "appEvents"
         public let attributes: CreateAppEventAttributes
         public let relationships: CreateAppEventRelationships
     }
@@ -140,7 +140,7 @@ public struct UpdateAppEventRequest: Codable, Sendable {
     public let data: UpdateAppEventData
 
     public struct UpdateAppEventData: Codable, Sendable {
-        public let type: String = "appEvents"
+        public var type: String = "appEvents"
         public let id: String
         public let attributes: UpdateAppEventAttributes
     }
@@ -162,7 +162,7 @@ public struct CreateAppEventLocalizationRequest: Codable, Sendable {
     public let data: CreateData
 
     public struct CreateData: Codable, Sendable {
-        public let type: String = "appEventLocalizations"
+        public var type: String = "appEventLocalizations"
         public let attributes: Attributes
         public let relationships: Relationships
     }
@@ -188,7 +188,7 @@ public struct UpdateAppEventLocalizationRequest: Codable, Sendable {
     public let data: UpdateData
 
     public struct UpdateData: Codable, Sendable {
-        public let type: String = "appEventLocalizations"
+        public var type: String = "appEventLocalizations"
         public let id: String
         public let attributes: Attributes
     }

@@ -82,7 +82,7 @@ public struct UpdateAppInfoRequest: Codable, Sendable {
     public let data: UpdateAppInfoData
 
     public struct UpdateAppInfoData: Codable, Sendable {
-        public let type: String = "appInfos"
+        public var type: String = "appInfos"
         public let id: String
         public let relationships: UpdateAppInfoRelationships?
     }
@@ -108,7 +108,7 @@ public struct UpdateAppInfoLocalizationRequest: Codable, Sendable {
     public let data: UpdateAppInfoLocalizationData
 
     public struct UpdateAppInfoLocalizationData: Codable, Sendable {
-        public let type: String = "appInfoLocalizations"
+        public var type: String = "appInfoLocalizations"
         public let id: String
         public let attributes: UpdateAppInfoLocalizationAttributes
     }
@@ -127,7 +127,7 @@ public struct CreateAppInfoLocalizationRequest: Codable, Sendable {
     public let data: CreateAppInfoLocalizationData
 
     public struct CreateAppInfoLocalizationData: Codable, Sendable {
-        public let type: String = "appInfoLocalizations"
+        public var type: String = "appInfoLocalizations"
         public let attributes: CreateAppInfoLocalizationAttributes
         public let relationships: CreateAppInfoLocalizationRelationships
     }

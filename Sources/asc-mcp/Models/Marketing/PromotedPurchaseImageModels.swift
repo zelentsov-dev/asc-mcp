@@ -31,7 +31,7 @@ public struct CreatePromotedPurchaseImageRequest: Codable, Sendable {
     public let data: CreateData
 
     public struct CreateData: Codable, Sendable {
-        public let type: String = "promotedPurchaseImages"
+        public var type: String = "promotedPurchaseImages"
         public let attributes: Attributes
         public let relationships: Relationships
     }
@@ -55,7 +55,7 @@ public struct CommitPromotedPurchaseImageRequest: Codable, Sendable {
     public let data: CommitData
 
     public struct CommitData: Codable, Sendable {
-        public let type: String = "promotedPurchaseImages"
+        public var type: String = "promotedPurchaseImages"
         public let id: String
         public let attributes: Attributes
     }

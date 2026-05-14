@@ -63,11 +63,11 @@ extension ProvisioningWorker {
                 result["next_url"] = next
             }
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to list bundle IDs: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to list bundle IDs: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -80,7 +80,7 @@ extension ProvisioningWorker {
               let idValue = arguments["bundle_id_resource_id"],
               let resourceId = idValue.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameter 'bundle_id_resource_id' is missing")],
+                content: [MCPContent.text("Error: Required parameter 'bundle_id_resource_id' is missing")],
                 isError: true
             )
         }
@@ -98,11 +98,11 @@ extension ProvisioningWorker {
                 "bundle_id": bundleId
             ] as [String: Any]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to get bundle ID: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to get bundle ID: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -119,7 +119,7 @@ extension ProvisioningWorker {
               let platformValue = arguments["platform"],
               let platform = platformValue.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameters: name, identifier, platform")],
+                content: [MCPContent.text("Error: Required parameters: name, identifier, platform")],
                 isError: true
             )
         }
@@ -148,11 +148,11 @@ extension ProvisioningWorker {
                 "bundle_id": bundleId
             ] as [String: Any]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to create bundle ID: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to create bundle ID: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -165,7 +165,7 @@ extension ProvisioningWorker {
               let idValue = arguments["bundle_id_resource_id"],
               let resourceId = idValue.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameter 'bundle_id_resource_id' is missing")],
+                content: [MCPContent.text("Error: Required parameter 'bundle_id_resource_id' is missing")],
                 isError: true
             )
         }
@@ -178,11 +178,11 @@ extension ProvisioningWorker {
                 "message": "Bundle ID '\(resourceId)' deleted"
             ] as [String: Any]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to delete bundle ID: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to delete bundle ID: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -242,11 +242,11 @@ extension ProvisioningWorker {
                 result["next_url"] = next
             }
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to list devices: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to list devices: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -263,7 +263,7 @@ extension ProvisioningWorker {
               let platformValue = arguments["platform"],
               let platform = platformValue.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameters: name, udid, platform")],
+                content: [MCPContent.text("Error: Required parameters: name, udid, platform")],
                 isError: true
             )
         }
@@ -292,11 +292,11 @@ extension ProvisioningWorker {
                 "device": device
             ] as [String: Any]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to register device: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to register device: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -309,7 +309,7 @@ extension ProvisioningWorker {
               let deviceIdValue = arguments["device_id"],
               let deviceId = deviceIdValue.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameter 'device_id' is missing")],
+                content: [MCPContent.text("Error: Required parameter 'device_id' is missing")],
                 isError: true
             )
         }
@@ -338,11 +338,11 @@ extension ProvisioningWorker {
                 "device": device
             ] as [String: Any]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to update device: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to update device: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -397,11 +397,11 @@ extension ProvisioningWorker {
                 result["next_url"] = next
             }
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to list certificates: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to list certificates: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -461,11 +461,11 @@ extension ProvisioningWorker {
                 result["next_url"] = next
             }
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to list profiles: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to list profiles: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -480,7 +480,7 @@ extension ProvisioningWorker {
               let idValue = arguments["certificate_id"],
               let certificateId = idValue.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameter 'certificate_id' is missing")],
+                content: [MCPContent.text("Error: Required parameter 'certificate_id' is missing")],
                 isError: true
             )
         }
@@ -498,11 +498,11 @@ extension ProvisioningWorker {
                 "certificate": certificate
             ] as [String: Any]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to get certificate: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to get certificate: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -515,7 +515,7 @@ extension ProvisioningWorker {
               let idValue = arguments["certificate_id"],
               let certificateId = idValue.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameter 'certificate_id' is missing")],
+                content: [MCPContent.text("Error: Required parameter 'certificate_id' is missing")],
                 isError: true
             )
         }
@@ -528,11 +528,11 @@ extension ProvisioningWorker {
                 "message": "Certificate '\(certificateId)' revoked"
             ] as [String: Any]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to revoke certificate: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to revoke certificate: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -547,7 +547,7 @@ extension ProvisioningWorker {
               let idValue = arguments["profile_id"],
               let profileId = idValue.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameter 'profile_id' is missing")],
+                content: [MCPContent.text("Error: Required parameter 'profile_id' is missing")],
                 isError: true
             )
         }
@@ -565,11 +565,11 @@ extension ProvisioningWorker {
                 "profile": profile
             ] as [String: Any]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to get profile: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to get profile: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -582,7 +582,7 @@ extension ProvisioningWorker {
               let idValue = arguments["profile_id"],
               let profileId = idValue.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameter 'profile_id' is missing")],
+                content: [MCPContent.text("Error: Required parameter 'profile_id' is missing")],
                 isError: true
             )
         }
@@ -595,11 +595,11 @@ extension ProvisioningWorker {
                 "message": "Profile '\(profileId)' deleted"
             ] as [String: Any]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to delete profile: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to delete profile: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -618,7 +618,7 @@ extension ProvisioningWorker {
               let certIdsValue = arguments["certificate_ids"],
               let certIdsArray = certIdsValue.arrayValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameters: name, profile_type, bundle_id_resource_id, certificate_ids")],
+                content: [MCPContent.text("Error: Required parameters: name, profile_type, bundle_id_resource_id, certificate_ids")],
                 isError: true
             )
         }
@@ -670,11 +670,11 @@ extension ProvisioningWorker {
                 "profile": profile
             ] as [String: Any]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to create profile: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to create profile: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -689,7 +689,7 @@ extension ProvisioningWorker {
               let idValue = arguments["bundle_id_resource_id"],
               let bundleIdResourceId = idValue.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameter 'bundle_id_resource_id' is missing")],
+                content: [MCPContent.text("Error: Required parameter 'bundle_id_resource_id' is missing")],
                 isError: true
             )
         }
@@ -722,11 +722,11 @@ extension ProvisioningWorker {
                 result["next_url"] = next
             }
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to list capabilities: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to list capabilities: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -741,7 +741,7 @@ extension ProvisioningWorker {
               let capTypeValue = arguments["capability_type"],
               let capabilityType = capTypeValue.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameters: bundle_id_resource_id, capability_type")],
+                content: [MCPContent.text("Error: Required parameters: bundle_id_resource_id, capability_type")],
                 isError: true
             )
         }
@@ -783,11 +783,11 @@ extension ProvisioningWorker {
                 "capability": capability
             ] as [String: Any]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to enable capability: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to enable capability: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -800,7 +800,7 @@ extension ProvisioningWorker {
               let idValue = arguments["capability_id"],
               let capabilityId = idValue.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameter 'capability_id' is missing")],
+                content: [MCPContent.text("Error: Required parameter 'capability_id' is missing")],
                 isError: true
             )
         }
@@ -813,11 +813,11 @@ extension ProvisioningWorker {
                 "message": "Capability '\(capabilityId)' disabled"
             ] as [String: Any]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to disable capability: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to disable capability: \(error.localizedDescription)")],
                 isError: true
             )
         }

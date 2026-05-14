@@ -40,7 +40,7 @@ public struct CreateAnalyticsReportRequestRequest: Codable, Sendable {
     public let data: CreateAnalyticsReportRequestData
 
     public struct CreateAnalyticsReportRequestData: Codable, Sendable {
-        public let type: String = "analyticsReportRequests"
+        public var type: String = "analyticsReportRequests"
         public let attributes: CreateAnalyticsReportRequestAttributes
         public let relationships: CreateAnalyticsReportRequestRelationships
     }

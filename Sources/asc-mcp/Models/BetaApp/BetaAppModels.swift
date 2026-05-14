@@ -37,7 +37,7 @@ public struct CreateBetaAppLocalizationRequest: Codable, Sendable {
     public let data: CreateData
 
     public struct CreateData: Codable, Sendable {
-        public let type: String = "betaAppLocalizations"
+        public var type: String = "betaAppLocalizations"
         public let attributes: Attributes
         public let relationships: Relationships
     }
@@ -65,7 +65,7 @@ public struct UpdateBetaAppLocalizationRequest: Codable, Sendable {
     public let data: UpdateData
 
     public struct UpdateData: Codable, Sendable {
-        public let type: String = "betaAppLocalizations"
+        public var type: String = "betaAppLocalizations"
         public let id: String
         public let attributes: Attributes
     }
@@ -112,7 +112,7 @@ public struct CreateBetaAppReviewSubmissionRequest: Codable, Sendable {
     public let data: CreateData
 
     public struct CreateData: Codable, Sendable {
-        public let type: String = "betaAppReviewSubmissions"
+        public var type: String = "betaAppReviewSubmissions"
         public let relationships: Relationships
     }
 
@@ -158,7 +158,7 @@ public struct UpdateBetaAppReviewDetailRequest: Codable, Sendable {
     public let data: UpdateData
 
     public struct UpdateData: Codable, Sendable {
-        public let type: String = "betaAppReviewDetails"
+        public var type: String = "betaAppReviewDetails"
         public let id: String
         public let attributes: Attributes
     }

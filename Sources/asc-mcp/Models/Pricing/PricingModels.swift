@@ -191,7 +191,7 @@ public struct CreateAppPriceScheduleRequest: Codable, Sendable {
     public let included: [CreateAppPriceInlineRequest]
 
     public struct CreateAppPriceScheduleData: Codable, Sendable {
-        public let type: String = "appPriceSchedules"
+        public var type: String = "appPriceSchedules"
         public let relationships: CreateAppPriceScheduleRelationships
     }
 
@@ -216,7 +216,7 @@ public struct CreateAppPriceScheduleRequest: Codable, Sendable {
 
 /// Inline app price for creating price schedule
 public struct CreateAppPriceInlineRequest: Codable, Sendable {
-    public let type: String = "appPrices"
+    public var type: String = "appPrices"
     public let id: String
     public let relationships: CreateAppPriceInlineRelationships
 

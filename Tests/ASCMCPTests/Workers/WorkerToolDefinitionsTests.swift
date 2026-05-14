@@ -26,6 +26,105 @@ struct WorkerToolDefinitionsTests {
         #expect(names.contains("apps_list_localizations"))
     }
 
+    // MARK: - AccessibilityWorker (6 tools)
+
+    @Test("AccessibilityWorker returns 6 tools with correct names")
+    func accessibilityWorkerTools() async throws {
+        let client = try await TestFactory.makeHTTPClient()
+        let worker = AccessibilityWorker(httpClient: client)
+        let tools = await worker.getTools()
+        #expect(tools.count == 6)
+        let names = Set(tools.map(\.name))
+        #expect(names.contains("accessibility_list"))
+        #expect(names.contains("accessibility_get"))
+        #expect(names.contains("accessibility_create"))
+        #expect(names.contains("accessibility_update"))
+        #expect(names.contains("accessibility_delete"))
+        #expect(names.contains("accessibility_list_relationships"))
+    }
+
+    // MARK: - WebhooksWorker (11 tools)
+
+    @Test("WebhooksWorker returns 11 tools with correct names")
+    func webhooksWorkerTools() async throws {
+        let client = try await TestFactory.makeHTTPClient()
+        let worker = WebhooksWorker(httpClient: client)
+        let tools = await worker.getTools()
+        #expect(tools.count == 11)
+        let names = Set(tools.map(\.name))
+        #expect(names.contains("webhooks_list"))
+        #expect(names.contains("webhooks_get"))
+        #expect(names.contains("webhooks_create"))
+        #expect(names.contains("webhooks_update"))
+        #expect(names.contains("webhooks_delete"))
+        #expect(names.contains("webhooks_list_deliveries"))
+        #expect(names.contains("webhooks_redeliver"))
+        #expect(names.contains("webhooks_ping"))
+        #expect(names.contains("webhooks_verify_signature"))
+        #expect(names.contains("webhooks_parse_payload"))
+        #expect(names.contains("webhooks_triage_event"))
+    }
+
+    // MARK: - XcodeCloudWorker (30 tools)
+
+    @Test("XcodeCloudWorker returns 30 tools with correct names")
+    func xcodeCloudWorkerTools() async throws {
+        let client = try await TestFactory.makeHTTPClient()
+        let worker = XcodeCloudWorker(httpClient: client)
+        let tools = await worker.getTools()
+        #expect(tools.count == 30)
+        let names = Set(tools.map(\.name))
+        #expect(names.contains("xcode_cloud_products_list"))
+        #expect(names.contains("xcode_cloud_products_get"))
+        #expect(names.contains("xcode_cloud_product_workflows_list"))
+        #expect(names.contains("xcode_cloud_product_build_runs_list"))
+        #expect(names.contains("xcode_cloud_workflows_get"))
+        #expect(names.contains("xcode_cloud_workflow_build_runs_list"))
+        #expect(names.contains("xcode_cloud_build_runs_get"))
+        #expect(names.contains("xcode_cloud_build_runs_start"))
+        #expect(names.contains("xcode_cloud_build_run_actions_list"))
+        #expect(names.contains("xcode_cloud_build_run_builds_list"))
+        #expect(names.contains("xcode_cloud_actions_get"))
+        #expect(names.contains("xcode_cloud_action_artifacts_list"))
+        #expect(names.contains("xcode_cloud_action_issues_list"))
+        #expect(names.contains("xcode_cloud_action_test_results_list"))
+        #expect(names.contains("xcode_cloud_artifacts_get"))
+        #expect(names.contains("xcode_cloud_issues_get"))
+        #expect(names.contains("xcode_cloud_test_results_get"))
+        #expect(names.contains("xcode_cloud_xcode_versions_list"))
+        #expect(names.contains("xcode_cloud_xcode_versions_get"))
+        #expect(names.contains("xcode_cloud_macos_versions_list"))
+        #expect(names.contains("xcode_cloud_macos_versions_get"))
+        #expect(names.contains("xcode_cloud_scm_providers_list"))
+        #expect(names.contains("xcode_cloud_scm_providers_get"))
+        #expect(names.contains("xcode_cloud_scm_provider_repositories_list"))
+        #expect(names.contains("xcode_cloud_scm_repositories_list"))
+        #expect(names.contains("xcode_cloud_scm_repositories_get"))
+        #expect(names.contains("xcode_cloud_scm_repository_git_references_list"))
+        #expect(names.contains("xcode_cloud_scm_repository_pull_requests_list"))
+        #expect(names.contains("xcode_cloud_scm_git_references_get"))
+        #expect(names.contains("xcode_cloud_scm_pull_requests_get"))
+    }
+
+    // MARK: - BetaFeedbackWorker (8 tools)
+
+    @Test("BetaFeedbackWorker returns 8 tools with correct names")
+    func betaFeedbackWorkerTools() async throws {
+        let client = try await TestFactory.makeHTTPClient()
+        let worker = BetaFeedbackWorker(httpClient: client)
+        let tools = await worker.getTools()
+        #expect(tools.count == 8)
+        let names = Set(tools.map(\.name))
+        #expect(names.contains("beta_feedback_list_crashes"))
+        #expect(names.contains("beta_feedback_get_crash"))
+        #expect(names.contains("beta_feedback_get_crash_log"))
+        #expect(names.contains("beta_feedback_get_crash_log_by_id"))
+        #expect(names.contains("beta_feedback_delete_crash"))
+        #expect(names.contains("beta_feedback_list_screenshots"))
+        #expect(names.contains("beta_feedback_get_screenshot"))
+        #expect(names.contains("beta_feedback_delete_screenshot"))
+    }
+
     // MARK: - BuildsWorker (4 tools)
 
     @Test("BuildsWorker returns 4 tools with correct names")
@@ -56,9 +155,9 @@ struct WorkerToolDefinitionsTests {
         #expect(names.contains("builds_check_readiness"))
     }
 
-    // MARK: - BuildBetaDetailsWorker (8 tools)
+    // MARK: - BuildBetaDetailsWorker (11 tools)
 
-    @Test("BuildBetaDetailsWorker returns 8 tools with correct names")
+    @Test("BuildBetaDetailsWorker returns 11 tools with correct names")
     func buildBetaDetailsWorkerTools() async throws {
         let client = try await TestFactory.makeHTTPClient()
         let worker = BuildBetaDetailsWorker(httpClient: client)
@@ -71,9 +170,9 @@ struct WorkerToolDefinitionsTests {
         #expect(names.contains("builds_list_beta_localizations"))
     }
 
-    // MARK: - AppLifecycleWorker (13 tools)
+    // MARK: - AppLifecycleWorker (14 tools)
 
-    @Test("AppLifecycleWorker returns 13 tools with correct names")
+    @Test("AppLifecycleWorker returns 14 tools with correct names")
     func appLifecycleWorkerTools() async throws {
         let client = try await TestFactory.makeHTTPClient()
         let worker = AppLifecycleWorker(httpClient: client)
@@ -91,9 +190,9 @@ struct WorkerToolDefinitionsTests {
         #expect(names.contains("app_versions_release"))
     }
 
-    // MARK: - ReviewsWorker (7 tools)
+    // MARK: - ReviewsWorker (8 tools)
 
-    @Test("ReviewsWorker returns 7 tools with correct names")
+    @Test("ReviewsWorker returns 8 tools with correct names")
     func reviewsWorkerTools() async throws {
         let client = try await TestFactory.makeHTTPClient()
         let worker = ReviewsWorker(httpClient: client)
@@ -129,7 +228,7 @@ struct WorkerToolDefinitionsTests {
         #expect(names.contains("beta_groups_remove_builds"))
     }
 
-    // MARK: - InAppPurchasesWorker (22 tools)
+    // MARK: - InAppPurchasesWorker (24 tools)
 
     @Test("InAppPurchasesWorker returns 24 tools with correct names")
     func inAppPurchasesWorkerTools() async throws {
@@ -192,9 +291,9 @@ struct WorkerToolDefinitionsTests {
         #expect(names.contains("provisioning_disable_capability"))
     }
 
-    // MARK: - BetaTestersWorker (6 tools)
+    // MARK: - BetaTestersWorker (12 tools)
 
-    @Test("BetaTestersWorker returns 6 tools with correct names")
+    @Test("BetaTestersWorker returns 12 tools with correct names")
     func betaTestersWorkerTools() async throws {
         let client = try await TestFactory.makeHTTPClient()
         let worker = BetaTestersWorker(httpClient: client)
@@ -209,9 +308,9 @@ struct WorkerToolDefinitionsTests {
         #expect(names.contains("beta_testers_list_apps"))
     }
 
-    // MARK: - AppInfoWorker (7 tools)
+    // MARK: - AppInfoWorker (10 tools)
 
-    @Test("AppInfoWorker returns 7 tools with correct names")
+    @Test("AppInfoWorker returns 10 tools with correct names")
     func appInfoWorkerTools() async throws {
         let client = try await TestFactory.makeHTTPClient()
         let worker = AppInfoWorker(httpClient: client)
@@ -247,9 +346,9 @@ struct WorkerToolDefinitionsTests {
         #expect(names.contains("pricing_list_territory_availabilities"))
     }
 
-    // MARK: - UsersWorker (7 tools)
+    // MARK: - UsersWorker (10 tools)
 
-    @Test("UsersWorker returns 7 tools with correct names")
+    @Test("UsersWorker returns 10 tools with correct names")
     func usersWorkerTools() async throws {
         let client = try await TestFactory.makeHTTPClient()
         let worker = UsersWorker(httpClient: client)
@@ -307,7 +406,7 @@ struct WorkerToolDefinitionsTests {
         #expect(names.contains("analytics_check_snapshot_status"))
     }
 
-    // MARK: - SubscriptionsWorker (27 tools)
+    // MARK: - SubscriptionsWorker (29 tools)
 
     @Test("SubscriptionsWorker returns 29 tools with correct names")
     func subscriptionsWorkerTools() async throws {
@@ -347,9 +446,9 @@ struct WorkerToolDefinitionsTests {
         #expect(names.contains("subscriptions_get_review_screenshot_for_subscription"))
     }
 
-    // MARK: - OfferCodesWorker (7 tools)
+    // MARK: - OfferCodesWorker (10 tools)
 
-    @Test("OfferCodesWorker returns 7 tools with correct names")
+    @Test("OfferCodesWorker returns 10 tools with correct names")
     func offerCodesWorkerTools() async throws {
         let client = try await TestFactory.makeHTTPClient()
         let worker = OfferCodesWorker(httpClient: client)
@@ -476,9 +575,9 @@ struct WorkerToolDefinitionsTests {
         #expect(names.contains("beta_license_update"))
     }
 
-    // MARK: - ScreenshotsWorker (15 tools)
+    // MARK: - ScreenshotsWorker (16 tools)
 
-    @Test("ScreenshotsWorker returns 15 tools with correct names")
+    @Test("ScreenshotsWorker returns 16 tools with correct names")
     func screenshotsWorkerTools() async throws {
         let client = try await TestFactory.makeHTTPClient()
         let worker = ScreenshotsWorker(httpClient: client, uploadService: UploadService())
@@ -544,9 +643,9 @@ struct WorkerToolDefinitionsTests {
         #expect(names.contains("ppo_create_treatment_localization"))
     }
 
-    // MARK: - PromotedPurchasesWorker (8 tools)
+    // MARK: - PromotedPurchasesWorker (9 tools)
 
-    @Test("PromotedPurchasesWorker returns 8 tools with correct names")
+    @Test("PromotedPurchasesWorker returns 9 tools with correct names")
     func promotedPurchasesWorkerTools() async throws {
         let client = try await TestFactory.makeHTTPClient()
         let worker = PromotedPurchasesWorker(httpClient: client, uploadService: UploadService())
@@ -587,12 +686,15 @@ struct WorkerToolDefinitionsTests {
 
         var allNames: [String] = []
         allNames += (await AppsWorker(client: client).getTools()).map(\.name)
+        allNames += (await AccessibilityWorker(httpClient: client).getTools()).map(\.name)
+        allNames += (await WebhooksWorker(httpClient: client).getTools()).map(\.name)
         allNames += (await BuildsWorker(httpClient: client).getTools()).map(\.name)
         allNames += (await BuildProcessingWorker(httpClient: client).getTools()).map(\.name)
         allNames += (await BuildBetaDetailsWorker(httpClient: client).getTools()).map(\.name)
         allNames += (await AppLifecycleWorker(httpClient: client).getTools()).map(\.name)
         allNames += (await ReviewsWorker(httpClient: client).getTools()).map(\.name)
         allNames += (await BetaGroupsWorker(httpClient: client).getTools()).map(\.name)
+        allNames += (await BetaFeedbackWorker(httpClient: client).getTools()).map(\.name)
         allNames += (await InAppPurchasesWorker(httpClient: client, uploadService: UploadService()).getTools()).map(\.name)
         allNames += (await ProvisioningWorker(httpClient: client).getTools()).map(\.name)
         allNames += (await BetaTestersWorker(httpClient: client).getTools()).map(\.name)
@@ -628,12 +730,15 @@ struct WorkerToolDefinitionsTests {
         let allTools: [Tool] = await {
             var tools: [Tool] = []
             tools += await AppsWorker(client: client).getTools()
+            tools += await AccessibilityWorker(httpClient: client).getTools()
+            tools += await WebhooksWorker(httpClient: client).getTools()
             tools += await BuildsWorker(httpClient: client).getTools()
             tools += await BuildProcessingWorker(httpClient: client).getTools()
             tools += await BuildBetaDetailsWorker(httpClient: client).getTools()
             tools += await AppLifecycleWorker(httpClient: client).getTools()
             tools += await ReviewsWorker(httpClient: client).getTools()
             tools += await BetaGroupsWorker(httpClient: client).getTools()
+            tools += await BetaFeedbackWorker(httpClient: client).getTools()
             tools += await InAppPurchasesWorker(httpClient: client, uploadService: UploadService()).getTools()
             tools += await ProvisioningWorker(httpClient: client).getTools()
             tools += await BetaTestersWorker(httpClient: client).getTools()
@@ -661,7 +766,7 @@ struct WorkerToolDefinitionsTests {
         }()
 
         for tool in allTools {
-            let desc = "\(tool.description)" // Works with both String and String?
+            let desc = tool.description ?? ""
             #expect(!desc.isEmpty && desc != "nil", "Tool '\(tool.name)' has empty description")
         }
     }

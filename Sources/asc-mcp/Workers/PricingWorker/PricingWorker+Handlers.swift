@@ -52,11 +52,11 @@ extension PricingWorker {
                 result["next_url"] = next
             }
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Failed to list territories: \(error.localizedDescription)")],
+                content: [MCPContent.text("Failed to list territories: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -71,7 +71,7 @@ extension PricingWorker {
               let appIdValue = arguments["app_id"],
               let appId = appIdValue.stringValue else {
             return CallTool.Result(
-                content: [.text("Required parameter 'app_id' is missing")],
+                content: [MCPContent.text("Required parameter 'app_id' is missing")],
                 isError: true
             )
         }
@@ -87,15 +87,15 @@ extension PricingWorker {
                 "availability": [
                     "id": response.data.id,
                     "type": response.data.type,
-                    "availableInNewTerritories": response.data.attributes?.availableInNewTerritories.jsonSafe
+                    "availableInNewTerritories": (response.data.attributes?.availableInNewTerritories).jsonSafe
                 ] as [String: Any]
             ]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Failed to get app availability: \(error.localizedDescription)")],
+                content: [MCPContent.text("Failed to get app availability: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -110,7 +110,7 @@ extension PricingWorker {
               let appIdValue = arguments["app_id"],
               let appId = appIdValue.stringValue else {
             return CallTool.Result(
-                content: [.text("Required parameter 'app_id' is missing")],
+                content: [MCPContent.text("Required parameter 'app_id' is missing")],
                 isError: true
             )
         }
@@ -165,11 +165,11 @@ extension PricingWorker {
                 result["next_url"] = next
             }
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Failed to list price points: \(error.localizedDescription)")],
+                content: [MCPContent.text("Failed to list price points: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -184,7 +184,7 @@ extension PricingWorker {
               let appIdValue = arguments["app_id"],
               let appId = appIdValue.stringValue else {
             return CallTool.Result(
-                content: [.text("Required parameter 'app_id' is missing")],
+                content: [MCPContent.text("Required parameter 'app_id' is missing")],
                 isError: true
             )
         }
@@ -245,11 +245,11 @@ extension PricingWorker {
                 "price_schedule": schedule
             ]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Failed to get price schedule: \(error.localizedDescription)")],
+                content: [MCPContent.text("Failed to get price schedule: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -268,7 +268,7 @@ extension PricingWorker {
               let pricePointIdValue = arguments["price_point_id"],
               let pricePointId = pricePointIdValue.stringValue else {
             return CallTool.Result(
-                content: [.text("Required parameters: app_id, base_territory_id, price_point_id")],
+                content: [MCPContent.text("Required parameters: app_id, base_territory_id, price_point_id")],
                 isError: true
             )
         }
@@ -322,11 +322,11 @@ extension PricingWorker {
                 "price_schedule": schedule
             ]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Failed to set price schedule: \(error.localizedDescription)")],
+                content: [MCPContent.text("Failed to set price schedule: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -341,7 +341,7 @@ extension PricingWorker {
               let appIdValue = arguments["app_id"],
               let appId = appIdValue.stringValue else {
             return CallTool.Result(
-                content: [.text("Required parameter 'app_id' is missing")],
+                content: [MCPContent.text("Required parameter 'app_id' is missing")],
                 isError: true
             )
         }
@@ -390,11 +390,11 @@ extension PricingWorker {
                 "count": availabilities.count
             ]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Failed to list territory availability: \(error.localizedDescription)")],
+                content: [MCPContent.text("Failed to list territory availability: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -410,7 +410,7 @@ extension PricingWorker {
               let appId = arguments["app_id"]?.stringValue,
               let availableInNew = arguments["available_in_new_territories"]?.boolValue else {
             return CallTool.Result(
-                content: [.text("Required parameters: app_id, available_in_new_territories, territory_ids")],
+                content: [MCPContent.text("Required parameters: app_id, available_in_new_territories, territory_ids")],
                 isError: true
             )
         }
@@ -419,7 +419,7 @@ extension PricingWorker {
         guard let territoryIdsValue = arguments["territory_ids"],
               case .array(let territoryArray) = territoryIdsValue else {
             return CallTool.Result(
-                content: [.text("Required parameter 'territory_ids' must be an array of strings")],
+                content: [MCPContent.text("Required parameter 'territory_ids' must be an array of strings")],
                 isError: true
             )
         }
@@ -431,7 +431,7 @@ extension PricingWorker {
 
         guard !territoryIds.isEmpty else {
             return CallTool.Result(
-                content: [.text("Required parameter 'territory_ids' must contain at least one territory ID")],
+                content: [MCPContent.text("Required parameter 'territory_ids' must contain at least one territory ID")],
                 isError: true
             )
         }
@@ -464,15 +464,15 @@ extension PricingWorker {
                 "availability": [
                     "id": response.data.id,
                     "type": response.data.type,
-                    "availableInNewTerritories": response.data.attributes?.availableInNewTerritories.jsonSafe
+                    "availableInNewTerritories": (response.data.attributes?.availableInNewTerritories).jsonSafe
                 ] as [String: Any]
             ]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Failed to create app availability: \(error.localizedDescription)")],
+                content: [MCPContent.text("Failed to create app availability: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -485,7 +485,7 @@ extension PricingWorker {
         guard let arguments = params.arguments,
               let availabilityId = arguments["availability_id"]?.stringValue else {
             return CallTool.Result(
-                content: [.text("Required parameter 'availability_id' is missing")],
+                content: [MCPContent.text("Required parameter 'availability_id' is missing")],
                 isError: true
             )
         }
@@ -501,15 +501,15 @@ extension PricingWorker {
                 "availability": [
                     "id": response.data.id,
                     "type": response.data.type,
-                    "availableInNewTerritories": response.data.attributes?.availableInNewTerritories.jsonSafe
+                    "availableInNewTerritories": (response.data.attributes?.availableInNewTerritories).jsonSafe
                 ] as [String: Any]
             ]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Failed to get app availability: \(error.localizedDescription)")],
+                content: [MCPContent.text("Failed to get app availability: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -522,7 +522,7 @@ extension PricingWorker {
         guard let arguments = params.arguments,
               let availabilityId = arguments["availability_id"]?.stringValue else {
             return CallTool.Result(
-                content: [.text("Required parameter 'availability_id' is missing")],
+                content: [MCPContent.text("Required parameter 'availability_id' is missing")],
                 isError: true
             )
         }
@@ -560,11 +560,11 @@ extension PricingWorker {
                 result["next_url"] = next
             }
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Failed to list territory availabilities: \(error.localizedDescription)")],
+                content: [MCPContent.text("Failed to list territory availabilities: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -577,7 +577,7 @@ extension PricingWorker {
         return [
             "id": territory.id,
             "type": territory.type,
-            "currency": territory.attributes?.currency.jsonSafe
+            "currency": (territory.attributes?.currency).jsonSafe
         ]
     }
 
@@ -586,14 +586,14 @@ extension PricingWorker {
         var result: [String: Any] = [
             "id": pricePoint.id,
             "type": pricePoint.type,
-            "customerPrice": pricePoint.attributes?.customerPrice.jsonSafe,
-            "proceeds": pricePoint.attributes?.proceeds.jsonSafe
+            "customerPrice": (pricePoint.attributes?.customerPrice).jsonSafe,
+            "proceeds": (pricePoint.attributes?.proceeds).jsonSafe
         ]
 
         if let territoryData = pricePoint.relationships?.territory?.data,
            let territory = territoryMap[territoryData.id] {
             result["territory_id"] = territory.id
-            result["currency"] = territory.attributes?.currency.jsonSafe
+            result["currency"] = (territory.attributes?.currency).jsonSafe
         } else if let territoryData = pricePoint.relationships?.territory?.data {
             result["territory_id"] = territoryData.id
         }
@@ -606,9 +606,9 @@ extension PricingWorker {
         var result: [String: Any] = [
             "id": price.id,
             "type": price.type,
-            "startDate": price.attributes?.startDate.jsonSafe,
-            "endDate": price.attributes?.endDate.jsonSafe,
-            "manual": price.attributes?.manual.jsonSafe
+            "startDate": (price.attributes?.startDate).jsonSafe,
+            "endDate": (price.attributes?.endDate).jsonSafe,
+            "manual": (price.attributes?.manual).jsonSafe
         ]
 
         if let pricePointData = price.relationships?.appPricePoint?.data {
@@ -626,9 +626,9 @@ extension PricingWorker {
         var result: [String: Any] = [
             "id": availability.id,
             "type": availability.type,
-            "available": availability.attributes?.available.jsonSafe,
-            "releaseDate": availability.attributes?.releaseDate.jsonSafe,
-            "preOrderEnabled": availability.attributes?.preOrderEnabled.jsonSafe
+            "available": (availability.attributes?.available).jsonSafe,
+            "releaseDate": (availability.attributes?.releaseDate).jsonSafe,
+            "preOrderEnabled": (availability.attributes?.preOrderEnabled).jsonSafe
         ]
 
         if let contentStatuses = availability.attributes?.contentStatuses {

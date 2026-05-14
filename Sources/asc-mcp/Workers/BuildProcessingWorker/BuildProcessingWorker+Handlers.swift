@@ -12,7 +12,7 @@ extension BuildProcessingWorker {
               let buildIdValue = arguments["build_id"],
               let buildId = buildIdValue.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameter 'build_id' is missing")],
+                content: [MCPContent.text("Error: Required parameter 'build_id' is missing")],
                 isError: true
             )
         }
@@ -58,11 +58,11 @@ extension BuildProcessingWorker {
                 "stateDescription": getStateDescription(processingState)
             ] as [String: Any]
             
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
             
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to get processing state: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to get processing state: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -78,7 +78,7 @@ extension BuildProcessingWorker {
               let encryptionValue = arguments["uses_non_exempt_encryption"],
               let usesNonExemptEncryption = encryptionValue.boolValue else {
             return CallTool.Result(
-                content: [.text("Required parameters 'build_id' and 'uses_non_exempt_encryption' are missing")],
+                content: [MCPContent.text("Required parameters 'build_id' and 'uses_non_exempt_encryption' are missing")],
                 isError: true
             )
         }
@@ -94,7 +94,7 @@ extension BuildProcessingWorker {
                   let dataObj = declarationJson["data"] as? [String: Any],
                   let declarationId = dataObj["id"] as? String else {
                 return CallTool.Result(
-                    content: [.text("Error: Could not parse encryption declaration response for build \(buildId). The build may not have an encryption declaration. Note: builds older than 90 days may have expired and no longer support this operation.")],
+                    content: [MCPContent.text("Error: Could not parse encryption declaration response for build \(buildId). The build may not have an encryption declaration. Note: builds older than 90 days may have expired and no longer support this operation.")],
                     isError: true
                 )
             }
@@ -134,11 +134,11 @@ extension BuildProcessingWorker {
                 "message": "Encryption declaration updated successfully"
             ] as [String: Any]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Failed to update encryption declaration: \(error.localizedDescription)")],
+                content: [MCPContent.text("Failed to update encryption declaration: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -152,7 +152,7 @@ extension BuildProcessingWorker {
               let buildIdValue = arguments["build_id"],
               let buildId = buildIdValue.stringValue else {
             return CallTool.Result(
-                content: [.text("Required parameter 'build_id' is missing")],
+                content: [MCPContent.text("Required parameter 'build_id' is missing")],
                 isError: true
             )
         }
@@ -198,11 +198,11 @@ extension BuildProcessingWorker {
                 resultDict["suggestion"] = "Build is still processing. Call this tool again to check progress."
             }
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(resultDict))])
+            return MCPResult.jsonObject(resultDict)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Failed to get processing status: \(error.localizedDescription)")],
+                content: [MCPContent.text("Failed to get processing status: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -216,7 +216,7 @@ extension BuildProcessingWorker {
               let buildIdValue = arguments["build_id"],
               let buildId = buildIdValue.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameter 'build_id' is missing")],
+                content: [MCPContent.text("Error: Required parameter 'build_id' is missing")],
                 isError: true
             )
         }
@@ -260,7 +260,7 @@ extension BuildProcessingWorker {
             
             // Check readiness conditions
             var issues: [String] = []
-            var warnings: [String] = []
+            let warnings: [String] = []
             
             let isProcessed = processingState == "VALID"
             let encryptionCompliant = usesNonExemptEncryption != nil
@@ -320,11 +320,11 @@ extension BuildProcessingWorker {
                 "betaDetails": betaDetails
             ] as [String: Any]
             
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
             
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to check readiness: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to check readiness: \(error.localizedDescription)")],
                 isError: true
             )
         }

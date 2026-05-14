@@ -10,7 +10,7 @@ extension IntroductoryOffersWorker {
         guard let arguments = params.arguments,
               let subscriptionId = arguments["subscription_id"]?.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameter 'subscription_id' is missing")],
+                content: [MCPContent.text("Error: Required parameter 'subscription_id' is missing")],
                 isError: true
             )
         }
@@ -52,11 +52,11 @@ extension IntroductoryOffersWorker {
                 result["next_url"] = next
             }
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to list introductory offers: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to list introductory offers: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -71,7 +71,7 @@ extension IntroductoryOffersWorker {
               let offerMode = arguments["offer_mode"]?.stringValue,
               let numberOfPeriods = arguments["number_of_periods"]?.intValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameters: subscription_id, duration, offer_mode, number_of_periods")],
+                content: [MCPContent.text("Error: Required parameters: subscription_id, duration, offer_mode, number_of_periods")],
                 isError: true
             )
         }
@@ -80,7 +80,7 @@ extension IntroductoryOffersWorker {
         let pricePointId = arguments["subscription_price_point_id"]?.stringValue
         if offerMode != "FREE_TRIAL" && pricePointId == nil {
             return CallTool.Result(
-                content: [.text("Error: subscription_price_point_id is required for \(offerMode) mode (only FREE_TRIAL doesn't need it)")],
+                content: [MCPContent.text("Error: subscription_price_point_id is required for \(offerMode) mode (only FREE_TRIAL doesn't need it)")],
                 isError: true
             )
         }
@@ -135,11 +135,11 @@ extension IntroductoryOffersWorker {
                 "introductory_offer": offer
             ] as [String: Any]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to create introductory offer: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to create introductory offer: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -151,7 +151,7 @@ extension IntroductoryOffersWorker {
         guard let arguments = params.arguments,
               let introOfferId = arguments["introductory_offer_id"]?.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameter 'introductory_offer_id' is missing")],
+                content: [MCPContent.text("Error: Required parameter 'introductory_offer_id' is missing")],
                 isError: true
             )
         }
@@ -179,11 +179,11 @@ extension IntroductoryOffersWorker {
                 "introductory_offer": offer
             ] as [String: Any]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to update introductory offer: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to update introductory offer: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -195,7 +195,7 @@ extension IntroductoryOffersWorker {
         guard let arguments = params.arguments,
               let introOfferId = arguments["introductory_offer_id"]?.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameter 'introductory_offer_id' is missing")],
+                content: [MCPContent.text("Error: Required parameter 'introductory_offer_id' is missing")],
                 isError: true
             )
         }
@@ -208,11 +208,11 @@ extension IntroductoryOffersWorker {
                 "message": "Introductory offer '\(introOfferId)' deleted"
             ] as [String: Any]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to delete introductory offer: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to delete introductory offer: \(error.localizedDescription)")],
                 isError: true
             )
         }

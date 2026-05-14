@@ -24,5 +24,19 @@ jobs:
       - name: Build
         run: swift build
 
+      - name: Release build
+        run: swift build -c release 2>&1 | tee /tmp/asc_mcp_release.log
+
+      - name: Fail on release warnings
+        run: '! grep -q "warning:" /tmp/asc_mcp_release.log'
+
+      - name: OpenAPI coverage tooling smoke
+        run: |
+          swift run asc-mcp openapi-coverage \
+            --spec Tests/ASCMCPTests/Fixtures/openapi_minimal.oas.json \
+            --output /tmp/asc_openapi_coverage.md \
+            --generated-at 2026-05-07
+          test -s /tmp/asc_openapi_coverage.md
+
       - name: Test
         run: swift test

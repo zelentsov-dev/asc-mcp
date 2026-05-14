@@ -35,7 +35,7 @@ public struct CreateSubscriptionGroupLocalizationRequest: Codable, Sendable {
     public let data: CreateData
 
     public struct CreateData: Codable, Sendable {
-        public let type: String = "subscriptionGroupLocalizations"
+        public var type: String = "subscriptionGroupLocalizations"
         public let attributes: Attributes
         public let relationships: Relationships
     }
@@ -60,7 +60,7 @@ public struct UpdateSubscriptionGroupLocalizationRequest: Codable, Sendable {
     public let data: UpdateData
 
     public struct UpdateData: Codable, Sendable {
-        public let type: String = "subscriptionGroupLocalizations"
+        public var type: String = "subscriptionGroupLocalizations"
         public let id: String
         public let attributes: Attributes
     }

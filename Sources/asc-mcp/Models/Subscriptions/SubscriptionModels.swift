@@ -119,7 +119,7 @@ public struct CreateSubscriptionRequest: Codable, Sendable {
     public let data: CreateData
 
     public struct CreateData: Codable, Sendable {
-        public let type: String = "subscriptions"
+        public var type: String = "subscriptions"
         public let attributes: Attributes
         public let relationships: Relationships
     }
@@ -147,7 +147,7 @@ public struct UpdateSubscriptionRequest: Codable, Sendable {
     public let data: UpdateData
 
     public struct UpdateData: Codable, Sendable {
-        public let type: String = "subscriptions"
+        public var type: String = "subscriptions"
         public let id: String
         public let attributes: Attributes
     }
@@ -165,7 +165,7 @@ public struct CreateSubscriptionLocalizationRequest: Codable, Sendable {
     public let data: CreateData
 
     public struct CreateData: Codable, Sendable {
-        public let type: String = "subscriptionLocalizations"
+        public var type: String = "subscriptionLocalizations"
         public let attributes: Attributes
         public let relationships: Relationships
     }
@@ -190,7 +190,7 @@ public struct UpdateSubscriptionLocalizationRequest: Codable, Sendable {
     public let data: UpdateData
 
     public struct UpdateData: Codable, Sendable {
-        public let type: String = "subscriptionLocalizations"
+        public var type: String = "subscriptionLocalizations"
         public let id: String
         public let attributes: Attributes
     }
@@ -206,7 +206,7 @@ public struct CreateSubscriptionGroupRequest: Codable, Sendable {
     public let data: CreateData
 
     public struct CreateData: Codable, Sendable {
-        public let type: String = "subscriptionGroups"
+        public var type: String = "subscriptionGroups"
         public let attributes: Attributes
         public let relationships: Relationships
     }
@@ -229,7 +229,7 @@ public struct UpdateSubscriptionGroupRequest: Codable, Sendable {
     public let data: UpdateData
 
     public struct UpdateData: Codable, Sendable {
-        public let type: String = "subscriptionGroups"
+        public var type: String = "subscriptionGroups"
         public let id: String
         public let attributes: Attributes
     }
@@ -244,7 +244,7 @@ public struct CreateSubscriptionSubmissionRequest: Codable, Sendable {
     public let data: CreateData
 
     public struct CreateData: Codable, Sendable {
-        public let type: String = "subscriptionSubmissions"
+        public var type: String = "subscriptionSubmissions"
         public let relationships: Relationships
     }
 

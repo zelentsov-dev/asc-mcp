@@ -17,7 +17,7 @@ extension ReviewsWorker {
               let appIdValue = arguments["app_id"],
               let appId = appIdValue.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameter 'app_id' is missing")],
+                content: [MCPContent.text("Error: Required parameter 'app_id' is missing")],
                 isError: true
             )
         }
@@ -66,11 +66,11 @@ extension ReviewsWorker {
                 result["total"] = total
             }
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to list reviews: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to list reviews: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -83,7 +83,7 @@ extension ReviewsWorker {
               let reviewIdValue = arguments["review_id"],
               let reviewId = reviewIdValue.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameter 'review_id' is missing")],
+                content: [MCPContent.text("Error: Required parameter 'review_id' is missing")],
                 isError: true
             )
         }
@@ -103,11 +103,11 @@ extension ReviewsWorker {
                 "review": formatReviewDict(reviewResponse.data)
             ]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to get review: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to get review: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -120,7 +120,7 @@ extension ReviewsWorker {
               let versionIdValue = arguments["version_id"],
               let versionId = versionIdValue.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameter 'version_id' is missing")],
+                content: [MCPContent.text("Error: Required parameter 'version_id' is missing")],
                 isError: true
             )
         }
@@ -169,11 +169,11 @@ extension ReviewsWorker {
                 result["total"] = total
             }
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to list reviews for version: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to list reviews for version: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -186,7 +186,7 @@ extension ReviewsWorker {
               let appIdValue = arguments["app_id"],
               let appId = appIdValue.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameter 'app_id' is missing")],
+                content: [MCPContent.text("Error: Required parameter 'app_id' is missing")],
                 isError: true
             )
         }
@@ -235,11 +235,11 @@ extension ReviewsWorker {
                 }
             }
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to get review stats: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to get review stats: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -254,14 +254,14 @@ extension ReviewsWorker {
               let responseBodyValue = arguments["response_body"],
               let responseBody = responseBodyValue.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameters 'review_id' and 'response_body' are missing")],
+                content: [MCPContent.text("Error: Required parameters 'review_id' and 'response_body' are missing")],
                 isError: true
             )
         }
 
         if responseBody.count > 5000 {
             return CallTool.Result(
-                content: [.text("Error: Response body exceeds 5000 characters limit")],
+                content: [MCPContent.text("Error: Response body exceeds 5000 characters limit")],
                 isError: true
             )
         }
@@ -292,11 +292,11 @@ extension ReviewsWorker {
                 "response": formatResponseDict(responseData.data)
             ]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to create response: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to create response: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -309,7 +309,7 @@ extension ReviewsWorker {
               let responseIdValue = arguments["response_id"],
               let responseId = responseIdValue.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameter 'response_id' is missing")],
+                content: [MCPContent.text("Error: Required parameter 'response_id' is missing")],
                 isError: true
             )
         }
@@ -322,11 +322,11 @@ extension ReviewsWorker {
                 "message": "Response '\(responseId)' deleted"
             ]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to delete response: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to delete response: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -339,7 +339,7 @@ extension ReviewsWorker {
               let reviewIdValue = arguments["review_id"],
               let reviewId = reviewIdValue.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameter 'review_id' is missing")],
+                content: [MCPContent.text("Error: Required parameter 'review_id' is missing")],
                 isError: true
             )
         }
@@ -362,7 +362,7 @@ extension ReviewsWorker {
                     "has_response": false,
                     "message": "No developer response found for this review"
                 ]
-                return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+                return MCPResult.jsonObject(result)
             }
 
             let result: [String: Any] = [
@@ -371,11 +371,11 @@ extension ReviewsWorker {
                 "response": formatResponseDict(responseData)
             ]
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to get response: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to get response: \(error.localizedDescription)")],
                 isError: true
             )
         }
@@ -388,7 +388,7 @@ extension ReviewsWorker {
               let appIdValue = arguments["app_id"],
               let appId = appIdValue.stringValue else {
             return CallTool.Result(
-                content: [.text("Error: Required parameter 'app_id' is missing")],
+                content: [MCPContent.text("Error: Required parameter 'app_id' is missing")],
                 isError: true
             )
         }
@@ -421,11 +421,11 @@ extension ReviewsWorker {
                 result["next_url"] = nextUrl
             }
 
-            return CallTool.Result(content: [.text(JSONFormatter.formatJSON(result))])
+            return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [.text("Error: Failed to get review summarizations: \(error.localizedDescription)")],
+                content: [MCPContent.text("Error: Failed to get review summarizations: \(error.localizedDescription)")],
                 isError: true
             )
         }

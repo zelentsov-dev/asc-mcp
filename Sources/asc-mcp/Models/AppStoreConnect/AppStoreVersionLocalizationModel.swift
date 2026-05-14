@@ -223,7 +223,7 @@ public struct ASCAppStoreVersionLocalizationUpdateRequest: Codable, Sendable {
     public let data: Data
     
     public struct Data: Codable, Sendable {
-        public let type: String = "appStoreVersionLocalizations"
+        public var type: String = "appStoreVersionLocalizations"
         public let id: String
         public let attributes: Attributes
         
@@ -429,7 +429,7 @@ public struct CreateAppStoreVersionLocalizationRequest: Codable, Sendable {
     public let data: Data
 
     public struct Data: Codable, Sendable {
-        public let type: String = "appStoreVersionLocalizations"
+        public var type: String = "appStoreVersionLocalizations"
         public let attributes: Attributes
         public let relationships: Relationships
 
@@ -450,7 +450,7 @@ public struct CreateAppStoreVersionLocalizationRequest: Codable, Sendable {
                 public let data: ResourceRef
 
                 public struct ResourceRef: Codable, Sendable {
-                    public let type: String = "appStoreVersions"
+                    public var type: String = "appStoreVersions"
                     public let id: String
                 }
             }
