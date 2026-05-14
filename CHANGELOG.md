@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.5.0] - 2026-05-14
+
+### Added
+
+- **Individual API Key support** — configure App Store Connect Individual Keys (created from a team member's user profile) by omitting the issuer ID. Set `ASC_KEY_ID` + `ASC_PRIVATE_KEY_PATH` without `ASC_ISSUER_ID`, or omit `issuer_id` in `companies.json`.
+- `Company.isIndividualKey` computed property and `keyType` field (`"individual"` / `"team"`) in structured JSON responses for `company_list`, `company_switch`, and `company_current`.
+- JWT generation for Individual Keys follows Apple's specification: emits `sub: "user"` instead of `iss: <issuerID>`.
+- New tests: `CompanyModelTests`, `CompaniesConfigModelTests`, `CompaniesManagerEnvTests`, and `JWTServiceTests` cover Individual Key encode/decode, environment loading, and JWT payload generation.
+
+### Changed
+
+- `Company.issuerID` is now `String?` (Optional). Source-breaking for direct Swift API consumers; configuration files and structured JSON remain backward compatible.
+- Company display in startup logs and `company_*` text responses now shows the key type explicitly: `Type: Team Key (Issuer: ****xxxx)` or `Type: Individual Key`. Sensitive identifiers are masked.
+
+### Notes
+
+- Individual Keys cannot access Provisioning, Sales/Finance, or notaryTool endpoints per Apple's documentation. Calls to `provisioning_*` and sales/financial `analytics_*` tools will return HTTP 403 from the App Store Connect API; no pre-validation is performed by the server.
+
 ## [2.4.0] - 2026-05-08
 
 ### Added
