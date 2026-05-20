@@ -15,7 +15,7 @@ extension WebhooksWorker {
         do {
             let response: ASCWebhooksResponse
             if let nextURL = arguments["next_url"]?.stringValue,
-               let parsed = parsePaginationUrl(nextURL) {
+               let parsed = await httpClient.parsePaginationUrl(nextURL) {
                 response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCWebhooksResponse.self)
             } else {
                 var query = defaultListQuery(arguments: arguments)
@@ -177,7 +177,7 @@ extension WebhooksWorker {
         do {
             let response: ASCWebhookDeliveriesResponse
             if let nextURL = arguments["next_url"]?.stringValue,
-               let parsed = parsePaginationUrl(nextURL) {
+               let parsed = await httpClient.parsePaginationUrl(nextURL) {
                 response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCWebhookDeliveriesResponse.self)
             } else {
                 var query = defaultListQuery(arguments: arguments)

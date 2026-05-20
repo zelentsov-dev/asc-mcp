@@ -13,7 +13,7 @@ extension PreReleaseVersionsWorker {
             let response: ASCPreReleaseVersionsResponse
 
             if let nextUrl = arguments?["next_url"]?.stringValue,
-               let parsed = parsePaginationUrl(nextUrl) {
+               let parsed = await httpClient.parsePaginationUrl(nextUrl) {
                 response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCPreReleaseVersionsResponse.self)
             } else {
                 var queryParams: [String: String] = [:]
@@ -114,7 +114,7 @@ extension PreReleaseVersionsWorker {
             let response: ASCBuildsResponse
 
             if let nextUrl = arguments["next_url"]?.stringValue,
-               let parsed = parsePaginationUrl(nextUrl) {
+               let parsed = await httpClient.parsePaginationUrl(nextUrl) {
                 response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCBuildsResponse.self)
             } else {
                 var queryParams: [String: String] = [:]

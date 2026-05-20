@@ -8,6 +8,35 @@ extension CompaniesWorker {
     private func masked(_ value: String, visibleSuffix: Int = 4) -> String {
         Redactor.maskIdentifier(value, visibleSuffix: visibleSuffix)
     }
+
+    /// Builds the standard success result for a completed company switch.
+    /// - Parameter company: Company that is now active.
+    /// - Returns: MCP result with masked credential identifiers.
+    func makeSwitchResult(for company: Company) -> CallTool.Result {
+        let result = """
+        **Switched to Company**
+
+        **\(company.name)**
+        • ID: `\(company.id)`
+        • Key ID: \(masked(company.keyID))
+        • Issuer ID: \(masked(company.issuerID))
+
+        All subsequent API calls will use this company's credentials.
+        """
+
+        return MCPResult.json(
+            .object([
+                "success": .bool(true),
+                "company": .object([
+                    "id": .string(company.id),
+                    "name": .string(company.name),
+                    "keyID": .string(masked(company.keyID)),
+                    "issuerID": .string(masked(company.issuerID))
+                ])
+            ]),
+            text: result
+        )
+    }
     
     /// Lists all available companies configured in the MCP server
     /// - Returns: Formatted list of companies with their IDs, names, and active status
@@ -72,30 +101,7 @@ extension CompaniesWorker {
 
         do {
             let company = try await manager.switchToCompany(companyIdOrName)
-
-            let result = """
-            **Switched to Company**
-
-            **\(company.name)**
-            • ID: `\(company.id)`
-            • Key ID: \(masked(company.keyID))
-            • Issuer ID: \(masked(company.issuerID))
-
-            All subsequent API calls will use this company's credentials.
-            """
-
-            return MCPResult.json(
-                .object([
-                    "success": .bool(true),
-                    "company": .object([
-                        "id": .string(company.id),
-                        "name": .string(company.name),
-                        "keyID": .string(masked(company.keyID)),
-                        "issuerID": .string(masked(company.issuerID))
-                    ])
-                ]),
-                text: result
-            )
+            return makeSwitchResult(for: company)
 
         } catch {
             return MCPResult.error("Error switching company: \(error.localizedDescription)")

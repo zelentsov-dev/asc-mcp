@@ -19,7 +19,7 @@ extension OfferCodesWorker {
             let response: ASCOfferCodesResponse
 
             if let nextUrl = arguments["next_url"]?.stringValue,
-               let parsed = parsePaginationUrl(nextUrl) {
+               let parsed = await httpClient.parsePaginationUrl(nextUrl) {
                 response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCOfferCodesResponse.self)
             } else {
                 var queryParams: [String: String] = [:]
@@ -297,7 +297,7 @@ extension OfferCodesWorker {
             let response: ASCOfferCodePricesResponse
 
             if let nextUrl = arguments["next_url"]?.stringValue,
-               let parsed = parsePaginationUrl(nextUrl) {
+               let parsed = await httpClient.parsePaginationUrl(nextUrl) {
                 response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCOfferCodePricesResponse.self)
             } else {
                 var queryParams: [String: String] = [:]
@@ -403,7 +403,7 @@ extension OfferCodesWorker {
             let response: ASCOneTimeUseCodesResponse
 
             if let nextUrl = arguments["next_url"]?.stringValue,
-               let parsed = parsePaginationUrl(nextUrl) {
+               let parsed = await httpClient.parsePaginationUrl(nextUrl) {
                 response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCOneTimeUseCodesResponse.self)
             } else {
                 var queryParams: [String: String] = [:]

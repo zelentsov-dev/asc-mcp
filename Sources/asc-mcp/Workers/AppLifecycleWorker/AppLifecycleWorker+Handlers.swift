@@ -69,7 +69,7 @@ extension AppLifecycleWorker {
 
             // Check for pagination URL
             if let nextUrl = arguments["next_url"]?.stringValue,
-               let parsed = parsePaginationUrl(nextUrl) {
+               let parsed = await httpClient.parsePaginationUrl(nextUrl) {
                 responseData = try await httpClient.get(parsed.path, parameters: parsed.parameters)
             } else {
                 var queryParams: [String: String] = [
@@ -279,6 +279,9 @@ extension AppLifecycleWorker {
             )
         }
 
+        var submissionId: String?
+        var failedStep = "create_review_submission"
+
         do {
             // Resolve app ID: use provided app_id or extract from version
             let appId: String
@@ -301,7 +304,7 @@ extension AppLifecycleWorker {
                 appId = appRef.id
             }
 
-            let platform = arguments["platform"]?.stringValue ?? "IOS"
+            let platform = arguments["platform"]?.stringValue
 
             // Step 1: Create review submission
             let submissionRequest = CreateReviewSubmissionRequest(platform: platform, appId: appId)
@@ -310,17 +313,22 @@ extension AppLifecycleWorker {
                 body: submissionRequest,
                 as: SingleResourceResponse.self
             )
-            let submissionId = submissionResponse.data.id
+            submissionId = submissionResponse.data.id
 
             // Step 2: Add version as review submission item
-            let itemRequest = CreateReviewSubmissionItemRequest(submissionId: submissionId, versionId: versionId)
+            failedStep = "create_review_submission_item"
+            guard let createdSubmissionId = submissionId else {
+                return MCPResult.error("Review submission was created without an ID.")
+            }
+            let itemRequest = CreateReviewSubmissionItemRequest(submissionId: createdSubmissionId, versionId: versionId)
             let itemBodyData = try JSONEncoder().encode(itemRequest)
             _ = try await httpClient.post("/v1/reviewSubmissionItems", body: itemBodyData)
 
             // Step 3: Confirm the submission
-            let confirmRequest = ConfirmReviewSubmissionRequest(submissionId: submissionId)
+            failedStep = "confirm_review_submission"
+            let confirmRequest = ConfirmReviewSubmissionRequest(submissionId: createdSubmissionId)
             let confirmResponse = try await httpClient.patch(
-                "/v1/reviewSubmissions/\(submissionId)",
+                "/v1/reviewSubmissions/\(createdSubmissionId)",
                 body: confirmRequest,
                 as: PassthroughAPIResponse.self
             )
@@ -328,18 +336,44 @@ extension AppLifecycleWorker {
             let result: [String: Any] = [
                 "success": true,
                 "submission": confirmResponse.data.asAny,
-                "submission_id": submissionId,
+                "submission_id": createdSubmissionId,
                 "message": "Version submitted for review successfully"
             ]
 
             return MCPResult.jsonObject(result)
 
         } catch {
-            return CallTool.Result(
-                content: [MCPContent.text("Error: Failed to submit for review: \(error.localizedDescription)")],
-                isError: true
-            )
+            if let submissionId = submissionId {
+                return partialReviewSubmissionFailure(
+                    submissionId: submissionId,
+                    failedStep: failedStep,
+                    error: error
+                )
+            }
+            return MCPResult.error("Failed to submit for review: \(error.localizedDescription)")
         }
+    }
+
+    private func partialReviewSubmissionFailure(
+        submissionId: String,
+        failedStep: String,
+        error: any Error
+    ) -> CallTool.Result {
+        MCPResult.jsonObject(
+            [
+                "success": false,
+                "partial_success": true,
+                "submission_id": submissionId,
+                "failed_step": failedStep,
+                "error": error.localizedDescription,
+                "recovery_tools": [
+                    "app_versions_cancel_review",
+                    "app_versions_get"
+                ],
+                "message": "Review submission was created, but the submit flow failed before completion. Use submission_id to inspect or cancel the partial submission."
+            ],
+            isError: true
+        )
     }
 
     /// Cancels an ongoing App Store review submission using the Review Submissions API
@@ -500,6 +534,61 @@ extension AppLifecycleWorker {
         }
 
         do {
+            let versionResponse = try await httpClient.get(
+                "/v1/appStoreVersions/\(versionId)",
+                parameters: ["fields[appStoreVersions]": "platform,versionString,appVersionState"],
+                as: ASCAppStoreVersionResponse.self
+            )
+            let attributes = versionResponse.data.attributes
+            let versionString = attributes?.versionString
+            let appVersionState = attributes?.appVersionState
+            let platform = attributes?.platform
+            let expectedState = "PENDING_DEVELOPER_RELEASE"
+
+            guard appVersionState == expectedState else {
+                return releasePreflightError(
+                    reason: "invalid_app_version_state",
+                    message: "Version must be in \(expectedState) before manual release.",
+                    versionId: versionId,
+                    versionString: versionString,
+                    platform: platform,
+                    appVersionState: appVersionState
+                )
+            }
+
+            guard let versionString, !versionString.isEmpty else {
+                return releasePreflightError(
+                    reason: "missing_version_string",
+                    message: "Could not read versionString needed for release confirmation.",
+                    versionId: versionId,
+                    versionString: versionString,
+                    platform: platform,
+                    appVersionState: appVersionState
+                )
+            }
+
+            guard let confirmation = arguments["confirm_version_string"]?.stringValue else {
+                return releasePreflightError(
+                    reason: "confirmation_required",
+                    message: "Re-run with confirm_version_string exactly equal to \(versionString) to release this version.",
+                    versionId: versionId,
+                    versionString: versionString,
+                    platform: platform,
+                    appVersionState: appVersionState
+                )
+            }
+
+            guard confirmation == versionString else {
+                return releasePreflightError(
+                    reason: "confirmation_mismatch",
+                    message: "confirm_version_string must exactly match \(versionString).",
+                    versionId: versionId,
+                    versionString: versionString,
+                    platform: platform,
+                    appVersionState: appVersionState
+                )
+            }
+
             let request = CreateReleaseRequest(versionId: versionId)
             let response = try await httpClient.post(
                 "/v1/appStoreVersionReleaseRequests",
@@ -510,17 +599,42 @@ extension AppLifecycleWorker {
             let result: [String: Any] = [
                 "success": true,
                 "release_request": response.data.asAny,
+                "version_id": versionId,
+                "version_string": versionString,
+                "platform": platform.jsonSafe,
+                "app_version_state": appVersionState.jsonSafe,
                 "message": "Version released to App Store successfully"
             ]
 
             return MCPResult.jsonObject(result)
 
         } catch {
-            return CallTool.Result(
-                content: [MCPContent.text("Error: Failed to release version: \(error.localizedDescription)")],
-                isError: true
-            )
+            return MCPResult.error("Failed to release version: \(error.localizedDescription)")
         }
+    }
+
+    private func releasePreflightError(
+        reason: String,
+        message: String,
+        versionId: String,
+        versionString: String?,
+        platform: String?,
+        appVersionState: String?
+    ) -> CallTool.Result {
+        MCPResult.jsonObject(
+            [
+                "success": false,
+                "reason": reason,
+                "message": message,
+                "version_id": versionId,
+                "version_string": versionString.jsonSafe,
+                "platform": platform.jsonSafe,
+                "app_version_state": appVersionState.jsonSafe,
+                "required_app_version_state": "PENDING_DEVELOPER_RELEASE"
+            ],
+            text: "Error: \(message)",
+            isError: true
+        )
     }
 
     /// Sets or updates review details for App Store reviewers including contact info and demo account

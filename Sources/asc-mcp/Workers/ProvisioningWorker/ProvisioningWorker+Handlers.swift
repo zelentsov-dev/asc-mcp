@@ -13,7 +13,7 @@ extension ProvisioningWorker {
             let response: ASCBundleIdsResponse
 
             if let nextUrl = arguments?["next_url"]?.stringValue,
-               let parsed = parsePaginationUrl(nextUrl) {
+               let parsed = await httpClient.parsePaginationUrl(nextUrl) {
                 response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCBundleIdsResponse.self)
             } else {
                 var queryParams: [String: String] = [:]
@@ -197,7 +197,7 @@ extension ProvisioningWorker {
             let response: ASCDevicesResponse
 
             if let nextUrl = arguments?["next_url"]?.stringValue,
-               let parsed = parsePaginationUrl(nextUrl) {
+               let parsed = await httpClient.parsePaginationUrl(nextUrl) {
                 response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCDevicesResponse.self)
             } else {
                 var queryParams: [String: String] = [:]
@@ -357,7 +357,7 @@ extension ProvisioningWorker {
             let response: ASCCertificatesResponse
 
             if let nextUrl = arguments?["next_url"]?.stringValue,
-               let parsed = parsePaginationUrl(nextUrl) {
+               let parsed = await httpClient.parsePaginationUrl(nextUrl) {
                 response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCCertificatesResponse.self)
             } else {
                 var queryParams: [String: String] = [:]
@@ -416,7 +416,7 @@ extension ProvisioningWorker {
             let response: ASCProfilesResponse
 
             if let nextUrl = arguments?["next_url"]?.stringValue,
-               let parsed = parsePaginationUrl(nextUrl) {
+               let parsed = await httpClient.parsePaginationUrl(nextUrl) {
                 response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCProfilesResponse.self)
             } else {
                 var queryParams: [String: String] = [:]
@@ -698,7 +698,7 @@ extension ProvisioningWorker {
             let response: ASCBundleIdCapabilitiesResponse
 
             if let nextUrl = arguments["next_url"]?.stringValue,
-               let parsed = parsePaginationUrl(nextUrl) {
+               let parsed = await httpClient.parsePaginationUrl(nextUrl) {
                 response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCBundleIdCapabilitiesResponse.self)
             } else {
                 // Note: Apple API does not support limit parameter for this endpoint despite documentation

@@ -45,7 +45,7 @@ extension SubscriptionsWorker {
             let response: ASCSubscriptionsResponse
 
             if let nextUrl = arguments["next_url"]?.stringValue,
-               let parsed = parsePaginationUrl(nextUrl) {
+               let parsed = await httpClient.parsePaginationUrl(nextUrl) {
                 response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCSubscriptionsResponse.self)
             } else {
                 var queryParams: [String: String] = [:]
@@ -265,7 +265,7 @@ extension SubscriptionsWorker {
             let response: ASCSubscriptionLocalizationsResponse
 
             if let nextUrl = arguments["next_url"]?.stringValue,
-               let parsed = parsePaginationUrl(nextUrl) {
+               let parsed = await httpClient.parsePaginationUrl(nextUrl) {
                 response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCSubscriptionLocalizationsResponse.self)
             } else {
                 response = try await httpClient.get(
@@ -435,7 +435,7 @@ extension SubscriptionsWorker {
             let response: ASCSubscriptionPricesResponse
 
             if let nextUrl = arguments["next_url"]?.stringValue,
-               let parsed = parsePaginationUrl(nextUrl) {
+               let parsed = await httpClient.parsePaginationUrl(nextUrl) {
                 response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCSubscriptionPricesResponse.self)
             } else {
                 var queryParams: [String: String] = [
@@ -500,7 +500,7 @@ extension SubscriptionsWorker {
             let response: ASCSubscriptionPricePointsResponse
 
             if let nextUrl = arguments["next_url"]?.stringValue,
-               let parsed = parsePaginationUrl(nextUrl) {
+               let parsed = await httpClient.parsePaginationUrl(nextUrl) {
                 response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCSubscriptionPricePointsResponse.self)
             } else {
                 var queryParams: [String: String] = [:]
@@ -751,7 +751,7 @@ extension SubscriptionsWorker {
             let response: ASCSubscriptionGroupLocalizationsResponse
 
             if let nextUrl = arguments["next_url"]?.stringValue,
-               let parsed = parsePaginationUrl(nextUrl) {
+               let parsed = await httpClient.parsePaginationUrl(nextUrl) {
                 response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCSubscriptionGroupLocalizationsResponse.self)
             } else {
                 var queryParams: [String: String] = [:]
@@ -1238,7 +1238,7 @@ extension SubscriptionsWorker {
             let response: ASCSubscriptionImagesResponse
 
             if let nextUrl = arguments["next_url"]?.stringValue,
-               let parsed = parsePaginationUrl(nextUrl) {
+               let parsed = await httpClient.parsePaginationUrl(nextUrl) {
                 response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCSubscriptionImagesResponse.self)
             } else {
                 var queryParams: [String: String] = [:]

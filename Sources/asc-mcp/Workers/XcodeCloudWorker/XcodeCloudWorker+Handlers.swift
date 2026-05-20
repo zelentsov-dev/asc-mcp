@@ -11,7 +11,7 @@ extension XcodeCloudWorker {
             let arguments = params.arguments ?? [:]
             let response: ASCCIProductsResponse
             if let nextURL = arguments["next_url"]?.stringValue,
-               let parsed = parsePaginationUrl(nextURL) {
+               let parsed = await httpClient.parsePaginationUrl(nextURL) {
                 response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCCIProductsResponse.self)
             } else {
                 var query = listQuery(arguments)
@@ -187,7 +187,7 @@ extension XcodeCloudWorker {
         do {
             let response: ASCCIBuildActionsResponse
             if let nextURL = arguments["next_url"]?.stringValue,
-               let parsed = parsePaginationUrl(nextURL) {
+               let parsed = await httpClient.parsePaginationUrl(nextURL) {
                 response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCCIBuildActionsResponse.self)
             } else {
                 var query = listQuery(arguments)
@@ -216,7 +216,7 @@ extension XcodeCloudWorker {
         do {
             let response: ASCBuildsResponse
             if let nextURL = arguments["next_url"]?.stringValue,
-               let parsed = parsePaginationUrl(nextURL) {
+               let parsed = await httpClient.parsePaginationUrl(nextURL) {
                 response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCBuildsResponse.self)
             } else {
                 response = try await httpClient.get("/v1/ciBuildRuns/\(buildRunID)/builds", parameters: listQuery(arguments), as: ASCBuildsResponse.self)
@@ -355,7 +355,7 @@ extension XcodeCloudWorker {
         do {
             let response: ASCCIXcodeVersionsResponse
             if let nextURL = arguments["next_url"]?.stringValue,
-               let parsed = parsePaginationUrl(nextURL) {
+               let parsed = await httpClient.parsePaginationUrl(nextURL) {
                 response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCCIXcodeVersionsResponse.self)
             } else {
                 var query = listQuery(arguments)
@@ -402,7 +402,7 @@ extension XcodeCloudWorker {
         do {
             let response: ASCCIMacOSVersionsResponse
             if let nextURL = arguments["next_url"]?.stringValue,
-               let parsed = parsePaginationUrl(nextURL) {
+               let parsed = await httpClient.parsePaginationUrl(nextURL) {
                 response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCCIMacOSVersionsResponse.self)
             } else {
                 var query = listQuery(arguments)
@@ -449,7 +449,7 @@ extension XcodeCloudWorker {
         do {
             let response: ASCScmProvidersResponse
             if let nextURL = arguments["next_url"]?.stringValue,
-               let parsed = parsePaginationUrl(nextURL) {
+               let parsed = await httpClient.parsePaginationUrl(nextURL) {
                 response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCScmProvidersResponse.self)
             } else {
                 response = try await httpClient.get("/v1/scmProviders", parameters: listQuery(arguments), as: ASCScmProvidersResponse.self)
@@ -595,7 +595,7 @@ extension XcodeCloudWorker {
         do {
             let response: ASCCIWorkflowsResponse
             if let nextURL = arguments["next_url"]?.stringValue,
-               let parsed = parsePaginationUrl(nextURL) {
+               let parsed = await httpClient.parsePaginationUrl(nextURL) {
                 response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCCIWorkflowsResponse.self)
             } else {
                 var query = listQuery(arguments)
@@ -615,7 +615,7 @@ extension XcodeCloudWorker {
         do {
             let response: ASCCIBuildRunsResponse
             if let nextURL = arguments["next_url"]?.stringValue,
-               let parsed = parsePaginationUrl(nextURL) {
+               let parsed = await httpClient.parsePaginationUrl(nextURL) {
                 response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCCIBuildRunsResponse.self)
             } else {
                 var query = listQuery(arguments)
@@ -641,7 +641,7 @@ extension XcodeCloudWorker {
         do {
             let response: ASCCIArtifactsResponse
             if let nextURL = arguments["next_url"]?.stringValue,
-               let parsed = parsePaginationUrl(nextURL) {
+               let parsed = await httpClient.parsePaginationUrl(nextURL) {
                 response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCCIArtifactsResponse.self)
             } else {
                 response = try await httpClient.get(endpoint, parameters: listQuery(arguments), as: ASCCIArtifactsResponse.self)
@@ -658,7 +658,7 @@ extension XcodeCloudWorker {
         do {
             let response: ASCCIIssuesResponse
             if let nextURL = arguments["next_url"]?.stringValue,
-               let parsed = parsePaginationUrl(nextURL) {
+               let parsed = await httpClient.parsePaginationUrl(nextURL) {
                 response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCCIIssuesResponse.self)
             } else {
                 response = try await httpClient.get(endpoint, parameters: listQuery(arguments), as: ASCCIIssuesResponse.self)
@@ -675,7 +675,7 @@ extension XcodeCloudWorker {
         do {
             let response: ASCCITestResultsResponse
             if let nextURL = arguments["next_url"]?.stringValue,
-               let parsed = parsePaginationUrl(nextURL) {
+               let parsed = await httpClient.parsePaginationUrl(nextURL) {
                 response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCCITestResultsResponse.self)
             } else {
                 response = try await httpClient.get(endpoint, parameters: listQuery(arguments), as: ASCCITestResultsResponse.self)
@@ -692,7 +692,7 @@ extension XcodeCloudWorker {
         do {
             let response: ASCScmRepositoriesResponse
             if let nextURL = arguments["next_url"]?.stringValue,
-               let parsed = parsePaginationUrl(nextURL) {
+               let parsed = await httpClient.parsePaginationUrl(nextURL) {
                 response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCScmRepositoriesResponse.self)
             } else {
                 var query = listQuery(arguments)
@@ -715,7 +715,7 @@ extension XcodeCloudWorker {
         do {
             let response: ASCScmGitReferencesResponse
             if let nextURL = arguments["next_url"]?.stringValue,
-               let parsed = parsePaginationUrl(nextURL) {
+               let parsed = await httpClient.parsePaginationUrl(nextURL) {
                 response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCScmGitReferencesResponse.self)
             } else {
                 var query = listQuery(arguments)
@@ -735,7 +735,7 @@ extension XcodeCloudWorker {
         do {
             let response: ASCScmPullRequestsResponse
             if let nextURL = arguments["next_url"]?.stringValue,
-               let parsed = parsePaginationUrl(nextURL) {
+               let parsed = await httpClient.parsePaginationUrl(nextURL) {
                 response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCScmPullRequestsResponse.self)
             } else {
                 var query = listQuery(arguments)

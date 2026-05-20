@@ -15,7 +15,7 @@ extension BetaFeedbackWorker {
         do {
             let response: ASCBetaFeedbackCrashSubmissionsResponse
             if let nextURL = arguments["next_url"]?.stringValue,
-               let parsed = parsePaginationUrl(nextURL) {
+               let parsed = await httpClient.parsePaginationUrl(nextURL) {
                 response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCBetaFeedbackCrashSubmissionsResponse.self)
             } else {
                 response = try await httpClient.get(
@@ -128,7 +128,7 @@ extension BetaFeedbackWorker {
         do {
             let response: ASCBetaFeedbackScreenshotSubmissionsResponse
             if let nextURL = arguments["next_url"]?.stringValue,
-               let parsed = parsePaginationUrl(nextURL) {
+               let parsed = await httpClient.parsePaginationUrl(nextURL) {
                 response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCBetaFeedbackScreenshotSubmissionsResponse.self)
             } else {
                 response = try await httpClient.get(

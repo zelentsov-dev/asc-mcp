@@ -20,7 +20,7 @@ extension CustomProductPagesWorker {
             let response: ASCCustomProductPagesResponse
 
             if let nextUrl = arguments["next_url"]?.stringValue,
-               let parsed = parsePaginationUrl(nextUrl) {
+               let parsed = await httpClient.parsePaginationUrl(nextUrl) {
                 response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCCustomProductPagesResponse.self)
             } else {
                 var queryParams: [String: String] = [:]
@@ -274,7 +274,7 @@ extension CustomProductPagesWorker {
             let response: ASCCustomProductPageVersionsResponse
 
             if let nextUrl = arguments["next_url"]?.stringValue,
-               let parsed = parsePaginationUrl(nextUrl) {
+               let parsed = await httpClient.parsePaginationUrl(nextUrl) {
                 response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCCustomProductPageVersionsResponse.self)
             } else {
                 var queryParams: [String: String] = [:]
@@ -376,7 +376,7 @@ extension CustomProductPagesWorker {
             let response: ASCCustomProductPageLocalizationsResponse
 
             if let nextUrl = arguments["next_url"]?.stringValue,
-               let parsed = parsePaginationUrl(nextUrl) {
+               let parsed = await httpClient.parsePaginationUrl(nextUrl) {
                 response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCCustomProductPageLocalizationsResponse.self)
             } else {
                 var queryParams: [String: String] = [:]

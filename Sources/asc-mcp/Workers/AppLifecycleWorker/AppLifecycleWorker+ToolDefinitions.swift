@@ -275,13 +275,17 @@ extension AppLifecycleWorker {
     func releaseVersionTool() -> Tool {
         Tool(
             name: "app_versions_release",
-            description: "Release an approved version to the App Store",
+            description: "Release an approved version in PENDING_DEVELOPER_RELEASE state to the App Store",
             inputSchema: .object([
                 "type": .string("object"),
                 "properties": .object([
                     "version_id": .object([
                         "type": .string("string"),
                         "description": .string("Version ID to release")
+                    ]),
+                    "confirm_version_string": .object([
+                        "type": .string("string"),
+                        "description": .string("Exact version string required to confirm the irreversible release request")
                     ])
                 ]),
                 "required": .array([.string("version_id")])

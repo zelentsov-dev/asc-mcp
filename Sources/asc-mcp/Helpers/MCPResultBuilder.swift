@@ -22,10 +22,11 @@ enum MCPResult {
         isError: Bool = false,
         _meta: Metadata? = nil
     ) -> CallTool.Result {
-        let textContent = text ?? (try? MCPValue.prettyJSONString(from: value)) ?? value.description
+        let sanitizedValue = MCPValueSanitizer.sanitize(value)
+        let textContent = text ?? (try? MCPValue.prettyJSONString(from: sanitizedValue)) ?? sanitizedValue.description
         return CallTool.Result(
             content: [MCPContent.text(textContent)],
-            structuredContent: Optional.some(value),
+            structuredContent: Optional.some(sanitizedValue),
             isError: isError ? true : nil,
             _meta: _meta
         )
@@ -51,10 +52,47 @@ enum MCPResult {
     static func error(_ message: String, details: Value? = nil, _meta: Metadata? = nil) -> CallTool.Result {
         let structured: Value = .object([
             "success": .bool(false),
-            "error": .string(message),
+            "error": .string(Redactor.redact(message)),
             "details": details ?? .null
         ])
-        return json(structured, text: "Error: \(message)", isError: true, _meta: _meta)
+        return json(structured, text: "Error: \(Redactor.redact(message))", isError: true, _meta: _meta)
+    }
+}
+
+enum MCPValueSanitizer {
+    static func sanitize(_ value: Value) -> Value {
+        switch value {
+        case .object(let object):
+            var sanitized: [String: Value] = [:]
+            for (key, child) in object {
+                sanitized[key] = isSensitiveKey(key) ? .string("[REDACTED]") : sanitize(child)
+            }
+            return .object(sanitized)
+        case .array(let array):
+            return .array(array.map(sanitize))
+        default:
+            return value
+        }
+    }
+
+    private static func isSensitiveKey(_ key: String) -> Bool {
+        let lower = key.lowercased()
+        let normalized = lower.replacingOccurrences(of: "[^a-z0-9]", with: "", options: .regularExpression)
+
+        if normalized == "hascachedtoken" {
+            return false
+        }
+
+        return lower.contains("password") ||
+            lower.contains("secret") ||
+            lower.contains("authorization") ||
+            lower.contains("bearer") ||
+            normalized.contains("privatekey") ||
+            normalized.contains("keycontent") ||
+            normalized == "token" ||
+            lower.hasSuffix("_token") ||
+            lower.hasSuffix("-token") ||
+            (normalized.hasSuffix("token") && !normalized.hasPrefix("has"))
     }
 }
 

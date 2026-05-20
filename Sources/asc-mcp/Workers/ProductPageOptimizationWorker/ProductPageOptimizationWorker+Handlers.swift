@@ -20,7 +20,7 @@ extension ProductPageOptimizationWorker {
             let response: ASCExperimentsResponse
 
             if let nextUrl = arguments["next_url"]?.stringValue,
-               let parsed = parsePaginationUrl(nextUrl) {
+               let parsed = await httpClient.parsePaginationUrl(nextUrl) {
                 response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCExperimentsResponse.self)
             } else {
                 var queryParams: [String: String] = [:]
@@ -242,7 +242,7 @@ extension ProductPageOptimizationWorker {
             let response: ASCTreatmentsResponse
 
             if let nextUrl = arguments["next_url"]?.stringValue,
-               let parsed = parsePaginationUrl(nextUrl) {
+               let parsed = await httpClient.parsePaginationUrl(nextUrl) {
                 response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCTreatmentsResponse.self)
             } else {
                 var queryParams: [String: String] = [:]
@@ -347,7 +347,7 @@ extension ProductPageOptimizationWorker {
             let response: ASCTreatmentLocalizationsResponse
 
             if let nextUrl = arguments["next_url"]?.stringValue,
-               let parsed = parsePaginationUrl(nextUrl) {
+               let parsed = await httpClient.parsePaginationUrl(nextUrl) {
                 response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCTreatmentLocalizationsResponse.self)
             } else {
                 var queryParams: [String: String] = [:]

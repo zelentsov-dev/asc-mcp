@@ -46,7 +46,7 @@ extension InAppPurchasesWorker {
             let response: ASCInAppPurchasesV2Response
 
             if let nextUrl = arguments["next_url"]?.stringValue,
-               let parsed = parsePaginationUrl(nextUrl) {
+               let parsed = await httpClient.parsePaginationUrl(nextUrl) {
                 response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCInAppPurchasesV2Response.self)
             } else {
                 var queryParams: [String: String] = [:]
@@ -283,7 +283,7 @@ extension InAppPurchasesWorker {
             let response: ASCInAppPurchaseLocalizationsResponse
 
             if let nextUrl = arguments["next_url"]?.stringValue,
-               let parsed = parsePaginationUrl(nextUrl) {
+               let parsed = await httpClient.parsePaginationUrl(nextUrl) {
                 response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCInAppPurchaseLocalizationsResponse.self)
             } else {
                 response = try await httpClient.get(
@@ -330,7 +330,7 @@ extension InAppPurchasesWorker {
             let response: ASCSubscriptionGroupsResponse
 
             if let nextUrl = arguments["next_url"]?.stringValue,
-               let parsed = parsePaginationUrl(nextUrl) {
+               let parsed = await httpClient.parsePaginationUrl(nextUrl) {
                 response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCSubscriptionGroupsResponse.self)
             } else {
                 var queryParams: [String: String] = [:]
@@ -602,7 +602,7 @@ extension InAppPurchasesWorker {
             let response: ASCIAPPricePointsResponse
 
             if let nextUrl = arguments["next_url"]?.stringValue,
-               let parsed = parsePaginationUrl(nextUrl) {
+               let parsed = await httpClient.parsePaginationUrl(nextUrl) {
                 response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCIAPPricePointsResponse.self)
             } else {
                 var queryParams: [String: String] = [:]
@@ -1161,7 +1161,7 @@ extension InAppPurchasesWorker {
             let response: ASCIAPImagesResponse
 
             if let nextUrl = arguments["next_url"]?.stringValue,
-               let parsed = parsePaginationUrl(nextUrl) {
+               let parsed = await httpClient.parsePaginationUrl(nextUrl) {
                 response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCIAPImagesResponse.self)
             } else {
                 var queryParams: [String: String] = [:]

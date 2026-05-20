@@ -21,7 +21,7 @@ extension BetaAppWorker {
             let response: ASCBetaAppLocalizationsResponse
 
             if let nextUrl = arguments["next_url"]?.stringValue,
-               let parsed = parsePaginationUrl(nextUrl) {
+               let parsed = await httpClient.parsePaginationUrl(nextUrl) {
                 response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCBetaAppLocalizationsResponse.self)
             } else {
                 var queryParams: [String: String] = [:]
@@ -288,7 +288,7 @@ extension BetaAppWorker {
             let response: ASCBetaAppReviewSubmissionsResponse
 
             if let nextUrl = arguments["next_url"]?.stringValue,
-               let parsed = parsePaginationUrl(nextUrl) {
+               let parsed = await httpClient.parsePaginationUrl(nextUrl) {
                 response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCBetaAppReviewSubmissionsResponse.self)
             } else {
                 var queryParams: [String: String] = [

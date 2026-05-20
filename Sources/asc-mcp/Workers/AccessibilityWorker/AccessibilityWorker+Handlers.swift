@@ -25,7 +25,7 @@ extension AccessibilityWorker {
         do {
             let response: ASCAccessibilityDeclarationsResponse
             if let nextURL = arguments["next_url"]?.stringValue {
-                guard let parsed = parsePaginationUrl(nextURL) else {
+                guard let parsed = await httpClient.parsePaginationUrl(nextURL) else {
                     return MCPResult.error("Parameter 'next_url' must be an App Store Connect API pagination URL")
                 }
                 response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCAccessibilityDeclarationsResponse.self)
@@ -177,7 +177,7 @@ extension AccessibilityWorker {
         do {
             let response: ASCAccessibilityDeclarationLinkagesResponse
             if let nextURL = arguments["next_url"]?.stringValue {
-                guard let parsed = parsePaginationUrl(nextURL) else {
+                guard let parsed = await httpClient.parsePaginationUrl(nextURL) else {
                     return MCPResult.error("Parameter 'next_url' must be an App Store Connect API pagination URL")
                 }
                 response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCAccessibilityDeclarationLinkagesResponse.self)

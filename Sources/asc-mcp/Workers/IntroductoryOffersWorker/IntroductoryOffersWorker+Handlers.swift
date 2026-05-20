@@ -19,7 +19,7 @@ extension IntroductoryOffersWorker {
             let response: ASCIntroductoryOffersResponse
 
             if let nextUrl = arguments["next_url"]?.stringValue,
-               let parsed = parsePaginationUrl(nextUrl) {
+               let parsed = await httpClient.parsePaginationUrl(nextUrl) {
                 response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCIntroductoryOffersResponse.self)
             } else {
                 var queryParams: [String: String] = [:]

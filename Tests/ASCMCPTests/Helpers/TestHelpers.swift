@@ -50,9 +50,16 @@ enum TestFactory {
         return await HTTPClient(jwtService: jwt, baseURL: "https://test.example.com")
     }
 
-    /// Create a CompaniesManager from a temporary single-company config.
-    static func makeCompaniesManager(company: Company? = nil) throws -> CompaniesManager {
-        let config = CompaniesConfig(companies: [company ?? makeCompany()])
+    /// Create a CompaniesManager from a temporary config.
+    static func makeCompaniesManager(
+        company: Company? = nil,
+        companies: [Company]? = nil,
+        defaultURL: String = "https://api.appstoreconnect.apple.com"
+    ) throws -> CompaniesManager {
+        let config = CompaniesConfig(
+            companies: companies ?? [company ?? makeCompany()],
+            defaultURL: defaultURL
+        )
         let data = try JSONEncoder().encode(config)
         let url = FileManager.default.temporaryDirectory
             .appendingPathComponent("asc-mcp-test-companies-\(UUID().uuidString).json")
@@ -72,6 +79,23 @@ enum TestFactory {
             authWorker: AuthWorker(jwtService: jwtService)
         )
         return await WorkerManager(dependencies: dependencies, enabledWorkers: enabledWorkers, readOnlyMode: readOnlyMode)
+    }
+
+    /// Create a WorkerManager through the production factory with a custom CompaniesManager.
+    static func makeProductionWorkerManager(
+        companies: [Company],
+        defaultURL: String = "https://api.appstoreconnect.apple.com",
+        enabledWorkers: Set<String>? = nil,
+        readOnlyMode: Bool = false
+    ) async throws -> WorkerManager {
+        let companiesWorker = CompaniesWorker(
+            manager: try makeCompaniesManager(companies: companies, defaultURL: defaultURL)
+        )
+        return try await WorkerManager.createForProduction(
+            companiesWorker: companiesWorker,
+            enabledWorkers: enabledWorkers,
+            readOnlyMode: readOnlyMode
+        )
     }
 
     /// Collect current tool definitions grouped by README worker key.
@@ -146,6 +170,59 @@ func decodeFixture<T: Decodable>(_ name: String, as type: T.Type = T.self) throw
 
 enum FixtureError: Error {
     case notFound(String)
+}
+
+// MARK: - HTTP Transport Test Double
+
+actor TestHTTPTransport: HTTPTransport {
+    struct Response: Sendable {
+        let statusCode: Int
+        let headers: [String: String]
+        let data: Data
+
+        init(statusCode: Int, headers: [String: String] = [:], body: String) {
+            self.statusCode = statusCode
+            self.headers = headers
+            self.data = Data(body.utf8)
+        }
+    }
+
+    private var responses: [Response]
+    private var requests: [URLRequest] = []
+
+    init(responses: [Response]) {
+        self.responses = responses
+    }
+
+    func data(for request: URLRequest) async throws -> (Data, HTTPURLResponse) {
+        requests.append(request)
+        guard !responses.isEmpty else {
+            throw ASCError.network("No mock response queued")
+        }
+
+        let response = responses.removeFirst()
+        let httpResponse = HTTPURLResponse(
+            url: request.url ?? URL(string: "https://api.example.test")!,
+            statusCode: response.statusCode,
+            httpVersion: "HTTP/1.1",
+            headerFields: response.headers
+        )!
+        return (response.data, httpResponse)
+    }
+
+    func requestCount() -> Int {
+        requests.count
+    }
+
+    func recordedRequests() -> [URLRequest] {
+        requests
+    }
+
+    func recordedBodyStrings() -> [String] {
+        requests.map { request in
+            request.httpBody.flatMap { String(data: $0, encoding: .utf8) } ?? ""
+        }
+    }
 }
 
 // MARK: - JSON Encoding Helper

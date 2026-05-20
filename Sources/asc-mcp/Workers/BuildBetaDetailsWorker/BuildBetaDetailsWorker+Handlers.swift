@@ -290,7 +290,7 @@ extension BuildBetaDetailsWorker {
             // Check for pagination URL
             if let nextUrlValue = arguments["next_url"],
                let nextUrl = nextUrlValue.stringValue,
-               let parsed = parsePaginationUrl(nextUrl) {
+               let parsed = await httpClient.parsePaginationUrl(nextUrl) {
                 response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCBetaBuildLocalizationsResponse.self)
             } else {
                 var queryParams: [String: String] = [:]
@@ -351,7 +351,7 @@ extension BuildBetaDetailsWorker {
             // Check for pagination URL
             if let nextUrlValue = arguments["next_url"],
                let nextUrl = nextUrlValue.stringValue,
-               let parsed = parsePaginationUrl(nextUrl) {
+               let parsed = await httpClient.parsePaginationUrl(nextUrl) {
                 response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCBetaGroupsResponse.self)
             } else {
                 var queryParams: [String: String] = [
@@ -413,7 +413,7 @@ extension BuildBetaDetailsWorker {
             // Check for pagination URL
             if let nextUrlValue = arguments["next_url"],
                let nextUrl = nextUrlValue.stringValue,
-               let parsed = parsePaginationUrl(nextUrl) {
+               let parsed = await httpClient.parsePaginationUrl(nextUrl) {
                 response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCBetaTestersResponse.self)
             } else {
                 var queryParams: [String: String] = [:]
@@ -620,7 +620,7 @@ extension BuildBetaDetailsWorker {
             // Check for pagination URL
             if let nextUrlValue = arguments["next_url"],
                let nextUrl = nextUrlValue.stringValue,
-               let parsed = parsePaginationUrl(nextUrl) {
+               let parsed = await httpClient.parsePaginationUrl(nextUrl) {
                 response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCBetaTestersResponse.self)
             } else {
                 var queryParams: [String: String] = [:]

@@ -76,4 +76,39 @@ struct MCPResultBuilderTests {
         #expect(object["missing"] == .null)
         #expect(object["date"] == .string("1970-01-01T00:00:00Z"))
     }
+
+    @Test("JSON result sanitizes nested sensitive fields in structured and text output")
+    func jsonResultSanitizesNestedSensitiveFields() throws {
+        let result = MCPResult.jsonObject([
+            "success": true,
+            "review_details": [
+                "attributes": [
+                    "demoAccountName": "demo@example.com",
+                    "demoAccountPassword": "super-secret",
+                    "api_token": "token-value",
+                    "privateKeyContent": "private-key-value"
+                ]
+            ]
+        ])
+
+        guard case .object(let root)? = result.structuredContent,
+              case .object(let details)? = root["review_details"],
+              case .object(let attributes)? = details["attributes"] else {
+            Issue.record("Expected nested structured object")
+            return
+        }
+
+        #expect(attributes["demoAccountName"] == .string("demo@example.com"))
+        #expect(attributes["demoAccountPassword"] == .string("[REDACTED]"))
+        #expect(attributes["api_token"] == .string("[REDACTED]"))
+        #expect(attributes["privateKeyContent"] == .string("[REDACTED]"))
+
+        guard case .text(let text, _, _) = result.content.first else {
+            Issue.record("Expected text content")
+            return
+        }
+        #expect(!text.contains("super-secret"))
+        #expect(!text.contains("token-value"))
+        #expect(!text.contains("private-key-value"))
+    }
 }

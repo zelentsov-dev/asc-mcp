@@ -58,7 +58,7 @@ extension AppsWorker {
 
             // Check for pagination next_url
             if let nextUrl = params.arguments?["next_url"]?.stringValue,
-               let parsed = parsePaginationUrl(nextUrl) {
+               let parsed = await httpClient.parsePaginationUrl(nextUrl) {
                 response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCAppsResponse.self)
             } else {
                 // Extract parameters
@@ -285,7 +285,7 @@ extension AppsWorker {
 
             // Check for pagination next_url
             if let nextUrl = arguments["next_url"]?.stringValue,
-               let parsed = parsePaginationUrl(nextUrl) {
+               let parsed = await httpClient.parsePaginationUrl(nextUrl) {
                 response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCAppStoreVersionsResponse.self)
             } else {
                 response = try await httpClient.get(
@@ -880,7 +880,7 @@ extension AppsWorker {
 
             // Check for pagination next_url
             if let nextUrl = arguments["next_url"]?.stringValue,
-               let parsed = parsePaginationUrl(nextUrl) {
+               let parsed = await httpClient.parsePaginationUrl(nextUrl) {
                 localizationsResponse = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCAppStoreVersionLocalizationsResponse.self)
             } else {
                 localizationsResponse = try await httpClient.get(

@@ -4,15 +4,14 @@ import Testing
 
 @Suite("HTTP Client Tests")
 struct HTTPClientTests {
-    @Test("retries 429 and stores rate-limit headers")
+    @Test("retries 429 and stores Apple X-Rate-Limit header")
     func retries429AndStoresRateLimitHeaders() async throws {
         let transport = MockHTTPTransport(responses: [
             .init(statusCode: 429, headers: ["Retry-After": "0"], body: #"{"errors":[{"status":"429","detail":"rate limited"}]}"#),
             .init(
                 statusCode: 200,
                 headers: [
-                    "X-Rate-Limit-User-Hour-Limit": "3600",
-                    "X-Rate-Limit-User-Hour-Remaining": "3599"
+                    "X-Rate-Limit": "user-hour-lim:3600;user-hour-rem:3599;"
                 ],
                 body: #"{"ok":true}"#
             )
@@ -31,6 +30,32 @@ struct HTTPClientTests {
         let rateLimit = await client.getLastRateLimitInfo()
         #expect(rateLimit?.userHourLimit == 3600)
         #expect(rateLimit?.userHourRemaining == 3599)
+    }
+
+    @Test("stores legacy split rate-limit headers")
+    func storesLegacySplitRateLimitHeaders() async throws {
+        let transport = MockHTTPTransport(responses: [
+            .init(
+                statusCode: 200,
+                headers: [
+                    "X-Rate-Limit-User-Hour-Limit": "3600",
+                    "X-Rate-Limit-User-Hour-Remaining": "3598"
+                ],
+                body: #"{"ok":true}"#
+            )
+        ])
+        let client = await HTTPClient(
+            jwtService: try TestFactory.makeJWTService(),
+            baseURL: "https://api.example.test",
+            transport: transport,
+            maxRetries: 1
+        )
+
+        _ = try await client.get("/v1/apps")
+
+        let rateLimit = await client.getLastRateLimitInfo()
+        #expect(rateLimit?.userHourLimit == 3600)
+        #expect(rateLimit?.userHourRemaining == 3598)
     }
 
     @Test("refreshes token on 401 and retries")
@@ -93,6 +118,46 @@ struct HTTPClientTests {
         _ = try await client.get("/v1/apps")
 
         #expect(await transport.requestCount() == 2)
+    }
+
+    @Test("honors HTTP-date Retry-After without failing")
+    func honorsHTTPDateRetryAfter() async throws {
+        let transport = MockHTTPTransport(responses: [
+            .init(statusCode: 503, headers: ["Retry-After": "Fri, 31 Dec 1999 23:59:59 GMT"], body: #"{"errors":[{"status":"503","detail":"busy"}]}"#),
+            .init(statusCode: 200, body: #"{"ok":true}"#)
+        ])
+        let client = await HTTPClient(
+            jwtService: try TestFactory.makeJWTService(),
+            baseURL: "https://api.example.test",
+            transport: transport,
+            maxRetries: 2
+        )
+
+        _ = try await client.get("/v1/apps")
+
+        #expect(await transport.requestCount() == 2)
+    }
+
+    @Test("stores past HTTP-date Retry-After as zero seconds")
+    func storesPastHTTPDateRetryAfterAsZero() async throws {
+        let transport = MockHTTPTransport(responses: [
+            .init(
+                statusCode: 200,
+                headers: ["Retry-After": "Fri, 31 Dec 1999 23:59:59 GMT"],
+                body: #"{"ok":true}"#
+            )
+        ])
+        let client = await HTTPClient(
+            jwtService: try TestFactory.makeJWTService(),
+            baseURL: "https://api.example.test",
+            transport: transport,
+            maxRetries: 1
+        )
+
+        _ = try await client.get("/v1/apps")
+
+        let rateLimit = await client.getLastRateLimitInfo()
+        #expect(rateLimit?.retryAfterSeconds == 0)
     }
 }
 

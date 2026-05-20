@@ -12,6 +12,7 @@ public struct ASCAppStoreVersion: Codable, Sendable {
     public struct Attributes: Codable, Sendable {
         public let platform: String?
         public let versionString: String?
+        public let appVersionState: String?
         public let appStoreState: String?
         public let copyright: String?
         public let releaseType: String?

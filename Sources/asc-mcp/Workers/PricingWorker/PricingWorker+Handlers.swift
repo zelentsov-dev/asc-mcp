@@ -22,7 +22,7 @@ extension PricingWorker {
             let response: ASCTerritoriesResponse
 
             if let nextUrl = arguments?["next_url"]?.stringValue,
-               let parsed = parsePaginationUrl(nextUrl) {
+               let parsed = await httpClient.parsePaginationUrl(nextUrl) {
                 response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCTerritoriesResponse.self)
             } else {
                 var queryParams: [String: String] = [:]
@@ -119,7 +119,7 @@ extension PricingWorker {
             let response: ASCAppPricePointsV3Response
 
             if let nextUrl = arguments["next_url"]?.stringValue,
-               let parsed = parsePaginationUrl(nextUrl) {
+               let parsed = await httpClient.parsePaginationUrl(nextUrl) {
                 response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCAppPricePointsV3Response.self)
             } else {
                 var queryParams: [String: String] = [
@@ -531,7 +531,7 @@ extension PricingWorker {
             let response: ASCTerritoryAvailabilitiesResponse
 
             if let nextUrl = arguments["next_url"]?.stringValue,
-               let parsed = parsePaginationUrl(nextUrl) {
+               let parsed = await httpClient.parsePaginationUrl(nextUrl) {
                 response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCTerritoryAvailabilitiesResponse.self)
             } else {
                 var queryParams: [String: String] = [:]

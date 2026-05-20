@@ -22,7 +22,7 @@ extension BuildsWorker {
 
             // Check for pagination next_url
             if let nextUrl = arguments["next_url"]?.stringValue,
-               let parsed = parsePaginationUrl(nextUrl) {
+               let parsed = await httpClient.parsePaginationUrl(nextUrl) {
                 response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCBuildsResponse.self)
             } else {
                 var queryParams: [String: String] = [

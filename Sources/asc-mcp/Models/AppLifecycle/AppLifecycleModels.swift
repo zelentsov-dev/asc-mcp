@@ -99,14 +99,14 @@ struct CreateReviewSubmissionRequest: Codable, Sendable {
         let attributes: Attributes
         let relationships: Relationships
         struct Attributes: Codable, Sendable {
-            let platform: String
+            let platform: String?
         }
         struct Relationships: Codable, Sendable {
             let app: RelationshipData
         }
     }
 
-    init(platform: String, appId: String) {
+    init(platform: String?, appId: String) {
         self.data = Data(
             type: "reviewSubmissions",
             attributes: Data.Attributes(platform: platform),

@@ -36,6 +36,14 @@ public actor HTTPClient {
         lastRateLimitInfo
     }
 
+    /// Parses an App Store Connect pagination URL using this client's configured base host.
+    /// - Parameter fullUrl: Absolute pagination URL from an API `links.next` response.
+    /// - Returns: Endpoint path and query parameters, or nil when the URL is invalid or from another host.
+    public func parsePaginationUrl(_ fullUrl: String) -> (path: String, parameters: [String: String])? {
+        let allowedHost = URLComponents(string: baseURL)?.host ?? PaginationURLPolicy.defaultAllowedHost
+        return asc_mcp.parsePaginationUrl(fullUrl, allowedHost: allowedHost)
+    }
+
     /// Performs GET request to App Store Connect API
     public func get(_ endpoint: String, parameters: [String: String] = [:]) async throws -> Data {
         return try await request(.GET, endpoint: endpoint, parameters: parameters)
@@ -199,7 +207,7 @@ public actor HTTPClient {
         // Check Retry-After header
         if let response = response,
            let retryAfterString = response.value(forHTTPHeaderField: "Retry-After"),
-           let retryAfter = Double(retryAfterString) {
+           let retryAfter = Self.parseRetryAfter(retryAfterString) {
             return retryAfter
         }
 
@@ -210,9 +218,12 @@ public actor HTTPClient {
     }
 
     private func updateRateLimitInfo(from response: HTTPURLResponse) {
-        let limit = response.integerHeader("X-Rate-Limit-User-Hour-Limit")
-        let remaining = response.integerHeader("X-Rate-Limit-User-Hour-Remaining")
-        let retryAfter = response.doubleHeader("Retry-After")
+        let appleHeader = response.value(forHTTPHeaderField: "X-Rate-Limit")
+            .flatMap(Self.parseAppleRateLimitHeader)
+        let limit = appleHeader?.limit ?? response.integerHeader("X-Rate-Limit-User-Hour-Limit")
+        let remaining = appleHeader?.remaining ?? response.integerHeader("X-Rate-Limit-User-Hour-Remaining")
+        let retryAfter = response.value(forHTTPHeaderField: "Retry-After")
+            .flatMap { Self.parseRetryAfter($0) }
 
         guard limit != nil || remaining != nil || retryAfter != nil else {
             return
@@ -229,6 +240,46 @@ public actor HTTPClient {
     private func decodeAPIErrorResponse(from data: Data) -> ASCAPIErrorResponse? {
         try? JSONDecoder().decode(ASCAPIErrorResponse.self, from: data)
     }
+
+    private static func parseAppleRateLimitHeader(_ header: String) -> (limit: Int?, remaining: Int?) {
+        var limit: Int?
+        var remaining: Int?
+
+        for part in header.split(separator: ";") {
+            let pair = part.split(separator: ":", maxSplits: 1).map {
+                $0.trimmingCharacters(in: .whitespacesAndNewlines)
+            }
+            guard pair.count == 2 else { continue }
+
+            switch pair[0] {
+            case "user-hour-lim":
+                limit = Int(pair[1])
+            case "user-hour-rem":
+                remaining = Int(pair[1])
+            default:
+                continue
+            }
+        }
+
+        return (limit, remaining)
+    }
+
+    private static func parseRetryAfter(_ value: String, now: Date = Date()) -> Double? {
+        if let seconds = Double(value.trimmingCharacters(in: .whitespacesAndNewlines)) {
+            return max(0, seconds)
+        }
+
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = TimeZone(secondsFromGMT: 0)
+        formatter.dateFormat = "EEE, dd MMM yyyy HH:mm:ss zzz"
+
+        guard let date = formatter.date(from: value) else {
+            return nil
+        }
+
+        return max(0, date.timeIntervalSince(now))
+    }
 }
 
 /// HTTP methods
@@ -243,10 +294,6 @@ private enum HTTPMethod: String {
 private extension HTTPURLResponse {
     func integerHeader(_ name: String) -> Int? {
         value(forHTTPHeaderField: name).flatMap(Int.init)
-    }
-
-    func doubleHeader(_ name: String) -> Double? {
-        value(forHTTPHeaderField: name).flatMap(Double.init)
     }
 }
 

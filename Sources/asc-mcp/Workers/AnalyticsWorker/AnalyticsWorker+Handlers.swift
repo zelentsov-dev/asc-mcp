@@ -369,7 +369,7 @@ extension AnalyticsWorker {
             // Check for pagination URL
             if let nextUrlValue = arguments["next_url"],
                let nextUrl = nextUrlValue.stringValue,
-               let parsed = parsePaginationUrl(nextUrl) {
+               let parsed = await httpClient.parsePaginationUrl(nextUrl) {
                 response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCAnalyticsReportRequestsResponse.self)
             } else {
                 var queryParams: [String: String] = [:]
@@ -479,7 +479,7 @@ extension AnalyticsWorker {
             let response: ASCAnalyticsReportsResponse
 
             if let nextUrl = arguments["next_url"]?.stringValue,
-               let parsed = parsePaginationUrl(nextUrl) {
+               let parsed = await httpClient.parsePaginationUrl(nextUrl) {
                 response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCAnalyticsReportsResponse.self)
             } else {
                 var queryParams: [String: String] = [:]
@@ -569,7 +569,7 @@ extension AnalyticsWorker {
             let response: ASCAnalyticsReportInstancesResponse
 
             if let nextUrl = arguments["next_url"]?.stringValue,
-               let parsed = parsePaginationUrl(nextUrl) {
+               let parsed = await httpClient.parsePaginationUrl(nextUrl) {
                 response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCAnalyticsReportInstancesResponse.self)
             } else {
                 var queryParams: [String: String] = [:]
@@ -659,7 +659,7 @@ extension AnalyticsWorker {
             let response: ASCAnalyticsReportSegmentsResponse
 
             if let nextUrl = arguments["next_url"]?.stringValue,
-               let parsed = parsePaginationUrl(nextUrl) {
+               let parsed = await httpClient.parsePaginationUrl(nextUrl) {
                 response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCAnalyticsReportSegmentsResponse.self)
             } else {
                 var queryParams: [String: String] = [:]
@@ -727,7 +727,7 @@ extension AnalyticsWorker {
                 )
                 allReports.append(contentsOf: response.data)
 
-                if let nextUrl = response.links?.next, let parsed = parsePaginationUrl(nextUrl) {
+                if let nextUrl = response.links?.next, let parsed = await httpClient.parsePaginationUrl(nextUrl) {
                     nextPath = parsed.path
                     nextParams = parsed.parameters
                 } else {

@@ -32,7 +32,7 @@ extension ReviewsWorker {
             let response: Data
 
             if let nextUrl = arguments["next_url"]?.stringValue,
-               let parsed = parsePaginationUrl(nextUrl) {
+               let parsed = await httpClient.parsePaginationUrl(nextUrl) {
                 response = try await httpClient.get(parsed.path, parameters: parsed.parameters)
             } else {
                 var queryParams: [String: String] = [
@@ -135,7 +135,7 @@ extension ReviewsWorker {
             let response: Data
 
             if let nextUrl = arguments["next_url"]?.stringValue,
-               let parsed = parsePaginationUrl(nextUrl) {
+               let parsed = await httpClient.parsePaginationUrl(nextUrl) {
                 response = try await httpClient.get(parsed.path, parameters: parsed.parameters)
             } else {
                 var queryParams: [String: String] = [

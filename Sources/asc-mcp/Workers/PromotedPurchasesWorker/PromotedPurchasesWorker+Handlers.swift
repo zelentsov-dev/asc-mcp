@@ -20,7 +20,7 @@ extension PromotedPurchasesWorker {
             let response: ASCPromotedPurchasesResponse
 
             if let nextUrl = arguments["next_url"]?.stringValue,
-               let parsed = parsePaginationUrl(nextUrl) {
+               let parsed = await httpClient.parsePaginationUrl(nextUrl) {
                 response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCPromotedPurchasesResponse.self)
             } else {
                 var queryParams: [String: String] = [:]

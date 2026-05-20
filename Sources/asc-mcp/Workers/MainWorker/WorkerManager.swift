@@ -20,24 +20,26 @@ public actor WorkerDependencies: Sendable {
         self.authWorker = authWorker
     }
     
-    /// Update dependencies for a new company
-    public func updateForCompany() async throws {
-        // Get current company from CompaniesManager
-        let company = try await companiesWorker.manager.getCurrentCompany()
+    /// Update dependencies for a company after all replacement services are built successfully.
+    /// - Parameter company: Company configuration to use for new auth and HTTP dependencies.
+    /// - Throws: JWT/private-key errors if the candidate company cannot initialize authentication.
+    public func updateForCompany(_ company: Company) async throws {
         let defaultURL = await companiesWorker.manager.getDefaultURL()
 
         print("Reinitializing workers for company: \(company.name)", to: &standardError)
         print("  Key ID: \(Redactor.maskIdentifier(company.keyID))", to: &standardError)
         print("  Issuer ID: \(Redactor.maskIdentifier(company.issuerID))", to: &standardError)
 
-        self.jwtService = try JWTService(company: company)
-
-        self.httpClient = await HTTPClient(
-            jwtService: self.jwtService,
+        let newJWTService = try JWTService(company: company)
+        let newHTTPClient = await HTTPClient(
+            jwtService: newJWTService,
             baseURL: defaultURL
         )
+        let newAuthWorker = AuthWorker(jwtService: newJWTService)
 
-        self.authWorker = AuthWorker(jwtService: self.jwtService)
+        self.jwtService = newJWTService
+        self.httpClient = newHTTPClient
+        self.authWorker = newAuthWorker
         
         print("Dependencies updated for company: \(company.name)", to: &standardError)
     }
@@ -303,9 +305,7 @@ public actor WorkerManager {
         }
 
         if params.name == "company_switch" {
-            let result = try await dependencies.companiesWorker.handleTool(params)
-            try await reinitializeWorkers()
-            return result
+            return try await switchCompanyTransactionally(params)
         }
 
         for descriptor in workerDescriptors() where descriptor.matches(params.name) {
@@ -337,9 +337,36 @@ public actor WorkerManager {
         )
     }
     
-    /// Reinitialize workers with current company configuration
+    private func switchCompanyTransactionally(_ params: CallTool.Parameters) async throws -> CallTool.Result {
+        guard let arguments = params.arguments,
+              let companyValue = arguments["company"],
+              let companyIdOrName = companyValue.stringValue else {
+            return MCPResult.error("Required parameter 'company' (ID or name)")
+        }
+
+        do {
+            let manager = dependencies.companiesWorker.manager
+            let company = try await manager.resolveCompany(companyIdOrName)
+            try await reinitializeWorkers(for: company)
+            await manager.setCurrentCompany(company)
+            return dependencies.companiesWorker.makeSwitchResult(for: company)
+        } catch {
+            return MCPResult.error("Error switching company: \(error.localizedDescription)")
+        }
+    }
+
+    /// Reinitialize workers with the currently active company configuration.
+    /// - Throws: JWT/private-key errors if dependency replacement cannot be built.
     public func reinitializeWorkers() async throws {
-        try await dependencies.updateForCompany()
+        let company = try await dependencies.companiesWorker.manager.getCurrentCompany()
+        try await reinitializeWorkers(for: company)
+    }
+
+    /// Reinitialize workers with a prepared company configuration.
+    /// - Parameter company: Company whose credentials should back all API workers.
+    /// - Throws: JWT/private-key errors if dependency replacement cannot be built.
+    public func reinitializeWorkers(for company: Company) async throws {
+        try await dependencies.updateForCompany(company)
         self.appsWorker = await AppsWorker(client: dependencies.httpClient)
         self.accessibilityWorker = await AccessibilityWorker(httpClient: dependencies.httpClient)
         self.webhooksWorker = await WebhooksWorker(httpClient: dependencies.httpClient)

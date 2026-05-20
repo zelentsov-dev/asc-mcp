@@ -27,13 +27,11 @@ public actor CompaniesManager {
         }
 
         // 4. Try loading from JSON file (explicit path or default locations)
-        if let loaded = Self.loadFromFile(explicitPath: configFilePath) {
+        if let loaded = try Self.loadFromFile(explicitPath: configFilePath) {
             print("✅ Loaded config from: \(loaded.path)", to: &standardError)
             self.configSource = loaded.path
             self.config = loaded.config
-            if !config.companies.isEmpty {
-                self.currentCompany = config.companies[0]
-            }
+            self.currentCompany = config.companies[0]
             return
         }
 
@@ -80,7 +78,7 @@ public actor CompaniesManager {
         ]
     }
 
-    private static func loadFromFile(explicitPath: String?) -> (config: CompaniesConfig, path: String)? {
+    private static func loadFromFile(explicitPath: String?) throws -> (config: CompaniesConfig, path: String)? {
         let paths: [String]
         if let explicit = explicitPath {
             paths = [explicit]
@@ -90,10 +88,31 @@ public actor CompaniesManager {
 
         for path in paths {
             let url = URL(fileURLWithPath: path)
-            guard let data = try? Data(contentsOf: url),
-                  let config = try? JSONDecoder().decode(CompaniesConfig.self, from: data) else {
+            guard FileManager.default.fileExists(atPath: path) else {
+                if explicitPath != nil {
+                    throw CompanyError.configFileMissing(path)
+                }
                 continue
             }
+
+            let data: Data
+            do {
+                data = try Data(contentsOf: url)
+            } catch {
+                throw CompanyError.configFileUnreadable(path, error.localizedDescription)
+            }
+
+            let config: CompaniesConfig
+            do {
+                config = try JSONDecoder().decode(CompaniesConfig.self, from: data)
+            } catch {
+                throw CompanyError.invalidConfig(path, error.localizedDescription)
+            }
+
+            guard !config.companies.isEmpty else {
+                throw CompanyError.emptyCompanies(path)
+            }
+
             return (config, path)
         }
         return nil
@@ -158,27 +177,47 @@ public actor CompaniesManager {
 
     // MARK: - Public API
 
-    /// Get list of all companies
+    /// Gets all configured companies.
+    /// - Returns: Company configurations loaded from the active config source.
     public func listCompanies() -> [Company] {
         return config.companies
     }
 
-    /// Switch to specific company by ID or name
-    public func switchToCompany(_ idOrName: String) throws -> Company {
+    /// Resolves a company by exact ID or partial case-insensitive name without changing the active company.
+    /// - Parameter idOrName: Company ID or name fragment.
+    /// - Returns: Matching company configuration.
+    /// - Throws: `CompanyError.companyNotFound` when no configured company matches.
+    public func resolveCompany(_ idOrName: String) throws -> Company {
         if let company = config.companies.first(where: { $0.id.lowercased() == idOrName.lowercased() }) {
-            currentCompany = company
             return company
         }
 
         if let company = config.companies.first(where: { $0.name.lowercased().contains(idOrName.lowercased()) }) {
-            currentCompany = company
             return company
         }
 
         throw CompanyError.companyNotFound(idOrName)
     }
 
-    /// Get current company configuration
+    /// Commits the active company after dependent services have been prepared.
+    /// - Parameter company: Company configuration to mark active.
+    public func setCurrentCompany(_ company: Company) {
+        currentCompany = company
+    }
+
+    /// Switches to a specific company by ID or name.
+    /// - Parameter idOrName: Company ID or name fragment.
+    /// - Returns: Newly active company configuration.
+    /// - Throws: `CompanyError.companyNotFound` when no configured company matches.
+    public func switchToCompany(_ idOrName: String) throws -> Company {
+        let company = try resolveCompany(idOrName)
+        currentCompany = company
+        return company
+    }
+
+    /// Gets the current company configuration.
+    /// - Returns: Active company configuration.
+    /// - Throws: `CompanyError.noCompanySelected` if no company is active.
     public func getCurrentCompany() throws -> Company {
         guard let company = currentCompany else {
             throw CompanyError.noCompanySelected
@@ -186,7 +225,8 @@ public actor CompaniesManager {
         return company
     }
 
-    /// Get default URL for API
+    /// Gets the configured App Store Connect API base URL.
+    /// - Returns: Base URL string used for API requests.
     public func getDefaultURL() -> String {
         return config.defaultURL
     }
@@ -197,6 +237,10 @@ public enum CompanyError: LocalizedError, Sendable {
     case companyNotFound(String)
     case noCompanySelected
     case configFileNotFound
+    case configFileMissing(String)
+    case configFileUnreadable(String, String)
+    case invalidConfig(String, String)
+    case emptyCompanies(String)
 
     public var errorDescription: String? {
         switch self {
@@ -206,7 +250,14 @@ public enum CompanyError: LocalizedError, Sendable {
             return "No company selected. Use company_switch to select a company."
         case .configFileNotFound:
             return "Configuration not found. Set environment variables or provide companies.json."
+        case .configFileMissing(let path):
+            return "Configuration file not found: \(path)"
+        case .configFileUnreadable(let path, let reason):
+            return "Configuration file could not be read: \(path). \(reason)"
+        case .invalidConfig(let path, let reason):
+            return "Configuration file is invalid JSON or does not match the expected schema: \(path). \(reason)"
+        case .emptyCompanies(let path):
+            return "Configuration file contains no companies: \(path)"
         }
     }
 }
-

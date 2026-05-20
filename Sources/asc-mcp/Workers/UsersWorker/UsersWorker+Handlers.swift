@@ -13,7 +13,7 @@ extension UsersWorker {
             let response: ASCUsersResponse
 
             if let nextUrl = arguments?["next_url"]?.stringValue,
-               let parsed = parsePaginationUrl(nextUrl) {
+               let parsed = await httpClient.parsePaginationUrl(nextUrl) {
                 response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCUsersResponse.self)
             } else {
                 var queryParams: [String: String] = [:]
@@ -276,7 +276,7 @@ extension UsersWorker {
             let response: ASCUserInvitationsResponse
 
             if let nextUrl = arguments?["next_url"]?.stringValue,
-               let parsed = parsePaginationUrl(nextUrl) {
+               let parsed = await httpClient.parsePaginationUrl(nextUrl) {
                 response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCUserInvitationsResponse.self)
             } else {
                 var queryParams: [String: String] = [:]
@@ -362,7 +362,7 @@ extension UsersWorker {
             let response: ASCAppsResponse
 
             if let nextUrl = arguments["next_url"]?.stringValue,
-               let parsed = parsePaginationUrl(nextUrl) {
+               let parsed = await httpClient.parsePaginationUrl(nextUrl) {
                 response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCAppsResponse.self)
             } else {
                 var queryParams: [String: String] = [:]

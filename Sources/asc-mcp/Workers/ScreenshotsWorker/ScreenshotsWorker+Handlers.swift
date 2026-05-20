@@ -20,7 +20,7 @@ extension ScreenshotsWorker {
             let response: ASCScreenshotSetsResponse
 
             if let nextUrl = arguments["next_url"]?.stringValue,
-               let parsed = parsePaginationUrl(nextUrl) {
+               let parsed = await httpClient.parsePaginationUrl(nextUrl) {
                 response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCScreenshotSetsResponse.self)
             } else {
                 var queryParams: [String: String] = [:]
@@ -155,7 +155,7 @@ extension ScreenshotsWorker {
             let response: ASCScreenshotsResponse
 
             if let nextUrl = arguments["next_url"]?.stringValue,
-               let parsed = parsePaginationUrl(nextUrl) {
+               let parsed = await httpClient.parsePaginationUrl(nextUrl) {
                 response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCScreenshotsResponse.self)
             } else {
                 var queryParams: [String: String] = [:]
@@ -485,7 +485,7 @@ extension ScreenshotsWorker {
             let response: ASCPreviewSetsResponse
 
             if let nextUrl = arguments["next_url"]?.stringValue,
-               let parsed = parsePaginationUrl(nextUrl) {
+               let parsed = await httpClient.parsePaginationUrl(nextUrl) {
                 response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCPreviewSetsResponse.self)
             } else {
                 var queryParams: [String: String] = [:]
@@ -730,7 +730,7 @@ extension ScreenshotsWorker {
             let response: ASCPreviewsResponse
 
             if let nextUrl = arguments["next_url"]?.stringValue,
-               let parsed = parsePaginationUrl(nextUrl) {
+               let parsed = await httpClient.parsePaginationUrl(nextUrl) {
                 response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCPreviewsResponse.self)
             } else {
                 var queryParams: [String: String] = [:]

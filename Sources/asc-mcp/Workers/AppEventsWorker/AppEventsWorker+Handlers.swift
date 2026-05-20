@@ -21,7 +21,7 @@ extension AppEventsWorker {
             let response: ASCAppEventsResponse
 
             if let nextUrl = arguments["next_url"]?.stringValue,
-               let parsed = parsePaginationUrl(nextUrl) {
+               let parsed = await httpClient.parsePaginationUrl(nextUrl) {
                 response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCAppEventsResponse.self)
             } else {
                 var queryParams: [String: String] = [:]

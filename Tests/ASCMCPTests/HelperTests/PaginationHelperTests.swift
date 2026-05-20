@@ -54,4 +54,24 @@ struct PaginationHelperTests {
         let result = parsePaginationUrl("https://evil.example.com/v1/apps?limit=10")
         #expect(result == nil)
     }
+
+    @Test func acceptsConfiguredHost() {
+        let result = parsePaginationUrl(
+            "https://proxy.example.test/v1/apps?limit=10&cursor=abc",
+            allowedHost: "proxy.example.test"
+        )
+
+        #expect(result != nil)
+        #expect(result?.path == "/v1/apps")
+        #expect(result?.parameters["cursor"] == "abc")
+    }
+
+    @Test func rejectsHostDifferentFromConfiguredHost() {
+        let result = parsePaginationUrl(
+            "https://evil.example.com/v1/apps?limit=10",
+            allowedHost: "proxy.example.test"
+        )
+
+        #expect(result == nil)
+    }
 }
