@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.5.0] - 2026-05-20
+
+### Fixed
+
+- Webhook tools (`webhooks_verify_signature`, `webhooks_parse_payload`, `webhooks_triage_event`) no longer emit a top-level `anyOf` in their input schema. The Anthropic API rejects top-level `oneOf`/`anyOf`/`allOf` in a tool `input_schema`, which had caused every Claude Code sub-agent (Explore, Plan, teammates) to fail with HTTP 400 since 2.4.0. The "payload or payload_base64" constraint is still enforced at runtime in the handlers, and `ToolMetadataPolicy` now strips top-level composition keywords as a safety net.
+- `company_switch` is now transactional and rolls back on failed worker reinitialization, preventing a split-brain state where `company_current` and the active API workers disagree (P1-01).
+- `app_versions_submit_for_review` surfaces `submission_id` and partial-failure context when a later step fails, so a created review submission can still be cancelled or inspected (P1-02).
+- `app_versions_release` performs a preflight version-state check and requires explicit confirmation before the irreversible release request (P2-02).
+- App Store Connect `X-Rate-Limit` header is parsed per Apple's documented format (with legacy header fallback), and `Retry-After` now supports HTTP-date values in addition to numeric seconds (P2-01, P3-01).
+- Demo-account passwords and secret-like keys are redacted from MCP results (P2-03).
+- Pagination host allowlist now follows the configured base URL instead of hardcoding the Apple host (P2-04).
+
+### Changed
+
+- Clearer diagnostics for missing, unreadable, malformed, or empty `companies.json` (P3-02).
+
 ## [2.4.0] - 2026-05-08
 
 ### Added
