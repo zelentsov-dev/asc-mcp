@@ -47,9 +47,12 @@ enum ReportSummary {
             totalUnits += units
 
             let currency = row["Currency of Proceeds"] ?? row["Customer Currency"] ?? ""
-            let proceeds = Double(row["Developer Proceeds"] ?? "") ?? 0.0
+            // Apple's SALES report `Developer Proceeds` column is per-unit, not the row total.
+            // Multiply by Units to get the row's contribution to total proceeds.
+            let proceedsPerUnit = Double(row["Developer Proceeds"] ?? "") ?? 0.0
+            let rowProceeds = proceedsPerUnit * Double(units)
             if !currency.isEmpty {
-                proceedsByCurrency[currency, default: 0.0] += proceeds
+                proceedsByCurrency[currency, default: 0.0] += rowProceeds
             }
 
             let country = row["Country Code"] ?? ""
@@ -65,7 +68,7 @@ enum ReportSummary {
             let title = row["Title"] ?? ""
             if !title.isEmpty {
                 appStats[title, default: AppSalesStats()].units += units
-                appStats[title, default: AppSalesStats()].proceedsByCurrency[currency, default: 0.0] += proceeds
+                appStats[title, default: AppSalesStats()].proceedsByCurrency[currency, default: 0.0] += rowProceeds
             }
         }
 
@@ -247,9 +250,12 @@ enum ReportSummary {
             }
 
             let currency = row["Proceeds Currency"] ?? row["Customer Currency"] ?? ""
-            let proceeds = Double(row["Developer Proceeds"] ?? "") ?? 0.0
+            // Apple's SUBSCRIBER report `Developer Proceeds` is per-unit; multiply by Units
+            // to get the row total (typically Units=1 per row, but be defensive).
+            let proceedsPerUnit = Double(row["Developer Proceeds"] ?? "") ?? 0.0
+            let rowProceeds = proceedsPerUnit * Double(units)
             if !currency.isEmpty {
-                proceedsByCurrency[currency, default: 0.0] += proceeds
+                proceedsByCurrency[currency, default: 0.0] += rowProceeds
             }
 
             let country = row["Country"] ?? ""

@@ -25,15 +25,46 @@ struct ReportSummaryTests {
     }
 
     @Test func salesSummary_proceedsByCurrency() {
+        // Apple's `Developer Proceeds` column is per-unit. Each row represents `Units`
+        // sales at `Developer Proceeds` each, so the row's contribution to the total is
+        // Units × Developer Proceeds.
         let rows: [[String: String]] = [
-            ["Units": "10", "Developer Proceeds": "69.90", "Currency of Proceeds": "USD"],
-            ["Units": "5", "Developer Proceeds": "34.95", "Currency of Proceeds": "EUR"],
-            ["Units": "3", "Developer Proceeds": "20.10", "Currency of Proceeds": "USD"]
+            ["Units": "10", "Developer Proceeds": "6.99", "Currency of Proceeds": "USD"],
+            ["Units": "5",  "Developer Proceeds": "6.99", "Currency of Proceeds": "EUR"],
+            ["Units": "3",  "Developer Proceeds": "6.70", "Currency of Proceeds": "USD"]
         ]
         let summary = ReportSummary.salesSummary(from: rows)
         let proceeds = summary["proceeds_by_currency"] as? [String: Double]
+        // USD: 10 × 6.99 + 3 × 6.70 = 69.90 + 20.10 = 90.00
         #expect(proceeds?["USD"] == 90.0)
+        // EUR: 5 × 6.99 = 34.95
         #expect(proceeds?["EUR"] == 34.95)
+    }
+
+    @Test func salesSummary_proceedsScalesWithUnits() {
+        // Regression test: previously `Developer Proceeds` was summed directly,
+        // ignoring `Units`, which undercounted multi-unit rows.
+        let rows: [[String: String]] = [
+            // 100 sales at $0.70 each in one aggregated row.
+            ["Units": "100", "Developer Proceeds": "0.70", "Currency of Proceeds": "USD"]
+        ]
+        let summary = ReportSummary.salesSummary(from: rows)
+        let proceeds = summary["proceeds_by_currency"] as? [String: Double]
+        #expect(proceeds?["USD"] == 70.0) // 100 × 0.70, not 0.70
+    }
+
+    @Test func salesSummary_perAppProceedsScalesWithUnits() {
+        // Same regression for the per-app breakdown (by_app).
+        let rows: [[String: String]] = [
+            ["Title": "MyApp", "Units": "10", "Developer Proceeds": "0.70", "Currency of Proceeds": "USD"],
+            ["Title": "MyApp", "Units": "5",  "Developer Proceeds": "0.62", "Currency of Proceeds": "EUR"]
+        ]
+        let summary = ReportSummary.salesSummary(from: rows)
+        let byApp = summary["by_app"] as? [[String: Any]]
+        #expect(byApp?.count == 1)
+        let stats = byApp?.first?["proceeds_by_currency"] as? [String: Double]
+        #expect(stats?["USD"] == 7.0)  // 10 × 0.70
+        #expect(stats?["EUR"] == 3.10) // 5 × 0.62
     }
 
     @Test func salesSummary_topCountries() {
@@ -65,6 +96,7 @@ struct ReportSummaryTests {
     }
 
     @Test func salesSummary_proceedsRounding() {
+        // Each row has Units=1 so row proceeds == per-unit proceeds.
         let rows: [[String: String]] = [
             ["Units": "1", "Developer Proceeds": "1.111", "Currency of Proceeds": "USD"],
             ["Units": "1", "Developer Proceeds": "2.222", "Currency of Proceeds": "USD"]
