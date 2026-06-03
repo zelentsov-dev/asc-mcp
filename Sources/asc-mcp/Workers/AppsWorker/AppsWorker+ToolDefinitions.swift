@@ -139,7 +139,7 @@ extension AppsWorker {
     func updateMetadataTool() -> Tool {
         return Tool(
             name: "apps_update_metadata",
-            description: "Update app version metadata for a specific localization (version must be in PREPARE_FOR_SUBMISSION state)",
+            description: "Update app version metadata for a specific localization. App Store Connect validates whether the current version state is editable; rejected metadata can be edited for resubmission.",
             inputSchema: .object([
                 "type": .string("object"),
                 "properties": .object([

@@ -624,16 +624,14 @@ extension AppsWorker {
         }
         
         do {
-            // 1. First check that version is in editable state
+            // 1. Fetch version details for result context. App Store Connect
+            // enforces the exact editable-state rules on the PATCH request.
             let versionResponse: ASCAppStoreVersionResponse = try await httpClient.get(
                 "/v1/appStoreVersions/\(versionId)",
                 as: ASCAppStoreVersionResponse.self
             )
             
             let version = versionResponse.data
-            guard version.attributes?.appStoreState == "PREPARE_FOR_SUBMISSION" else {
-                return MCPResult.error("Version must be in PREPARE_FOR_SUBMISSION state for editing. Current state: \(version.attributes?.appStoreState ?? "Unknown")")
-            }
             
             // 2. Get localization ID for the specified locale
             let localizationsResponse: ASCAppStoreVersionLocalizationsResponse = try await httpClient.get(

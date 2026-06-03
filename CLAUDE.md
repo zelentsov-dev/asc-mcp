@@ -100,9 +100,9 @@ Each company needs: `keyID`, `issuerID`, `privateKeyPath` (path to `.p8` file).
 
 - **No emojis** in metadata fields (What's New, Description, etc.)
 - **Version states**: 
-  - `READY_FOR_SALE`: Published, read-only
-  - `PREPARE_FOR_SUBMISSION`: Editable
-  - `WAITING_FOR_REVIEW`, `IN_REVIEW`: Read-only
+  - App Store Connect validates editable states for version metadata PATCH requests.
+  - `REJECTED` / `METADATA_REJECTED`: editable for resolving review issues and resubmission.
+  - `READY_FOR_SALE`, `WAITING_FOR_REVIEW`, `IN_REVIEW`: generally locked; expect Apple API errors for disallowed fields.
 - **Locale codes**: Use standard format (en-US, ru-RU, de-DE, etc.)
 
 ## Testing
@@ -156,7 +156,7 @@ Test infrastructure: `TestFactory` (`Tests/ASCMCPTests/Helpers/TestHelpers.swift
 
 ### Debugging API Issues
 
-- Check version state (must be PREPARE_FOR_SUBMISSION for edits)
+- Check Apple API error details for state-locked metadata fields
 - Verify locale exists for the version
 - Remove any emojis from text fields
 - Check JWT token expiration (20 minutes)

@@ -1021,7 +1021,7 @@ Claude will:
 | Constraint | Details |
 |------------|---------|
 | **No emojis** | Metadata fields (What's New, Description, Keywords) must not contain emoji characters |
-| **Version state** | Only versions in `PREPARE_FOR_SUBMISSION` state can be edited |
+| **Version state** | App Store Connect validates editable states for metadata updates. Rejected and metadata-rejected versions can be edited for resubmission; published or in-review versions may be rejected by Apple. |
 | **JWT expiry** | Tokens expire after 20 minutes — the server auto-refreshes them |
 | **Rate limits** | Apple enforces per-account rate limits ([documentation](https://developer.apple.com/documentation/appstoreconnectapi/identifying-rate-limits)) |
 | **Locale format** | Use standard codes: `en-US`, `ru`, `de-DE`, `ja`, `zh-Hans` |
@@ -1111,9 +1111,9 @@ Sources/asc-mcp/
 </details>
 
 <details>
-<summary><strong>"Version must be in PREPARE_FOR_SUBMISSION state"</strong></summary>
+<summary><strong>Metadata update rejected by App Store Connect state rules</strong></summary>
 
-You can only edit metadata for versions that are in `PREPARE_FOR_SUBMISSION` state. Versions in `READY_FOR_SALE`, `IN_REVIEW`, or `WAITING_FOR_REVIEW` are read-only. Create a new version first if needed.
+`apps_update_metadata` sends the metadata PATCH to App Store Connect after local text, locale, and URL validation. Apple decides whether the current version state is editable. Rejected and metadata-rejected versions can be edited and resubmitted; published, in-review, or otherwise locked versions may return an Apple API error.
 
 </details>
 
