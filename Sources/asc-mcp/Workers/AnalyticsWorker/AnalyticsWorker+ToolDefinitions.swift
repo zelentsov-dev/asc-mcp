@@ -14,37 +14,42 @@ extension AnalyticsWorker {
         return Tool(
             name: "analytics_sales_report",
             description: """
-            Get sales, subscription, and download reports from App Store Connect. Returns structured JSON with parsed TSV data, summary statistics, and individual rows.
+            Get sales, subscription, and download reports from App Store Connect. Returns structured JSON with parsed TSV data, a report-type summary, and optional individual rows. Monetary summaries use Decimal accumulation, retain numeric proceeds_by_currency for compatibility, and include proceeds_by_currency_exact strings without binary floating-point loss. FIRST_ANNUAL, INSTALLS, SUBSCRIPTION_OFFER_CODE_REDEMPTION, and WIN_BACK_ELIGIBILITY use an honest row-count summary; set summary_only=false to inspect their report-specific columns.
 
             Report types and their use cases:
-            - SALES (version 1_0): Downloads, updates, re-downloads, proceeds. Frequency: DAILY/WEEKLY/MONTHLY/YEARLY. Sub-type: SUMMARY/DETAILED.
-            - SUBSCRIPTION (version 1_3): Active subscriber counts by state/country/device, intro offers, promo offers, billing retry, grace period. Frequency: DAILY. Sub-type: SUMMARY.
-            - SUBSCRIPTION_EVENT (version 1_4): Subscriber activity — new subscriptions, renewals, upgrades, downgrades, cancellations, reactivations, refunds, conversions from trial. Frequency: DAILY. Sub-type: SUMMARY.
+            - SALES (version 1_0): Downloads, updates, re-downloads, proceeds. Frequency: DAILY/WEEKLY/MONTHLY/YEARLY. Sub-type: SUMMARY.
+            - SUBSCRIPTION (version 1_3): Active standard-price, free/pay-up-front/pay-as-you-go introductory, promotional, offer-code, and win-back counts, plus marketing opt-ins, billing retry, grace period, and subscriber counts. Frequency: DAILY. Sub-type: SUMMARY. Apple's Subscribers cell is blank when a record represents 3 or fewer subscriptions, so total_subscribers is retained as a compatibility alias for the reported lower bound; subscriber_rows_suppressed and total_subscribers_is_lower_bound make suppression explicit.
+            - SUBSCRIPTION_EVENT (version 1_3): Subscriber activity — new subscriptions, renewals, upgrades, downgrades, cancellations, reactivations, refunds, conversions from trial. Frequency: DAILY. Sub-type: SUMMARY.
             - SUBSCRIBER (version 1_3): Transaction-level subscriber activity with anonymous Subscriber IDs, purchase dates, proceeds. Frequency: DAILY. Sub-type: DETAILED.
             - SUBSCRIPTION_OFFER_CODE_REDEMPTION (version 1_0): Offer code redemptions. Frequency: DAILY. Sub-type: SUMMARY.
-            - PRE_ORDER (version 1_1): Pre-order units. Frequency: DAILY/WEEKLY/MONTHLY/YEARLY. Sub-type: SUMMARY.
+            - PRE_ORDER (version 1_0): Pre-order units. Frequency: DAILY/WEEKLY/MONTHLY/YEARLY. Sub-type: SUMMARY.
+            - INSTALLS: Monthly SUMMARY/DETAILED reports use version 1_2; yearly DETAILED and SUMMARY_CHANNEL/SUMMARY_INSTALL_TYPE/SUMMARY_TERRITORY reports default to version 1_1.
+            - FIRST_ANNUAL (version 1_0): DAILY/DETAILED or YEARLY/SUMMARY.
+            - WIN_BACK_ELIGIBILITY (version 1_0): DAILY/SUMMARY.
 
             Typical workflows:
             1. Installs/downloads: SALES + SUMMARY + DAILY
             2. Active subscribers: SUBSCRIPTION + SUMMARY + DAILY
             3. Trial conversions, cancellations, renewals: SUBSCRIPTION_EVENT + SUMMARY + DAILY
             4. Per-subscriber transaction history: SUBSCRIBER + DETAILED + DAILY
-            5. Revenue by product: SALES + DETAILED + DAILY
+            5. Revenue by product: SALES + SUMMARY + DAILY
             """,
             inputSchema: .object([
                 "type": .string("object"),
                 "properties": .object([
                     "vendor_number": .object([
                         "type": .string("string"),
-                        "description": .string("Vendor number from App Store Connect (found in Sales and Trends > Reports). If not provided, uses vendor_number from company config.")
+                        "description": .string("Vendor number from App Store Connect (found in Sales and Trends > Reports). If not provided, uses vendor_number from company config."),
+                        "minLength": .int(1)
                     ]),
                     "app_id": .object([
                         "type": .string("string"),
-                        "description": .string("Apple ID of the app to filter by (numeric, e.g., '1234567890'). If omitted, returns data for all apps. Use apps_list to find app IDs.")
+                        "description": .string("Apple ID of the app to filter by (numeric, e.g., '1234567890'). If omitted, returns data for all apps. Use apps_list to find app IDs."),
+                        "minLength": .int(1)
                     ]),
                     "report_type": .object([
                         "type": .string("string"),
-                        "description": .string("Type of report: SALES (downloads/revenue), SUBSCRIPTION (active subs), SUBSCRIPTION_EVENT (renewals/cancellations/trials), SUBSCRIBER (per-user transactions), PRE_ORDER, SUBSCRIPTION_OFFER_CODE_REDEMPTION"),
+                        "description": .string("Apple sales report type"),
                         "enum": .array([
                             .string("SALES"),
                             .string("PRE_ORDER"),
@@ -52,16 +57,21 @@ extension AnalyticsWorker {
                             .string("SUBSCRIPTION"),
                             .string("SUBSCRIPTION_EVENT"),
                             .string("SUBSCRIBER"),
-                            .string("SUBSCRIPTION_OFFER_CODE_REDEMPTION")
+                            .string("SUBSCRIPTION_OFFER_CODE_REDEMPTION"),
+                            .string("INSTALLS"),
+                            .string("FIRST_ANNUAL"),
+                            .string("WIN_BACK_ELIGIBILITY")
                         ])
                     ]),
                     "report_sub_type": .object([
                         "type": .string("string"),
-                        "description": .string("Report sub-type: SUMMARY (aggregated), DETAILED (per-transaction), OPT_IN (marketing opt-ins)"),
+                        "description": .string("Apple sales report sub-type. Valid combinations depend on report_type and frequency."),
                         "enum": .array([
                             .string("SUMMARY"),
                             .string("DETAILED"),
-                            .string("OPT_IN")
+                            .string("SUMMARY_INSTALL_TYPE"),
+                            .string("SUMMARY_TERRITORY"),
+                            .string("SUMMARY_CHANNEL")
                         ])
                     ]),
                     "frequency": .object([
@@ -76,11 +86,12 @@ extension AnalyticsWorker {
                     ]),
                     "report_date": .object([
                         "type": .string("string"),
-                        "description": .string("Report date in YYYY-MM-DD format (e.g., 2025-01-15). Reports available next day by 8am PT.")
+                        "description": .string("Apple report date in YYYY-MM-DD format. Optional for DAILY reports to request the latest available report; required in the same YYYY-MM-DD format for WEEKLY, MONTHLY, and YEARLY reports."),
+                        "pattern": .string("^\\d{4}-\\d{2}-\\d{2}$")
                     ]),
                     "version": .object([
                         "type": .string("string"),
-                        "description": .string("Report version (e.g., 1_0, 1_3, 1_4). If omitted, uses the latest known default for the report type.")
+                        "description": .string("Report version. If omitted, uses the latest version Apple supports for the selected report type, sub-type, and frequency.")
                     ]),
                     "summary_only": .object([
                         "type": .string("boolean"),
@@ -88,14 +99,15 @@ extension AnalyticsWorker {
                     ]),
                     "limit": .object([
                         "type": .string("integer"),
-                        "description": .string("Max raw rows to return when summary_only=false (default: 25). Summary is always computed from all rows.")
+                        "description": .string("Max raw rows to return when summary_only=false (1-200, default: 25). Summary is always computed from all rows."),
+                        "minimum": .int(1),
+                        "maximum": .int(200)
                     ])
                 ]),
                 "required": .array([
                     .string("report_type"),
                     .string("report_sub_type"),
-                    .string("frequency"),
-                    .string("report_date")
+                    .string("frequency")
                 ])
             ])
         )
@@ -110,14 +122,14 @@ extension AnalyticsWorker {
 
             Sections returned:
             - downloads: Units, proceeds, by country/product type (from SALES/SUMMARY/DAILY)
-            - subscriptions: Active subscribers, free trials, billing retry, grace period (from SUBSCRIPTION/SUMMARY/DAILY)
+            - subscriptions: All version 1_3 standard, introductory, promotional, offer-code, and win-back active counts; marketing opt-ins, billing retry, grace period, and reported/lower-bound subscriber semantics (from SUBSCRIPTION/SUMMARY/DAILY)
             - subscription_events: Renewals, cancellations, trials, upgrades, downgrades (from SUBSCRIPTION_EVENT/SUMMARY/DAILY)
             - revenue: Per-subscriber transaction data with proceeds (from SUBSCRIBER/DETAILED/DAILY)
 
-            Each section has status "success" or "error" (partial success supported — e.g., no subscriptions won't block downloads).
+            Each section has status "success" or "error". Partial success is returned when at least one section succeeds; the tool returns an error when every section fails.
 
             Example use cases:
-            - "How is my app doing today?" → analytics_app_summary with today's date
+            - "How did my app do yesterday?" → analytics_app_summary with the latest available completed report date
             - "Show me downloads and revenue for app X" → analytics_app_summary with app_id filter
             """,
             inputSchema: .object([
@@ -125,15 +137,18 @@ extension AnalyticsWorker {
                 "properties": .object([
                     "report_date": .object([
                         "type": .string("string"),
-                        "description": .string("Report date in YYYY-MM-DD format (e.g., 2025-01-15). Reports available next day by 8am PT.")
+                        "description": .string("Completed daily report date in YYYY-MM-DD format. Daily reports are normally available the following day by 8 a.m. PT."),
+                        "pattern": .string("^\\d{4}-\\d{2}-\\d{2}$")
                     ]),
                     "app_id": .object([
                         "type": .string("string"),
-                        "description": .string("Apple ID of the app to filter by (numeric, e.g., '1234567890'). If omitted, returns data for all apps.")
+                        "description": .string("Apple ID of the app to filter by (numeric, e.g., '1234567890'). If omitted, returns data for all apps."),
+                        "minLength": .int(1)
                     ]),
                     "vendor_number": .object([
                         "type": .string("string"),
-                        "description": .string("Vendor number from App Store Connect. If not provided, uses vendor_number from company config.")
+                        "description": .string("Vendor number from App Store Connect. If not provided, uses vendor_number from company config."),
+                        "minLength": .int(1)
                     ])
                 ]),
                 "required": .array([
@@ -147,7 +162,7 @@ extension AnalyticsWorker {
     func getFinancialReportTool() -> Tool {
         return Tool(
             name: "analytics_financial_report",
-            description: "Get financial reports from App Store Connect. Returns summary with total quantity, partner share by currency, and top countries. Set summary_only=false to include raw rows.",
+            description: "Get financial reports from App Store Connect. Returns summary with total quantity, partner share by currency, exact decimal partner-share strings, and top countries. Aggregation prefers Apple's signed Extended Partner Share and falls back to Quantity multiplied by per-unit Partner Share. Set summary_only=false to include raw rows.",
             inputSchema: .object([
                 "type": .string("object"),
                 "properties": .object([

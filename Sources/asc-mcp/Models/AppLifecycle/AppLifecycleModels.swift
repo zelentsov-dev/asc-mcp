@@ -264,15 +264,14 @@ struct CreateAppStoreReviewDetailRequest: Codable, Sendable {
         let attributes: Attributes
         let relationships: Relationships
         struct Attributes: Codable, Sendable {
-            let contactFirstName: String?
-            let contactLastName: String?
-            let contactPhone: String?
-            let contactEmail: String?
-            let demoAccountName: String?
-            let demoAccountPassword: String?
-            let demoAccountRequired: Bool?
-            let notes: String?
-            let attachmentAssetId: String?
+            let contactFirstName: NullableAttributeValue?
+            let contactLastName: NullableAttributeValue?
+            let contactPhone: NullableAttributeValue?
+            let contactEmail: NullableAttributeValue?
+            let demoAccountName: NullableAttributeValue?
+            let demoAccountPassword: NullableAttributeValue?
+            let demoAccountRequired: NullableAttributeValue?
+            let notes: NullableAttributeValue?
         }
         struct Relationships: Codable, Sendable {
             let appStoreVersion: RelationshipData
@@ -298,15 +297,14 @@ struct UpdateAppStoreReviewDetailRequest: Codable, Sendable {
         let id: String
         let attributes: Attributes
         struct Attributes: Codable, Sendable {
-            let contactFirstName: String?
-            let contactLastName: String?
-            let contactPhone: String?
-            let contactEmail: String?
-            let demoAccountName: String?
-            let demoAccountPassword: String?
-            let demoAccountRequired: Bool?
-            let notes: String?
-            let attachmentAssetId: String?
+            let contactFirstName: NullableAttributeValue?
+            let contactLastName: NullableAttributeValue?
+            let contactPhone: NullableAttributeValue?
+            let contactEmail: NullableAttributeValue?
+            let demoAccountName: NullableAttributeValue?
+            let demoAccountPassword: NullableAttributeValue?
+            let demoAccountRequired: NullableAttributeValue?
+            let notes: NullableAttributeValue?
         }
     }
 
@@ -327,10 +325,10 @@ struct UpdateAgeRatingDeclarationRequest: Codable, Sendable {
     struct Data: Codable, Sendable {
         let type: String
         let id: String
-        let attributes: [String: AgeRatingValue]
+        let attributes: [String: NullableAttributeValue]
     }
 
-    init(ageRatingId: String, attributes: [String: AgeRatingValue]) {
+    init(ageRatingId: String, attributes: [String: NullableAttributeValue]) {
         self.data = Data(
             type: "ageRatingDeclarations",
             id: ageRatingId,
@@ -339,42 +337,22 @@ struct UpdateAgeRatingDeclarationRequest: Codable, Sendable {
     }
 }
 
-/// Request to create age rating declaration
-struct CreateAgeRatingDeclarationRequest: Codable, Sendable {
-    let data: Data
-    struct Data: Codable, Sendable {
-        let type: String
-        let attributes: [String: AgeRatingValue]
-        let relationships: Relationships
-        struct Relationships: Codable, Sendable {
-            let appStoreVersion: RelationshipData
-        }
-    }
-
-    init(versionId: String, attributes: [String: AgeRatingValue]) {
-        self.data = Data(
-            type: "ageRatingDeclarations",
-            attributes: attributes,
-            relationships: Data.Relationships(
-                appStoreVersion: RelationshipData(data: .init(type: "appStoreVersions", id: versionId))
-            )
-        )
-    }
-}
-
-/// Type-erased value for age rating attributes (string or bool)
-enum AgeRatingValue: Codable, Sendable {
+/// String, boolean, or explicit null value for nullable App Store Connect attributes
+enum NullableAttributeValue: Codable, Sendable {
     case string(String)
     case bool(Bool)
+    case null
 
     init(from decoder: Decoder) throws {
         let container = try decoder.singleValueContainer()
-        if let value = try? container.decode(Bool.self) {
+        if container.decodeNil() {
+            self = .null
+        } else if let value = try? container.decode(Bool.self) {
             self = .bool(value)
         } else if let value = try? container.decode(String.self) {
             self = .string(value)
         } else {
-            throw DecodingError.dataCorruptedError(in: container, debugDescription: "Expected String or Bool")
+            throw DecodingError.dataCorruptedError(in: container, debugDescription: "Expected String, Bool, or null")
         }
     }
 
@@ -383,9 +361,12 @@ enum AgeRatingValue: Codable, Sendable {
         switch self {
         case .string(let v): try container.encode(v)
         case .bool(let v): try container.encode(v)
+        case .null: try container.encodeNil()
         }
     }
 }
+
+typealias AgeRatingValue = NullableAttributeValue
 
 // MARK: - Lightweight Response Wrappers
 

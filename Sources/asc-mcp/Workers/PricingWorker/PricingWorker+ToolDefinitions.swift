@@ -129,7 +129,7 @@ extension PricingWorker {
     func listTerritoryAvailabilityTool() -> Tool {
         return Tool(
             name: "pricing_list_territory_availability",
-            description: "List per-territory availability for an app (available, release date, pre-order status)",
+            description: "List per-territory availability for an app (availability, release date, pre-order state, and pre-order publish date)",
             inputSchema: .object([
                 "type": .string("object"),
                 "properties": .object([

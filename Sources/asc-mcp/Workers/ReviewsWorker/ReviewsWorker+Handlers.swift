@@ -10,6 +10,125 @@ import MCP
 
 extension ReviewsWorker {
 
+    private struct TerritoryAccumulator {
+        var count = 0
+        var ratingTotal = 0
+    }
+
+    private struct StreamedReviewStats {
+        let stats: ReviewStats
+        let reviewsScanned: Int
+        let uniqueReviewsScanned: Int
+        let duplicatesSkipped: Int
+        let pagesFetched: Int
+    }
+
+    private func loadReviewStats(
+        appId: String,
+        territory: String?,
+        startDate: Date?,
+        now: Date
+    ) async throws -> StreamedReviewStats {
+        var endpoint = "/v1/apps/\(appId)/customerReviews"
+        var parameters: [String: String] = [
+            "limit": "200",
+            "sort": "-createdDate"
+        ]
+        if let territory, territory != "all" {
+            parameters["filter[territory]"] = territory
+        }
+
+        var seenReviewIDs: Set<String> = []
+        var reviewsScanned = 0
+        var uniqueReviewsScanned = 0
+        var duplicatesSkipped = 0
+        var pagesFetched = 0
+        var seenNextURLs: Set<String> = []
+        var totalCount = 0
+        var totalRating = 0
+        var ratingDistribution = Dictionary(uniqueKeysWithValues: (1...5).map { ($0, 0) })
+        var territories: [String: TerritoryAccumulator] = [:]
+
+        while true {
+            let response = try await httpClient.get(endpoint, parameters: parameters)
+            let page = try parseReviewsResponse(data: response)
+            pagesFetched += 1
+            reviewsScanned += page.data.count
+
+            let oldestDate = page.data.compactMap { parseReviewDate($0.attributes.createdDate) }.min()
+            for review in page.data {
+                guard seenReviewIDs.insert(review.id).inserted else {
+                    duplicatesSkipped += 1
+                    continue
+                }
+                uniqueReviewsScanned += 1
+
+                if let startDate {
+                    guard let reviewDate = parseReviewDate(review.attributes.createdDate),
+                          reviewDate >= startDate,
+                          reviewDate <= now else {
+                        continue
+                    }
+                }
+
+                totalCount += 1
+                totalRating += review.attributes.rating
+                ratingDistribution[review.attributes.rating, default: 0] += 1
+                let reviewTerritory = review.attributes.territory ?? "Unknown"
+                territories[reviewTerritory, default: TerritoryAccumulator()].count += 1
+                territories[reviewTerritory, default: TerritoryAccumulator()].ratingTotal += review.attributes.rating
+            }
+
+            if let startDate,
+               let oldestDate,
+               oldestDate < startDate {
+                break
+            }
+
+            guard let nextURL = page.links?.next else { break }
+            guard seenNextURLs.insert(nextURL).inserted else {
+                throw ASCError.parsing("Customer reviews pagination returned a repeated next URL")
+            }
+            guard let nextPage = await httpClient.parsePaginationUrl(nextURL) else {
+                throw ASCError.parsing("Customer reviews pagination returned an invalid next URL")
+            }
+            endpoint = nextPage.path
+            parameters = nextPage.parameters
+        }
+
+        let averageRating = totalCount > 0 ? Double(totalRating) / Double(totalCount) : 0
+        var territoryStats: [TerritoryStats] = []
+        territoryStats.reserveCapacity(territories.count)
+        for (territory, aggregate) in territories {
+            territoryStats.append(
+                TerritoryStats(
+                    territory: territory,
+                    count: aggregate.count,
+                    averageRating: Double(aggregate.ratingTotal) / Double(aggregate.count)
+                )
+            )
+        }
+        territoryStats.sort {
+            $0.count == $1.count ? $0.territory < $1.territory : $0.count > $1.count
+        }
+        let topTerritories = Array(territoryStats.prefix(5))
+
+        return StreamedReviewStats(
+            stats: ReviewStats(
+                totalCount: totalCount,
+                averageRating: averageRating,
+                ratingDistribution: ratingDistribution,
+                periodStart: startDate.map { ISO8601DateFormatter().string(from: $0) },
+                periodEnd: ISO8601DateFormatter().string(from: now),
+                topTerritories: topTerritories.isEmpty ? nil : topTerritories
+            ),
+            reviewsScanned: reviewsScanned,
+            uniqueReviewsScanned: uniqueReviewsScanned,
+            duplicatesSkipped: duplicatesSkipped,
+            pagesFetched: pagesFetched
+        )
+    }
+
     /// Lists customer reviews for an app with filtering and pagination
     /// - Returns: JSON with reviews array and pagination info
     func handleReviewsList(_ params: CallTool.Parameters) async throws -> CallTool.Result {
@@ -184,29 +303,40 @@ extension ReviewsWorker {
     func handleReviewsStats(_ params: CallTool.Parameters) async throws -> CallTool.Result {
         guard let arguments = params.arguments,
               let appIdValue = arguments["app_id"],
-              let appId = appIdValue.stringValue else {
+              let rawAppId = appIdValue.stringValue else {
             return CallTool.Result(
                 content: [MCPContent.text("Error: Required parameter 'app_id' is missing")],
                 isError: true
             )
         }
 
-        let period = arguments["period"]?.stringValue ?? "last_month"
-        let territory = arguments["territory"]?.stringValue
-
-        var queryParams: [String: String] = [
-            "limit": "200",
-            "sort": "-createdDate"
-        ]
-
-        if let territory = territory, territory != "all" {
-            queryParams["filter[territory]"] = territory
+        let appId = rawAppId.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !appId.isEmpty else {
+            return CallTool.Result(
+                content: [MCPContent.text("Error: Required parameter 'app_id' must not be empty")],
+                isError: true
+            )
         }
 
+        let requestedPeriod = arguments["period"]?.stringValue ?? "last_month"
+        guard let period = normalizeReviewPeriod(requestedPeriod) else {
+            return CallTool.Result(
+                content: [MCPContent.text("Error: Unsupported period '\(requestedPeriod)'. Use last_week, last_month, last_3_months, or all_time")],
+                isError: true
+            )
+        }
+        let territory = arguments["territory"]?.stringValue
+        let now = Date()
+        let startDate = reviewPeriodStart(for: period, now: now)
+
         do {
-            let response = try await httpClient.get("/v1/apps/\(appId)/customerReviews", parameters: queryParams)
-            let reviewsResponse = try parseReviewsResponse(data: response)
-            let stats = calculateStats(from: reviewsResponse.data, period: period)
+            let collection = try await loadReviewStats(
+                appId: appId,
+                territory: territory,
+                startDate: startDate,
+                now: now
+            )
+            let stats = collection.stats
 
             var ratingDist: [String: Any] = [:]
             for (key, value) in stats.ratingDistribution {
@@ -217,9 +347,22 @@ extension ReviewsWorker {
                 "success": true,
                 "period": period,
                 "total_in_sample": stats.totalCount,
+                "total_in_period": stats.totalCount,
+                "reviews_scanned": collection.reviewsScanned,
+                "unique_reviews_scanned": collection.uniqueReviewsScanned,
+                "duplicates_skipped": collection.duplicatesSkipped,
+                "pages_fetched": collection.pagesFetched,
+                "complete": true,
                 "average_rating": Double(String(format: "%.2f", stats.averageRating)) ?? stats.averageRating,
                 "rating_distribution": ratingDist
             ]
+
+            if let periodStart = stats.periodStart {
+                result["period_start"] = periodStart
+            }
+            if let periodEnd = stats.periodEnd {
+                result["period_end"] = periodEnd
+            }
 
             if let territory = territory {
                 result["territory"] = territory

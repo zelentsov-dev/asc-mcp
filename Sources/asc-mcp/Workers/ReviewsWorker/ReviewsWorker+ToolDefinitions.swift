@@ -31,7 +31,7 @@ extension ReviewsWorker {
                     ]),
                     "territory": .object([
                         "type": .string("string"),
-                        "description": .string("ISO 3166-1 alpha-2 territory code (US, RU, DE, JP)")
+                        "description": .string("Apple ISO 3166-1 alpha-3 territory code (USA, RUS, DEU, JPN)")
                     ]),
                     "sort": .object([
                         "type": .string("string"),
@@ -91,7 +91,7 @@ extension ReviewsWorker {
                     ]),
                     "territory": .object([
                         "type": .string("string"),
-                        "description": .string("Filter by territory code (e.g., US, RU, DE)")
+                        "description": .string("Filter by Apple's ISO 3166-1 alpha-3 territory code (e.g., USA, RUS, DEU)")
                     ]),
                     "sort": .object([
                         "type": .string("string"),
@@ -115,21 +115,28 @@ extension ReviewsWorker {
     func createReviewsStatsTool() -> Tool {
         return Tool(
             name: "reviews_stats",
-            description: "Get aggregated statistics for customer reviews without loading all reviews",
+            description: "Get complete deduplicated customer-review statistics for a rolling time period. Aggregates each page without retaining full review bodies, follows Apple pagination until the requested period is complete, and follows every page for all_time.",
             inputSchema: .object([
                 "type": .string("object"),
                 "properties": .object([
                     "app_id": .object([
                         "type": .string("string"),
-                        "description": .string("App Store Connect app ID")
+                        "description": .string("App Store Connect app ID"),
+                        "minLength": .int(1)
                     ]),
                     "period": .object([
                         "type": .string("string"),
-                        "description": .string("Time period: last_week, last_month, last_3_months, all_time")
+                        "description": .string("Rolling UTC time period ending when the tool runs: previous 7 days, previous 1 calendar month, previous 3 calendar months, or all available history. Default: last_month."),
+                        "enum": .array([
+                            .string("last_week"),
+                            .string("last_month"),
+                            .string("last_3_months"),
+                            .string("all_time")
+                        ])
                     ]),
                     "territory": .object([
                         "type": .string("string"),
-                        "description": .string("Filter by territory code (e.g., US, RU, DE) or 'all' for all territories")
+                        "description": .string("Filter by Apple's ISO 3166-1 alpha-3 territory code (e.g., USA, RUS, DEU) or 'all' for all territories")
                     ])
                 ]),
                 "required": .array([.string("app_id")])

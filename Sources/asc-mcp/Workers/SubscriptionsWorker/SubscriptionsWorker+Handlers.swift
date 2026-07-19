@@ -1143,7 +1143,7 @@ extension SubscriptionsWorker {
                 }
 
                 response = try await httpClient.get(
-                    "/v1/subscriptions/\(subscriptionId)/subscriptionImages",
+                    "/v1/subscriptions/\(subscriptionId)/images",
                     parameters: queryParams,
                     as: ASCSubscriptionImagesResponse.self
                 )

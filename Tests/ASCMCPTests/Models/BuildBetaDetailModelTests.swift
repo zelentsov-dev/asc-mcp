@@ -38,15 +38,15 @@ struct BuildBetaDetailModelTests {
         #expect(loc.attributes.whatsNew == "Beta fixes")
     }
 
-    @Test func betaBuildLocalizationFullAttributes() throws {
+    @Test func betaBuildLocalizationWithBuildRelationship() throws {
         let json = """
-        {"type":"betaBuildLocalizations","id":"bbl-2","attributes":{"locale":"de-DE","whatsNew":"Neue Features","feedbackEmail":"fb@test.com","marketingUrl":"https://marketing.com","privacyPolicyUrl":"https://privacy.com"}}
+        {"type":"betaBuildLocalizations","id":"bbl-2","attributes":{"locale":"de-DE","whatsNew":"Neue Features"},"relationships":{"build":{"data":{"type":"builds","id":"build-1"}}}}
         """.data(using: .utf8)!
         let loc = try JSONDecoder().decode(ASCBetaBuildLocalization.self, from: json)
         #expect(loc.attributes.locale == "de-DE")
-        #expect(loc.attributes.feedbackEmail == "fb@test.com")
-        #expect(loc.attributes.marketingUrl == "https://marketing.com")
-        #expect(loc.attributes.privacyPolicyUrl == "https://privacy.com")
+        #expect(loc.attributes.whatsNew == "Neue Features")
+        #expect(loc.relationships?.build?.data?.type == "builds")
+        #expect(loc.relationships?.build?.data?.id == "build-1")
     }
 
     @Test func betaGroup() throws {

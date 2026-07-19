@@ -42,7 +42,7 @@
       "kind": "direct",
       "status": "partial",
       "effect": "write",
-      "implementationState": "target",
+      "implementationState": "asBuilt",
       "operations": [
         {
           "operationId": "appStoreVersionExperimentTreatments_createInstance",
@@ -68,7 +68,7 @@
           { "outputField": "treatment", "operationId": "appStoreVersionExperimentTreatments_createInstance", "jsonPointer": "/data" }
         ]
       },
-      "note": "Intended current contract binds the treatment to appStoreVersionExperimentV2. The present Swift request instead sends the legacy appStoreVersionExperiment relationship, so this operation is expected to fail for IDs returned by the V2 experiment tools until the handler is corrected."
+      "note": "The handler binds treatments created for current V2 experiment IDs through the appStoreVersionExperimentV2 relationship."
     },
     {
       "tool": "ppo_create_treatment_localization",
@@ -263,7 +263,7 @@
       "kind": "direct",
       "status": "partial",
       "effect": "write",
-      "implementationState": "target",
+      "implementationState": "asBuilt",
       "operations": [
         {
           "operationId": "appStoreVersionExperimentsV2_updateInstance",
@@ -297,7 +297,7 @@
           { "outputField": "experiment", "operationId": "appStoreVersionExperimentsV2_updateInstance", "jsonPointer": "/data" }
         ]
       },
-      "note": "Intended V2 contract derives started=true from START and started=false from STOP. The current handler instead sends a string attribute named state, which is absent from AppStoreVersionExperimentV2UpdateRequest, so lifecycle updates remain broken until the Swift model and handler perform this conversion."
+      "note": "The handler derives started=true from START and started=false from STOP for the V2 update request."
     }
   ],
   "implementationAliases": []

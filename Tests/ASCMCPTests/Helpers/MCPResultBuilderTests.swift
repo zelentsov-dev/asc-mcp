@@ -53,6 +53,58 @@ struct MCPResultBuilderTests {
         #expect(text == "Error: Bad input")
     }
 
+    @Test("error result preserves long semantic identifiers")
+    func errorResultPreservesLongSemanticIdentifiers() throws {
+        let message = "Use beta_app_create_localization or pricing_get_availability_v2 with REPLACE_INTRO_OFFERS"
+        let result = MCPResult.error(message)
+
+        guard case .text(let text, _, _) = result.content.first,
+              case .object(let payload)? = result.structuredContent else {
+            Issue.record("Expected text and structured error content")
+            return
+        }
+
+        #expect(text == "Error: \(message)")
+        #expect(payload["error"] == .string(message))
+    }
+
+    @Test("error result still redacts bearer, base64url, and private-key secrets")
+    func errorResultRedactsCredentials() throws {
+        let bearer = "abc_def-123~+/=="
+        let base64URL = "eyJhbGciOiJFUzI1NiJ9_AbCdEfGhIjKlMnOpQrStUvWxYz0123456789"
+        let lowerSnakeSecret = "api_token_abcdefghijklmnopqrstuvwxyz012345"
+        let upperSnakeSecret = "TOKEN_ABCDEFGHIJKLMNOPQRSTUVWXYZ012345"
+        let prefixedSecret = "internal_secret-A1B2C3D4"
+        let privateKeyPath = "/tmp/AuthKey_ABC123.p8"
+        let privateKey = "-----BEGIN PRIVATE KEY-----\nabcdefghijklmnopqrstuvwxyzABCD\n-----END PRIVATE KEY-----"
+        let result = MCPResult.error(
+            "bearer \(bearer), token \(base64URL), lower \(lowerSnakeSecret), upper \(upperSnakeSecret), prefixed \(prefixedSecret), key \(privateKeyPath)\n\(privateKey)"
+        )
+
+        guard case .text(let text, _, _) = result.content.first,
+              case .object(let payload)? = result.structuredContent,
+              case .string(let error)? = payload["error"] else {
+            Issue.record("Expected text and structured error content")
+            return
+        }
+
+        #expect(text.contains("Bearer [REDACTED]"))
+        #expect(text.contains("token [REDACTED]"))
+        #expect(text.contains("key [REDACTED_PRIVATE_KEY_PATH]"))
+        #expect(text.contains("[REDACTED_PRIVATE_KEY]"))
+        #expect(error.contains("Bearer [REDACTED]"))
+        #expect(error.contains("token [REDACTED]"))
+        #expect(error.contains("key [REDACTED_PRIVATE_KEY_PATH]"))
+        #expect(error.contains("[REDACTED_PRIVATE_KEY]"))
+        #expect(!text.contains(bearer))
+        #expect(!text.contains(base64URL))
+        #expect(!text.contains(lowerSnakeSecret))
+        #expect(!text.contains(upperSnakeSecret))
+        #expect(!text.contains(prefixedSecret))
+        #expect(!text.contains(privateKeyPath))
+        #expect(!text.contains(privateKey))
+    }
+
     @Test("fromAny handles nulls, dates, and nested dictionaries")
     func fromAnyHandlesCommonResultDictionaries() throws {
         let date = Date(timeIntervalSince1970: 0)

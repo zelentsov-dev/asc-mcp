@@ -158,7 +158,7 @@
       "kind": "direct",
       "status": "partial",
       "effect": "write",
-      "implementationState": "target",
+      "implementationState": "asBuilt",
       "operations": [
         {
           "operationId": "builds_updateInstance",
@@ -211,10 +211,28 @@
             "outputField": "build",
             "operationId": "builds_updateInstance",
             "jsonPointer": "/data"
+          },
+          {
+            "outputField": "buildId",
+            "operationId": "builds_updateInstance",
+            "jsonPointer": "/data/id"
+          },
+          {
+            "outputField": "usesNonExemptEncryption",
+            "operationId": "builds_updateInstance",
+            "jsonPointer": "/data/attributes/usesNonExemptEncryption"
+          },
+          {
+            "outputField": "success",
+            "localRole": "True after Apple accepts the build update."
+          },
+          {
+            "outputField": "message",
+            "localRole": "Local confirmation that encryption compliance was updated."
           }
         ]
       },
-      "note": "Intended App Store Connect 4.4.1 contract. The current handler is broken: it GETs the declaration and PATCHes nonexistent /v1/appEncryptionDeclarations/{id} with the different usesEncryption attribute."
+      "note": "PATCHes the Build resource directly with usesNonExemptEncryption and returns Apple's updated Build projection."
     }
   ],
   "implementationAliases": []

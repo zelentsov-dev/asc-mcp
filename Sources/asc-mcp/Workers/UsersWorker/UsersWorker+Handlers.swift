@@ -101,36 +101,98 @@ extension UsersWorker {
         }
     }
 
-    /// Updates user roles
+    /// Updates user roles, app visibility, or provisioning access
     /// - Returns: JSON with updated user details
     func updateUser(_ params: CallTool.Parameters) async throws -> CallTool.Result {
         guard let arguments = params.arguments,
               let userIdValue = arguments["user_id"],
-              let userId = userIdValue.stringValue,
-              let rolesValue = arguments["roles"],
-              let rolesArray = rolesValue.arrayValue else {
-            return CallTool.Result(
-                content: [MCPContent.text("Required parameters: user_id, roles")],
-                isError: true
-            )
+              let userId = userIdValue.stringValue else {
+            return MCPResult.error("Required parameter 'user_id' is missing")
         }
 
-        let roles = rolesArray.compactMap { $0.stringValue }
-        guard !roles.isEmpty else {
-            return CallTool.Result(
-                content: [MCPContent.text("'roles' must contain at least one role")],
-                isError: true
+        let roles: [String]?
+        if let rolesValue = arguments["roles"] {
+            guard let rolesArray = rolesValue.arrayValue else {
+                return MCPResult.error("'roles' must be an array of strings")
+            }
+            let parsedRoles = rolesArray.compactMap(\.stringValue)
+            guard parsedRoles.count == rolesArray.count, !parsedRoles.isEmpty else {
+                return MCPResult.error("'roles' must contain at least one string role")
+            }
+            guard Set(parsedRoles).count == parsedRoles.count else {
+                return MCPResult.error("'roles' must not contain duplicate values")
+            }
+            let invalidRoles = parsedRoles.filter { !UsersWorker.assignableRoles.contains($0) }
+            guard invalidRoles.isEmpty else {
+                return MCPResult.error(
+                    "Unsupported role(s): \(invalidRoles.joined(separator: ", ")). Valid roles: \(UsersWorker.assignableRoles.joined(separator: ", "))"
+                )
+            }
+            roles = parsedRoles
+        } else {
+            roles = nil
+        }
+
+        let allAppsVisible: Bool?
+        if let value = arguments["all_apps_visible"] {
+            guard let parsed = value.boolValue else {
+                return MCPResult.error("'all_apps_visible' must be a boolean")
+            }
+            allAppsVisible = parsed
+        } else {
+            allAppsVisible = nil
+        }
+
+        let provisioningAllowed: Bool?
+        if let value = arguments["provisioning_allowed"] {
+            guard let parsed = value.boolValue else {
+                return MCPResult.error("'provisioning_allowed' must be a boolean")
+            }
+            provisioningAllowed = parsed
+        } else {
+            provisioningAllowed = nil
+        }
+
+        let visibleAppIds: [String]?
+        if let value = arguments["visible_app_ids"] {
+            guard let array = value.arrayValue else {
+                return MCPResult.error("'visible_app_ids' must be an array of strings")
+            }
+            let parsed = array.compactMap(\.stringValue)
+            guard parsed.count == array.count, parsed.allSatisfy({ !$0.isEmpty }) else {
+                return MCPResult.error("'visible_app_ids' must contain only non-empty string IDs")
+            }
+            guard Set(parsed).count == parsed.count else {
+                return MCPResult.error("'visible_app_ids' must not contain duplicate values")
+            }
+            visibleAppIds = parsed
+        } else {
+            visibleAppIds = nil
+        }
+
+        guard roles != nil || allAppsVisible != nil || provisioningAllowed != nil || visibleAppIds != nil else {
+            return MCPResult.error(
+                "Provide at least one update field: roles, all_apps_visible, provisioning_allowed, or visible_app_ids"
             )
         }
 
         do {
+            let relationships = visibleAppIds.map { ids in
+                UpdateUserRequest.UpdateUserRelationships(
+                    visibleApps: UpdateUserRequest.VisibleAppsRelationship(
+                        data: ids.map { ASCResourceIdentifier(type: "apps", id: $0) }
+                    )
+                )
+            }
             let request = UpdateUserRequest(
                 data: UpdateUserRequest.UpdateUserData(
                     id: userId,
                     attributes: UpdateUserRequest.UpdateUserAttributes(
                         roles: roles,
-                        allAppsVisible: nil
-                    )
+                        allAppsVisible: allAppsVisible,
+                        provisioningAllowed: provisioningAllowed
+                    ),
+                    relationships: relationships
                 )
             )
 
@@ -142,10 +204,16 @@ extension UsersWorker {
 
             let user = formatUser(response.data)
 
-            let result = [
+            var result = [
                 "success": true,
                 "user": user
             ] as [String: Any]
+            if let roles,
+               !UsersWorker.deprecatedRoles.isDisjoint(with: roles) {
+                result["warnings"] = [
+                    "ACCESS_TO_REPORTS is deprecated by Apple and remains accepted only for backward compatibility."
+                ]
+            }
 
             return MCPResult.jsonObject(result)
 

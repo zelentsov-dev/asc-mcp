@@ -408,7 +408,7 @@
       "kind": "direct",
       "status": "partial",
       "effect": "write",
-      "implementationState": "broken",
+      "implementationState": "asBuilt",
       "operations": [
         {
           "operationId": "subscriptionOfferCodes_createInstance",
@@ -426,14 +426,6 @@
               "sourceKind": "fixed",
               "jsonPointer": "/data/relationships/subscription/data/type",
               "fixedValue": "subscriptions"
-            },
-            {
-              "sourceKind": "derived",
-              "jsonPointer": "/data/attributes/customerEligibilities",
-              "derivedFrom": [
-                "offer_eligibility"
-              ],
-              "localRole": "Wrap the public offer eligibility in the customerEligibilities array used by the delegated handler."
             },
             {
               "sourceKind": "fixed",
@@ -464,6 +456,12 @@
           "sourceKind": "requestBody",
           "operationId": "subscriptionOfferCodes_createInstance",
           "jsonPointer": "/data/attributes/name"
+        },
+        {
+          "toolField": "customer_eligibilities",
+          "sourceKind": "requestBody",
+          "operationId": "subscriptionOfferCodes_createInstance",
+          "jsonPointer": "/data/attributes/customerEligibilities"
         },
         {
           "toolField": "offer_eligibility",
@@ -502,6 +500,18 @@
           "operationId": "subscriptionOfferCodes_createInstance",
           "jsonPointer": "/included",
           "localRole": "Zipped with territory_ids into inline subscriptionOfferCodePrices price-point relationships."
+        },
+        {
+          "toolField": "auto_renew_enabled",
+          "sourceKind": "requestBody",
+          "operationId": "subscriptionOfferCodes_createInstance",
+          "jsonPointer": "/data/attributes/autoRenewEnabled"
+        },
+        {
+          "toolField": "target_subscription_plan_type",
+          "sourceKind": "requestBody",
+          "operationId": "subscriptionOfferCodes_createInstance",
+          "jsonPointer": "/data/attributes/targetSubscriptionPlanType"
         }
       ],
       "response": {
@@ -511,7 +521,7 @@
         ],
         "fields": []
       },
-      "note": "Broken as built: when territory_ids is empty, the legacy fallback can omit the required prices relationship; it also copies offerEligibility into customerEligibilities even though Apple defines disjoint enums. Plan targeting and auto-renew controls are not exposed."
+      "note": "The handler requires explicit customer eligibility values and non-empty territory pricing, validates paid/free pricing rules, and enforces that autoRenewEnabled=false is limited to FREE_TRIAL offers that replace introductory offers."
     },
     {
       "tool": "subscriptions_create_price",
@@ -590,7 +600,7 @@
       "kind": "direct",
       "status": "partial",
       "effect": "write",
-      "implementationState": "broken",
+      "implementationState": "asBuilt",
       "operations": [
         {
           "operationId": "subscriptionPromotionalOffers_createInstance",
@@ -676,6 +686,12 @@
           "operationId": "subscriptionPromotionalOffers_createInstance",
           "jsonPointer": "/included",
           "localRole": "Zipped with territory_ids into inline subscriptionPromotionalOfferPrices price-point relationships."
+        },
+        {
+          "toolField": "target_subscription_plan_type",
+          "sourceKind": "requestBody",
+          "operationId": "subscriptionPromotionalOffers_createInstance",
+          "jsonPointer": "/data/attributes/targetSubscriptionPlanType"
         }
       ],
       "response": {
@@ -685,14 +701,14 @@
         ],
         "fields": []
       },
-      "note": "Broken as built: territory_ids and price_point_ids are optional; when absent or empty, the handler omits Apple required prices relationship."
+      "note": "The handler requires non-empty territory pricing, validates paid/free price-point rules, and always sends Apple's required prices relationship."
     },
     {
       "tool": "subscriptions_create_winback_offer",
       "kind": "direct",
       "status": "partial",
       "effect": "write",
-      "implementationState": "broken",
+      "implementationState": "asBuilt",
       "operations": [
         {
           "operationId": "winBackOffers_createInstance",
@@ -720,10 +736,9 @@
               "sourceKind": "derived",
               "jsonPointer": "/data/relationships/prices/data/*/id",
               "derivedFrom": [
-                "territory_ids",
                 "price_point_ids"
               ],
-              "localRole": "Generate the same ${price-index} linkage IDs used by the inline win-back price resources; the current handler omits the Apple-required prices relationship when no territories are supplied."
+              "localRole": "Generate the same ${price-index} linkage IDs used by inline win-back price resources."
             }
           ]
         }
@@ -787,13 +802,15 @@
           "toolField": "eligibility_time_since_last_months_min",
           "sourceKind": "requestBody",
           "operationId": "winBackOffers_createInstance",
-          "jsonPointer": "/data/attributes/customerEligibilityTimeSinceLastSubscribedInMonths/minimum"
+          "jsonPointer": "/data/attributes/customerEligibilityTimeSinceLastSubscribedInMonths/minimum",
+          "localRole": "Optional IntegerRange minimum encoded independently without inventing a maximum."
         },
         {
           "toolField": "eligibility_time_since_last_months_max",
           "sourceKind": "requestBody",
           "operationId": "winBackOffers_createInstance",
-          "jsonPointer": "/data/attributes/customerEligibilityTimeSinceLastSubscribedInMonths/maximum"
+          "jsonPointer": "/data/attributes/customerEligibilityTimeSinceLastSubscribedInMonths/maximum",
+          "localRole": "Optional IntegerRange maximum encoded independently without inventing a minimum."
         },
         {
           "toolField": "eligibility_wait_between_months",
@@ -815,17 +832,21 @@
         },
         {
           "toolField": "territory_ids",
-          "sourceKind": "requestBody",
-          "operationId": "winBackOffers_createInstance",
-          "jsonPointer": "/included",
-          "localRole": "Zipped with price_point_ids into inline winBackOfferPrices territory relationships."
+          "sourceKind": "local",
+          "localRole": "Optional compatibility labels validated one-to-one against price_point_ids; not sent because each subscription price point ID already identifies its territory."
         },
         {
           "toolField": "price_point_ids",
           "sourceKind": "requestBody",
           "operationId": "winBackOffers_createInstance",
           "jsonPointer": "/included",
-          "localRole": "Zipped with territory_ids into inline winBackOfferPrices price-point relationships."
+          "localRole": "Creates inline winBackOfferPrices resources containing only the subscriptionPricePoint relationship shown in Apple's official create example."
+        },
+        {
+          "toolField": "target_subscription_plan_type",
+          "sourceKind": "requestBody",
+          "operationId": "winBackOffers_createInstance",
+          "jsonPointer": "/data/attributes/targetSubscriptionPlanType"
         }
       ],
       "response": {
@@ -835,7 +856,7 @@
         ],
         "fields": []
       },
-      "note": "Broken as built: territory_ids and price_point_ids can be absent or empty, and the handler then omits Apple required prices relationship."
+      "note": "Apple API 4.4.1 requires the prices relationship, and Apple's official create example identifies availability through subscription price point IDs. The handler sends non-empty inline resources containing subscriptionPricePoint only, treats territory_ids as optional local compatibility metadata, and preserves independently optional IntegerRange bounds."
     },
     {
       "tool": "subscriptions_deactivate_custom_code",
@@ -2131,7 +2152,7 @@
       "kind": "direct",
       "status": "partial",
       "effect": "read",
-      "implementationState": "target",
+      "implementationState": "asBuilt",
       "operations": [
         {
           "operationId": "subscriptions_images_getToManyRelated",
@@ -2159,7 +2180,7 @@
         {
           "toolField": "next_url",
           "sourceKind": "local",
-          "localRole": "Validated Apple pagination URL override for version images."
+          "localRole": "Validated Apple pagination URL override for subscription images."
         }
       ],
       "response": {
@@ -2169,7 +2190,7 @@
         ],
         "fields": []
       },
-      "note": "Apple 4.4.1 defines GET /v1/subscriptions/{id}/images. The current handler incorrectly calls /v1/subscriptions/{id}/subscriptionImages, which is absent from the specification; this mapping records the intended official operation and the implementation must be fixed."
+      "note": "The handler uses Apple's GET /v1/subscriptions/{id}/images operation and preserves validated pagination URLs."
     },
     {
       "tool": "subscriptions_list_intro_offers",
@@ -3431,7 +3452,7 @@
       "kind": "direct",
       "status": "partial",
       "effect": "write",
-      "implementationState": "broken",
+      "implementationState": "asBuilt",
       "operations": [
         {
           "operationId": "subscriptionPromotionalOffers_updateInstance",
@@ -3500,14 +3521,14 @@
         ],
         "fields": []
       },
-      "note": "Broken as built: the public schema requires only id; with both optional arrays omitted or empty, the handler sends an id/type-only no-op PATCH with no mutable attributes."
+      "note": "The handler requires non-empty territory pricing and always sends a meaningful prices relationship with inline price resources."
     },
     {
       "tool": "subscriptions_update_winback_offer",
       "kind": "direct",
       "status": "partial",
       "effect": "write",
-      "implementationState": "broken",
+      "implementationState": "asBuilt",
       "operations": [
         {
           "operationId": "winBackOffers_updateInstance",
@@ -3539,6 +3560,62 @@
           "operationId": "winBackOffers_updateInstance",
           "location": "path",
           "appleName": "id"
+        },
+        {
+          "toolField": "eligibility_duration_months",
+          "sourceKind": "requestBody",
+          "operationId": "winBackOffers_updateInstance",
+          "jsonPointer": "/data/attributes/customerEligibilityPaidSubscriptionDurationInMonths",
+          "localRole": "Accepts Apple's supported month values or explicit null to clear the attribute; omission leaves it unchanged."
+        },
+        {
+          "toolField": "eligibility_time_since_last_months_min",
+          "sourceKind": "requestBody",
+          "operationId": "winBackOffers_updateInstance",
+          "jsonPointer": "/data/attributes/customerEligibilityTimeSinceLastSubscribedInMonths/minimum",
+          "localRole": "An integer sets only minimum without inventing maximum; explicit null clears customerEligibilityTimeSinceLastSubscribedInMonths."
+        },
+        {
+          "toolField": "eligibility_time_since_last_months_max",
+          "sourceKind": "requestBody",
+          "operationId": "winBackOffers_updateInstance",
+          "jsonPointer": "/data/attributes/customerEligibilityTimeSinceLastSubscribedInMonths/maximum",
+          "localRole": "An integer sets only maximum without inventing minimum; explicit null clears customerEligibilityTimeSinceLastSubscribedInMonths."
+        },
+        {
+          "toolField": "eligibility_wait_between_months",
+          "sourceKind": "requestBody",
+          "operationId": "winBackOffers_updateInstance",
+          "jsonPointer": "/data/attributes/customerEligibilityWaitBetweenOffersInMonths",
+          "localRole": "Explicit null clears the attribute; omission leaves it unchanged."
+        },
+        {
+          "toolField": "start_date",
+          "sourceKind": "requestBody",
+          "operationId": "winBackOffers_updateInstance",
+          "jsonPointer": "/data/attributes/startDate",
+          "localRole": "Explicit null clears the attribute; omission leaves it unchanged."
+        },
+        {
+          "toolField": "end_date",
+          "sourceKind": "requestBody",
+          "operationId": "winBackOffers_updateInstance",
+          "jsonPointer": "/data/attributes/endDate",
+          "localRole": "Explicit null clears the attribute; omission leaves it unchanged."
+        },
+        {
+          "toolField": "priority",
+          "sourceKind": "requestBody",
+          "operationId": "winBackOffers_updateInstance",
+          "jsonPointer": "/data/attributes/priority",
+          "localRole": "Explicit null clears the attribute; omission leaves it unchanged."
+        },
+        {
+          "toolField": "promotion_intent",
+          "sourceKind": "requestBody",
+          "operationId": "winBackOffers_updateInstance",
+          "jsonPointer": "/data/attributes/promotionIntent",
+          "localRole": "Explicit null clears the attribute; omission leaves it unchanged."
         }
       ],
       "response": {
@@ -3548,7 +3625,7 @@
         ],
         "fields": []
       },
-      "note": "Broken as built: the public wrapper carries only the ID, so every mutable win-back attribute remains nil and the advertised update sends a no-op PATCH."
+      "note": "The public tool preserves omitted-versus-null update semantics for every nullable Apple 4.4.1 attribute, accepts either IntegerRange bound independently, and rejects no-op updates before network I/O."
     },
     {
       "tool": "subscriptions_upload_image",

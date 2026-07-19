@@ -67,24 +67,64 @@ extension OfferCodesWorker {
               let offerEligibility = arguments["offer_eligibility"]?.stringValue,
               let offerMode = arguments["offer_mode"]?.stringValue,
               let duration = arguments["duration"]?.stringValue,
-              let numberOfPeriods = arguments["number_of_periods"]?.intValue else {
+              let numberOfPeriods = arguments["number_of_periods"]?.intValue,
+              let customerEligibilityValues = arguments["customer_eligibilities"]?.arrayValue,
+              let territoryValues = arguments["territory_ids"]?.arrayValue else {
             return CallTool.Result(
-                content: [MCPContent.text("Error: Required parameters: subscription_id, name, offer_eligibility, offer_mode, duration, number_of_periods")],
+                content: [MCPContent.text("Error: Required parameters: subscription_id, name, customer_eligibilities, offer_eligibility, offer_mode, duration, number_of_periods, territory_ids")],
                 isError: true
             )
         }
 
         do {
-            // Parse customer_eligibilities from arguments
-            var customerEligibilities: [String] = []
-            if let eligArray = arguments["customer_eligibilities"]?.arrayValue {
-                customerEligibilities = eligArray.compactMap { $0.stringValue }
-            } else {
-                customerEligibilities = [offerEligibility]
-            }
+            let customerEligibilities = customerEligibilityValues.compactMap(\.stringValue)
+            let territoryIds = territoryValues.compactMap(\.stringValue)
+            let pricePointValues = arguments["price_point_ids"]?.arrayValue ?? []
+            let pricePointIds = pricePointValues.compactMap(\.stringValue)
 
-            // Parse territory_ids
-            let territoryIds = arguments["territory_ids"]?.arrayValue?.compactMap { $0.stringValue } ?? []
+            guard customerEligibilities.count == customerEligibilityValues.count,
+                  !customerEligibilities.isEmpty,
+                  customerEligibilities.allSatisfy(Set(["NEW", "EXISTING", "EXPIRED"]).contains) else {
+                return MCPResult.error("customer_eligibilities must contain one or more of: NEW, EXISTING, EXPIRED")
+            }
+            guard Set(["STACK_WITH_INTRO_OFFERS", "REPLACE_INTRO_OFFERS"]).contains(offerEligibility) else {
+                return MCPResult.error("offer_eligibility must be STACK_WITH_INTRO_OFFERS or REPLACE_INTRO_OFFERS")
+            }
+            guard Set(["PAY_AS_YOU_GO", "PAY_UP_FRONT", "FREE_TRIAL"]).contains(offerMode) else {
+                return MCPResult.error("offer_mode must be PAY_AS_YOU_GO, PAY_UP_FRONT, or FREE_TRIAL")
+            }
+            guard Set(["THREE_DAYS", "ONE_WEEK", "TWO_WEEKS", "ONE_MONTH", "TWO_MONTHS", "THREE_MONTHS", "SIX_MONTHS", "ONE_YEAR"]).contains(duration),
+                  numberOfPeriods > 0 else {
+                return MCPResult.error("duration must be a supported Apple duration and number_of_periods must be positive")
+            }
+            guard territoryIds.count == territoryValues.count,
+                  !territoryIds.isEmpty,
+                  territoryIds.allSatisfy({ !$0.isEmpty }) else {
+                return MCPResult.error("territory_ids must contain at least one territory ID")
+            }
+            guard pricePointIds.count == pricePointValues.count,
+                  pricePointIds.allSatisfy({ !$0.isEmpty }) else {
+                return MCPResult.error("price_point_ids must contain only string IDs")
+            }
+            if let targetPlan = arguments["target_subscription_plan_type"]?.stringValue,
+               !Set(["MONTHLY", "UPFRONT"]).contains(targetPlan) {
+                return MCPResult.error("target_subscription_plan_type must be MONTHLY or UPFRONT")
+            }
+            if arguments["auto_renew_enabled"]?.boolValue == false {
+                guard offerMode == "FREE_TRIAL" else {
+                    return MCPResult.error("auto_renew_enabled can be false only for FREE_TRIAL offers")
+                }
+                guard offerEligibility == "REPLACE_INTRO_OFFERS" else {
+                    return MCPResult.error("auto_renew_enabled=false requires offer_eligibility=REPLACE_INTRO_OFFERS")
+                }
+            }
+            if offerMode == "FREE_TRIAL", !pricePointIds.isEmpty {
+                return MCPResult.error("price_point_ids must be omitted for FREE_TRIAL offers")
+            }
+            if offerMode != "FREE_TRIAL",
+               (pricePointIds.isEmpty || pricePointIds.count != territoryIds.count) {
+                return MCPResult.error("paid offers require one price_point_id per territory_id")
+            }
 
             // Build prices relationship and included based on offerMode
             var pricesRelationship: CreateOfferCodeRequest.PricesRelationship?
@@ -150,6 +190,10 @@ extension OfferCodesWorker {
                 }
             }
 
+            guard let pricesRelationship, let included else {
+                return MCPResult.error("At least one valid territory price is required")
+            }
+
             let request = CreateOfferCodeRequest(
                 data: CreateOfferCodeRequest.CreateData(
                     attributes: CreateOfferCodeRequest.Attributes(
@@ -158,7 +202,9 @@ extension OfferCodesWorker {
                         offerMode: offerMode,
                         duration: duration,
                         numberOfPeriods: numberOfPeriods,
-                        customerEligibilities: customerEligibilities
+                        customerEligibilities: customerEligibilities,
+                        autoRenewEnabled: arguments["auto_renew_enabled"]?.boolValue,
+                        targetSubscriptionPlanType: arguments["target_subscription_plan_type"]?.stringValue
                     ),
                     relationships: CreateOfferCodeRequest.Relationships(
                         subscription: CreateOfferCodeRequest.SubscriptionRelationship(
@@ -588,7 +634,11 @@ extension OfferCodesWorker {
             "duration": code.attributes.duration.jsonSafe,
             "numberOfPeriods": code.attributes.numberOfPeriods.jsonSafe,
             "totalNumberOfCodes": code.attributes.totalNumberOfCodes.jsonSafe,
-            "customerEligibilities": code.attributes.customerEligibilities.jsonSafe
+            "productionCodeCount": code.attributes.productionCodeCount.jsonSafe,
+            "sandboxCodeCount": code.attributes.sandboxCodeCount.jsonSafe,
+            "customerEligibilities": code.attributes.customerEligibilities.jsonSafe,
+            "autoRenewEnabled": code.attributes.autoRenewEnabled.jsonSafe,
+            "targetSubscriptionPlanType": code.attributes.targetSubscriptionPlanType.jsonSafe
         ]
     }
 

@@ -60,6 +60,7 @@ public struct TerritoryAvailabilityAttributes: Codable, Sendable {
     public let available: Bool?
     public let releaseDate: String?
     public let preOrderEnabled: Bool?
+    public let preOrderPublishDate: String?
     public let contentStatuses: [String]?
 }
 

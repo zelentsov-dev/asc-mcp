@@ -463,7 +463,7 @@
       "kind": "compound",
       "status": "partial",
       "effect": "read",
-      "implementationState": "target",
+      "implementationState": "asBuilt",
       "operations": [
         {
           "operationId": "apps_appAvailabilityV2_getToOneRelated",
@@ -507,7 +507,7 @@
         {
           "toolField": "next_url",
           "sourceKind": "local",
-          "localRole": "Parse the related-collection pagination URL and replay its path and query."
+          "localRole": "Parse an Apple-host pagination URL, require the exact /v2/appAvailabilities/{id}/territoryAvailabilities route, and replay its path and query."
         }
       ],
       "response": {
@@ -537,7 +537,7 @@
           }
         ]
       },
-      "note": "Intended current Apple workflow is resolve-then-list. The existing handler instead reads one appAvailabilityV2 response with a fixed nested limit of 50 and ignores both MCP limit and next_url, so this mapping is intentionally partial."
+      "note": "The handler resolves the app availability ID on the first page, lists its territory availability collection with the requested limit, projects Apple's preOrderPublishDate attribute, and only replays next_url values for the same related-collection route."
     },
     {
       "tool": "pricing_set_price_schedule",

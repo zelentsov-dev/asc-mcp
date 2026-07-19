@@ -10,55 +10,117 @@ import MCP
 
 extension AnalyticsWorker {
 
+    private struct ParsedSalesReport {
+        let headers: [String]
+        let rows: [[String: String]]
+        let totalRows: Int
+        let summary: [String: Any]
+    }
+
     /// Resolves vendor number from explicit parameter or company config
     /// - Returns: Vendor number string or nil if not available
     private func resolveVendorNumber(from arguments: [String: Value]?) async -> String? {
         if let explicit = arguments?["vendor_number"]?.stringValue {
-            return explicit
+            let trimmed = explicit.trimmingCharacters(in: .whitespacesAndNewlines)
+            return trimmed.isEmpty ? nil : trimmed
         }
         if let manager = companiesManager,
            let company = try? await manager.getCurrentCompany(),
            let vendorNumber = company.vendorNumber {
-            return vendorNumber
+            let trimmed = vendorNumber.trimmingCharacters(in: .whitespacesAndNewlines)
+            return trimmed.isEmpty ? nil : trimmed
         }
         return nil
     }
 
-    /// Default report version by report type (latest known as of 2026)
-    private static let defaultReportVersions: [String: String] = [
-        "SALES": "1_0",
-        "PRE_ORDER": "1_1",
-        "NEWSSTAND": "1_0",
-        "SUBSCRIPTION": "1_3",
-        "SUBSCRIPTION_EVENT": "1_4",
-        "SUBSCRIBER": "1_3",
-        "SUBSCRIPTION_OFFER_CODE_REDEMPTION": "1_0"
-    ]
+    private static func nonEmptyIdentifier(_ value: String) -> String? {
+        let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty ? nil : trimmed
+    }
 
-    /// Fetches and parses a sales report, returning summary and row counts
-    /// - Returns: Tuple with summary dict, total row count, and filtered row count
-    /// - Throws: Error if API call or decompression fails
+    private static func reportDate(_ value: String) -> String? {
+        let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+        let bytes = Array(trimmed.utf8)
+        guard bytes.count == 10,
+              bytes[4] == 45,
+              bytes[7] == 45,
+              bytes.enumerated().allSatisfy({ index, byte in
+                  index == 4 || index == 7 || (48...57).contains(byte)
+              }),
+              let year = Int(trimmed.prefix(4)),
+              let month = Int(trimmed.dropFirst(5).prefix(2)),
+              let day = Int(trimmed.suffix(2)),
+              year > 0 else {
+            return nil
+        }
+
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 0) ?? calendar.timeZone
+        let components = DateComponents(calendar: calendar, timeZone: calendar.timeZone, year: year, month: month, day: day)
+        guard let date = calendar.date(from: components) else { return nil }
+        let resolved = calendar.dateComponents([.year, .month, .day], from: date)
+        guard resolved.year == year, resolved.month == month, resolved.day == day else { return nil }
+        return trimmed
+    }
+
+    private static func allowedReportVersions(
+        reportType: String,
+        reportSubType: String,
+        frequency: String
+    ) -> [String]? {
+        switch (reportType, reportSubType, frequency) {
+        case ("FIRST_ANNUAL", "DETAILED", "DAILY"),
+             ("FIRST_ANNUAL", "SUMMARY", "YEARLY"),
+             ("NEWSSTAND", "DETAILED", "DAILY"),
+             ("NEWSSTAND", "DETAILED", "WEEKLY"),
+             ("SUBSCRIPTION_OFFER_CODE_REDEMPTION", "SUMMARY", "DAILY"),
+             ("WIN_BACK_ELIGIBILITY", "SUMMARY", "DAILY"):
+            return ["1_0"]
+        case ("PRE_ORDER", "SUMMARY", "DAILY"),
+             ("PRE_ORDER", "SUMMARY", "WEEKLY"),
+             ("PRE_ORDER", "SUMMARY", "MONTHLY"),
+             ("PRE_ORDER", "SUMMARY", "YEARLY"),
+             ("SALES", "SUMMARY", "DAILY"),
+             ("SALES", "SUMMARY", "WEEKLY"),
+             ("SALES", "SUMMARY", "MONTHLY"),
+             ("SALES", "SUMMARY", "YEARLY"):
+            return ["1_0"]
+        case ("SUBSCRIBER", "DETAILED", "DAILY"),
+             ("SUBSCRIPTION", "SUMMARY", "DAILY"),
+             ("SUBSCRIPTION_EVENT", "SUMMARY", "DAILY"):
+            return ["1_3"]
+        case ("INSTALLS", "SUMMARY", "MONTHLY"),
+             ("INSTALLS", "DETAILED", "MONTHLY"):
+            return ["1_2"]
+        case ("INSTALLS", "SUMMARY_CHANNEL", "YEARLY"),
+             ("INSTALLS", "SUMMARY_INSTALL_TYPE", "YEARLY"),
+             ("INSTALLS", "SUMMARY_TERRITORY", "YEARLY"),
+             ("INSTALLS", "DETAILED", "YEARLY"):
+            return ["1_0", "1_1"]
+        default:
+            return nil
+        }
+    }
+
     private func fetchReportSummary(
         vendorNumber: String,
         reportType: String,
         reportSubType: String,
         frequency: String,
-        reportDate: String,
-        version: String? = nil,
+        reportDate: String?,
+        version: String,
         appIdFilter: String? = nil
-    ) async throws -> (summary: [String: Any], totalRows: Int, filteredRows: Int) {
-        let resolvedVersion = version
-            ?? Self.defaultReportVersions[reportType]
-            ?? "1_0"
-
-        let queryParams: [String: String] = [
+    ) async throws -> ParsedSalesReport {
+        var queryParams: [String: String] = [
             "filter[vendorNumber]": vendorNumber,
             "filter[reportType]": reportType,
             "filter[reportSubType]": reportSubType,
             "filter[frequency]": frequency,
-            "filter[reportDate]": reportDate,
-            "filter[version]": resolvedVersion
+            "filter[version]": version
         ]
+        if let reportDate {
+            queryParams["filter[reportDate]"] = reportDate
+        }
 
         let data = try await httpClient.getRaw("/v1/salesReports", parameters: queryParams, accept: "application/a-gzip")
 
@@ -71,14 +133,22 @@ extension AnalyticsWorker {
         let filteredRows: [[String: String]]
         if let appId = appIdFilter {
             filteredRows = allParsed.rows.filter { row in
-                row["Apple Identifier"] == appId || row["App Apple ID"] == appId
+                row["Apple Identifier"] == appId ||
+                    row["App Apple ID"] == appId ||
+                    row["App Identifier"] == appId ||
+                    row["App ID"] == appId
             }
         } else {
             filteredRows = allParsed.rows
         }
 
         let summary = ReportSummary.summary(for: reportType, from: filteredRows)
-        return (summary: summary, totalRows: allParsed.totalRowCount, filteredRows: filteredRows.count)
+        return ParsedSalesReport(
+            headers: allParsed.headers,
+            rows: filteredRows,
+            totalRows: allParsed.totalRowCount,
+            summary: summary
+        )
     }
 
     /// Gets a sales/download report from App Store Connect
@@ -88,10 +158,39 @@ extension AnalyticsWorker {
         guard let arguments = params.arguments,
               let reportType = arguments["report_type"]?.stringValue,
               let reportSubType = arguments["report_sub_type"]?.stringValue,
-              let frequency = arguments["frequency"]?.stringValue,
-              let reportDate = arguments["report_date"]?.stringValue else {
+              let frequency = arguments["frequency"]?.stringValue else {
             return CallTool.Result(
-                content: [MCPContent.text("Missing required parameters: report_type, report_sub_type, frequency, report_date")],
+                content: [MCPContent.text("Missing required parameters: report_type, report_sub_type, frequency")],
+                isError: true
+            )
+        }
+
+        let reportDate: String?
+        if let rawReportDate = arguments["report_date"]?.stringValue {
+            guard let normalizedReportDate = Self.reportDate(rawReportDate) else {
+                return CallTool.Result(
+                    content: [MCPContent.text("Invalid report_date: use a real calendar date in YYYY-MM-DD format")],
+                    isError: true
+                )
+            }
+            reportDate = normalizedReportDate
+        } else {
+            reportDate = nil
+        }
+        if frequency != "DAILY", reportDate == nil {
+            return CallTool.Result(
+                content: [MCPContent.text("Missing required parameter 'report_date' for non-daily reports")],
+                isError: true
+            )
+        }
+
+        guard let allowedVersions = Self.allowedReportVersions(
+            reportType: reportType,
+            reportSubType: reportSubType,
+            frequency: frequency
+        ), let defaultVersion = allowedVersions.last else {
+            return CallTool.Result(
+                content: [MCPContent.text("Unsupported report type, sub-type, and frequency combination")],
                 isError: true
             )
         }
@@ -103,10 +202,27 @@ extension AnalyticsWorker {
             )
         }
 
-        let version = arguments["version"]?.stringValue
+        let version = arguments["version"]?.stringValue ?? defaultVersion
+        guard allowedVersions.contains(version) else {
+            return CallTool.Result(
+                content: [MCPContent.text("Unsupported version '\(version)' for the selected report combination. Allowed versions: \(allowedVersions.joined(separator: ", "))")],
+                isError: true
+            )
+        }
         let summaryOnly = arguments["summary_only"]?.boolValue ?? true
-        let limit = arguments["limit"]?.intValue ?? 25
-        let appIdFilter = arguments["app_id"]?.stringValue
+        let limit = min(max(arguments["limit"]?.intValue ?? 25, 1), 200)
+        let appIdFilter: String?
+        if let rawAppId = arguments["app_id"]?.stringValue {
+            guard let normalizedAppId = Self.nonEmptyIdentifier(rawAppId) else {
+                return CallTool.Result(
+                    content: [MCPContent.text("Invalid app_id: value must not be empty")],
+                    isError: true
+                )
+            }
+            appIdFilter = normalizedAppId
+        } else {
+            appIdFilter = nil
+        }
 
         do {
             let report = try await fetchReportSummary(
@@ -119,52 +235,30 @@ extension AnalyticsWorker {
                 appIdFilter: appIdFilter
             )
 
-            let resolvedVersion = version
-                ?? Self.defaultReportVersions[reportType]
-                ?? "1_0"
-
             var result: [String: Any] = [
                 "success": true,
                 "report_type": reportType,
                 "report_sub_type": reportSubType,
                 "frequency": frequency,
-                "report_date": reportDate,
-                "version": resolvedVersion,
+                "version": version,
                 "total_rows": report.totalRows,
-                "filtered_rows": report.filteredRows,
+                "filtered_rows": report.rows.count,
                 "summary": report.summary
             ]
+
+            if let reportDate {
+                result["report_date"] = reportDate
+            }
 
             if let appId = appIdFilter {
                 result["app_id_filter"] = appId
             }
 
             if !summaryOnly {
-                // Re-fetch raw rows for display (fetchReportSummary doesn't return them)
-                let queryParams: [String: String] = [
-                    "filter[vendorNumber]": vendorNumber,
-                    "filter[reportType]": reportType,
-                    "filter[reportSubType]": reportSubType,
-                    "filter[frequency]": frequency,
-                    "filter[reportDate]": reportDate,
-                    "filter[version]": resolvedVersion
-                ]
-                let data = try await httpClient.getRaw("/v1/salesReports", parameters: queryParams, accept: "application/a-gzip")
-                if let tsvString = decompressReportData(data) {
-                    let allParsed = TSVParser.parse(data: tsvString)
-                    let filteredRows: [[String: String]]
-                    if let appId = appIdFilter {
-                        filteredRows = allParsed.rows.filter { row in
-                            row["Apple Identifier"] == appId || row["App Apple ID"] == appId
-                        }
-                    } else {
-                        filteredRows = allParsed.rows
-                    }
-                    let rows = Array(filteredRows.prefix(limit))
-                    result["showing_rows"] = rows.count
-                    result["columns"] = allParsed.headers
-                    result["rows"] = rows
-                }
+                let rows = Array(report.rows.prefix(limit))
+                result["showing_rows"] = rows.count
+                result["columns"] = report.headers
+                result["rows"] = rows
             }
 
             return MCPResult.jsonObject(result)
@@ -181,9 +275,16 @@ extension AnalyticsWorker {
     /// - Throws: Error if required parameters are missing
     func getAppSummary(_ params: CallTool.Parameters) async throws -> CallTool.Result {
         guard let arguments = params.arguments,
-              let reportDate = arguments["report_date"]?.stringValue else {
+              let rawReportDate = arguments["report_date"]?.stringValue else {
             return CallTool.Result(
                 content: [MCPContent.text("Missing required parameter: report_date")],
+                isError: true
+            )
+        }
+
+        guard let reportDate = Self.reportDate(rawReportDate) else {
+            return CallTool.Result(
+                content: [MCPContent.text("Invalid report_date: use a real calendar date in YYYY-MM-DD format")],
                 isError: true
             )
         }
@@ -195,28 +296,38 @@ extension AnalyticsWorker {
             )
         }
 
-        let appIdFilter = arguments["app_id"]?.stringValue
+        let appIdFilter: String?
+        if let rawAppId = arguments["app_id"]?.stringValue {
+            guard let normalizedAppId = Self.nonEmptyIdentifier(rawAppId) else {
+                return CallTool.Result(
+                    content: [MCPContent.text("Invalid app_id: value must not be empty")],
+                    isError: true
+                )
+            }
+            appIdFilter = normalizedAppId
+        } else {
+            appIdFilter = nil
+        }
 
-        // Fetch 4 report types in parallel with partial success handling
         async let downloadsTask = fetchSectionSummary(
             vendorNumber: vendorNumber, reportType: "SALES",
             reportSubType: "SUMMARY", frequency: "DAILY",
-            reportDate: reportDate, appIdFilter: appIdFilter
+            reportDate: reportDate, version: "1_0", appIdFilter: appIdFilter
         )
         async let subscriptionsTask = fetchSectionSummary(
             vendorNumber: vendorNumber, reportType: "SUBSCRIPTION",
             reportSubType: "SUMMARY", frequency: "DAILY",
-            reportDate: reportDate, appIdFilter: appIdFilter
+            reportDate: reportDate, version: "1_3", appIdFilter: appIdFilter
         )
         async let eventsTask = fetchSectionSummary(
             vendorNumber: vendorNumber, reportType: "SUBSCRIPTION_EVENT",
             reportSubType: "SUMMARY", frequency: "DAILY",
-            reportDate: reportDate, appIdFilter: appIdFilter
+            reportDate: reportDate, version: "1_3", appIdFilter: appIdFilter
         )
         async let revenueTask = fetchSectionSummary(
             vendorNumber: vendorNumber, reportType: "SUBSCRIBER",
             reportSubType: "DETAILED", frequency: "DAILY",
-            reportDate: reportDate, appIdFilter: appIdFilter
+            reportDate: reportDate, version: "1_3", appIdFilter: appIdFilter
         )
 
         let downloads = await downloadsTask
@@ -233,9 +344,11 @@ extension AnalyticsWorker {
 
         let succeeded = sections.values.filter { ($0["status"] as? String) == "success" }.count
         let failed = sections.count - succeeded
+        let success = succeeded > 0
 
         var result: [String: Any] = [
-            "success": true,
+            "success": success,
+            "partial_success": success && failed > 0,
             "report_date": reportDate,
             "sections": sections,
             "sections_succeeded": succeeded,
@@ -246,7 +359,7 @@ extension AnalyticsWorker {
             result["app_id_filter"] = appId
         }
 
-        return MCPResult.jsonObject(result)
+        return MCPResult.jsonObject(result, isError: !success)
     }
 
     /// Fetches a single report section, returning success or error dict
@@ -256,6 +369,7 @@ extension AnalyticsWorker {
         reportSubType: String,
         frequency: String,
         reportDate: String,
+        version: String,
         appIdFilter: String?
     ) async -> [String: Any] {
         do {
@@ -265,13 +379,15 @@ extension AnalyticsWorker {
                 reportSubType: reportSubType,
                 frequency: frequency,
                 reportDate: reportDate,
+                version: version,
                 appIdFilter: appIdFilter
             )
             return [
                 "status": "success",
+                "version": version,
                 "summary": report.summary,
                 "total_rows": report.totalRows,
-                "filtered_rows": report.filteredRows
+                "filtered_rows": report.rows.count
             ]
         } catch {
             return [

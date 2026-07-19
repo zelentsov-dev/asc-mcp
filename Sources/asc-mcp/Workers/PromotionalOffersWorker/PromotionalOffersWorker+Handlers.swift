@@ -102,16 +102,46 @@ extension PromotionalOffersWorker {
               let offerCode = arguments["offer_code"]?.stringValue,
               let duration = arguments["duration"]?.stringValue,
               let offerMode = arguments["offer_mode"]?.stringValue,
-              let numberOfPeriods = arguments["number_of_periods"]?.intValue else {
+              let numberOfPeriods = arguments["number_of_periods"]?.intValue,
+              let territoryValues = arguments["territory_ids"]?.arrayValue else {
             return CallTool.Result(
-                content: [MCPContent.text("Error: Required parameters: subscription_id, name, offer_code, duration, offer_mode, number_of_periods")],
+                content: [MCPContent.text("Error: Required parameters: subscription_id, name, offer_code, duration, offer_mode, number_of_periods, territory_ids")],
                 isError: true
             )
         }
 
         do {
-            // Parse territory_ids
-            let territoryIds = arguments["territory_ids"]?.arrayValue?.compactMap { $0.stringValue } ?? []
+            let territoryIds = territoryValues.compactMap(\.stringValue)
+            let pricePointValues = arguments["price_point_ids"]?.arrayValue ?? []
+            let pricePointIds = pricePointValues.compactMap(\.stringValue)
+
+            guard Set(["PAY_AS_YOU_GO", "PAY_UP_FRONT", "FREE_TRIAL"]).contains(offerMode) else {
+                return MCPResult.error("offer_mode must be PAY_AS_YOU_GO, PAY_UP_FRONT, or FREE_TRIAL")
+            }
+            guard Set(["THREE_DAYS", "ONE_WEEK", "TWO_WEEKS", "ONE_MONTH", "TWO_MONTHS", "THREE_MONTHS", "SIX_MONTHS", "ONE_YEAR"]).contains(duration),
+                  numberOfPeriods > 0 else {
+                return MCPResult.error("duration must be a supported Apple duration and number_of_periods must be positive")
+            }
+            guard territoryIds.count == territoryValues.count,
+                  !territoryIds.isEmpty,
+                  territoryIds.allSatisfy({ !$0.isEmpty }) else {
+                return MCPResult.error("territory_ids must contain at least one territory ID")
+            }
+            guard pricePointIds.count == pricePointValues.count,
+                  pricePointIds.allSatisfy({ !$0.isEmpty }) else {
+                return MCPResult.error("price_point_ids must contain only string IDs")
+            }
+            if let targetPlan = arguments["target_subscription_plan_type"]?.stringValue,
+               !Set(["MONTHLY", "UPFRONT"]).contains(targetPlan) {
+                return MCPResult.error("target_subscription_plan_type must be MONTHLY or UPFRONT")
+            }
+            if offerMode == "FREE_TRIAL", !pricePointIds.isEmpty {
+                return MCPResult.error("price_point_ids must be omitted for FREE_TRIAL offers")
+            }
+            if offerMode != "FREE_TRIAL",
+               (pricePointIds.isEmpty || pricePointIds.count != territoryIds.count) {
+                return MCPResult.error("price_point_ids and territory_ids must have the same non-zero count")
+            }
 
             // Build prices relationship and included if territory_ids provided
             var pricesRelationship: CreatePromotionalOfferRequest.PricesRelationship?
@@ -177,6 +207,10 @@ extension PromotionalOffersWorker {
                 }
             }
 
+            guard let pricesRelationship, let included else {
+                return MCPResult.error("At least one valid territory price is required")
+            }
+
             let request = CreatePromotionalOfferRequest(
                 data: CreatePromotionalOfferRequest.CreateData(
                     attributes: CreatePromotionalOfferRequest.Attributes(
@@ -184,7 +218,8 @@ extension PromotionalOffersWorker {
                         offerCode: offerCode,
                         duration: duration,
                         offerMode: offerMode,
-                        numberOfPeriods: numberOfPeriods
+                        numberOfPeriods: numberOfPeriods,
+                        targetSubscriptionPlanType: arguments["target_subscription_plan_type"]?.stringValue
                     ),
                     relationships: CreatePromotionalOfferRequest.Relationships(
                         subscription: CreatePromotionalOfferRequest.SubscriptionRelationship(
@@ -223,56 +258,61 @@ extension PromotionalOffersWorker {
     /// - Returns: JSON with updated promotional offer details
     func updatePromotionalOffer(_ params: CallTool.Parameters) async throws -> CallTool.Result {
         guard let arguments = params.arguments,
-              let promotionalOfferId = arguments["promotional_offer_id"]?.stringValue else {
+              let promotionalOfferId = arguments["promotional_offer_id"]?.stringValue,
+              let territoryValues = arguments["territory_ids"]?.arrayValue else {
             return CallTool.Result(
-                content: [MCPContent.text("Error: Required parameter 'promotional_offer_id' is missing")],
+                content: [MCPContent.text("Error: Required parameters: promotional_offer_id, territory_ids")],
                 isError: true
             )
         }
 
         do {
-            // Parse territory_ids
-            let territoryIds = arguments["territory_ids"]?.arrayValue?.compactMap { $0.stringValue } ?? []
+            let territoryIds = territoryValues.compactMap(\.stringValue)
+            let pricePointValues = arguments["price_point_ids"]?.arrayValue ?? []
+            let pricePointIds = pricePointValues.compactMap(\.stringValue)
+
+            guard territoryIds.count == territoryValues.count,
+                  !territoryIds.isEmpty,
+                  territoryIds.allSatisfy({ !$0.isEmpty }) else {
+                return MCPResult.error("territory_ids must contain at least one territory ID")
+            }
+            guard pricePointIds.count == pricePointValues.count,
+                  pricePointIds.allSatisfy({ !$0.isEmpty }) else {
+                return MCPResult.error("price_point_ids must contain only string IDs")
+            }
+            if !pricePointIds.isEmpty, pricePointIds.count != territoryIds.count {
+                return MCPResult.error("price_point_ids and territory_ids must have the same count")
+            }
 
             // Build prices relationship and included
             var pricesRelationship: UpdatePromotionalOfferRequest.PricesRelationship?
             var included: [PromotionalOfferPriceInlineCreate]?
 
-            if let pricePointIds = arguments["price_point_ids"]?.arrayValue {
-                // PAY modes: both price points and territories
-                let ids = pricePointIds.compactMap { $0.stringValue }
-                if !ids.isEmpty {
-                    guard ids.count == territoryIds.count else {
-                        return CallTool.Result(
-                            content: [MCPContent.text("Error: price_point_ids and territory_ids must have the same count (got \(ids.count) vs \(territoryIds.count))")],
-                            isError: true
-                        )
-                    }
+            if !pricePointIds.isEmpty {
+                let ids = pricePointIds
 
-                    var priceRefs: [ASCResourceIdentifier] = []
-                    var priceInlines: [PromotionalOfferPriceInlineCreate] = []
+                var priceRefs: [ASCResourceIdentifier] = []
+                var priceInlines: [PromotionalOfferPriceInlineCreate] = []
 
-                    for (index, pricePointId) in ids.enumerated() {
-                        let tempId = "${price-\(index)}"
-                        priceRefs.append(ASCResourceIdentifier(type: "subscriptionPromotionalOfferPrices", id: tempId))
-                        priceInlines.append(PromotionalOfferPriceInlineCreate(
-                            id: tempId,
-                            relationships: PromotionalOfferPriceInlineCreate.Relationships(
-                                subscriptionPricePoint: PromotionalOfferPriceInlineCreate.PricePointRelationship(
-                                    data: ASCResourceIdentifier(type: "subscriptionPricePoints", id: pricePointId)
-                                ),
-                                territory: PromotionalOfferPriceInlineCreate.TerritoryRelationship(
-                                    data: ASCResourceIdentifier(type: "territories", id: territoryIds[index])
-                                )
+                for (index, pricePointId) in ids.enumerated() {
+                    let tempId = "${price-\(index)}"
+                    priceRefs.append(ASCResourceIdentifier(type: "subscriptionPromotionalOfferPrices", id: tempId))
+                    priceInlines.append(PromotionalOfferPriceInlineCreate(
+                        id: tempId,
+                        relationships: PromotionalOfferPriceInlineCreate.Relationships(
+                            subscriptionPricePoint: PromotionalOfferPriceInlineCreate.PricePointRelationship(
+                                data: ASCResourceIdentifier(type: "subscriptionPricePoints", id: pricePointId)
+                            ),
+                            territory: PromotionalOfferPriceInlineCreate.TerritoryRelationship(
+                                data: ASCResourceIdentifier(type: "territories", id: territoryIds[index])
                             )
-                        ))
-                    }
-
-                    pricesRelationship = UpdatePromotionalOfferRequest.PricesRelationship(data: priceRefs)
-                    included = priceInlines
+                        )
+                    ))
                 }
-            } else if !territoryIds.isEmpty {
-                // FREE_TRIAL mode: territory only
+
+                pricesRelationship = UpdatePromotionalOfferRequest.PricesRelationship(data: priceRefs)
+                included = priceInlines
+            } else {
                 var priceRefs: [ASCResourceIdentifier] = []
                 var priceInlines: [PromotionalOfferPriceInlineCreate] = []
 
@@ -294,10 +334,10 @@ extension PromotionalOffersWorker {
                 included = priceInlines
             }
 
-            let relationships: UpdatePromotionalOfferRequest.Relationships? =
-                pricesRelationship != nil
-                    ? UpdatePromotionalOfferRequest.Relationships(prices: pricesRelationship)
-                    : nil
+            guard let pricesRelationship, let included else {
+                return MCPResult.error("At least one valid territory price is required")
+            }
+            let relationships = UpdatePromotionalOfferRequest.Relationships(prices: pricesRelationship)
 
             let request = UpdatePromotionalOfferRequest(
                 data: UpdatePromotionalOfferRequest.UpdateData(
@@ -423,7 +463,8 @@ extension PromotionalOffersWorker {
             "offerCode": offer.attributes.offerCode.jsonSafe,
             "duration": offer.attributes.duration.jsonSafe,
             "offerMode": offer.attributes.offerMode.jsonSafe,
-            "numberOfPeriods": offer.attributes.numberOfPeriods.jsonSafe
+            "numberOfPeriods": offer.attributes.numberOfPeriods.jsonSafe,
+            "targetSubscriptionPlanType": offer.attributes.targetSubscriptionPlanType.jsonSafe
         ]
     }
 

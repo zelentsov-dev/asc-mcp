@@ -261,7 +261,7 @@
       "kind": "direct",
       "status": "partial",
       "effect": "read",
-      "implementationState": "broken",
+      "implementationState": "asBuilt",
       "operations": [
         {
           "operationId": "appStoreVersions_getInstance",
@@ -290,7 +290,7 @@
         ],
         "fields": []
       },
-      "note": "The Apple 4.4.1 version resource no longer exposes an ageRatingDeclaration include; the current handler include list must be corrected."
+      "note": "The handler uses only relationships supported by the Apple 4.4.1 appStoreVersions include parameter."
     },
     {
       "tool": "app_versions_get_phased_release",
@@ -456,7 +456,7 @@
       "kind": "compound",
       "status": "partial",
       "effect": "write",
-      "implementationState": "target",
+      "implementationState": "asBuilt",
       "operations": [
         {
           "operationId": "appStoreVersions_appStoreReviewDetail_getToOneRelated",
@@ -579,6 +579,54 @@
           "jsonPointer": "/data/attributes/notes"
         },
         {
+          "toolField": "contact_first_name",
+          "sourceKind": "requestBody",
+          "operationId": "appStoreReviewDetails_updateInstance",
+          "jsonPointer": "/data/attributes/contactFirstName"
+        },
+        {
+          "toolField": "contact_last_name",
+          "sourceKind": "requestBody",
+          "operationId": "appStoreReviewDetails_updateInstance",
+          "jsonPointer": "/data/attributes/contactLastName"
+        },
+        {
+          "toolField": "contact_phone",
+          "sourceKind": "requestBody",
+          "operationId": "appStoreReviewDetails_updateInstance",
+          "jsonPointer": "/data/attributes/contactPhone"
+        },
+        {
+          "toolField": "contact_email",
+          "sourceKind": "requestBody",
+          "operationId": "appStoreReviewDetails_updateInstance",
+          "jsonPointer": "/data/attributes/contactEmail"
+        },
+        {
+          "toolField": "demo_account_name",
+          "sourceKind": "requestBody",
+          "operationId": "appStoreReviewDetails_updateInstance",
+          "jsonPointer": "/data/attributes/demoAccountName"
+        },
+        {
+          "toolField": "demo_account_password",
+          "sourceKind": "requestBody",
+          "operationId": "appStoreReviewDetails_updateInstance",
+          "jsonPointer": "/data/attributes/demoAccountPassword"
+        },
+        {
+          "toolField": "demo_account_required",
+          "sourceKind": "requestBody",
+          "operationId": "appStoreReviewDetails_updateInstance",
+          "jsonPointer": "/data/attributes/demoAccountRequired"
+        },
+        {
+          "toolField": "notes",
+          "sourceKind": "requestBody",
+          "operationId": "appStoreReviewDetails_updateInstance",
+          "jsonPointer": "/data/attributes/notes"
+        },
+        {
           "toolField": "attachment_file_id",
           "sourceKind": "local",
           "localRole": "legacyUnsupportedReviewDetailAttribute",
@@ -594,7 +642,7 @@
         ],
         "fields": []
       },
-      "note": "The current handler must use the dedicated related-resource GET and must stop emitting attachmentFileId, which is absent from Apple 4.4.1. Attribute payloads are identical for create and update branches."
+      "note": "The handler uses the dedicated related-resource GET and never emits attachmentFileId, which is absent from Apple 4.4.1. Every nullable attribute preserves omitted versus explicit MCP null semantics in both create and update payloads."
     },
     {
       "tool": "app_versions_submit_for_review",
@@ -817,21 +865,29 @@
       "kind": "compound",
       "status": "partial",
       "effect": "write",
-      "implementationState": "target",
+      "implementationState": "asBuilt",
       "operations": [
         {
           "operationId": "appStoreVersions_getInstance",
           "method": "get",
           "path": "/v1/appStoreVersions/{id}",
           "role": "supporting",
-          "condition": "Resolves the owning app id from the legacy version_id input."
+          "condition": "Used only when app_info_id is omitted; resolves the owning app and current appVersionState from legacy version_id.",
+          "inputs": [
+            {
+              "sourceKind": "fixed",
+              "location": "query",
+              "appleName": "fields[appStoreVersions]",
+              "fixedValue": ["app", "appVersionState"]
+            }
+          ]
         },
         {
           "operationId": "apps_appInfos_getToManyRelated",
           "method": "get",
           "path": "/v1/apps/{id}/appInfos",
           "role": "supporting",
-          "condition": "Selects the AppInfo for the version platform or current editable app metadata.",
+          "condition": "Used only for legacy version_id resolution; selects exactly one AppInfo whose state equals the version state or an explicit documented state mapping.",
           "inputs": [
             {
               "sourceKind": "derived",
@@ -841,6 +897,18 @@
                 "appStoreVersions_getInstance:/data/relationships/app/data/id"
               ],
               "localRole": "Use the owning app ID resolved from the App Store version relationship."
+            },
+            {
+              "sourceKind": "fixed",
+              "location": "query",
+              "appleName": "fields[appInfos]",
+              "fixedValue": ["state"]
+            },
+            {
+              "sourceKind": "fixed",
+              "location": "query",
+              "appleName": "limit",
+              "fixedValue": 200
             }
           ]
         },
@@ -849,16 +917,17 @@
           "method": "get",
           "path": "/v1/appInfos/{id}/ageRatingDeclaration",
           "role": "supporting",
-          "condition": "Resolves the ageRatingDeclaration id required by the update operation.",
+          "condition": "Uses authoritative app_info_id directly when provided; otherwise uses the unique exact-state AppInfo resolved from version_id.",
           "inputs": [
             {
               "sourceKind": "derived",
               "location": "path",
               "appleName": "id",
               "derivedFrom": [
+                "app_info_id",
                 "apps_appInfos_getToManyRelated:/data/*/id"
               ],
-              "localRole": "Select the AppInfo that matches the version platform and editable metadata context."
+              "localRole": "Prefer the public app_info_id; legacy fallback is accepted only after unique exact or explicitly mapped state matching."
             }
           ]
         },
@@ -898,6 +967,13 @@
           "toolField": "version_id",
           "sourceKind": "parameter",
           "operationId": "appStoreVersions_getInstance",
+          "location": "path",
+          "appleName": "id"
+        },
+        {
+          "toolField": "app_info_id",
+          "sourceKind": "parameter",
+          "operationId": "appInfos_ageRatingDeclaration_getToOneRelated",
           "location": "path",
           "appleName": "id"
         },
@@ -1046,6 +1122,18 @@
           "jsonPointer": "/data/attributes/parentalControls"
         },
         {
+          "toolField": "social_media",
+          "sourceKind": "requestBody",
+          "operationId": "ageRatingDeclarations_updateInstance",
+          "jsonPointer": "/data/attributes/socialMedia"
+        },
+        {
+          "toolField": "social_media_age_restricted",
+          "sourceKind": "requestBody",
+          "operationId": "ageRatingDeclarations_updateInstance",
+          "jsonPointer": "/data/attributes/socialMediaAgeRestricted"
+        },
+        {
           "toolField": "user_generated_content",
           "sourceKind": "requestBody",
           "operationId": "ageRatingDeclarations_updateInstance",
@@ -1068,7 +1156,7 @@
         ],
         "fields": []
       },
-      "note": "Apple 4.4.1 owns age ratings under AppInfo, not AppStoreVersion. The current handler's version include and fallback POST are invalid; it must resolve AppInfo and PATCH the existing declaration. Apple also added socialMedia and socialMediaAgeRestricted fields that the current MCP schema does not expose."
+      "note": "Apple 4.4.1 owns age ratings under AppInfo, not AppStoreVersion. app_info_id is authoritative; version_id is a compatibility fallback that never mutates without a unique compatible state match. Every nullable questionnaire field preserves omission versus explicit MCP null, and deprecated intensity values remain legacy-only compatibility inputs."
     },
     {
       "tool": "app_versions_update_phased_release",

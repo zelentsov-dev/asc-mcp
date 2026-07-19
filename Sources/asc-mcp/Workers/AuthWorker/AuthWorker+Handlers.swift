@@ -22,8 +22,8 @@ extension AuthWorker {
         }
     }
 
-    /// Validates a JWT token to check if it's still valid
-    /// - Returns: Success or failure message based on token validity
+    /// Validates a team-key JWT locally against the configured key and claims
+    /// - Returns: Local validation result and whether Apple acceptance was checked
     /// - Throws: CallTool.Result with error if token parameter is missing
     func validateToken(_ params: CallTool.Parameters) async throws -> CallTool.Result {
         guard let arguments = params.arguments,
@@ -32,14 +32,23 @@ extension AuthWorker {
             return MCPResult.error("Required parameter 'token' is missing")
         }
 
-        let isValid = await jwtService.validateToken(token)
+        let validation = await jwtService.validateTokenDetails(token)
+
+        var result: [String: Value] = [
+            "success": .bool(true),
+            "isValid": .bool(validation.isValid),
+            "validationScope": .string("configured_team_key"),
+            "appleAcceptanceChecked": .bool(false)
+        ]
+        if let failure = validation.failure {
+            result["failureReason"] = .string(failure.rawValue)
+        }
 
         return MCPResult.json(
-            .object([
-                "success": .bool(true),
-                "isValid": .bool(isValid)
-            ]),
-            text: isValid ? "JWT token is valid" : "JWT token is invalid or expired"
+            .object(result),
+            text: validation.isValid
+                ? "JWT token passed local signature and claim validation"
+                : "JWT token failed local validation: \(validation.failure?.rawValue ?? "unknown")"
         )
     }
 

@@ -345,7 +345,7 @@
           }
         ]
       },
-      "note": "Partial: OpenAPI 4.4.1 territory filters use three-letter TerritoryCode values, while the tool advertises two-letter examples; rating is modeled as one integer although Apple accepts an array; include=response is requested but included response bodies are discarded. reviewTerritory, exists[publishedResponse], sparse fields, and multi-value filters are absent."
+      "note": "Partial: territory documentation uses Apple's three-letter TerritoryCode values; rating is modeled as one integer although Apple accepts an array; include=response is requested but included response bodies are discarded. reviewTerritory, exists[publishedResponse], sparse fields, and multi-value filters are absent."
     },
     {
       "tool": "reviews_list_for_version",
@@ -449,21 +449,21 @@
           }
         ]
       },
-      "note": "Partial for the same filter and included-resource gaps as reviews_list: territory examples are two-letter rather than Apple's TerritoryCode, multi-value filters are narrowed to scalars, and included response bodies are not returned."
+      "note": "Partial for the same filter and included-resource gaps as reviews_list: territory documentation uses Apple's three-letter TerritoryCode values, multi-value filters are narrowed to scalars, and included response bodies are not returned."
     },
     {
       "tool": "reviews_stats",
       "kind": "direct",
       "status": "partial",
       "effect": "read",
-      "implementationState": "broken",
+      "implementationState": "asBuilt",
       "operations": [
         {
           "operationId": "apps_customerReviews_getToManyRelated",
           "method": "get",
           "path": "/v1/apps/{id}/customerReviews",
           "role": "primary",
-          "condition": "Fetches only the first page with limit=200 and sort=-createdDate, then aggregates locally."
+          "condition": "Uses limit=200 and sort=-createdDate. Streams and deduplicates each page by review ID without retaining all review bodies. Follows every page for all_time; bounded periods stop only after a page contains an item older than the inclusive rolling UTC boundary."
         }
       ],
       "fields": [
@@ -477,7 +477,7 @@
         {
           "toolField": "period",
           "sourceKind": "local",
-          "localRole": "createdDateWindowForFirstPageSample"
+          "localRole": "rollingUTCCreatedDateWindow"
         },
         {
           "toolField": "territory",
@@ -510,23 +510,55 @@
             "outputField": "total_in_sample",
             "operationId": "apps_customerReviews_getToManyRelated",
             "jsonPointer": "/data",
-            "localRole": "filteredFirstPageCount"
+            "localRole": "completePeriodCountCompatibilityAlias"
+          },
+          {
+            "outputField": "total_in_period",
+            "localRole": "completePeriodCount"
+          },
+          {
+            "outputField": "reviews_scanned",
+            "localRole": "downloadedRowCountIncludingDuplicateAndOutOfPeriodRows"
+          },
+          {
+            "outputField": "unique_reviews_scanned",
+            "localRole": "uniqueReviewIdCountBeforePeriodFilter"
+          },
+          {
+            "outputField": "duplicates_skipped",
+            "localRole": "duplicateReviewIdCountExcludedFromAggregation"
+          },
+          {
+            "outputField": "pages_fetched",
+            "localRole": "paginationRequestCount"
+          },
+          {
+            "outputField": "complete",
+            "localRole": "requestedPeriodCompleteness"
+          },
+          {
+            "outputField": "period_start",
+            "localRole": "inclusiveRollingUTCStart"
+          },
+          {
+            "outputField": "period_end",
+            "localRole": "inclusiveEvaluationTimestamp"
           },
           {
             "outputField": "average_rating",
-            "localRole": "sampleAverage"
+            "localRole": "completePeriodAverage"
           },
           {
             "outputField": "rating_distribution",
-            "localRole": "sampleHistogram"
+            "localRole": "completePeriodHistogram"
           },
           {
             "outputField": "top_territories",
-            "localRole": "sampleTerritoryAggregation"
+            "localRole": "completePeriodTerritoryAggregation"
           }
         ]
       },
-      "note": "Partial and potentially misleading: it never follows pagination, so all_time is at most the newest 200 reviews. The public last_3_months value is not recognized by the handler (which checks last_quarter), causing an unbounded sample; territory examples also use the wrong two-letter format."
+      "note": "The handler validates a trimmed non-empty app ID, then streams Apple pagination into deduplicated numeric accumulators to produce complete statistics for the requested rolling UTC period without retaining all review bodies. Repeated or invalid next URLs fail instead of returning partial results. last_quarter remains an input alias for compatibility and normalizes to last_3_months. Territory documentation uses Apple's three-letter codes."
     },
     {
       "tool": "reviews_summarizations",

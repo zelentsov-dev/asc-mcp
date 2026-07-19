@@ -24,13 +24,13 @@ extension SubscriptionsWorker {
             simpleTool("subscriptions_delete_intro_offer", "Delete an introductory offer", ["intro_offer_id": "Introductory offer ID"], ["intro_offer_id"]),
             simpleTool("subscriptions_list_promotional_offers", "List promotional offers", ["subscription_id": "Subscription ID", "territory_id": "Optional territory filter", "limit": "Max results", "next_url": "Pagination URL"], ["subscription_id"]),
             simpleTool("subscriptions_get_promotional_offer", "Get a promotional offer", ["promotional_offer_id": "Promotional offer ID"], ["promotional_offer_id"]),
-            simpleTool("subscriptions_create_promotional_offer", "Create a promotional offer", ["subscription_id": "Subscription ID", "name": "Reference name", "offer_code": "Offer code", "duration": "Duration", "offer_mode": "Offer mode", "number_of_periods": "Number of periods", "territory_ids": "Array of territory IDs", "price_point_ids": "Array of price point IDs for paid modes"], ["subscription_id", "name", "offer_code", "duration", "offer_mode", "number_of_periods"]),
-            simpleTool("subscriptions_update_promotional_offer", "Update promotional offer prices", ["promotional_offer_id": "Promotional offer ID", "territory_ids": "Array of territory IDs", "price_point_ids": "Array of price point IDs"], ["promotional_offer_id"]),
+            simpleTool("subscriptions_create_promotional_offer", "Create a promotional offer", ["subscription_id": "Subscription ID", "name": "Reference name", "offer_code": "Offer code", "duration": "Duration", "offer_mode": "Offer mode", "number_of_periods": "Number of periods", "territory_ids": "Array of territory IDs", "price_point_ids": "Array of price point IDs for paid modes", "target_subscription_plan_type": "Optional target subscription plan type"], ["subscription_id", "name", "offer_code", "duration", "offer_mode", "number_of_periods", "territory_ids"]),
+            simpleTool("subscriptions_update_promotional_offer", "Update promotional offer prices", ["promotional_offer_id": "Promotional offer ID", "territory_ids": "Array of territory IDs", "price_point_ids": "Array of price point IDs for paid offers; omit for free trials"], ["promotional_offer_id", "territory_ids"]),
             simpleTool("subscriptions_delete_promotional_offer", "Delete a promotional offer", ["promotional_offer_id": "Promotional offer ID"], ["promotional_offer_id"]),
             simpleTool("subscriptions_list_promotional_offer_prices", "List promotional offer prices", ["promotional_offer_id": "Promotional offer ID", "territory_id": "Optional territory filter", "limit": "Max results", "next_url": "Pagination URL"], ["promotional_offer_id"]),
             simpleTool("subscriptions_list_offer_codes", "List subscription offer codes", ["subscription_id": "Subscription ID", "territory_id": "Optional territory filter", "limit": "Max results", "next_url": "Pagination URL"], ["subscription_id"]),
             simpleTool("subscriptions_get_offer_code", "Get a subscription offer code", ["offer_code_id": "Offer code ID"], ["offer_code_id"]),
-            simpleTool("subscriptions_create_offer_code", "Create a subscription offer code", ["subscription_id": "Subscription ID", "name": "Name", "offer_eligibility": "Offer eligibility", "offer_mode": "Offer mode", "duration": "Duration", "number_of_periods": "Number of periods", "territory_ids": "Territory IDs", "price_point_ids": "Price point IDs for paid modes"], ["subscription_id", "name", "offer_eligibility", "offer_mode", "duration", "number_of_periods", "territory_ids"]),
+            simpleTool("subscriptions_create_offer_code", "Create a subscription offer code", ["subscription_id": "Subscription ID", "name": "Name", "customer_eligibilities": "One or more customer eligibility values", "offer_eligibility": "Introductory-offer stacking eligibility", "offer_mode": "Offer mode", "duration": "Duration", "number_of_periods": "Number of periods", "territory_ids": "Territory IDs", "price_point_ids": "Price point IDs for paid modes", "auto_renew_enabled": "Whether the subscription renews after the offer. false requires FREE_TRIAL and REPLACE_INTRO_OFFERS", "target_subscription_plan_type": "Optional target subscription plan type"], ["subscription_id", "name", "customer_eligibilities", "offer_eligibility", "offer_mode", "duration", "number_of_periods", "territory_ids"]),
             simpleTool("subscriptions_update_offer_code", "Update an offer code", ["offer_code_id": "Offer code ID", "active": "Whether active"], ["offer_code_id"]),
             simpleTool("subscriptions_deactivate_offer_code", "Deactivate an offer code", ["offer_code_id": "Offer code ID"], ["offer_code_id"]),
             simpleTool("subscriptions_list_offer_code_prices", "List offer code prices", ["offer_code_id": "Offer code ID", "territory_id": "Optional territory filter", "limit": "Max results", "next_url": "Pagination URL"], ["offer_code_id"]),
@@ -44,8 +44,8 @@ extension SubscriptionsWorker {
             simpleTool("subscriptions_deactivate_custom_code", "Deactivate custom offer code", ["custom_code_id": "Custom code ID"], ["custom_code_id"]),
             simpleTool("subscriptions_list_winback_offers", "List win-back offers", ["subscription_id": "Subscription ID", "limit": "Max results", "next_url": "Pagination URL"], ["subscription_id"]),
             simpleTool("subscriptions_get_winback_offer", "Get a win-back offer", ["winback_offer_id": "Win-back offer ID"], ["winback_offer_id"]),
-            simpleTool("subscriptions_create_winback_offer", "Create a win-back offer", ["subscription_id": "Subscription ID", "reference_name": "Reference name", "offer_id": "Offer ID", "duration": "Duration", "offer_mode": "Offer mode", "period_count": "Period count", "priority": "Offer priority", "promotion_intent": "Promotion intent", "eligibility_duration_months": "Minimum paid subscription duration in months", "eligibility_time_since_last_months_min": "Minimum months since last subscription", "eligibility_time_since_last_months_max": "Maximum months since last subscription", "eligibility_wait_between_months": "Months to wait between offers", "start_date": "Start date", "end_date": "Optional end date", "territory_ids": "Territory IDs", "price_point_ids": "Price point IDs"], ["subscription_id", "reference_name", "offer_id", "duration", "offer_mode", "period_count", "priority", "promotion_intent", "eligibility_duration_months", "eligibility_time_since_last_months_min", "eligibility_time_since_last_months_max", "eligibility_wait_between_months", "start_date"]),
-            simpleTool("subscriptions_update_winback_offer", "Update a win-back offer", ["winback_offer_id": "Win-back offer ID"], ["winback_offer_id"]),
+            simpleTool("subscriptions_create_winback_offer", "Create a win-back offer", ["subscription_id": "Subscription ID", "reference_name": "Reference name", "offer_id": "Offer ID", "duration": "Duration", "offer_mode": "Offer mode", "period_count": "Period count", "priority": "Offer priority", "promotion_intent": "Optional promotion intent", "eligibility_duration_months": "Minimum paid subscription duration in months", "eligibility_time_since_last_months_min": "Optional minimum months since last subscription", "eligibility_time_since_last_months_max": "Optional maximum months since last subscription", "eligibility_wait_between_months": "Optional months to wait between offers", "start_date": "Start date", "end_date": "Optional end date", "territory_ids": "Optional compatibility labels matched to price_point_ids; not sent to Apple", "price_point_ids": "Subscription price point IDs whose encoded territories define offer availability", "target_subscription_plan_type": "Optional target subscription plan type"], ["subscription_id", "reference_name", "offer_id", "duration", "offer_mode", "period_count", "priority", "eligibility_duration_months", "start_date", "price_point_ids"]),
+            simpleTool("subscriptions_update_winback_offer", "Update or clear mutable win-back offer attributes", ["winback_offer_id": "Win-back offer ID", "eligibility_duration_months": "Minimum paid subscription duration in months; pass null to clear", "eligibility_time_since_last_months_min": "Minimum months since last subscription; provide independently, or pass null to clear the whole range", "eligibility_time_since_last_months_max": "Maximum months since last subscription; provide independently, or pass null to clear the whole range", "eligibility_wait_between_months": "Months to wait between offers; pass null to clear", "start_date": "Start date; pass null to clear", "end_date": "End date; pass null to clear", "priority": "Offer priority; pass null to clear", "promotion_intent": "Promotion intent; pass null to clear"], ["winback_offer_id"]),
             simpleTool("subscriptions_delete_winback_offer", "Delete a win-back offer", ["winback_offer_id": "Win-back offer ID"], ["winback_offer_id"]),
             simpleTool("subscriptions_list_winback_offer_prices", "List win-back offer prices", ["winback_offer_id": "Win-back offer ID", "territory_id": "Optional territory filter", "limit": "Max results", "next_url": "Pagination URL"], ["winback_offer_id"])
         ]
@@ -57,15 +57,96 @@ extension SubscriptionsWorker {
             description: description,
             inputSchema: .object([
                 "type": .string("object"),
-                "properties": .object(Dictionary(uniqueKeysWithValues: properties.map { key, description in
-                    let type = key.hasSuffix("_ids") ? "array" : (key == "limit" || key == "number_of_periods" || key == "number_of_codes" || key == "period_count" || key.hasSuffix("_months") || key.hasSuffix("_months_min") || key.hasSuffix("_months_max") ? "integer" : (key == "active" || key == "available_in_new_territories" ? "boolean" : "string"))
-                    if type == "array" {
-                        return (key, .object(["type": .string("array"), "items": .object(["type": .string("string")]), "description": .string(description)]))
-                    }
-                    return (key, .object(["type": .string(type), "description": .string(description)]))
+                "properties": .object(Dictionary(uniqueKeysWithValues: properties.map { key, fieldDescription in
+                    (key, propertySchema(toolName: name, key: key, description: fieldDescription))
                 })),
                 "required": .array(required.map { .string($0) })
             ])
         )
+    }
+
+    private func propertySchema(toolName: String, key: String, description: String) -> Value {
+        let baseType = key.hasSuffix("_ids") || key == "customer_eligibilities"
+            ? "array"
+            : (key == "limit" || key == "number_of_periods" || key == "number_of_codes" || key == "period_count" || key.hasSuffix("_months") || key.hasSuffix("_months_min") || key.hasSuffix("_months_max")
+                ? "integer"
+                : (key == "active" || key == "available_in_new_territories" || key == "auto_renew_enabled" ? "boolean" : "string"))
+        let nullableWinBackFields: Set<String> = [
+            "eligibility_duration_months",
+            "eligibility_time_since_last_months_min",
+            "eligibility_time_since_last_months_max",
+            "eligibility_wait_between_months",
+            "start_date",
+            "end_date",
+            "priority",
+            "promotion_intent"
+        ]
+        let isNullable = toolName == "subscriptions_update_winback_offer" && nullableWinBackFields.contains(key)
+        let nullableType: Value = key.hasSuffix("_months_min") || key.hasSuffix("_months_max")
+            ? .null
+            : .string("null")
+        var schema: [String: Value] = [
+            "type": isNullable ? .array([.string(baseType), nullableType]) : .string(baseType),
+            "description": .string(description)
+        ]
+
+        if baseType == "array" {
+            var itemSchema: [String: Value] = ["type": .string("string"), "minLength": .int(1)]
+            if key == "customer_eligibilities" {
+                itemSchema["enum"] = .array(["NEW", "EXISTING", "EXPIRED"].map(Value.string))
+                schema["minItems"] = .int(1)
+                schema["uniqueItems"] = .bool(true)
+            } else if [
+                "subscriptions_create_promotional_offer",
+                "subscriptions_update_promotional_offer",
+                "subscriptions_create_offer_code",
+                "subscriptions_create_winback_offer"
+            ].contains(toolName) {
+                schema["minItems"] = .int(1)
+                schema["uniqueItems"] = .bool(true)
+            }
+            schema["items"] = .object(itemSchema)
+        }
+
+        let stringEnums: [String: [String]] = [
+            "offer_eligibility": ["STACK_WITH_INTRO_OFFERS", "REPLACE_INTRO_OFFERS"],
+            "offer_mode": ["PAY_AS_YOU_GO", "PAY_UP_FRONT", "FREE_TRIAL"],
+            "mode": ["PAY_AS_YOU_GO", "PAY_UP_FRONT", "FREE_TRIAL"],
+            "duration": ["THREE_DAYS", "ONE_WEEK", "TWO_WEEKS", "ONE_MONTH", "TWO_MONTHS", "THREE_MONTHS", "SIX_MONTHS", "ONE_YEAR"],
+            "target_subscription_plan_type": ["MONTHLY", "UPFRONT"],
+            "priority": ["HIGH", "NORMAL"],
+            "promotion_intent": ["NOT_PROMOTED", "USE_AUTO_GENERATED_ASSETS"]
+        ]
+        if let values = stringEnums[key] {
+            var enumValues = values.map(Value.string)
+            if isNullable {
+                enumValues.append(.null)
+            }
+            schema["enum"] = .array(enumValues)
+        }
+
+        if key == "eligibility_duration_months" {
+            var values = (Array(1...24) + [36, 48, 60]).map(Value.int)
+            if isNullable {
+                values.append(.null)
+            }
+            schema["enum"] = .array(values)
+        }
+        if key == "eligibility_wait_between_months" {
+            schema["minimum"] = .int(2)
+            schema["maximum"] = .int(24)
+        } else if key.hasSuffix("_months_min") || key.hasSuffix("_months_max") {
+            schema["minimum"] = .int(0)
+        } else if ["number_of_periods", "number_of_codes", "period_count"].contains(key) {
+            schema["minimum"] = .int(1)
+        }
+        if key.hasSuffix("_date") {
+            schema["format"] = .string("date")
+        }
+        if baseType == "string", (key.hasSuffix("_id") || ["name", "reference_name", "offer_id", "offer_code", "custom_code"].contains(key)) {
+            schema["minLength"] = .int(1)
+        }
+
+        return .object(schema)
     }
 }

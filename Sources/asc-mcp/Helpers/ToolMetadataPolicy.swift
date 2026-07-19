@@ -128,7 +128,29 @@ enum ToolMetadataPolicy {
            schema["additionalProperties"] == nil {
             schema["additionalProperties"] = .bool(false)
         }
-        return .object(schema)
+        return normalizeNullableTypeMarkers(in: .object(schema))
+    }
+
+    private static func normalizeNullableTypeMarkers(in value: Value) -> Value {
+        switch value {
+        case .object(let object):
+            var normalized: [String: Value] = [:]
+            normalized.reserveCapacity(object.count)
+            for (key, nestedValue) in object {
+                if key == "type", case .array(let types) = nestedValue {
+                    normalized[key] = .array(types.map { type in
+                        type == .null ? .string("null") : type
+                    })
+                } else {
+                    normalized[key] = normalizeNullableTypeMarkers(in: nestedValue)
+                }
+            }
+            return .object(normalized)
+        case .array(let values):
+            return .array(values.map(normalizeNullableTypeMarkers))
+        default:
+            return value
+        }
     }
 
     private static func outputSchema(for toolName: String) -> Value? {

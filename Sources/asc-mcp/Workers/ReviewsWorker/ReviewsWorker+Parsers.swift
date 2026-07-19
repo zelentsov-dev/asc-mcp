@@ -61,33 +61,53 @@ extension ReviewsWorker {
         return displayFormatter.string(from: date)
     }
     
-    /// Calculate statistics from reviews, filtering by period
-    func calculateStats(from reviews: [CustomerReview], period: String) -> ReviewStats {
-        // Filter reviews by period
-        let startDate: Date? = switch period {
-        case "last_week":
-            Calendar.current.date(byAdding: .day, value: -7, to: Date())
-        case "last_month":
-            Calendar.current.date(byAdding: .month, value: -1, to: Date())
+    func normalizeReviewPeriod(_ period: String) -> String? {
+        switch period {
+        case "last_week", "last_month", "last_3_months", "all_time":
+            return period
         case "last_quarter":
-            Calendar.current.date(byAdding: .month, value: -3, to: Date())
+            return "last_3_months"
         default:
-            nil // all_time
+            return nil
+        }
+    }
+
+    func reviewPeriodStart(for period: String, now: Date) -> Date? {
+        var calendar = Calendar(identifier: .gregorian)
+        if let utc = TimeZone(secondsFromGMT: 0) {
+            calendar.timeZone = utc
         }
 
-        let iso8601 = ISO8601DateFormatter()
-        iso8601.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        switch period {
+        case "last_week":
+            return calendar.date(byAdding: .day, value: -7, to: now)
+        case "last_month":
+            return calendar.date(byAdding: .month, value: -1, to: now)
+        case "last_3_months":
+            return calendar.date(byAdding: .month, value: -3, to: now)
+        default:
+            return nil
+        }
+    }
+
+    func parseReviewDate(_ value: String) -> Date? {
+        let fractional = ISO8601DateFormatter()
+        fractional.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        if let date = fractional.date(from: value) {
+            return date
+        }
+        return ISO8601DateFormatter().date(from: value)
+    }
+
+    /// Calculate statistics from reviews, filtering by period
+    func calculateStats(from reviews: [CustomerReview], period: String, now: Date = Date()) -> ReviewStats {
+        let startDate = reviewPeriodStart(for: period, now: now)
 
         let filteredReviews: [CustomerReview]
         if let startDate {
             filteredReviews = reviews.filter { review in
-                guard let reviewDate = iso8601.date(from: review.attributes.createdDate) else {
-                    // Try without fractional seconds
-                    let fallback = ISO8601DateFormatter()
-                    guard let date = fallback.date(from: review.attributes.createdDate) else { return true }
-                    return date >= startDate
-                }
-                return reviewDate >= startDate
+                guard let reviewDate = parseReviewDate(review.attributes.createdDate) else { return false }
+                return reviewDate >= startDate && reviewDate <= now
             }
         } else {
             filteredReviews = reviews
@@ -129,8 +149,8 @@ extension ReviewsWorker {
             totalCount: totalCount,
             averageRating: averageRating,
             ratingDistribution: ratingDistribution,
-            periodStart: startDate.map { iso8601.string(from: $0) },
-            periodEnd: iso8601.string(from: Date()),
+            periodStart: startDate.map { ISO8601DateFormatter().string(from: $0) },
+            periodEnd: ISO8601DateFormatter().string(from: now),
             topTerritories: topTerritories.isEmpty ? nil : topTerritories
         )
     }

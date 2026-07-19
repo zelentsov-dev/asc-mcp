@@ -422,9 +422,9 @@ swift run asc-mcp openapi-contract-check \
   --structural-strict
 ```
 
-The manifest is pinned to Apple API 4.4.1 by version, SHA-256, path count, and operation count. It currently maps 361 Apple operations, explicitly defers 539, and scopes out 363, covering all 1,263 operations without overlap. CI fails when the Apple document changes, a mapped operation moves or disappears, a public tool or worker drifts from the manifest, an input field loses its binding, response lineage becomes invalid, or a deferred decision expires. Unexposed optional Apple parameters are warnings so they remain visible in the generated backlog.
+The manifest is pinned to Apple API 4.4.1 by version, SHA-256, path count, and operation count. It currently maps 362 Apple operations, explicitly defers 538, and scopes out 363, covering all 1,263 operations without overlap. CI fails when the Apple document changes, a mapped operation moves or disappears, a public tool or worker drifts from the manifest, an input field loses its binding, response lineage becomes invalid, or a deferred decision expires. Unexposed optional Apple parameters are warnings so they remain visible in the generated backlog.
 
-`--structural-strict` is the merge-time ratchet while remediation is phased: every declared `target` or `broken` tool remains an error in reports, and a regression test pins their exact state. The current baseline is 16 target implementations and 11 broken implementations. Tagged CI additionally runs `--strict`, so releases remain blocked until all declared implementation drift is fixed and moved to `asBuilt`.
+`--structural-strict` is the merge-time ratchet while remediation is phased: every declared `target` or `broken` tool remains an error in reports, and a regression test pins their exact state. The current baseline has no `target` or `broken` implementations and no implementation drift. Tagged CI additionally runs `--strict`, so releases remain blocked if any implementation leaves `asBuilt` or any other contract error appears.
 
 This gate proves operation identity, top-level MCP field ownership, required Apple inputs, typed internal values, and response source/pointer lineage. Full MCP type/enum/range parity and complete typed response schemas remain separate optimization phases; the current mapping status is 381 partial and 8 deprecated.
 
@@ -505,7 +505,7 @@ For 200K-context clients, ~44K tokens is about 22% of the window. For clients wi
 | Tool | Description |
 |------|-------------|
 | `auth_generate_token` | Generate JWT token for API access |
-| `auth_validate_token` | Validate an existing JWT token |
+| `auth_validate_token` | Locally validate a standard team-key JWT: ES256 signature, configured `kid`/`iss`, App Store Connect audience, issued-at and expiration claims, and the 20-minute maximum lifetime. This makes no Apple API call and does not prove server acceptance. |
 | `auth_refresh_token` | Force refresh JWT token |
 | `auth_token_status` | Get JWT token cache status |
 

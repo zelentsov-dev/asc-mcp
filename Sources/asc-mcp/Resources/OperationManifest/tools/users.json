@@ -253,7 +253,7 @@
       "kind": "direct",
       "status": "partial",
       "effect": "write",
-      "implementationState": "broken",
+      "implementationState": "asBuilt",
       "operations": [
         {
           "operationId": "users_updateInstance",
@@ -261,14 +261,18 @@
           "path": "/v1/users/{id}",
           "role": "primary",
           "inputs": [
-            { "sourceKind": "fixed", "jsonPointer": "/data/type", "fixedValue": "users" }
+            { "sourceKind": "fixed", "jsonPointer": "/data/type", "fixedValue": "users" },
+            { "sourceKind": "fixed", "jsonPointer": "/data/relationships/visibleApps/data/*/type", "fixedValue": "apps" }
           ]
         }
       ],
       "fields": [
         { "toolField": "user_id", "sourceKind": "parameter", "operationId": "users_updateInstance", "location": "path", "appleName": "id" },
         { "toolField": "user_id", "sourceKind": "requestBody", "operationId": "users_updateInstance", "jsonPointer": "/data/id" },
-        { "toolField": "roles", "sourceKind": "requestBody", "operationId": "users_updateInstance", "jsonPointer": "/data/attributes/roles", "localRole": "non-string values are dropped and at least one role must remain" }
+        { "toolField": "roles", "sourceKind": "requestBody", "operationId": "users_updateInstance", "jsonPointer": "/data/attributes/roles", "localRole": "validated against Apple 4.4.1 UserRole values; ACCESS_TO_REPORTS remains accepted with a deprecation warning" },
+        { "toolField": "all_apps_visible", "sourceKind": "requestBody", "operationId": "users_updateInstance", "jsonPointer": "/data/attributes/allAppsVisible" },
+        { "toolField": "provisioning_allowed", "sourceKind": "requestBody", "operationId": "users_updateInstance", "jsonPointer": "/data/attributes/provisioningAllowed" },
+        { "toolField": "visible_app_ids", "sourceKind": "requestBody", "operationId": "users_updateInstance", "jsonPointer": "/data/relationships/visibleApps/data/*/id", "localRole": "each non-empty unique ID is encoded as an apps resource linkage; an empty array clears the relationship" }
       ],
       "response": {
         "mode": "projection",
@@ -276,10 +280,11 @@
           { "operationId": "users_updateInstance", "statusCode": "200", "mediaType": "application/json" }
         ],
         "fields": [
-          { "outputField": "user", "operationId": "users_updateInstance", "jsonPointer": "/data" }
+          { "outputField": "user", "operationId": "users_updateInstance", "jsonPointer": "/data" },
+          { "outputField": "warnings", "localRole": "present when deprecated ACCESS_TO_REPORTS is submitted" }
         ]
       },
-      "note": "Only roles can be changed. Apple's allAppsVisible, provisioningAllowed, and visibleApps update fields are not exposed. The public role description incorrectly advertises TECHNICAL, which is absent from Apple 4.4.1, and ACCESS_TO_REPORTS remains advertised although Apple marks that role deprecated."
+      "note": "Covers every writable field in Apple 4.4.1 UserUpdateRequest. At least one update field is required locally. TECHNICAL and unknown roles are rejected before the request; ACCESS_TO_REPORTS remains accepted for compatibility because it is still in Apple's enum, with an explicit deprecation warning from current Apple documentation. No local mutual exclusion is imposed between allAppsVisible and visibleApps because Apple 4.4.1 declares both optional without a cross-field constraint; Apple remains responsible for account-specific validation. The response formatter remains a selected projection of Apple's User resource."
     }
   ],
   "implementationAliases": []

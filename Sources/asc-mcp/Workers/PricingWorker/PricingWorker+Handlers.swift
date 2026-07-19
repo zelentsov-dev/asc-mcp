@@ -347,48 +347,45 @@ extension PricingWorker {
         }
 
         do {
-            // Use appAvailabilityV2 with included territoryAvailabilities
-            let queryParams: [String: String] = [
-                "include": "territoryAvailabilities",
-                "fields[territoryAvailabilities]": "available,releaseDate,preOrderEnabled,territory",
-                "limit[territoryAvailabilities]": "50"
-            ]
+            let response: ASCTerritoryAvailabilitiesResponse
 
-            let data = try await httpClient.get(
-                "/v1/apps/\(appId)/appAvailabilityV2",
-                parameters: queryParams
-            )
-
-            // Parse response with included territory availabilities
-            let json = try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any]
-
-            var availabilities: [[String: Any]] = []
-            if let included = json?["included"] as? [[String: Any]] {
-                for item in included {
-                    guard let type = item["type"] as? String, type == "territoryAvailabilities" else { continue }
-                    var availability: [String: Any] = [
-                        "id": item["id"] as? String ?? "",
-                        "type": type
-                    ]
-                    if let attrs = item["attributes"] as? [String: Any] {
-                        availability["available"] = attrs["available"]
-                        availability["releaseDate"] = attrs["releaseDate"]
-                        availability["preOrderEnabled"] = attrs["preOrderEnabled"]
-                    }
-                    if let rels = item["relationships"] as? [String: Any],
-                       let territory = rels["territory"] as? [String: Any],
-                       let territoryData = territory["data"] as? [String: Any] {
-                        availability["territory_id"] = territoryData["id"]
-                    }
-                    availabilities.append(availability)
+            if let nextUrl = arguments["next_url"]?.stringValue {
+                guard let parsed = await httpClient.parsePaginationUrl(nextUrl),
+                      isTerritoryAvailabilityCollectionPath(parsed.path) else {
+                    return CallTool.Result(
+                        content: [MCPContent.text("Invalid next_url for App Store Connect pagination")],
+                        isError: true
+                    )
                 }
+
+                response = try await httpClient.get(
+                    parsed.path,
+                    parameters: parsed.parameters,
+                    as: ASCTerritoryAvailabilitiesResponse.self
+                )
+            } else {
+                let availability: ASCAppAvailabilityV2Response = try await httpClient.get(
+                    "/v1/apps/\(appId)/appAvailabilityV2",
+                    as: ASCAppAvailabilityV2Response.self
+                )
+                let limit = min(max(arguments["limit"]?.intValue ?? 50, 1), 200)
+
+                response = try await httpClient.get(
+                    "/v2/appAvailabilities/\(availability.data.id)/territoryAvailabilities",
+                    parameters: ["limit": String(limit)],
+                    as: ASCTerritoryAvailabilitiesResponse.self
+                )
             }
 
-            let result: [String: Any] = [
+            let availabilities = response.data.map { formatTerritoryAvailability($0) }
+            var result: [String: Any] = [
                 "success": true,
                 "territory_availabilities": availabilities,
                 "count": availabilities.count
             ]
+            if let next = response.links?.next {
+                result["next_url"] = next
+            }
 
             return MCPResult.jsonObject(result)
 
@@ -628,7 +625,8 @@ extension PricingWorker {
             "type": availability.type,
             "available": (availability.attributes?.available).jsonSafe,
             "releaseDate": (availability.attributes?.releaseDate).jsonSafe,
-            "preOrderEnabled": (availability.attributes?.preOrderEnabled).jsonSafe
+            "preOrderEnabled": (availability.attributes?.preOrderEnabled).jsonSafe,
+            "preOrderPublishDate": (availability.attributes?.preOrderPublishDate).jsonSafe
         ]
 
         if let contentStatuses = availability.attributes?.contentStatuses {
@@ -640,5 +638,15 @@ extension PricingWorker {
         }
 
         return result
+    }
+
+    private func isTerritoryAvailabilityCollectionPath(_ path: String) -> Bool {
+        let components = path.split(separator: "/", omittingEmptySubsequences: false)
+        return components.count == 5
+            && components[0].isEmpty
+            && components[1] == "v2"
+            && components[2] == "appAvailabilities"
+            && !components[3].isEmpty
+            && components[4] == "territoryAvailabilities"
     }
 }

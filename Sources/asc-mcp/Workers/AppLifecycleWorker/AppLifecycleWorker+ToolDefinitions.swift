@@ -304,43 +304,20 @@ extension AppLifecycleWorker {
                 "properties": .object([
                     "version_id": .object([
                         "type": .string("string"),
-                        "description": .string("Version ID")
+                        "description": .string("Version ID"),
+                        "minLength": .int(1)
                     ]),
-                    "contact_first_name": .object([
-                        "type": .string("string"),
-                        "description": .string("Contact first name")
-                    ]),
-                    "contact_last_name": .object([
-                        "type": .string("string"),
-                        "description": .string("Contact last name")
-                    ]),
-                    "contact_phone": .object([
-                        "type": .string("string"),
-                        "description": .string("Contact phone number")
-                    ]),
-                    "contact_email": .object([
-                        "type": .string("string"),
-                        "description": .string("Contact email address")
-                    ]),
-                    "demo_account_name": .object([
-                        "type": .string("string"),
-                        "description": .string("Demo account username")
-                    ]),
-                    "demo_account_password": .object([
-                        "type": .string("string"),
-                        "description": .string("Demo account password")
-                    ]),
-                    "demo_account_required": .object([
-                        "type": .string("boolean"),
-                        "description": .string("Whether demo account is required")
-                    ]),
-                    "notes": .object([
-                        "type": .string("string"),
-                        "description": .string("Additional notes for reviewers")
-                    ]),
+                    "contact_first_name": nullablePropertySchema(type: "string", description: "Contact first name"),
+                    "contact_last_name": nullablePropertySchema(type: "string", description: "Contact last name"),
+                    "contact_phone": nullablePropertySchema(type: "string", description: "Contact phone number"),
+                    "contact_email": nullablePropertySchema(type: "string", description: "Contact email address"),
+                    "demo_account_name": nullablePropertySchema(type: "string", description: "Demo account username"),
+                    "demo_account_password": nullablePropertySchema(type: "string", description: "Demo account password"),
+                    "demo_account_required": nullablePropertySchema(type: "boolean", description: "Whether demo account is required"),
+                    "notes": nullablePropertySchema(type: "string", description: "Additional notes for reviewers"),
                     "attachment_file_id": .object([
                         "type": .string("string"),
-                        "description": .string("ID of uploaded attachment file")
+                        "description": .string("Legacy unsupported parameter. Use review_attachments_upload after creating or updating review details.")
                     ])
                 ]),
                 "required": .array([.string("version_id")])
@@ -349,138 +326,156 @@ extension AppLifecycleWorker {
     }
     
     func updateAgeRatingTool() -> Tool {
-        Tool(
+        let intensityValues = ["NONE", "INFREQUENT_OR_MILD", "FREQUENT_OR_INTENSE", "INFREQUENT", "FREQUENT"]
+        return Tool(
             name: "app_versions_update_age_rating",
-            description: "Update age rating declaration for the app",
+            description: "Update the app-level age rating declaration. Prefer app_info_id from app_info_list; version_id remains available for compatible-state lookup. INFREQUENT_OR_MILD and FREQUENT_OR_INTENSE are accepted only for legacy compatibility; use INFREQUENT or FREQUENT.",
             inputSchema: .object([
                 "type": .string("object"),
                 "properties": .object([
                     "version_id": .object([
                         "type": .string("string"),
-                        "description": .string("Version ID")
+                        "description": .string("Legacy compatibility input used to resolve a uniquely state-compatible App Info"),
+                        "minLength": .int(1)
+                    ]),
+                    "app_info_id": .object([
+                        "type": .string("string"),
+                        "description": .string("Authoritative App Info ID from app_info_list"),
+                        "minLength": .int(1)
                     ]),
                     "alcohol_tobacco_or_drug_use": .object([
-                        "type": .string("string"),
+                        "type": .array([.string("string"), .string("null")]),
                         "description": .string("Alcohol, tobacco, or drug use references"),
-                        "enum": .array([.string("NONE"), .string("INFREQUENT_OR_MILD"), .string("FREQUENT_OR_INTENSE")])
+                        "enum": .array(intensityValues.map(Value.string) + [.null])
                     ]),
                     "contests": .object([
-                        "type": .string("string"),
+                        "type": .array([.string("string"), .string("null")]),
                         "description": .string("Contests"),
-                        "enum": .array([.string("NONE"), .string("INFREQUENT_OR_MILD"), .string("FREQUENT_OR_INTENSE")])
+                        "enum": .array(intensityValues.map(Value.string) + [.null])
                     ]),
                     "gambling": .object([
-                        "type": .string("boolean"),
+                        "type": .array([.string("boolean"), .string("null")]),
                         "description": .string("Whether the app contains gambling (true/false)")
                     ]),
                     "gambling_simulated": .object([
-                        "type": .string("string"),
+                        "type": .array([.string("string"), .string("null")]),
                         "description": .string("Simulated gambling intensity level"),
-                        "enum": .array([.string("NONE"), .string("INFREQUENT_OR_MILD"), .string("FREQUENT_OR_INTENSE")])
+                        "enum": .array(intensityValues.map(Value.string) + [.null])
                     ]),
                     "unrestricted_web_access": .object([
-                        "type": .string("boolean"),
+                        "type": .array([.string("boolean"), .string("null")]),
                         "description": .string("Whether the app provides unrestricted web access (true/false)")
                     ]),
                     "horror_fear_themes": .object([
-                        "type": .string("string"),
+                        "type": .array([.string("string"), .string("null")]),
                         "description": .string("Horror or fear themes"),
-                        "enum": .array([.string("NONE"), .string("INFREQUENT_OR_MILD"), .string("FREQUENT_OR_INTENSE")])
+                        "enum": .array(intensityValues.map(Value.string) + [.null])
                     ]),
                     "mature_suggestive_themes": .object([
-                        "type": .string("string"),
+                        "type": .array([.string("string"), .string("null")]),
                         "description": .string("Mature or suggestive themes"),
-                        "enum": .array([.string("NONE"), .string("INFREQUENT_OR_MILD"), .string("FREQUENT_OR_INTENSE")])
+                        "enum": .array(intensityValues.map(Value.string) + [.null])
                     ]),
                     "medical_treatment_information": .object([
-                        "type": .string("string"),
+                        "type": .array([.string("string"), .string("null")]),
                         "description": .string("Medical treatment information"),
-                        "enum": .array([.string("NONE"), .string("INFREQUENT_OR_MILD"), .string("FREQUENT_OR_INTENSE")])
+                        "enum": .array(intensityValues.map(Value.string) + [.null])
                     ]),
                     "profanity_crude_humor": .object([
-                        "type": .string("string"),
+                        "type": .array([.string("string"), .string("null")]),
                         "description": .string("Profanity or crude humor"),
-                        "enum": .array([.string("NONE"), .string("INFREQUENT_OR_MILD"), .string("FREQUENT_OR_INTENSE")])
+                        "enum": .array(intensityValues.map(Value.string) + [.null])
                     ]),
                     "sexual_content_nudity": .object([
-                        "type": .string("string"),
+                        "type": .array([.string("string"), .string("null")]),
                         "description": .string("Sexual content or nudity"),
-                        "enum": .array([.string("NONE"), .string("INFREQUENT_OR_MILD"), .string("FREQUENT_OR_INTENSE")])
+                        "enum": .array(intensityValues.map(Value.string) + [.null])
                     ]),
                     "violence_cartoon": .object([
-                        "type": .string("string"),
+                        "type": .array([.string("string"), .string("null")]),
                         "description": .string("Cartoon or fantasy violence"),
-                        "enum": .array([.string("NONE"), .string("INFREQUENT_OR_MILD"), .string("FREQUENT_OR_INTENSE")])
+                        "enum": .array(intensityValues.map(Value.string) + [.null])
                     ]),
                     "violence_realistic": .object([
-                        "type": .string("string"),
+                        "type": .array([.string("string"), .string("null")]),
                         "description": .string("Realistic violence"),
-                        "enum": .array([.string("NONE"), .string("INFREQUENT_OR_MILD"), .string("FREQUENT_OR_INTENSE")])
+                        "enum": .array(intensityValues.map(Value.string) + [.null])
                     ]),
                     "violence_realistic_prolonged": .object([
-                        "type": .string("string"),
+                        "type": .array([.string("string"), .string("null")]),
                         "description": .string("Prolonged graphic or sadistic realistic violence"),
-                        "enum": .array([.string("NONE"), .string("INFREQUENT_OR_MILD"), .string("FREQUENT_OR_INTENSE")])
+                        "enum": .array(intensityValues.map(Value.string) + [.null])
                     ]),
                     "sexual_content_graphic_nudity": .object([
-                        "type": .string("string"),
+                        "type": .array([.string("string"), .string("null")]),
                         "description": .string("Graphic sexual content and nudity"),
-                        "enum": .array([.string("NONE"), .string("INFREQUENT_OR_MILD"), .string("FREQUENT_OR_INTENSE")])
+                        "enum": .array(intensityValues.map(Value.string) + [.null])
                     ]),
                     "guns_or_other_weapons": .object([
-                        "type": .string("string"),
+                        "type": .array([.string("string"), .string("null")]),
                         "description": .string("Guns or other weapons"),
-                        "enum": .array([.string("NONE"), .string("INFREQUENT_OR_MILD"), .string("FREQUENT_OR_INTENSE")])
+                        "enum": .array(intensityValues.map(Value.string) + [.null])
                     ]),
                     "kids_age_band": .object([
-                        "type": .string("string"),
+                        "type": .array([.string("string"), .string("null")]),
                         "description": .string("Kids age band (for kids apps)"),
-                        "enum": .array([.string("FIVE_AND_UNDER"), .string("SIX_TO_EIGHT"), .string("NINE_TO_ELEVEN")])
+                        "enum": .array([.string("FIVE_AND_UNDER"), .string("SIX_TO_EIGHT"), .string("NINE_TO_ELEVEN"), .null])
                     ]),
                     "age_rating_override": .object([
-                        "type": .string("string"),
+                        "type": .array([.string("string"), .string("null")]),
                         "description": .string("Age rating override (v2)"),
-                        "enum": .array([.string("NONE"), .string("NINE_PLUS"), .string("THIRTEEN_PLUS"), .string("SIXTEEN_PLUS"), .string("EIGHTEEN_PLUS"), .string("UNRATED")])
+                        "enum": .array([.string("NONE"), .string("NINE_PLUS"), .string("THIRTEEN_PLUS"), .string("SIXTEEN_PLUS"), .string("EIGHTEEN_PLUS"), .string("UNRATED"), .null])
                     ]),
                     "korea_age_rating_override": .object([
-                        "type": .string("string"),
+                        "type": .array([.string("string"), .string("null")]),
                         "description": .string("Korea-specific age rating override"),
-                        "enum": .array([.string("NONE"), .string("FIFTEEN_PLUS"), .string("NINETEEN_PLUS")])
+                        "enum": .array([.string("NONE"), .string("FIFTEEN_PLUS"), .string("NINETEEN_PLUS"), .null])
                     ]),
                     "advertising": .object([
-                        "type": .string("boolean"),
+                        "type": .array([.string("boolean"), .string("null")]),
                         "description": .string("Whether the app contains advertising (true/false)")
                     ]),
                     "age_assurance": .object([
-                        "type": .string("boolean"),
+                        "type": .array([.string("boolean"), .string("null")]),
                         "description": .string("Whether the app uses age assurance (true/false)")
                     ]),
                     "health_or_wellness_topics": .object([
-                        "type": .string("boolean"),
+                        "type": .array([.string("boolean"), .string("null")]),
                         "description": .string("Whether the app covers health or wellness topics (true/false)")
                     ]),
                     "loot_box": .object([
-                        "type": .string("boolean"),
+                        "type": .array([.string("boolean"), .string("null")]),
                         "description": .string("Whether the app contains loot boxes (true/false)")
                     ]),
                     "messaging_and_chat": .object([
-                        "type": .string("boolean"),
+                        "type": .array([.string("boolean"), .string("null")]),
                         "description": .string("Whether the app includes messaging or chat (true/false)")
                     ]),
                     "parental_controls": .object([
-                        "type": .string("boolean"),
+                        "type": .array([.string("boolean"), .string("null")]),
                         "description": .string("Whether the app has parental controls (true/false)")
                     ]),
+                    "social_media": .object([
+                        "type": .array([.string("boolean"), .string("null")]),
+                        "description": .string("Whether the app includes social media features (true/false)")
+                    ]),
+                    "social_media_age_restricted": .object([
+                        "type": .array([.string("boolean"), .string("null")]),
+                        "description": .string("Whether social media is disabled for users under 13 (true/false)")
+                    ]),
                     "user_generated_content": .object([
-                        "type": .string("boolean"),
+                        "type": .array([.string("boolean"), .string("null")]),
                         "description": .string("Whether the app contains user-generated content (true/false)")
                     ]),
                     "developer_age_rating_info_url": .object([
-                        "type": .string("string"),
+                        "type": .array([.string("string"), .string("null")]),
                         "description": .string("URL with developer's age rating information")
                     ])
                 ]),
-                "required": .array([.string("version_id")])
+                "anyOf": .array([
+                    .object(["required": .array([.string("app_info_id")])]),
+                    .object(["required": .array([.string("version_id")])])
+                ])
             ])
         )
     }
@@ -500,5 +495,12 @@ extension AppLifecycleWorker {
                 "required": .array([.string("version_id")])
             ])
         )
+    }
+
+    private func nullablePropertySchema(type: String, description: String) -> Value {
+        .object([
+            "type": .array([.string(type), .string("null")]),
+            "description": .string("\(description). Pass null to clear the saved value.")
+        ])
     }
 }

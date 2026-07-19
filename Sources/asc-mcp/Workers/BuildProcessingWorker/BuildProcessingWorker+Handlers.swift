@@ -68,8 +68,8 @@ extension BuildProcessingWorker {
         }
     }
     
-    /// Updates encryption compliance via the build's App Encryption Declaration
-    /// - Returns: JSON with updated encryption declaration details
+    /// Updates encryption compliance directly on a build
+    /// - Returns: JSON with the updated build and encryption setting
     /// - Throws: CallTool.Result with error if required parameters missing or API call fails
     func updateEncryption(_ params: CallTool.Parameters) async throws -> CallTool.Result {
         guard let arguments = params.arguments,
@@ -84,61 +84,38 @@ extension BuildProcessingWorker {
         }
 
         do {
-            // Step 1: Get the build's encryption declaration (raw JSON to avoid Codable issues)
-            let declarationData = try await httpClient.get(
-                "/v1/builds/\(buildId)/appEncryptionDeclaration",
-                parameters: [:]
-            )
-
-            guard let declarationJson = try JSONSerialization.jsonObject(with: declarationData) as? [String: Any],
-                  let dataObj = declarationJson["data"] as? [String: Any],
-                  let declarationId = dataObj["id"] as? String else {
-                return CallTool.Result(
-                    content: [MCPContent.text("Error: Could not parse encryption declaration response for build \(buildId). The build may not have an encryption declaration. Note: builds older than 90 days may have expired and no longer support this operation.")],
-                    isError: true
+            let updateRequest = UpdateBuildProcessingRequest(
+                data: UpdateBuildProcessingRequest.UpdateBuildProcessingData(
+                    id: buildId,
+                    attributes: UpdateBuildProcessingRequest.BuildProcessingAttributes(
+                        expired: nil,
+                        usesNonExemptEncryption: usesNonExemptEncryption
+                    )
                 )
-            }
-
-            // Step 2: Build PATCH request body (usesEncryption is the declaration attribute)
-            let requestBody: [String: Any] = [
-                "data": [
-                    "type": "appEncryptionDeclarations",
-                    "id": declarationId,
-                    "attributes": [
-                        "usesEncryption": usesNonExemptEncryption
-                    ]
-                ]
-            ]
-            let bodyData = try JSONSerialization.data(withJSONObject: requestBody)
-
-            // Step 3: Update the encryption declaration
-            let responseData = try await httpClient.patch(
-                "/v1/appEncryptionDeclarations/\(declarationId)",
-                body: bodyData
             )
 
-            // Step 4: Parse response (raw JSON)
-            var state = "UNKNOWN"
-            if let responseJson = try JSONSerialization.jsonObject(with: responseData) as? [String: Any],
-               let respData = responseJson["data"] as? [String: Any],
-               let attrs = respData["attributes"] as? [String: Any] {
-                state = attrs["appEncryptionDeclarationState"] as? String ?? "UNKNOWN"
-            }
+            let response: ASCBuildResponse = try await httpClient.patch(
+                "/v1/builds/\(buildId)",
+                body: updateRequest,
+                as: ASCBuildResponse.self
+            )
 
-            let result = [
+            let encodedBuild = try JSONEncoder().encode(response.data)
+            let build = try JSONSerialization.jsonObject(with: encodedBuild) as? [String: Any] ?? [:]
+
+            let result: [String: Any] = [
                 "success": true,
-                "buildId": buildId,
-                "declarationId": declarationId,
-                "usesEncryption": usesNonExemptEncryption,
-                "state": state,
-                "message": "Encryption declaration updated successfully"
-            ] as [String: Any]
+                "build": build,
+                "buildId": response.data.id,
+                "usesNonExemptEncryption": response.data.attributes.usesNonExemptEncryption.jsonSafe,
+                "message": "Build encryption compliance updated successfully"
+            ]
 
             return MCPResult.jsonObject(result)
 
         } catch {
             return CallTool.Result(
-                content: [MCPContent.text("Failed to update encryption declaration: \(error.localizedDescription)")],
+                content: [MCPContent.text("Failed to update build encryption compliance: \(error.localizedDescription)")],
                 isError: true
             )
         }

@@ -161,6 +161,23 @@ extension ProductPageOptimizationWorker {
             )
         }
 
+        let started: Bool?
+        if let state = arguments["state"]?.stringValue {
+            switch state.uppercased() {
+            case "START":
+                started = true
+            case "STOP":
+                started = false
+            default:
+                return CallTool.Result(
+                    content: [MCPContent.text("Error: Parameter 'state' must be START or STOP")],
+                    isError: true
+                )
+            }
+        } else {
+            started = nil
+        }
+
         do {
             let request = UpdateExperimentRequest(
                 data: UpdateExperimentRequest.UpdateData(
@@ -168,7 +185,7 @@ extension ProductPageOptimizationWorker {
                     attributes: UpdateExperimentRequest.Attributes(
                         name: arguments["name"]?.stringValue,
                         trafficProportion: arguments["traffic_proportion"]?.intValue,
-                        state: arguments["state"]?.stringValue
+                        started: started
                     )
                 )
             )
@@ -301,7 +318,7 @@ extension ProductPageOptimizationWorker {
                         name: name
                     ),
                     relationships: CreateTreatmentRequest.Relationships(
-                        appStoreVersionExperiment: CreateTreatmentRequest.ExperimentRelationship(
+                        appStoreVersionExperimentV2: CreateTreatmentRequest.ExperimentRelationship(
                             data: ASCResourceIdentifier(type: "appStoreVersionExperiments", id: experimentId)
                         )
                     )

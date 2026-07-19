@@ -126,7 +126,7 @@ extension PromotedPurchasesWorker {
     func uploadPromotedPurchaseImageTool() -> Tool {
         return Tool(
             name: "promoted_upload_image",
-            description: "Upload a promotional image for a promoted purchase (full cycle: reserve, upload, commit)",
+            description: "Deprecated: Apple removed promoted purchase image endpoints. Returns migration guidance for iap_*_image or subscriptions_*_image tools without calling Apple.",
             inputSchema: .object([
                 "type": .string("object"),
                 "properties": .object([
@@ -147,7 +147,7 @@ extension PromotedPurchasesWorker {
     func getPromotedPurchaseImageTool() -> Tool {
         return Tool(
             name: "promoted_get_image",
-            description: "Get details of a promoted purchase image",
+            description: "Deprecated: Apple removed promoted purchase image endpoints. Returns migration guidance for iap_*_image or subscriptions_*_image tools without calling Apple.",
             inputSchema: .object([
                 "type": .string("object"),
                 "properties": .object([
@@ -164,7 +164,7 @@ extension PromotedPurchasesWorker {
     func deletePromotedPurchaseImageTool() -> Tool {
         return Tool(
             name: "promoted_delete_image",
-            description: "Delete a promoted purchase image",
+            description: "Deprecated: Apple removed promoted purchase image endpoints. Returns migration guidance for iap_*_image or subscriptions_*_image tools without calling Apple.",
             inputSchema: .object([
                 "type": .string("object"),
                 "properties": .object([
@@ -181,7 +181,7 @@ extension PromotedPurchasesWorker {
     func getPromotedPurchaseImageForPurchaseTool() -> Tool {
         return Tool(
             name: "promoted_get_image_for_purchase",
-            description: "Get the promotional image for a promoted purchase by promoted purchase ID (singular resource — one per purchase)",
+            description: "Deprecated: Apple removed the promoted purchase image relationship. Returns migration guidance for product-scoped image tools without calling Apple.",
             inputSchema: .object([
                 "type": .string("object"),
                 "properties": .object([

@@ -44,10 +44,13 @@ extension BuildBetaDetailsWorker {
         
         result["locale"] = localization.attributes.locale.jsonSafe
         result["whatsNew"] = localization.attributes.whatsNew.jsonSafe
-        result["feedbackEmail"] = localization.attributes.feedbackEmail.jsonSafe
-        result["marketingUrl"] = localization.attributes.marketingUrl.jsonSafe
-        result["privacyPolicyUrl"] = localization.attributes.privacyPolicyUrl.jsonSafe
-        result["tvOsPrivacyPolicy"] = localization.attributes.tvOsPrivacyPolicy.jsonSafe
+
+        if let build = localization.relationships?.build?.data {
+            result["build"] = [
+                "type": build.type,
+                "id": build.id
+            ]
+        }
         
         return result
     }
@@ -134,14 +137,22 @@ extension BuildBetaDetailsWorker {
         if let id = data["id"] as? String {
             result["id"] = id
         }
+
+        if let type = data["type"] as? String {
+            result["type"] = type
+        }
         
         if let attributes = data["attributes"] as? [String: Any] {
             result["locale"] = attributes["locale"] as? String
             result["whatsNew"] = attributes["whatsNew"] as? String
-            result["feedbackEmail"] = attributes["feedbackEmail"] as? String
-            result["marketingUrl"] = attributes["marketingUrl"] as? String
-            result["privacyPolicyUrl"] = attributes["privacyPolicyUrl"] as? String
-            result["tvOsPrivacyPolicy"] = attributes["tvOsPrivacyPolicy"] as? String
+        }
+
+        if let relationships = data["relationships"] as? [String: Any],
+           let build = relationships["build"] as? [String: Any],
+           let linkage = build["data"] as? [String: Any],
+           let type = linkage["type"] as? String,
+           let id = linkage["id"] as? String {
+            result["build"] = ["type": type, "id": id]
         }
         
         return result

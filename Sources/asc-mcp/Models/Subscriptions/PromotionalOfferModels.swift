@@ -27,6 +27,7 @@ public struct PromotionalOfferAttributes: Codable, Sendable {
     public let duration: String?
     public let offerMode: String?
     public let numberOfPeriods: Int?
+    public let targetSubscriptionPlanType: String?
 }
 
 // MARK: - Promotional Offer Price Models
@@ -82,11 +83,12 @@ public struct CreatePromotionalOfferRequest: Codable, Sendable {
         public let duration: String
         public let offerMode: String
         public let numberOfPeriods: Int
+        public let targetSubscriptionPlanType: String?
     }
 
     public struct Relationships: Codable, Sendable {
         public let subscription: SubscriptionRelationship
-        public let prices: PricesRelationship?
+        public let prices: PricesRelationship
     }
 
     public struct SubscriptionRelationship: Codable, Sendable {
@@ -106,11 +108,11 @@ public struct UpdatePromotionalOfferRequest: Codable, Sendable {
     public struct UpdateData: Codable, Sendable {
         public var type: String = "subscriptionPromotionalOffers"
         public let id: String
-        public let relationships: Relationships?
+        public let relationships: Relationships
     }
 
     public struct Relationships: Codable, Sendable {
-        public let prices: PricesRelationship?
+        public let prices: PricesRelationship
     }
 
     public struct PricesRelationship: Codable, Sendable {

@@ -17,18 +17,21 @@ public actor UploadService {
         self.batchSize = max(1, batchSize)
     }
 
-    /// Reads a file from disk and uploads it using the provided upload operations
+    /// Uploads an immutable snapshot of a file using the provided upload operations
     /// - Parameters:
     ///   - filePath: Absolute path to the file on disk
     ///   - uploadOperations: Upload operations from the ASC reserve response
-    /// - Returns: MD5 hex checksum of the entire file (for commit step)
+    /// - Returns: MD5 hex checksum of the exact snapshot bytes uploaded
     /// - Throws: ASCError on file read or upload failure
     public func uploadFile(
         filePath: String,
         uploadOperations: [ASCUploadOperation]
     ) async throws -> String {
         let fileURL = URL(fileURLWithPath: filePath)
-        let size = try fileSize(at: filePath)
+        let snapshotURL = try createSnapshot(of: fileURL)
+        defer { try? FileManager.default.removeItem(at: snapshotURL) }
+
+        let size = try fileSize(at: snapshotURL.path)
         try validateUploadOperations(uploadOperations, fileSize: size)
 
         logger.info("Uploading file: \(fileURL.lastPathComponent) (\(size) bytes, \(uploadOperations.count) chunks)")
@@ -43,7 +46,7 @@ public actor UploadService {
                     let chunkIndex = nextIndex + batchOffset
                     group.addTask {
                         try await self.uploadChunk(
-                            fileURL: fileURL,
+                            fileURL: snapshotURL,
                             fileSize: size,
                             operation: operation,
                             chunkIndex: chunkIndex
@@ -56,9 +59,59 @@ public actor UploadService {
             nextIndex = batchEnd
         }
 
-        let md5 = try computeMD5(fileURL: fileURL)
+        let md5 = try computeMD5(fileURL: snapshotURL)
         logger.info("Upload complete. MD5: \(md5)")
         return md5
+    }
+
+    private func createSnapshot(of fileURL: URL) throws -> URL {
+        var snapshotURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("asc-mcp-upload-snapshot-\(UUID().uuidString)")
+        if !fileURL.pathExtension.isEmpty {
+            snapshotURL.appendPathExtension(fileURL.pathExtension)
+        }
+
+        let sourceHandle: FileHandle
+        do {
+            sourceHandle = try FileHandle(forReadingFrom: fileURL)
+        } catch {
+            throw ASCError.network("Failed to snapshot upload file '\(fileURL.path)': \(error.localizedDescription)")
+        }
+
+        guard FileManager.default.createFile(
+            atPath: snapshotURL.path,
+            contents: nil,
+            attributes: [.posixPermissions: 0o600]
+        ) else {
+            try? sourceHandle.close()
+            throw ASCError.network("Failed to create an upload snapshot for '\(fileURL.path)'")
+        }
+
+        let snapshotHandle: FileHandle
+        do {
+            snapshotHandle = try FileHandle(forWritingTo: snapshotURL)
+        } catch {
+            try? sourceHandle.close()
+            try? FileManager.default.removeItem(at: snapshotURL)
+            throw ASCError.network("Failed to open the upload snapshot: \(error.localizedDescription)")
+        }
+
+        do {
+            while true {
+                let data = try sourceHandle.read(upToCount: 1024 * 1024) ?? Data()
+                if data.isEmpty { break }
+                try snapshotHandle.write(contentsOf: data)
+            }
+            try snapshotHandle.synchronize()
+            try sourceHandle.close()
+            try snapshotHandle.close()
+            return snapshotURL
+        } catch {
+            try? sourceHandle.close()
+            try? snapshotHandle.close()
+            try? FileManager.default.removeItem(at: snapshotURL)
+            throw ASCError.network("Failed to snapshot upload file '\(fileURL.path)': \(error.localizedDescription)")
+        }
     }
 
     func validateUploadOperations(_ operations: [ASCUploadOperation], fileSize: Int) throws {

@@ -123,6 +123,34 @@ struct ToolMetadataPolicyTests {
         #expect(schema["additionalProperties"] == Value.bool(false))
     }
 
+    @Test("normalizes nullable type markers without removing enum null")
+    func normalizesNullableTypeMarkers() {
+        let rawTool = Tool(
+            name: "subscriptions_update_winback_offer",
+            description: "Sample",
+            inputSchema: .object([
+                "type": .string("object"),
+                "properties": .object([
+                    "eligibility_time_since_last_months_min": .object([
+                        "type": .array([.string("integer"), .null]),
+                        "enum": .array([.int(0), .null])
+                    ])
+                ])
+            ])
+        )
+
+        let tool = ToolMetadataPolicy.apply(to: rawTool)
+        guard case .object(let schema) = tool.inputSchema,
+              case .object(let properties)? = schema["properties"],
+              case .object(let property)? = properties["eligibility_time_since_last_months_min"] else {
+            Issue.record("Expected nested nullable property schema")
+            return
+        }
+
+        #expect(property["type"] == .array([.string("integer"), .string("null")]))
+        #expect(property["enum"] == .array([.int(0), .null]))
+    }
+
     private static func sampleTool(named name: String) -> Tool {
         Tool(
             name: name,

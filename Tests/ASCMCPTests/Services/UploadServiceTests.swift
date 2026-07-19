@@ -46,6 +46,35 @@ struct UploadServiceTests {
         #expect(bodies["/2"] == Data([6, 7, 8]))
     }
 
+    @Test("source mutation cannot change uploaded bytes or committed checksum")
+    func sourceMutationUsesImmutableSnapshot() async throws {
+        let original = Data([0, 1, 2, 3, 4, 5])
+        let replacement = Data([9, 9, 9, 9, 9, 9])
+        let fileURL = try makeTempFile(bytes: Array(original))
+        defer { try? FileManager.default.removeItem(at: fileURL) }
+        let transport = SourceMutatingUploadTransport(
+            sourceURL: fileURL,
+            replacement: replacement
+        )
+        let service = UploadService(transport: transport, batchSize: 1)
+
+        let checksum = try await service.uploadFile(
+            filePath: fileURL.path,
+            uploadOperations: [
+                ASCUploadOperation(method: "PUT", url: "https://upload.example.test/0", length: 3, offset: 0, requestHeaders: nil),
+                ASCUploadOperation(method: "PUT", url: "https://upload.example.test/1", length: 3, offset: 3, requestHeaders: nil)
+            ]
+        )
+
+        let bodies = await transport.bodiesByPath()
+        let expectedChecksum = await service.computeMD5(data: original)
+        let currentSource = try Data(contentsOf: fileURL)
+        #expect(bodies["/0"] == Data([0, 1, 2]))
+        #expect(bodies["/1"] == Data([3, 4, 5]))
+        #expect(checksum == expectedChecksum)
+        #expect(currentSource == replacement)
+    }
+
     @Test("limits upload concurrency to batch size")
     func limitsConcurrency() async throws {
         let transport = RecordingUploadTransport(responseDelayNanoseconds: 40_000_000)
@@ -128,5 +157,37 @@ private actor RecordingUploadTransport: HTTPTransport {
 
     func requestCount() -> Int {
         requestBodies.count
+    }
+}
+
+private actor SourceMutatingUploadTransport: HTTPTransport {
+    private let sourceURL: URL
+    private let replacement: Data
+    private var didMutate = false
+    private var requestBodies: [String: Data] = [:]
+
+    init(sourceURL: URL, replacement: Data) {
+        self.sourceURL = sourceURL
+        self.replacement = replacement
+    }
+
+    func data(for request: URLRequest) async throws -> (Data, HTTPURLResponse) {
+        if !didMutate {
+            try replacement.write(to: sourceURL, options: .atomic)
+            didMutate = true
+        }
+
+        requestBodies[request.url?.path ?? ""] = request.httpBody ?? Data()
+        let response = HTTPURLResponse(
+            url: request.url ?? URL(string: "https://upload.example.test")!,
+            statusCode: 200,
+            httpVersion: "HTTP/1.1",
+            headerFields: nil
+        )!
+        return (Data(), response)
+    }
+
+    func bodiesByPath() -> [String: Data] {
+        requestBodies
     }
 }

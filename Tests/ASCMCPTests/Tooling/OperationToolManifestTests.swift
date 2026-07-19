@@ -576,37 +576,8 @@ struct OperationToolManifestTests {
                 "Worker manifest drift: \(snapshot.key)"
             )
         }
-        let expectedBroken: Set<String> = [
-            "analytics_app_summary",
-            "analytics_sales_report",
-            "app_versions_get",
-            "auth_validate_token",
-            "reviews_stats",
-            "subscriptions_create_offer_code",
-            "subscriptions_create_promotional_offer",
-            "subscriptions_create_winback_offer",
-            "subscriptions_update_promotional_offer",
-            "subscriptions_update_winback_offer",
-            "users_update"
-        ]
-        let expectedTarget: Set<String> = [
-            "app_versions_set_review_details",
-            "app_versions_update_age_rating",
-            "builds_send_beta_notification",
-            "builds_set_beta_localization",
-            "builds_update_beta_detail",
-            "builds_update_encryption",
-            "iap_list_images",
-            "ppo_create_treatment",
-            "ppo_update_experiment",
-            "pricing_list_territory_availability",
-            "promoted_delete_image",
-            "promoted_get_image",
-            "promoted_get_image_for_purchase",
-            "promoted_upload_image",
-            "review_attachments_upload",
-            "subscriptions_list_images"
-        ]
+        let expectedBroken: Set<String> = []
+        let expectedTarget: Set<String> = []
         let expectedImplementationStates = Dictionary(uniqueKeysWithValues:
             expectedBroken.map { ($0, ASCImplementationState.broken) } +
                 expectedTarget.map { ($0, ASCImplementationState.target) }

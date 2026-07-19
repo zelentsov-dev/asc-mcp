@@ -160,7 +160,7 @@
       "kind": "compound",
       "status": "partial",
       "effect": "write",
-      "implementationState": "target",
+      "implementationState": "asBuilt",
       "operations": [
         {
           "operationId": "appStoreReviewAttachments_createInstance",
@@ -221,7 +221,7 @@
           "method": "get",
           "path": "/v1/appStoreReviewAttachments/{id}",
           "role": "conditional",
-          "condition": "After commit, poll the created attachment until assetDeliveryState reaches a terminal state.",
+          "condition": "When the commit response is nonterminal or the commit outcome is ambiguous, reconcile the created attachment until assetDeliveryState reaches a terminal state unless the task is cancelled.",
           "inputs": [
             {
               "sourceKind": "derived",
@@ -239,7 +239,7 @@
           "method": "delete",
           "path": "/v1/appStoreReviewAttachments/{id}",
           "role": "conditional",
-          "condition": "If reserve succeeds but upload, commit, or delivery fails, delete the created attachment as cleanup.",
+          "condition": "Before any commit PATCH is attempted, delete the reservation only when Apple returns no upload operations or the presigned byte transfer fails. Treat a 404 cleanup response as already absent.",
           "inputs": [
             {
               "sourceKind": "derived",
@@ -248,7 +248,7 @@
               "derivedFrom": [
                 "appStoreReviewAttachments_createInstance:/data/id"
               ],
-              "localRole": "Delete the attachment created by the reservation operation when cleanup is required."
+              "localRole": "Rollback the reservation only for a missing upload plan or presigned transfer failure before commit."
             }
           ]
         }
@@ -263,7 +263,7 @@
         {
           "toolField": "file_path",
           "sourceKind": "local",
-          "localRole": "Read the local file and upload its bytes through the presigned uploadOperations returned by Apple; presigned transfers are outside the App Store Connect OpenAPI."
+          "localRole": "Create an immutable temporary snapshot of the local file and upload those bytes through Apple's presigned uploadOperations; presigned transfers are outside the App Store Connect OpenAPI."
         },
         {
           "toolField": "file_path",
@@ -293,7 +293,7 @@
           "derivedFrom": [
             "file_path"
           ],
-          "localRole": "Derive the sourceFileChecksum while uploading the local file."
+          "localRole": "Derive sourceFileChecksum from the same immutable snapshot bytes sent through every upload operation."
         }
       ],
       "response": {
@@ -307,17 +307,15 @@
         "fields": [
           {
             "outputField": "success",
-            "localRole": "Set true after reserve, presigned upload, and commit all return successfully."
+            "localRole": "Set true only when the commit response or a reconciliation response reports COMPLETE."
           },
           {
             "outputField": "attachment",
-            "operationId": "appStoreReviewAttachments_getInstance",
-            "jsonPointer": "/data",
-            "localRole": "Use the terminal poll response; the current handler instead projects the immediate commit response."
+            "localRole": "Project the latest attachment returned by commit or reconciliation, including nonterminal and FAILED states."
           }
         ]
       },
-      "note": "Intended current workflow is reserve, local presigned upload, then commit. Mapping is partial because the handler does not poll assetDeliveryState to COMPLETE or delete a reservation after upload failure, and the tool has no outputSchema."
+      "note": "The handler snapshots the local file, reserves, uploads, commits, and reconciles assetDeliveryState. Automatic DELETE is restricted to missing upload operations or transfer failure before PATCH. Once commit may have started, every error, cancellation, timeout, malformed response, and FAILED state retains the attachment with explicit get/delete guidance. The mapping remains partial because the MCP output has no outputSchema."
     }
   ],
   "implementationAliases": []

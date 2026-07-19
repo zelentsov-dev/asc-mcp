@@ -24,7 +24,7 @@ extension BuildProcessingWorker {
     func updateEncryptionTool() -> Tool {
         return Tool(
             name: "builds_update_encryption",
-            description: "Update encryption compliance via the build's App Encryption Declaration. Fetches the declaration for the given build and patches usesNonExemptEncryption.",
+            description: "Set whether a build uses non-exempt encryption",
             inputSchema: .object([
                 "type": .string("object"),
                 "properties": .object([

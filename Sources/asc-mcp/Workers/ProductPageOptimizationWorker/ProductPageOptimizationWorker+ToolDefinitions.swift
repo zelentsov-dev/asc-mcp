@@ -97,7 +97,8 @@ extension ProductPageOptimizationWorker {
                     ]),
                     "state": .object([
                         "type": .string("string"),
-                        "description": .string("Experiment state: START or STOP")
+                        "description": .string("Experiment state: START or STOP"),
+                        "enum": .array([.string("START"), .string("STOP")])
                     ])
                 ]),
                 "required": .array([.string("experiment_id")])

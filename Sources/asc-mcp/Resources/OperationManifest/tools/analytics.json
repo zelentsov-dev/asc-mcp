@@ -6,7 +6,7 @@
       "kind": "compound",
       "status": "partial",
       "effect": "read",
-      "implementationState": "broken",
+      "implementationState": "asBuilt",
       "operations": [
         {
           "invocationId": "downloads",
@@ -18,7 +18,8 @@
           "inputs": [
             { "sourceKind": "fixed", "location": "query", "appleName": "filter[reportType]", "fixedValue": ["SALES"] },
             { "sourceKind": "fixed", "location": "query", "appleName": "filter[reportSubType]", "fixedValue": ["SUMMARY"] },
-            { "sourceKind": "fixed", "location": "query", "appleName": "filter[frequency]", "fixedValue": ["DAILY"] }
+            { "sourceKind": "fixed", "location": "query", "appleName": "filter[frequency]", "fixedValue": ["DAILY"] },
+            { "sourceKind": "fixed", "location": "query", "appleName": "filter[version]", "fixedValue": ["1_0"] }
           ]
         },
         {
@@ -31,7 +32,8 @@
           "inputs": [
             { "sourceKind": "fixed", "location": "query", "appleName": "filter[reportType]", "fixedValue": ["SUBSCRIPTION"] },
             { "sourceKind": "fixed", "location": "query", "appleName": "filter[reportSubType]", "fixedValue": ["SUMMARY"] },
-            { "sourceKind": "fixed", "location": "query", "appleName": "filter[frequency]", "fixedValue": ["DAILY"] }
+            { "sourceKind": "fixed", "location": "query", "appleName": "filter[frequency]", "fixedValue": ["DAILY"] },
+            { "sourceKind": "fixed", "location": "query", "appleName": "filter[version]", "fixedValue": ["1_3"] }
           ]
         },
         {
@@ -44,7 +46,8 @@
           "inputs": [
             { "sourceKind": "fixed", "location": "query", "appleName": "filter[reportType]", "fixedValue": ["SUBSCRIPTION_EVENT"] },
             { "sourceKind": "fixed", "location": "query", "appleName": "filter[reportSubType]", "fixedValue": ["SUMMARY"] },
-            { "sourceKind": "fixed", "location": "query", "appleName": "filter[frequency]", "fixedValue": ["DAILY"] }
+            { "sourceKind": "fixed", "location": "query", "appleName": "filter[frequency]", "fixedValue": ["DAILY"] },
+            { "sourceKind": "fixed", "location": "query", "appleName": "filter[version]", "fixedValue": ["1_3"] }
           ]
         },
         {
@@ -57,7 +60,8 @@
           "inputs": [
             { "sourceKind": "fixed", "location": "query", "appleName": "filter[reportType]", "fixedValue": ["SUBSCRIBER"] },
             { "sourceKind": "fixed", "location": "query", "appleName": "filter[reportSubType]", "fixedValue": ["DETAILED"] },
-            { "sourceKind": "fixed", "location": "query", "appleName": "filter[frequency]", "fixedValue": ["DAILY"] }
+            { "sourceKind": "fixed", "location": "query", "appleName": "filter[frequency]", "fixedValue": ["DAILY"] },
+            { "sourceKind": "fixed", "location": "query", "appleName": "filter[version]", "fixedValue": ["1_3"] }
           ]
         }
       ],
@@ -94,10 +98,10 @@
           "location": "query",
           "appleName": "filter[reportDate]"
         },
-        {
-          "toolField": "app_id",
-          "sourceKind": "local",
-          "localRole": "postDownloadAppleIdentifierRowFilter"
+      {
+        "toolField": "app_id",
+        "sourceKind": "local",
+        "localRole": "trimmedNonEmptyValidationThenPostDownloadAppIdentifierColumnFilter"
         },
         {
           "toolField": "vendor_number",
@@ -152,6 +156,10 @@
             "localRole": "orchestrationEnvelope"
           },
           {
+            "outputField": "partial_success",
+            "localRole": "mixedSectionOutcomeIndicator"
+          },
+          {
             "outputField": "report_date",
             "localRole": "requestedDateEcho"
           },
@@ -176,7 +184,7 @@
           }
         ]
       },
-      "note": "Compound local workflow over four salesReports downloads with independent section errors. Partial: SUBSCRIPTION_EVENT defaults to version 1_4 although OpenAPI 4.4.1 supports 1_3, so that section can fail; app_id filtering and all summaries are local TSV heuristics rather than Apple API fields."
+      "note": "Compound local workflow over four salesReports downloads with independent section errors. All four requests use Apple-supported report combinations and versions after trimmed non-empty identifier and strict YYYY-MM-DD calendar-date validation. app_id filtering and summaries are local TSV aggregations. Monetary aggregation uses Decimal and per-unit proceeds; compatibility numeric proceeds are accompanied by exact decimal strings. The subscription section covers all version 1_3 active offer columns and exposes reported/lower-bound/suppressed-row Subscribers semantics."
     },
     {
       "tool": "analytics_check_snapshot_status",
@@ -416,9 +424,9 @@
             "jsonPointer": "/",
             "localRole": "parsedTSVRowCount"
           },
-          {
-            "outputField": "summary",
-            "localRole": "localFinancialTSVAggregation"
+      {
+        "outputField": "summary",
+        "localRole": "localDecimalFinancialTSVAggregationPreferringExtendedPartnerShare"
           },
           {
             "outputField": "rows",
@@ -426,7 +434,7 @@
           }
         ]
       },
-      "note": "All Apple 4.4.1 request parameters are bound. Partial because summary_only, limit, decompression, TSV parsing, and monetary aggregation are local behavior; the tool does not expose a typed output contract."
+      "note": "All Apple 4.4.1 request parameters are bound. Partial because summary_only, limit, decompression, TSV parsing, and monetary aggregation are local behavior; the tool does not expose a typed output contract. Financial aggregation uses Decimal, prefers Apple's signed Extended Partner Share, falls back to Quantity multiplied by per-unit Partner Share, and returns both compatibility numeric values and exact decimal strings."
     },
     {
       "tool": "analytics_get_instance",
@@ -833,7 +841,7 @@
       "kind": "compound",
       "status": "partial",
       "effect": "read",
-      "implementationState": "broken",
+      "implementationState": "asBuilt",
       "operations": [
         {
           "invocationId": "summary",
@@ -841,15 +849,7 @@
           "method": "get",
           "path": "/v1/salesReports",
           "role": "primary",
-          "condition": "Always downloads and parses one gzip TSV report."
-        },
-        {
-          "invocationId": "raw-rows-redownload",
-          "operationId": "salesReports_getCollection",
-          "method": "get",
-          "path": "/v1/salesReports",
-          "role": "conditional",
-          "condition": "When summary_only=false, downloads the same report a second time to recover rows for output."
+          "condition": "Always downloads and parses one gzip TSV report; summary_only only changes the local response projection."
         }
       ],
       "fields": [
@@ -862,33 +862,16 @@
           "appleName": "filter[vendorNumber]",
           "localRole": "optionalCompanyConfigFallback"
         },
-        {
-          "toolField": "vendor_number",
-          "sourceKind": "parameter",
-          "operationId": "salesReports_getCollection",
-          "invocationId": "raw-rows-redownload",
-          "location": "query",
-          "appleName": "filter[vendorNumber]",
-          "localRole": "optionalCompanyConfigFallback"
-        },
-        {
-          "toolField": "app_id",
-          "sourceKind": "local",
-          "localRole": "postDownloadAppleIdentifierRowFilter"
+      {
+        "toolField": "app_id",
+        "sourceKind": "local",
+        "localRole": "trimmedNonEmptyValidationThenPostDownloadAppIdentifierColumnFilter"
         },
         {
           "toolField": "report_type",
           "sourceKind": "parameter",
           "operationId": "salesReports_getCollection",
           "invocationId": "summary",
-          "location": "query",
-          "appleName": "filter[reportType]"
-        },
-        {
-          "toolField": "report_type",
-          "sourceKind": "parameter",
-          "operationId": "salesReports_getCollection",
-          "invocationId": "raw-rows-redownload",
           "location": "query",
           "appleName": "filter[reportType]"
         },
@@ -901,26 +884,10 @@
           "appleName": "filter[reportSubType]"
         },
         {
-          "toolField": "report_sub_type",
-          "sourceKind": "parameter",
-          "operationId": "salesReports_getCollection",
-          "invocationId": "raw-rows-redownload",
-          "location": "query",
-          "appleName": "filter[reportSubType]"
-        },
-        {
           "toolField": "frequency",
           "sourceKind": "parameter",
           "operationId": "salesReports_getCollection",
           "invocationId": "summary",
-          "location": "query",
-          "appleName": "filter[frequency]"
-        },
-        {
-          "toolField": "frequency",
-          "sourceKind": "parameter",
-          "operationId": "salesReports_getCollection",
-          "invocationId": "raw-rows-redownload",
           "location": "query",
           "appleName": "filter[frequency]"
         },
@@ -933,33 +900,18 @@
           "appleName": "filter[reportDate]"
         },
         {
-          "toolField": "report_date",
-          "sourceKind": "parameter",
-          "operationId": "salesReports_getCollection",
-          "invocationId": "raw-rows-redownload",
-          "location": "query",
-          "appleName": "filter[reportDate]"
-        },
-        {
           "toolField": "version",
           "sourceKind": "parameter",
           "operationId": "salesReports_getCollection",
           "invocationId": "summary",
           "location": "query",
-          "appleName": "filter[version]"
-        },
-        {
-          "toolField": "version",
-          "sourceKind": "parameter",
-          "operationId": "salesReports_getCollection",
-          "invocationId": "raw-rows-redownload",
-          "location": "query",
-          "appleName": "filter[version]"
+          "appleName": "filter[version]",
+          "localRole": "validatedAppleCombinationDefaultWhenOmitted"
         },
         {
           "toolField": "summary_only",
           "sourceKind": "local",
-          "localRole": "selectAggregateOnlyOrSecondFetchWithRows"
+          "localRole": "selectAggregateOnlyOrRowsFromSingleParsedDownload"
         },
         {
           "toolField": "limit",
@@ -973,8 +925,7 @@
           {
             "operationId": "salesReports_getCollection",
             "statusCode": "200",
-            "mediaType": "application/a-gzip",
-            "invocationIds": ["summary", "raw-rows-redownload"]
+            "mediaType": "application/a-gzip"
           }
         ],
         "fields": [
@@ -1006,16 +957,15 @@
             "outputField": "total_rows",
             "operationId": "salesReports_getCollection",
             "jsonPointer": "/",
-            "invocationIds": ["summary"],
             "localRole": "parsedTSVRowCount"
           },
           {
             "outputField": "filtered_rows",
             "localRole": "postDownloadAppFilterCount"
           },
-          {
-            "outputField": "summary",
-            "localRole": "reportTypeSpecificTSVAggregation"
+      {
+        "outputField": "summary",
+        "localRole": "reportTypeSpecificDecimalTSVAggregationWithExactMonetaryStringsAndSubscriberSuppressionSemantics"
           },
           {
             "outputField": "rows",
@@ -1023,7 +973,7 @@
           }
         ]
       },
-      "note": "Partial against OpenAPI 4.4.1: public report_type omits FIRST_ANNUAL, INSTALLS, and WIN_BACK_ELIGIBILITY; report_sub_type exposes invalid OPT_IN and omits SUMMARY_INSTALL_TYPE, SUMMARY_TERRITORY, and SUMMARY_CHANNEL; SUBSCRIPTION_EVENT defaults to unsupported 1_4 instead of 1_3. app_id, summaries, and row limiting are local. summary_only=false performs a redundant second network download."
+      "note": "The public enums match OpenAPI 4.4.1. Handler validation enforces Apple's supported combinations, strict YYYY-MM-DD calendar dates when supplied, and trimmed non-empty vendor/app identifiers before network access. app_id filtering, report-type or row-count summaries, and row limiting are local. Raw rows and summary reuse one parsed gzip download. Monetary aggregation uses Decimal, multiplies per-unit proceeds by signed units, returns compatibility numeric values plus exact decimal strings, and the version 1_3 subscription summary exposes all active offer columns plus reported/lower-bound/suppressed-row Subscribers semantics."
     }
   ],
   "implementationAliases": []

@@ -3,6 +3,23 @@ import MCP
 
 /// UsersWorker manages team members and invitations in App Store Connect
 public final class UsersWorker: Sendable {
+    static let assignableRoles = [
+        "ADMIN",
+        "FINANCE",
+        "ACCOUNT_HOLDER",
+        "SALES",
+        "MARKETING",
+        "APP_MANAGER",
+        "DEVELOPER",
+        "ACCESS_TO_REPORTS",
+        "CUSTOMER_SUPPORT",
+        "CREATE_APPS",
+        "CLOUD_MANAGED_DEVELOPER_ID",
+        "CLOUD_MANAGED_APP_DISTRIBUTION",
+        "GENERATE_INDIVIDUAL_KEYS"
+    ]
+    static let deprecatedRoles: Set<String> = ["ACCESS_TO_REPORTS"]
+
     let httpClient: HTTPClient
 
     public init(httpClient: HTTPClient) {

@@ -47,11 +47,49 @@ public struct UpdateUserRequest: Codable, Sendable {
         public var type: String = "users"
         public let id: String
         public let attributes: UpdateUserAttributes
+        public let relationships: UpdateUserRelationships?
+
+        public init(
+            id: String,
+            attributes: UpdateUserAttributes,
+            relationships: UpdateUserRelationships? = nil
+        ) {
+            self.id = id
+            self.attributes = attributes
+            self.relationships = relationships
+        }
     }
 
     public struct UpdateUserAttributes: Codable, Sendable {
         public let roles: [String]?
         public let allAppsVisible: Bool?
+        public let provisioningAllowed: Bool?
+
+        public init(
+            roles: [String]? = nil,
+            allAppsVisible: Bool? = nil,
+            provisioningAllowed: Bool? = nil
+        ) {
+            self.roles = roles
+            self.allAppsVisible = allAppsVisible
+            self.provisioningAllowed = provisioningAllowed
+        }
+    }
+
+    public struct UpdateUserRelationships: Codable, Sendable {
+        public let visibleApps: VisibleAppsRelationship?
+
+        public init(visibleApps: VisibleAppsRelationship? = nil) {
+            self.visibleApps = visibleApps
+        }
+    }
+
+    public struct VisibleAppsRelationship: Codable, Sendable {
+        public let data: [ASCResourceIdentifier]
+
+        public init(data: [ASCResourceIdentifier]) {
+            self.data = data
+        }
     }
 }
 

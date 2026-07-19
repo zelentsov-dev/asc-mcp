@@ -1160,8 +1160,12 @@ extension InAppPurchasesWorker {
         do {
             let response: ASCIAPImagesResponse
 
-            if let nextUrl = arguments["next_url"]?.stringValue,
-               let parsed = await httpClient.parsePaginationUrl(nextUrl) {
+            if let nextUrl = arguments["next_url"]?.stringValue {
+                guard let parsed = await httpClient.parsePaginationUrl(nextUrl),
+                      isIAPImagesCollectionPath(parsed.path, iapId: iapId) else {
+                    return MCPResult.error("Invalid next_url for the in-app purchase images collection")
+                }
+
                 response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCIAPImagesResponse.self)
             } else {
                 var queryParams: [String: String] = [:]
@@ -1173,7 +1177,7 @@ extension InAppPurchasesWorker {
                 }
 
                 response = try await httpClient.get(
-                    "/v2/inAppPurchases/\(iapId)/inAppPurchaseImages",
+                    "/v2/inAppPurchases/\(iapId)/images",
                     parameters: queryParams,
                     as: ASCIAPImagesResponse.self
                 )
@@ -1219,6 +1223,16 @@ extension InAppPurchasesWorker {
         }
 
         return result
+    }
+
+    private func isIAPImagesCollectionPath(_ path: String, iapId: String) -> Bool {
+        let components = path.split(separator: "/", omittingEmptySubsequences: false)
+        return components.count == 5
+            && components[0].isEmpty
+            && components[1] == "v2"
+            && components[2] == "inAppPurchases"
+            && components[3] == iapId
+            && components[4] == "images"
     }
 
     // MARK: - Formatting

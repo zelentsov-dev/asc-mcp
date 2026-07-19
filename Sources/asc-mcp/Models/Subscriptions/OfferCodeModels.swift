@@ -29,7 +29,11 @@ public struct OfferCodeAttributes: Codable, Sendable {
     public let duration: String?
     public let numberOfPeriods: Int?
     public let totalNumberOfCodes: Int?
+    public let productionCodeCount: Int?
+    public let sandboxCodeCount: Int?
     public let customerEligibilities: [String]?
+    public let autoRenewEnabled: Bool?
+    public let targetSubscriptionPlanType: String?
 }
 
 // MARK: - Offer Code Price Models
@@ -180,11 +184,13 @@ public struct CreateOfferCodeRequest: Codable, Sendable {
         public let duration: String
         public let numberOfPeriods: Int
         public let customerEligibilities: [String]
+        public let autoRenewEnabled: Bool?
+        public let targetSubscriptionPlanType: String?
     }
 
     public struct Relationships: Codable, Sendable {
         public let subscription: SubscriptionRelationship
-        public let prices: PricesRelationship?
+        public let prices: PricesRelationship
     }
 
     public struct SubscriptionRelationship: Codable, Sendable {

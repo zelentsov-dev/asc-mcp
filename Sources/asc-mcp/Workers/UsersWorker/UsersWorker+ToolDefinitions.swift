@@ -53,7 +53,7 @@ extension UsersWorker {
     func updateUserTool() -> Tool {
         return Tool(
             name: "users_update",
-            description: "Update user roles in the team",
+            description: "Update a team member's roles, app visibility, or provisioning access. Provide at least one field to change.",
             inputSchema: .object([
                 "type": .string("object"),
                 "properties": .object([
@@ -63,11 +63,30 @@ extension UsersWorker {
                     ]),
                     "roles": .object([
                         "type": .string("array"),
+                        "items": .object([
+                            "type": .string("string"),
+                            "enum": .array(UsersWorker.assignableRoles.map(Value.string))
+                        ]),
+                        "minItems": .int(1),
+                        "uniqueItems": .bool(true),
+                        "description": .string("Roles or permissions to assign. ACCESS_TO_REPORTS is deprecated by Apple but remains accepted for backward compatibility.")
+                    ]),
+                    "all_apps_visible": .object([
+                        "type": .string("boolean"),
+                        "description": .string("Whether the user can access all apps")
+                    ]),
+                    "provisioning_allowed": .object([
+                        "type": .string("boolean"),
+                        "description": .string("Whether the user's role can access provisioning on the Apple Developer website")
+                    ]),
+                    "visible_app_ids": .object([
+                        "type": .string("array"),
                         "items": .object(["type": .string("string")]),
-                        "description": .string("Array of roles to assign (e.g. [\"DEVELOPER\",\"MARKETING\"]). Valid: ADMIN, FINANCE, TECHNICAL, ACCOUNT_HOLDER, SALES, MARKETING, APP_MANAGER, DEVELOPER, ACCESS_TO_REPORTS, CUSTOMER_SUPPORT, CREATE_APPS, CLOUD_MANAGED_DEVELOPER_ID, CLOUD_MANAGED_APP_DISTRIBUTION, GENERATE_INDIVIDUAL_KEYS")
+                        "uniqueItems": .bool(true),
+                        "description": .string("Complete set of app resource IDs visible to the user; pass an empty array to clear specific app visibility")
                     ])
                 ]),
-                "required": .array([.string("user_id"), .string("roles")])
+                "required": .array([.string("user_id")])
             ])
         )
     }

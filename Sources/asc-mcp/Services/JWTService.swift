@@ -12,9 +12,36 @@ public struct TokenCacheInfo: Sendable {
 
 /// Decoded JWT payload
 private struct DecodedJWTPayload: Decodable {
-    let exp: Int  // Unix timestamp
+    let exp: Int
     let iat: Int?
     let iss: String?
+    let aud: String?
+}
+
+private struct DecodedJWTHeader: Decodable {
+    let alg: String?
+    let kid: String?
+    let typ: String?
+}
+
+enum TokenValidationFailure: String, Sendable, Equatable {
+    case malformedToken = "malformed_token"
+    case malformedHeader = "malformed_header"
+    case unsupportedAlgorithm = "unsupported_algorithm"
+    case incorrectKeyID = "incorrect_key_id"
+    case incorrectTokenType = "incorrect_token_type"
+    case invalidSignature = "invalid_signature"
+    case malformedPayload = "malformed_payload"
+    case incorrectIssuer = "incorrect_issuer"
+    case incorrectAudience = "incorrect_audience"
+    case invalidIssuedAt = "invalid_issued_at"
+    case excessiveLifetime = "excessive_lifetime"
+    case expiredOrExpiring = "expired_or_expiring"
+}
+
+struct TokenValidationResult: Sendable {
+    let isValid: Bool
+    let failure: TokenValidationFailure?
 }
 
 /// JWT token service for App Store Connect API
@@ -66,17 +93,10 @@ public actor JWTService {
 
     /// Decodes JWT token and extracts expiration time
     private func decodeTokenExpiration(_ token: String) -> Date? {
-        let parts = token.split(separator: ".")
+        let parts = token.split(separator: ".", omittingEmptySubsequences: false)
         guard parts.count == 3 else { return nil }
 
-        let payloadBase64 = String(parts[1])
-        // Add padding if needed
-        let padded = payloadBase64.padding(toLength: ((payloadBase64.count + 3) / 4) * 4,
-                                           withPad: "=",
-                                           startingAt: 0)
-
-        guard let payloadData = Data(base64Encoded: padded.replacingOccurrences(of: "-", with: "+")
-                                                          .replacingOccurrences(of: "_", with: "/")) else {
+        guard let payloadData = decodeBase64URL(parts[1]) else {
             return nil
         }
 
@@ -167,11 +187,66 @@ public actor JWTService {
         return "\(signingInput).\(signatureBase64)"
     }
 
-    /// Validate token (check expiration)
+    /// Validate a token against the configured App Store Connect team key and claims
     public func validateToken(_ token: String) -> Bool {
-        guard let expirationDate = decodeTokenExpiration(token) else { return false }
-        // Token is invalid if less than leeway time until expiration
-        return expirationDate.timeIntervalSinceNow > tokenRefreshLeeway
+        validateTokenDetails(token).isValid
+    }
+
+    func validateTokenDetails(_ token: String) -> TokenValidationResult {
+        let parts = token.split(separator: ".", omittingEmptySubsequences: false)
+        guard parts.count == 3 else {
+            return TokenValidationResult(isValid: false, failure: .malformedToken)
+        }
+
+        guard let headerData = decodeBase64URL(parts[0]),
+              let header = try? JSONDecoder().decode(DecodedJWTHeader.self, from: headerData) else {
+            return TokenValidationResult(isValid: false, failure: .malformedHeader)
+        }
+        guard header.alg == "ES256" else {
+            return TokenValidationResult(isValid: false, failure: .unsupportedAlgorithm)
+        }
+        guard header.kid == company.keyID else {
+            return TokenValidationResult(isValid: false, failure: .incorrectKeyID)
+        }
+        guard header.typ == "JWT" else {
+            return TokenValidationResult(isValid: false, failure: .incorrectTokenType)
+        }
+
+        guard let signatureData = decodeBase64URL(parts[2]),
+              let signature = try? P256.Signing.ECDSASignature(rawRepresentation: signatureData) else {
+            return TokenValidationResult(isValid: false, failure: .invalidSignature)
+        }
+
+        let signingInput = Data("\(parts[0]).\(parts[1])".utf8)
+        guard privateKey.publicKey.isValidSignature(signature, for: signingInput) else {
+            return TokenValidationResult(isValid: false, failure: .invalidSignature)
+        }
+
+        guard let payloadData = decodeBase64URL(parts[1]),
+              let payload = try? JSONDecoder().decode(DecodedJWTPayload.self, from: payloadData) else {
+            return TokenValidationResult(isValid: false, failure: .malformedPayload)
+        }
+        guard payload.iss == company.issuerID else {
+            return TokenValidationResult(isValid: false, failure: .incorrectIssuer)
+        }
+        guard payload.aud == "appstoreconnect-v1" else {
+            return TokenValidationResult(isValid: false, failure: .incorrectAudience)
+        }
+
+        let now = Date().timeIntervalSince1970
+        guard let issuedAt = payload.iat,
+              TimeInterval(issuedAt) <= now + 30,
+              issuedAt < payload.exp else {
+            return TokenValidationResult(isValid: false, failure: .invalidIssuedAt)
+        }
+        guard TimeInterval(payload.exp) - TimeInterval(issuedAt) <= 20 * 60 else {
+            return TokenValidationResult(isValid: false, failure: .excessiveLifetime)
+        }
+        guard TimeInterval(payload.exp) - now > tokenRefreshLeeway else {
+            return TokenValidationResult(isValid: false, failure: .expiredOrExpiring)
+        }
+
+        return TokenValidationResult(isValid: true, failure: nil)
     }
 
     /// Force token refresh
@@ -204,6 +279,15 @@ public actor JWTService {
             expirationDate: expirationDateString
         )
     }
+}
+
+private func decodeBase64URL(_ value: Substring) -> Data? {
+    var base64 = String(value)
+        .replacingOccurrences(of: "-", with: "+")
+        .replacingOccurrences(of: "_", with: "/")
+    let padding = (4 - base64.count % 4) % 4
+    base64.append(String(repeating: "=", count: padding))
+    return Data(base64Encoded: base64)
 }
 
 // MARK: - JWT Models

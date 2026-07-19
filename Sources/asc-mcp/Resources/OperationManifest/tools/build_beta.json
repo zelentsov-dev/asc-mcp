@@ -450,7 +450,7 @@
       "kind": "direct",
       "status": "partial",
       "effect": "write",
-      "implementationState": "target",
+      "implementationState": "asBuilt",
       "operations": [
         {
           "operationId": "buildBetaNotifications_createInstance",
@@ -491,20 +491,28 @@
           }
         ]
       },
-      "note": "Intended 4.4.1 contract. The current handler incorrectly posts to /v1/betaBuildNotifications and sends type betaBuildNotifications; Apple requires path /v1/buildBetaNotifications and type buildBetaNotifications."
+      "note": "Posts buildBetaNotifications to the current Build Beta Notifications endpoint and confirms Apple's 201 response."
     },
     {
       "tool": "builds_set_beta_localization",
       "kind": "compound",
       "status": "partial",
       "effect": "write",
-      "implementationState": "target",
+      "implementationState": "asBuilt",
       "operations": [
         {
-          "operationId": "builds_betaBuildLocalizations_getToManyRelated",
+          "operationId": "betaBuildLocalizations_getCollection",
           "method": "get",
-          "path": "/v1/builds/{id}/betaBuildLocalizations",
-          "role": "supporting"
+          "path": "/v1/betaBuildLocalizations",
+          "role": "supporting",
+          "inputs": [
+            {
+              "sourceKind": "fixed",
+              "location": "query",
+              "appleName": "limit",
+              "fixedValue": 1
+            }
+          ]
         },
         {
           "operationId": "betaBuildLocalizations_createInstance",
@@ -528,14 +536,14 @@
               "sourceKind": "derived",
               "location": "path",
               "appleName": "id",
-              "derivedFrom": ["builds_betaBuildLocalizations_getToManyRelated:/data/*/id"],
+              "derivedFrom": ["betaBuildLocalizations_getCollection:/data/*/id"],
               "localRole": "useFirstLocaleMatchedLocalizationIdentifierForPath"
             },
             { "sourceKind": "fixed", "jsonPointer": "/data/type", "fixedValue": "betaBuildLocalizations" },
             {
               "sourceKind": "derived",
               "jsonPointer": "/data/id",
-              "derivedFrom": ["builds_betaBuildLocalizations_getToManyRelated:/data/*/id"],
+              "derivedFrom": ["betaBuildLocalizations_getCollection:/data/*/id"],
               "localRole": "copyLocaleMatchedLocalizationIdentifierToRequestBody"
             }
           ]
@@ -545,9 +553,16 @@
         {
           "toolField": "build_id",
           "sourceKind": "parameter",
-          "operationId": "builds_betaBuildLocalizations_getToManyRelated",
-          "location": "path",
-          "appleName": "id"
+          "operationId": "betaBuildLocalizations_getCollection",
+          "location": "query",
+          "appleName": "filter[build]"
+        },
+        {
+          "toolField": "locale",
+          "sourceKind": "parameter",
+          "operationId": "betaBuildLocalizations_getCollection",
+          "location": "query",
+          "appleName": "filter[locale]"
         },
         {
           "toolField": "build_id",
@@ -576,26 +591,26 @@
         {
           "toolField": "feedback_email",
           "sourceKind": "local",
-          "localRole": "Unsupported input for BetaBuildLocalization.",
-          "omissionReason": "Apple 4.4.1 places feedbackEmail on BetaAppLocalization, not BetaBuildLocalization; this field must be removed or rejected."
+          "localRole": "Deprecated input rejected before network access.",
+          "omissionReason": "Apple 4.4.1 places feedbackEmail on BetaAppLocalization, not BetaBuildLocalization."
         },
         {
           "toolField": "marketing_url",
           "sourceKind": "local",
-          "localRole": "Unsupported input for BetaBuildLocalization.",
-          "omissionReason": "Apple 4.4.1 places marketingUrl on BetaAppLocalization, not BetaBuildLocalization; this field must be removed or rejected."
+          "localRole": "Deprecated input rejected before network access.",
+          "omissionReason": "Apple 4.4.1 places marketingUrl on BetaAppLocalization, not BetaBuildLocalization."
         },
         {
           "toolField": "privacy_policy_url",
           "sourceKind": "local",
-          "localRole": "Unsupported input for BetaBuildLocalization.",
-          "omissionReason": "Apple 4.4.1 places privacyPolicyUrl on BetaAppLocalization, not BetaBuildLocalization; this field must be removed or rejected."
+          "localRole": "Deprecated input rejected before network access.",
+          "omissionReason": "Apple 4.4.1 places privacyPolicyUrl on BetaAppLocalization, not BetaBuildLocalization."
         },
         {
           "toolField": "tv_os_privacy_policy",
           "sourceKind": "local",
-          "localRole": "Unsupported input for BetaBuildLocalization.",
-          "omissionReason": "Apple 4.4.1 places tvOsPrivacyPolicy on BetaAppLocalization, not BetaBuildLocalization; this field must be removed or rejected."
+          "localRole": "Deprecated input rejected before network access.",
+          "omissionReason": "Apple 4.4.1 places tvOsPrivacyPolicy on BetaAppLocalization, not BetaBuildLocalization."
         }
       ],
       "response": {
@@ -603,7 +618,7 @@
         "sources": [
           { "operationId": "betaBuildLocalizations_createInstance", "statusCode": "201", "mediaType": "application/json" },
           { "operationId": "betaBuildLocalizations_updateInstance", "statusCode": "200", "mediaType": "application/json" },
-          { "operationId": "builds_betaBuildLocalizations_getToManyRelated", "statusCode": "200", "mediaType": "application/json" }
+          { "operationId": "betaBuildLocalizations_getCollection", "statusCode": "200", "mediaType": "application/json" }
         ],
         "fields": [
           {
@@ -618,18 +633,22 @@
           },
           {
             "outputField": "action",
-            "localRole": "Created or updated branch selected after scanning existing localizations by locale."
+            "localRole": "Created or updated branch selected from the build-and-locale-filtered collection result."
+          },
+          {
+            "outputField": "success",
+            "localRole": "True after Apple creates or updates the localization."
           }
         ]
       },
-      "note": "Intended create-or-update workflow. Only locale and whatsNew are writable for BetaBuildLocalization; the current handler sends four BetaAppLocalization-only attributes and will be rejected when any is present."
+      "note": "Create-or-update workflow uses Apple-side build and locale filters to find an existing resource across the full collection, then serializes only locale and whatsNew. Deprecated BetaAppLocalization-only inputs remain discoverable and are rejected before network access with replacement tool guidance."
     },
     {
       "tool": "builds_update_beta_detail",
       "kind": "direct",
       "status": "partial",
       "effect": "write",
-      "implementationState": "target",
+      "implementationState": "asBuilt",
       "operations": [
         {
           "operationId": "buildBetaDetails_updateInstance",
@@ -664,14 +683,14 @@
         {
           "toolField": "internal_build_state",
           "sourceKind": "local",
-          "localRole": "Unsupported read-only Apple attribute.",
-          "omissionReason": "BuildBetaDetailUpdateRequest 4.4.1 permits only autoNotifyEnabled; this input must be removed or rejected."
+          "localRole": "Deprecated read-only input rejected before network access.",
+          "omissionReason": "BuildBetaDetailUpdateRequest 4.4.1 permits only autoNotifyEnabled."
         },
         {
           "toolField": "external_build_state",
           "sourceKind": "local",
-          "localRole": "Unsupported read-only Apple attribute.",
-          "omissionReason": "BuildBetaDetailUpdateRequest 4.4.1 permits only autoNotifyEnabled; this input must be removed or rejected."
+          "localRole": "Deprecated read-only input rejected before network access.",
+          "omissionReason": "BuildBetaDetailUpdateRequest 4.4.1 permits only autoNotifyEnabled."
         }
       ],
       "response": {
@@ -685,13 +704,17 @@
         ],
         "fields": [
           {
-            "outputField": "beta_detail",
+            "outputField": "betaDetail",
             "operationId": "buildBetaDetails_updateInstance",
             "jsonPointer": "/data"
+          },
+          {
+            "outputField": "success",
+            "localRole": "True after Apple accepts the beta detail update."
           }
         ]
       },
-      "note": "Intended current operation. The current handler incorrectly serializes read-only internalBuildState and externalBuildState; Apple accepts only autoNotifyEnabled."
+      "note": "Serializes only autoNotifyEnabled. Deprecated internal and external state inputs remain discoverable and are rejected before network access."
     }
   ],
   "implementationAliases": []

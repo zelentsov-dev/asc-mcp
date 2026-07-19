@@ -16,12 +16,6 @@ extension BuildBetaDetailsWorker {
             )
         }
 
-        for key in ["marketing_url", "privacy_policy_url", "tv_os_privacy_policy"] {
-            if let value = arguments[key]?.stringValue, !value.isEmpty {
-                errors += ASCMetadataValidator.validateHTTPURL(value, field: key)
-            }
-        }
-
         return errors
     }
 
@@ -91,26 +85,18 @@ extension BuildBetaDetailsWorker {
                 isError: true
             )
         }
+
+        let unsupportedFields = ["internal_build_state", "external_build_state"]
+            .filter { arguments[$0] != nil }
+        if !unsupportedFields.isEmpty {
+            return MCPResult.error(
+                "Unsupported read-only parameter(s): \(unsupportedFields.joined(separator: ", ")). Apple only permits auto_notify when updating a build beta detail."
+            )
+        }
         
         do {
-            var attributes: [String: Any] = [:]
-            
-            if let autoNotifyValue = arguments["auto_notify"],
-               let autoNotify = autoNotifyValue.boolValue {
-                attributes["autoNotifyEnabled"] = autoNotify
-            }
-            
-            if let internalStateValue = arguments["internal_build_state"],
-               let internalState = internalStateValue.stringValue {
-                attributes["internalBuildState"] = internalState
-            }
-            
-            if let externalStateValue = arguments["external_build_state"],
-               let externalState = externalStateValue.stringValue {
-                attributes["externalBuildState"] = externalState
-            }
-            
-            if attributes.isEmpty {
+            guard let autoNotifyValue = arguments["auto_notify"],
+                  let autoNotify = autoNotifyValue.boolValue else {
                 return CallTool.Result(
                     content: [MCPContent.text("Warning: No updates provided")],
                     isError: false
@@ -121,9 +107,7 @@ extension BuildBetaDetailsWorker {
                 data: UpdateBuildBetaDetailRequest.UpdateBuildBetaDetailData(
                     id: betaDetailId,
                     attributes: UpdateBuildBetaDetailRequest.BuildBetaDetailUpdateAttributes(
-                        autoNotifyEnabled: attributes["autoNotifyEnabled"] as? Bool,
-                        internalBuildState: attributes["internalBuildState"] as? String,
-                        externalBuildState: attributes["externalBuildState"] as? String
+                        autoNotifyEnabled: autoNotify
                     )
                 )
             )
@@ -163,33 +147,42 @@ extension BuildBetaDetailsWorker {
             return MCPResult.error("Required parameters 'build_id' and 'locale' are missing")
         }
 
+        let unsupportedFields = [
+            "feedback_email",
+            "marketing_url",
+            "privacy_policy_url",
+            "tv_os_privacy_policy"
+        ].filter { arguments[$0] != nil }
+        if !unsupportedFields.isEmpty {
+            return MCPResult.error(
+                "Unsupported build-localization parameter(s): \(unsupportedFields.joined(separator: ", ")). Use beta_app_create_localization or beta_app_update_localization for app-level TestFlight contact and policy metadata."
+            )
+        }
+
         let validationErrors = validateBetaLocalizationArguments(arguments, locale: locale)
         if !validationErrors.isEmpty {
             return ASCMetadataValidator.errorResult(validationErrors)
         }
         
         do {
-            // Check if localization exists - get all and filter locally
             let existingResponse: ASCBetaBuildLocalizationsResponse = try await httpClient.get(
-                "/v1/builds/\(buildId)/betaBuildLocalizations",
-                parameters: [:],
+                "/v1/betaBuildLocalizations",
+                parameters: [
+                    "filter[build]": buildId,
+                    "filter[locale]": locale,
+                    "limit": "1"
+                ],
                 as: ASCBetaBuildLocalizationsResponse.self
             )
-            
-            // Filter by locale locally
-            let existingData = existingResponse.data.filter { $0.attributes.locale == locale }
+            let existingData = existingResponse.data
             
             if existingData.isEmpty {
                 // Create new localization
                 let createRequest = CreateBetaBuildLocalizationRequest(
                     data: CreateBetaBuildLocalizationRequest.CreateBetaBuildLocalizationData(
-                        attributes: BetaBuildLocalizationAttributes(
+                        attributes: CreateBetaBuildLocalizationRequest.CreateBetaBuildLocalizationAttributes(
                             locale: locale,
-                            whatsNew: arguments["whats_new"]?.stringValue,
-                            feedbackEmail: arguments["feedback_email"]?.stringValue,
-                            marketingUrl: arguments["marketing_url"]?.stringValue,
-                            privacyPolicyUrl: arguments["privacy_policy_url"]?.stringValue,
-                            tvOsPrivacyPolicy: arguments["tv_os_privacy_policy"]?.stringValue
+                            whatsNew: arguments["whats_new"]?.stringValue
                         ),
                         relationships: CreateBetaBuildLocalizationRequest.CreateBetaBuildLocalizationRelationships(
                             build: CreateBetaBuildLocalizationRequest.BuildRelationship(
@@ -224,21 +217,10 @@ extension BuildBetaDetailsWorker {
                 let localizationId = localizationData.id
                 
                 let updateAttributes = UpdateBetaBuildLocalizationRequest.BetaBuildLocalizationUpdateAttributes(
-                    whatsNew: arguments["whats_new"]?.stringValue,
-                    feedbackEmail: arguments["feedback_email"]?.stringValue,
-                    marketingUrl: arguments["marketing_url"]?.stringValue,
-                    privacyPolicyUrl: arguments["privacy_policy_url"]?.stringValue,
-                    tvOsPrivacyPolicy: arguments["tv_os_privacy_policy"]?.stringValue
+                    whatsNew: arguments["whats_new"]?.stringValue
                 )
                 
-                // Check if any attributes were provided
-                let hasUpdates = updateAttributes.whatsNew != nil ||
-                                updateAttributes.feedbackEmail != nil ||
-                                updateAttributes.marketingUrl != nil ||
-                                updateAttributes.privacyPolicyUrl != nil ||
-                                updateAttributes.tvOsPrivacyPolicy != nil
-                
-                if !hasUpdates {
+                if updateAttributes.whatsNew == nil {
                     return MCPResult.text("Warning: No updates provided")
                 }
                 
@@ -272,7 +254,7 @@ extension BuildBetaDetailsWorker {
     }
     
     /// Lists all TestFlight localizations for a build
-    /// - Returns: JSON array of localizations with What's New text and URLs
+    /// - Returns: JSON array of localizations with locale, What's New text, and build linkage
     /// - Throws: CallTool.Result with error if build_id missing or API call fails
     func listBetaLocalizations(_ params: CallTool.Parameters) async throws -> CallTool.Result {
         guard let arguments = params.arguments,
@@ -677,7 +659,7 @@ extension BuildBetaDetailsWorker {
         do {
             let body: [String: Any] = [
                 "data": [
-                    "type": "betaBuildNotifications",
+                    "type": "buildBetaNotifications",
                     "relationships": [
                         "build": [
                             "data": [
@@ -691,7 +673,7 @@ extension BuildBetaDetailsWorker {
 
             let bodyData = try JSONSerialization.data(withJSONObject: body, options: [])
             _ = try await httpClient.post(
-                "/v1/betaBuildNotifications",
+                "/v1/buildBetaNotifications",
                 body: bodyData
             )
 

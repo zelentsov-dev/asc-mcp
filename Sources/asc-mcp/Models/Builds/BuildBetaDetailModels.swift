@@ -54,15 +54,11 @@ public struct ASCBetaBuildLocalization: Codable, Sendable {
 public struct BetaBuildLocalizationAttributes: Codable, Sendable {
     public let locale: String?
     public let whatsNew: String?
-    public let feedbackEmail: String?
-    public let marketingUrl: String?
-    public let privacyPolicyUrl: String?
-    public let tvOsPrivacyPolicy: String?
 }
 
 /// Beta build localization relationships
 public struct BetaBuildLocalizationRelationships: Codable, Sendable {
-    public let buildBetaDetail: ASCRelationship?
+    public let build: ASCRelationship?
 }
 
 // MARK: - Beta Group Models
@@ -187,8 +183,13 @@ public struct CreateBetaBuildLocalizationRequest: Codable, Sendable {
     
     public struct CreateBetaBuildLocalizationData: Codable, Sendable {
         public var type: String = "betaBuildLocalizations"
-        public let attributes: BetaBuildLocalizationAttributes
+        public let attributes: CreateBetaBuildLocalizationAttributes
         public let relationships: CreateBetaBuildLocalizationRelationships
+    }
+
+    public struct CreateBetaBuildLocalizationAttributes: Codable, Sendable {
+        public let locale: String
+        public let whatsNew: String?
     }
     
     public struct CreateBetaBuildLocalizationRelationships: Codable, Sendable {
@@ -212,10 +213,6 @@ public struct UpdateBetaBuildLocalizationRequest: Codable, Sendable {
     
     public struct BetaBuildLocalizationUpdateAttributes: Codable, Sendable {
         public let whatsNew: String?
-        public let feedbackEmail: String?
-        public let marketingUrl: String?
-        public let privacyPolicyUrl: String?
-        public let tvOsPrivacyPolicy: String?
     }
 }
 
@@ -288,8 +285,6 @@ public struct UpdateBuildBetaDetailRequest: Codable, Sendable {
     
     public struct BuildBetaDetailUpdateAttributes: Codable, Sendable {
         public let autoNotifyEnabled: Bool?
-        public let internalBuildState: String?
-        public let externalBuildState: String?
     }
 }
 

@@ -99,7 +99,7 @@
       "kind": "local",
       "status": "deprecated",
       "effect": "write",
-      "implementationState": "target",
+      "implementationState": "asBuilt",
       "operations": [],
       "fields": [
         {
@@ -114,7 +114,7 @@
         "sources": [],
         "fields": []
       },
-      "note": "Target contract: Apple 4.4.1 has no promotedPurchaseImages resource or promotionImage relationship, while current Swift still calls those absent endpoints. Replace them with current in-app-purchase or subscription image resources, or deterministic deprecation."
+      "note": "Apple 4.4.1 has no promotedPurchaseImages resource or promotionImage relationship. The handler sends no Apple request and returns a structured deprecation error with current IAP and subscription image replacements."
     },
     {
       "tool": "promoted_get",
@@ -154,7 +154,7 @@
       "kind": "local",
       "status": "deprecated",
       "effect": "read",
-      "implementationState": "target",
+      "implementationState": "asBuilt",
       "operations": [],
       "fields": [
         {
@@ -169,14 +169,14 @@
         "sources": [],
         "fields": []
       },
-      "note": "Target contract: Apple 4.4.1 has no promotedPurchaseImages resource or promotionImage relationship, while current Swift still calls those absent endpoints. Replace them with current in-app-purchase or subscription image resources, or deterministic deprecation."
+      "note": "Apple 4.4.1 has no promotedPurchaseImages resource or promotionImage relationship. The handler sends no Apple request and returns a structured deprecation error with current IAP and subscription image replacements."
     },
     {
       "tool": "promoted_get_image_for_purchase",
       "kind": "local",
       "status": "deprecated",
       "effect": "read",
-      "implementationState": "target",
+      "implementationState": "asBuilt",
       "operations": [],
       "fields": [
         {
@@ -191,7 +191,7 @@
         "sources": [],
         "fields": []
       },
-      "note": "Target contract: Apple 4.4.1 has no promotedPurchaseImages resource or promotionImage relationship, while current Swift still calls those absent endpoints. Replace them with current in-app-purchase or subscription image resources, or deterministic deprecation."
+      "note": "Apple 4.4.1 has no promotedPurchaseImages resource or promotionImage relationship. The handler sends no Apple request and returns a structured deprecation error with current IAP and subscription image replacements."
     },
     {
       "tool": "promoted_list",
@@ -297,7 +297,7 @@
       "kind": "local",
       "status": "deprecated",
       "effect": "write",
-      "implementationState": "target",
+      "implementationState": "asBuilt",
       "operations": [],
       "fields": [
         {
@@ -318,7 +318,7 @@
         "sources": [],
         "fields": []
       },
-      "note": "Target contract: Apple 4.4.1 has no promotedPurchaseImages resource or promotionImage relationship, while current Swift still calls those absent endpoints. Replace them with current in-app-purchase or subscription image resources, or deterministic deprecation."
+      "note": "Apple 4.4.1 has no promotedPurchaseImages resource or promotionImage relationship. The handler sends no Apple request and returns a structured deprecation error with current IAP and subscription image replacements."
     }
   ],
   "implementationAliases": []

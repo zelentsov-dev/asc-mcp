@@ -19,13 +19,13 @@ extension AuthWorker {
     func validateTokenTool() -> Tool {
         return Tool(
             name: "auth_validate_token",
-            description: "Validate a JWT token",
+            description: "Locally validate a standard team-key JWT signature and App Store Connect claims against the configured company, including the 20-minute maximum lifetime. This does not call Apple or prove that Apple will accept a specific API request.",
             inputSchema: .object([
                 "type": .string("object"),
                 "properties": .object([
                     "token": .object([
                         "type": .string("string"),
-                        "description": .string("JWT token to validate")
+                        "description": .string("Non-scoped team-key JWT to validate using the configured ES256 key, key ID, issuer, audience, issued-at time, expiration, and standard maximum lifetime")
                     ])
                 ]),
                 "required": .array([.string("token")])

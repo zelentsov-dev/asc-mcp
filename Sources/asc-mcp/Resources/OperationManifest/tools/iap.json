@@ -1206,7 +1206,7 @@
       "kind": "direct",
       "status": "partial",
       "effect": "read",
-      "implementationState": "target",
+      "implementationState": "asBuilt",
       "operations": [
         {
           "operationId": "inAppPurchasesV2_images_getToManyRelated",
@@ -1234,7 +1234,7 @@
         {
           "toolField": "next_url",
           "sourceKind": "local",
-          "localRole": "Validated Apple pagination URL override for the version images collection."
+          "localRole": "Validated same-host Apple pagination URL restricted to /v2/inAppPurchases/{iap_id}/images for the requested parent."
         }
       ],
       "response": {
@@ -1244,7 +1244,7 @@
         ],
         "fields": []
       },
-      "note": "Apple 4.4.1 defines GET /v2/inAppPurchases/{id}/images. The current handler incorrectly calls /v2/inAppPurchases/{id}/inAppPurchaseImages, which is absent from the specification; this mapping records the intended official operation and the implementation must be fixed."
+      "note": "The handler uses Apple's current GET /v2/inAppPurchases/{id}/images relationship endpoint with bounded pagination and rejects foreign hosts, wrong collection paths, or a parent ID different from iap_id. The mapping remains partial because the MCP output has no outputSchema."
     },
     {
       "tool": "iap_list_localizations",

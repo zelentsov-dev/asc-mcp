@@ -144,7 +144,7 @@ extension AppLifecycleWorker {
 
         do {
             let queryParams: [String: String] = [
-                "include": "build,appStoreVersionSubmission,appStoreVersionPhasedRelease,appStoreReviewDetail,ageRatingDeclaration"
+                "include": "build,appStoreVersionSubmission,appStoreVersionPhasedRelease,appStoreReviewDetail"
             ]
 
             let response = try await httpClient.get(
@@ -153,10 +153,14 @@ extension AppLifecycleWorker {
                 as: PassthroughAPIResponse.self
             )
 
-            let result: [String: Any] = [
+            var result: [String: Any] = [
                 "success": true,
                 "version": response.data.asAny
             ]
+
+            if let included = response.included {
+                result["included"] = included.map(\.asAny)
+            }
 
             return MCPResult.jsonObject(result)
 
@@ -641,43 +645,42 @@ extension AppLifecycleWorker {
     /// - Returns: JSON with review details and action taken (created/updated)
     /// - Throws: CallTool.Result with error if version_id missing or API call fails
     func setReviewDetails(_ params: CallTool.Parameters) async throws -> CallTool.Result {
-        guard let arguments = params.arguments,
-              let versionId = arguments["version_id"]?.stringValue else {
+        guard let arguments = params.arguments else {
             return CallTool.Result(
                 content: [MCPContent.text("Error: Required parameter 'version_id' is missing")],
                 isError: true
             )
         }
 
+        let versionId: String
         do {
-            // First, check if review details already exist for this version
-            let versionResponse = try await httpClient.get(
-                "/v1/appStoreVersions/\(versionId)",
-                parameters: ["include": "appStoreReviewDetail"],
-                as: SingleResourceResponse.self
+            versionId = try requiredIdentifier("version_id", from: arguments)
+        } catch {
+            return MCPResult.error(error.localizedDescription)
+        }
+
+        if arguments["attachment_file_id"] != nil {
+            return MCPResult.error("attachment_file_id is not accepted by Apple's review detail API. Create or update the review details first, then use review_attachments_upload with the returned review detail ID.")
+        }
+
+        let attrs: ReviewDetailAttributes
+        do {
+            attrs = ReviewDetailAttributes(
+                contactFirstName: try nullableString("contact_first_name", from: arguments),
+                contactLastName: try nullableString("contact_last_name", from: arguments),
+                contactPhone: try nullableString("contact_phone", from: arguments),
+                contactEmail: try nullableString("contact_email", from: arguments),
+                demoAccountName: try nullableString("demo_account_name", from: arguments),
+                demoAccountPassword: try nullableString("demo_account_password", from: arguments),
+                demoAccountRequired: try nullableBool("demo_account_required", from: arguments),
+                notes: try nullableString("notes", from: arguments)
             )
+        } catch {
+            return MCPResult.error(error.localizedDescription)
+        }
 
-            var existingReviewDetailId: String? = nil
-
-            // Check if review detail relationship exists in relationships
-            if case .object(let relationships) = versionResponse.data.relationships,
-               case .object(let reviewDetail) = relationships["appStoreReviewDetail"],
-               case .object(let reviewData) = reviewDetail["data"],
-               case .string(let reviewId) = reviewData["id"] {
-                existingReviewDetailId = reviewId
-            }
-
-            let attrs = ReviewDetailAttributes(
-                contactFirstName: arguments["contact_first_name"]?.stringValue,
-                contactLastName: arguments["contact_last_name"]?.stringValue,
-                contactPhone: arguments["contact_phone"]?.stringValue,
-                contactEmail: arguments["contact_email"]?.stringValue,
-                demoAccountName: arguments["demo_account_name"]?.stringValue,
-                demoAccountPassword: arguments["demo_account_password"]?.stringValue,
-                demoAccountRequired: arguments["demo_account_required"]?.boolValue,
-                notes: arguments["notes"]?.stringValue,
-                attachmentAssetId: arguments["attachment_file_id"]?.stringValue
-            )
+        do {
+            let existingReviewDetailId = try await resolveReviewDetailId(versionId: versionId)
 
             let responseData: Data
             let message: String
@@ -694,8 +697,7 @@ extension AppLifecycleWorker {
                         demoAccountName: attrs.demoAccountName,
                         demoAccountPassword: attrs.demoAccountPassword,
                         demoAccountRequired: attrs.demoAccountRequired,
-                        notes: attrs.notes,
-                        attachmentAssetId: attrs.attachmentAssetId
+                        notes: attrs.notes
                     )
                 )
                 let bodyData = try JSONEncoder().encode(request)
@@ -716,8 +718,7 @@ extension AppLifecycleWorker {
                         demoAccountName: attrs.demoAccountName,
                         demoAccountPassword: attrs.demoAccountPassword,
                         demoAccountRequired: attrs.demoAccountRequired,
-                        notes: attrs.notes,
-                        attachmentAssetId: attrs.attachmentAssetId
+                        notes: attrs.notes
                     )
                 )
                 let bodyData = try JSONEncoder().encode(request)
@@ -747,138 +748,170 @@ extension AppLifecycleWorker {
         }
     }
 
-    /// Updates or creates age rating declaration for the app version
-    /// - Returns: JSON with age rating details and action taken (created/updated)
-    /// - Throws: CallTool.Result with error if version_id missing or API call fails
+    /// Updates an app-level age rating declaration using an App Info ID or a compatible version lookup
+    /// - Returns: JSON with the updated age rating details and selected App Info ID
+    /// - Throws: CallTool.Result with error if identifiers or attributes are invalid, or an API call fails
     func updateAgeRating(_ params: CallTool.Parameters) async throws -> CallTool.Result {
-        guard let arguments = params.arguments,
-              let versionId = arguments["version_id"]?.stringValue else {
-            return CallTool.Result(
-                content: [MCPContent.text("Error: Required parameter 'version_id' is missing")],
-                isError: true
-            )
+        guard let arguments = params.arguments else {
+            return MCPResult.error("At least one of app_info_id or version_id is required")
+        }
+
+        let versionId: String?
+        let directAppInfoId: String?
+        do {
+            versionId = try optionalIdentifier("version_id", from: arguments)
+            directAppInfoId = try optionalIdentifier("app_info_id", from: arguments)
+        } catch {
+            return MCPResult.error(error.localizedDescription)
+        }
+
+        guard versionId != nil || directAppInfoId != nil else {
+            return MCPResult.error("At least one of app_info_id or version_id is required")
+        }
+
+        let intensityValues = Set(["NONE", "INFREQUENT_OR_MILD", "FREQUENT_OR_INTENSE", "INFREQUENT", "FREQUENT"])
+        let intensityFields: [String: String] = [
+            "alcohol_tobacco_or_drug_use": "alcoholTobaccoOrDrugUseOrReferences",
+            "contests": "contests",
+            "gambling_simulated": "gamblingSimulated",
+            "horror_fear_themes": "horrorOrFearThemes",
+            "mature_suggestive_themes": "matureOrSuggestiveThemes",
+            "medical_treatment_information": "medicalOrTreatmentInformation",
+            "profanity_crude_humor": "profanityOrCrudeHumor",
+            "sexual_content_nudity": "sexualContentOrNudity",
+            "sexual_content_graphic_nudity": "sexualContentGraphicAndNudity",
+            "violence_cartoon": "violenceCartoonOrFantasy",
+            "violence_realistic": "violenceRealistic",
+            "violence_realistic_prolonged": "violenceRealisticProlongedGraphicOrSadistic",
+            "guns_or_other_weapons": "gunsOrOtherWeapons"
+        ]
+        let boolFields: [String: String] = [
+            "gambling": "gambling",
+            "unrestricted_web_access": "unrestrictedWebAccess",
+            "advertising": "advertising",
+            "age_assurance": "ageAssurance",
+            "health_or_wellness_topics": "healthOrWellnessTopics",
+            "loot_box": "lootBox",
+            "messaging_and_chat": "messagingAndChat",
+            "parental_controls": "parentalControls",
+            "social_media": "socialMedia",
+            "social_media_age_restricted": "socialMediaAgeRestricted",
+            "user_generated_content": "userGeneratedContent"
+        ]
+
+        var attributes: [String: NullableAttributeValue] = [:]
+        do {
+            for (toolField, appleField) in intensityFields {
+                if let value = try nullableString(toolField, from: arguments, allowedValues: intensityValues) {
+                    attributes[appleField] = value
+                }
+            }
+
+            for (toolField, appleField) in boolFields {
+                if let value = try nullableBool(toolField, from: arguments) {
+                    attributes[appleField] = value
+                }
+            }
+
+            if let value = try nullableString(
+                "kids_age_band",
+                from: arguments,
+                allowedValues: ["FIVE_AND_UNDER", "SIX_TO_EIGHT", "NINE_TO_ELEVEN"]
+            ) {
+                attributes["kidsAgeBand"] = value
+            }
+            if let value = try nullableString(
+                "age_rating_override",
+                from: arguments,
+                allowedValues: ["NONE", "NINE_PLUS", "THIRTEEN_PLUS", "SIXTEEN_PLUS", "EIGHTEEN_PLUS", "UNRATED"]
+            ) {
+                attributes["ageRatingOverrideV2"] = value
+            }
+            if let value = try nullableString(
+                "korea_age_rating_override",
+                from: arguments,
+                allowedValues: ["NONE", "FIFTEEN_PLUS", "NINETEEN_PLUS"]
+            ) {
+                attributes["koreaAgeRatingOverride"] = value
+            }
+            if let value = try nullableString("developer_age_rating_info_url", from: arguments) {
+                attributes["developerAgeRatingInfoUrl"] = value
+            }
+        } catch {
+            return MCPResult.error(error.localizedDescription)
+        }
+
+        guard !attributes.isEmpty else {
+            return MCPResult.error("No age rating attributes to update")
         }
 
         do {
-            // First, check if age rating declaration already exists for this version
-            let versionResponse = try await httpClient.get(
-                "/v1/appStoreVersions/\(versionId)",
-                parameters: ["include": "ageRatingDeclaration"],
+            let appInfoId: String
+            if let directAppInfoId {
+                appInfoId = directAppInfoId
+            } else if let versionId {
+                let versionResponse = try await httpClient.get(
+                    "/v1/appStoreVersions/\(versionId)",
+                    parameters: ["fields[appStoreVersions]": "app,appVersionState"],
+                    as: ASCAppStoreVersionResponse.self
+                )
+
+                guard let appRelationship = versionResponse.data.relationships?.app?.data,
+                      case .single(let app) = appRelationship else {
+                    return MCPResult.error("Could not resolve the owning app from version \(versionId). Provide app_info_id from app_info_list.")
+                }
+
+                guard appInfoState(for: versionResponse.data.attributes?.appVersionState) != nil else {
+                    let versionState = versionResponse.data.attributes?.appVersionState ?? "UNKNOWN"
+                    return MCPResult.error("Version state \(versionState) cannot be safely mapped to App Info. Provide app_info_id from app_info_list.")
+                }
+
+                let appInfos = try await httpClient.get(
+                    "/v1/apps/\(app.id)/appInfos",
+                    parameters: [
+                        "fields[appInfos]": "state",
+                        "limit": "200"
+                    ],
+                    as: ASCAppInfosResponse.self
+                )
+
+                guard let appInfo = selectAppInfo(
+                    from: appInfos.data,
+                    versionState: versionResponse.data.attributes?.appVersionState
+                ) else {
+                    let candidates = appInfos.data.map { info in
+                        "\(info.id):\(info.attributes?.state ?? "UNKNOWN")"
+                    }.joined(separator: ", ")
+                    return MCPResult.error("Could not safely select App Info for version \(versionId). Provide app_info_id from app_info_list. Candidates: \(candidates.isEmpty ? "none" : candidates).")
+                }
+                appInfoId = appInfo.id
+            } else {
+                return MCPResult.error("At least one of app_info_id or version_id is required")
+            }
+
+            let ageRatingResponse = try await httpClient.get(
+                "/v1/appInfos/\(appInfoId)/ageRatingDeclaration",
+                parameters: [:],
                 as: SingleResourceResponse.self
             )
+            let ageRatingId = ageRatingResponse.data.id
 
-            var existingAgeRatingId: String? = nil
-
-            // Check if age rating declaration relationship exists
-            if case .object(let relationships) = versionResponse.data.relationships,
-               case .object(let ageRating) = relationships["ageRatingDeclaration"],
-               case .object(let ageRatingData) = ageRating["data"],
-               case .string(let ageRatingId) = ageRatingData["id"] {
-                existingAgeRatingId = ageRatingId
-            }
-
-            // Map string enum age rating attributes (NONE/INFREQUENT_OR_MILD/FREQUENT_OR_INTENSE)
-            let stringFields: [String: String] = [
-                "alcohol_tobacco_or_drug_use": "alcoholTobaccoOrDrugUseOrReferences",
-                "contests": "contests",
-                "gambling_simulated": "gamblingSimulated",
-                "horror_fear_themes": "horrorOrFearThemes",
-                "mature_suggestive_themes": "matureOrSuggestiveThemes",
-                "medical_treatment_information": "medicalOrTreatmentInformation",
-                "profanity_crude_humor": "profanityOrCrudeHumor",
-                "sexual_content_nudity": "sexualContentOrNudity",
-                "sexual_content_graphic_nudity": "sexualContentGraphicAndNudity",
-                "violence_cartoon": "violenceCartoonOrFantasy",
-                "violence_realistic": "violenceRealistic",
-                "violence_realistic_prolonged": "violenceRealisticProlongedGraphicOrSadistic",
-                "guns_or_other_weapons": "gunsOrOtherWeapons",
-                "kids_age_band": "kidsAgeBand",
-                "age_rating_override": "ageRatingOverrideV2",
-                "korea_age_rating_override": "koreaAgeRatingOverride"
-            ]
-
-            // Map boolean age rating attributes
-            let boolFields: [String: String] = [
-                "gambling": "gambling",
-                "unrestricted_web_access": "unrestrictedWebAccess",
-                "advertising": "advertising",
-                "age_assurance": "ageAssurance",
-                "health_or_wellness_topics": "healthOrWellnessTopics",
-                "loot_box": "lootBox",
-                "messaging_and_chat": "messagingAndChat",
-                "parental_controls": "parentalControls",
-                "user_generated_content": "userGeneratedContent"
-            ]
-
-            // Map string (URI) fields
-            let uriFields: [String: String] = [
-                "developer_age_rating_info_url": "developerAgeRatingInfoUrl"
-            ]
-
-            var attributes: [String: AgeRatingValue] = [:]
-
-            for (argName, apiName) in stringFields {
-                if let value = arguments[argName],
-                   let stringValue = value.stringValue {
-                    attributes[apiName] = .string(stringValue)
-                }
-            }
-
-            for (argName, apiName) in boolFields {
-                if let value = arguments[argName],
-                   let boolValue = value.boolValue {
-                    attributes[apiName] = .bool(boolValue)
-                }
-            }
-
-            for (argName, apiName) in uriFields {
-                if let value = arguments[argName],
-                   let stringValue = value.stringValue {
-                    attributes[apiName] = .string(stringValue)
-                }
-            }
-
-            if attributes.isEmpty {
-                return CallTool.Result(
-                    content: [MCPContent.text("Error: No age rating attributes to update")],
-                    isError: true
-                )
-            }
-
-            let response: PassthroughAPIResponse
-            let message: String
-
-            if let ageRatingId = existingAgeRatingId {
-                // Age rating exists - update it with PATCH
-                let request = UpdateAgeRatingDeclarationRequest(
-                    ageRatingId: ageRatingId,
-                    attributes: attributes
-                )
-                response = try await httpClient.patch(
-                    "/v1/ageRatingDeclarations/\(ageRatingId)",
-                    body: request,
-                    as: PassthroughAPIResponse.self
-                )
-                message = "Age rating declaration updated successfully"
-            } else {
-                // Age rating doesn't exist - create new with POST
-                let request = CreateAgeRatingDeclarationRequest(
-                    versionId: versionId,
-                    attributes: attributes
-                )
-                response = try await httpClient.post(
-                    "/v1/ageRatingDeclarations",
-                    body: request,
-                    as: PassthroughAPIResponse.self
-                )
-                message = "Age rating declaration created successfully"
-            }
+            let request = UpdateAgeRatingDeclarationRequest(
+                ageRatingId: ageRatingId,
+                attributes: attributes
+            )
+            let response = try await httpClient.patch(
+                "/v1/ageRatingDeclarations/\(ageRatingId)",
+                body: request,
+                as: PassthroughAPIResponse.self
+            )
 
             let result: [String: Any] = [
                 "success": true,
                 "age_rating": response.data.asAny,
-                "message": message,
-                "action": existingAgeRatingId != nil ? "updated" : "created"
+                "app_info_id": appInfoId,
+                "message": "Age rating declaration updated successfully",
+                "action": "updated"
             ]
 
             return MCPResult.jsonObject(result)
@@ -924,14 +957,123 @@ extension AppLifecycleWorker {
 
 // MARK: - Private Helpers
 
+private extension AppLifecycleWorker {
+    func resolveReviewDetailId(versionId: String) async throws -> String? {
+        do {
+            let response = try await httpClient.get(
+                "/v1/appStoreVersions/\(versionId)/appStoreReviewDetail",
+                parameters: [:],
+                as: SingleResourceResponse.self
+            )
+            return response.data.id
+        } catch let error as ASCError {
+            switch error {
+            case .api(_, 404), .apiResponse(_, 404):
+                return nil
+            default:
+                throw error
+            }
+        }
+    }
+
+    func selectAppInfo(from appInfos: [ASCAppInfo], versionState: String?) -> ASCAppInfo? {
+        guard let targetState = appInfoState(for: versionState) else {
+            return nil
+        }
+        let exactMatches = appInfos.filter { $0.attributes?.state == targetState }
+        return exactMatches.count == 1 ? exactMatches[0] : nil
+    }
+
+    func appInfoState(for versionState: String?) -> String? {
+        guard let versionState else {
+            return nil
+        }
+
+        switch versionState {
+        case "PENDING_APPLE_RELEASE", "PENDING_DEVELOPER_RELEASE", "PROCESSING_FOR_DISTRIBUTION":
+            return "PENDING_RELEASE"
+        case "METADATA_REJECTED":
+            return "REJECTED"
+        case "INVALID_BINARY":
+            return nil
+        case "REPLACED_WITH_NEW_VERSION":
+            return "REPLACED_WITH_NEW_INFO"
+        default:
+            return versionState
+        }
+    }
+
+    func requiredIdentifier(_ name: String, from arguments: [String: Value]) throws -> String {
+        guard let value = try optionalIdentifier(name, from: arguments) else {
+            throw AppLifecycleArgumentError("Required parameter '\(name)' is missing")
+        }
+        return value
+    }
+
+    func optionalIdentifier(_ name: String, from arguments: [String: Value]) throws -> String? {
+        guard let value = arguments[name] else {
+            return nil
+        }
+        guard let string = value.stringValue,
+              !string.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            throw AppLifecycleArgumentError("\(name) must be a non-empty string")
+        }
+        return string
+    }
+
+    func nullableString(
+        _ name: String,
+        from arguments: [String: Value],
+        allowedValues: Set<String>? = nil
+    ) throws -> NullableAttributeValue? {
+        guard let value = arguments[name] else {
+            return nil
+        }
+        if value.isNull {
+            return .null
+        }
+        guard let string = value.stringValue else {
+            throw AppLifecycleArgumentError("\(name) must be a string or null")
+        }
+        if let allowedValues, !allowedValues.contains(string) {
+            throw AppLifecycleArgumentError("\(name) must be null or one of: \(allowedValues.sorted().joined(separator: ", "))")
+        }
+        return .string(string)
+    }
+
+    func nullableBool(_ name: String, from arguments: [String: Value]) throws -> NullableAttributeValue? {
+        guard let value = arguments[name] else {
+            return nil
+        }
+        if value.isNull {
+            return .null
+        }
+        guard let bool = value.boolValue else {
+            throw AppLifecycleArgumentError("\(name) must be a boolean or null")
+        }
+        return .bool(bool)
+    }
+}
+
 private struct ReviewDetailAttributes {
-    let contactFirstName: String?
-    let contactLastName: String?
-    let contactPhone: String?
-    let contactEmail: String?
-    let demoAccountName: String?
-    let demoAccountPassword: String?
-    let demoAccountRequired: Bool?
-    let notes: String?
-    let attachmentAssetId: String?
+    let contactFirstName: NullableAttributeValue?
+    let contactLastName: NullableAttributeValue?
+    let contactPhone: NullableAttributeValue?
+    let contactEmail: NullableAttributeValue?
+    let demoAccountName: NullableAttributeValue?
+    let demoAccountPassword: NullableAttributeValue?
+    let demoAccountRequired: NullableAttributeValue?
+    let notes: NullableAttributeValue?
+}
+
+private struct AppLifecycleArgumentError: LocalizedError {
+    let message: String
+
+    init(_ message: String) {
+        self.message = message
+    }
+
+    var errorDescription: String? {
+        message
+    }
 }

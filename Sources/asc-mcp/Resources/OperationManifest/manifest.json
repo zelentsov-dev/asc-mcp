@@ -2150,14 +2150,6 @@
       "reviewAtSpec": "4.4.1"
     },
     {
-      "id": "deferred.betaBuildLocalizations_getCollection",
-      "operationId": "betaBuildLocalizations_getCollection",
-      "disposition": "deferred",
-      "reason": "The `betaBuildLocalizations` resource-group capability is not yet exposed by asc-mcp.",
-      "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
-    },
-    {
       "id": "deferred.betaBuildLocalizations_deleteInstance",
       "operationId": "betaBuildLocalizations_deleteInstance",
       "disposition": "deferred",

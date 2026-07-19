@@ -24,7 +24,7 @@ extension BuildBetaDetailsWorker {
     func updateBetaDetailTool() -> Tool {
         Tool(
             name: "builds_update_beta_detail",
-            description: "Update TestFlight beta details for a build",
+            description: "Update the automatic TestFlight tester notification setting for a build beta detail",
             inputSchema: .object([
                 "type": .string("object"),
                 "properties": .object([
@@ -38,12 +38,14 @@ extension BuildBetaDetailsWorker {
                     ]),
                     "internal_build_state": .object([
                         "type": .string("string"),
-                        "description": .string("Internal build state"),
+                        "description": .string("Deprecated and unsupported: Apple exposes internal build state as read-only"),
+                        "deprecated": .bool(true),
                         "enum": .array([.string("PROCESSING"), .string("PROCESSING_EXCEPTION"), .string("MISSING_EXPORT_COMPLIANCE"), .string("READY_FOR_BETA_TESTING"), .string("IN_BETA_TESTING"), .string("EXPIRED"), .string("IN_EXPORT_COMPLIANCE_REVIEW")])
                     ]),
                     "external_build_state": .object([
                         "type": .string("string"),
-                        "description": .string("External build state"),
+                        "description": .string("Deprecated and unsupported: Apple exposes external build state as read-only"),
+                        "deprecated": .bool(true),
                         "enum": .array([.string("PROCESSING"), .string("PROCESSING_EXCEPTION"), .string("MISSING_EXPORT_COMPLIANCE"), .string("READY_FOR_BETA_TESTING"), .string("IN_BETA_TESTING"), .string("EXPIRED"), .string("READY_FOR_BETA_SUBMISSION"), .string("IN_EXPORT_COMPLIANCE_REVIEW"), .string("WAITING_FOR_BETA_REVIEW"), .string("IN_BETA_REVIEW"), .string("BETA_REJECTED"), .string("BETA_APPROVED"), .string("NOT_APPLICABLE")])
                     ])
                 ]),
@@ -73,19 +75,23 @@ extension BuildBetaDetailsWorker {
                     ]),
                     "feedback_email": .object([
                         "type": .string("string"),
-                        "description": .string("Feedback email for testers")
+                        "description": .string("Deprecated and unsupported for build localizations; use beta_app_create_localization or beta_app_update_localization"),
+                        "deprecated": .bool(true)
                     ]),
                     "marketing_url": .object([
                         "type": .string("string"),
-                        "description": .string("Marketing URL")
+                        "description": .string("Deprecated and unsupported for build localizations; use beta_app_create_localization or beta_app_update_localization"),
+                        "deprecated": .bool(true)
                     ]),
                     "privacy_policy_url": .object([
                         "type": .string("string"),
-                        "description": .string("Privacy policy URL")
+                        "description": .string("Deprecated and unsupported for build localizations; use beta_app_create_localization or beta_app_update_localization"),
+                        "deprecated": .bool(true)
                     ]),
                     "tv_os_privacy_policy": .object([
                         "type": .string("string"),
-                        "description": .string("tvOS privacy policy text")
+                        "description": .string("Deprecated and unsupported for build localizations; use beta_app_create_localization or beta_app_update_localization"),
+                        "deprecated": .bool(true)
                     ])
                 ]),
                 "required": .array([.string("build_id"), .string("locale")])

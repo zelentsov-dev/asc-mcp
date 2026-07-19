@@ -45,4 +45,16 @@ struct AgeRatingValueTests {
             Issue.record("Roundtrip failed")
         }
     }
+
+    @Test func encodeNull() throws {
+        let value = AgeRatingValue.null
+        let data = try JSONEncoder().encode(value)
+        #expect(String(decoding: data, as: UTF8.self) == "null")
+
+        let decoded = try JSONDecoder().decode(AgeRatingValue.self, from: data)
+        guard case .null = decoded else {
+            Issue.record("Expected null")
+            return
+        }
+    }
 }

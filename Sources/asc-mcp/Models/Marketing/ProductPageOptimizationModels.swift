@@ -121,7 +121,7 @@ public struct UpdateExperimentRequest: Codable, Sendable {
     public struct Attributes: Codable, Sendable {
         public let name: String?
         public let trafficProportion: Int?
-        public let state: String?
+        public let started: Bool?
     }
 }
 
@@ -140,7 +140,7 @@ public struct CreateTreatmentRequest: Codable, Sendable {
     }
 
     public struct Relationships: Codable, Sendable {
-        public let appStoreVersionExperiment: ExperimentRelationship
+        public let appStoreVersionExperimentV2: ExperimentRelationship
     }
 
     public struct ExperimentRelationship: Codable, Sendable {

@@ -28,6 +28,7 @@ public struct ASCImageAsset: Codable, Sendable {
 public struct ASCAssetDeliveryState: Codable, Sendable {
     public let state: String?
     public let errors: [ASCAssetDeliveryError]?
+    public let warnings: [ASCAssetDeliveryError]?
 }
 
 /// Error details for asset delivery failures

@@ -16,7 +16,7 @@ MCP (Model Context Protocol) server for App Store Connect API integration, desig
 # Build the project
 swift build
 
-# Run all unit tests (436 tests)
+# Run all unit tests
 swift test
 
 # Run the MCP server (requires environment variables or companies.json)
@@ -110,7 +110,7 @@ Each company needs: `keyID`, `issuerID`, `privateKeyPath` (path to `.p8` file).
 ### Unit Tests (Swift Testing)
 
 ```bash
-swift test    # Run all 436 tests across 31 suites
+swift test    # Run all tests
 ```
 
 Test categories:
