@@ -11,40 +11,47 @@ extension ProvisioningWorker {
 
         do {
             let response: ASCBundleIdsResponse
+            var queryParams: [String: String] = [:]
 
-            if let nextUrl = arguments?["next_url"]?.stringValue,
-               let parsed = await httpClient.parsePaginationUrl(nextUrl) {
-                response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCBundleIdsResponse.self)
+            if let limitValue = arguments?["limit"],
+               let limit = limitValue.intValue {
+                queryParams["limit"] = String(min(max(limit, 1), 200))
             } else {
-                var queryParams: [String: String] = [:]
+                queryParams["limit"] = "25"
+            }
 
-                if let limitValue = arguments?["limit"],
-                   let limit = limitValue.intValue {
-                    queryParams["limit"] = String(min(max(limit, 1), 200))
-                } else {
-                    queryParams["limit"] = "25"
-                }
+            if let platformValue = arguments?["filter_platform"],
+               let platform = platformValue.stringValue {
+                queryParams["filter[platform]"] = platform
+            }
 
-                if let platformValue = arguments?["filter_platform"],
-                   let platform = platformValue.stringValue {
-                    queryParams["filter[platform]"] = platform
-                }
+            if let identifierValue = arguments?["filter_identifier"],
+               let identifier = identifierValue.stringValue {
+                queryParams["filter[identifier]"] = identifier
+            }
 
-                if let identifierValue = arguments?["filter_identifier"],
-                   let identifier = identifierValue.stringValue {
-                    queryParams["filter[identifier]"] = identifier
-                }
+            if let nameValue = arguments?["filter_name"],
+               let name = nameValue.stringValue {
+                queryParams["filter[name]"] = name
+            }
 
-                if let nameValue = arguments?["filter_name"],
-                   let name = nameValue.stringValue {
-                    queryParams["filter[name]"] = name
-                }
+            if let sortValue = arguments?["sort"],
+               let sort = sortValue.stringValue {
+                queryParams["sort"] = sort
+            }
 
-                if let sortValue = arguments?["sort"],
-                   let sort = sortValue.stringValue {
-                    queryParams["sort"] = sort
-                }
-
+            if let nextUrl = try paginationURL(from: arguments?["next_url"]) {
+                var requiredParameters = queryParams
+                requiredParameters.removeValue(forKey: "limit")
+                response = try await httpClient.getPage(
+                    nextUrl,
+                    scope: PaginationScope(
+                        path: "/v1/bundleIds",
+                        requiredParameters: requiredParameters
+                    ),
+                    as: ASCBundleIdsResponse.self
+                )
+            } else {
                 response = try await httpClient.get(
                     "/v1/bundleIds",
                     parameters: queryParams,
@@ -195,35 +202,42 @@ extension ProvisioningWorker {
 
         do {
             let response: ASCDevicesResponse
+            var queryParams: [String: String] = [:]
 
-            if let nextUrl = arguments?["next_url"]?.stringValue,
-               let parsed = await httpClient.parsePaginationUrl(nextUrl) {
-                response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCDevicesResponse.self)
+            if let limitValue = arguments?["limit"],
+               let limit = limitValue.intValue {
+                queryParams["limit"] = String(min(max(limit, 1), 200))
             } else {
-                var queryParams: [String: String] = [:]
+                queryParams["limit"] = "25"
+            }
 
-                if let limitValue = arguments?["limit"],
-                   let limit = limitValue.intValue {
-                    queryParams["limit"] = String(min(max(limit, 1), 200))
-                } else {
-                    queryParams["limit"] = "25"
-                }
+            if let platformValue = arguments?["filter_platform"],
+               let platform = platformValue.stringValue {
+                queryParams["filter[platform]"] = platform
+            }
 
-                if let platformValue = arguments?["filter_platform"],
-                   let platform = platformValue.stringValue {
-                    queryParams["filter[platform]"] = platform
-                }
+            if let statusValue = arguments?["filter_status"],
+               let status = statusValue.stringValue {
+                queryParams["filter[status]"] = status
+            }
 
-                if let statusValue = arguments?["filter_status"],
-                   let status = statusValue.stringValue {
-                    queryParams["filter[status]"] = status
-                }
+            if let sortValue = arguments?["sort"],
+               let sort = sortValue.stringValue {
+                queryParams["sort"] = sort
+            }
 
-                if let sortValue = arguments?["sort"],
-                   let sort = sortValue.stringValue {
-                    queryParams["sort"] = sort
-                }
-
+            if let nextUrl = try paginationURL(from: arguments?["next_url"]) {
+                var requiredParameters = queryParams
+                requiredParameters.removeValue(forKey: "limit")
+                response = try await httpClient.getPage(
+                    nextUrl,
+                    scope: PaginationScope(
+                        path: "/v1/devices",
+                        requiredParameters: requiredParameters
+                    ),
+                    as: ASCDevicesResponse.self
+                )
+            } else {
                 response = try await httpClient.get(
                     "/v1/devices",
                     parameters: queryParams,
@@ -355,30 +369,37 @@ extension ProvisioningWorker {
 
         do {
             let response: ASCCertificatesResponse
+            var queryParams: [String: String] = [:]
 
-            if let nextUrl = arguments?["next_url"]?.stringValue,
-               let parsed = await httpClient.parsePaginationUrl(nextUrl) {
-                response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCCertificatesResponse.self)
+            if let limitValue = arguments?["limit"],
+               let limit = limitValue.intValue {
+                queryParams["limit"] = String(min(max(limit, 1), 200))
             } else {
-                var queryParams: [String: String] = [:]
+                queryParams["limit"] = "25"
+            }
 
-                if let limitValue = arguments?["limit"],
-                   let limit = limitValue.intValue {
-                    queryParams["limit"] = String(min(max(limit, 1), 200))
-                } else {
-                    queryParams["limit"] = "25"
-                }
+            if let typeValue = arguments?["filter_type"],
+               let type = typeValue.stringValue {
+                queryParams["filter[certificateType]"] = type
+            }
 
-                if let typeValue = arguments?["filter_type"],
-                   let type = typeValue.stringValue {
-                    queryParams["filter[certificateType]"] = type
-                }
+            if let sortValue = arguments?["sort"],
+               let sort = sortValue.stringValue {
+                queryParams["sort"] = sort
+            }
 
-                if let sortValue = arguments?["sort"],
-                   let sort = sortValue.stringValue {
-                    queryParams["sort"] = sort
-                }
-
+            if let nextUrl = try paginationURL(from: arguments?["next_url"]) {
+                var requiredParameters = queryParams
+                requiredParameters.removeValue(forKey: "limit")
+                response = try await httpClient.getPage(
+                    nextUrl,
+                    scope: PaginationScope(
+                        path: "/v1/certificates",
+                        requiredParameters: requiredParameters
+                    ),
+                    as: ASCCertificatesResponse.self
+                )
+            } else {
                 response = try await httpClient.get(
                     "/v1/certificates",
                     parameters: queryParams,
@@ -414,35 +435,42 @@ extension ProvisioningWorker {
 
         do {
             let response: ASCProfilesResponse
+            var queryParams: [String: String] = [:]
 
-            if let nextUrl = arguments?["next_url"]?.stringValue,
-               let parsed = await httpClient.parsePaginationUrl(nextUrl) {
-                response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCProfilesResponse.self)
+            if let limitValue = arguments?["limit"],
+               let limit = limitValue.intValue {
+                queryParams["limit"] = String(min(max(limit, 1), 200))
             } else {
-                var queryParams: [String: String] = [:]
+                queryParams["limit"] = "25"
+            }
 
-                if let limitValue = arguments?["limit"],
-                   let limit = limitValue.intValue {
-                    queryParams["limit"] = String(min(max(limit, 1), 200))
-                } else {
-                    queryParams["limit"] = "25"
-                }
+            if let typeValue = arguments?["filter_profile_type"],
+               let type = typeValue.stringValue {
+                queryParams["filter[profileType]"] = type
+            }
 
-                if let typeValue = arguments?["filter_profile_type"],
-                   let type = typeValue.stringValue {
-                    queryParams["filter[profileType]"] = type
-                }
+            if let stateValue = arguments?["filter_profile_state"],
+               let state = stateValue.stringValue {
+                queryParams["filter[profileState]"] = state
+            }
 
-                if let stateValue = arguments?["filter_profile_state"],
-                   let state = stateValue.stringValue {
-                    queryParams["filter[profileState]"] = state
-                }
+            if let sortValue = arguments?["sort"],
+               let sort = sortValue.stringValue {
+                queryParams["sort"] = sort
+            }
 
-                if let sortValue = arguments?["sort"],
-                   let sort = sortValue.stringValue {
-                    queryParams["sort"] = sort
-                }
-
+            if let nextUrl = try paginationURL(from: arguments?["next_url"]) {
+                var requiredParameters = queryParams
+                requiredParameters.removeValue(forKey: "limit")
+                response = try await httpClient.getPage(
+                    nextUrl,
+                    scope: PaginationScope(
+                        path: "/v1/profiles",
+                        requiredParameters: requiredParameters
+                    ),
+                    as: ASCProfilesResponse.self
+                )
+            } else {
                 response = try await httpClient.get(
                     "/v1/profiles",
                     parameters: queryParams,
@@ -697,9 +725,14 @@ extension ProvisioningWorker {
         do {
             let response: ASCBundleIdCapabilitiesResponse
 
-            if let nextUrl = arguments["next_url"]?.stringValue,
-               let parsed = await httpClient.parsePaginationUrl(nextUrl) {
-                response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCBundleIdCapabilitiesResponse.self)
+            if let nextUrl = try paginationURL(from: arguments["next_url"]) {
+                response = try await httpClient.getPage(
+                    nextUrl,
+                    scope: PaginationScope(
+                        path: "/v1/bundleIds/\(bundleIdResourceId)/bundleIdCapabilities"
+                    ),
+                    as: ASCBundleIdCapabilitiesResponse.self
+                )
             } else {
                 // Note: Apple API does not support limit parameter for this endpoint despite documentation
                 let queryParams: [String: String] = [:]

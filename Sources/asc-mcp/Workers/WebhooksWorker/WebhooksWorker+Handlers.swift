@@ -14,14 +14,22 @@ extension WebhooksWorker {
 
         do {
             let response: ASCWebhooksResponse
-            if let nextURL = arguments["next_url"]?.stringValue,
-               let parsed = await httpClient.parsePaginationUrl(nextURL) {
-                response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCWebhooksResponse.self)
+            var query = defaultListQuery(arguments: arguments)
+            if arguments["include_app"]?.boolValue == true {
+                query["include"] = "app"
+            }
+            if let nextURL = try paginationURL(from: arguments["next_url"]) {
+                var requiredParameters = query
+                requiredParameters.removeValue(forKey: "limit")
+                response = try await httpClient.getPage(
+                    nextURL,
+                    scope: PaginationScope(
+                        path: "/v1/apps/\(appID)/webhooks",
+                        requiredParameters: requiredParameters
+                    ),
+                    as: ASCWebhooksResponse.self
+                )
             } else {
-                var query = defaultListQuery(arguments: arguments)
-                if arguments["include_app"]?.boolValue == true {
-                    query["include"] = "app"
-                }
                 response = try await httpClient.get("/v1/apps/\(appID)/webhooks", parameters: query, as: ASCWebhooksResponse.self)
             }
 
@@ -176,23 +184,34 @@ extension WebhooksWorker {
 
         do {
             let response: ASCWebhookDeliveriesResponse
-            if let nextURL = arguments["next_url"]?.stringValue,
-               let parsed = await httpClient.parsePaginationUrl(nextURL) {
-                response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCWebhookDeliveriesResponse.self)
+            var query = defaultListQuery(arguments: arguments)
+            if let deliveryState = arguments["delivery_state"]?.stringValue {
+                query["filter[deliveryState]"] = deliveryState
+            }
+            if let createdAfter = arguments["created_after"]?.stringValue {
+                query["filter[createdDateGreaterThanOrEqualTo]"] = createdAfter
+            }
+            if let createdBefore = arguments["created_before"]?.stringValue {
+                query["filter[createdDateLessThan]"] = createdBefore
+            }
+            if arguments["include_event"]?.boolValue ?? true {
+                query["include"] = "event"
+            }
+            if let nextURL = try paginationURL(from: arguments["next_url"]) {
+                var requiredParameters = query
+                requiredParameters.removeValue(forKey: "limit")
+                if arguments["include_event"]?.boolValue == nil {
+                    requiredParameters.removeValue(forKey: "include")
+                }
+                response = try await httpClient.getPage(
+                    nextURL,
+                    scope: PaginationScope(
+                        path: "/v1/webhooks/\(webhookID)/deliveries",
+                        requiredParameters: requiredParameters
+                    ),
+                    as: ASCWebhookDeliveriesResponse.self
+                )
             } else {
-                var query = defaultListQuery(arguments: arguments)
-                if let deliveryState = arguments["delivery_state"]?.stringValue {
-                    query["filter[deliveryState]"] = deliveryState
-                }
-                if let createdAfter = arguments["created_after"]?.stringValue {
-                    query["filter[createdDateGreaterThanOrEqualTo]"] = createdAfter
-                }
-                if let createdBefore = arguments["created_before"]?.stringValue {
-                    query["filter[createdDateLessThan]"] = createdBefore
-                }
-                if arguments["include_event"]?.boolValue ?? true {
-                    query["include"] = "event"
-                }
                 response = try await httpClient.get("/v1/webhooks/\(webhookID)/deliveries", parameters: query, as: ASCWebhookDeliveriesResponse.self)
             }
 

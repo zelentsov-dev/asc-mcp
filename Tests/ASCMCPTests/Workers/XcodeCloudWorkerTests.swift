@@ -162,6 +162,51 @@ struct XcodeCloudWorkerTests {
         #expect(product["appId"] == .string("app-1"))
     }
 
+    @Test("workflow pagination rejects another product parent before transport")
+    func workflowPaginationRejectsAnotherProduct() async throws {
+        let transport = TestHTTPTransport(responses: [])
+        let client = await HTTPClient(
+            jwtService: try TestFactory.makeJWTService(),
+            baseURL: "https://api.example.test",
+            transport: transport,
+            maxRetries: 1
+        )
+        let worker = XcodeCloudWorker(httpClient: client)
+
+        let result = try await worker.handleTool(CallTool.Parameters(
+            name: "xcode_cloud_product_workflows_list",
+            arguments: [
+                "product_id": .string("product-1"),
+                "next_url": .string(
+                    "https://api.example.test/v1/ciProducts/product-2/workflows?cursor=next"
+                )
+            ]
+        ))
+
+        #expect(result.isError == true)
+        #expect(await transport.requestCount() == 0)
+    }
+
+    @Test("present non-string pagination value fails before transport")
+    func productPaginationRejectsNonStringValue() async throws {
+        let transport = TestHTTPTransport(responses: [])
+        let client = await HTTPClient(
+            jwtService: try TestFactory.makeJWTService(),
+            baseURL: "https://api.example.test",
+            transport: transport,
+            maxRetries: 1
+        )
+        let worker = XcodeCloudWorker(httpClient: client)
+
+        let result = try await worker.handleTool(CallTool.Parameters(
+            name: "xcode_cloud_products_list",
+            arguments: ["next_url": .int(1)]
+        ))
+
+        #expect(result.isError == true)
+        #expect(await transport.requestCount() == 0)
+    }
+
     @Test("models decode workflow, build run, and SCM repository")
     func modelDecoding() throws {
         let workflowJSON = Data("""

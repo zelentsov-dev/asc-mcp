@@ -18,9 +18,19 @@ extension IntroductoryOffersWorker {
         do {
             let response: ASCIntroductoryOffersResponse
 
-            if let nextUrl = arguments["next_url"]?.stringValue,
-               let parsed = await httpClient.parsePaginationUrl(nextUrl) {
-                response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCIntroductoryOffersResponse.self)
+            if let nextUrl = try paginationURL(from: arguments["next_url"]) {
+                var requiredParameters: [String: String] = [:]
+                if let territory = arguments["filter_territory"]?.stringValue {
+                    requiredParameters["filter[territory]"] = territory
+                }
+                response = try await httpClient.getPage(
+                    nextUrl,
+                    scope: PaginationScope(
+                        path: "/v1/subscriptions/\(subscriptionId)/introductoryOffers",
+                        requiredParameters: requiredParameters
+                    ),
+                    as: ASCIntroductoryOffersResponse.self
+                )
             } else {
                 var queryParams: [String: String] = [:]
 

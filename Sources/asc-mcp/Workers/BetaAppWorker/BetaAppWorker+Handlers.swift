@@ -20,9 +20,12 @@ extension BetaAppWorker {
         do {
             let response: ASCBetaAppLocalizationsResponse
 
-            if let nextUrl = arguments["next_url"]?.stringValue,
-               let parsed = await httpClient.parsePaginationUrl(nextUrl) {
-                response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCBetaAppLocalizationsResponse.self)
+            if let nextUrl = try paginationURL(from: arguments["next_url"]) {
+                response = try await httpClient.getPage(
+                    nextUrl,
+                    scope: PaginationScope(path: "/v1/apps/\(appId)/betaAppLocalizations"),
+                    as: ASCBetaAppLocalizationsResponse.self
+                )
             } else {
                 var queryParams: [String: String] = [:]
 
@@ -286,24 +289,31 @@ extension BetaAppWorker {
 
         do {
             let response: ASCBetaAppReviewSubmissionsResponse
+            var queryParams: [String: String] = [
+                "filter[build]": buildId
+            ]
 
-            if let nextUrl = arguments["next_url"]?.stringValue,
-               let parsed = await httpClient.parsePaginationUrl(nextUrl) {
-                response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCBetaAppReviewSubmissionsResponse.self)
+            if let reviewState = arguments["review_state"]?.stringValue {
+                queryParams["filter[betaReviewState]"] = reviewState
+            }
+            if let limit = arguments["limit"]?.intValue {
+                queryParams["limit"] = String(min(max(limit, 1), 200))
             } else {
-                var queryParams: [String: String] = [
-                    "filter[build]": buildId
-                ]
+                queryParams["limit"] = "25"
+            }
 
-                if let reviewState = arguments["review_state"]?.stringValue {
-                    queryParams["filter[betaReviewState]"] = reviewState
-                }
-                if let limit = arguments["limit"]?.intValue {
-                    queryParams["limit"] = String(min(max(limit, 1), 200))
-                } else {
-                    queryParams["limit"] = "25"
-                }
-
+            if let nextUrl = try paginationURL(from: arguments["next_url"]) {
+                var requiredParameters = queryParams
+                requiredParameters.removeValue(forKey: "limit")
+                response = try await httpClient.getPage(
+                    nextUrl,
+                    scope: PaginationScope(
+                        path: "/v1/betaAppReviewSubmissions",
+                        requiredParameters: requiredParameters
+                    ),
+                    as: ASCBetaAppReviewSubmissionsResponse.self
+                )
+            } else {
                 response = try await httpClient.get(
                     "/v1/betaAppReviewSubmissions",
                     parameters: queryParams,

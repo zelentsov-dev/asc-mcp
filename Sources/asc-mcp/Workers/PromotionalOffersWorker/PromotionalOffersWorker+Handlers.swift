@@ -18,9 +18,12 @@ extension PromotionalOffersWorker {
         do {
             let response: ASCPromotionalOffersResponse
 
-            if let nextUrl = arguments["next_url"]?.stringValue,
-               let parsed = await httpClient.parsePaginationUrl(nextUrl) {
-                response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCPromotionalOffersResponse.self)
+            if let nextUrl = try paginationURL(from: arguments["next_url"]) {
+                response = try await httpClient.getPage(
+                    nextUrl,
+                    scope: PaginationScope(path: "/v1/subscriptions/\(subscriptionId)/promotionalOffers"),
+                    as: ASCPromotionalOffersResponse.self
+                )
             } else {
                 var queryParams: [String: String] = [:]
 
@@ -413,9 +416,12 @@ extension PromotionalOffersWorker {
         do {
             let response: ASCPromotionalOfferPricesResponse
 
-            if let nextUrl = arguments["next_url"]?.stringValue,
-               let parsed = await httpClient.parsePaginationUrl(nextUrl) {
-                response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCPromotionalOfferPricesResponse.self)
+            if let nextUrl = try paginationURL(from: arguments["next_url"]) {
+                response = try await httpClient.getPage(
+                    nextUrl,
+                    scope: PaginationScope(path: "/v1/subscriptionPromotionalOffers/\(promotionalOfferId)/prices"),
+                    as: ASCPromotionalOfferPricesResponse.self
+                )
             } else {
                 var queryParams: [String: String] = [:]
 

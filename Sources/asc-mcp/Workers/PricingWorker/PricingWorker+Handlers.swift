@@ -21,9 +21,12 @@ extension PricingWorker {
         do {
             let response: ASCTerritoriesResponse
 
-            if let nextUrl = arguments?["next_url"]?.stringValue,
-               let parsed = await httpClient.parsePaginationUrl(nextUrl) {
-                response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCTerritoriesResponse.self)
+            if let nextUrl = try paginationURL(from: arguments?["next_url"]) {
+                response = try await httpClient.getPage(
+                    nextUrl,
+                    scope: PaginationScope(path: "/v1/territories"),
+                    as: ASCTerritoriesResponse.self
+                )
             } else {
                 var queryParams: [String: String] = [:]
 
@@ -118,9 +121,18 @@ extension PricingWorker {
         do {
             let response: ASCAppPricePointsV3Response
 
-            if let nextUrl = arguments["next_url"]?.stringValue,
-               let parsed = await httpClient.parsePaginationUrl(nextUrl) {
-                response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCAppPricePointsV3Response.self)
+            let endpoint = "/v1/apps/\(appId)/appPricePoints"
+            var requiredParameters: [String: String] = [:]
+            if let territoryId = arguments["territory_id"]?.stringValue {
+                requiredParameters["filter[territory]"] = territoryId
+            }
+
+            if let nextUrl = try paginationURL(from: arguments["next_url"]) {
+                response = try await httpClient.getPage(
+                    nextUrl,
+                    scope: PaginationScope(path: endpoint, requiredParameters: requiredParameters),
+                    as: ASCAppPricePointsV3Response.self
+                )
             } else {
                 var queryParams: [String: String] = [
                     "include": "territory"
@@ -138,7 +150,7 @@ extension PricingWorker {
                 }
 
                 response = try await httpClient.get(
-                    "/v1/apps/\(appId)/appPricePoints",
+                    endpoint,
                     parameters: queryParams,
                     as: ASCAppPricePointsV3Response.self
                 )
@@ -348,30 +360,23 @@ extension PricingWorker {
 
         do {
             let response: ASCTerritoryAvailabilitiesResponse
+            let availability: ASCAppAvailabilityV2Response = try await httpClient.get(
+                "/v1/apps/\(appId)/appAvailabilityV2",
+                as: ASCAppAvailabilityV2Response.self
+            )
+            let endpoint = "/v2/appAvailabilities/\(availability.data.id)/territoryAvailabilities"
 
-            if let nextUrl = arguments["next_url"]?.stringValue {
-                guard let parsed = await httpClient.parsePaginationUrl(nextUrl),
-                      isTerritoryAvailabilityCollectionPath(parsed.path) else {
-                    return CallTool.Result(
-                        content: [MCPContent.text("Invalid next_url for App Store Connect pagination")],
-                        isError: true
-                    )
-                }
-
-                response = try await httpClient.get(
-                    parsed.path,
-                    parameters: parsed.parameters,
+            if let nextUrl = try paginationURL(from: arguments["next_url"]) {
+                response = try await httpClient.getPage(
+                    nextUrl,
+                    scope: PaginationScope(path: endpoint),
                     as: ASCTerritoryAvailabilitiesResponse.self
                 )
             } else {
-                let availability: ASCAppAvailabilityV2Response = try await httpClient.get(
-                    "/v1/apps/\(appId)/appAvailabilityV2",
-                    as: ASCAppAvailabilityV2Response.self
-                )
                 let limit = min(max(arguments["limit"]?.intValue ?? 50, 1), 200)
 
                 response = try await httpClient.get(
-                    "/v2/appAvailabilities/\(availability.data.id)/territoryAvailabilities",
+                    endpoint,
                     parameters: ["limit": String(limit)],
                     as: ASCTerritoryAvailabilitiesResponse.self
                 )
@@ -527,9 +532,14 @@ extension PricingWorker {
         do {
             let response: ASCTerritoryAvailabilitiesResponse
 
-            if let nextUrl = arguments["next_url"]?.stringValue,
-               let parsed = await httpClient.parsePaginationUrl(nextUrl) {
-                response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCTerritoryAvailabilitiesResponse.self)
+            let endpoint = "/v2/appAvailabilities/\(availabilityId)/territoryAvailabilities"
+
+            if let nextUrl = try paginationURL(from: arguments["next_url"]) {
+                response = try await httpClient.getPage(
+                    nextUrl,
+                    scope: PaginationScope(path: endpoint),
+                    as: ASCTerritoryAvailabilitiesResponse.self
+                )
             } else {
                 var queryParams: [String: String] = [:]
 
@@ -540,7 +550,7 @@ extension PricingWorker {
                 }
 
                 response = try await httpClient.get(
-                    "/v2/appAvailabilities/\(availabilityId)/territoryAvailabilities",
+                    endpoint,
                     parameters: queryParams,
                     as: ASCTerritoryAvailabilitiesResponse.self
                 )
@@ -640,13 +650,4 @@ extension PricingWorker {
         return result
     }
 
-    private func isTerritoryAvailabilityCollectionPath(_ path: String) -> Bool {
-        let components = path.split(separator: "/", omittingEmptySubsequences: false)
-        return components.count == 5
-            && components[0].isEmpty
-            && components[1] == "v2"
-            && components[2] == "appAvailabilities"
-            && !components[3].isEmpty
-            && components[4] == "territoryAvailabilities"
-    }
 }

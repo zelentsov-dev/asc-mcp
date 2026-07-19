@@ -11,31 +11,38 @@ extension PreReleaseVersionsWorker {
 
         do {
             let response: ASCPreReleaseVersionsResponse
+            var queryParams: [String: String] = [:]
 
-            if let nextUrl = arguments?["next_url"]?.stringValue,
-               let parsed = await httpClient.parsePaginationUrl(nextUrl) {
-                response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCPreReleaseVersionsResponse.self)
+            if let appId = arguments?["app_id"]?.stringValue {
+                queryParams["filter[app]"] = appId
+            }
+            if let platform = arguments?["platform"]?.stringValue {
+                queryParams["filter[platform]"] = platform
+            }
+            if let version = arguments?["version"]?.stringValue {
+                queryParams["filter[version]"] = version
+            }
+            if let sort = arguments?["sort"]?.stringValue {
+                queryParams["sort"] = sort
+            }
+            if let limit = arguments?["limit"]?.intValue {
+                queryParams["limit"] = String(min(max(limit, 1), 200))
             } else {
-                var queryParams: [String: String] = [:]
+                queryParams["limit"] = "25"
+            }
 
-                if let appId = arguments?["app_id"]?.stringValue {
-                    queryParams["filter[app]"] = appId
-                }
-                if let platform = arguments?["platform"]?.stringValue {
-                    queryParams["filter[platform]"] = platform
-                }
-                if let version = arguments?["version"]?.stringValue {
-                    queryParams["filter[version]"] = version
-                }
-                if let sort = arguments?["sort"]?.stringValue {
-                    queryParams["sort"] = sort
-                }
-                if let limit = arguments?["limit"]?.intValue {
-                    queryParams["limit"] = String(min(max(limit, 1), 200))
-                } else {
-                    queryParams["limit"] = "25"
-                }
-
+            if let nextUrl = try paginationURL(from: arguments?["next_url"]) {
+                var requiredParameters = queryParams
+                requiredParameters.removeValue(forKey: "limit")
+                response = try await httpClient.getPage(
+                    nextUrl,
+                    scope: PaginationScope(
+                        path: "/v1/preReleaseVersions",
+                        requiredParameters: requiredParameters
+                    ),
+                    as: ASCPreReleaseVersionsResponse.self
+                )
+            } else {
                 response = try await httpClient.get(
                     "/v1/preReleaseVersions",
                     parameters: queryParams,
@@ -113,9 +120,12 @@ extension PreReleaseVersionsWorker {
         do {
             let response: ASCBuildsResponse
 
-            if let nextUrl = arguments["next_url"]?.stringValue,
-               let parsed = await httpClient.parsePaginationUrl(nextUrl) {
-                response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCBuildsResponse.self)
+            if let nextUrl = try paginationURL(from: arguments["next_url"]) {
+                response = try await httpClient.getPage(
+                    nextUrl,
+                    scope: PaginationScope(path: "/v1/preReleaseVersions/\(preReleaseVersionId)/builds"),
+                    as: ASCBuildsResponse.self
+                )
             } else {
                 var queryParams: [String: String] = [:]
 

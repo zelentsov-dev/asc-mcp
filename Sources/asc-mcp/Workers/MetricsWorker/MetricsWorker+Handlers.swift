@@ -118,23 +118,30 @@ extension MetricsWorker {
 
         do {
             let response: ASCDiagnosticSignaturesResponse
+            var queryParams: [String: String] = [:]
 
-            if let nextUrl = arguments["next_url"]?.stringValue,
-               let parsed = await httpClient.parsePaginationUrl(nextUrl) {
-                response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCDiagnosticSignaturesResponse.self)
+            if let diagnosticType = arguments["diagnostic_type"]?.stringValue {
+                queryParams["filter[diagnosticType]"] = diagnosticType
+            }
+
+            if let limit = arguments["limit"]?.intValue {
+                queryParams["limit"] = String(min(max(limit, 1), 200))
             } else {
-                var queryParams: [String: String] = [:]
+                queryParams["limit"] = "25"
+            }
 
-                if let diagnosticType = arguments["diagnostic_type"]?.stringValue {
-                    queryParams["filter[diagnosticType]"] = diagnosticType
-                }
-
-                if let limit = arguments["limit"]?.intValue {
-                    queryParams["limit"] = String(min(max(limit, 1), 200))
-                } else {
-                    queryParams["limit"] = "25"
-                }
-
+            if let nextUrl = try paginationURL(from: arguments["next_url"]) {
+                var requiredParameters = queryParams
+                requiredParameters.removeValue(forKey: "limit")
+                response = try await httpClient.getPage(
+                    nextUrl,
+                    scope: PaginationScope(
+                        path: "/v1/builds/\(buildId)/diagnosticSignatures",
+                        requiredParameters: requiredParameters
+                    ),
+                    as: ASCDiagnosticSignaturesResponse.self
+                )
+            } else {
                 response = try await httpClient.get(
                     "/v1/builds/\(buildId)/diagnosticSignatures",
                     parameters: queryParams,

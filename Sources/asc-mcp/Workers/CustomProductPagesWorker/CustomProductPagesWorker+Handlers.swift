@@ -19,9 +19,12 @@ extension CustomProductPagesWorker {
         do {
             let response: ASCCustomProductPagesResponse
 
-            if let nextUrl = arguments["next_url"]?.stringValue,
-               let parsed = await httpClient.parsePaginationUrl(nextUrl) {
-                response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCCustomProductPagesResponse.self)
+            if let nextUrl = try paginationURL(from: arguments["next_url"]) {
+                response = try await httpClient.getPage(
+                    nextUrl,
+                    scope: PaginationScope(path: "/v1/apps/\(appId)/appCustomProductPages"),
+                    as: ASCCustomProductPagesResponse.self
+                )
             } else {
                 var queryParams: [String: String] = [:]
 
@@ -273,9 +276,12 @@ extension CustomProductPagesWorker {
         do {
             let response: ASCCustomProductPageVersionsResponse
 
-            if let nextUrl = arguments["next_url"]?.stringValue,
-               let parsed = await httpClient.parsePaginationUrl(nextUrl) {
-                response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCCustomProductPageVersionsResponse.self)
+            if let nextUrl = try paginationURL(from: arguments["next_url"]) {
+                response = try await httpClient.getPage(
+                    nextUrl,
+                    scope: PaginationScope(path: "/v1/appCustomProductPages/\(pageId)/appCustomProductPageVersions"),
+                    as: ASCCustomProductPageVersionsResponse.self
+                )
             } else {
                 var queryParams: [String: String] = [:]
 
@@ -375,9 +381,12 @@ extension CustomProductPagesWorker {
         do {
             let response: ASCCustomProductPageLocalizationsResponse
 
-            if let nextUrl = arguments["next_url"]?.stringValue,
-               let parsed = await httpClient.parsePaginationUrl(nextUrl) {
-                response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCCustomProductPageLocalizationsResponse.self)
+            if let nextUrl = try paginationURL(from: arguments["next_url"]) {
+                response = try await httpClient.getPage(
+                    nextUrl,
+                    scope: PaginationScope(path: "/v1/appCustomProductPageVersions/\(versionId)/appCustomProductPageLocalizations"),
+                    as: ASCCustomProductPageLocalizationsResponse.self
+                )
             } else {
                 var queryParams: [String: String] = [:]
 

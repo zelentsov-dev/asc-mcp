@@ -10,9 +10,19 @@ extension InAppPurchasesWorker {
 
         do {
             let response: PassthroughAPIResponse
-            if let nextUrl = arguments["next_url"]?.stringValue,
-               let parsed = await httpClient.parsePaginationUrl(nextUrl) {
-                response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: PassthroughAPIResponse.self)
+            if let nextUrl = try paginationURL(from: arguments["next_url"]) {
+                var requiredParameters: [String: String] = [:]
+                if let territoryId = arguments["territory_id"]?.stringValue ?? arguments["territory"]?.stringValue {
+                    requiredParameters["filter[territory]"] = territoryId
+                }
+                response = try await httpClient.getPage(
+                    nextUrl,
+                    scope: PaginationScope(
+                        path: "/v2/inAppPurchases/\(iapId)/pricePoints",
+                        requiredParameters: requiredParameters
+                    ),
+                    as: PassthroughAPIResponse.self
+                )
             } else {
                 var query = iapPricePointQuery(limit: clampedIAPLimit(arguments["limit"]?.intValue, defaultValue: 50, max: 8000))
                 if let territoryId = arguments["territory_id"]?.stringValue ?? arguments["territory"]?.stringValue {
@@ -47,9 +57,22 @@ extension InAppPurchasesWorker {
 
         do {
             let response: PassthroughAPIResponse
-            if let nextUrl = arguments["next_url"]?.stringValue,
-               let parsed = await httpClient.parsePaginationUrl(nextUrl) {
-                response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: PassthroughAPIResponse.self)
+            if let nextUrl = try paginationURL(from: arguments["next_url"]) {
+                var requiredParameters: [String: String] = [:]
+                if let iapId = arguments["iap_id"]?.stringValue {
+                    requiredParameters["filter[inAppPurchaseV2]"] = iapId
+                }
+                if let territoryId = arguments["territory_id"]?.stringValue {
+                    requiredParameters["filter[territory]"] = territoryId
+                }
+                response = try await httpClient.getPage(
+                    nextUrl,
+                    scope: PaginationScope(
+                        path: "/v1/inAppPurchasePricePoints/\(pricePointId)/equalizations",
+                        requiredParameters: requiredParameters
+                    ),
+                    as: PassthroughAPIResponse.self
+                )
             } else {
                 var query = iapPricePointQuery(limit: clampedIAPLimit(arguments["limit"]?.intValue, defaultValue: 25, max: 8000))
                 if let iapId = arguments["iap_id"]?.stringValue {
@@ -348,9 +371,19 @@ extension InAppPurchasesWorker {
 
         do {
             let response: PassthroughAPIResponse
-            if let nextUrl = arguments["next_url"]?.stringValue,
-               let parsed = await httpClient.parsePaginationUrl(nextUrl) {
-                response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: PassthroughAPIResponse.self)
+            if let nextUrl = try paginationURL(from: arguments["next_url"]) {
+                var requiredParameters: [String: String] = [:]
+                if let territoryId = arguments["territory_id"]?.stringValue {
+                    requiredParameters["filter[territory]"] = territoryId
+                }
+                response = try await httpClient.getPage(
+                    nextUrl,
+                    scope: PaginationScope(
+                        path: "/v1/inAppPurchaseOfferCodes/\(offerCodeId)/prices",
+                        requiredParameters: requiredParameters
+                    ),
+                    as: PassthroughAPIResponse.self
+                )
             } else {
                 var query = iapOfferPriceQuery(limit: clampedIAPLimit(arguments["limit"]?.intValue, defaultValue: 25, max: 200))
                 if let territoryId = arguments["territory_id"]?.stringValue {
@@ -524,9 +557,16 @@ extension InAppPurchasesWorker {
     ) async throws -> CallTool.Result {
         do {
             let response: PassthroughAPIResponse
-            if let nextUrl = params.arguments?["next_url"]?.stringValue,
-               let parsed = await httpClient.parsePaginationUrl(nextUrl) {
-                response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: PassthroughAPIResponse.self)
+            if let nextUrl = try paginationURL(from: params.arguments?["next_url"]) {
+                var requiredParameters: [String: String] = [:]
+                for (key, value) in defaultQuery where key.hasPrefix("filter[") {
+                    requiredParameters[key] = value
+                }
+                response = try await httpClient.getPage(
+                    nextUrl,
+                    scope: PaginationScope(path: endpoint, requiredParameters: requiredParameters),
+                    as: PassthroughAPIResponse.self
+                )
             } else {
                 var query = defaultQuery
                 query["limit"] = String(clampedIAPLimit(params.arguments?["limit"]?.intValue, defaultValue: 25, max: 200))

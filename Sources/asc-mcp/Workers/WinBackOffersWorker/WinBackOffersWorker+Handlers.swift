@@ -18,9 +18,12 @@ extension WinBackOffersWorker {
         do {
             let response: ASCWinBackOffersResponse
 
-            if let nextUrl = arguments["next_url"]?.stringValue,
-               let parsed = await httpClient.parsePaginationUrl(nextUrl) {
-                response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCWinBackOffersResponse.self)
+            if let nextUrl = try paginationURL(from: arguments["next_url"]) {
+                response = try await httpClient.getPage(
+                    nextUrl,
+                    scope: PaginationScope(path: "/v1/subscriptions/\(subscriptionId)/winBackOffers"),
+                    as: ASCWinBackOffersResponse.self
+                )
             } else {
                 var queryParams: [String: String] = [:]
 
@@ -397,9 +400,12 @@ extension WinBackOffersWorker {
         do {
             let response: ASCWinBackOfferPricesResponse
 
-            if let nextUrl = arguments["next_url"]?.stringValue,
-               let parsed = await httpClient.parsePaginationUrl(nextUrl) {
-                response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCWinBackOfferPricesResponse.self)
+            if let nextUrl = try paginationURL(from: arguments["next_url"]) {
+                response = try await httpClient.getPage(
+                    nextUrl,
+                    scope: PaginationScope(path: "/v1/winBackOffers/\(winbackOfferId)/prices"),
+                    as: ASCWinBackOfferPricesResponse.self
+                )
             } else {
                 var queryParams: [String: String] = [:]
 

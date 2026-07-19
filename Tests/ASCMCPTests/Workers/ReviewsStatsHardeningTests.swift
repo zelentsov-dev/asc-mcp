@@ -24,7 +24,7 @@ struct ReviewsStatsHardeningTests {
 
     @Test("all-time stats follow every customer reviews page")
     func allTimeStatsFollowPagination() async throws {
-        let nextURL = "https://api.example.test/v1/apps/app-1/customerReviews?cursor=next-page&limit=200"
+        let nextURL = "https://api.example.test/v1/apps/app-1/customerReviews?cursor=next-page&limit=200&filter%5Bterritory%5D=USA"
         let transport = TestHTTPTransport(responses: [
             .init(statusCode: 200, body: reviewsPage(
                 reviews: [
@@ -68,6 +68,55 @@ struct ReviewsStatsHardeningTests {
         #expect(root["duplicates_skipped"] == .int(0))
         #expect(root["pages_fetched"] == .int(2))
         #expect(root["complete"] == .bool(true))
+    }
+
+    @Test("stats reject a same-origin next link for another API collection")
+    func statsRejectCrossRoutePagination() async throws {
+        let transport = TestHTTPTransport(responses: [
+            .init(statusCode: 200, body: reviewsPage(
+                reviews: [
+                    reviewJSON(id: "review-1", rating: 5, date: "2026-07-18T10:00:00Z", territory: "USA")
+                ],
+                nextURL: "https://api.example.test/v1/users?cursor=next-page"
+            ))
+        ])
+        let worker = try await makeReviewsWorker(transport: transport)
+
+        let result = try await worker.handleTool(CallTool.Parameters(
+            name: "reviews_stats",
+            arguments: [
+                "app_id": .string("app-1"),
+                "period": .string("all_time")
+            ]
+        ))
+
+        #expect(result.isError == true)
+        #expect(await transport.requestCount() == 1)
+    }
+
+    @Test("stats reject a next link that drops the originating territory filter")
+    func statsRejectDroppedTerritoryFilter() async throws {
+        let transport = TestHTTPTransport(responses: [
+            .init(statusCode: 200, body: reviewsPage(
+                reviews: [
+                    reviewJSON(id: "review-1", rating: 5, date: "2026-07-18T10:00:00Z", territory: "USA")
+                ],
+                nextURL: "https://api.example.test/v1/apps/app-1/customerReviews?cursor=next-page"
+            ))
+        ])
+        let worker = try await makeReviewsWorker(transport: transport)
+
+        let result = try await worker.handleTool(CallTool.Parameters(
+            name: "reviews_stats",
+            arguments: [
+                "app_id": .string("app-1"),
+                "period": .string("all_time"),
+                "territory": .string("USA")
+            ]
+        ))
+
+        #expect(result.isError == true)
+        #expect(await transport.requestCount() == 1)
     }
 
     @Test("bounded stats stop after the requested period is complete")

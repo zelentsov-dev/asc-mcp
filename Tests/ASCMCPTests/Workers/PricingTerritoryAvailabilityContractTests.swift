@@ -42,10 +42,11 @@ struct PricingTerritoryAvailabilityContractTests {
         #expect(availability["contentStatuses"] == .array([.string("AVAILABLE")]))
     }
 
-    @Test("next URL replays the collection page without resolving app availability again")
-    func nextURLReplaysCollectionPage() async throws {
+    @Test("next URL is bound to the freshly resolved app availability")
+    func nextURLUsesFreshlyResolvedAvailability() async throws {
         let nextURL = "https://api.example.test/v2/appAvailabilities/availability-1/territoryAvailabilities?cursor=next-page&limit=25"
         let transport = TestHTTPTransport(responses: [
+            .init(statusCode: 200, body: appAvailabilityBody(id: "availability-1")),
             .init(statusCode: 200, body: #"{"data":[],"links":{"self":"https://api.example.test/v2/appAvailabilities/availability-1/territoryAvailabilities?cursor=next-page&limit=25"}}"#)
         ])
         let worker = try await makePricingWorker(transport: transport)
@@ -61,16 +62,19 @@ struct PricingTerritoryAvailabilityContractTests {
 
         #expect(result.isError != true)
         let requests = await transport.recordedRequests()
-        #expect(requests.count == 1)
-        let request = try #require(requests.first)
+        #expect(requests.count == 2)
+        #expect(requests.first?.url?.path == "/v1/apps/app-1/appAvailabilityV2")
+        let request = try #require(requests.last)
         #expect(request.url?.path == "/v2/appAvailabilities/availability-1/territoryAvailabilities")
         #expect(try queryItems(request)["cursor"] == "next-page")
         #expect(try queryItems(request)["limit"] == "25")
     }
 
-    @Test("foreign pagination URL is rejected before transport")
+    @Test("foreign pagination URL is rejected after authoritative availability resolution")
     func rejectsForeignNextURL() async throws {
-        let transport = TestHTTPTransport(responses: [])
+        let transport = TestHTTPTransport(responses: [
+            .init(statusCode: 200, body: appAvailabilityBody(id: "availability-1"))
+        ])
         let worker = try await makePricingWorker(transport: transport)
 
         let result = try await worker.handleTool(CallTool.Parameters(
@@ -82,12 +86,14 @@ struct PricingTerritoryAvailabilityContractTests {
         ))
 
         #expect(result.isError == true)
-        #expect(await transport.requestCount() == 0)
+        #expect(await transport.requestCount() == 1)
     }
 
-    @Test("same-host pagination URL for another route is rejected before transport")
+    @Test("same-host pagination URL for another route is rejected after resolution")
     func rejectsSameHostForeignPath() async throws {
-        let transport = TestHTTPTransport(responses: [])
+        let transport = TestHTTPTransport(responses: [
+            .init(statusCode: 200, body: appAvailabilityBody(id: "availability-1"))
+        ])
         let worker = try await makePricingWorker(transport: transport)
 
         let result = try await worker.handleTool(CallTool.Parameters(
@@ -99,7 +105,26 @@ struct PricingTerritoryAvailabilityContractTests {
         ))
 
         #expect(result.isError == true)
-        #expect(await transport.requestCount() == 0)
+        #expect(await transport.requestCount() == 1)
+    }
+
+    @Test("same-host pagination URL for another resolved availability is rejected")
+    func rejectsWrongResolvedAvailabilityParent() async throws {
+        let transport = TestHTTPTransport(responses: [
+            .init(statusCode: 200, body: appAvailabilityBody(id: "availability-1"))
+        ])
+        let worker = try await makePricingWorker(transport: transport)
+
+        let result = try await worker.handleTool(CallTool.Parameters(
+            name: "pricing_list_territory_availability",
+            arguments: [
+                "app_id": .string("app-1"),
+                "next_url": .string("https://api.example.test/v2/appAvailabilities/availability-2/territoryAvailabilities?cursor=bad")
+            ]
+        ))
+
+        #expect(result.isError == true)
+        #expect(await transport.requestCount() == 1)
     }
 }
 
@@ -140,6 +165,10 @@ private func territoryAvailabilitiesBody(nextURL: String) -> String {
       }
     }
     """
+}
+
+private func appAvailabilityBody(id: String) -> String {
+    #"{"data":{"type":"appAvailabilities","id":"\#(id)","attributes":{"availableInNewTerritories":true}}}"#
 }
 
 private func queryItems(_ request: URLRequest) throws -> [String: String] {

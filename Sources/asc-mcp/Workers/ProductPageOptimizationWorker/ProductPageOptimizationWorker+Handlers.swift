@@ -19,9 +19,12 @@ extension ProductPageOptimizationWorker {
         do {
             let response: ASCExperimentsResponse
 
-            if let nextUrl = arguments["next_url"]?.stringValue,
-               let parsed = await httpClient.parsePaginationUrl(nextUrl) {
-                response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCExperimentsResponse.self)
+            if let nextUrl = try paginationURL(from: arguments["next_url"]) {
+                response = try await httpClient.getPage(
+                    nextUrl,
+                    scope: PaginationScope(path: "/v1/apps/\(appId)/appStoreVersionExperimentsV2"),
+                    as: ASCExperimentsResponse.self
+                )
             } else {
                 var queryParams: [String: String] = [:]
 
@@ -258,9 +261,12 @@ extension ProductPageOptimizationWorker {
         do {
             let response: ASCTreatmentsResponse
 
-            if let nextUrl = arguments["next_url"]?.stringValue,
-               let parsed = await httpClient.parsePaginationUrl(nextUrl) {
-                response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCTreatmentsResponse.self)
+            if let nextUrl = try paginationURL(from: arguments["next_url"]) {
+                response = try await httpClient.getPage(
+                    nextUrl,
+                    scope: PaginationScope(path: "/v2/appStoreVersionExperiments/\(experimentId)/appStoreVersionExperimentTreatments"),
+                    as: ASCTreatmentsResponse.self
+                )
             } else {
                 var queryParams: [String: String] = [:]
 
@@ -363,9 +369,12 @@ extension ProductPageOptimizationWorker {
         do {
             let response: ASCTreatmentLocalizationsResponse
 
-            if let nextUrl = arguments["next_url"]?.stringValue,
-               let parsed = await httpClient.parsePaginationUrl(nextUrl) {
-                response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCTreatmentLocalizationsResponse.self)
+            if let nextUrl = try paginationURL(from: arguments["next_url"]) {
+                response = try await httpClient.getPage(
+                    nextUrl,
+                    scope: PaginationScope(path: "/v1/appStoreVersionExperimentTreatments/\(treatmentId)/appStoreVersionExperimentTreatmentLocalizations"),
+                    as: ASCTreatmentLocalizationsResponse.self
+                )
             } else {
                 var queryParams: [String: String] = [:]
 

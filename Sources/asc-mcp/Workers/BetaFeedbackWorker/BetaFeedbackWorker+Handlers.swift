@@ -14,13 +14,25 @@ extension BetaFeedbackWorker {
 
         do {
             let response: ASCBetaFeedbackCrashSubmissionsResponse
-            if let nextURL = arguments["next_url"]?.stringValue,
-               let parsed = await httpClient.parsePaginationUrl(nextURL) {
-                response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCBetaFeedbackCrashSubmissionsResponse.self)
+            let query = buildListQuery(arguments)
+            if let nextURL = try paginationURL(from: arguments["next_url"]) {
+                var requiredParameters = query
+                requiredParameters.removeValue(forKey: "limit")
+                if arguments["sort"]?.stringValue == nil {
+                    requiredParameters.removeValue(forKey: "sort")
+                }
+                response = try await httpClient.getPage(
+                    nextURL,
+                    scope: PaginationScope(
+                        path: "/v1/apps/\(appID)/betaFeedbackCrashSubmissions",
+                        requiredParameters: requiredParameters
+                    ),
+                    as: ASCBetaFeedbackCrashSubmissionsResponse.self
+                )
             } else {
                 response = try await httpClient.get(
                     "/v1/apps/\(appID)/betaFeedbackCrashSubmissions",
-                    parameters: buildListQuery(arguments),
+                    parameters: query,
                     as: ASCBetaFeedbackCrashSubmissionsResponse.self
                 )
             }
@@ -127,13 +139,25 @@ extension BetaFeedbackWorker {
 
         do {
             let response: ASCBetaFeedbackScreenshotSubmissionsResponse
-            if let nextURL = arguments["next_url"]?.stringValue,
-               let parsed = await httpClient.parsePaginationUrl(nextURL) {
-                response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCBetaFeedbackScreenshotSubmissionsResponse.self)
+            let query = buildListQuery(arguments)
+            if let nextURL = try paginationURL(from: arguments["next_url"]) {
+                var requiredParameters = query
+                requiredParameters.removeValue(forKey: "limit")
+                if arguments["sort"]?.stringValue == nil {
+                    requiredParameters.removeValue(forKey: "sort")
+                }
+                response = try await httpClient.getPage(
+                    nextURL,
+                    scope: PaginationScope(
+                        path: "/v1/apps/\(appID)/betaFeedbackScreenshotSubmissions",
+                        requiredParameters: requiredParameters
+                    ),
+                    as: ASCBetaFeedbackScreenshotSubmissionsResponse.self
+                )
             } else {
                 response = try await httpClient.get(
                     "/v1/apps/\(appID)/betaFeedbackScreenshotSubmissions",
-                    parameters: buildListQuery(arguments),
+                    parameters: query,
                     as: ASCBetaFeedbackScreenshotSubmissionsResponse.self
                 )
             }

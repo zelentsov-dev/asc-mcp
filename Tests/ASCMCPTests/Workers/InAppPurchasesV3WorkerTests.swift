@@ -52,6 +52,41 @@ struct InAppPurchasesV3WorkerTests {
         #expect(point["customer_price"] == .string("4.99"))
     }
 
+    @Test("IAP price point pagination rejects another parent before network")
+    func pricePointPaginationRejectsAnotherParent() async throws {
+        let transport = TestHTTPTransport(responses: [])
+        let worker = try await makeIAPWorker(transport: transport)
+
+        let result = try await worker.handleTool(CallTool.Parameters(
+            name: "iap_list_price_points",
+            arguments: [
+                "iap_id": .string("iap-1"),
+                "next_url": .string("https://api.example.test/v2/inAppPurchases/iap-2/pricePoints?cursor=next")
+            ]
+        ))
+
+        #expect(result.isError == true)
+        #expect(await transport.requestCount() == 0)
+    }
+
+    @Test("IAP price point pagination preserves the requested territory filter")
+    func pricePointPaginationPreservesTerritoryFilter() async throws {
+        let transport = TestHTTPTransport(responses: [])
+        let worker = try await makeIAPWorker(transport: transport)
+
+        let result = try await worker.handleTool(CallTool.Parameters(
+            name: "iap_list_price_points",
+            arguments: [
+                "iap_id": .string("iap-1"),
+                "territory_id": .string("USA"),
+                "next_url": .string("https://api.example.test/v2/inAppPurchases/iap-1/pricePoints?filter%5Bterritory%5D=GBR&cursor=next")
+            ]
+        ))
+
+        #expect(result.isError == true)
+        #expect(await transport.requestCount() == 0)
+    }
+
     @Test("IAP availability can be read directly from an IAP id")
     func availabilityCanBeReadFromIAPID() async throws {
         let transport = TestHTTPTransport(responses: [

@@ -5,6 +5,67 @@ import Testing
 
 @Suite("AppLifecycleWorker Hardening Tests")
 struct AppLifecycleWorkerHardeningTests {
+    @Test("version pagination rejects a same-origin cross-route URL before network")
+    func versionPaginationRejectsCrossRoute() async throws {
+        let transport = TestHTTPTransport(responses: [])
+        let worker = try await makeWorker(transport: transport)
+
+        let result = try await worker.handleTool(CallTool.Parameters(
+            name: "app_versions_list",
+            arguments: [
+                "app_id": .string("app-1"),
+                "next_url": .string("https://api.example.test/v1/users?cursor=next")
+            ]
+        ))
+
+        #expect(result.isError == true)
+        #expect(await transport.requestCount() == 0)
+    }
+
+    @Test(
+        "version pagination rejects malformed and off-origin URLs before network",
+        arguments: [
+            "not a URL",
+            "https://example.invalid/v1/apps/app-1/appStoreVersions?cursor=next"
+        ]
+    )
+    func versionPaginationRejectsInvalidURL(_ nextURL: String) async throws {
+        let transport = TestHTTPTransport(responses: [])
+        let worker = try await makeWorker(transport: transport)
+
+        let result = try await worker.handleTool(CallTool.Parameters(
+            name: "app_versions_list",
+            arguments: [
+                "app_id": .string("app-1"),
+                "next_url": .string(nextURL)
+            ]
+        ))
+
+        #expect(result.isError == true)
+        #expect(await transport.requestCount() == 0)
+    }
+
+    @Test("version pagination rejects non-string and empty values before network")
+    func versionPaginationRejectsInvalidValue() async throws {
+        let invalidValues: [Value] = [.int(42), .string("   ")]
+
+        for invalidValue in invalidValues {
+            let transport = TestHTTPTransport(responses: [])
+            let worker = try await makeWorker(transport: transport)
+
+            let result = try await worker.handleTool(CallTool.Parameters(
+                name: "app_versions_list",
+                arguments: [
+                    "app_id": .string("app-1"),
+                    "next_url": invalidValue
+                ]
+            ))
+
+            #expect(result.isError == true)
+            #expect(await transport.requestCount() == 0)
+        }
+    }
+
     @Test("submit for review exposes submission id after item creation failure")
     func submitForReviewExposesSubmissionIdAfterItemFailure() async throws {
         let transport = TestHTTPTransport(responses: [

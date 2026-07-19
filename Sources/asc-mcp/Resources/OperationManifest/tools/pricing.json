@@ -470,14 +470,14 @@
           "method": "get",
           "path": "/v1/apps/{id}/appAvailabilityV2",
           "role": "conditional",
-          "condition": "When next_url is absent, resolve the app availability ID for app_id."
+          "condition": "Resolve the app availability ID for app_id before every first-page or continuation request."
         },
         {
           "operationId": "appAvailabilitiesV2_territoryAvailabilities_getToManyRelated",
           "method": "get",
           "path": "/v2/appAvailabilities/{id}/territoryAvailabilities",
           "role": "primary",
-          "condition": "Use the resolved availability ID, or replay the supplied next_url for subsequent pages.",
+          "condition": "Use the resolved availability ID and require any supplied next_url to target that exact related collection.",
           "inputs": [
             {
               "sourceKind": "derived",
@@ -507,7 +507,7 @@
         {
           "toolField": "next_url",
           "sourceKind": "local",
-          "localRole": "Parse an Apple-host pagination URL, require the exact /v2/appAvailabilities/{id}/territoryAvailabilities route, and replay its path and query."
+          "localRole": "Validate the configured origin and exact /v2/appAvailabilities/{resolvedId}/territoryAvailabilities scope before requesting the continuation page."
         }
       ],
       "response": {
@@ -537,7 +537,7 @@
           }
         ]
       },
-      "note": "The handler resolves the app availability ID on the first page, lists its territory availability collection with the requested limit, projects Apple's preOrderPublishDate attribute, and only replays next_url values for the same related-collection route."
+      "note": "The handler resolves the app availability ID for every request, lists its territory availability collection with the requested limit, projects Apple's preOrderPublishDate attribute, and accepts continuation links only for the exact resolved related-collection route."
     },
     {
       "tool": "pricing_set_price_schedule",

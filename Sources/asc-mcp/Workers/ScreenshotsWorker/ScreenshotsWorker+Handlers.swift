@@ -19,9 +19,12 @@ extension ScreenshotsWorker {
         do {
             let response: ASCScreenshotSetsResponse
 
-            if let nextUrl = arguments["next_url"]?.stringValue,
-               let parsed = await httpClient.parsePaginationUrl(nextUrl) {
-                response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCScreenshotSetsResponse.self)
+            if let nextUrl = try paginationURL(from: arguments["next_url"]) {
+                response = try await httpClient.getPage(
+                    nextUrl,
+                    scope: PaginationScope(path: "/v1/appStoreVersionLocalizations/\(localizationId)/appScreenshotSets"),
+                    as: ASCScreenshotSetsResponse.self
+                )
             } else {
                 var queryParams: [String: String] = [:]
 
@@ -154,9 +157,12 @@ extension ScreenshotsWorker {
         do {
             let response: ASCScreenshotsResponse
 
-            if let nextUrl = arguments["next_url"]?.stringValue,
-               let parsed = await httpClient.parsePaginationUrl(nextUrl) {
-                response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCScreenshotsResponse.self)
+            if let nextUrl = try paginationURL(from: arguments["next_url"]) {
+                response = try await httpClient.getPage(
+                    nextUrl,
+                    scope: PaginationScope(path: "/v1/appScreenshotSets/\(setId)/appScreenshots"),
+                    as: ASCScreenshotsResponse.self
+                )
             } else {
                 var queryParams: [String: String] = [:]
 
@@ -484,9 +490,12 @@ extension ScreenshotsWorker {
         do {
             let response: ASCPreviewSetsResponse
 
-            if let nextUrl = arguments["next_url"]?.stringValue,
-               let parsed = await httpClient.parsePaginationUrl(nextUrl) {
-                response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCPreviewSetsResponse.self)
+            if let nextUrl = try paginationURL(from: arguments["next_url"]) {
+                response = try await httpClient.getPage(
+                    nextUrl,
+                    scope: PaginationScope(path: "/v1/appStoreVersionLocalizations/\(localizationId)/appPreviewSets"),
+                    as: ASCPreviewSetsResponse.self
+                )
             } else {
                 var queryParams: [String: String] = [:]
 
@@ -729,9 +738,12 @@ extension ScreenshotsWorker {
         do {
             let response: ASCPreviewsResponse
 
-            if let nextUrl = arguments["next_url"]?.stringValue,
-               let parsed = await httpClient.parsePaginationUrl(nextUrl) {
-                response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCPreviewsResponse.self)
+            if let nextUrl = try paginationURL(from: arguments["next_url"]) {
+                response = try await httpClient.getPage(
+                    nextUrl,
+                    scope: PaginationScope(path: "/v1/appPreviewSets/\(setId)/appPreviews"),
+                    as: ASCPreviewsResponse.self
+                )
             } else {
                 var queryParams: [String: String] = [:]
 

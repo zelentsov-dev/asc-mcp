@@ -82,6 +82,59 @@ struct SubscriptionsV3WorkerTests {
         #expect(price["proceeds_year2"] == .string("8.50"))
     }
 
+    @Test("subscription pagination rejects another subscription parent")
+    func subscriptionPaginationRejectsWrongParent() async throws {
+        let transport = TestHTTPTransport(responses: [])
+        let worker = try await makeWorker(transport: transport)
+
+        let result = try await worker.handleTool(CallTool.Parameters(
+            name: "subscriptions_list_prices",
+            arguments: [
+                "subscription_id": .string("sub-1"),
+                "territory_id": .string("USA"),
+                "next_url": .string("https://api.example.test/v1/subscriptions/sub-2/prices?filter%5Bterritory%5D=USA&cursor=next")
+            ]
+        ))
+
+        #expect(result.isError == true)
+        #expect(await transport.requestCount() == 0)
+    }
+
+    @Test("subscription pagination preserves the originating territory filter")
+    func subscriptionPaginationRejectsChangedFilter() async throws {
+        let transport = TestHTTPTransport(responses: [])
+        let worker = try await makeWorker(transport: transport)
+
+        let result = try await worker.handleTool(CallTool.Parameters(
+            name: "subscriptions_list_prices",
+            arguments: [
+                "subscription_id": .string("sub-1"),
+                "territory_id": .string("USA"),
+                "next_url": .string("https://api.example.test/v1/subscriptions/sub-1/prices?filter%5Bterritory%5D=GBR&cursor=next")
+            ]
+        ))
+
+        #expect(result.isError == true)
+        #expect(await transport.requestCount() == 0)
+    }
+
+    @Test("present subscription next URL must be a string")
+    func subscriptionPaginationRejectsNonStringURL() async throws {
+        let transport = TestHTTPTransport(responses: [])
+        let worker = try await makeWorker(transport: transport)
+
+        let result = try await worker.handleTool(CallTool.Parameters(
+            name: "subscriptions_list_prices",
+            arguments: [
+                "subscription_id": .string("sub-1"),
+                "next_url": .int(1)
+            ]
+        ))
+
+        #expect(result.isError == true)
+        #expect(await transport.requestCount() == 0)
+    }
+
     @Test("list subscription price points supports territory and 8000 limit")
     func listPricePointsSupportsTerritoryAndLargeLimit() async throws {
         let transport = TestHTTPTransport(responses: [

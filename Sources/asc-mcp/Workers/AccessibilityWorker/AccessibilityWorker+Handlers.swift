@@ -24,11 +24,22 @@ extension AccessibilityWorker {
 
         do {
             let response: ASCAccessibilityDeclarationsResponse
-            if let nextURL = arguments["next_url"]?.stringValue {
-                guard let parsed = await httpClient.parsePaginationUrl(nextURL) else {
-                    return MCPResult.error("Parameter 'next_url' must be an App Store Connect API pagination URL")
+            if let nextURL = try paginationURL(from: arguments["next_url"]) {
+                var requiredParameters: [String: String] = [:]
+                if let deviceFamilies = parseStringList(arguments["device_family"]) {
+                    requiredParameters["filter[deviceFamily]"] = deviceFamilies.joined(separator: ",")
                 }
-                response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCAccessibilityDeclarationsResponse.self)
+                if let states = parseStringList(arguments["state"]) {
+                    requiredParameters["filter[state]"] = states.joined(separator: ",")
+                }
+                response = try await httpClient.getPage(
+                    nextURL,
+                    scope: PaginationScope(
+                        path: "/v1/apps/\(appID)/accessibilityDeclarations",
+                        requiredParameters: requiredParameters
+                    ),
+                    as: ASCAccessibilityDeclarationsResponse.self
+                )
             } else {
                 var query = defaultListQuery(arguments: arguments)
                 if let deviceFamilies = parseStringList(arguments["device_family"]) {
@@ -176,11 +187,12 @@ extension AccessibilityWorker {
 
         do {
             let response: ASCAccessibilityDeclarationLinkagesResponse
-            if let nextURL = arguments["next_url"]?.stringValue {
-                guard let parsed = await httpClient.parsePaginationUrl(nextURL) else {
-                    return MCPResult.error("Parameter 'next_url' must be an App Store Connect API pagination URL")
-                }
-                response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCAccessibilityDeclarationLinkagesResponse.self)
+            if let nextURL = try paginationURL(from: arguments["next_url"]) {
+                response = try await httpClient.getPage(
+                    nextURL,
+                    scope: PaginationScope(path: "/v1/apps/\(appID)/relationships/accessibilityDeclarations"),
+                    as: ASCAccessibilityDeclarationLinkagesResponse.self
+                )
             } else {
                 response = try await httpClient.get(
                     "/v1/apps/\(appID)/relationships/accessibilityDeclarations",

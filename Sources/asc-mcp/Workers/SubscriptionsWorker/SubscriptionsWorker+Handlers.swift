@@ -29,7 +29,6 @@ extension SubscriptionsWorker {
         return errors
     }
 
-
     /// Lists subscriptions in a subscription group
     /// - Returns: JSON array of subscriptions with attributes
     func listSubscriptions(_ params: CallTool.Parameters) async throws -> CallTool.Result {
@@ -44,9 +43,14 @@ extension SubscriptionsWorker {
         do {
             let response: ASCSubscriptionsResponse
 
-            if let nextUrl = arguments["next_url"]?.stringValue,
-               let parsed = await httpClient.parsePaginationUrl(nextUrl) {
-                response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCSubscriptionsResponse.self)
+            let endpoint = "/v1/subscriptionGroups/\(groupId)/subscriptions"
+
+            if let nextUrl = try paginationURL(from: arguments["next_url"]) {
+                response = try await httpClient.getPage(
+                    nextUrl,
+                    scope: PaginationScope(path: endpoint),
+                    as: ASCSubscriptionsResponse.self
+                )
             } else {
                 var queryParams: [String: String] = [:]
 
@@ -57,7 +61,7 @@ extension SubscriptionsWorker {
                 }
 
                 response = try await httpClient.get(
-                    "/v1/subscriptionGroups/\(groupId)/subscriptions",
+                    endpoint,
                     parameters: queryParams,
                     as: ASCSubscriptionsResponse.self
                 )
@@ -264,12 +268,17 @@ extension SubscriptionsWorker {
         do {
             let response: ASCSubscriptionLocalizationsResponse
 
-            if let nextUrl = arguments["next_url"]?.stringValue,
-               let parsed = await httpClient.parsePaginationUrl(nextUrl) {
-                response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCSubscriptionLocalizationsResponse.self)
+            let endpoint = "/v1/subscriptions/\(subscriptionId)/subscriptionLocalizations"
+
+            if let nextUrl = try paginationURL(from: arguments["next_url"]) {
+                response = try await httpClient.getPage(
+                    nextUrl,
+                    scope: PaginationScope(path: endpoint),
+                    as: ASCSubscriptionLocalizationsResponse.self
+                )
             } else {
                 response = try await httpClient.get(
-                    "/v1/subscriptions/\(subscriptionId)/subscriptionLocalizations",
+                    endpoint,
                     parameters: [:],
                     as: ASCSubscriptionLocalizationsResponse.self
                 )
@@ -643,9 +652,14 @@ extension SubscriptionsWorker {
         do {
             let response: ASCSubscriptionGroupLocalizationsResponse
 
-            if let nextUrl = arguments["next_url"]?.stringValue,
-               let parsed = await httpClient.parsePaginationUrl(nextUrl) {
-                response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCSubscriptionGroupLocalizationsResponse.self)
+            let endpoint = "/v1/subscriptionGroups/\(groupId)/subscriptionGroupLocalizations"
+
+            if let nextUrl = try paginationURL(from: arguments["next_url"]) {
+                response = try await httpClient.getPage(
+                    nextUrl,
+                    scope: PaginationScope(path: endpoint),
+                    as: ASCSubscriptionGroupLocalizationsResponse.self
+                )
             } else {
                 var queryParams: [String: String] = [:]
 
@@ -656,7 +670,7 @@ extension SubscriptionsWorker {
                 }
 
                 response = try await httpClient.get(
-                    "/v1/subscriptionGroups/\(groupId)/subscriptionGroupLocalizations",
+                    endpoint,
                     parameters: queryParams,
                     as: ASCSubscriptionGroupLocalizationsResponse.self
                 )
@@ -1130,9 +1144,14 @@ extension SubscriptionsWorker {
         do {
             let response: ASCSubscriptionImagesResponse
 
-            if let nextUrl = arguments["next_url"]?.stringValue,
-               let parsed = await httpClient.parsePaginationUrl(nextUrl) {
-                response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCSubscriptionImagesResponse.self)
+            let endpoint = "/v1/subscriptions/\(subscriptionId)/images"
+
+            if let nextUrl = try paginationURL(from: arguments["next_url"]) {
+                response = try await httpClient.getPage(
+                    nextUrl,
+                    scope: PaginationScope(path: endpoint),
+                    as: ASCSubscriptionImagesResponse.self
+                )
             } else {
                 var queryParams: [String: String] = [:]
 
@@ -1143,7 +1162,7 @@ extension SubscriptionsWorker {
                 }
 
                 response = try await httpClient.get(
-                    "/v1/subscriptions/\(subscriptionId)/images",
+                    endpoint,
                     parameters: queryParams,
                     as: ASCSubscriptionImagesResponse.self
                 )

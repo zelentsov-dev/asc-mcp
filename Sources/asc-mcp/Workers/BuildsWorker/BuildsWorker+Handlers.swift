@@ -19,42 +19,52 @@ extension BuildsWorker {
 
         do {
             let response: ASCBuildsResponse
+            var queryParams: [String: String] = [
+                "filter[app]": appId,
+                "include": "app,buildBetaDetail,preReleaseVersion"
+            ]
+
+            if let versionValue = arguments["version"],
+               let version = versionValue.stringValue {
+                queryParams["filter[version]"] = version
+            }
+            if let stateValue = arguments["processing_state"],
+               let state = stateValue.stringValue {
+                queryParams["filter[processingState]"] = state
+            }
+            if let expiredValue = arguments["expired"],
+               let expired = expiredValue.boolValue {
+                queryParams["filter[expired]"] = expired ? "true" : "false"
+            }
+            if let limitValue = arguments["limit"],
+               let limit = limitValue.intValue {
+                queryParams["limit"] = String(min(max(limit, 1), 200))
+            } else {
+                queryParams["limit"] = "25"
+            }
+            if let sortValue = arguments["sort"],
+               let sort = sortValue.stringValue {
+                queryParams["sort"] = sort
+            } else {
+                queryParams["sort"] = "-uploadedDate"
+            }
 
             // Check for pagination next_url
-            if let nextUrl = arguments["next_url"]?.stringValue,
-               let parsed = await httpClient.parsePaginationUrl(nextUrl) {
-                response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCBuildsResponse.self)
+            if let nextUrl = try paginationURL(from: arguments["next_url"]) {
+                var requiredParameters = queryParams
+                requiredParameters.removeValue(forKey: "limit")
+                if arguments["sort"]?.stringValue == nil {
+                    requiredParameters.removeValue(forKey: "sort")
+                }
+                response = try await httpClient.getPage(
+                    nextUrl,
+                    scope: PaginationScope(
+                        path: "/v1/builds",
+                        requiredParameters: requiredParameters
+                    ),
+                    as: ASCBuildsResponse.self
+                )
             } else {
-                var queryParams: [String: String] = [
-                    "filter[app]": appId,
-                    "include": "app,buildBetaDetail,preReleaseVersion"
-                ]
-
-                if let versionValue = arguments["version"],
-                   let version = versionValue.stringValue {
-                    queryParams["filter[version]"] = version
-                }
-                if let stateValue = arguments["processing_state"],
-                   let state = stateValue.stringValue {
-                    queryParams["filter[processingState]"] = state
-                }
-                if let expiredValue = arguments["expired"],
-                   let expired = expiredValue.boolValue {
-                    queryParams["filter[expired]"] = expired ? "true" : "false"
-                }
-                if let limitValue = arguments["limit"],
-                   let limit = limitValue.intValue {
-                    queryParams["limit"] = String(min(max(limit, 1), 200))
-                } else {
-                    queryParams["limit"] = "25"
-                }
-                if let sortValue = arguments["sort"],
-                   let sort = sortValue.stringValue {
-                    queryParams["sort"] = sort
-                } else {
-                    queryParams["sort"] = "-uploadedDate"
-                }
-
                 response = try await httpClient.get(
                     "/v1/builds",
                     parameters: queryParams,

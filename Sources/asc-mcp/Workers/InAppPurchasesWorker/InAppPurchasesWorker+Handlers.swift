@@ -45,9 +45,22 @@ extension InAppPurchasesWorker {
         do {
             let response: ASCInAppPurchasesV2Response
 
-            if let nextUrl = arguments["next_url"]?.stringValue,
-               let parsed = await httpClient.parsePaginationUrl(nextUrl) {
-                response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCInAppPurchasesV2Response.self)
+            if let nextUrl = try paginationURL(from: arguments["next_url"]) {
+                var requiredParameters: [String: String] = [:]
+                if let state = arguments["filter_state"]?.stringValue {
+                    requiredParameters["filter[state]"] = state
+                }
+                if let type = arguments["filter_type"]?.stringValue {
+                    requiredParameters["filter[inAppPurchaseType]"] = type
+                }
+                response = try await httpClient.getPage(
+                    nextUrl,
+                    scope: PaginationScope(
+                        path: "/v1/apps/\(appId)/inAppPurchasesV2",
+                        requiredParameters: requiredParameters
+                    ),
+                    as: ASCInAppPurchasesV2Response.self
+                )
             } else {
                 var queryParams: [String: String] = [:]
 
@@ -282,9 +295,12 @@ extension InAppPurchasesWorker {
         do {
             let response: ASCInAppPurchaseLocalizationsResponse
 
-            if let nextUrl = arguments["next_url"]?.stringValue,
-               let parsed = await httpClient.parsePaginationUrl(nextUrl) {
-                response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCInAppPurchaseLocalizationsResponse.self)
+            if let nextUrl = try paginationURL(from: arguments["next_url"]) {
+                response = try await httpClient.getPage(
+                    nextUrl,
+                    scope: PaginationScope(path: "/v2/inAppPurchases/\(iapId)/inAppPurchaseLocalizations"),
+                    as: ASCInAppPurchaseLocalizationsResponse.self
+                )
             } else {
                 response = try await httpClient.get(
                     "/v2/inAppPurchases/\(iapId)/inAppPurchaseLocalizations",
@@ -329,9 +345,12 @@ extension InAppPurchasesWorker {
         do {
             let response: ASCSubscriptionGroupsResponse
 
-            if let nextUrl = arguments["next_url"]?.stringValue,
-               let parsed = await httpClient.parsePaginationUrl(nextUrl) {
-                response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCSubscriptionGroupsResponse.self)
+            if let nextUrl = try paginationURL(from: arguments["next_url"]) {
+                response = try await httpClient.getPage(
+                    nextUrl,
+                    scope: PaginationScope(path: "/v1/apps/\(appId)/subscriptionGroups"),
+                    as: ASCSubscriptionGroupsResponse.self
+                )
             } else {
                 var queryParams: [String: String] = [:]
 
@@ -601,9 +620,19 @@ extension InAppPurchasesWorker {
         do {
             let response: ASCIAPPricePointsResponse
 
-            if let nextUrl = arguments["next_url"]?.stringValue,
-               let parsed = await httpClient.parsePaginationUrl(nextUrl) {
-                response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCIAPPricePointsResponse.self)
+            if let nextUrl = try paginationURL(from: arguments["next_url"]) {
+                var requiredParameters: [String: String] = [:]
+                if let territory = arguments["territory"]?.stringValue {
+                    requiredParameters["filter[territory]"] = territory
+                }
+                response = try await httpClient.getPage(
+                    nextUrl,
+                    scope: PaginationScope(
+                        path: "/v2/inAppPurchases/\(iapId)/pricePoints",
+                        requiredParameters: requiredParameters
+                    ),
+                    as: ASCIAPPricePointsResponse.self
+                )
             } else {
                 var queryParams: [String: String] = [:]
 
@@ -1160,13 +1189,12 @@ extension InAppPurchasesWorker {
         do {
             let response: ASCIAPImagesResponse
 
-            if let nextUrl = arguments["next_url"]?.stringValue {
-                guard let parsed = await httpClient.parsePaginationUrl(nextUrl),
-                      isIAPImagesCollectionPath(parsed.path, iapId: iapId) else {
-                    return MCPResult.error("Invalid next_url for the in-app purchase images collection")
-                }
-
-                response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCIAPImagesResponse.self)
+            if let nextUrl = try paginationURL(from: arguments["next_url"]) {
+                response = try await httpClient.getPage(
+                    nextUrl,
+                    scope: PaginationScope(path: "/v2/inAppPurchases/\(iapId)/images"),
+                    as: ASCIAPImagesResponse.self
+                )
             } else {
                 var queryParams: [String: String] = [:]
 
@@ -1223,16 +1251,6 @@ extension InAppPurchasesWorker {
         }
 
         return result
-    }
-
-    private func isIAPImagesCollectionPath(_ path: String, iapId: String) -> Bool {
-        let components = path.split(separator: "/", omittingEmptySubsequences: false)
-        return components.count == 5
-            && components[0].isEmpty
-            && components[1] == "v2"
-            && components[2] == "inAppPurchases"
-            && components[3] == iapId
-            && components[4] == "images"
     }
 
     // MARK: - Formatting

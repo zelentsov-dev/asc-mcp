@@ -68,9 +68,24 @@ extension AppLifecycleWorker {
             let responseData: Data
 
             // Check for pagination URL
-            if let nextUrl = arguments["next_url"]?.stringValue,
-               let parsed = await httpClient.parsePaginationUrl(nextUrl) {
-                responseData = try await httpClient.get(parsed.path, parameters: parsed.parameters)
+            if let nextUrl = try paginationURL(from: arguments["next_url"]) {
+                var requiredParameters: [String: String] = [:]
+                if let states = arguments["states"]?.arrayValue {
+                    let stateStrings = states.compactMap { $0.stringValue }
+                    if !stateStrings.isEmpty {
+                        requiredParameters["filter[appVersionState]"] = stateStrings.joined(separator: ",")
+                    }
+                }
+                if let platform = arguments["platform"]?.stringValue {
+                    requiredParameters["filter[platform]"] = platform
+                }
+                responseData = try await httpClient.getPage(
+                    nextUrl,
+                    scope: PaginationScope(
+                        path: "/v1/apps/\(appId)/appStoreVersions",
+                        requiredParameters: requiredParameters
+                    )
+                )
             } else {
                 var queryParams: [String: String] = [
                     "include": "build,appStoreVersionSubmission,appStoreVersionPhasedRelease"

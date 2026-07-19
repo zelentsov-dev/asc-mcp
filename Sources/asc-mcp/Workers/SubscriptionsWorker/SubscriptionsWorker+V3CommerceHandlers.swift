@@ -10,19 +10,24 @@ extension SubscriptionsWorker {
 
         do {
             let response: PassthroughAPIResponse
-            if let nextUrl = arguments["next_url"]?.stringValue,
-               let parsed = await httpClient.parsePaginationUrl(nextUrl) {
-                response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: PassthroughAPIResponse.self)
+            let endpoint = "/v1/subscriptions/\(subscriptionId)/prices"
+            var query = subscriptionPriceQuery(arguments: arguments, maxLimit: 200)
+            if let territoryId = arguments["territory_id"]?.stringValue {
+                query["filter[territory]"] = territoryId
+            }
+            if let pricePointId = arguments["price_point_id"]?.stringValue {
+                query["filter[subscriptionPricePoint]"] = pricePointId
+            }
+
+            if let nextUrl = try paginationURL(from: arguments["next_url"]) {
+                response = try await httpClient.getPage(
+                    nextUrl,
+                    scope: PaginationScope(path: endpoint, requiredParameters: paginationFilters(from: query)),
+                    as: PassthroughAPIResponse.self
+                )
             } else {
-                var query = subscriptionPriceQuery(arguments: arguments, maxLimit: 200)
-                if let territoryId = arguments["territory_id"]?.stringValue {
-                    query["filter[territory]"] = territoryId
-                }
-                if let pricePointId = arguments["price_point_id"]?.stringValue {
-                    query["filter[subscriptionPricePoint]"] = pricePointId
-                }
                 response = try await httpClient.get(
-                    "/v1/subscriptions/\(subscriptionId)/prices",
+                    endpoint,
                     parameters: query,
                     as: PassthroughAPIResponse.self
                 )
@@ -50,21 +55,26 @@ extension SubscriptionsWorker {
 
         do {
             let response: PassthroughAPIResponse
-            if let nextUrl = arguments["next_url"]?.stringValue,
-               let parsed = await httpClient.parsePaginationUrl(nextUrl) {
-                response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: PassthroughAPIResponse.self)
+            let endpoint = "/v1/subscriptions/\(subscriptionId)/pricePoints"
+            var query: [String: String] = [
+                "include": "territory",
+                "fields[subscriptionPricePoints]": "customerPrice,proceeds,proceedsYear2,territory,equalizations",
+                "fields[territories]": "currency",
+                "limit": String(clampedLimit(arguments["limit"]?.intValue, defaultValue: 25, max: 8000))
+            ]
+            if let territoryId = arguments["territory_id"]?.stringValue {
+                query["filter[territory]"] = territoryId
+            }
+
+            if let nextUrl = try paginationURL(from: arguments["next_url"]) {
+                response = try await httpClient.getPage(
+                    nextUrl,
+                    scope: PaginationScope(path: endpoint, requiredParameters: paginationFilters(from: query)),
+                    as: PassthroughAPIResponse.self
+                )
             } else {
-                var query: [String: String] = [
-                    "include": "territory",
-                    "fields[subscriptionPricePoints]": "customerPrice,proceeds,proceedsYear2,territory,equalizations",
-                    "fields[territories]": "currency",
-                    "limit": String(clampedLimit(arguments["limit"]?.intValue, defaultValue: 25, max: 8000))
-                ]
-                if let territoryId = arguments["territory_id"]?.stringValue {
-                    query["filter[territory]"] = territoryId
-                }
                 response = try await httpClient.get(
-                    "/v1/subscriptions/\(subscriptionId)/pricePoints",
+                    endpoint,
                     parameters: query,
                     as: PassthroughAPIResponse.self
                 )
@@ -175,19 +185,24 @@ extension SubscriptionsWorker {
 
         do {
             let response: PassthroughAPIResponse
-            if let nextUrl = arguments["next_url"]?.stringValue,
-               let parsed = await httpClient.parsePaginationUrl(nextUrl) {
-                response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: PassthroughAPIResponse.self)
+            let endpoint = "/v1/subscriptionPricePoints/\(pricePointId)/equalizations"
+            var query = pricePointQuery(limit: clampedLimit(arguments["limit"]?.intValue, defaultValue: 25, max: 8000))
+            if let subscriptionId = arguments["subscription_id"]?.stringValue {
+                query["filter[subscription]"] = subscriptionId
+            }
+            if let territoryId = arguments["territory_id"]?.stringValue {
+                query["filter[territory]"] = territoryId
+            }
+
+            if let nextUrl = try paginationURL(from: arguments["next_url"]) {
+                response = try await httpClient.getPage(
+                    nextUrl,
+                    scope: PaginationScope(path: endpoint, requiredParameters: paginationFilters(from: query)),
+                    as: PassthroughAPIResponse.self
+                )
             } else {
-                var query = pricePointQuery(limit: clampedLimit(arguments["limit"]?.intValue, defaultValue: 25, max: 8000))
-                if let subscriptionId = arguments["subscription_id"]?.stringValue {
-                    query["filter[subscription]"] = subscriptionId
-                }
-                if let territoryId = arguments["territory_id"]?.stringValue {
-                    query["filter[territory]"] = territoryId
-                }
                 response = try await httpClient.get(
-                    "/v1/subscriptionPricePoints/\(pricePointId)/equalizations",
+                    endpoint,
                     parameters: query,
                     as: PassthroughAPIResponse.self
                 )
@@ -490,17 +505,22 @@ extension SubscriptionsWorker {
 
         do {
             let response: PassthroughAPIResponse
-            if let nextUrl = arguments["next_url"]?.stringValue,
-               let parsed = await httpClient.parsePaginationUrl(nextUrl) {
-                response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: PassthroughAPIResponse.self)
+            let endpoint = "/v1/subscriptions/\(subscriptionId)/\(endpointSuffix)"
+            var query = defaultQuery
+            query["limit"] = String(clampedLimit(arguments["limit"]?.intValue, defaultValue: 25, max: 200))
+            if let territoryId = arguments["territory_id"]?.stringValue {
+                query["filter[territory]"] = territoryId
+            }
+
+            if let nextUrl = try paginationURL(from: arguments["next_url"]) {
+                response = try await httpClient.getPage(
+                    nextUrl,
+                    scope: PaginationScope(path: endpoint, requiredParameters: paginationFilters(from: query)),
+                    as: PassthroughAPIResponse.self
+                )
             } else {
-                var query = defaultQuery
-                query["limit"] = String(clampedLimit(arguments["limit"]?.intValue, defaultValue: 25, max: 200))
-                if let territoryId = arguments["territory_id"]?.stringValue {
-                    query["filter[territory]"] = territoryId
-                }
                 response = try await httpClient.get(
-                    "/v1/subscriptions/\(subscriptionId)/\(endpointSuffix)",
+                    endpoint,
                     parameters: query,
                     as: PassthroughAPIResponse.self
                 )
@@ -539,16 +559,21 @@ extension SubscriptionsWorker {
 
         do {
             let response: PassthroughAPIResponse
-            if let nextUrl = arguments["next_url"]?.stringValue,
-               let parsed = await httpClient.parsePaginationUrl(nextUrl) {
-                response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: PassthroughAPIResponse.self)
+            let endpoint = "\(endpointPrefix)/\(ownerId)/prices"
+            var query = subscriptionOfferPriceQuery(arguments: arguments, fieldsKey: fieldsKey)
+            if let territoryId = arguments["territory_id"]?.stringValue {
+                query["filter[territory]"] = territoryId
+            }
+
+            if let nextUrl = try paginationURL(from: arguments["next_url"]) {
+                response = try await httpClient.getPage(
+                    nextUrl,
+                    scope: PaginationScope(path: endpoint, requiredParameters: paginationFilters(from: query)),
+                    as: PassthroughAPIResponse.self
+                )
             } else {
-                var query = subscriptionOfferPriceQuery(arguments: arguments, fieldsKey: fieldsKey)
-                if let territoryId = arguments["territory_id"]?.stringValue {
-                    query["filter[territory]"] = territoryId
-                }
                 response = try await httpClient.get(
-                    "\(endpointPrefix)/\(ownerId)/prices",
+                    endpoint,
                     parameters: query,
                     as: PassthroughAPIResponse.self
                 )
@@ -612,12 +637,16 @@ extension SubscriptionsWorker {
     private func listResources(_ params: CallTool.Parameters, endpoint: String, key: String, defaultQuery: [String: String]) async throws -> CallTool.Result {
         do {
             let response: PassthroughAPIResponse
-            if let nextUrl = params.arguments?["next_url"]?.stringValue,
-               let parsed = await httpClient.parsePaginationUrl(nextUrl) {
-                response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: PassthroughAPIResponse.self)
+            var query = defaultQuery
+            query["limit"] = String(clampedLimit(params.arguments?["limit"]?.intValue, defaultValue: 25, max: 200))
+
+            if let nextUrl = try paginationURL(from: params.arguments?["next_url"]) {
+                response = try await httpClient.getPage(
+                    nextUrl,
+                    scope: PaginationScope(path: endpoint, requiredParameters: paginationFilters(from: query)),
+                    as: PassthroughAPIResponse.self
+                )
             } else {
-                var query = defaultQuery
-                query["limit"] = String(clampedLimit(params.arguments?["limit"]?.intValue, defaultValue: 25, max: 200))
                 response = try await httpClient.get(endpoint, parameters: query, as: PassthroughAPIResponse.self)
             }
             let data = response.data.arrayValue ?? []
@@ -703,6 +732,14 @@ extension SubscriptionsWorker {
             "fields[territories]": "currency",
             "limit": String(clampedLimit(arguments["limit"]?.intValue, defaultValue: 25, max: 200))
         ]
+    }
+
+    private func paginationFilters(from query: [String: String]) -> [String: String] {
+        var filters: [String: String] = [:]
+        for (name, value) in query where name.hasPrefix("filter[") && name.hasSuffix("]") {
+            filters[name] = value
+        }
+        return filters
     }
 
     private func clampedLimit(_ value: Int?, defaultValue: Int, max: Int) -> Int {

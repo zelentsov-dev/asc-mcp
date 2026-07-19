@@ -18,29 +18,35 @@ extension BetaGroupsWorker {
 
         do {
             let response: ASCBetaGroupsResponse
+            var queryParams: [String: String] = [
+                "filter[app]": appId
+            ]
+
+            if let limitValue = arguments["limit"],
+               let limit = limitValue.intValue {
+                queryParams["limit"] = String(min(max(limit, 1), 200))
+            } else {
+                queryParams["limit"] = "25"
+            }
+
+            if let isInternalValue = arguments["is_internal"],
+               let isInternal = isInternalValue.boolValue {
+                queryParams["filter[isInternalGroup]"] = isInternal ? "true" : "false"
+            }
 
             // Check for pagination URL
-            if let nextUrlValue = arguments["next_url"],
-               let nextUrl = nextUrlValue.stringValue,
-               let parsed = await httpClient.parsePaginationUrl(nextUrl) {
-                response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCBetaGroupsResponse.self)
+            if let nextUrl = try paginationURL(from: arguments["next_url"]) {
+                var requiredParameters = queryParams
+                requiredParameters.removeValue(forKey: "limit")
+                response = try await httpClient.getPage(
+                    nextUrl,
+                    scope: PaginationScope(
+                        path: "/v1/betaGroups",
+                        requiredParameters: requiredParameters
+                    ),
+                    as: ASCBetaGroupsResponse.self
+                )
             } else {
-                var queryParams: [String: String] = [
-                    "filter[app]": appId
-                ]
-
-                if let limitValue = arguments["limit"],
-                   let limit = limitValue.intValue {
-                    queryParams["limit"] = String(min(max(limit, 1), 200))
-                } else {
-                    queryParams["limit"] = "25"
-                }
-
-                if let isInternalValue = arguments["is_internal"],
-                   let isInternal = isInternalValue.boolValue {
-                    queryParams["filter[isInternalGroup]"] = isInternal ? "true" : "false"
-                }
-
                 response = try await httpClient.get(
                     "/v1/betaGroups",
                     parameters: queryParams,
@@ -320,10 +326,12 @@ extension BetaGroupsWorker {
             let response: ASCBetaTestersResponse
 
             // Check for pagination URL
-            if let nextUrlValue = arguments["next_url"],
-               let nextUrl = nextUrlValue.stringValue,
-               let parsed = await httpClient.parsePaginationUrl(nextUrl) {
-                response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCBetaTestersResponse.self)
+            if let nextUrl = try paginationURL(from: arguments["next_url"]) {
+                response = try await httpClient.getPage(
+                    nextUrl,
+                    scope: PaginationScope(path: "/v1/betaGroups/\(groupId)/betaTesters"),
+                    as: ASCBetaTestersResponse.self
+                )
             } else {
                 var queryParams: [String: String] = [:]
 

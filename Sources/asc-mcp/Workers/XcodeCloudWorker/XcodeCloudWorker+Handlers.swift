@@ -10,18 +10,21 @@ extension XcodeCloudWorker {
         do {
             let arguments = params.arguments ?? [:]
             let response: ASCCIProductsResponse
-            if let nextURL = arguments["next_url"]?.stringValue,
-               let parsed = await httpClient.parsePaginationUrl(nextURL) {
-                response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCCIProductsResponse.self)
+            var query = listQuery(arguments)
+            if let productType = arguments["product_type"]?.stringValue {
+                query["filter[productType]"] = productType
+            }
+            if let appID = arguments["app_id"]?.stringValue {
+                query["filter[app]"] = appID
+            }
+            applyInclude(arguments, to: &query)
+            if let nextURL = try paginationURL(from: arguments["next_url"]) {
+                response = try await httpClient.getPage(
+                    nextURL,
+                    scope: paginationScope(endpoint: "/v1/ciProducts", query: query),
+                    as: ASCCIProductsResponse.self
+                )
             } else {
-                var query = listQuery(arguments)
-                if let productType = arguments["product_type"]?.stringValue {
-                    query["filter[productType]"] = productType
-                }
-                if let appID = arguments["app_id"]?.stringValue {
-                    query["filter[app]"] = appID
-                }
-                applyInclude(arguments, to: &query)
                 response = try await httpClient.get("/v1/ciProducts", parameters: query, as: ASCCIProductsResponse.self)
             }
 
@@ -186,13 +189,17 @@ extension XcodeCloudWorker {
 
         do {
             let response: ASCCIBuildActionsResponse
-            if let nextURL = arguments["next_url"]?.stringValue,
-               let parsed = await httpClient.parsePaginationUrl(nextURL) {
-                response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCCIBuildActionsResponse.self)
+            var query = listQuery(arguments)
+            applyInclude(arguments, to: &query)
+            let endpoint = "/v1/ciBuildRuns/\(buildRunID)/actions"
+            if let nextURL = try paginationURL(from: arguments["next_url"]) {
+                response = try await httpClient.getPage(
+                    nextURL,
+                    scope: paginationScope(endpoint: endpoint, query: query),
+                    as: ASCCIBuildActionsResponse.self
+                )
             } else {
-                var query = listQuery(arguments)
-                applyInclude(arguments, to: &query)
-                response = try await httpClient.get("/v1/ciBuildRuns/\(buildRunID)/actions", parameters: query, as: ASCCIBuildActionsResponse.self)
+                response = try await httpClient.get(endpoint, parameters: query, as: ASCCIBuildActionsResponse.self)
             }
 
             var result = listResult("actions", response.data.map(formatAction), links: response.links, meta: response.meta)
@@ -215,11 +222,16 @@ extension XcodeCloudWorker {
 
         do {
             let response: ASCBuildsResponse
-            if let nextURL = arguments["next_url"]?.stringValue,
-               let parsed = await httpClient.parsePaginationUrl(nextURL) {
-                response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCBuildsResponse.self)
+            let query = listQuery(arguments)
+            let endpoint = "/v1/ciBuildRuns/\(buildRunID)/builds"
+            if let nextURL = try paginationURL(from: arguments["next_url"]) {
+                response = try await httpClient.getPage(
+                    nextURL,
+                    scope: paginationScope(endpoint: endpoint, query: query),
+                    as: ASCBuildsResponse.self
+                )
             } else {
-                response = try await httpClient.get("/v1/ciBuildRuns/\(buildRunID)/builds", parameters: listQuery(arguments), as: ASCBuildsResponse.self)
+                response = try await httpClient.get(endpoint, parameters: query, as: ASCBuildsResponse.self)
             }
 
             var result: [String: Any] = [
@@ -354,12 +366,15 @@ extension XcodeCloudWorker {
         let arguments = params.arguments ?? [:]
         do {
             let response: ASCCIXcodeVersionsResponse
-            if let nextURL = arguments["next_url"]?.stringValue,
-               let parsed = await httpClient.parsePaginationUrl(nextURL) {
-                response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCCIXcodeVersionsResponse.self)
+            var query = listQuery(arguments)
+            applyInclude(arguments, to: &query)
+            if let nextURL = try paginationURL(from: arguments["next_url"]) {
+                response = try await httpClient.getPage(
+                    nextURL,
+                    scope: paginationScope(endpoint: "/v1/ciXcodeVersions", query: query),
+                    as: ASCCIXcodeVersionsResponse.self
+                )
             } else {
-                var query = listQuery(arguments)
-                applyInclude(arguments, to: &query)
                 response = try await httpClient.get("/v1/ciXcodeVersions", parameters: query, as: ASCCIXcodeVersionsResponse.self)
             }
 
@@ -401,12 +416,15 @@ extension XcodeCloudWorker {
         let arguments = params.arguments ?? [:]
         do {
             let response: ASCCIMacOSVersionsResponse
-            if let nextURL = arguments["next_url"]?.stringValue,
-               let parsed = await httpClient.parsePaginationUrl(nextURL) {
-                response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCCIMacOSVersionsResponse.self)
+            var query = listQuery(arguments)
+            applyInclude(arguments, to: &query)
+            if let nextURL = try paginationURL(from: arguments["next_url"]) {
+                response = try await httpClient.getPage(
+                    nextURL,
+                    scope: paginationScope(endpoint: "/v1/ciMacOsVersions", query: query),
+                    as: ASCCIMacOSVersionsResponse.self
+                )
             } else {
-                var query = listQuery(arguments)
-                applyInclude(arguments, to: &query)
                 response = try await httpClient.get("/v1/ciMacOsVersions", parameters: query, as: ASCCIMacOSVersionsResponse.self)
             }
 
@@ -448,11 +466,15 @@ extension XcodeCloudWorker {
         let arguments = params.arguments ?? [:]
         do {
             let response: ASCScmProvidersResponse
-            if let nextURL = arguments["next_url"]?.stringValue,
-               let parsed = await httpClient.parsePaginationUrl(nextURL) {
-                response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCScmProvidersResponse.self)
+            let query = listQuery(arguments)
+            if let nextURL = try paginationURL(from: arguments["next_url"]) {
+                response = try await httpClient.getPage(
+                    nextURL,
+                    scope: paginationScope(endpoint: "/v1/scmProviders", query: query),
+                    as: ASCScmProvidersResponse.self
+                )
             } else {
-                response = try await httpClient.get("/v1/scmProviders", parameters: listQuery(arguments), as: ASCScmProvidersResponse.self)
+                response = try await httpClient.get("/v1/scmProviders", parameters: query, as: ASCScmProvidersResponse.self)
             }
 
             var result = listResult("providers", response.data.map(formatScmProvider), links: response.links, meta: response.meta)
@@ -594,12 +616,15 @@ extension XcodeCloudWorker {
     private func listWorkflows(endpoint: String, arguments: [String: Value], failureContext: String) async throws -> CallTool.Result {
         do {
             let response: ASCCIWorkflowsResponse
-            if let nextURL = arguments["next_url"]?.stringValue,
-               let parsed = await httpClient.parsePaginationUrl(nextURL) {
-                response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCCIWorkflowsResponse.self)
+            var query = listQuery(arguments)
+            applyInclude(arguments, to: &query)
+            if let nextURL = try paginationURL(from: arguments["next_url"]) {
+                response = try await httpClient.getPage(
+                    nextURL,
+                    scope: paginationScope(endpoint: endpoint, query: query),
+                    as: ASCCIWorkflowsResponse.self
+                )
             } else {
-                var query = listQuery(arguments)
-                applyInclude(arguments, to: &query)
                 response = try await httpClient.get(endpoint, parameters: query, as: ASCCIWorkflowsResponse.self)
             }
 
@@ -614,18 +639,21 @@ extension XcodeCloudWorker {
     private func listBuildRuns(endpoint: String, arguments: [String: Value], failureContext: String) async throws -> CallTool.Result {
         do {
             let response: ASCCIBuildRunsResponse
-            if let nextURL = arguments["next_url"]?.stringValue,
-               let parsed = await httpClient.parsePaginationUrl(nextURL) {
-                response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCCIBuildRunsResponse.self)
+            var query = listQuery(arguments)
+            if let buildID = arguments["build_id"]?.stringValue {
+                query["filter[builds]"] = buildID
+            }
+            if let sort = arguments["sort"]?.stringValue {
+                query["sort"] = sort
+            }
+            applyInclude(arguments, to: &query)
+            if let nextURL = try paginationURL(from: arguments["next_url"]) {
+                response = try await httpClient.getPage(
+                    nextURL,
+                    scope: paginationScope(endpoint: endpoint, query: query),
+                    as: ASCCIBuildRunsResponse.self
+                )
             } else {
-                var query = listQuery(arguments)
-                if let buildID = arguments["build_id"]?.stringValue {
-                    query["filter[builds]"] = buildID
-                }
-                if let sort = arguments["sort"]?.stringValue {
-                    query["sort"] = sort
-                }
-                applyInclude(arguments, to: &query)
                 response = try await httpClient.get(endpoint, parameters: query, as: ASCCIBuildRunsResponse.self)
             }
 
@@ -640,11 +668,15 @@ extension XcodeCloudWorker {
     private func listArtifacts(endpoint: String, arguments: [String: Value]) async throws -> CallTool.Result {
         do {
             let response: ASCCIArtifactsResponse
-            if let nextURL = arguments["next_url"]?.stringValue,
-               let parsed = await httpClient.parsePaginationUrl(nextURL) {
-                response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCCIArtifactsResponse.self)
+            let query = listQuery(arguments)
+            if let nextURL = try paginationURL(from: arguments["next_url"]) {
+                response = try await httpClient.getPage(
+                    nextURL,
+                    scope: paginationScope(endpoint: endpoint, query: query),
+                    as: ASCCIArtifactsResponse.self
+                )
             } else {
-                response = try await httpClient.get(endpoint, parameters: listQuery(arguments), as: ASCCIArtifactsResponse.self)
+                response = try await httpClient.get(endpoint, parameters: query, as: ASCCIArtifactsResponse.self)
             }
             var result = listResult("artifacts", response.data.map(formatArtifact), links: response.links, meta: response.meta)
             appendIncluded(response.included, to: &result)
@@ -657,11 +689,15 @@ extension XcodeCloudWorker {
     private func listIssues(endpoint: String, arguments: [String: Value]) async throws -> CallTool.Result {
         do {
             let response: ASCCIIssuesResponse
-            if let nextURL = arguments["next_url"]?.stringValue,
-               let parsed = await httpClient.parsePaginationUrl(nextURL) {
-                response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCCIIssuesResponse.self)
+            let query = listQuery(arguments)
+            if let nextURL = try paginationURL(from: arguments["next_url"]) {
+                response = try await httpClient.getPage(
+                    nextURL,
+                    scope: paginationScope(endpoint: endpoint, query: query),
+                    as: ASCCIIssuesResponse.self
+                )
             } else {
-                response = try await httpClient.get(endpoint, parameters: listQuery(arguments), as: ASCCIIssuesResponse.self)
+                response = try await httpClient.get(endpoint, parameters: query, as: ASCCIIssuesResponse.self)
             }
             var result = listResult("issues", response.data.map(formatIssue), links: response.links, meta: response.meta)
             appendIncluded(response.included, to: &result)
@@ -674,11 +710,15 @@ extension XcodeCloudWorker {
     private func listTestResults(endpoint: String, arguments: [String: Value]) async throws -> CallTool.Result {
         do {
             let response: ASCCITestResultsResponse
-            if let nextURL = arguments["next_url"]?.stringValue,
-               let parsed = await httpClient.parsePaginationUrl(nextURL) {
-                response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCCITestResultsResponse.self)
+            let query = listQuery(arguments)
+            if let nextURL = try paginationURL(from: arguments["next_url"]) {
+                response = try await httpClient.getPage(
+                    nextURL,
+                    scope: paginationScope(endpoint: endpoint, query: query),
+                    as: ASCCITestResultsResponse.self
+                )
             } else {
-                response = try await httpClient.get(endpoint, parameters: listQuery(arguments), as: ASCCITestResultsResponse.self)
+                response = try await httpClient.get(endpoint, parameters: query, as: ASCCITestResultsResponse.self)
             }
             var result = listResult("testResults", response.data.map(formatTestResult), links: response.links, meta: response.meta)
             appendIncluded(response.included, to: &result)
@@ -691,15 +731,18 @@ extension XcodeCloudWorker {
     private func listScmRepositories(endpoint: String, arguments: [String: Value]) async throws -> CallTool.Result {
         do {
             let response: ASCScmRepositoriesResponse
-            if let nextURL = arguments["next_url"]?.stringValue,
-               let parsed = await httpClient.parsePaginationUrl(nextURL) {
-                response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCScmRepositoriesResponse.self)
+            var query = listQuery(arguments)
+            if let repositoryID = arguments["repository_id"]?.stringValue {
+                query["filter[id]"] = repositoryID
+            }
+            applyInclude(arguments, to: &query)
+            if let nextURL = try paginationURL(from: arguments["next_url"]) {
+                response = try await httpClient.getPage(
+                    nextURL,
+                    scope: paginationScope(endpoint: endpoint, query: query),
+                    as: ASCScmRepositoriesResponse.self
+                )
             } else {
-                var query = listQuery(arguments)
-                if let repositoryID = arguments["repository_id"]?.stringValue {
-                    query["filter[id]"] = repositoryID
-                }
-                applyInclude(arguments, to: &query)
                 response = try await httpClient.get(endpoint, parameters: query, as: ASCScmRepositoriesResponse.self)
             }
 
@@ -714,12 +757,15 @@ extension XcodeCloudWorker {
     private func listScmGitReferences(endpoint: String, arguments: [String: Value]) async throws -> CallTool.Result {
         do {
             let response: ASCScmGitReferencesResponse
-            if let nextURL = arguments["next_url"]?.stringValue,
-               let parsed = await httpClient.parsePaginationUrl(nextURL) {
-                response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCScmGitReferencesResponse.self)
+            var query = listQuery(arguments)
+            applyInclude(arguments, to: &query)
+            if let nextURL = try paginationURL(from: arguments["next_url"]) {
+                response = try await httpClient.getPage(
+                    nextURL,
+                    scope: paginationScope(endpoint: endpoint, query: query),
+                    as: ASCScmGitReferencesResponse.self
+                )
             } else {
-                var query = listQuery(arguments)
-                applyInclude(arguments, to: &query)
                 response = try await httpClient.get(endpoint, parameters: query, as: ASCScmGitReferencesResponse.self)
             }
 
@@ -734,12 +780,15 @@ extension XcodeCloudWorker {
     private func listScmPullRequests(endpoint: String, arguments: [String: Value]) async throws -> CallTool.Result {
         do {
             let response: ASCScmPullRequestsResponse
-            if let nextURL = arguments["next_url"]?.stringValue,
-               let parsed = await httpClient.parsePaginationUrl(nextURL) {
-                response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCScmPullRequestsResponse.self)
+            var query = listQuery(arguments)
+            applyInclude(arguments, to: &query)
+            if let nextURL = try paginationURL(from: arguments["next_url"]) {
+                response = try await httpClient.getPage(
+                    nextURL,
+                    scope: paginationScope(endpoint: endpoint, query: query),
+                    as: ASCScmPullRequestsResponse.self
+                )
             } else {
-                var query = listQuery(arguments)
-                applyInclude(arguments, to: &query)
                 response = try await httpClient.get(endpoint, parameters: query, as: ASCScmPullRequestsResponse.self)
             }
 
@@ -754,6 +803,12 @@ extension XcodeCloudWorker {
     private func listQuery(_ arguments: [String: Value]) -> [String: String] {
         let limit = arguments["limit"]?.intValue ?? 25
         return ["limit": String(min(max(limit, 1), 200))]
+    }
+
+    private func paginationScope(endpoint: String, query: [String: String]) -> PaginationScope {
+        var requiredParameters = query
+        requiredParameters.removeValue(forKey: "limit")
+        return PaginationScope(path: endpoint, requiredParameters: requiredParameters)
     }
 
     private func applyInclude(_ arguments: [String: Value], to query: inout [String: String]) {

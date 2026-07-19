@@ -11,22 +11,29 @@ extension BetaLicenseAgreementsWorker {
 
         do {
             let response: ASCBetaLicenseAgreementsResponse
+            var queryParams: [String: String] = [:]
 
-            if let nextUrl = arguments?["next_url"]?.stringValue,
-               let parsed = await httpClient.parsePaginationUrl(nextUrl) {
-                response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCBetaLicenseAgreementsResponse.self)
+            if let appId = arguments?["app_id"]?.stringValue {
+                queryParams["filter[app]"] = appId
+            }
+            if let limit = arguments?["limit"]?.intValue {
+                queryParams["limit"] = String(min(max(limit, 1), 200))
             } else {
-                var queryParams: [String: String] = [:]
+                queryParams["limit"] = "25"
+            }
 
-                if let appId = arguments?["app_id"]?.stringValue {
-                    queryParams["filter[app]"] = appId
-                }
-                if let limit = arguments?["limit"]?.intValue {
-                    queryParams["limit"] = String(min(max(limit, 1), 200))
-                } else {
-                    queryParams["limit"] = "25"
-                }
-
+            if let nextUrl = try paginationURL(from: arguments?["next_url"]) {
+                var requiredParameters = queryParams
+                requiredParameters.removeValue(forKey: "limit")
+                response = try await httpClient.getPage(
+                    nextUrl,
+                    scope: PaginationScope(
+                        path: "/v1/betaLicenseAgreements",
+                        requiredParameters: requiredParameters
+                    ),
+                    as: ASCBetaLicenseAgreementsResponse.self
+                )
+            } else {
                 response = try await httpClient.get(
                     "/v1/betaLicenseAgreements",
                     parameters: queryParams,

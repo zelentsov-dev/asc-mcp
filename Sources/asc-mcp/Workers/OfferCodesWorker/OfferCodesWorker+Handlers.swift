@@ -18,9 +18,12 @@ extension OfferCodesWorker {
         do {
             let response: ASCOfferCodesResponse
 
-            if let nextUrl = arguments["next_url"]?.stringValue,
-               let parsed = await httpClient.parsePaginationUrl(nextUrl) {
-                response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCOfferCodesResponse.self)
+            if let nextUrl = try paginationURL(from: arguments["next_url"]) {
+                response = try await httpClient.getPage(
+                    nextUrl,
+                    scope: PaginationScope(path: "/v1/subscriptions/\(subscriptionId)/offerCodes"),
+                    as: ASCOfferCodesResponse.self
+                )
             } else {
                 var queryParams: [String: String] = [:]
 
@@ -342,9 +345,12 @@ extension OfferCodesWorker {
         do {
             let response: ASCOfferCodePricesResponse
 
-            if let nextUrl = arguments["next_url"]?.stringValue,
-               let parsed = await httpClient.parsePaginationUrl(nextUrl) {
-                response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCOfferCodePricesResponse.self)
+            if let nextUrl = try paginationURL(from: arguments["next_url"]) {
+                response = try await httpClient.getPage(
+                    nextUrl,
+                    scope: PaginationScope(path: "/v1/subscriptionOfferCodes/\(offerCodeId)/prices"),
+                    as: ASCOfferCodePricesResponse.self
+                )
             } else {
                 var queryParams: [String: String] = [:]
 
@@ -448,9 +454,12 @@ extension OfferCodesWorker {
         do {
             let response: ASCOneTimeUseCodesResponse
 
-            if let nextUrl = arguments["next_url"]?.stringValue,
-               let parsed = await httpClient.parsePaginationUrl(nextUrl) {
-                response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCOneTimeUseCodesResponse.self)
+            if let nextUrl = try paginationURL(from: arguments["next_url"]) {
+                response = try await httpClient.getPage(
+                    nextUrl,
+                    scope: PaginationScope(path: "/v1/subscriptionOfferCodes/\(offerCodeId)/oneTimeUseCodes"),
+                    as: ASCOneTimeUseCodesResponse.self
+                )
             } else {
                 var queryParams: [String: String] = [:]
 

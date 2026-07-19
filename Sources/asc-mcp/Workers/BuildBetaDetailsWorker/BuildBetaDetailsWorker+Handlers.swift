@@ -270,10 +270,12 @@ extension BuildBetaDetailsWorker {
             let response: ASCBetaBuildLocalizationsResponse
 
             // Check for pagination URL
-            if let nextUrlValue = arguments["next_url"],
-               let nextUrl = nextUrlValue.stringValue,
-               let parsed = await httpClient.parsePaginationUrl(nextUrl) {
-                response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCBetaBuildLocalizationsResponse.self)
+            if let nextUrl = try paginationURL(from: arguments["next_url"]) {
+                response = try await httpClient.getPage(
+                    nextUrl,
+                    scope: PaginationScope(path: "/v1/builds/\(buildId)/betaBuildLocalizations"),
+                    as: ASCBetaBuildLocalizationsResponse.self
+                )
             } else {
                 var queryParams: [String: String] = [:]
 
@@ -331,10 +333,15 @@ extension BuildBetaDetailsWorker {
             let response: ASCBetaGroupsResponse
 
             // Check for pagination URL
-            if let nextUrlValue = arguments["next_url"],
-               let nextUrl = nextUrlValue.stringValue,
-               let parsed = await httpClient.parsePaginationUrl(nextUrl) {
-                response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCBetaGroupsResponse.self)
+            if let nextUrl = try paginationURL(from: arguments["next_url"]) {
+                response = try await httpClient.getPage(
+                    nextUrl,
+                    scope: PaginationScope(
+                        path: "/v1/betaGroups",
+                        requiredParameters: ["filter[builds]": buildId]
+                    ),
+                    as: ASCBetaGroupsResponse.self
+                )
             } else {
                 var queryParams: [String: String] = [
                     "filter[builds]": buildId
@@ -393,10 +400,12 @@ extension BuildBetaDetailsWorker {
             let response: ASCBetaTestersResponse
 
             // Check for pagination URL
-            if let nextUrlValue = arguments["next_url"],
-               let nextUrl = nextUrlValue.stringValue,
-               let parsed = await httpClient.parsePaginationUrl(nextUrl) {
-                response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCBetaTestersResponse.self)
+            if let nextUrl = try paginationURL(from: arguments["next_url"]) {
+                response = try await httpClient.getPage(
+                    nextUrl,
+                    scope: PaginationScope(path: "/v1/builds/\(buildId)/individualTesters"),
+                    as: ASCBetaTestersResponse.self
+                )
             } else {
                 var queryParams: [String: String] = [:]
 
@@ -600,10 +609,12 @@ extension BuildBetaDetailsWorker {
             let response: ASCBetaTestersResponse
 
             // Check for pagination URL
-            if let nextUrlValue = arguments["next_url"],
-               let nextUrl = nextUrlValue.stringValue,
-               let parsed = await httpClient.parsePaginationUrl(nextUrl) {
-                response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCBetaTestersResponse.self)
+            if let nextUrl = try paginationURL(from: arguments["next_url"]) {
+                response = try await httpClient.getPage(
+                    nextUrl,
+                    scope: PaginationScope(path: "/v1/builds/\(buildId)/individualTesters"),
+                    as: ASCBetaTestersResponse.self
+                )
             } else {
                 var queryParams: [String: String] = [:]
 

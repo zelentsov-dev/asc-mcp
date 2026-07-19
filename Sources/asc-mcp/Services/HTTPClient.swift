@@ -36,12 +36,15 @@ public actor HTTPClient {
         lastRateLimitInfo
     }
 
-    /// Parses an App Store Connect pagination URL using this client's configured base host.
-    /// - Parameter fullUrl: Absolute pagination URL from an API `links.next` response.
-    /// - Returns: Endpoint path and query parameters, or nil when the URL is invalid or from another host.
-    public func parsePaginationUrl(_ fullUrl: String) -> (path: String, parameters: [String: String])? {
-        let allowedHost = URLComponents(string: baseURL)?.host ?? PaginationURLPolicy.defaultAllowedHost
-        return asc_mcp.parsePaginationUrl(fullUrl, allowedHost: allowedHost)
+    /// Fetches a pagination link only when it remains inside the supplied collection scope.
+    /// - Parameters:
+    ///   - nextURL: Absolute URL returned by an App Store Connect `links.next` field.
+    ///   - scope: Exact collection path and query invariants established by the originating tool call.
+    /// - Returns: Raw response data for the validated next page.
+    /// - Throws: `ASCError` when the link is invalid, leaves the configured origin or scope, or the request fails.
+    public func getPage(_ nextURL: String, scope: PaginationScope) async throws -> Data {
+        let page = try validatedPaginationRequest(nextURL, baseURL: baseURL, scope: scope)
+        return try await get(page.path, parameters: page.parameters)
     }
 
     /// Performs GET request to App Store Connect API
@@ -300,6 +303,27 @@ private extension HTTPURLResponse {
 // MARK: - Convenience Methods
 
 extension HTTPClient {
+    /// Fetches and decodes a pagination link after enforcing its originating collection scope.
+    /// - Parameters:
+    ///   - nextURL: Absolute URL returned by an App Store Connect `links.next` field.
+    ///   - scope: Exact collection path and query invariants established by the originating tool call.
+    ///   - type: Response type expected from the originating collection.
+    /// - Returns: Decoded response for the validated next page.
+    /// - Throws: `ASCError` when validation, transport, or decoding fails.
+    public func getPage<T: Codable & Sendable>(
+        _ nextURL: String,
+        scope: PaginationScope,
+        as type: T.Type
+    ) async throws -> T {
+        let data = try await getPage(nextURL, scope: scope)
+
+        do {
+            return try JSONDecoder().decode(type, from: data)
+        } catch {
+            throw ASCError.parsing("Failed to decode \(type): \(error.localizedDescription)")
+        }
+    }
+
     /// Decodes JSON response into specified type
     public func get<T: Codable & Sendable>(_ endpoint: String, parameters: [String: String] = [:], as type: T.Type) async throws -> T {
         let data = try await get(endpoint, parameters: parameters)

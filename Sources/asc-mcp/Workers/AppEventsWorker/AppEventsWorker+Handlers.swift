@@ -20,9 +20,12 @@ extension AppEventsWorker {
         do {
             let response: ASCAppEventsResponse
 
-            if let nextUrl = arguments["next_url"]?.stringValue,
-               let parsed = await httpClient.parsePaginationUrl(nextUrl) {
-                response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCAppEventsResponse.self)
+            if let nextUrl = try paginationURL(from: arguments["next_url"]) {
+                response = try await httpClient.getPage(
+                    nextUrl,
+                    scope: PaginationScope(path: "/v1/apps/\(appId)/appEvents"),
+                    as: ASCAppEventsResponse.self
+                )
             } else {
                 var queryParams: [String: String] = [:]
 

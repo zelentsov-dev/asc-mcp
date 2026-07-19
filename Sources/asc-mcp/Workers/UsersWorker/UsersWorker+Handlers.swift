@@ -11,25 +11,32 @@ extension UsersWorker {
 
         do {
             let response: ASCUsersResponse
+            var queryParams: [String: String] = [:]
 
-            if let nextUrl = arguments?["next_url"]?.stringValue,
-               let parsed = await httpClient.parsePaginationUrl(nextUrl) {
-                response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCUsersResponse.self)
+            if let limitValue = arguments?["limit"],
+               let limit = limitValue.intValue {
+                queryParams["limit"] = String(min(max(limit, 1), 200))
             } else {
-                var queryParams: [String: String] = [:]
+                queryParams["limit"] = "25"
+            }
 
-                if let limitValue = arguments?["limit"],
-                   let limit = limitValue.intValue {
-                    queryParams["limit"] = String(min(max(limit, 1), 200))
-                } else {
-                    queryParams["limit"] = "25"
-                }
+            if let rolesValue = arguments?["filter_roles"],
+               let roles = rolesValue.stringValue {
+                queryParams["filter[roles]"] = roles
+            }
 
-                if let rolesValue = arguments?["filter_roles"],
-                   let roles = rolesValue.stringValue {
-                    queryParams["filter[roles]"] = roles
-                }
-
+            if let nextUrl = try paginationURL(from: arguments?["next_url"]) {
+                var requiredParameters = queryParams
+                requiredParameters.removeValue(forKey: "limit")
+                response = try await httpClient.getPage(
+                    nextUrl,
+                    scope: PaginationScope(
+                        path: "/v1/users",
+                        requiredParameters: requiredParameters
+                    ),
+                    as: ASCUsersResponse.self
+                )
+            } else {
                 response = try await httpClient.get(
                     "/v1/users",
                     parameters: queryParams,
@@ -343,9 +350,12 @@ extension UsersWorker {
         do {
             let response: ASCUserInvitationsResponse
 
-            if let nextUrl = arguments?["next_url"]?.stringValue,
-               let parsed = await httpClient.parsePaginationUrl(nextUrl) {
-                response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCUserInvitationsResponse.self)
+            if let nextUrl = try paginationURL(from: arguments?["next_url"]) {
+                response = try await httpClient.getPage(
+                    nextUrl,
+                    scope: PaginationScope(path: "/v1/userInvitations"),
+                    as: ASCUserInvitationsResponse.self
+                )
             } else {
                 var queryParams: [String: String] = [:]
 
@@ -429,9 +439,12 @@ extension UsersWorker {
         do {
             let response: ASCAppsResponse
 
-            if let nextUrl = arguments["next_url"]?.stringValue,
-               let parsed = await httpClient.parsePaginationUrl(nextUrl) {
-                response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCAppsResponse.self)
+            if let nextUrl = try paginationURL(from: arguments["next_url"]) {
+                response = try await httpClient.getPage(
+                    nextUrl,
+                    scope: PaginationScope(path: "/v1/users/\(userId)/visibleApps"),
+                    as: ASCAppsResponse.self
+                )
             } else {
                 var queryParams: [String: String] = [:]
 

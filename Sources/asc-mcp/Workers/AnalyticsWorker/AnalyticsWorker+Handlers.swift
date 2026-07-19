@@ -483,10 +483,12 @@ extension AnalyticsWorker {
             let response: ASCAnalyticsReportRequestsResponse
 
             // Check for pagination URL
-            if let nextUrlValue = arguments["next_url"],
-               let nextUrl = nextUrlValue.stringValue,
-               let parsed = await httpClient.parsePaginationUrl(nextUrl) {
-                response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCAnalyticsReportRequestsResponse.self)
+            if let nextUrl = try paginationURL(from: arguments["next_url"]) {
+                response = try await httpClient.getPage(
+                    nextUrl,
+                    scope: PaginationScope(path: "/v1/apps/\(appId)/analyticsReportRequests"),
+                    as: ASCAnalyticsReportRequestsResponse.self
+                )
             } else {
                 var queryParams: [String: String] = [:]
 
@@ -594,9 +596,12 @@ extension AnalyticsWorker {
         do {
             let response: ASCAnalyticsReportsResponse
 
-            if let nextUrl = arguments["next_url"]?.stringValue,
-               let parsed = await httpClient.parsePaginationUrl(nextUrl) {
-                response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCAnalyticsReportsResponse.self)
+            if let nextUrl = try paginationURL(from: arguments["next_url"]) {
+                response = try await httpClient.getPage(
+                    nextUrl,
+                    scope: PaginationScope(path: "/v1/analyticsReportRequests/\(requestId)/reports"),
+                    as: ASCAnalyticsReportsResponse.self
+                )
             } else {
                 var queryParams: [String: String] = [:]
 
@@ -684,9 +689,12 @@ extension AnalyticsWorker {
         do {
             let response: ASCAnalyticsReportInstancesResponse
 
-            if let nextUrl = arguments["next_url"]?.stringValue,
-               let parsed = await httpClient.parsePaginationUrl(nextUrl) {
-                response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCAnalyticsReportInstancesResponse.self)
+            if let nextUrl = try paginationURL(from: arguments["next_url"]) {
+                response = try await httpClient.getPage(
+                    nextUrl,
+                    scope: PaginationScope(path: "/v1/analyticsReports/\(reportId)/instances"),
+                    as: ASCAnalyticsReportInstancesResponse.self
+                )
             } else {
                 var queryParams: [String: String] = [:]
 
@@ -774,9 +782,12 @@ extension AnalyticsWorker {
         do {
             let response: ASCAnalyticsReportSegmentsResponse
 
-            if let nextUrl = arguments["next_url"]?.stringValue,
-               let parsed = await httpClient.parsePaginationUrl(nextUrl) {
-                response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCAnalyticsReportSegmentsResponse.self)
+            if let nextUrl = try paginationURL(from: arguments["next_url"]) {
+                response = try await httpClient.getPage(
+                    nextUrl,
+                    scope: PaginationScope(path: "/v1/analyticsReportInstances/\(instanceId)/segments"),
+                    as: ASCAnalyticsReportSegmentsResponse.self
+                )
             } else {
                 var queryParams: [String: String] = [:]
 
@@ -834,21 +845,33 @@ extension AnalyticsWorker {
         do {
             // Fetch all reports for this request (paginated)
             var allReports: [ASCAnalyticsReport] = []
-            var nextPath: String? = "/v1/analyticsReportRequests/\(requestId)/reports"
-            var nextParams: [String: String] = ["limit": "200"]
+            let reportsPath = "/v1/analyticsReportRequests/\(requestId)/reports"
+            let reportsScope = PaginationScope(path: reportsPath)
+            var nextURL: String?
+            var seenNextURLs: Set<String> = []
 
-            while let path = nextPath {
-                let response: ASCAnalyticsReportsResponse = try await httpClient.get(
-                    path, parameters: nextParams, as: ASCAnalyticsReportsResponse.self
-                )
+            while true {
+                let response: ASCAnalyticsReportsResponse
+                if let nextURL {
+                    response = try await httpClient.getPage(
+                        nextURL,
+                        scope: reportsScope,
+                        as: ASCAnalyticsReportsResponse.self
+                    )
+                } else {
+                    response = try await httpClient.get(
+                        reportsPath,
+                        parameters: ["limit": "200"],
+                        as: ASCAnalyticsReportsResponse.self
+                    )
+                }
                 allReports.append(contentsOf: response.data)
 
-                if let nextUrl = response.links?.next, let parsed = await httpClient.parsePaginationUrl(nextUrl) {
-                    nextPath = parsed.path
-                    nextParams = parsed.parameters
-                } else {
-                    nextPath = nil
+                guard let next = response.links?.next else { break }
+                guard seenNextURLs.insert(next).inserted else {
+                    throw ASCError.parsing("Analytics reports pagination returned a repeated next URL")
                 }
+                nextURL = next
             }
 
             // Filter by category if specified

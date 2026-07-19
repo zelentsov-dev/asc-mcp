@@ -57,9 +57,19 @@ extension AppsWorker {
             let response: ASCAppsResponse
 
             // Check for pagination next_url
-            if let nextUrl = params.arguments?["next_url"]?.stringValue,
-               let parsed = await httpClient.parsePaginationUrl(nextUrl) {
-                response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCAppsResponse.self)
+            if let nextUrl = try paginationURL(from: params.arguments?["next_url"]) {
+                var requiredParameters: [String: String] = [:]
+                if let bundleId = params.arguments?["bundle_id"]?.stringValue {
+                    requiredParameters["filter[bundleId]"] = bundleId
+                }
+                if let name = params.arguments?["name"]?.stringValue {
+                    requiredParameters["filter[name]"] = name
+                }
+                response = try await httpClient.getPage(
+                    nextUrl,
+                    scope: PaginationScope(path: "/v1/apps", requiredParameters: requiredParameters),
+                    as: ASCAppsResponse.self
+                )
             } else {
                 // Extract parameters
                 var queryParams: [String: String] = [:]
@@ -284,9 +294,12 @@ extension AppsWorker {
             let response: ASCAppStoreVersionsResponse
 
             // Check for pagination next_url
-            if let nextUrl = arguments["next_url"]?.stringValue,
-               let parsed = await httpClient.parsePaginationUrl(nextUrl) {
-                response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCAppStoreVersionsResponse.self)
+            if let nextUrl = try paginationURL(from: arguments["next_url"]) {
+                response = try await httpClient.getPage(
+                    nextUrl,
+                    scope: PaginationScope(path: "/v1/apps/\(appId)/appStoreVersions"),
+                    as: ASCAppStoreVersionsResponse.self
+                )
             } else {
                 response = try await httpClient.get(
                     "/v1/apps/\(appId)/appStoreVersions",
@@ -874,9 +887,12 @@ extension AppsWorker {
             let localizationsResponse: ASCAppStoreVersionLocalizationsResponse
 
             // Check for pagination next_url
-            if let nextUrl = arguments["next_url"]?.stringValue,
-               let parsed = await httpClient.parsePaginationUrl(nextUrl) {
-                localizationsResponse = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCAppStoreVersionLocalizationsResponse.self)
+            if let nextUrl = try paginationURL(from: arguments["next_url"]) {
+                localizationsResponse = try await httpClient.getPage(
+                    nextUrl,
+                    scope: PaginationScope(path: "/v1/appStoreVersions/\(versionId)/appStoreVersionLocalizations"),
+                    as: ASCAppStoreVersionLocalizationsResponse.self
+                )
             } else {
                 localizationsResponse = try await httpClient.get(
                     "/v1/appStoreVersions/\(versionId)/appStoreVersionLocalizations",

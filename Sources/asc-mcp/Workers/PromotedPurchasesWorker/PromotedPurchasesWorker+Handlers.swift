@@ -19,9 +19,12 @@ extension PromotedPurchasesWorker {
         do {
             let response: ASCPromotedPurchasesResponse
 
-            if let nextUrl = arguments["next_url"]?.stringValue,
-               let parsed = await httpClient.parsePaginationUrl(nextUrl) {
-                response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCPromotedPurchasesResponse.self)
+            if let nextUrl = try paginationURL(from: arguments["next_url"]) {
+                response = try await httpClient.getPage(
+                    nextUrl,
+                    scope: PaginationScope(path: "/v1/apps/\(appId)/promotedPurchases"),
+                    as: ASCPromotedPurchasesResponse.self
+                )
             } else {
                 var queryParams: [String: String] = [:]
 

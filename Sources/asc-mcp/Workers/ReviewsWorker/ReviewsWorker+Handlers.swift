@@ -29,7 +29,7 @@ extension ReviewsWorker {
         startDate: Date?,
         now: Date
     ) async throws -> StreamedReviewStats {
-        var endpoint = "/v1/apps/\(appId)/customerReviews"
+        let endpoint = "/v1/apps/\(appId)/customerReviews"
         var parameters: [String: String] = [
             "limit": "200",
             "sort": "-createdDate"
@@ -48,9 +48,17 @@ extension ReviewsWorker {
         var totalRating = 0
         var ratingDistribution = Dictionary(uniqueKeysWithValues: (1...5).map { ($0, 0) })
         var territories: [String: TerritoryAccumulator] = [:]
+        var nextURL: String?
+        let requiredParameters = parameters.filter { $0.key.hasPrefix("filter[") }
+        let scope = PaginationScope(path: endpoint, requiredParameters: requiredParameters)
 
         while true {
-            let response = try await httpClient.get(endpoint, parameters: parameters)
+            let response: Data
+            if let nextURL {
+                response = try await httpClient.getPage(nextURL, scope: scope)
+            } else {
+                response = try await httpClient.get(endpoint, parameters: parameters)
+            }
             let page = try parseReviewsResponse(data: response)
             pagesFetched += 1
             reviewsScanned += page.data.count
@@ -85,15 +93,11 @@ extension ReviewsWorker {
                 break
             }
 
-            guard let nextURL = page.links?.next else { break }
-            guard seenNextURLs.insert(nextURL).inserted else {
+            guard let next = page.links?.next else { break }
+            guard seenNextURLs.insert(next).inserted else {
                 throw ASCError.parsing("Customer reviews pagination returned a repeated next URL")
             }
-            guard let nextPage = await httpClient.parsePaginationUrl(nextURL) else {
-                throw ASCError.parsing("Customer reviews pagination returned an invalid next URL")
-            }
-            endpoint = nextPage.path
-            parameters = nextPage.parameters
+            nextURL = next
         }
 
         let averageRating = totalCount > 0 ? Double(totalRating) / Double(totalCount) : 0
@@ -150,9 +154,22 @@ extension ReviewsWorker {
         do {
             let response: Data
 
-            if let nextUrl = arguments["next_url"]?.stringValue,
-               let parsed = await httpClient.parsePaginationUrl(nextUrl) {
-                response = try await httpClient.get(parsed.path, parameters: parsed.parameters)
+            var requiredParameters: [String: String] = [:]
+            if let rating {
+                requiredParameters["filter[rating]"] = String(rating)
+            }
+            if let territory {
+                requiredParameters["filter[territory]"] = territory
+            }
+
+            if let nextUrl = try paginationURL(from: arguments["next_url"]) {
+                response = try await httpClient.getPage(
+                    nextUrl,
+                    scope: PaginationScope(
+                        path: "/v1/apps/\(appId)/customerReviews",
+                        requiredParameters: requiredParameters
+                    )
+                )
             } else {
                 var queryParams: [String: String] = [
                     "limit": String(min(max(limit, 1), 200)),
@@ -253,9 +270,22 @@ extension ReviewsWorker {
         do {
             let response: Data
 
-            if let nextUrl = arguments["next_url"]?.stringValue,
-               let parsed = await httpClient.parsePaginationUrl(nextUrl) {
-                response = try await httpClient.get(parsed.path, parameters: parsed.parameters)
+            var requiredParameters: [String: String] = [:]
+            if let rating {
+                requiredParameters["filter[rating]"] = String(rating)
+            }
+            if let territory {
+                requiredParameters["filter[territory]"] = territory
+            }
+
+            if let nextUrl = try paginationURL(from: arguments["next_url"]) {
+                response = try await httpClient.getPage(
+                    nextUrl,
+                    scope: PaginationScope(
+                        path: "/v1/appStoreVersions/\(versionId)/customerReviews",
+                        requiredParameters: requiredParameters
+                    )
+                )
             } else {
                 var queryParams: [String: String] = [
                     "limit": String(min(max(limit, 1), 200)),

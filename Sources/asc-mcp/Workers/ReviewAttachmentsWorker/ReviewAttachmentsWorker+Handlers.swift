@@ -208,9 +208,12 @@ extension ReviewAttachmentsWorker {
         do {
             let response: ASCReviewAttachmentsResponse
 
-            if let nextUrl = arguments["next_url"]?.stringValue,
-               let parsed = await httpClient.parsePaginationUrl(nextUrl) {
-                response = try await httpClient.get(parsed.path, parameters: parsed.parameters, as: ASCReviewAttachmentsResponse.self)
+            if let nextUrl = try paginationURL(from: arguments["next_url"]) {
+                response = try await httpClient.getPage(
+                    nextUrl,
+                    scope: PaginationScope(path: "/v1/appStoreReviewDetails/\(reviewDetailId)/appStoreReviewAttachments"),
+                    as: ASCReviewAttachmentsResponse.self
+                )
             } else {
                 var queryParams: [String: String] = [:]
 
