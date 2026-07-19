@@ -1593,19 +1593,17 @@ struct ASCOperationToolAnalyzer: Sendable {
     }
 
     private func fieldBindingIdentity(_ binding: ASCToolFieldBinding) -> String {
-        [
-            binding.toolField,
-            binding.sourceKind.rawValue,
-            binding.operationID ?? "",
-            binding.invocationID ?? "",
-            binding.location ?? "",
-            binding.appleName ?? "",
-            binding.jsonPointer ?? "",
-            binding.localRole ?? "",
-            binding.fixedValue?.canonicalIdentity ?? "",
-            binding.derivedFrom?.joined(separator: ",") ?? "",
-            binding.omissionReason ?? ""
-        ].joined(separator: "\u{1F}")
+        var components = [binding.toolField, binding.sourceKind.rawValue]
+        components.append(binding.operationID ?? "")
+        components.append(binding.invocationID ?? "")
+        components.append(binding.location ?? "")
+        components.append(binding.appleName ?? "")
+        components.append(binding.jsonPointer ?? "")
+        components.append(binding.localRole ?? "")
+        components.append(binding.fixedValue?.canonicalIdentity ?? "")
+        components.append(binding.derivedFrom?.joined(separator: ",") ?? "")
+        components.append(binding.omissionReason ?? "")
+        return components.joined(separator: "\u{1F}")
     }
 
     private func fieldBinding(
