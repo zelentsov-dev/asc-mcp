@@ -1,0 +1,221 @@
+{
+  "workerKey": "build_processing",
+  "tools": [
+    {
+      "tool": "builds_check_readiness",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "builds_getInstance",
+          "method": "get",
+          "path": "/v1/builds/{id}",
+          "role": "primary"
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "build_id",
+          "sourceKind": "parameter",
+          "operationId": "builds_getInstance",
+          "location": "path",
+          "appleName": "id"
+        }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          {
+            "operationId": "builds_getInstance",
+            "statusCode": "200",
+            "mediaType": "application/json"
+          }
+        ],
+        "fields": [
+          {
+            "outputField": "states",
+            "operationId": "builds_getInstance",
+            "jsonPointer": "/data"
+          },
+          {
+            "outputField": "readiness",
+            "localRole": "Locally derived heuristic from processing, encryption, expiration, and included build beta detail fields."
+          },
+          {
+            "outputField": "issues",
+            "localRole": "Locally generated diagnostic strings."
+          }
+        ]
+      },
+      "note": "Contract is only a Build read. Current readiness semantics are incomplete and unsafe: EXPIRED is treated as internally ready, pre-review external states are treated as testable, and App Store submission requirements are not checked."
+    },
+    {
+      "tool": "builds_get_processing_state",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "builds_getInstance",
+          "method": "get",
+          "path": "/v1/builds/{id}",
+          "role": "primary"
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "build_id",
+          "sourceKind": "parameter",
+          "operationId": "builds_getInstance",
+          "location": "path",
+          "appleName": "id"
+        }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          {
+            "operationId": "builds_getInstance",
+            "statusCode": "200",
+            "mediaType": "application/json"
+          }
+        ],
+        "fields": [
+          {
+            "outputField": "processingState",
+            "operationId": "builds_getInstance",
+            "jsonPointer": "/data/attributes/processingState"
+          },
+          {
+            "outputField": "uploadedDate",
+            "operationId": "builds_getInstance",
+            "jsonPointer": "/data/attributes/uploadedDate"
+          },
+          {
+            "outputField": "processingDuration",
+            "localRole": "Derived from uploadedDate and the local clock while processing."
+          }
+        ]
+      },
+      "note": "Reduced Build projection with local state description; overlaps builds_get_processing_status."
+    },
+    {
+      "tool": "builds_get_processing_status",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "builds_getInstance",
+          "method": "get",
+          "path": "/v1/builds/{id}",
+          "role": "primary"
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "build_id",
+          "sourceKind": "parameter",
+          "operationId": "builds_getInstance",
+          "location": "path",
+          "appleName": "id"
+        }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          {
+            "operationId": "builds_getInstance",
+            "statusCode": "200",
+            "mediaType": "application/json"
+          }
+        ],
+        "fields": [
+          {
+            "outputField": "processingState",
+            "operationId": "builds_getInstance",
+            "jsonPointer": "/data/attributes/processingState"
+          },
+          {
+            "outputField": "uploadedDate",
+            "operationId": "builds_getInstance",
+            "jsonPointer": "/data/attributes/uploadedDate"
+          },
+          {
+            "outputField": "timeSinceUpload",
+            "localRole": "Derived from uploadedDate and the local clock."
+          }
+        ]
+      },
+      "note": "Non-blocking reduced Build projection; duplicates most of builds_get_processing_state."
+    },
+    {
+      "tool": "builds_update_encryption",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "write",
+      "implementationState": "target",
+      "operations": [
+        {
+          "operationId": "builds_updateInstance",
+          "method": "patch",
+          "path": "/v1/builds/{id}",
+          "role": "primary",
+          "inputs": [
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/type",
+              "fixedValue": "builds"
+            },
+            {
+              "sourceKind": "derived",
+              "jsonPointer": "/data/id",
+              "derivedFrom": [
+                "build_id"
+              ],
+              "localRole": "Reuse the public build ID as the JSON:API resource ID in the intended update body."
+            }
+          ]
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "build_id",
+          "sourceKind": "parameter",
+          "operationId": "builds_updateInstance",
+          "location": "path",
+          "appleName": "id"
+        },
+        {
+          "toolField": "uses_non_exempt_encryption",
+          "sourceKind": "requestBody",
+          "operationId": "builds_updateInstance",
+          "jsonPointer": "/data/attributes/usesNonExemptEncryption"
+        }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          {
+            "operationId": "builds_updateInstance",
+            "statusCode": "200",
+            "mediaType": "application/json"
+          }
+        ],
+        "fields": [
+          {
+            "outputField": "build",
+            "operationId": "builds_updateInstance",
+            "jsonPointer": "/data"
+          }
+        ]
+      },
+      "note": "Intended App Store Connect 4.4.1 contract. The current handler is broken: it GETs the declaration and PATCHes nonexistent /v1/appEncryptionDeclarations/{id} with the different usesEncryption attribute."
+    }
+  ],
+  "implementationAliases": []
+}

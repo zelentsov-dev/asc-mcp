@@ -38,6 +38,7 @@ enum ToolMetadataPolicy {
         if toolName == "analytics_sales_report" ||
             toolName == "analytics_financial_report" ||
             toolName == "analytics_app_summary" ||
+            toolName == "reviews_summarizations" ||
             toolName.hasPrefix("metrics_") {
             return true
         }

@@ -1,0 +1,817 @@
+{
+  "workerKey": "xcode_cloud",
+  "tools": [
+    {
+      "tool": "xcode_cloud_action_artifacts_list",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        { "operationId": "ciBuildActions_artifacts_getToManyRelated", "method": "get", "path": "/v1/ciBuildActions/{id}/artifacts", "role": "primary" }
+      ],
+      "fields": [
+        { "toolField": "action_id", "sourceKind": "parameter", "operationId": "ciBuildActions_artifacts_getToManyRelated", "location": "path", "appleName": "id" },
+        { "toolField": "limit", "sourceKind": "parameter", "operationId": "ciBuildActions_artifacts_getToManyRelated", "location": "query", "appleName": "limit" },
+        { "toolField": "next_url", "sourceKind": "local", "localRole": "paginationContinuation" }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          { "operationId": "ciBuildActions_artifacts_getToManyRelated", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": [
+          { "outputField": "artifacts", "operationId": "ciBuildActions_artifacts_getToManyRelated", "jsonPointer": "/data" },
+          { "outputField": "next_url", "operationId": "ciBuildActions_artifacts_getToManyRelated", "jsonPointer": "/links/next" },
+          { "outputField": "total", "operationId": "ciBuildActions_artifacts_getToManyRelated", "jsonPointer": "/meta/paging/total" }
+        ]
+      },
+      "note": "Exact Apple endpoint and exposed pagination mapping; sparse fields are not exposed and the handler returns a selected artifact projection without an MCP output schema."
+    },
+    {
+      "tool": "xcode_cloud_action_issues_list",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        { "operationId": "ciBuildActions_issues_getToManyRelated", "method": "get", "path": "/v1/ciBuildActions/{id}/issues", "role": "primary" }
+      ],
+      "fields": [
+        { "toolField": "action_id", "sourceKind": "parameter", "operationId": "ciBuildActions_issues_getToManyRelated", "location": "path", "appleName": "id" },
+        { "toolField": "limit", "sourceKind": "parameter", "operationId": "ciBuildActions_issues_getToManyRelated", "location": "query", "appleName": "limit" },
+        { "toolField": "next_url", "sourceKind": "local", "localRole": "paginationContinuation" }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          { "operationId": "ciBuildActions_issues_getToManyRelated", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": [
+          { "outputField": "issues", "operationId": "ciBuildActions_issues_getToManyRelated", "jsonPointer": "/data" },
+          { "outputField": "next_url", "operationId": "ciBuildActions_issues_getToManyRelated", "jsonPointer": "/links/next" },
+          { "outputField": "total", "operationId": "ciBuildActions_issues_getToManyRelated", "jsonPointer": "/meta/paging/total" }
+        ]
+      },
+      "note": "Sparse fields are omitted. Known Apple 4.4.1 response loss: FileLocation uses path, while the current model expects fileName, so issue source paths decode as nil."
+    },
+    {
+      "tool": "xcode_cloud_action_test_results_list",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        { "operationId": "ciBuildActions_testResults_getToManyRelated", "method": "get", "path": "/v1/ciBuildActions/{id}/testResults", "role": "primary" }
+      ],
+      "fields": [
+        { "toolField": "action_id", "sourceKind": "parameter", "operationId": "ciBuildActions_testResults_getToManyRelated", "location": "path", "appleName": "id" },
+        { "toolField": "limit", "sourceKind": "parameter", "operationId": "ciBuildActions_testResults_getToManyRelated", "location": "query", "appleName": "limit" },
+        { "toolField": "next_url", "sourceKind": "local", "localRole": "paginationContinuation" }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          { "operationId": "ciBuildActions_testResults_getToManyRelated", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": [
+          { "outputField": "testResults", "operationId": "ciBuildActions_testResults_getToManyRelated", "jsonPointer": "/data" },
+          { "outputField": "next_url", "operationId": "ciBuildActions_testResults_getToManyRelated", "jsonPointer": "/links/next" },
+          { "outputField": "total", "operationId": "ciBuildActions_testResults_getToManyRelated", "jsonPointer": "/meta/paging/total" }
+        ]
+      },
+      "note": "Sparse fields are omitted. FileLocation.path is lost because the model expects fileName, and destinationTestResults.uuid is not modeled; the model also declares a destination message field absent from Apple 4.4.1."
+    },
+    {
+      "tool": "xcode_cloud_actions_get",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        { "operationId": "ciBuildActions_getInstance", "method": "get", "path": "/v1/ciBuildActions/{id}", "role": "primary" }
+      ],
+      "fields": [
+        { "toolField": "action_id", "sourceKind": "parameter", "operationId": "ciBuildActions_getInstance", "location": "path", "appleName": "id" },
+        { "toolField": "include", "sourceKind": "parameter", "operationId": "ciBuildActions_getInstance", "location": "query", "appleName": "include" }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          { "operationId": "ciBuildActions_getInstance", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": [
+          { "outputField": "action", "operationId": "ciBuildActions_getInstance", "jsonPointer": "/data" },
+          { "outputField": "included", "operationId": "ciBuildActions_getInstance", "jsonPointer": "/included" }
+        ]
+      },
+      "note": "The include mapping is exact; sparse fields are omitted and the resource is reformatted as an MCP projection."
+    },
+    {
+      "tool": "xcode_cloud_artifacts_get",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        { "operationId": "ciArtifacts_getInstance", "method": "get", "path": "/v1/ciArtifacts/{id}", "role": "primary" }
+      ],
+      "fields": [
+        { "toolField": "artifact_id", "sourceKind": "parameter", "operationId": "ciArtifacts_getInstance", "location": "path", "appleName": "id" }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          { "operationId": "ciArtifacts_getInstance", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": [
+          { "outputField": "artifact", "operationId": "ciArtifacts_getInstance", "jsonPointer": "/data" }
+        ]
+      },
+      "note": "Sparse artifact fields are not exposed; the handler returns a selected projection."
+    },
+    {
+      "tool": "xcode_cloud_build_run_actions_list",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        { "operationId": "ciBuildRuns_actions_getToManyRelated", "method": "get", "path": "/v1/ciBuildRuns/{id}/actions", "role": "primary" }
+      ],
+      "fields": [
+        { "toolField": "build_run_id", "sourceKind": "parameter", "operationId": "ciBuildRuns_actions_getToManyRelated", "location": "path", "appleName": "id" },
+        { "toolField": "limit", "sourceKind": "parameter", "operationId": "ciBuildRuns_actions_getToManyRelated", "location": "query", "appleName": "limit" },
+        { "toolField": "include", "sourceKind": "parameter", "operationId": "ciBuildRuns_actions_getToManyRelated", "location": "query", "appleName": "include" },
+        { "toolField": "next_url", "sourceKind": "local", "localRole": "paginationContinuation" }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          { "operationId": "ciBuildRuns_actions_getToManyRelated", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": [
+          { "outputField": "actions", "operationId": "ciBuildRuns_actions_getToManyRelated", "jsonPointer": "/data" },
+          { "outputField": "included", "operationId": "ciBuildRuns_actions_getToManyRelated", "jsonPointer": "/included" },
+          { "outputField": "next_url", "operationId": "ciBuildRuns_actions_getToManyRelated", "jsonPointer": "/links/next" },
+          { "outputField": "total", "operationId": "ciBuildRuns_actions_getToManyRelated", "jsonPointer": "/meta/paging/total" }
+        ]
+      },
+      "note": "Exact path/include/limit mapping; sparse action/build-run fields are not exposed."
+    },
+    {
+      "tool": "xcode_cloud_build_run_builds_list",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        { "operationId": "ciBuildRuns_builds_getToManyRelated", "method": "get", "path": "/v1/ciBuildRuns/{id}/builds", "role": "primary" }
+      ],
+      "fields": [
+        { "toolField": "build_run_id", "sourceKind": "parameter", "operationId": "ciBuildRuns_builds_getToManyRelated", "location": "path", "appleName": "id" },
+        { "toolField": "limit", "sourceKind": "parameter", "operationId": "ciBuildRuns_builds_getToManyRelated", "location": "query", "appleName": "limit" },
+        { "toolField": "next_url", "sourceKind": "local", "localRole": "paginationContinuation" }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          { "operationId": "ciBuildRuns_builds_getToManyRelated", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": [
+          { "outputField": "builds", "operationId": "ciBuildRuns_builds_getToManyRelated", "jsonPointer": "/data" },
+          { "outputField": "next_url", "operationId": "ciBuildRuns_builds_getToManyRelated", "jsonPointer": "/links/next" }
+        ]
+      },
+      "note": "Only limit and continuation are exposed although Apple 4.4.1 provides extensive build filters, sorting, sparse fields, includes, and nested limits. The handler returns a compact build projection."
+    },
+    {
+      "tool": "xcode_cloud_build_runs_get",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        { "operationId": "ciBuildRuns_getInstance", "method": "get", "path": "/v1/ciBuildRuns/{id}", "role": "primary" }
+      ],
+      "fields": [
+        { "toolField": "build_run_id", "sourceKind": "parameter", "operationId": "ciBuildRuns_getInstance", "location": "path", "appleName": "id" },
+        { "toolField": "include", "sourceKind": "parameter", "operationId": "ciBuildRuns_getInstance", "location": "query", "appleName": "include" }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          { "operationId": "ciBuildRuns_getInstance", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": [
+          { "outputField": "buildRun", "operationId": "ciBuildRuns_getInstance", "jsonPointer": "/data" },
+          { "outputField": "included", "operationId": "ciBuildRuns_getInstance", "jsonPointer": "/included" }
+        ]
+      },
+      "note": "The include mapping is exact; sparse fields and limit[builds] are omitted, and the response is reformatted."
+    },
+    {
+      "tool": "xcode_cloud_build_runs_start",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "write",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "ciBuildRuns_createInstance",
+          "method": "post",
+          "path": "/v1/ciBuildRuns",
+          "role": "primary",
+          "inputs": [
+            { "sourceKind": "fixed", "jsonPointer": "/data/type", "fixedValue": "ciBuildRuns" },
+            { "sourceKind": "fixed", "jsonPointer": "/data/relationships/workflow/data/type", "fixedValue": "ciWorkflows" },
+            { "sourceKind": "fixed", "jsonPointer": "/data/relationships/buildRun/data/type", "fixedValue": "ciBuildRuns" },
+            { "sourceKind": "fixed", "jsonPointer": "/data/relationships/sourceBranchOrTag/data/type", "fixedValue": "scmGitReferences" },
+            { "sourceKind": "fixed", "jsonPointer": "/data/relationships/pullRequest/data/type", "fixedValue": "scmPullRequests" }
+          ]
+        }
+      ],
+      "fields": [
+        { "toolField": "workflow_id", "sourceKind": "requestBody", "operationId": "ciBuildRuns_createInstance", "jsonPointer": "/data/relationships/workflow/data/id" },
+        { "toolField": "build_run_id", "sourceKind": "requestBody", "operationId": "ciBuildRuns_createInstance", "jsonPointer": "/data/relationships/buildRun/data/id" },
+        { "toolField": "source_branch_or_tag_id", "sourceKind": "requestBody", "operationId": "ciBuildRuns_createInstance", "jsonPointer": "/data/relationships/sourceBranchOrTag/data/id" },
+        { "toolField": "pull_request_id", "sourceKind": "requestBody", "operationId": "ciBuildRuns_createInstance", "jsonPointer": "/data/relationships/pullRequest/data/id" },
+        { "toolField": "clean", "sourceKind": "requestBody", "operationId": "ciBuildRuns_createInstance", "jsonPointer": "/data/attributes/clean" }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          { "operationId": "ciBuildRuns_createInstance", "statusCode": "201", "mediaType": "application/json" }
+        ],
+        "fields": [
+          { "outputField": "buildRun", "operationId": "ciBuildRuns_createInstance", "jsonPointer": "/data" }
+        ]
+      },
+      "note": "Exact Apple request fields. Runtime validation enforces one source selector but only requires at least one of workflow_id/build_run_id, so supplying both run selectors is not rejected locally and is left to Apple."
+    },
+    {
+      "tool": "xcode_cloud_issues_get",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        { "operationId": "ciIssues_getInstance", "method": "get", "path": "/v1/ciIssues/{id}", "role": "primary" }
+      ],
+      "fields": [
+        { "toolField": "issue_id", "sourceKind": "parameter", "operationId": "ciIssues_getInstance", "location": "path", "appleName": "id" }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          { "operationId": "ciIssues_getInstance", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": [
+          { "outputField": "issue", "operationId": "ciIssues_getInstance", "jsonPointer": "/data" }
+        ]
+      },
+      "note": "Sparse fields are omitted. Known response loss: Apple FileLocation.path is not decoded because the current model expects fileName."
+    },
+    {
+      "tool": "xcode_cloud_macos_versions_get",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        { "operationId": "ciMacOsVersions_getInstance", "method": "get", "path": "/v1/ciMacOsVersions/{id}", "role": "primary" }
+      ],
+      "fields": [
+        { "toolField": "macos_version_id", "sourceKind": "parameter", "operationId": "ciMacOsVersions_getInstance", "location": "path", "appleName": "id" },
+        { "toolField": "include", "sourceKind": "parameter", "operationId": "ciMacOsVersions_getInstance", "location": "query", "appleName": "include" }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          { "operationId": "ciMacOsVersions_getInstance", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": [
+          { "outputField": "macOSVersion", "operationId": "ciMacOsVersions_getInstance", "jsonPointer": "/data" },
+          { "outputField": "included", "operationId": "ciMacOsVersions_getInstance", "jsonPointer": "/included" }
+        ]
+      },
+      "note": "The include mapping is exact; sparse fields and limit[xcodeVersions] are omitted."
+    },
+    {
+      "tool": "xcode_cloud_macos_versions_list",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        { "operationId": "ciMacOsVersions_getCollection", "method": "get", "path": "/v1/ciMacOsVersions", "role": "primary" }
+      ],
+      "fields": [
+        { "toolField": "limit", "sourceKind": "parameter", "operationId": "ciMacOsVersions_getCollection", "location": "query", "appleName": "limit" },
+        { "toolField": "include", "sourceKind": "parameter", "operationId": "ciMacOsVersions_getCollection", "location": "query", "appleName": "include" },
+        { "toolField": "next_url", "sourceKind": "local", "localRole": "paginationContinuation" }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          { "operationId": "ciMacOsVersions_getCollection", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": [
+          { "outputField": "macOSVersions", "operationId": "ciMacOsVersions_getCollection", "jsonPointer": "/data" },
+          { "outputField": "included", "operationId": "ciMacOsVersions_getCollection", "jsonPointer": "/included" },
+          { "outputField": "next_url", "operationId": "ciMacOsVersions_getCollection", "jsonPointer": "/links/next" },
+          { "outputField": "total", "operationId": "ciMacOsVersions_getCollection", "jsonPointer": "/meta/paging/total" }
+        ]
+      },
+      "note": "The include/limit mapping is exact; sparse fields and limit[xcodeVersions] are omitted."
+    },
+    {
+      "tool": "xcode_cloud_product_build_runs_list",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        { "operationId": "ciProducts_buildRuns_getToManyRelated", "method": "get", "path": "/v1/ciProducts/{id}/buildRuns", "role": "primary" }
+      ],
+      "fields": [
+        { "toolField": "product_id", "sourceKind": "parameter", "operationId": "ciProducts_buildRuns_getToManyRelated", "location": "path", "appleName": "id" },
+        { "toolField": "sort", "sourceKind": "parameter", "operationId": "ciProducts_buildRuns_getToManyRelated", "location": "query", "appleName": "sort" },
+        { "toolField": "include", "sourceKind": "parameter", "operationId": "ciProducts_buildRuns_getToManyRelated", "location": "query", "appleName": "include" },
+        { "toolField": "limit", "sourceKind": "parameter", "operationId": "ciProducts_buildRuns_getToManyRelated", "location": "query", "appleName": "limit" },
+        { "toolField": "next_url", "sourceKind": "local", "localRole": "paginationContinuation" }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          { "operationId": "ciProducts_buildRuns_getToManyRelated", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": [
+          { "outputField": "buildRuns", "operationId": "ciProducts_buildRuns_getToManyRelated", "jsonPointer": "/data" },
+          { "outputField": "included", "operationId": "ciProducts_buildRuns_getToManyRelated", "jsonPointer": "/included" },
+          { "outputField": "next_url", "operationId": "ciProducts_buildRuns_getToManyRelated", "jsonPointer": "/links/next" },
+          { "outputField": "total", "operationId": "ciProducts_buildRuns_getToManyRelated", "jsonPointer": "/meta/paging/total" }
+        ]
+      },
+      "note": "The public schema omits Apple's filter[builds], sparse fields, and limit[builds]. The shared handler could send filter[builds], but this tool has no build_id input, so that filter is unreachable here."
+    },
+    {
+      "tool": "xcode_cloud_product_workflows_list",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        { "operationId": "ciProducts_workflows_getToManyRelated", "method": "get", "path": "/v1/ciProducts/{id}/workflows", "role": "primary" }
+      ],
+      "fields": [
+        { "toolField": "product_id", "sourceKind": "parameter", "operationId": "ciProducts_workflows_getToManyRelated", "location": "path", "appleName": "id" },
+        { "toolField": "include", "sourceKind": "parameter", "operationId": "ciProducts_workflows_getToManyRelated", "location": "query", "appleName": "include" },
+        { "toolField": "limit", "sourceKind": "parameter", "operationId": "ciProducts_workflows_getToManyRelated", "location": "query", "appleName": "limit" },
+        { "toolField": "next_url", "sourceKind": "local", "localRole": "paginationContinuation" }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          { "operationId": "ciProducts_workflows_getToManyRelated", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": [
+          { "outputField": "workflows", "operationId": "ciProducts_workflows_getToManyRelated", "jsonPointer": "/data" },
+          { "outputField": "included", "operationId": "ciProducts_workflows_getToManyRelated", "jsonPointer": "/included" },
+          { "outputField": "next_url", "operationId": "ciProducts_workflows_getToManyRelated", "jsonPointer": "/links/next" },
+          { "outputField": "total", "operationId": "ciProducts_workflows_getToManyRelated", "jsonPointer": "/meta/paging/total" }
+        ]
+      },
+      "note": "Exact exposed mapping, but sparse fields are omitted; Apple workflow create/update/delete operations are not represented by public tools."
+    },
+    {
+      "tool": "xcode_cloud_products_get",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        { "operationId": "ciProducts_getInstance", "method": "get", "path": "/v1/ciProducts/{id}", "role": "primary" }
+      ],
+      "fields": [
+        { "toolField": "product_id", "sourceKind": "parameter", "operationId": "ciProducts_getInstance", "location": "path", "appleName": "id" },
+        { "toolField": "include", "sourceKind": "parameter", "operationId": "ciProducts_getInstance", "location": "query", "appleName": "include" }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          { "operationId": "ciProducts_getInstance", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": [
+          { "outputField": "product", "operationId": "ciProducts_getInstance", "jsonPointer": "/data" },
+          { "outputField": "included", "operationId": "ciProducts_getInstance", "jsonPointer": "/included" }
+        ]
+      },
+      "note": "The include mapping is exact; sparse fields and limit[primaryRepositories] are omitted."
+    },
+    {
+      "tool": "xcode_cloud_products_list",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        { "operationId": "ciProducts_getCollection", "method": "get", "path": "/v1/ciProducts", "role": "primary" }
+      ],
+      "fields": [
+        { "toolField": "product_type", "sourceKind": "parameter", "operationId": "ciProducts_getCollection", "location": "query", "appleName": "filter[productType]" },
+        { "toolField": "app_id", "sourceKind": "parameter", "operationId": "ciProducts_getCollection", "location": "query", "appleName": "filter[app]" },
+        { "toolField": "include", "sourceKind": "parameter", "operationId": "ciProducts_getCollection", "location": "query", "appleName": "include" },
+        { "toolField": "limit", "sourceKind": "parameter", "operationId": "ciProducts_getCollection", "location": "query", "appleName": "limit" },
+        { "toolField": "next_url", "sourceKind": "local", "localRole": "paginationContinuation" }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          { "operationId": "ciProducts_getCollection", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": [
+          { "outputField": "products", "operationId": "ciProducts_getCollection", "jsonPointer": "/data" },
+          { "outputField": "included", "operationId": "ciProducts_getCollection", "jsonPointer": "/included" },
+          { "outputField": "next_url", "operationId": "ciProducts_getCollection", "jsonPointer": "/links/next" },
+          { "outputField": "total", "operationId": "ciProducts_getCollection", "jsonPointer": "/meta/paging/total" }
+        ]
+      },
+      "note": "The exposed filters/include/limit map exactly; sparse fields and limit[primaryRepositories] are omitted, and Apple product deletion has no public tool."
+    },
+    {
+      "tool": "xcode_cloud_scm_git_references_get",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        { "operationId": "scmGitReferences_getInstance", "method": "get", "path": "/v1/scmGitReferences/{id}", "role": "primary" }
+      ],
+      "fields": [
+        { "toolField": "git_reference_id", "sourceKind": "parameter", "operationId": "scmGitReferences_getInstance", "location": "path", "appleName": "id" },
+        { "toolField": "include", "sourceKind": "parameter", "operationId": "scmGitReferences_getInstance", "location": "query", "appleName": "include" }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          { "operationId": "scmGitReferences_getInstance", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": [
+          { "outputField": "gitReference", "operationId": "scmGitReferences_getInstance", "jsonPointer": "/data" },
+          { "outputField": "included", "operationId": "scmGitReferences_getInstance", "jsonPointer": "/included" }
+        ]
+      },
+      "note": "The include mapping is exact; sparse fields are omitted and the response is projected."
+    },
+    {
+      "tool": "xcode_cloud_scm_provider_repositories_list",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        { "operationId": "scmProviders_repositories_getToManyRelated", "method": "get", "path": "/v1/scmProviders/{id}/repositories", "role": "primary" }
+      ],
+      "fields": [
+        { "toolField": "provider_id", "sourceKind": "parameter", "operationId": "scmProviders_repositories_getToManyRelated", "location": "path", "appleName": "id" },
+        { "toolField": "repository_id", "sourceKind": "parameter", "operationId": "scmProviders_repositories_getToManyRelated", "location": "query", "appleName": "filter[id]" },
+        { "toolField": "include", "sourceKind": "parameter", "operationId": "scmProviders_repositories_getToManyRelated", "location": "query", "appleName": "include" },
+        { "toolField": "limit", "sourceKind": "parameter", "operationId": "scmProviders_repositories_getToManyRelated", "location": "query", "appleName": "limit" },
+        { "toolField": "next_url", "sourceKind": "local", "localRole": "paginationContinuation" }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          { "operationId": "scmProviders_repositories_getToManyRelated", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": [
+          { "outputField": "repositories", "operationId": "scmProviders_repositories_getToManyRelated", "jsonPointer": "/data" },
+          { "outputField": "included", "operationId": "scmProviders_repositories_getToManyRelated", "jsonPointer": "/included" },
+          { "outputField": "next_url", "operationId": "scmProviders_repositories_getToManyRelated", "jsonPointer": "/links/next" },
+          { "outputField": "total", "operationId": "scmProviders_repositories_getToManyRelated", "jsonPointer": "/meta/paging/total" }
+        ]
+      },
+      "note": "Exact exposed filter/include/limit mapping; Apple sparse fields are omitted."
+    },
+    {
+      "tool": "xcode_cloud_scm_providers_get",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        { "operationId": "scmProviders_getInstance", "method": "get", "path": "/v1/scmProviders/{id}", "role": "primary" }
+      ],
+      "fields": [
+        { "toolField": "provider_id", "sourceKind": "parameter", "operationId": "scmProviders_getInstance", "location": "path", "appleName": "id" }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          { "operationId": "scmProviders_getInstance", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": [
+          { "outputField": "provider", "operationId": "scmProviders_getInstance", "jsonPointer": "/data" }
+        ]
+      },
+      "note": "Apple sparse provider fields are not exposed; the handler returns a selected projection."
+    },
+    {
+      "tool": "xcode_cloud_scm_providers_list",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        { "operationId": "scmProviders_getCollection", "method": "get", "path": "/v1/scmProviders", "role": "primary" }
+      ],
+      "fields": [
+        { "toolField": "limit", "sourceKind": "parameter", "operationId": "scmProviders_getCollection", "location": "query", "appleName": "limit" },
+        { "toolField": "next_url", "sourceKind": "local", "localRole": "paginationContinuation" }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          { "operationId": "scmProviders_getCollection", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": [
+          { "outputField": "providers", "operationId": "scmProviders_getCollection", "jsonPointer": "/data" },
+          { "outputField": "next_url", "operationId": "scmProviders_getCollection", "jsonPointer": "/links/next" },
+          { "outputField": "total", "operationId": "scmProviders_getCollection", "jsonPointer": "/meta/paging/total" }
+        ]
+      },
+      "note": "Apple sparse provider fields are not exposed; limit and pagination map exactly."
+    },
+    {
+      "tool": "xcode_cloud_scm_pull_requests_get",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        { "operationId": "scmPullRequests_getInstance", "method": "get", "path": "/v1/scmPullRequests/{id}", "role": "primary" }
+      ],
+      "fields": [
+        { "toolField": "pull_request_id", "sourceKind": "parameter", "operationId": "scmPullRequests_getInstance", "location": "path", "appleName": "id" },
+        { "toolField": "include", "sourceKind": "parameter", "operationId": "scmPullRequests_getInstance", "location": "query", "appleName": "include" }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          { "operationId": "scmPullRequests_getInstance", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": [
+          { "outputField": "pullRequest", "operationId": "scmPullRequests_getInstance", "jsonPointer": "/data" },
+          { "outputField": "included", "operationId": "scmPullRequests_getInstance", "jsonPointer": "/included" }
+        ]
+      },
+      "note": "The include mapping is exact; sparse fields are omitted and the response is projected."
+    },
+    {
+      "tool": "xcode_cloud_scm_repositories_get",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        { "operationId": "scmRepositories_getInstance", "method": "get", "path": "/v1/scmRepositories/{id}", "role": "primary" }
+      ],
+      "fields": [
+        { "toolField": "repository_id", "sourceKind": "parameter", "operationId": "scmRepositories_getInstance", "location": "path", "appleName": "id" },
+        { "toolField": "include", "sourceKind": "parameter", "operationId": "scmRepositories_getInstance", "location": "query", "appleName": "include" }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          { "operationId": "scmRepositories_getInstance", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": [
+          { "outputField": "repository", "operationId": "scmRepositories_getInstance", "jsonPointer": "/data" },
+          { "outputField": "included", "operationId": "scmRepositories_getInstance", "jsonPointer": "/included" }
+        ]
+      },
+      "note": "The include mapping is exact; sparse fields are omitted and the response is projected."
+    },
+    {
+      "tool": "xcode_cloud_scm_repositories_list",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        { "operationId": "scmRepositories_getCollection", "method": "get", "path": "/v1/scmRepositories", "role": "primary" }
+      ],
+      "fields": [
+        { "toolField": "repository_id", "sourceKind": "parameter", "operationId": "scmRepositories_getCollection", "location": "query", "appleName": "filter[id]" },
+        { "toolField": "include", "sourceKind": "parameter", "operationId": "scmRepositories_getCollection", "location": "query", "appleName": "include" },
+        { "toolField": "limit", "sourceKind": "parameter", "operationId": "scmRepositories_getCollection", "location": "query", "appleName": "limit" },
+        { "toolField": "next_url", "sourceKind": "local", "localRole": "paginationContinuation" }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          { "operationId": "scmRepositories_getCollection", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": [
+          { "outputField": "repositories", "operationId": "scmRepositories_getCollection", "jsonPointer": "/data" },
+          { "outputField": "included", "operationId": "scmRepositories_getCollection", "jsonPointer": "/included" },
+          { "outputField": "next_url", "operationId": "scmRepositories_getCollection", "jsonPointer": "/links/next" },
+          { "outputField": "total", "operationId": "scmRepositories_getCollection", "jsonPointer": "/meta/paging/total" }
+        ]
+      },
+      "note": "Exact exposed id/include/limit mapping; Apple sparse fields are omitted."
+    },
+    {
+      "tool": "xcode_cloud_scm_repository_git_references_list",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        { "operationId": "scmRepositories_gitReferences_getToManyRelated", "method": "get", "path": "/v1/scmRepositories/{id}/gitReferences", "role": "primary" }
+      ],
+      "fields": [
+        { "toolField": "repository_id", "sourceKind": "parameter", "operationId": "scmRepositories_gitReferences_getToManyRelated", "location": "path", "appleName": "id" },
+        { "toolField": "include", "sourceKind": "parameter", "operationId": "scmRepositories_gitReferences_getToManyRelated", "location": "query", "appleName": "include" },
+        { "toolField": "limit", "sourceKind": "parameter", "operationId": "scmRepositories_gitReferences_getToManyRelated", "location": "query", "appleName": "limit" },
+        { "toolField": "next_url", "sourceKind": "local", "localRole": "paginationContinuation" }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          { "operationId": "scmRepositories_gitReferences_getToManyRelated", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": [
+          { "outputField": "gitReferences", "operationId": "scmRepositories_gitReferences_getToManyRelated", "jsonPointer": "/data" },
+          { "outputField": "included", "operationId": "scmRepositories_gitReferences_getToManyRelated", "jsonPointer": "/included" },
+          { "outputField": "next_url", "operationId": "scmRepositories_gitReferences_getToManyRelated", "jsonPointer": "/links/next" },
+          { "outputField": "total", "operationId": "scmRepositories_gitReferences_getToManyRelated", "jsonPointer": "/meta/paging/total" }
+        ]
+      },
+      "note": "Exact exposed path/include/limit mapping; Apple sparse fields are omitted."
+    },
+    {
+      "tool": "xcode_cloud_scm_repository_pull_requests_list",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        { "operationId": "scmRepositories_pullRequests_getToManyRelated", "method": "get", "path": "/v1/scmRepositories/{id}/pullRequests", "role": "primary" }
+      ],
+      "fields": [
+        { "toolField": "repository_id", "sourceKind": "parameter", "operationId": "scmRepositories_pullRequests_getToManyRelated", "location": "path", "appleName": "id" },
+        { "toolField": "include", "sourceKind": "parameter", "operationId": "scmRepositories_pullRequests_getToManyRelated", "location": "query", "appleName": "include" },
+        { "toolField": "limit", "sourceKind": "parameter", "operationId": "scmRepositories_pullRequests_getToManyRelated", "location": "query", "appleName": "limit" },
+        { "toolField": "next_url", "sourceKind": "local", "localRole": "paginationContinuation" }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          { "operationId": "scmRepositories_pullRequests_getToManyRelated", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": [
+          { "outputField": "pullRequests", "operationId": "scmRepositories_pullRequests_getToManyRelated", "jsonPointer": "/data" },
+          { "outputField": "included", "operationId": "scmRepositories_pullRequests_getToManyRelated", "jsonPointer": "/included" },
+          { "outputField": "next_url", "operationId": "scmRepositories_pullRequests_getToManyRelated", "jsonPointer": "/links/next" },
+          { "outputField": "total", "operationId": "scmRepositories_pullRequests_getToManyRelated", "jsonPointer": "/meta/paging/total" }
+        ]
+      },
+      "note": "Exact exposed path/include/limit mapping; Apple sparse fields are omitted."
+    },
+    {
+      "tool": "xcode_cloud_test_results_get",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        { "operationId": "ciTestResults_getInstance", "method": "get", "path": "/v1/ciTestResults/{id}", "role": "primary" }
+      ],
+      "fields": [
+        { "toolField": "test_result_id", "sourceKind": "parameter", "operationId": "ciTestResults_getInstance", "location": "path", "appleName": "id" }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          { "operationId": "ciTestResults_getInstance", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": [
+          { "outputField": "testResult", "operationId": "ciTestResults_getInstance", "jsonPointer": "/data" }
+        ]
+      },
+      "note": "Sparse fields are omitted. FileLocation.path is lost because the model expects fileName, and destinationTestResults.uuid is not modeled; a nonexistent destination message field is declared locally."
+    },
+    {
+      "tool": "xcode_cloud_workflow_build_runs_list",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        { "operationId": "ciWorkflows_buildRuns_getToManyRelated", "method": "get", "path": "/v1/ciWorkflows/{id}/buildRuns", "role": "primary" }
+      ],
+      "fields": [
+        { "toolField": "workflow_id", "sourceKind": "parameter", "operationId": "ciWorkflows_buildRuns_getToManyRelated", "location": "path", "appleName": "id" },
+        { "toolField": "build_id", "sourceKind": "parameter", "operationId": "ciWorkflows_buildRuns_getToManyRelated", "location": "query", "appleName": "filter[builds]" },
+        { "toolField": "sort", "sourceKind": "parameter", "operationId": "ciWorkflows_buildRuns_getToManyRelated", "location": "query", "appleName": "sort" },
+        { "toolField": "include", "sourceKind": "parameter", "operationId": "ciWorkflows_buildRuns_getToManyRelated", "location": "query", "appleName": "include" },
+        { "toolField": "limit", "sourceKind": "parameter", "operationId": "ciWorkflows_buildRuns_getToManyRelated", "location": "query", "appleName": "limit" },
+        { "toolField": "next_url", "sourceKind": "local", "localRole": "paginationContinuation" }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          { "operationId": "ciWorkflows_buildRuns_getToManyRelated", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": [
+          { "outputField": "buildRuns", "operationId": "ciWorkflows_buildRuns_getToManyRelated", "jsonPointer": "/data" },
+          { "outputField": "included", "operationId": "ciWorkflows_buildRuns_getToManyRelated", "jsonPointer": "/included" },
+          { "outputField": "next_url", "operationId": "ciWorkflows_buildRuns_getToManyRelated", "jsonPointer": "/links/next" },
+          { "outputField": "total", "operationId": "ciWorkflows_buildRuns_getToManyRelated", "jsonPointer": "/meta/paging/total" }
+        ]
+      },
+      "note": "The exposed build filter/sort/include/limit map exactly; sparse fields and limit[builds] are omitted."
+    },
+    {
+      "tool": "xcode_cloud_workflows_get",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        { "operationId": "ciWorkflows_getInstance", "method": "get", "path": "/v1/ciWorkflows/{id}", "role": "primary" }
+      ],
+      "fields": [
+        { "toolField": "workflow_id", "sourceKind": "parameter", "operationId": "ciWorkflows_getInstance", "location": "path", "appleName": "id" },
+        { "toolField": "include", "sourceKind": "parameter", "operationId": "ciWorkflows_getInstance", "location": "query", "appleName": "include" }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          { "operationId": "ciWorkflows_getInstance", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": [
+          { "outputField": "workflow", "operationId": "ciWorkflows_getInstance", "jsonPointer": "/data" },
+          { "outputField": "included", "operationId": "ciWorkflows_getInstance", "jsonPointer": "/included" }
+        ]
+      },
+      "note": "The include mapping is exact; sparse fields are omitted. Apple 4.4.1 workflow create/update/delete operations have no public MCP tools."
+    },
+    {
+      "tool": "xcode_cloud_xcode_versions_get",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        { "operationId": "ciXcodeVersions_getInstance", "method": "get", "path": "/v1/ciXcodeVersions/{id}", "role": "primary" }
+      ],
+      "fields": [
+        { "toolField": "xcode_version_id", "sourceKind": "parameter", "operationId": "ciXcodeVersions_getInstance", "location": "path", "appleName": "id" },
+        { "toolField": "include", "sourceKind": "parameter", "operationId": "ciXcodeVersions_getInstance", "location": "query", "appleName": "include" }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          { "operationId": "ciXcodeVersions_getInstance", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": [
+          { "outputField": "xcodeVersion", "operationId": "ciXcodeVersions_getInstance", "jsonPointer": "/data" },
+          { "outputField": "included", "operationId": "ciXcodeVersions_getInstance", "jsonPointer": "/included" }
+        ]
+      },
+      "note": "The include mapping is exact; sparse fields and limit[macOsVersions] are omitted."
+    },
+    {
+      "tool": "xcode_cloud_xcode_versions_list",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        { "operationId": "ciXcodeVersions_getCollection", "method": "get", "path": "/v1/ciXcodeVersions", "role": "primary" }
+      ],
+      "fields": [
+        { "toolField": "limit", "sourceKind": "parameter", "operationId": "ciXcodeVersions_getCollection", "location": "query", "appleName": "limit" },
+        { "toolField": "include", "sourceKind": "parameter", "operationId": "ciXcodeVersions_getCollection", "location": "query", "appleName": "include" },
+        { "toolField": "next_url", "sourceKind": "local", "localRole": "paginationContinuation" }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          { "operationId": "ciXcodeVersions_getCollection", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": [
+          { "outputField": "xcodeVersions", "operationId": "ciXcodeVersions_getCollection", "jsonPointer": "/data" },
+          { "outputField": "included", "operationId": "ciXcodeVersions_getCollection", "jsonPointer": "/included" },
+          { "outputField": "next_url", "operationId": "ciXcodeVersions_getCollection", "jsonPointer": "/links/next" },
+          { "outputField": "total", "operationId": "ciXcodeVersions_getCollection", "jsonPointer": "/meta/paging/total" }
+        ]
+      },
+      "note": "The include/limit mapping is exact; sparse fields and limit[macOsVersions] are omitted."
+    }
+  ],
+  "implementationAliases": []
+}

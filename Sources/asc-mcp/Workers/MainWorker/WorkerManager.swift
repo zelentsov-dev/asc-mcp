@@ -47,6 +47,15 @@ public actor WorkerDependencies: Sendable {
 
 /// Manager for all workers
 public actor WorkerManager {
+    static let validWorkerFilterKeys: Set<String> = [
+        "company", "auth", "apps", "accessibility", "webhooks", "xcode_cloud",
+        "builds", "build_processing", "build_beta", "versions", "reviews",
+        "beta_groups", "beta_feedback", "beta_testers", "iap", "provisioning",
+        "app_info", "pricing", "users", "app_events", "analytics", "subscriptions",
+        "sandbox", "beta_app", "pre_release", "beta_license", "screenshots",
+        "custom_pages", "ppo", "promoted", "metrics", "review_attachments"
+    ]
+
     private let dependencies: WorkerDependencies
     /// Set of enabled worker names. nil = all workers enabled.
     private let enabledWorkers: Set<String>?
@@ -257,6 +266,18 @@ public actor WorkerManager {
             WorkerDescriptor(key: "metrics", enabledKeys: ["metrics"], prefixes: ["metrics_"], getTools: { await self.getMetricsTools() }, handle: { try await self.metricsWorker.handleTool($0) }),
             WorkerDescriptor(key: "review_attachments", enabledKeys: ["review_attachments"], prefixes: ["review_attachments_"], getTools: { await self.getReviewAttachmentsTools() }, handle: { try await self.reviewAttachmentsWorker.handleTool($0) })
         ]
+    }
+
+    func collectWorkerToolSnapshots() async -> [ASCWorkerToolSnapshot] {
+        var snapshots: [ASCWorkerToolSnapshot] = []
+        for descriptor in workerDescriptors() where isWorkerDescriptorEnabled(descriptor) {
+            snapshots.append(ASCWorkerToolSnapshot(
+                key: descriptor.key,
+                readmeName: ASCToolCatalogFactory.readmeName(for: descriptor.key),
+                tools: await descriptor.getTools()
+            ))
+        }
+        return snapshots
     }
     
     /// Register all workers in MCP server

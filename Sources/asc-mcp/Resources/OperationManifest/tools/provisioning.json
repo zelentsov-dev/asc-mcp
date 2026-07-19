@@ -1,0 +1,476 @@
+{
+  "workerKey": "provisioning",
+  "tools": [
+    {
+      "tool": "provisioning_create_bundle_id",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "write",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "bundleIds_createInstance",
+          "method": "post",
+          "path": "/v1/bundleIds",
+          "role": "primary",
+          "inputs": [
+            { "sourceKind": "fixed", "jsonPointer": "/data/type", "fixedValue": "bundleIds" }
+          ]
+        }
+      ],
+      "fields": [
+        { "toolField": "name", "sourceKind": "requestBody", "operationId": "bundleIds_createInstance", "jsonPointer": "/data/attributes/name" },
+        { "toolField": "identifier", "sourceKind": "requestBody", "operationId": "bundleIds_createInstance", "jsonPointer": "/data/attributes/identifier" },
+        { "toolField": "platform", "sourceKind": "requestBody", "operationId": "bundleIds_createInstance", "jsonPointer": "/data/attributes/platform" }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          { "operationId": "bundleIds_createInstance", "statusCode": "201", "mediaType": "application/json" }
+        ],
+        "fields": [
+          { "outputField": "bundle_id", "operationId": "bundleIds_createInstance", "jsonPointer": "/data" }
+        ]
+      },
+      "note": "Exact Apple 4.4.1 create operation with a selected bundle-ID response projection and no MCP output schema."
+    },
+    {
+      "tool": "provisioning_create_profile",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "write",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "profiles_createInstance",
+          "method": "post",
+          "path": "/v1/profiles",
+          "role": "primary",
+          "inputs": [
+            { "sourceKind": "fixed", "jsonPointer": "/data/type", "fixedValue": "profiles" },
+            { "sourceKind": "fixed", "jsonPointer": "/data/relationships/bundleId/data/type", "fixedValue": "bundleIds" },
+            { "sourceKind": "fixed", "jsonPointer": "/data/relationships/certificates/data/*/type", "fixedValue": "certificates" }
+          ]
+        }
+      ],
+      "fields": [
+        { "toolField": "name", "sourceKind": "requestBody", "operationId": "profiles_createInstance", "jsonPointer": "/data/attributes/name" },
+        { "toolField": "profile_type", "sourceKind": "requestBody", "operationId": "profiles_createInstance", "jsonPointer": "/data/attributes/profileType" },
+        { "toolField": "bundle_id_resource_id", "sourceKind": "requestBody", "operationId": "profiles_createInstance", "jsonPointer": "/data/relationships/bundleId/data/id" },
+        { "toolField": "certificate_ids", "sourceKind": "requestBody", "operationId": "profiles_createInstance", "jsonPointer": "/data/relationships/certificates/data/*/id", "localRole": "non-string array elements are silently dropped" },
+        { "toolField": "device_ids", "sourceKind": "requestBody", "operationId": "profiles_createInstance", "jsonPointer": "/data/relationships/devices/data/*/id", "localRole": "optional relationship; non-string array elements are silently dropped" }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          { "operationId": "profiles_createInstance", "statusCode": "201", "mediaType": "application/json" }
+        ],
+        "fields": [
+          { "outputField": "profile", "operationId": "profiles_createInstance", "jsonPointer": "/data" }
+        ]
+      },
+      "note": "The Apple operation and body relationships are exact, but the handler does not reject partially invalid certificate_ids/device_ids arrays and drops Apple's profileContent from the decoded/formatted result."
+    },
+    {
+      "tool": "provisioning_delete_bundle_id",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "write",
+      "implementationState": "asBuilt",
+      "operations": [
+        { "operationId": "bundleIds_deleteInstance", "method": "delete", "path": "/v1/bundleIds/{id}", "role": "primary" }
+      ],
+      "fields": [
+        { "toolField": "bundle_id_resource_id", "sourceKind": "parameter", "operationId": "bundleIds_deleteInstance", "location": "path", "appleName": "id" }
+      ],
+      "response": {
+        "mode": "local",
+        "sources": [
+          { "operationId": "bundleIds_deleteInstance", "statusCode": "204" }
+        ],
+        "fields": [
+          { "outputField": "message", "localRole": "confirmation synthesized after Apple's content-free 204 response" }
+        ]
+      },
+      "note": "Apple returns 204 with no response document; the MCP result is a local deletion confirmation."
+    },
+    {
+      "tool": "provisioning_delete_profile",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "write",
+      "implementationState": "asBuilt",
+      "operations": [
+        { "operationId": "profiles_deleteInstance", "method": "delete", "path": "/v1/profiles/{id}", "role": "primary" }
+      ],
+      "fields": [
+        { "toolField": "profile_id", "sourceKind": "parameter", "operationId": "profiles_deleteInstance", "location": "path", "appleName": "id" }
+      ],
+      "response": {
+        "mode": "local",
+        "sources": [
+          { "operationId": "profiles_deleteInstance", "statusCode": "204" }
+        ],
+        "fields": [
+          { "outputField": "message", "localRole": "confirmation synthesized after Apple's content-free 204 response" }
+        ]
+      },
+      "note": "Apple returns 204 with no response document; the MCP result is a local deletion confirmation."
+    },
+    {
+      "tool": "provisioning_disable_capability",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "write",
+      "implementationState": "asBuilt",
+      "operations": [
+        { "operationId": "bundleIdCapabilities_deleteInstance", "method": "delete", "path": "/v1/bundleIdCapabilities/{id}", "role": "primary" }
+      ],
+      "fields": [
+        { "toolField": "capability_id", "sourceKind": "parameter", "operationId": "bundleIdCapabilities_deleteInstance", "location": "path", "appleName": "id" }
+      ],
+      "response": {
+        "mode": "local",
+        "sources": [
+          { "operationId": "bundleIdCapabilities_deleteInstance", "statusCode": "204" }
+        ],
+        "fields": [
+          { "outputField": "message", "localRole": "confirmation synthesized after Apple's content-free 204 response" }
+        ]
+      },
+      "note": "Apple returns 204 with no response document; the MCP result is a local capability-disable confirmation."
+    },
+    {
+      "tool": "provisioning_enable_capability",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "write",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "bundleIdCapabilities_createInstance",
+          "method": "post",
+          "path": "/v1/bundleIdCapabilities",
+          "role": "primary",
+          "inputs": [
+            { "sourceKind": "fixed", "jsonPointer": "/data/type", "fixedValue": "bundleIdCapabilities" },
+            { "sourceKind": "fixed", "jsonPointer": "/data/relationships/bundleId/data/type", "fixedValue": "bundleIds" }
+          ]
+        }
+      ],
+      "fields": [
+        { "toolField": "bundle_id_resource_id", "sourceKind": "requestBody", "operationId": "bundleIdCapabilities_createInstance", "jsonPointer": "/data/relationships/bundleId/data/id" },
+        { "toolField": "capability_type", "sourceKind": "requestBody", "operationId": "bundleIdCapabilities_createInstance", "jsonPointer": "/data/attributes/capabilityType" },
+        { "toolField": "settings", "sourceKind": "requestBody", "operationId": "bundleIdCapabilities_createInstance", "jsonPointer": "/data/attributes/settings", "localRole": "JSON string decoded locally as an array before request encoding" }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          { "operationId": "bundleIdCapabilities_createInstance", "statusCode": "201", "mediaType": "application/json" }
+        ],
+        "fields": [
+          { "outputField": "capability", "operationId": "bundleIdCapabilities_createInstance", "jsonPointer": "/data" }
+        ]
+      },
+      "note": "Exact Apple create operation, but settings are accepted only as a JSON-encoded string and the response model omits enabledByDefault, visible, and supportsWildcard capability attributes."
+    },
+    {
+      "tool": "provisioning_get_bundle_id",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        { "operationId": "bundleIds_getInstance", "method": "get", "path": "/v1/bundleIds/{id}", "role": "primary" }
+      ],
+      "fields": [
+        { "toolField": "bundle_id_resource_id", "sourceKind": "parameter", "operationId": "bundleIds_getInstance", "location": "path", "appleName": "id" }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          { "operationId": "bundleIds_getInstance", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": [
+          { "outputField": "bundle_id", "operationId": "bundleIds_getInstance", "jsonPointer": "/data" }
+        ]
+      },
+      "note": "Apple sparse fields and includes are not exposed; the handler returns selected bundle-ID attributes only."
+    },
+    {
+      "tool": "provisioning_get_certificate",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        { "operationId": "certificates_getInstance", "method": "get", "path": "/v1/certificates/{id}", "role": "primary" }
+      ],
+      "fields": [
+        { "toolField": "certificate_id", "sourceKind": "parameter", "operationId": "certificates_getInstance", "location": "path", "appleName": "id" }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          { "operationId": "certificates_getInstance", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": [
+          { "outputField": "certificate", "operationId": "certificates_getInstance", "jsonPointer": "/data" }
+        ]
+      },
+      "note": "The current certificate model/formatter omits Apple's certificateContent, so this cannot retrieve the certificate bytes despite using the correct get operation. Sparse fields and passTypeId include are not exposed."
+    },
+    {
+      "tool": "provisioning_get_profile",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        { "operationId": "profiles_getInstance", "method": "get", "path": "/v1/profiles/{id}", "role": "primary" }
+      ],
+      "fields": [
+        { "toolField": "profile_id", "sourceKind": "parameter", "operationId": "profiles_getInstance", "location": "path", "appleName": "id" }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          { "operationId": "profiles_getInstance", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": [
+          { "outputField": "profile", "operationId": "profiles_getInstance", "jsonPointer": "/data" }
+        ]
+      },
+      "note": "The current profile model/formatter omits Apple's profileContent, so this cannot retrieve installable provisioning-profile bytes. Sparse fields and bundleId/certificates/devices includes are not exposed."
+    },
+    {
+      "tool": "provisioning_list_bundle_ids",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        { "operationId": "bundleIds_getCollection", "method": "get", "path": "/v1/bundleIds", "role": "primary" }
+      ],
+      "fields": [
+        { "toolField": "limit", "sourceKind": "parameter", "operationId": "bundleIds_getCollection", "location": "query", "appleName": "limit" },
+        { "toolField": "filter_platform", "sourceKind": "parameter", "operationId": "bundleIds_getCollection", "location": "query", "appleName": "filter[platform]" },
+        { "toolField": "filter_identifier", "sourceKind": "parameter", "operationId": "bundleIds_getCollection", "location": "query", "appleName": "filter[identifier]" },
+        { "toolField": "filter_name", "sourceKind": "parameter", "operationId": "bundleIds_getCollection", "location": "query", "appleName": "filter[name]" },
+        { "toolField": "sort", "sourceKind": "parameter", "operationId": "bundleIds_getCollection", "location": "query", "appleName": "sort" },
+        { "toolField": "next_url", "sourceKind": "local", "localRole": "paginationContinuation" }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          { "operationId": "bundleIds_getCollection", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": [
+          { "outputField": "bundle_ids", "operationId": "bundleIds_getCollection", "jsonPointer": "/data" },
+          { "outputField": "next_url", "operationId": "bundleIds_getCollection", "jsonPointer": "/links/next" }
+        ]
+      },
+      "note": "The exposed filters and sorting map exactly, but Apple id/seedId filters, sparse fields, includes, and nested include limits are not exposed."
+    },
+    {
+      "tool": "provisioning_list_capabilities",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        { "operationId": "bundleIds_bundleIdCapabilities_getToManyRelated", "method": "get", "path": "/v1/bundleIds/{id}/bundleIdCapabilities", "role": "primary" }
+      ],
+      "fields": [
+        { "toolField": "bundle_id_resource_id", "sourceKind": "parameter", "operationId": "bundleIds_bundleIdCapabilities_getToManyRelated", "location": "path", "appleName": "id" },
+        { "toolField": "limit", "sourceKind": "local", "localRole": "acceptedButIgnored", "omissionReason": "The handler currently creates an empty query instead of sending Apple 4.4.1's supported limit parameter." },
+        { "toolField": "next_url", "sourceKind": "local", "localRole": "paginationContinuation" }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          { "operationId": "bundleIds_bundleIdCapabilities_getToManyRelated", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": [
+          { "outputField": "capabilities", "operationId": "bundleIds_bundleIdCapabilities_getToManyRelated", "jsonPointer": "/data" },
+          { "outputField": "next_url", "operationId": "bundleIds_bundleIdCapabilities_getToManyRelated", "jsonPointer": "/links/next" }
+        ]
+      },
+      "note": "Known contract bug: Apple 4.4.1 defines query limit for this operation, but the current handler ignores the advertised MCP limit field. Sparse fields are omitted, and enabledByDefault, visible, and supportsWildcard are lost by the response model."
+    },
+    {
+      "tool": "provisioning_list_certificates",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        { "operationId": "certificates_getCollection", "method": "get", "path": "/v1/certificates", "role": "primary" }
+      ],
+      "fields": [
+        { "toolField": "limit", "sourceKind": "parameter", "operationId": "certificates_getCollection", "location": "query", "appleName": "limit" },
+        { "toolField": "filter_type", "sourceKind": "parameter", "operationId": "certificates_getCollection", "location": "query", "appleName": "filter[certificateType]" },
+        { "toolField": "sort", "sourceKind": "parameter", "operationId": "certificates_getCollection", "location": "query", "appleName": "sort" },
+        { "toolField": "next_url", "sourceKind": "local", "localRole": "paginationContinuation" }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          { "operationId": "certificates_getCollection", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": [
+          { "outputField": "certificates", "operationId": "certificates_getCollection", "jsonPointer": "/data" },
+          { "outputField": "next_url", "operationId": "certificates_getCollection", "jsonPointer": "/links/next" }
+        ]
+      },
+      "note": "Only certificateType, sort, limit, and continuation are exposed. Apple displayName/serialNumber/id filters, sparse fields, include, and passTypeId limits are omitted; certificateContent is dropped from output."
+    },
+    {
+      "tool": "provisioning_list_devices",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        { "operationId": "devices_getCollection", "method": "get", "path": "/v1/devices", "role": "primary" }
+      ],
+      "fields": [
+        { "toolField": "limit", "sourceKind": "parameter", "operationId": "devices_getCollection", "location": "query", "appleName": "limit" },
+        { "toolField": "filter_platform", "sourceKind": "parameter", "operationId": "devices_getCollection", "location": "query", "appleName": "filter[platform]" },
+        { "toolField": "filter_status", "sourceKind": "parameter", "operationId": "devices_getCollection", "location": "query", "appleName": "filter[status]" },
+        { "toolField": "sort", "sourceKind": "parameter", "operationId": "devices_getCollection", "location": "query", "appleName": "sort" },
+        { "toolField": "next_url", "sourceKind": "local", "localRole": "paginationContinuation" }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          { "operationId": "devices_getCollection", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": [
+          { "outputField": "devices", "operationId": "devices_getCollection", "jsonPointer": "/data" },
+          { "outputField": "next_url", "operationId": "devices_getCollection", "jsonPointer": "/links/next" }
+        ]
+      },
+      "note": "The exposed filters map exactly, but Apple name/udid/id/deviceClass filters and sparse fields are omitted. The public descriptions also omit UNIVERSAL where Apple 4.4.1 permits it."
+    },
+    {
+      "tool": "provisioning_list_profiles",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        { "operationId": "profiles_getCollection", "method": "get", "path": "/v1/profiles", "role": "primary" }
+      ],
+      "fields": [
+        { "toolField": "limit", "sourceKind": "parameter", "operationId": "profiles_getCollection", "location": "query", "appleName": "limit" },
+        { "toolField": "filter_profile_type", "sourceKind": "parameter", "operationId": "profiles_getCollection", "location": "query", "appleName": "filter[profileType]" },
+        { "toolField": "filter_profile_state", "sourceKind": "parameter", "operationId": "profiles_getCollection", "location": "query", "appleName": "filter[profileState]" },
+        { "toolField": "sort", "sourceKind": "parameter", "operationId": "profiles_getCollection", "location": "query", "appleName": "sort" },
+        { "toolField": "next_url", "sourceKind": "local", "localRole": "paginationContinuation" }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          { "operationId": "profiles_getCollection", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": [
+          { "outputField": "profiles", "operationId": "profiles_getCollection", "jsonPointer": "/data" },
+          { "outputField": "next_url", "operationId": "profiles_getCollection", "jsonPointer": "/links/next" }
+        ]
+      },
+      "note": "Apple name/uuid/id filters, sparse fields, includes, and nested relationship limits are omitted. The response model drops profileContent and all included relationships."
+    },
+    {
+      "tool": "provisioning_register_device",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "write",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "devices_createInstance",
+          "method": "post",
+          "path": "/v1/devices",
+          "role": "primary",
+          "inputs": [
+            { "sourceKind": "fixed", "jsonPointer": "/data/type", "fixedValue": "devices" }
+          ]
+        }
+      ],
+      "fields": [
+        { "toolField": "name", "sourceKind": "requestBody", "operationId": "devices_createInstance", "jsonPointer": "/data/attributes/name" },
+        { "toolField": "udid", "sourceKind": "requestBody", "operationId": "devices_createInstance", "jsonPointer": "/data/attributes/udid" },
+        { "toolField": "platform", "sourceKind": "requestBody", "operationId": "devices_createInstance", "jsonPointer": "/data/attributes/platform" }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          { "operationId": "devices_createInstance", "statusCode": "201", "mediaType": "application/json" }
+        ],
+        "fields": [
+          { "outputField": "device", "operationId": "devices_createInstance", "jsonPointer": "/data" }
+        ]
+      },
+      "note": "Exact Apple 4.4.1 create operation. The public platform description omits UNIVERSAL even though the current Apple schema permits it."
+    },
+    {
+      "tool": "provisioning_revoke_certificate",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "write",
+      "implementationState": "asBuilt",
+      "operations": [
+        { "operationId": "certificates_deleteInstance", "method": "delete", "path": "/v1/certificates/{id}", "role": "primary" }
+      ],
+      "fields": [
+        { "toolField": "certificate_id", "sourceKind": "parameter", "operationId": "certificates_deleteInstance", "location": "path", "appleName": "id" }
+      ],
+      "response": {
+        "mode": "local",
+        "sources": [
+          { "operationId": "certificates_deleteInstance", "statusCode": "204" }
+        ],
+        "fields": [
+          { "outputField": "message", "localRole": "confirmation synthesized after Apple's content-free 204 response" }
+        ]
+      },
+      "note": "Apple models revocation as certificate deletion and returns 204 with no response document; the MCP result is a local confirmation."
+    },
+    {
+      "tool": "provisioning_update_device",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "write",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "devices_updateInstance",
+          "method": "patch",
+          "path": "/v1/devices/{id}",
+          "role": "primary",
+          "inputs": [
+            { "sourceKind": "fixed", "jsonPointer": "/data/type", "fixedValue": "devices" }
+          ]
+        }
+      ],
+      "fields": [
+        { "toolField": "device_id", "sourceKind": "parameter", "operationId": "devices_updateInstance", "location": "path", "appleName": "id" },
+        { "toolField": "device_id", "sourceKind": "requestBody", "operationId": "devices_updateInstance", "jsonPointer": "/data/id" },
+        { "toolField": "name", "sourceKind": "requestBody", "operationId": "devices_updateInstance", "jsonPointer": "/data/attributes/name" },
+        { "toolField": "status", "sourceKind": "requestBody", "operationId": "devices_updateInstance", "jsonPointer": "/data/attributes/status" }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          { "operationId": "devices_updateInstance", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": [
+          { "outputField": "device", "operationId": "devices_updateInstance", "jsonPointer": "/data" }
+        ]
+      },
+      "note": "Exact Apple 4.4.1 path/body mapping. The schema permits a request with device_id but neither mutable attribute; the handler sends that empty update and relies on Apple's error response."
+    }
+  ],
+  "implementationAliases": []
+}

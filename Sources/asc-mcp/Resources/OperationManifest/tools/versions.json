@@ -1,0 +1,1131 @@
+{
+  "workerKey": "versions",
+  "tools": [
+    {
+      "tool": "app_versions_attach_build",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "write",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "appStoreVersions_build_updateToOneRelationship",
+          "method": "patch",
+          "path": "/v1/appStoreVersions/{id}/relationships/build",
+          "role": "primary",
+          "inputs": [
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/type",
+              "fixedValue": "builds"
+            }
+          ]
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "version_id",
+          "sourceKind": "parameter",
+          "operationId": "appStoreVersions_build_updateToOneRelationship",
+          "location": "path",
+          "appleName": "id"
+        },
+        {
+          "toolField": "build_id",
+          "sourceKind": "requestBody",
+          "operationId": "appStoreVersions_build_updateToOneRelationship",
+          "jsonPointer": "/data/id"
+        }
+      ],
+      "response": {
+        "mode": "local",
+        "sources": [
+          { "operationId": "appStoreVersions_build_updateToOneRelationship", "statusCode": "204" }
+        ],
+        "fields": []
+      },
+      "note": "Apple returns 204 with no response document; the MCP success envelope is synthesized locally."
+    },
+    {
+      "tool": "app_versions_cancel_review",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "write",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "reviewSubmissions_updateInstance",
+          "method": "patch",
+          "path": "/v1/reviewSubmissions/{id}",
+          "role": "primary",
+          "inputs": [
+            {
+              "sourceKind": "derived",
+              "jsonPointer": "/data/id",
+              "derivedFrom": [
+                "review_submission_id"
+              ],
+              "localRole": "Copy the public review submission ID into the JSON:API resource identifier."
+            },
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/type",
+              "fixedValue": "reviewSubmissions"
+            },
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/attributes/canceled",
+              "fixedValue": true
+            }
+          ]
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "review_submission_id",
+          "sourceKind": "parameter",
+          "operationId": "reviewSubmissions_updateInstance",
+          "location": "path",
+          "appleName": "id"
+        }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          {
+            "operationId": "reviewSubmissions_updateInstance",
+            "statusCode": "200",
+            "mediaType": "application/json"
+          }
+        ],
+        "fields": []
+      },
+      "note": "The handler supplies the fixed request-body value /data/attributes/canceled=true."
+    },
+    {
+      "tool": "app_versions_create",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "write",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "appStoreVersions_createInstance",
+          "method": "post",
+          "path": "/v1/appStoreVersions",
+          "role": "primary",
+          "inputs": [
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/type",
+              "fixedValue": "appStoreVersions"
+            },
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/relationships/app/data/type",
+              "fixedValue": "apps"
+            }
+          ]
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "app_id",
+          "sourceKind": "requestBody",
+          "operationId": "appStoreVersions_createInstance",
+          "jsonPointer": "/data/relationships/app/data/id"
+        },
+        {
+          "toolField": "platform",
+          "sourceKind": "requestBody",
+          "operationId": "appStoreVersions_createInstance",
+          "jsonPointer": "/data/attributes/platform"
+        },
+        {
+          "toolField": "version_string",
+          "sourceKind": "requestBody",
+          "operationId": "appStoreVersions_createInstance",
+          "jsonPointer": "/data/attributes/versionString"
+        },
+        {
+          "toolField": "release_type",
+          "sourceKind": "requestBody",
+          "operationId": "appStoreVersions_createInstance",
+          "jsonPointer": "/data/attributes/releaseType"
+        },
+        {
+          "toolField": "earliest_release_date",
+          "sourceKind": "requestBody",
+          "operationId": "appStoreVersions_createInstance",
+          "jsonPointer": "/data/attributes/earliestReleaseDate"
+        }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          {
+            "operationId": "appStoreVersions_createInstance",
+            "statusCode": "201",
+            "mediaType": "application/json"
+          }
+        ],
+        "fields": []
+      }
+    },
+    {
+      "tool": "app_versions_create_phased_release",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "write",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "appStoreVersionPhasedReleases_createInstance",
+          "method": "post",
+          "path": "/v1/appStoreVersionPhasedReleases",
+          "role": "primary",
+          "inputs": [
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/type",
+              "fixedValue": "appStoreVersionPhasedReleases"
+            },
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/relationships/appStoreVersion/data/type",
+              "fixedValue": "appStoreVersions"
+            }
+          ]
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "version_id",
+          "sourceKind": "requestBody",
+          "operationId": "appStoreVersionPhasedReleases_createInstance",
+          "jsonPointer": "/data/relationships/appStoreVersion/data/id"
+        },
+        {
+          "toolField": "phased_release_state",
+          "sourceKind": "requestBody",
+          "operationId": "appStoreVersionPhasedReleases_createInstance",
+          "jsonPointer": "/data/attributes/phasedReleaseState"
+        }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          {
+            "operationId": "appStoreVersionPhasedReleases_createInstance",
+            "statusCode": "201",
+            "mediaType": "application/json"
+          }
+        ],
+        "fields": []
+      }
+    },
+    {
+      "tool": "app_versions_delete",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "destructive",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "appStoreVersions_deleteInstance",
+          "method": "delete",
+          "path": "/v1/appStoreVersions/{id}",
+          "role": "primary"
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "version_id",
+          "sourceKind": "parameter",
+          "operationId": "appStoreVersions_deleteInstance",
+          "location": "path",
+          "appleName": "id"
+        }
+      ],
+      "response": {
+        "mode": "local",
+        "sources": [
+          { "operationId": "appStoreVersions_deleteInstance", "statusCode": "204" }
+        ],
+        "fields": []
+      },
+      "note": "Apple returns 204 with no response document; the MCP deletion confirmation is synthesized locally."
+    },
+    {
+      "tool": "app_versions_get",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "broken",
+      "operations": [
+        {
+          "operationId": "appStoreVersions_getInstance",
+          "method": "get",
+          "path": "/v1/appStoreVersions/{id}",
+          "role": "primary"
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "version_id",
+          "sourceKind": "parameter",
+          "operationId": "appStoreVersions_getInstance",
+          "location": "path",
+          "appleName": "id"
+        }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          {
+            "operationId": "appStoreVersions_getInstance",
+            "statusCode": "200",
+            "mediaType": "application/json"
+          }
+        ],
+        "fields": []
+      },
+      "note": "The Apple 4.4.1 version resource no longer exposes an ageRatingDeclaration include; the current handler include list must be corrected."
+    },
+    {
+      "tool": "app_versions_get_phased_release",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "appStoreVersions_appStoreVersionPhasedRelease_getToOneRelated",
+          "method": "get",
+          "path": "/v1/appStoreVersions/{id}/appStoreVersionPhasedRelease",
+          "role": "primary"
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "version_id",
+          "sourceKind": "parameter",
+          "operationId": "appStoreVersions_appStoreVersionPhasedRelease_getToOneRelated",
+          "location": "path",
+          "appleName": "id"
+        }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          {
+            "operationId": "appStoreVersions_appStoreVersionPhasedRelease_getToOneRelated",
+            "statusCode": "200",
+            "mediaType": "application/json"
+          }
+        ],
+        "fields": []
+      }
+    },
+    {
+      "tool": "app_versions_list",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "apps_appStoreVersions_getToManyRelated",
+          "method": "get",
+          "path": "/v1/apps/{id}/appStoreVersions",
+          "role": "primary"
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "app_id",
+          "sourceKind": "parameter",
+          "operationId": "apps_appStoreVersions_getToManyRelated",
+          "location": "path",
+          "appleName": "id"
+        },
+        {
+          "toolField": "states",
+          "sourceKind": "parameter",
+          "operationId": "apps_appStoreVersions_getToManyRelated",
+          "location": "query",
+          "appleName": "filter[appVersionState]"
+        },
+        {
+          "toolField": "platform",
+          "sourceKind": "parameter",
+          "operationId": "apps_appStoreVersions_getToManyRelated",
+          "location": "query",
+          "appleName": "filter[platform]"
+        },
+        {
+          "toolField": "limit",
+          "sourceKind": "parameter",
+          "operationId": "apps_appStoreVersions_getToManyRelated",
+          "location": "query",
+          "appleName": "limit"
+        },
+        {
+          "toolField": "next_url",
+          "sourceKind": "local",
+          "localRole": "paginationContinuation"
+        }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          {
+            "operationId": "apps_appStoreVersions_getToManyRelated",
+            "statusCode": "200",
+            "mediaType": "application/json"
+          }
+        ],
+        "fields": []
+      },
+      "note": "The current MCP states enum still contains legacy appStoreState values while the handler sends filter[appVersionState]; the schema enum must be aligned to Apple 4.4.1."
+    },
+    {
+      "tool": "app_versions_release",
+      "kind": "compound",
+      "status": "partial",
+      "effect": "destructive",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "appStoreVersions_getInstance",
+          "method": "get",
+          "path": "/v1/appStoreVersions/{id}",
+          "role": "supporting",
+          "condition": "Always used to validate versionString and releasable state before the irreversible request."
+        },
+        {
+          "operationId": "appStoreVersionReleaseRequests_createInstance",
+          "method": "post",
+          "path": "/v1/appStoreVersionReleaseRequests",
+          "role": "primary",
+          "inputs": [
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/type",
+              "fixedValue": "appStoreVersionReleaseRequests"
+            },
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/relationships/appStoreVersion/data/type",
+              "fixedValue": "appStoreVersions"
+            }
+          ]
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "version_id",
+          "sourceKind": "parameter",
+          "operationId": "appStoreVersions_getInstance",
+          "location": "path",
+          "appleName": "id"
+        },
+        {
+          "toolField": "version_id",
+          "sourceKind": "requestBody",
+          "operationId": "appStoreVersionReleaseRequests_createInstance",
+          "jsonPointer": "/data/relationships/appStoreVersion/data/id"
+        },
+        {
+          "toolField": "confirm_version_string",
+          "sourceKind": "local",
+          "localRole": "irreversibleActionConfirmation"
+        }
+      ],
+      "response": {
+        "mode": "aggregate",
+        "sources": [
+          { "operationId": "appStoreVersionReleaseRequests_createInstance", "statusCode": "201", "mediaType": "application/json" },
+          { "operationId": "appStoreVersions_getInstance", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": []
+      }
+    },
+    {
+      "tool": "app_versions_set_review_details",
+      "kind": "compound",
+      "status": "partial",
+      "effect": "write",
+      "implementationState": "target",
+      "operations": [
+        {
+          "operationId": "appStoreVersions_appStoreReviewDetail_getToOneRelated",
+          "method": "get",
+          "path": "/v1/appStoreVersions/{id}/appStoreReviewDetail",
+          "role": "supporting",
+          "condition": "Determines whether to create review details or update the existing resource."
+        },
+        {
+          "operationId": "appStoreReviewDetails_createInstance",
+          "method": "post",
+          "path": "/v1/appStoreReviewDetails",
+          "role": "primary",
+          "condition": "Used when the version has no App Store review detail resource.",
+          "inputs": [
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/type",
+              "fixedValue": "appStoreReviewDetails"
+            },
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/relationships/appStoreVersion/data/type",
+              "fixedValue": "appStoreVersions"
+            }
+          ]
+        },
+        {
+          "operationId": "appStoreReviewDetails_updateInstance",
+          "method": "patch",
+          "path": "/v1/appStoreReviewDetails/{id}",
+          "role": "conditional",
+          "condition": "Used when review details already exist; the detail id is derived from the supporting GET response.",
+          "inputs": [
+            {
+              "sourceKind": "derived",
+              "location": "path",
+              "appleName": "id",
+              "derivedFrom": [
+                "appStoreVersions_appStoreReviewDetail_getToOneRelated:/data/id"
+              ],
+              "localRole": "Use the existing review detail ID returned by the related-resource lookup."
+            },
+            {
+              "sourceKind": "derived",
+              "jsonPointer": "/data/id",
+              "derivedFrom": [
+                "appStoreVersions_appStoreReviewDetail_getToOneRelated:/data/id"
+              ],
+              "localRole": "Copy the related-resource response ID into the update resource identifier."
+            },
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/type",
+              "fixedValue": "appStoreReviewDetails"
+            }
+          ]
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "version_id",
+          "sourceKind": "parameter",
+          "operationId": "appStoreVersions_appStoreReviewDetail_getToOneRelated",
+          "location": "path",
+          "appleName": "id"
+        },
+        {
+          "toolField": "version_id",
+          "sourceKind": "requestBody",
+          "operationId": "appStoreReviewDetails_createInstance",
+          "jsonPointer": "/data/relationships/appStoreVersion/data/id"
+        },
+        {
+          "toolField": "contact_first_name",
+          "sourceKind": "requestBody",
+          "operationId": "appStoreReviewDetails_createInstance",
+          "jsonPointer": "/data/attributes/contactFirstName"
+        },
+        {
+          "toolField": "contact_last_name",
+          "sourceKind": "requestBody",
+          "operationId": "appStoreReviewDetails_createInstance",
+          "jsonPointer": "/data/attributes/contactLastName"
+        },
+        {
+          "toolField": "contact_phone",
+          "sourceKind": "requestBody",
+          "operationId": "appStoreReviewDetails_createInstance",
+          "jsonPointer": "/data/attributes/contactPhone"
+        },
+        {
+          "toolField": "contact_email",
+          "sourceKind": "requestBody",
+          "operationId": "appStoreReviewDetails_createInstance",
+          "jsonPointer": "/data/attributes/contactEmail"
+        },
+        {
+          "toolField": "demo_account_name",
+          "sourceKind": "requestBody",
+          "operationId": "appStoreReviewDetails_createInstance",
+          "jsonPointer": "/data/attributes/demoAccountName"
+        },
+        {
+          "toolField": "demo_account_password",
+          "sourceKind": "requestBody",
+          "operationId": "appStoreReviewDetails_createInstance",
+          "jsonPointer": "/data/attributes/demoAccountPassword"
+        },
+        {
+          "toolField": "demo_account_required",
+          "sourceKind": "requestBody",
+          "operationId": "appStoreReviewDetails_createInstance",
+          "jsonPointer": "/data/attributes/demoAccountRequired"
+        },
+        {
+          "toolField": "notes",
+          "sourceKind": "requestBody",
+          "operationId": "appStoreReviewDetails_createInstance",
+          "jsonPointer": "/data/attributes/notes"
+        },
+        {
+          "toolField": "attachment_file_id",
+          "sourceKind": "local",
+          "localRole": "legacyUnsupportedReviewDetailAttribute",
+          "omissionReason": "Apple review detail requests do not accept an attachment asset id; use review_attachments_upload against the review detail resource."
+        }
+      ],
+      "response": {
+        "mode": "aggregate",
+        "sources": [
+          { "operationId": "appStoreReviewDetails_createInstance", "statusCode": "201", "mediaType": "application/json" },
+          { "operationId": "appStoreReviewDetails_updateInstance", "statusCode": "200", "mediaType": "application/json" },
+          { "operationId": "appStoreVersions_appStoreReviewDetail_getToOneRelated", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": []
+      },
+      "note": "The current handler must use the dedicated related-resource GET and must stop emitting attachmentFileId, which is absent from Apple 4.4.1. Attribute payloads are identical for create and update branches."
+    },
+    {
+      "tool": "app_versions_submit_for_review",
+      "kind": "compound",
+      "status": "partial",
+      "effect": "destructive",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "appStoreVersions_getInstance",
+          "method": "get",
+          "path": "/v1/appStoreVersions/{id}",
+          "role": "conditional",
+          "condition": "Used only when app_id is omitted, to derive the owning app id."
+        },
+        {
+          "operationId": "reviewSubmissions_createInstance",
+          "method": "post",
+          "path": "/v1/reviewSubmissions",
+          "role": "supporting",
+          "inputs": [
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/type",
+              "fixedValue": "reviewSubmissions"
+            },
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/relationships/app/data/type",
+              "fixedValue": "apps"
+            }
+          ]
+        },
+        {
+          "operationId": "reviewSubmissionItems_createInstance",
+          "method": "post",
+          "path": "/v1/reviewSubmissionItems",
+          "role": "supporting",
+          "inputs": [
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/type",
+              "fixedValue": "reviewSubmissionItems"
+            },
+            {
+              "sourceKind": "derived",
+              "jsonPointer": "/data/relationships/reviewSubmission/data/id",
+              "derivedFrom": [
+                "reviewSubmissions_createInstance:/data/id"
+              ],
+              "localRole": "Use the review submission ID returned by the create response."
+            },
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/relationships/reviewSubmission/data/type",
+              "fixedValue": "reviewSubmissions"
+            },
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/relationships/appStoreVersion/data/type",
+              "fixedValue": "appStoreVersions"
+            }
+          ]
+        },
+        {
+          "operationId": "reviewSubmissions_updateInstance",
+          "method": "patch",
+          "path": "/v1/reviewSubmissions/{id}",
+          "role": "primary",
+          "condition": "Marks the assembled review submission as submitted.",
+          "inputs": [
+            {
+              "sourceKind": "derived",
+              "location": "path",
+              "appleName": "id",
+              "derivedFrom": [
+                "reviewSubmissions_createInstance:/data/id"
+              ],
+              "localRole": "Address the review submission created earlier in this workflow."
+            },
+            {
+              "sourceKind": "derived",
+              "jsonPointer": "/data/id",
+              "derivedFrom": [
+                "reviewSubmissions_createInstance:/data/id"
+              ],
+              "localRole": "Copy the created review submission ID into the update resource identifier."
+            },
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/type",
+              "fixedValue": "reviewSubmissions"
+            },
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/attributes/submitted",
+              "fixedValue": true
+            }
+          ]
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "version_id",
+          "sourceKind": "parameter",
+          "operationId": "appStoreVersions_getInstance",
+          "location": "path",
+          "appleName": "id"
+        },
+        {
+          "toolField": "version_id",
+          "sourceKind": "requestBody",
+          "operationId": "reviewSubmissionItems_createInstance",
+          "jsonPointer": "/data/relationships/appStoreVersion/data/id"
+        },
+        {
+          "toolField": "app_id",
+          "sourceKind": "requestBody",
+          "operationId": "reviewSubmissions_createInstance",
+          "jsonPointer": "/data/relationships/app/data/id",
+          "derivedFrom": [
+            "appStoreVersions_getInstance:/data/relationships/app/data/id"
+          ]
+        },
+        {
+          "toolField": "platform",
+          "sourceKind": "requestBody",
+          "operationId": "reviewSubmissions_createInstance",
+          "jsonPointer": "/data/attributes/platform"
+        }
+      ],
+      "response": {
+        "mode": "aggregate",
+        "sources": [
+          { "operationId": "appStoreVersions_getInstance", "statusCode": "200", "mediaType": "application/json" },
+          { "operationId": "reviewSubmissionItems_createInstance", "statusCode": "201", "mediaType": "application/json" },
+          { "operationId": "reviewSubmissions_createInstance", "statusCode": "201", "mediaType": "application/json" },
+          { "operationId": "reviewSubmissions_updateInstance", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": []
+      },
+      "note": "Submission requires the three-operation Review Submissions workflow; the optional app_id is derived from the version when absent."
+    },
+    {
+      "tool": "app_versions_update",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "write",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "appStoreVersions_updateInstance",
+          "method": "patch",
+          "path": "/v1/appStoreVersions/{id}",
+          "role": "primary",
+          "inputs": [
+            {
+              "sourceKind": "derived",
+              "jsonPointer": "/data/id",
+              "derivedFrom": [
+                "version_id"
+              ],
+              "localRole": "Copy the public version ID into the JSON:API update resource identifier."
+            },
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/type",
+              "fixedValue": "appStoreVersions"
+            }
+          ]
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "version_id",
+          "sourceKind": "parameter",
+          "operationId": "appStoreVersions_updateInstance",
+          "location": "path",
+          "appleName": "id"
+        },
+        {
+          "toolField": "release_type",
+          "sourceKind": "requestBody",
+          "operationId": "appStoreVersions_updateInstance",
+          "jsonPointer": "/data/attributes/releaseType"
+        },
+        {
+          "toolField": "earliest_release_date",
+          "sourceKind": "requestBody",
+          "operationId": "appStoreVersions_updateInstance",
+          "jsonPointer": "/data/attributes/earliestReleaseDate"
+        },
+        {
+          "toolField": "copyright",
+          "sourceKind": "requestBody",
+          "operationId": "appStoreVersions_updateInstance",
+          "jsonPointer": "/data/attributes/copyright"
+        },
+        {
+          "toolField": "version_string",
+          "sourceKind": "requestBody",
+          "operationId": "appStoreVersions_updateInstance",
+          "jsonPointer": "/data/attributes/versionString"
+        }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          {
+            "operationId": "appStoreVersions_updateInstance",
+            "statusCode": "200",
+            "mediaType": "application/json"
+          }
+        ],
+        "fields": []
+      }
+    },
+    {
+      "tool": "app_versions_update_age_rating",
+      "kind": "compound",
+      "status": "partial",
+      "effect": "write",
+      "implementationState": "target",
+      "operations": [
+        {
+          "operationId": "appStoreVersions_getInstance",
+          "method": "get",
+          "path": "/v1/appStoreVersions/{id}",
+          "role": "supporting",
+          "condition": "Resolves the owning app id from the legacy version_id input."
+        },
+        {
+          "operationId": "apps_appInfos_getToManyRelated",
+          "method": "get",
+          "path": "/v1/apps/{id}/appInfos",
+          "role": "supporting",
+          "condition": "Selects the AppInfo for the version platform or current editable app metadata.",
+          "inputs": [
+            {
+              "sourceKind": "derived",
+              "location": "path",
+              "appleName": "id",
+              "derivedFrom": [
+                "appStoreVersions_getInstance:/data/relationships/app/data/id"
+              ],
+              "localRole": "Use the owning app ID resolved from the App Store version relationship."
+            }
+          ]
+        },
+        {
+          "operationId": "appInfos_ageRatingDeclaration_getToOneRelated",
+          "method": "get",
+          "path": "/v1/appInfos/{id}/ageRatingDeclaration",
+          "role": "supporting",
+          "condition": "Resolves the ageRatingDeclaration id required by the update operation.",
+          "inputs": [
+            {
+              "sourceKind": "derived",
+              "location": "path",
+              "appleName": "id",
+              "derivedFrom": [
+                "apps_appInfos_getToManyRelated:/data/*/id"
+              ],
+              "localRole": "Select the AppInfo that matches the version platform and editable metadata context."
+            }
+          ]
+        },
+        {
+          "operationId": "ageRatingDeclarations_updateInstance",
+          "method": "patch",
+          "path": "/v1/ageRatingDeclarations/{id}",
+          "role": "primary",
+          "inputs": [
+            {
+              "sourceKind": "derived",
+              "location": "path",
+              "appleName": "id",
+              "derivedFrom": [
+                "appInfos_ageRatingDeclaration_getToOneRelated:/data/id"
+              ],
+              "localRole": "Address the age rating declaration returned by the AppInfo relationship lookup."
+            },
+            {
+              "sourceKind": "derived",
+              "jsonPointer": "/data/id",
+              "derivedFrom": [
+                "appInfos_ageRatingDeclaration_getToOneRelated:/data/id"
+              ],
+              "localRole": "Copy the resolved age rating declaration ID into the update resource identifier."
+            },
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/type",
+              "fixedValue": "ageRatingDeclarations"
+            }
+          ]
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "version_id",
+          "sourceKind": "parameter",
+          "operationId": "appStoreVersions_getInstance",
+          "location": "path",
+          "appleName": "id"
+        },
+        {
+          "toolField": "alcohol_tobacco_or_drug_use",
+          "sourceKind": "requestBody",
+          "operationId": "ageRatingDeclarations_updateInstance",
+          "jsonPointer": "/data/attributes/alcoholTobaccoOrDrugUseOrReferences"
+        },
+        {
+          "toolField": "contests",
+          "sourceKind": "requestBody",
+          "operationId": "ageRatingDeclarations_updateInstance",
+          "jsonPointer": "/data/attributes/contests"
+        },
+        {
+          "toolField": "gambling",
+          "sourceKind": "requestBody",
+          "operationId": "ageRatingDeclarations_updateInstance",
+          "jsonPointer": "/data/attributes/gambling"
+        },
+        {
+          "toolField": "gambling_simulated",
+          "sourceKind": "requestBody",
+          "operationId": "ageRatingDeclarations_updateInstance",
+          "jsonPointer": "/data/attributes/gamblingSimulated"
+        },
+        {
+          "toolField": "unrestricted_web_access",
+          "sourceKind": "requestBody",
+          "operationId": "ageRatingDeclarations_updateInstance",
+          "jsonPointer": "/data/attributes/unrestrictedWebAccess"
+        },
+        {
+          "toolField": "horror_fear_themes",
+          "sourceKind": "requestBody",
+          "operationId": "ageRatingDeclarations_updateInstance",
+          "jsonPointer": "/data/attributes/horrorOrFearThemes"
+        },
+        {
+          "toolField": "mature_suggestive_themes",
+          "sourceKind": "requestBody",
+          "operationId": "ageRatingDeclarations_updateInstance",
+          "jsonPointer": "/data/attributes/matureOrSuggestiveThemes"
+        },
+        {
+          "toolField": "medical_treatment_information",
+          "sourceKind": "requestBody",
+          "operationId": "ageRatingDeclarations_updateInstance",
+          "jsonPointer": "/data/attributes/medicalOrTreatmentInformation"
+        },
+        {
+          "toolField": "profanity_crude_humor",
+          "sourceKind": "requestBody",
+          "operationId": "ageRatingDeclarations_updateInstance",
+          "jsonPointer": "/data/attributes/profanityOrCrudeHumor"
+        },
+        {
+          "toolField": "sexual_content_nudity",
+          "sourceKind": "requestBody",
+          "operationId": "ageRatingDeclarations_updateInstance",
+          "jsonPointer": "/data/attributes/sexualContentOrNudity"
+        },
+        {
+          "toolField": "violence_cartoon",
+          "sourceKind": "requestBody",
+          "operationId": "ageRatingDeclarations_updateInstance",
+          "jsonPointer": "/data/attributes/violenceCartoonOrFantasy"
+        },
+        {
+          "toolField": "violence_realistic",
+          "sourceKind": "requestBody",
+          "operationId": "ageRatingDeclarations_updateInstance",
+          "jsonPointer": "/data/attributes/violenceRealistic"
+        },
+        {
+          "toolField": "violence_realistic_prolonged",
+          "sourceKind": "requestBody",
+          "operationId": "ageRatingDeclarations_updateInstance",
+          "jsonPointer": "/data/attributes/violenceRealisticProlongedGraphicOrSadistic"
+        },
+        {
+          "toolField": "sexual_content_graphic_nudity",
+          "sourceKind": "requestBody",
+          "operationId": "ageRatingDeclarations_updateInstance",
+          "jsonPointer": "/data/attributes/sexualContentGraphicAndNudity"
+        },
+        {
+          "toolField": "guns_or_other_weapons",
+          "sourceKind": "requestBody",
+          "operationId": "ageRatingDeclarations_updateInstance",
+          "jsonPointer": "/data/attributes/gunsOrOtherWeapons"
+        },
+        {
+          "toolField": "kids_age_band",
+          "sourceKind": "requestBody",
+          "operationId": "ageRatingDeclarations_updateInstance",
+          "jsonPointer": "/data/attributes/kidsAgeBand"
+        },
+        {
+          "toolField": "age_rating_override",
+          "sourceKind": "requestBody",
+          "operationId": "ageRatingDeclarations_updateInstance",
+          "jsonPointer": "/data/attributes/ageRatingOverrideV2"
+        },
+        {
+          "toolField": "korea_age_rating_override",
+          "sourceKind": "requestBody",
+          "operationId": "ageRatingDeclarations_updateInstance",
+          "jsonPointer": "/data/attributes/koreaAgeRatingOverride"
+        },
+        {
+          "toolField": "advertising",
+          "sourceKind": "requestBody",
+          "operationId": "ageRatingDeclarations_updateInstance",
+          "jsonPointer": "/data/attributes/advertising"
+        },
+        {
+          "toolField": "age_assurance",
+          "sourceKind": "requestBody",
+          "operationId": "ageRatingDeclarations_updateInstance",
+          "jsonPointer": "/data/attributes/ageAssurance"
+        },
+        {
+          "toolField": "health_or_wellness_topics",
+          "sourceKind": "requestBody",
+          "operationId": "ageRatingDeclarations_updateInstance",
+          "jsonPointer": "/data/attributes/healthOrWellnessTopics"
+        },
+        {
+          "toolField": "loot_box",
+          "sourceKind": "requestBody",
+          "operationId": "ageRatingDeclarations_updateInstance",
+          "jsonPointer": "/data/attributes/lootBox"
+        },
+        {
+          "toolField": "messaging_and_chat",
+          "sourceKind": "requestBody",
+          "operationId": "ageRatingDeclarations_updateInstance",
+          "jsonPointer": "/data/attributes/messagingAndChat"
+        },
+        {
+          "toolField": "parental_controls",
+          "sourceKind": "requestBody",
+          "operationId": "ageRatingDeclarations_updateInstance",
+          "jsonPointer": "/data/attributes/parentalControls"
+        },
+        {
+          "toolField": "user_generated_content",
+          "sourceKind": "requestBody",
+          "operationId": "ageRatingDeclarations_updateInstance",
+          "jsonPointer": "/data/attributes/userGeneratedContent"
+        },
+        {
+          "toolField": "developer_age_rating_info_url",
+          "sourceKind": "requestBody",
+          "operationId": "ageRatingDeclarations_updateInstance",
+          "jsonPointer": "/data/attributes/developerAgeRatingInfoUrl"
+        }
+      ],
+      "response": {
+        "mode": "aggregate",
+        "sources": [
+          { "operationId": "ageRatingDeclarations_updateInstance", "statusCode": "200", "mediaType": "application/json" },
+          { "operationId": "appInfos_ageRatingDeclaration_getToOneRelated", "statusCode": "200", "mediaType": "application/json" },
+          { "operationId": "appStoreVersions_getInstance", "statusCode": "200", "mediaType": "application/json" },
+          { "operationId": "apps_appInfos_getToManyRelated", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": []
+      },
+      "note": "Apple 4.4.1 owns age ratings under AppInfo, not AppStoreVersion. The current handler's version include and fallback POST are invalid; it must resolve AppInfo and PATCH the existing declaration. Apple also added socialMedia and socialMediaAgeRestricted fields that the current MCP schema does not expose."
+    },
+    {
+      "tool": "app_versions_update_phased_release",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "write",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "appStoreVersionPhasedReleases_updateInstance",
+          "method": "patch",
+          "path": "/v1/appStoreVersionPhasedReleases/{id}",
+          "role": "primary",
+          "inputs": [
+            {
+              "sourceKind": "derived",
+              "jsonPointer": "/data/id",
+              "derivedFrom": [
+                "phased_release_id"
+              ],
+              "localRole": "Copy the public phased release ID into the JSON:API update resource identifier."
+            },
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/type",
+              "fixedValue": "appStoreVersionPhasedReleases"
+            }
+          ]
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "phased_release_id",
+          "sourceKind": "parameter",
+          "operationId": "appStoreVersionPhasedReleases_updateInstance",
+          "location": "path",
+          "appleName": "id"
+        },
+        {
+          "toolField": "phased_release_state",
+          "sourceKind": "requestBody",
+          "operationId": "appStoreVersionPhasedReleases_updateInstance",
+          "jsonPointer": "/data/attributes/phasedReleaseState"
+        }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          {
+            "operationId": "appStoreVersionPhasedReleases_updateInstance",
+            "statusCode": "200",
+            "mediaType": "application/json"
+          }
+        ],
+        "fields": []
+      }
+    }
+  ],
+  "implementationAliases": []
+}

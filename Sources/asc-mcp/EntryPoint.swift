@@ -5,11 +5,14 @@ import MCP
 struct ASCMCPApp {
     static func main() async throws {
         do {
+            if try await ASCOperationContractCommand.runIfRequested(arguments: CommandLine.arguments) {
+                return
+            }
             if try ASCOpenAPICoverageCommand.runIfRequested(arguments: CommandLine.arguments) {
                 return
             }
         } catch {
-            print("OpenAPI coverage error: \(error.localizedDescription)", to: &standardError)
+            print("OpenAPI tooling error: \(error.localizedDescription)", to: &standardError)
             exit(1)
         }
 
@@ -66,15 +69,7 @@ struct ASCMCPApp {
             return nil
         }
 
-        let validWorkers: Set<String> = [
-            "company", "auth", "apps", "accessibility", "webhooks", "xcode_cloud", "builds", "build_processing", "build_beta",
-            "versions", "reviews", "beta_groups", "beta_feedback", "beta_testers", "iap",
-            "provisioning", "app_info", "pricing", "users", "app_events", "analytics",
-            "subscriptions",
-            "sandbox", "beta_app", "pre_release", "beta_license",
-            "screenshots", "custom_pages",
-            "ppo", "promoted", "metrics", "review_attachments"
-        ]
+        let validWorkers = WorkerManager.validWorkerFilterKeys
 
         let requested = CommandLine.arguments[index + 1]
             .split(separator: ",")

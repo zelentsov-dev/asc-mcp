@@ -1,0 +1,554 @@
+{
+  "workerKey": "beta_feedback",
+  "tools": [
+    {
+      "tool": "beta_feedback_delete_crash",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "destructive",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "betaFeedbackCrashSubmissions_deleteInstance",
+          "method": "delete",
+          "path": "/v1/betaFeedbackCrashSubmissions/{id}",
+          "role": "primary"
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "submission_id",
+          "sourceKind": "parameter",
+          "operationId": "betaFeedbackCrashSubmissions_deleteInstance",
+          "location": "path",
+          "appleName": "id"
+        }
+      ],
+      "response": {
+        "mode": "local",
+        "sources": [
+          { "operationId": "betaFeedbackCrashSubmissions_deleteInstance", "statusCode": "204" }
+        ],
+        "fields": [
+          {
+            "outputField": "success",
+            "localRole": "True after Apple's 204 no-content response."
+          },
+          {
+            "outputField": "message",
+            "localRole": "Local deletion confirmation."
+          }
+        ]
+      },
+      "note": "Exact destructive operation; Apple returns no response document."
+    },
+    {
+      "tool": "beta_feedback_delete_screenshot",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "destructive",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "betaFeedbackScreenshotSubmissions_deleteInstance",
+          "method": "delete",
+          "path": "/v1/betaFeedbackScreenshotSubmissions/{id}",
+          "role": "primary"
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "submission_id",
+          "sourceKind": "parameter",
+          "operationId": "betaFeedbackScreenshotSubmissions_deleteInstance",
+          "location": "path",
+          "appleName": "id"
+        }
+      ],
+      "response": {
+        "mode": "local",
+        "sources": [
+          { "operationId": "betaFeedbackScreenshotSubmissions_deleteInstance", "statusCode": "204" }
+        ],
+        "fields": [
+          {
+            "outputField": "success",
+            "localRole": "True after Apple's 204 no-content response."
+          },
+          {
+            "outputField": "message",
+            "localRole": "Local deletion confirmation."
+          }
+        ]
+      },
+      "note": "Exact destructive operation; Apple returns no response document."
+    },
+    {
+      "tool": "beta_feedback_get_crash",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "betaFeedbackCrashSubmissions_getInstance",
+          "method": "get",
+          "path": "/v1/betaFeedbackCrashSubmissions/{id}",
+          "role": "primary"
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "submission_id",
+          "sourceKind": "parameter",
+          "operationId": "betaFeedbackCrashSubmissions_getInstance",
+          "location": "path",
+          "appleName": "id"
+        },
+        {
+          "toolField": "include_related",
+          "sourceKind": "parameter",
+          "operationId": "betaFeedbackCrashSubmissions_getInstance",
+          "location": "query",
+          "appleName": "include"
+        },
+        {
+          "toolField": "include_pii",
+          "sourceKind": "local",
+          "localRole": "Controls whether email and comment are retained in the MCP projection."
+        }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          {
+            "operationId": "betaFeedbackCrashSubmissions_getInstance",
+            "statusCode": "200",
+            "mediaType": "application/json"
+          }
+        ],
+        "fields": [
+          {
+            "outputField": "crash",
+            "operationId": "betaFeedbackCrashSubmissions_getInstance",
+            "jsonPointer": "/data"
+          }
+        ]
+      },
+      "note": "include_related derives include=build,tester, but current Codable response drops Apple's included resources; relationship IDs remain in the projected crash."
+    },
+    {
+      "tool": "beta_feedback_get_crash_log",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "betaFeedbackCrashSubmissions_crashLog_getToOneRelated",
+          "method": "get",
+          "path": "/v1/betaFeedbackCrashSubmissions/{id}/crashLog",
+          "role": "primary"
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "submission_id",
+          "sourceKind": "parameter",
+          "operationId": "betaFeedbackCrashSubmissions_crashLog_getToOneRelated",
+          "location": "path",
+          "appleName": "id"
+        },
+        {
+          "toolField": "max_log_chars",
+          "sourceKind": "local",
+          "localRole": "Clamps and truncates the returned log text to 1...500000 characters."
+        }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          {
+            "operationId": "betaFeedbackCrashSubmissions_crashLog_getToOneRelated",
+            "statusCode": "200",
+            "mediaType": "application/json"
+          }
+        ],
+        "fields": [
+          {
+            "outputField": "crashLog",
+            "operationId": "betaFeedbackCrashSubmissions_crashLog_getToOneRelated",
+            "jsonPointer": "/data"
+          }
+        ]
+      },
+      "note": "Exact related crash-log read with a local output-size safety projection."
+    },
+    {
+      "tool": "beta_feedback_get_crash_log_by_id",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "betaCrashLogs_getInstance",
+          "method": "get",
+          "path": "/v1/betaCrashLogs/{id}",
+          "role": "primary"
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "crash_log_id",
+          "sourceKind": "parameter",
+          "operationId": "betaCrashLogs_getInstance",
+          "location": "path",
+          "appleName": "id"
+        },
+        {
+          "toolField": "max_log_chars",
+          "sourceKind": "local",
+          "localRole": "Clamps and truncates the returned log text to 1...500000 characters."
+        }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          {
+            "operationId": "betaCrashLogs_getInstance",
+            "statusCode": "200",
+            "mediaType": "application/json"
+          }
+        ],
+        "fields": [
+          {
+            "outputField": "crashLog",
+            "operationId": "betaCrashLogs_getInstance",
+            "jsonPointer": "/data"
+          }
+        ]
+      },
+      "note": "Exact direct crash-log read with a local output-size safety projection."
+    },
+    {
+      "tool": "beta_feedback_get_screenshot",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "betaFeedbackScreenshotSubmissions_getInstance",
+          "method": "get",
+          "path": "/v1/betaFeedbackScreenshotSubmissions/{id}",
+          "role": "primary"
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "submission_id",
+          "sourceKind": "parameter",
+          "operationId": "betaFeedbackScreenshotSubmissions_getInstance",
+          "location": "path",
+          "appleName": "id"
+        },
+        {
+          "toolField": "include_related",
+          "sourceKind": "parameter",
+          "operationId": "betaFeedbackScreenshotSubmissions_getInstance",
+          "location": "query",
+          "appleName": "include"
+        },
+        {
+          "toolField": "include_pii",
+          "sourceKind": "local",
+          "localRole": "Controls whether email and comment are retained in the MCP projection."
+        }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          {
+            "operationId": "betaFeedbackScreenshotSubmissions_getInstance",
+            "statusCode": "200",
+            "mediaType": "application/json"
+          }
+        ],
+        "fields": [
+          {
+            "outputField": "screenshot",
+            "operationId": "betaFeedbackScreenshotSubmissions_getInstance",
+            "jsonPointer": "/data"
+          }
+        ]
+      },
+      "note": "include_related derives include=build,tester, but current Codable response drops Apple's included resources; relationship IDs remain in the projection."
+    },
+    {
+      "tool": "beta_feedback_list_crashes",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "apps_betaFeedbackCrashSubmissions_getToManyRelated",
+          "method": "get",
+          "path": "/v1/apps/{id}/betaFeedbackCrashSubmissions",
+          "role": "primary"
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "app_id",
+          "sourceKind": "parameter",
+          "operationId": "apps_betaFeedbackCrashSubmissions_getToManyRelated",
+          "location": "path",
+          "appleName": "id"
+        },
+        {
+          "toolField": "build_id",
+          "sourceKind": "parameter",
+          "operationId": "apps_betaFeedbackCrashSubmissions_getToManyRelated",
+          "location": "query",
+          "appleName": "filter[build]"
+        },
+        {
+          "toolField": "pre_release_version_id",
+          "sourceKind": "parameter",
+          "operationId": "apps_betaFeedbackCrashSubmissions_getToManyRelated",
+          "location": "query",
+          "appleName": "filter[build.preReleaseVersion]"
+        },
+        {
+          "toolField": "tester_id",
+          "sourceKind": "parameter",
+          "operationId": "apps_betaFeedbackCrashSubmissions_getToManyRelated",
+          "location": "query",
+          "appleName": "filter[tester]"
+        },
+        {
+          "toolField": "device_model",
+          "sourceKind": "parameter",
+          "operationId": "apps_betaFeedbackCrashSubmissions_getToManyRelated",
+          "location": "query",
+          "appleName": "filter[deviceModel]"
+        },
+        {
+          "toolField": "os_version",
+          "sourceKind": "parameter",
+          "operationId": "apps_betaFeedbackCrashSubmissions_getToManyRelated",
+          "location": "query",
+          "appleName": "filter[osVersion]"
+        },
+        {
+          "toolField": "app_platform",
+          "sourceKind": "parameter",
+          "operationId": "apps_betaFeedbackCrashSubmissions_getToManyRelated",
+          "location": "query",
+          "appleName": "filter[appPlatform]"
+        },
+        {
+          "toolField": "device_platform",
+          "sourceKind": "parameter",
+          "operationId": "apps_betaFeedbackCrashSubmissions_getToManyRelated",
+          "location": "query",
+          "appleName": "filter[devicePlatform]"
+        },
+        {
+          "toolField": "sort",
+          "sourceKind": "parameter",
+          "operationId": "apps_betaFeedbackCrashSubmissions_getToManyRelated",
+          "location": "query",
+          "appleName": "sort"
+        },
+        {
+          "toolField": "include_related",
+          "sourceKind": "parameter",
+          "operationId": "apps_betaFeedbackCrashSubmissions_getToManyRelated",
+          "location": "query",
+          "appleName": "include"
+        },
+        {
+          "toolField": "include_pii",
+          "sourceKind": "local",
+          "localRole": "Controls whether tester email and comment are retained in each projected item."
+        },
+        {
+          "toolField": "limit",
+          "sourceKind": "parameter",
+          "operationId": "apps_betaFeedbackCrashSubmissions_getToManyRelated",
+          "location": "query",
+          "appleName": "limit"
+        },
+        {
+          "toolField": "next_url",
+          "sourceKind": "local",
+          "localRole": "Validated pagination URL returned by Apple."
+        }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          {
+            "operationId": "apps_betaFeedbackCrashSubmissions_getToManyRelated",
+            "statusCode": "200",
+            "mediaType": "application/json"
+          }
+        ],
+        "fields": [
+          {
+            "outputField": "crashes",
+            "operationId": "apps_betaFeedbackCrashSubmissions_getToManyRelated",
+            "jsonPointer": "/data"
+          },
+          {
+            "outputField": "next_url",
+            "operationId": "apps_betaFeedbackCrashSubmissions_getToManyRelated",
+            "jsonPointer": "/links/next"
+          },
+          {
+            "outputField": "total",
+            "operationId": "apps_betaFeedbackCrashSubmissions_getToManyRelated",
+            "jsonPointer": "/meta/paging/total"
+          }
+        ]
+      },
+      "note": "All public filters map to documented 4.4.1 parameters. include_related is only partially honored because included build/tester resources are decoded away."
+    },
+    {
+      "tool": "beta_feedback_list_screenshots",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "apps_betaFeedbackScreenshotSubmissions_getToManyRelated",
+          "method": "get",
+          "path": "/v1/apps/{id}/betaFeedbackScreenshotSubmissions",
+          "role": "primary"
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "app_id",
+          "sourceKind": "parameter",
+          "operationId": "apps_betaFeedbackScreenshotSubmissions_getToManyRelated",
+          "location": "path",
+          "appleName": "id"
+        },
+        {
+          "toolField": "build_id",
+          "sourceKind": "parameter",
+          "operationId": "apps_betaFeedbackScreenshotSubmissions_getToManyRelated",
+          "location": "query",
+          "appleName": "filter[build]"
+        },
+        {
+          "toolField": "pre_release_version_id",
+          "sourceKind": "parameter",
+          "operationId": "apps_betaFeedbackScreenshotSubmissions_getToManyRelated",
+          "location": "query",
+          "appleName": "filter[build.preReleaseVersion]"
+        },
+        {
+          "toolField": "tester_id",
+          "sourceKind": "parameter",
+          "operationId": "apps_betaFeedbackScreenshotSubmissions_getToManyRelated",
+          "location": "query",
+          "appleName": "filter[tester]"
+        },
+        {
+          "toolField": "device_model",
+          "sourceKind": "parameter",
+          "operationId": "apps_betaFeedbackScreenshotSubmissions_getToManyRelated",
+          "location": "query",
+          "appleName": "filter[deviceModel]"
+        },
+        {
+          "toolField": "os_version",
+          "sourceKind": "parameter",
+          "operationId": "apps_betaFeedbackScreenshotSubmissions_getToManyRelated",
+          "location": "query",
+          "appleName": "filter[osVersion]"
+        },
+        {
+          "toolField": "app_platform",
+          "sourceKind": "parameter",
+          "operationId": "apps_betaFeedbackScreenshotSubmissions_getToManyRelated",
+          "location": "query",
+          "appleName": "filter[appPlatform]"
+        },
+        {
+          "toolField": "device_platform",
+          "sourceKind": "parameter",
+          "operationId": "apps_betaFeedbackScreenshotSubmissions_getToManyRelated",
+          "location": "query",
+          "appleName": "filter[devicePlatform]"
+        },
+        {
+          "toolField": "sort",
+          "sourceKind": "parameter",
+          "operationId": "apps_betaFeedbackScreenshotSubmissions_getToManyRelated",
+          "location": "query",
+          "appleName": "sort"
+        },
+        {
+          "toolField": "include_related",
+          "sourceKind": "parameter",
+          "operationId": "apps_betaFeedbackScreenshotSubmissions_getToManyRelated",
+          "location": "query",
+          "appleName": "include"
+        },
+        {
+          "toolField": "include_pii",
+          "sourceKind": "local",
+          "localRole": "Controls whether tester email and comment are retained in each projected item."
+        },
+        {
+          "toolField": "limit",
+          "sourceKind": "parameter",
+          "operationId": "apps_betaFeedbackScreenshotSubmissions_getToManyRelated",
+          "location": "query",
+          "appleName": "limit"
+        },
+        {
+          "toolField": "next_url",
+          "sourceKind": "local",
+          "localRole": "Validated pagination URL returned by Apple."
+        }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          {
+            "operationId": "apps_betaFeedbackScreenshotSubmissions_getToManyRelated",
+            "statusCode": "200",
+            "mediaType": "application/json"
+          }
+        ],
+        "fields": [
+          {
+            "outputField": "screenshots",
+            "operationId": "apps_betaFeedbackScreenshotSubmissions_getToManyRelated",
+            "jsonPointer": "/data"
+          },
+          {
+            "outputField": "next_url",
+            "operationId": "apps_betaFeedbackScreenshotSubmissions_getToManyRelated",
+            "jsonPointer": "/links/next"
+          },
+          {
+            "outputField": "total",
+            "operationId": "apps_betaFeedbackScreenshotSubmissions_getToManyRelated",
+            "jsonPointer": "/meta/paging/total"
+          }
+        ]
+      },
+      "note": "All public filters map to documented 4.4.1 parameters. include_related is only partially honored because included build/tester resources are decoded away."
+    }
+  ],
+  "implementationAliases": []
+}

@@ -7,6 +7,15 @@ public actor CompaniesManager {
     /// Source description (e.g. file path or "environment variables")
     public let configSource: String
 
+    init(config: CompaniesConfig, configSource: String) throws {
+        guard let company = config.companies.first else {
+            throw CompanyError.emptyCompanies(configSource)
+        }
+        self.config = config
+        self.configSource = configSource
+        self.currentCompany = company
+    }
+
     public init(configPath: String? = nil) throws {
         // 1. CLI argument: --companies /path
         let args = ProcessInfo.processInfo.arguments

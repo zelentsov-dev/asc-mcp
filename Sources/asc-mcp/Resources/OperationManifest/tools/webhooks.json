@@ -1,0 +1,331 @@
+{
+  "workerKey": "webhooks",
+  "tools": [
+    {
+      "tool": "webhooks_create",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "write",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "webhooks_createInstance",
+          "method": "post",
+          "path": "/v1/webhooks",
+          "role": "primary",
+          "inputs": [
+            { "sourceKind": "fixed", "jsonPointer": "/data/type", "fixedValue": "webhooks" },
+            { "sourceKind": "fixed", "jsonPointer": "/data/relationships/app/data/type", "fixedValue": "apps" }
+          ]
+        }
+      ],
+      "fields": [
+        { "toolField": "app_id", "sourceKind": "requestBody", "operationId": "webhooks_createInstance", "jsonPointer": "/data/relationships/app/data/id" },
+        { "toolField": "name", "sourceKind": "requestBody", "operationId": "webhooks_createInstance", "jsonPointer": "/data/attributes/name" },
+        { "toolField": "url", "sourceKind": "requestBody", "operationId": "webhooks_createInstance", "jsonPointer": "/data/attributes/url", "localRole": "absolute HTTP or HTTPS URL validation" },
+        { "toolField": "secret", "sourceKind": "requestBody", "operationId": "webhooks_createInstance", "jsonPointer": "/data/attributes/secret" },
+        { "toolField": "event_types", "sourceKind": "requestBody", "operationId": "webhooks_createInstance", "jsonPointer": "/data/attributes/eventTypes", "localRole": "validated against the Apple 4.4.1 webhook event enum" },
+        { "toolField": "enabled", "sourceKind": "requestBody", "operationId": "webhooks_createInstance", "jsonPointer": "/data/attributes/enabled", "localRole": "defaults to true when omitted" }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          { "operationId": "webhooks_createInstance", "statusCode": "201", "mediaType": "application/json" }
+        ],
+        "fields": [
+          { "outputField": "webhook", "operationId": "webhooks_createInstance", "jsonPointer": "/data" }
+        ]
+      },
+      "note": "Exact Apple 4.4.1 create operation. The handler returns a selected webhook projection and has no MCP output schema, so the contract remains partial."
+    },
+    {
+      "tool": "webhooks_delete",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "write",
+      "implementationState": "asBuilt",
+      "operations": [
+        { "operationId": "webhooks_deleteInstance", "method": "delete", "path": "/v1/webhooks/{id}", "role": "primary" }
+      ],
+      "fields": [
+        { "toolField": "webhook_id", "sourceKind": "parameter", "operationId": "webhooks_deleteInstance", "location": "path", "appleName": "id" }
+      ],
+      "response": {
+        "mode": "local",
+        "sources": [
+          { "operationId": "webhooks_deleteInstance", "statusCode": "204" }
+        ],
+        "fields": [
+          { "outputField": "message", "localRole": "confirmation synthesized after Apple's content-free 204 response" }
+        ]
+      },
+      "note": "Apple returns 204 with no response document; the MCP result is a local success confirmation."
+    },
+    {
+      "tool": "webhooks_get",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        { "operationId": "webhooks_getInstance", "method": "get", "path": "/v1/webhooks/{id}", "role": "primary" }
+      ],
+      "fields": [
+        { "toolField": "webhook_id", "sourceKind": "parameter", "operationId": "webhooks_getInstance", "location": "path", "appleName": "id" },
+        { "toolField": "include_app", "sourceKind": "parameter", "operationId": "webhooks_getInstance", "location": "query", "appleName": "include", "localRole": "true emits the fixed query value app; false or omission emits no include parameter" }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          { "operationId": "webhooks_getInstance", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": [
+          { "outputField": "webhook", "operationId": "webhooks_getInstance", "jsonPointer": "/data" }
+        ]
+      },
+      "note": "The include=app request is supported, but the decoded response model and formatter discard Apple's top-level included app resource. Sparse fieldsets are not exposed."
+    },
+    {
+      "tool": "webhooks_list",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        { "operationId": "apps_webhooks_getToManyRelated", "method": "get", "path": "/v1/apps/{id}/webhooks", "role": "primary" }
+      ],
+      "fields": [
+        { "toolField": "app_id", "sourceKind": "parameter", "operationId": "apps_webhooks_getToManyRelated", "location": "path", "appleName": "id" },
+        { "toolField": "limit", "sourceKind": "parameter", "operationId": "apps_webhooks_getToManyRelated", "location": "query", "appleName": "limit" },
+        { "toolField": "include_app", "sourceKind": "parameter", "operationId": "apps_webhooks_getToManyRelated", "location": "query", "appleName": "include", "localRole": "true emits the fixed query value app; false or omission emits no include parameter" },
+        { "toolField": "next_url", "sourceKind": "local", "localRole": "paginationContinuation" }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          { "operationId": "apps_webhooks_getToManyRelated", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": [
+          { "outputField": "webhooks", "operationId": "apps_webhooks_getToManyRelated", "jsonPointer": "/data" },
+          { "outputField": "next_url", "operationId": "apps_webhooks_getToManyRelated", "jsonPointer": "/links/next" },
+          { "outputField": "total", "operationId": "apps_webhooks_getToManyRelated", "jsonPointer": "/meta/paging/total" }
+        ]
+      },
+      "note": "The include=app request is supported, but included app resources are discarded by the current response model. Sparse fieldsets are not exposed."
+    },
+    {
+      "tool": "webhooks_list_deliveries",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        { "operationId": "webhooks_deliveries_getToManyRelated", "method": "get", "path": "/v1/webhooks/{id}/deliveries", "role": "primary" }
+      ],
+      "fields": [
+        { "toolField": "webhook_id", "sourceKind": "parameter", "operationId": "webhooks_deliveries_getToManyRelated", "location": "path", "appleName": "id" },
+        { "toolField": "delivery_state", "sourceKind": "parameter", "operationId": "webhooks_deliveries_getToManyRelated", "location": "query", "appleName": "filter[deliveryState]" },
+        { "toolField": "created_after", "sourceKind": "parameter", "operationId": "webhooks_deliveries_getToManyRelated", "location": "query", "appleName": "filter[createdDateGreaterThanOrEqualTo]" },
+        { "toolField": "created_before", "sourceKind": "parameter", "operationId": "webhooks_deliveries_getToManyRelated", "location": "query", "appleName": "filter[createdDateLessThan]" },
+        { "toolField": "include_event", "sourceKind": "parameter", "operationId": "webhooks_deliveries_getToManyRelated", "location": "query", "appleName": "include", "localRole": "true or omission emits the fixed query value event; false emits no include parameter" },
+        { "toolField": "limit", "sourceKind": "parameter", "operationId": "webhooks_deliveries_getToManyRelated", "location": "query", "appleName": "limit" },
+        { "toolField": "next_url", "sourceKind": "local", "localRole": "paginationContinuation" }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          { "operationId": "webhooks_deliveries_getToManyRelated", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": [
+          { "outputField": "deliveries", "operationId": "webhooks_deliveries_getToManyRelated", "jsonPointer": "/data" },
+          { "outputField": "events", "operationId": "webhooks_deliveries_getToManyRelated", "jsonPointer": "/included" },
+          { "outputField": "next_url", "operationId": "webhooks_deliveries_getToManyRelated", "jsonPointer": "/links/next" },
+          { "outputField": "total", "operationId": "webhooks_deliveries_getToManyRelated", "jsonPointer": "/meta/paging/total" }
+        ]
+      },
+      "note": "Exact Apple delivery filters and include mapping are represented. Sparse fieldsets are not exposed and the MCP response is a selected projection."
+    },
+    {
+      "tool": "webhooks_parse_payload",
+      "kind": "local",
+      "status": "partial",
+      "effect": "local",
+      "implementationState": "asBuilt",
+      "operations": [],
+      "fields": [
+        { "toolField": "payload", "sourceKind": "local", "localRole": "raw UTF-8 webhook body alternative" },
+        { "toolField": "payload_base64", "sourceKind": "local", "localRole": "base64 raw-byte webhook body alternative; takes precedence over payload" },
+        { "toolField": "secret", "sourceKind": "local", "localRole": "optional HMAC-SHA256 verification key when signature is also present" },
+        { "toolField": "signature", "sourceKind": "local", "localRole": "optional x-apple-signature value when secret is also present" }
+      ],
+      "response": {
+        "mode": "local",
+        "sources": [],
+        "fields": [
+          { "outputField": "event", "localRole": "ASCWebhookReceiverParser normalized event envelope" },
+          { "outputField": "payload", "localRole": "decoded nested event payload" },
+          { "outputField": "recommendedToolCalls", "localRole": "ASCWebhookTriagePolicy recommendations" },
+          { "outputField": "signature", "localRole": "optional ASCWebhookSignatureVerifier result" }
+        ]
+      },
+      "note": "Local receiver helper, not an Apple REST operation. Signature verification is silently skipped when only one of secret/signature is supplied. Related-resource extraction does not reliably handle every Apple 4.4.1 payload shape; BUILD_UPLOAD and BUILD_BETA_DETAIL triage currently expect build resource types rather than buildUploads/buildBetaDetails, and direct background-resource relationships are incomplete."
+    },
+    {
+      "tool": "webhooks_ping",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "write",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "webhookPings_createInstance",
+          "method": "post",
+          "path": "/v1/webhookPings",
+          "role": "primary",
+          "inputs": [
+            { "sourceKind": "fixed", "jsonPointer": "/data/type", "fixedValue": "webhookPings" },
+            { "sourceKind": "fixed", "jsonPointer": "/data/relationships/webhook/data/type", "fixedValue": "webhooks" }
+          ]
+        }
+      ],
+      "fields": [
+        { "toolField": "webhook_id", "sourceKind": "requestBody", "operationId": "webhookPings_createInstance", "jsonPointer": "/data/relationships/webhook/data/id" }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          { "operationId": "webhookPings_createInstance", "statusCode": "201", "mediaType": "application/json" }
+        ],
+        "fields": [
+          { "outputField": "ping", "operationId": "webhookPings_createInstance", "jsonPointer": "/data" }
+        ]
+      },
+      "note": "Exact Apple 4.4.1 ping operation; the handler projects only the returned resource id and type."
+    },
+    {
+      "tool": "webhooks_redeliver",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "write",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "webhookDeliveries_createInstance",
+          "method": "post",
+          "path": "/v1/webhookDeliveries",
+          "role": "primary",
+          "inputs": [
+            { "sourceKind": "fixed", "jsonPointer": "/data/type", "fixedValue": "webhookDeliveries" },
+            { "sourceKind": "fixed", "jsonPointer": "/data/relationships/template/data/type", "fixedValue": "webhookDeliveries" }
+          ]
+        }
+      ],
+      "fields": [
+        { "toolField": "delivery_id", "sourceKind": "requestBody", "operationId": "webhookDeliveries_createInstance", "jsonPointer": "/data/relationships/template/data/id" }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          { "operationId": "webhookDeliveries_createInstance", "statusCode": "201", "mediaType": "application/json" }
+        ],
+        "fields": [
+          { "outputField": "delivery", "operationId": "webhookDeliveries_createInstance", "jsonPointer": "/data" },
+          { "outputField": "events", "operationId": "webhookDeliveries_createInstance", "jsonPointer": "/included" }
+        ]
+      },
+      "note": "Exact Apple 4.4.1 redelivery operation with a projected delivery/event response."
+    },
+    {
+      "tool": "webhooks_triage_event",
+      "kind": "local",
+      "status": "partial",
+      "effect": "local",
+      "implementationState": "asBuilt",
+      "operations": [],
+      "fields": [
+        { "toolField": "payload", "sourceKind": "local", "localRole": "optional raw UTF-8 webhook body" },
+        { "toolField": "payload_base64", "sourceKind": "local", "localRole": "optional base64 raw-byte webhook body; takes precedence over payload" },
+        { "toolField": "event_type", "sourceKind": "local", "localRole": "explicit Apple webhook event type, preferred over the parsed payload value" },
+        { "toolField": "resource_type", "sourceKind": "local", "localRole": "explicit related resource type used only when resource_id is also present" },
+        { "toolField": "resource_id", "sourceKind": "local", "localRole": "explicit related resource identifier" },
+        { "toolField": "delivery_id", "sourceKind": "local", "localRole": "failed-delivery recovery recommendation context" },
+        { "toolField": "webhook_id", "sourceKind": "local", "localRole": "delivery-list and ping recommendation context" },
+        { "toolField": "delivery_state", "sourceKind": "local", "localRole": "delivery severity and recovery context" },
+        { "toolField": "http_status_code", "sourceKind": "local", "localRole": "receiver failure severity context" },
+        { "toolField": "error_message", "sourceKind": "local", "localRole": "delivery diagnostic context" }
+      ],
+      "response": {
+        "mode": "local",
+        "sources": [],
+        "fields": [
+          { "outputField": "severity", "localRole": "ASCWebhookTriagePolicy assessment" },
+          { "outputField": "recommendedToolCalls", "localRole": "event-specific local recommendation policy" },
+          { "outputField": "nextSteps", "localRole": "local recovery and lookup guidance" }
+        ]
+      },
+      "note": "Local policy helper, not an Apple REST operation. Specialized triage covers only part of the Apple event catalog; BUILD_UPLOAD and BUILD_BETA_DETAIL resource-type assumptions and some background/alternative-distribution relationship shapes are currently incomplete."
+    },
+    {
+      "tool": "webhooks_update",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "write",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "webhooks_updateInstance",
+          "method": "patch",
+          "path": "/v1/webhooks/{id}",
+          "role": "primary",
+          "inputs": [
+            { "sourceKind": "fixed", "jsonPointer": "/data/type", "fixedValue": "webhooks" }
+          ]
+        }
+      ],
+      "fields": [
+        { "toolField": "webhook_id", "sourceKind": "parameter", "operationId": "webhooks_updateInstance", "location": "path", "appleName": "id" },
+        { "toolField": "webhook_id", "sourceKind": "requestBody", "operationId": "webhooks_updateInstance", "jsonPointer": "/data/id" },
+        { "toolField": "name", "sourceKind": "requestBody", "operationId": "webhooks_updateInstance", "jsonPointer": "/data/attributes/name" },
+        { "toolField": "url", "sourceKind": "requestBody", "operationId": "webhooks_updateInstance", "jsonPointer": "/data/attributes/url", "localRole": "absolute HTTP or HTTPS URL validation" },
+        { "toolField": "secret", "sourceKind": "requestBody", "operationId": "webhooks_updateInstance", "jsonPointer": "/data/attributes/secret" },
+        { "toolField": "event_types", "sourceKind": "requestBody", "operationId": "webhooks_updateInstance", "jsonPointer": "/data/attributes/eventTypes", "localRole": "validated against the Apple 4.4.1 webhook event enum" },
+        { "toolField": "enabled", "sourceKind": "requestBody", "operationId": "webhooks_updateInstance", "jsonPointer": "/data/attributes/enabled" }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          { "operationId": "webhooks_updateInstance", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": [
+          { "outputField": "webhook", "operationId": "webhooks_updateInstance", "jsonPointer": "/data" }
+        ]
+      },
+      "note": "Exact Apple 4.4.1 update operation. The handler enforces at least one changed attribute and returns a selected projection without an MCP output schema."
+    },
+    {
+      "tool": "webhooks_verify_signature",
+      "kind": "local",
+      "status": "partial",
+      "effect": "local",
+      "implementationState": "asBuilt",
+      "operations": [],
+      "fields": [
+        { "toolField": "secret", "sourceKind": "local", "localRole": "HMAC-SHA256 key" },
+        { "toolField": "signature", "sourceKind": "local", "localRole": "x-apple-signature header normalization and constant-time comparison" },
+        { "toolField": "payload", "sourceKind": "local", "localRole": "raw UTF-8 body alternative" },
+        { "toolField": "payload_base64", "sourceKind": "local", "localRole": "base64 raw-byte body alternative; takes precedence over payload" }
+      ],
+      "response": {
+        "mode": "local",
+        "sources": [],
+        "fields": [
+          { "outputField": "valid", "localRole": "constant-time comparison of provided and computed HMAC-SHA256 digests" },
+          { "outputField": "computedSignature", "localRole": "locally computed digest" },
+          { "outputField": "reason", "localRole": "local normalization or mismatch diagnostic" }
+        ]
+      },
+      "note": "Local receiver helper, not an Apple REST operation. Verification is byte-sensitive and requires payload or payload_base64 at runtime even though the current MCP schema marks only secret and signature as required."
+    }
+  ],
+  "implementationAliases": []
+}

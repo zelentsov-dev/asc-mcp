@@ -1,0 +1,112 @@
+{
+  "workerKey": "apps",
+  "tools": [
+    {
+      "tool": "apps_list",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "apps_getCollection",
+          "method": "get",
+          "path": "/v1/apps",
+          "role": "primary",
+          "inputs": [
+            {
+              "sourceKind": "fixed",
+              "location": "query",
+              "appleName": "filter[platform]",
+              "fixedValue": "IOS"
+            },
+            {
+              "sourceKind": "fixed",
+              "location": "query",
+              "appleName": "includeBeta",
+              "fixedValue": true
+            }
+          ]
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "limit",
+          "sourceKind": "parameter",
+          "operationId": "apps_getCollection",
+          "location": "query",
+          "appleName": "limit"
+        },
+        {
+          "toolField": "next_url",
+          "sourceKind": "local",
+          "localRole": "paginationContinuation"
+        }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          {
+            "operationId": "apps_getCollection",
+            "statusCode": "200",
+            "mediaType": "application/json"
+          }
+        ],
+        "fields": []
+      }
+    },
+    {
+      "tool": "apps_update",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "write",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "apps_updateInstance",
+          "method": "patch",
+          "path": "/v1/apps/{id}",
+          "role": "primary",
+          "inputs": [
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/type",
+              "fixedValue": "apps"
+            }
+          ]
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "id",
+          "sourceKind": "parameter",
+          "operationId": "apps_updateInstance",
+          "location": "path",
+          "appleName": "id"
+        },
+        {
+          "toolField": "name",
+          "sourceKind": "requestBody",
+          "operationId": "apps_updateInstance",
+          "jsonPointer": "/data/attributes/name"
+        }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          {
+            "operationId": "apps_updateInstance",
+            "statusCode": "200",
+            "mediaType": "application/json"
+          },
+          {
+            "operationId": "apps_updateInstance",
+            "statusCode": "204"
+          }
+        ],
+        "fields": []
+      }
+    }
+  ],
+  "implementationAliases": []
+}

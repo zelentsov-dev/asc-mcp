@@ -1,0 +1,139 @@
+{
+  "workerKey": "sandbox",
+  "tools": [
+    {
+      "tool": "sandbox_clear_purchase_history",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "write",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "sandboxTestersClearPurchaseHistoryRequestV2_createInstance",
+          "method": "post",
+          "path": "/v2/sandboxTestersClearPurchaseHistoryRequest",
+          "role": "primary",
+          "condition": null,
+          "inputs": [
+            { "sourceKind": "fixed", "jsonPointer": "/data/type", "fixedValue": "sandboxTestersClearPurchaseHistoryRequest" }
+          ]
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "sandbox_tester_ids",
+          "sourceKind": "requestBody",
+          "operationId": "sandboxTestersClearPurchaseHistoryRequestV2_createInstance",
+          "jsonPointer": "/data/relationships/sandboxTesters/data"
+        }
+      ],
+      "response": {
+        "mode": "opaque",
+        "sources": [
+          { "operationId": "sandboxTestersClearPurchaseHistoryRequestV2_createInstance", "statusCode": "201", "mediaType": "application/json" }
+        ],
+        "fields": []
+      },
+      "note": "Apple 4.4.1 operation identity and all public inputs are classified; response remains opaque, so the semantic mapping is partial."
+    },
+    {
+      "tool": "sandbox_list",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "sandboxTestersV2_getCollection",
+          "method": "get",
+          "path": "/v2/sandboxTesters",
+          "role": "primary",
+          "condition": null
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "limit",
+          "sourceKind": "parameter",
+          "operationId": "sandboxTestersV2_getCollection",
+          "location": "query",
+          "appleName": "limit"
+        },
+        {
+          "toolField": "next_url",
+          "sourceKind": "local",
+          "localRole": "Validated Apple pagination URL override."
+        }
+      ],
+      "response": {
+        "mode": "opaque",
+        "sources": [
+          { "operationId": "sandboxTestersV2_getCollection", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": []
+      },
+      "note": "Apple 4.4.1 operation identity and all public inputs are classified; response remains opaque, so the semantic mapping is partial."
+    },
+    {
+      "tool": "sandbox_update",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "write",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "sandboxTestersV2_updateInstance",
+          "method": "patch",
+          "path": "/v2/sandboxTesters/{id}",
+          "role": "primary",
+          "condition": null,
+          "inputs": [
+            {
+              "sourceKind": "derived",
+              "jsonPointer": "/data/id",
+              "derivedFrom": ["sandbox_tester_id"],
+              "localRole": "copyPathIdentifierIntoResourceBody"
+            },
+            { "sourceKind": "fixed", "jsonPointer": "/data/type", "fixedValue": "sandboxTesters" }
+          ]
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "sandbox_tester_id",
+          "sourceKind": "parameter",
+          "operationId": "sandboxTestersV2_updateInstance",
+          "location": "path",
+          "appleName": "id"
+        },
+        {
+          "toolField": "territory",
+          "sourceKind": "requestBody",
+          "operationId": "sandboxTestersV2_updateInstance",
+          "jsonPointer": "/data/attributes/territory"
+        },
+        {
+          "toolField": "interrupt_purchases",
+          "sourceKind": "requestBody",
+          "operationId": "sandboxTestersV2_updateInstance",
+          "jsonPointer": "/data/attributes/interruptPurchases"
+        },
+        {
+          "toolField": "subscription_renewal_rate",
+          "sourceKind": "requestBody",
+          "operationId": "sandboxTestersV2_updateInstance",
+          "jsonPointer": "/data/attributes/subscriptionRenewalRate"
+        }
+      ],
+      "response": {
+        "mode": "opaque",
+        "sources": [
+          { "operationId": "sandboxTestersV2_updateInstance", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": []
+      },
+      "note": "Apple 4.4.1 operation identity and all public inputs are classified; response remains opaque, so the semantic mapping is partial."
+    }
+  ],
+  "implementationAliases": []
+}

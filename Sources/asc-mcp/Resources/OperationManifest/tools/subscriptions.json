@@ -1,0 +1,3753 @@
+{
+  "workerKey": "subscriptions",
+  "tools": [
+    {
+      "tool": "subscriptions_create",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "write",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "subscriptions_createInstance",
+          "method": "post",
+          "path": "/v1/subscriptions",
+          "role": "primary",
+          "condition": null,
+          "inputs": [
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/type",
+              "fixedValue": "subscriptions"
+            },
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/relationships/group/data/type",
+              "fixedValue": "subscriptionGroups"
+            }
+          ]
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "group_id",
+          "sourceKind": "requestBody",
+          "operationId": "subscriptions_createInstance",
+          "jsonPointer": "/data/relationships/group/data/id"
+        },
+        {
+          "toolField": "name",
+          "sourceKind": "requestBody",
+          "operationId": "subscriptions_createInstance",
+          "jsonPointer": "/data/attributes/name"
+        },
+        {
+          "toolField": "product_id",
+          "sourceKind": "requestBody",
+          "operationId": "subscriptions_createInstance",
+          "jsonPointer": "/data/attributes/productId"
+        },
+        {
+          "toolField": "subscription_period",
+          "sourceKind": "requestBody",
+          "operationId": "subscriptions_createInstance",
+          "jsonPointer": "/data/attributes/subscriptionPeriod"
+        },
+        {
+          "toolField": "family_sharable",
+          "sourceKind": "requestBody",
+          "operationId": "subscriptions_createInstance",
+          "jsonPointer": "/data/attributes/familySharable"
+        },
+        {
+          "toolField": "group_level",
+          "sourceKind": "requestBody",
+          "operationId": "subscriptions_createInstance",
+          "jsonPointer": "/data/attributes/groupLevel"
+        },
+        {
+          "toolField": "review_note",
+          "sourceKind": "requestBody",
+          "operationId": "subscriptions_createInstance",
+          "jsonPointer": "/data/attributes/reviewNote"
+        }
+      ],
+      "response": {
+        "mode": "opaque",
+        "sources": [
+          { "operationId": "subscriptions_createInstance", "statusCode": "201", "mediaType": "application/json" }
+        ],
+        "fields": []
+      },
+      "note": "Apple 4.4.1 operation identity and all public inputs are classified; response remains opaque, so the semantic mapping is partial."
+    },
+    {
+      "tool": "subscriptions_create_custom_code",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "write",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "subscriptionOfferCodeCustomCodes_createInstance",
+          "method": "post",
+          "path": "/v1/subscriptionOfferCodeCustomCodes",
+          "role": "primary",
+          "condition": null,
+          "inputs": [
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/type",
+              "fixedValue": "subscriptionOfferCodeCustomCodes"
+            },
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/relationships/offerCode/data/type",
+              "fixedValue": "subscriptionOfferCodes"
+            }
+          ]
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "offer_code_id",
+          "sourceKind": "requestBody",
+          "operationId": "subscriptionOfferCodeCustomCodes_createInstance",
+          "jsonPointer": "/data/relationships/offerCode/data/id"
+        },
+        {
+          "toolField": "custom_code",
+          "sourceKind": "requestBody",
+          "operationId": "subscriptionOfferCodeCustomCodes_createInstance",
+          "jsonPointer": "/data/attributes/customCode"
+        },
+        {
+          "toolField": "number_of_codes",
+          "sourceKind": "requestBody",
+          "operationId": "subscriptionOfferCodeCustomCodes_createInstance",
+          "jsonPointer": "/data/attributes/numberOfCodes"
+        },
+        {
+          "toolField": "expiration_date",
+          "sourceKind": "requestBody",
+          "operationId": "subscriptionOfferCodeCustomCodes_createInstance",
+          "jsonPointer": "/data/attributes/expirationDate"
+        }
+      ],
+      "response": {
+        "mode": "opaque",
+        "sources": [
+          { "operationId": "subscriptionOfferCodeCustomCodes_createInstance", "statusCode": "201", "mediaType": "application/json" }
+        ],
+        "fields": []
+      },
+      "note": "Apple 4.4.1 operation identity and all public inputs are classified; response remains opaque, so the semantic mapping is partial."
+    },
+    {
+      "tool": "subscriptions_create_group",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "write",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "subscriptionGroups_createInstance",
+          "method": "post",
+          "path": "/v1/subscriptionGroups",
+          "role": "primary",
+          "condition": null,
+          "inputs": [
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/type",
+              "fixedValue": "subscriptionGroups"
+            },
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/relationships/app/data/type",
+              "fixedValue": "apps"
+            }
+          ]
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "app_id",
+          "sourceKind": "requestBody",
+          "operationId": "subscriptionGroups_createInstance",
+          "jsonPointer": "/data/relationships/app/data/id"
+        },
+        {
+          "toolField": "reference_name",
+          "sourceKind": "requestBody",
+          "operationId": "subscriptionGroups_createInstance",
+          "jsonPointer": "/data/attributes/referenceName"
+        }
+      ],
+      "response": {
+        "mode": "opaque",
+        "sources": [
+          { "operationId": "subscriptionGroups_createInstance", "statusCode": "201", "mediaType": "application/json" }
+        ],
+        "fields": []
+      },
+      "note": "Apple 4.4.1 operation identity and all public inputs are classified; response remains opaque, so the semantic mapping is partial."
+    },
+    {
+      "tool": "subscriptions_create_group_localization",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "write",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "subscriptionGroupLocalizations_createInstance",
+          "method": "post",
+          "path": "/v1/subscriptionGroupLocalizations",
+          "role": "primary",
+          "condition": null,
+          "inputs": [
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/type",
+              "fixedValue": "subscriptionGroupLocalizations"
+            },
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/relationships/subscriptionGroup/data/type",
+              "fixedValue": "subscriptionGroups"
+            }
+          ]
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "subscription_group_id",
+          "sourceKind": "requestBody",
+          "operationId": "subscriptionGroupLocalizations_createInstance",
+          "jsonPointer": "/data/relationships/subscriptionGroup/data/id"
+        },
+        {
+          "toolField": "name",
+          "sourceKind": "requestBody",
+          "operationId": "subscriptionGroupLocalizations_createInstance",
+          "jsonPointer": "/data/attributes/name"
+        },
+        {
+          "toolField": "locale",
+          "sourceKind": "requestBody",
+          "operationId": "subscriptionGroupLocalizations_createInstance",
+          "jsonPointer": "/data/attributes/locale"
+        },
+        {
+          "toolField": "custom_app_name",
+          "sourceKind": "requestBody",
+          "operationId": "subscriptionGroupLocalizations_createInstance",
+          "jsonPointer": "/data/attributes/customAppName"
+        }
+      ],
+      "response": {
+        "mode": "opaque",
+        "sources": [
+          { "operationId": "subscriptionGroupLocalizations_createInstance", "statusCode": "201", "mediaType": "application/json" }
+        ],
+        "fields": []
+      },
+      "note": "The current handler uses the non-deprecated product-scoped subscription-group localization operations documented by Apple 4.4.1; no subscriptionGroupVersion resolver is part of this tool."
+    },
+    {
+      "tool": "subscriptions_create_intro_offer",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "write",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "subscriptionIntroductoryOffers_createInstance",
+          "method": "post",
+          "path": "/v1/subscriptionIntroductoryOffers",
+          "role": "primary",
+          "condition": null,
+          "inputs": [
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/type",
+              "fixedValue": "subscriptionIntroductoryOffers"
+            },
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/relationships/subscription/data/type",
+              "fixedValue": "subscriptions"
+            },
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/relationships/territory/data/type",
+              "fixedValue": "territories",
+              "localRole": "Emit this discriminator only when territory_id creates the optional territory relationship."
+            },
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/relationships/subscriptionPricePoint/data/type",
+              "fixedValue": "subscriptionPricePoints",
+              "localRole": "Emit this discriminator only when price_point_id creates the optional price-point relationship."
+            }
+          ]
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "subscription_id",
+          "sourceKind": "requestBody",
+          "operationId": "subscriptionIntroductoryOffers_createInstance",
+          "jsonPointer": "/data/relationships/subscription/data/id"
+        },
+        {
+          "toolField": "duration",
+          "sourceKind": "requestBody",
+          "operationId": "subscriptionIntroductoryOffers_createInstance",
+          "jsonPointer": "/data/attributes/duration"
+        },
+        {
+          "toolField": "offer_mode",
+          "sourceKind": "requestBody",
+          "operationId": "subscriptionIntroductoryOffers_createInstance",
+          "jsonPointer": "/data/attributes/offerMode"
+        },
+        {
+          "toolField": "number_of_periods",
+          "sourceKind": "requestBody",
+          "operationId": "subscriptionIntroductoryOffers_createInstance",
+          "jsonPointer": "/data/attributes/numberOfPeriods"
+        },
+        {
+          "toolField": "territory_id",
+          "sourceKind": "requestBody",
+          "operationId": "subscriptionIntroductoryOffers_createInstance",
+          "jsonPointer": "/data/relationships/territory/data/id"
+        },
+        {
+          "toolField": "price_point_id",
+          "sourceKind": "requestBody",
+          "operationId": "subscriptionIntroductoryOffers_createInstance",
+          "jsonPointer": "/data/relationships/subscriptionPricePoint/data/id"
+        }
+      ],
+      "response": {
+        "mode": "opaque",
+        "sources": [
+          { "operationId": "subscriptionIntroductoryOffers_createInstance", "statusCode": "201", "mediaType": "application/json" }
+        ],
+        "fields": []
+      },
+      "note": "Apple 4.4.1 operation identity and all public inputs are classified; response remains opaque, so the semantic mapping is partial."
+    },
+    {
+      "tool": "subscriptions_create_localization",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "write",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "subscriptionLocalizations_createInstance",
+          "method": "post",
+          "path": "/v1/subscriptionLocalizations",
+          "role": "primary",
+          "condition": null,
+          "inputs": [
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/type",
+              "fixedValue": "subscriptionLocalizations"
+            },
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/relationships/subscription/data/type",
+              "fixedValue": "subscriptions"
+            }
+          ]
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "subscription_id",
+          "sourceKind": "requestBody",
+          "operationId": "subscriptionLocalizations_createInstance",
+          "jsonPointer": "/data/relationships/subscription/data/id"
+        },
+        {
+          "toolField": "locale",
+          "sourceKind": "requestBody",
+          "operationId": "subscriptionLocalizations_createInstance",
+          "jsonPointer": "/data/attributes/locale"
+        },
+        {
+          "toolField": "name",
+          "sourceKind": "requestBody",
+          "operationId": "subscriptionLocalizations_createInstance",
+          "jsonPointer": "/data/attributes/name"
+        },
+        {
+          "toolField": "description",
+          "sourceKind": "requestBody",
+          "operationId": "subscriptionLocalizations_createInstance",
+          "jsonPointer": "/data/attributes/description"
+        }
+      ],
+      "response": {
+        "mode": "opaque",
+        "sources": [
+          { "operationId": "subscriptionLocalizations_createInstance", "statusCode": "201", "mediaType": "application/json" }
+        ],
+        "fields": []
+      },
+      "note": "The current handler uses the non-deprecated product-scoped subscription localization operations documented by Apple 4.4.1; no subscriptionVersion resolver is part of this tool."
+    },
+    {
+      "tool": "subscriptions_create_offer_code",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "write",
+      "implementationState": "broken",
+      "operations": [
+        {
+          "operationId": "subscriptionOfferCodes_createInstance",
+          "method": "post",
+          "path": "/v1/subscriptionOfferCodes",
+          "role": "primary",
+          "condition": null,
+          "inputs": [
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/type",
+              "fixedValue": "subscriptionOfferCodes"
+            },
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/relationships/subscription/data/type",
+              "fixedValue": "subscriptions"
+            },
+            {
+              "sourceKind": "derived",
+              "jsonPointer": "/data/attributes/customerEligibilities",
+              "derivedFrom": [
+                "offer_eligibility"
+              ],
+              "localRole": "Wrap the public offer eligibility in the customerEligibilities array used by the delegated handler."
+            },
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/relationships/prices/data/*/type",
+              "fixedValue": "subscriptionOfferCodePrices"
+            },
+            {
+              "sourceKind": "derived",
+              "jsonPointer": "/data/relationships/prices/data/*/id",
+              "derivedFrom": [
+                "territory_ids",
+                "price_point_ids"
+              ],
+              "localRole": "Generate the same ${price-index} linkage IDs used by the inline offer-code price resources."
+            }
+          ]
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "subscription_id",
+          "sourceKind": "requestBody",
+          "operationId": "subscriptionOfferCodes_createInstance",
+          "jsonPointer": "/data/relationships/subscription/data/id"
+        },
+        {
+          "toolField": "name",
+          "sourceKind": "requestBody",
+          "operationId": "subscriptionOfferCodes_createInstance",
+          "jsonPointer": "/data/attributes/name"
+        },
+        {
+          "toolField": "offer_eligibility",
+          "sourceKind": "requestBody",
+          "operationId": "subscriptionOfferCodes_createInstance",
+          "jsonPointer": "/data/attributes/offerEligibility"
+        },
+        {
+          "toolField": "offer_mode",
+          "sourceKind": "requestBody",
+          "operationId": "subscriptionOfferCodes_createInstance",
+          "jsonPointer": "/data/attributes/offerMode"
+        },
+        {
+          "toolField": "duration",
+          "sourceKind": "requestBody",
+          "operationId": "subscriptionOfferCodes_createInstance",
+          "jsonPointer": "/data/attributes/duration"
+        },
+        {
+          "toolField": "number_of_periods",
+          "sourceKind": "requestBody",
+          "operationId": "subscriptionOfferCodes_createInstance",
+          "jsonPointer": "/data/attributes/numberOfPeriods"
+        },
+        {
+          "toolField": "territory_ids",
+          "sourceKind": "requestBody",
+          "operationId": "subscriptionOfferCodes_createInstance",
+          "jsonPointer": "/included",
+          "localRole": "Zipped with price_point_ids into inline subscriptionOfferCodePrices territory relationships."
+        },
+        {
+          "toolField": "price_point_ids",
+          "sourceKind": "requestBody",
+          "operationId": "subscriptionOfferCodes_createInstance",
+          "jsonPointer": "/included",
+          "localRole": "Zipped with territory_ids into inline subscriptionOfferCodePrices price-point relationships."
+        }
+      ],
+      "response": {
+        "mode": "opaque",
+        "sources": [
+          { "operationId": "subscriptionOfferCodes_createInstance", "statusCode": "201", "mediaType": "application/json" }
+        ],
+        "fields": []
+      },
+      "note": "Broken as built: when territory_ids is empty, the legacy fallback can omit the required prices relationship; it also copies offerEligibility into customerEligibilities even though Apple defines disjoint enums. Plan targeting and auto-renew controls are not exposed."
+    },
+    {
+      "tool": "subscriptions_create_price",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "write",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "subscriptionPrices_createInstance",
+          "method": "post",
+          "path": "/v1/subscriptionPrices",
+          "role": "primary",
+          "condition": null,
+          "inputs": [
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/type",
+              "fixedValue": "subscriptionPrices"
+            },
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/relationships/subscription/data/type",
+              "fixedValue": "subscriptions"
+            },
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/relationships/territory/data/type",
+              "fixedValue": "territories"
+            },
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/relationships/subscriptionPricePoint/data/type",
+              "fixedValue": "subscriptionPricePoints"
+            }
+          ]
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "subscription_id",
+          "sourceKind": "requestBody",
+          "operationId": "subscriptionPrices_createInstance",
+          "jsonPointer": "/data/relationships/subscription/data/id"
+        },
+        {
+          "toolField": "territory_id",
+          "sourceKind": "requestBody",
+          "operationId": "subscriptionPrices_createInstance",
+          "jsonPointer": "/data/relationships/territory/data/id"
+        },
+        {
+          "toolField": "price_point_id",
+          "sourceKind": "requestBody",
+          "operationId": "subscriptionPrices_createInstance",
+          "jsonPointer": "/data/relationships/subscriptionPricePoint/data/id"
+        },
+        {
+          "toolField": "start_date",
+          "sourceKind": "requestBody",
+          "operationId": "subscriptionPrices_createInstance",
+          "jsonPointer": "/data/attributes/startDate"
+        }
+      ],
+      "response": {
+        "mode": "opaque",
+        "sources": [
+          { "operationId": "subscriptionPrices_createInstance", "statusCode": "201", "mediaType": "application/json" }
+        ],
+        "fields": []
+      },
+      "note": "Creates one subscription price. Apple 4.4 adds planType and preserveCurrentPrice; the public surface cannot express them, so mapping remains partial."
+    },
+    {
+      "tool": "subscriptions_create_promotional_offer",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "write",
+      "implementationState": "broken",
+      "operations": [
+        {
+          "operationId": "subscriptionPromotionalOffers_createInstance",
+          "method": "post",
+          "path": "/v1/subscriptionPromotionalOffers",
+          "role": "primary",
+          "condition": null,
+          "inputs": [
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/type",
+              "fixedValue": "subscriptionPromotionalOffers"
+            },
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/relationships/subscription/data/type",
+              "fixedValue": "subscriptions"
+            },
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/relationships/prices/data/*/type",
+              "fixedValue": "subscriptionPromotionalOfferPrices"
+            },
+            {
+              "sourceKind": "derived",
+              "jsonPointer": "/data/relationships/prices/data/*/id",
+              "derivedFrom": [
+                "territory_ids",
+                "price_point_ids"
+              ],
+              "localRole": "Generate the same ${price-index} linkage IDs used by the inline promotional-offer price resources; the current handler omits the Apple-required prices relationship when no territories are supplied."
+            }
+          ]
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "subscription_id",
+          "sourceKind": "requestBody",
+          "operationId": "subscriptionPromotionalOffers_createInstance",
+          "jsonPointer": "/data/relationships/subscription/data/id"
+        },
+        {
+          "toolField": "name",
+          "sourceKind": "requestBody",
+          "operationId": "subscriptionPromotionalOffers_createInstance",
+          "jsonPointer": "/data/attributes/name"
+        },
+        {
+          "toolField": "offer_code",
+          "sourceKind": "requestBody",
+          "operationId": "subscriptionPromotionalOffers_createInstance",
+          "jsonPointer": "/data/attributes/offerCode"
+        },
+        {
+          "toolField": "duration",
+          "sourceKind": "requestBody",
+          "operationId": "subscriptionPromotionalOffers_createInstance",
+          "jsonPointer": "/data/attributes/duration"
+        },
+        {
+          "toolField": "offer_mode",
+          "sourceKind": "requestBody",
+          "operationId": "subscriptionPromotionalOffers_createInstance",
+          "jsonPointer": "/data/attributes/offerMode"
+        },
+        {
+          "toolField": "number_of_periods",
+          "sourceKind": "requestBody",
+          "operationId": "subscriptionPromotionalOffers_createInstance",
+          "jsonPointer": "/data/attributes/numberOfPeriods"
+        },
+        {
+          "toolField": "territory_ids",
+          "sourceKind": "requestBody",
+          "operationId": "subscriptionPromotionalOffers_createInstance",
+          "jsonPointer": "/included",
+          "localRole": "Zipped with price_point_ids into inline subscriptionPromotionalOfferPrices territory relationships."
+        },
+        {
+          "toolField": "price_point_ids",
+          "sourceKind": "requestBody",
+          "operationId": "subscriptionPromotionalOffers_createInstance",
+          "jsonPointer": "/included",
+          "localRole": "Zipped with territory_ids into inline subscriptionPromotionalOfferPrices price-point relationships."
+        }
+      ],
+      "response": {
+        "mode": "opaque",
+        "sources": [
+          { "operationId": "subscriptionPromotionalOffers_createInstance", "statusCode": "201", "mediaType": "application/json" }
+        ],
+        "fields": []
+      },
+      "note": "Broken as built: territory_ids and price_point_ids are optional; when absent or empty, the handler omits Apple required prices relationship."
+    },
+    {
+      "tool": "subscriptions_create_winback_offer",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "write",
+      "implementationState": "broken",
+      "operations": [
+        {
+          "operationId": "winBackOffers_createInstance",
+          "method": "post",
+          "path": "/v1/winBackOffers",
+          "role": "primary",
+          "condition": null,
+          "inputs": [
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/type",
+              "fixedValue": "winBackOffers"
+            },
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/relationships/subscription/data/type",
+              "fixedValue": "subscriptions"
+            },
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/relationships/prices/data/*/type",
+              "fixedValue": "winBackOfferPrices"
+            },
+            {
+              "sourceKind": "derived",
+              "jsonPointer": "/data/relationships/prices/data/*/id",
+              "derivedFrom": [
+                "territory_ids",
+                "price_point_ids"
+              ],
+              "localRole": "Generate the same ${price-index} linkage IDs used by the inline win-back price resources; the current handler omits the Apple-required prices relationship when no territories are supplied."
+            }
+          ]
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "subscription_id",
+          "sourceKind": "requestBody",
+          "operationId": "winBackOffers_createInstance",
+          "jsonPointer": "/data/relationships/subscription/data/id"
+        },
+        {
+          "toolField": "reference_name",
+          "sourceKind": "requestBody",
+          "operationId": "winBackOffers_createInstance",
+          "jsonPointer": "/data/attributes/referenceName"
+        },
+        {
+          "toolField": "offer_id",
+          "sourceKind": "requestBody",
+          "operationId": "winBackOffers_createInstance",
+          "jsonPointer": "/data/attributes/offerId"
+        },
+        {
+          "toolField": "duration",
+          "sourceKind": "requestBody",
+          "operationId": "winBackOffers_createInstance",
+          "jsonPointer": "/data/attributes/duration"
+        },
+        {
+          "toolField": "offer_mode",
+          "sourceKind": "requestBody",
+          "operationId": "winBackOffers_createInstance",
+          "jsonPointer": "/data/attributes/offerMode"
+        },
+        {
+          "toolField": "period_count",
+          "sourceKind": "requestBody",
+          "operationId": "winBackOffers_createInstance",
+          "jsonPointer": "/data/attributes/periodCount"
+        },
+        {
+          "toolField": "priority",
+          "sourceKind": "requestBody",
+          "operationId": "winBackOffers_createInstance",
+          "jsonPointer": "/data/attributes/priority"
+        },
+        {
+          "toolField": "promotion_intent",
+          "sourceKind": "requestBody",
+          "operationId": "winBackOffers_createInstance",
+          "jsonPointer": "/data/attributes/promotionIntent"
+        },
+        {
+          "toolField": "eligibility_duration_months",
+          "sourceKind": "requestBody",
+          "operationId": "winBackOffers_createInstance",
+          "jsonPointer": "/data/attributes/customerEligibilityPaidSubscriptionDurationInMonths"
+        },
+        {
+          "toolField": "eligibility_time_since_last_months_min",
+          "sourceKind": "requestBody",
+          "operationId": "winBackOffers_createInstance",
+          "jsonPointer": "/data/attributes/customerEligibilityTimeSinceLastSubscribedInMonths/minimum"
+        },
+        {
+          "toolField": "eligibility_time_since_last_months_max",
+          "sourceKind": "requestBody",
+          "operationId": "winBackOffers_createInstance",
+          "jsonPointer": "/data/attributes/customerEligibilityTimeSinceLastSubscribedInMonths/maximum"
+        },
+        {
+          "toolField": "eligibility_wait_between_months",
+          "sourceKind": "requestBody",
+          "operationId": "winBackOffers_createInstance",
+          "jsonPointer": "/data/attributes/customerEligibilityWaitBetweenOffersInMonths"
+        },
+        {
+          "toolField": "start_date",
+          "sourceKind": "requestBody",
+          "operationId": "winBackOffers_createInstance",
+          "jsonPointer": "/data/attributes/startDate"
+        },
+        {
+          "toolField": "end_date",
+          "sourceKind": "requestBody",
+          "operationId": "winBackOffers_createInstance",
+          "jsonPointer": "/data/attributes/endDate"
+        },
+        {
+          "toolField": "territory_ids",
+          "sourceKind": "requestBody",
+          "operationId": "winBackOffers_createInstance",
+          "jsonPointer": "/included",
+          "localRole": "Zipped with price_point_ids into inline winBackOfferPrices territory relationships."
+        },
+        {
+          "toolField": "price_point_ids",
+          "sourceKind": "requestBody",
+          "operationId": "winBackOffers_createInstance",
+          "jsonPointer": "/included",
+          "localRole": "Zipped with territory_ids into inline winBackOfferPrices price-point relationships."
+        }
+      ],
+      "response": {
+        "mode": "opaque",
+        "sources": [
+          { "operationId": "winBackOffers_createInstance", "statusCode": "201", "mediaType": "application/json" }
+        ],
+        "fields": []
+      },
+      "note": "Broken as built: territory_ids and price_point_ids can be absent or empty, and the handler then omits Apple required prices relationship."
+    },
+    {
+      "tool": "subscriptions_deactivate_custom_code",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "write",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "subscriptionOfferCodeCustomCodes_updateInstance",
+          "method": "patch",
+          "path": "/v1/subscriptionOfferCodeCustomCodes/{id}",
+          "role": "primary",
+          "condition": null,
+          "inputs": [
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/type",
+              "fixedValue": "subscriptionOfferCodeCustomCodes"
+            },
+            {
+              "sourceKind": "derived",
+              "jsonPointer": "/data/id",
+              "derivedFrom": [
+                "custom_code_id"
+              ],
+              "localRole": "Reuse the public custom-code ID as the JSON:API resource ID in the update body."
+            },
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/attributes/active",
+              "fixedValue": false
+            }
+          ]
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "custom_code_id",
+          "sourceKind": "parameter",
+          "operationId": "subscriptionOfferCodeCustomCodes_updateInstance",
+          "location": "path",
+          "appleName": "id"
+        }
+      ],
+      "response": {
+        "mode": "opaque",
+        "sources": [
+          { "operationId": "subscriptionOfferCodeCustomCodes_updateInstance", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": []
+      },
+      "note": "Apple 4.4.1 operation identity and all public inputs are classified; response remains opaque, so the semantic mapping is partial."
+    },
+    {
+      "tool": "subscriptions_deactivate_offer_code",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "write",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "subscriptionOfferCodes_updateInstance",
+          "method": "patch",
+          "path": "/v1/subscriptionOfferCodes/{id}",
+          "role": "primary",
+          "condition": null,
+          "inputs": [
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/type",
+              "fixedValue": "subscriptionOfferCodes"
+            },
+            {
+              "sourceKind": "derived",
+              "jsonPointer": "/data/id",
+              "derivedFrom": [
+                "offer_code_id"
+              ],
+              "localRole": "Reuse the public offer-code ID as the JSON:API resource ID in the update body."
+            },
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/attributes/active",
+              "fixedValue": false
+            }
+          ]
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "offer_code_id",
+          "sourceKind": "parameter",
+          "operationId": "subscriptionOfferCodes_updateInstance",
+          "location": "path",
+          "appleName": "id"
+        }
+      ],
+      "response": {
+        "mode": "opaque",
+        "sources": [
+          { "operationId": "subscriptionOfferCodes_updateInstance", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": []
+      },
+      "note": "Apple 4.4.1 operation identity and all public inputs are classified; response remains opaque, so the semantic mapping is partial."
+    },
+    {
+      "tool": "subscriptions_delete",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "write",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "subscriptions_deleteInstance",
+          "method": "delete",
+          "path": "/v1/subscriptions/{id}",
+          "role": "primary",
+          "condition": null
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "subscription_id",
+          "sourceKind": "parameter",
+          "operationId": "subscriptions_deleteInstance",
+          "location": "path",
+          "appleName": "id"
+        }
+      ],
+      "response": {
+        "mode": "opaque",
+        "sources": [
+          { "operationId": "subscriptions_deleteInstance", "statusCode": "204" }
+        ],
+        "fields": []
+      },
+      "note": "Apple 4.4.1 operation identity and all public inputs are classified; response remains opaque, so the semantic mapping is partial."
+    },
+    {
+      "tool": "subscriptions_delete_group",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "write",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "subscriptionGroups_deleteInstance",
+          "method": "delete",
+          "path": "/v1/subscriptionGroups/{id}",
+          "role": "primary",
+          "condition": null
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "group_id",
+          "sourceKind": "parameter",
+          "operationId": "subscriptionGroups_deleteInstance",
+          "location": "path",
+          "appleName": "id"
+        }
+      ],
+      "response": {
+        "mode": "opaque",
+        "sources": [
+          { "operationId": "subscriptionGroups_deleteInstance", "statusCode": "204" }
+        ],
+        "fields": []
+      },
+      "note": "Apple 4.4.1 operation identity and all public inputs are classified; response remains opaque, so the semantic mapping is partial."
+    },
+    {
+      "tool": "subscriptions_delete_group_localization",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "write",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "subscriptionGroupLocalizations_deleteInstance",
+          "method": "delete",
+          "path": "/v1/subscriptionGroupLocalizations/{id}",
+          "role": "primary",
+          "condition": null
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "group_localization_id",
+          "sourceKind": "parameter",
+          "operationId": "subscriptionGroupLocalizations_deleteInstance",
+          "location": "path",
+          "appleName": "id"
+        }
+      ],
+      "response": {
+        "mode": "opaque",
+        "sources": [
+          { "operationId": "subscriptionGroupLocalizations_deleteInstance", "statusCode": "204" }
+        ],
+        "fields": []
+      },
+      "note": "The current handler uses the non-deprecated product-scoped subscription-group localization operations documented by Apple 4.4.1; no subscriptionGroupVersion resolver is part of this tool."
+    },
+    {
+      "tool": "subscriptions_delete_image",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "write",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "subscriptionImages_deleteInstance",
+          "method": "delete",
+          "path": "/v1/subscriptionImages/{id}",
+          "role": "primary",
+          "condition": null
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "image_id",
+          "sourceKind": "parameter",
+          "operationId": "subscriptionImages_deleteInstance",
+          "location": "path",
+          "appleName": "id"
+        }
+      ],
+      "response": {
+        "mode": "opaque",
+        "sources": [
+          { "operationId": "subscriptionImages_deleteInstance", "statusCode": "204" }
+        ],
+        "fields": []
+      },
+      "note": "The current handler and Apple 4.4.1 both use the non-deprecated product-scoped subscriptionImages resource."
+    },
+    {
+      "tool": "subscriptions_delete_intro_offer",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "write",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "subscriptionIntroductoryOffers_deleteInstance",
+          "method": "delete",
+          "path": "/v1/subscriptionIntroductoryOffers/{id}",
+          "role": "primary",
+          "condition": null
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "intro_offer_id",
+          "sourceKind": "parameter",
+          "operationId": "subscriptionIntroductoryOffers_deleteInstance",
+          "location": "path",
+          "appleName": "id"
+        }
+      ],
+      "response": {
+        "mode": "opaque",
+        "sources": [
+          { "operationId": "subscriptionIntroductoryOffers_deleteInstance", "statusCode": "204" }
+        ],
+        "fields": []
+      },
+      "note": "Apple 4.4.1 operation identity and all public inputs are classified; response remains opaque, so the semantic mapping is partial."
+    },
+    {
+      "tool": "subscriptions_delete_localization",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "write",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "subscriptionLocalizations_deleteInstance",
+          "method": "delete",
+          "path": "/v1/subscriptionLocalizations/{id}",
+          "role": "primary",
+          "condition": null
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "localization_id",
+          "sourceKind": "parameter",
+          "operationId": "subscriptionLocalizations_deleteInstance",
+          "location": "path",
+          "appleName": "id"
+        }
+      ],
+      "response": {
+        "mode": "opaque",
+        "sources": [
+          { "operationId": "subscriptionLocalizations_deleteInstance", "statusCode": "204" }
+        ],
+        "fields": []
+      },
+      "note": "The current handler uses the non-deprecated product-scoped subscription localization operations documented by Apple 4.4.1; no subscriptionVersion resolver is part of this tool."
+    },
+    {
+      "tool": "subscriptions_delete_price",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "write",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "subscriptionPrices_deleteInstance",
+          "method": "delete",
+          "path": "/v1/subscriptionPrices/{id}",
+          "role": "primary",
+          "condition": null
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "subscription_price_id",
+          "sourceKind": "parameter",
+          "operationId": "subscriptionPrices_deleteInstance",
+          "location": "path",
+          "appleName": "id"
+        }
+      ],
+      "response": {
+        "mode": "opaque",
+        "sources": [
+          { "operationId": "subscriptionPrices_deleteInstance", "statusCode": "204" }
+        ],
+        "fields": []
+      },
+      "note": "Apple 4.4.1 operation identity and all public inputs are classified; response remains opaque, so the semantic mapping is partial."
+    },
+    {
+      "tool": "subscriptions_delete_promotional_offer",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "write",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "subscriptionPromotionalOffers_deleteInstance",
+          "method": "delete",
+          "path": "/v1/subscriptionPromotionalOffers/{id}",
+          "role": "primary",
+          "condition": null
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "promotional_offer_id",
+          "sourceKind": "parameter",
+          "operationId": "subscriptionPromotionalOffers_deleteInstance",
+          "location": "path",
+          "appleName": "id"
+        }
+      ],
+      "response": {
+        "mode": "opaque",
+        "sources": [
+          { "operationId": "subscriptionPromotionalOffers_deleteInstance", "statusCode": "204" }
+        ],
+        "fields": []
+      },
+      "note": "Apple 4.4.1 operation identity and all public inputs are classified; response remains opaque, so the semantic mapping is partial."
+    },
+    {
+      "tool": "subscriptions_delete_review_screenshot",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "write",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "subscriptionAppStoreReviewScreenshots_deleteInstance",
+          "method": "delete",
+          "path": "/v1/subscriptionAppStoreReviewScreenshots/{id}",
+          "role": "primary",
+          "condition": null
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "screenshot_id",
+          "sourceKind": "parameter",
+          "operationId": "subscriptionAppStoreReviewScreenshots_deleteInstance",
+          "location": "path",
+          "appleName": "id"
+        }
+      ],
+      "response": {
+        "mode": "opaque",
+        "sources": [
+          { "operationId": "subscriptionAppStoreReviewScreenshots_deleteInstance", "statusCode": "204" }
+        ],
+        "fields": []
+      },
+      "note": "Apple 4.4.1 operation identity and all public inputs are classified; response remains opaque, so the semantic mapping is partial."
+    },
+    {
+      "tool": "subscriptions_delete_winback_offer",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "write",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "winBackOffers_deleteInstance",
+          "method": "delete",
+          "path": "/v1/winBackOffers/{id}",
+          "role": "primary",
+          "condition": null
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "winback_offer_id",
+          "sourceKind": "parameter",
+          "operationId": "winBackOffers_deleteInstance",
+          "location": "path",
+          "appleName": "id"
+        }
+      ],
+      "response": {
+        "mode": "opaque",
+        "sources": [
+          { "operationId": "winBackOffers_deleteInstance", "statusCode": "204" }
+        ],
+        "fields": []
+      },
+      "note": "Apple 4.4.1 operation identity and all public inputs are classified; response remains opaque, so the semantic mapping is partial."
+    },
+    {
+      "tool": "subscriptions_generate_one_time_codes",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "write",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "subscriptionOfferCodeOneTimeUseCodes_createInstance",
+          "method": "post",
+          "path": "/v1/subscriptionOfferCodeOneTimeUseCodes",
+          "role": "primary",
+          "condition": null,
+          "inputs": [
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/type",
+              "fixedValue": "subscriptionOfferCodeOneTimeUseCodes"
+            },
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/relationships/offerCode/data/type",
+              "fixedValue": "subscriptionOfferCodes"
+            }
+          ]
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "offer_code_id",
+          "sourceKind": "requestBody",
+          "operationId": "subscriptionOfferCodeOneTimeUseCodes_createInstance",
+          "jsonPointer": "/data/relationships/offerCode/data/id"
+        },
+        {
+          "toolField": "number_of_codes",
+          "sourceKind": "requestBody",
+          "operationId": "subscriptionOfferCodeOneTimeUseCodes_createInstance",
+          "jsonPointer": "/data/attributes/numberOfCodes"
+        },
+        {
+          "toolField": "expiration_date",
+          "sourceKind": "requestBody",
+          "operationId": "subscriptionOfferCodeOneTimeUseCodes_createInstance",
+          "jsonPointer": "/data/attributes/expirationDate"
+        }
+      ],
+      "response": {
+        "mode": "opaque",
+        "sources": [
+          { "operationId": "subscriptionOfferCodeOneTimeUseCodes_createInstance", "statusCode": "201", "mediaType": "application/json" }
+        ],
+        "fields": []
+      },
+      "note": "Apple create is POST /v1/subscriptionOfferCodeOneTimeUseCodes. The current nested POST implementation must migrate to this operation and relationship body."
+    },
+    {
+      "tool": "subscriptions_get",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "subscriptions_getInstance",
+          "method": "get",
+          "path": "/v1/subscriptions/{id}",
+          "role": "primary",
+          "condition": null
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "subscription_id",
+          "sourceKind": "parameter",
+          "operationId": "subscriptions_getInstance",
+          "location": "path",
+          "appleName": "id"
+        }
+      ],
+      "response": {
+        "mode": "opaque",
+        "sources": [
+          { "operationId": "subscriptions_getInstance", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": []
+      },
+      "note": "Apple 4.4.1 operation identity and all public inputs are classified; response remains opaque, so the semantic mapping is partial."
+    },
+    {
+      "tool": "subscriptions_get_availability",
+      "kind": "direct",
+      "status": "deprecated",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "subscriptions_subscriptionAvailability_getToOneRelated",
+          "method": "get",
+          "path": "/v1/subscriptions/{id}/subscriptionAvailability",
+          "role": "primary",
+          "condition": null
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "subscription_id",
+          "sourceKind": "parameter",
+          "operationId": "subscriptions_subscriptionAvailability_getToOneRelated",
+          "location": "path",
+          "appleName": "id"
+        }
+      ],
+      "response": {
+        "mode": "opaque",
+        "sources": [
+          { "operationId": "subscriptions_subscriptionAvailability_getToOneRelated", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": []
+      },
+      "note": "The current handler uses Apple 4.4.1 subscriptionAvailability, which Apple marks deprecated in favor of subscriptionPlanAvailabilities; the public tool cannot select planType."
+    },
+    {
+      "tool": "subscriptions_get_custom_code",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "subscriptionOfferCodeCustomCodes_getInstance",
+          "method": "get",
+          "path": "/v1/subscriptionOfferCodeCustomCodes/{id}",
+          "role": "primary",
+          "condition": null
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "custom_code_id",
+          "sourceKind": "parameter",
+          "operationId": "subscriptionOfferCodeCustomCodes_getInstance",
+          "location": "path",
+          "appleName": "id"
+        }
+      ],
+      "response": {
+        "mode": "opaque",
+        "sources": [
+          { "operationId": "subscriptionOfferCodeCustomCodes_getInstance", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": []
+      },
+      "note": "Apple 4.4.1 operation identity and all public inputs are classified; response remains opaque, so the semantic mapping is partial."
+    },
+    {
+      "tool": "subscriptions_get_group",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "subscriptionGroups_getInstance",
+          "method": "get",
+          "path": "/v1/subscriptionGroups/{id}",
+          "role": "primary",
+          "condition": null
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "group_id",
+          "sourceKind": "parameter",
+          "operationId": "subscriptionGroups_getInstance",
+          "location": "path",
+          "appleName": "id"
+        }
+      ],
+      "response": {
+        "mode": "opaque",
+        "sources": [
+          { "operationId": "subscriptionGroups_getInstance", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": []
+      },
+      "note": "Apple 4.4.1 operation identity and all public inputs are classified; response remains opaque, so the semantic mapping is partial."
+    },
+    {
+      "tool": "subscriptions_get_group_localization",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "subscriptionGroupLocalizations_getInstance",
+          "method": "get",
+          "path": "/v1/subscriptionGroupLocalizations/{id}",
+          "role": "primary",
+          "condition": null
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "group_localization_id",
+          "sourceKind": "parameter",
+          "operationId": "subscriptionGroupLocalizations_getInstance",
+          "location": "path",
+          "appleName": "id"
+        }
+      ],
+      "response": {
+        "mode": "opaque",
+        "sources": [
+          { "operationId": "subscriptionGroupLocalizations_getInstance", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": []
+      },
+      "note": "The current handler uses the non-deprecated product-scoped subscription-group localization operations documented by Apple 4.4.1; no subscriptionGroupVersion resolver is part of this tool."
+    },
+    {
+      "tool": "subscriptions_get_image",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "subscriptionImages_getInstance",
+          "method": "get",
+          "path": "/v1/subscriptionImages/{id}",
+          "role": "primary",
+          "condition": null
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "image_id",
+          "sourceKind": "parameter",
+          "operationId": "subscriptionImages_getInstance",
+          "location": "path",
+          "appleName": "id"
+        }
+      ],
+      "response": {
+        "mode": "opaque",
+        "sources": [
+          { "operationId": "subscriptionImages_getInstance", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": []
+      },
+      "note": "The current handler and Apple 4.4.1 both use the non-deprecated product-scoped subscriptionImages resource."
+    },
+    {
+      "tool": "subscriptions_get_localization",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "subscriptionLocalizations_getInstance",
+          "method": "get",
+          "path": "/v1/subscriptionLocalizations/{id}",
+          "role": "primary",
+          "condition": null
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "localization_id",
+          "sourceKind": "parameter",
+          "operationId": "subscriptionLocalizations_getInstance",
+          "location": "path",
+          "appleName": "id"
+        }
+      ],
+      "response": {
+        "mode": "opaque",
+        "sources": [
+          { "operationId": "subscriptionLocalizations_getInstance", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": []
+      },
+      "note": "The current handler uses the non-deprecated product-scoped subscription localization operations documented by Apple 4.4.1; no subscriptionVersion resolver is part of this tool."
+    },
+    {
+      "tool": "subscriptions_get_offer_code",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "subscriptionOfferCodes_getInstance",
+          "method": "get",
+          "path": "/v1/subscriptionOfferCodes/{id}",
+          "role": "primary",
+          "condition": null
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "offer_code_id",
+          "sourceKind": "parameter",
+          "operationId": "subscriptionOfferCodes_getInstance",
+          "location": "path",
+          "appleName": "id"
+        }
+      ],
+      "response": {
+        "mode": "opaque",
+        "sources": [
+          { "operationId": "subscriptionOfferCodes_getInstance", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": []
+      },
+      "note": "Apple 4.4.1 operation identity and all public inputs are classified; response remains opaque, so the semantic mapping is partial."
+    },
+    {
+      "tool": "subscriptions_get_one_time_code",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "subscriptionOfferCodeOneTimeUseCodes_getInstance",
+          "method": "get",
+          "path": "/v1/subscriptionOfferCodeOneTimeUseCodes/{id}",
+          "role": "primary",
+          "condition": null
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "one_time_code_id",
+          "sourceKind": "parameter",
+          "operationId": "subscriptionOfferCodeOneTimeUseCodes_getInstance",
+          "location": "path",
+          "appleName": "id"
+        }
+      ],
+      "response": {
+        "mode": "opaque",
+        "sources": [
+          { "operationId": "subscriptionOfferCodeOneTimeUseCodes_getInstance", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": []
+      },
+      "note": "Apple 4.4.1 operation identity and all public inputs are classified; response remains opaque, so the semantic mapping is partial."
+    },
+    {
+      "tool": "subscriptions_get_one_time_code_values",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "subscriptionOfferCodeOneTimeUseCodes_values_getToOneRelated",
+          "method": "get",
+          "path": "/v1/subscriptionOfferCodeOneTimeUseCodes/{id}/values",
+          "role": "primary",
+          "condition": null
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "one_time_code_id",
+          "sourceKind": "parameter",
+          "operationId": "subscriptionOfferCodeOneTimeUseCodes_values_getToOneRelated",
+          "location": "path",
+          "appleName": "id"
+        }
+      ],
+      "response": {
+        "mode": "opaque",
+        "sources": [
+          {
+            "operationId": "subscriptionOfferCodeOneTimeUseCodes_values_getToOneRelated",
+            "statusCode": "200",
+            "mediaType": "text/csv"
+          }
+        ],
+        "fields": []
+      },
+      "note": "Apple returns text/csv, not JSON. The transport must preserve the CSV payload and content type."
+    },
+    {
+      "tool": "subscriptions_get_price_point",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "subscriptionPricePoints_getInstance",
+          "method": "get",
+          "path": "/v1/subscriptionPricePoints/{id}",
+          "role": "primary",
+          "condition": null
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "price_point_id",
+          "sourceKind": "parameter",
+          "operationId": "subscriptionPricePoints_getInstance",
+          "location": "path",
+          "appleName": "id"
+        }
+      ],
+      "response": {
+        "mode": "opaque",
+        "sources": [
+          { "operationId": "subscriptionPricePoints_getInstance", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": []
+      },
+      "note": "Apple 4.4.1 operation identity and all public inputs are classified; response remains opaque, so the semantic mapping is partial."
+    },
+    {
+      "tool": "subscriptions_get_promoted_purchase",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "subscriptions_promotedPurchase_getToOneRelated",
+          "method": "get",
+          "path": "/v1/subscriptions/{id}/promotedPurchase",
+          "role": "primary",
+          "condition": null
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "subscription_id",
+          "sourceKind": "parameter",
+          "operationId": "subscriptions_promotedPurchase_getToOneRelated",
+          "location": "path",
+          "appleName": "id"
+        }
+      ],
+      "response": {
+        "mode": "opaque",
+        "sources": [
+          { "operationId": "subscriptions_promotedPurchase_getToOneRelated", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": []
+      },
+      "note": "Apple 4.4.1 operation identity and all public inputs are classified; response remains opaque, so the semantic mapping is partial."
+    },
+    {
+      "tool": "subscriptions_get_promotional_offer",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "subscriptionPromotionalOffers_getInstance",
+          "method": "get",
+          "path": "/v1/subscriptionPromotionalOffers/{id}",
+          "role": "primary",
+          "condition": null
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "promotional_offer_id",
+          "sourceKind": "parameter",
+          "operationId": "subscriptionPromotionalOffers_getInstance",
+          "location": "path",
+          "appleName": "id"
+        }
+      ],
+      "response": {
+        "mode": "opaque",
+        "sources": [
+          { "operationId": "subscriptionPromotionalOffers_getInstance", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": []
+      },
+      "note": "Apple 4.4.1 operation identity and all public inputs are classified; response remains opaque, so the semantic mapping is partial."
+    },
+    {
+      "tool": "subscriptions_get_review_screenshot",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "subscriptionAppStoreReviewScreenshots_getInstance",
+          "method": "get",
+          "path": "/v1/subscriptionAppStoreReviewScreenshots/{id}",
+          "role": "primary",
+          "condition": null
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "screenshot_id",
+          "sourceKind": "parameter",
+          "operationId": "subscriptionAppStoreReviewScreenshots_getInstance",
+          "location": "path",
+          "appleName": "id"
+        }
+      ],
+      "response": {
+        "mode": "opaque",
+        "sources": [
+          { "operationId": "subscriptionAppStoreReviewScreenshots_getInstance", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": []
+      },
+      "note": "Apple 4.4.1 operation identity and all public inputs are classified; response remains opaque, so the semantic mapping is partial."
+    },
+    {
+      "tool": "subscriptions_get_review_screenshot_for_subscription",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "subscriptions_appStoreReviewScreenshot_getToOneRelated",
+          "method": "get",
+          "path": "/v1/subscriptions/{id}/appStoreReviewScreenshot",
+          "role": "primary",
+          "condition": null
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "subscription_id",
+          "sourceKind": "parameter",
+          "operationId": "subscriptions_appStoreReviewScreenshot_getToOneRelated",
+          "location": "path",
+          "appleName": "id"
+        }
+      ],
+      "response": {
+        "mode": "opaque",
+        "sources": [
+          { "operationId": "subscriptions_appStoreReviewScreenshot_getToOneRelated", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": []
+      },
+      "note": "Operation reads the review screenshot relationship for the subscription; the MCP response remains an opaque local projection."
+    },
+    {
+      "tool": "subscriptions_get_winback_offer",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "winBackOffers_getInstance",
+          "method": "get",
+          "path": "/v1/winBackOffers/{id}",
+          "role": "primary",
+          "condition": null
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "winback_offer_id",
+          "sourceKind": "parameter",
+          "operationId": "winBackOffers_getInstance",
+          "location": "path",
+          "appleName": "id"
+        }
+      ],
+      "response": {
+        "mode": "opaque",
+        "sources": [
+          { "operationId": "winBackOffers_getInstance", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": []
+      },
+      "note": "Apple 4.4.1 operation identity and all public inputs are classified; response remains opaque, so the semantic mapping is partial."
+    },
+    {
+      "tool": "subscriptions_inventory",
+      "kind": "compound",
+      "status": "deprecated",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "apps_subscriptionGroups_getToManyRelated",
+          "method": "get",
+          "path": "/v1/apps/{id}/subscriptionGroups",
+          "role": "primary",
+          "condition": null
+        },
+        {
+          "operationId": "subscriptions_subscriptionAvailability_getToOneRelated",
+          "method": "get",
+          "path": "/v1/subscriptions/{id}/subscriptionAvailability",
+          "role": "supporting",
+          "condition": null,
+          "inputs": [
+            {
+              "sourceKind": "derived",
+              "location": "path",
+              "appleName": "id",
+              "derivedFrom": [
+                "apps_subscriptionGroups_getToManyRelated:/included/*/id"
+              ],
+              "localRole": "Invoke the availability lookup once for each included resource whose JSON:API type is subscriptions."
+            }
+          ]
+        },
+        {
+          "operationId": "subscriptions_prices_getToManyRelated",
+          "method": "get",
+          "path": "/v1/subscriptions/{id}/prices",
+          "role": "conditional",
+          "condition": "territory_id is provided",
+          "inputs": [
+            {
+              "sourceKind": "derived",
+              "location": "path",
+              "appleName": "id",
+              "derivedFrom": [
+                "apps_subscriptionGroups_getToManyRelated:/included/*/id"
+              ],
+              "localRole": "Invoke the price lookup once for each included resource whose JSON:API type is subscriptions."
+            }
+          ]
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "app_id",
+          "sourceKind": "parameter",
+          "operationId": "apps_subscriptionGroups_getToManyRelated",
+          "location": "path",
+          "appleName": "id"
+        },
+        {
+          "toolField": "territory_id",
+          "sourceKind": "parameter",
+          "operationId": "subscriptions_prices_getToManyRelated",
+          "location": "query",
+          "appleName": "filter[territory]"
+        },
+        {
+          "toolField": "limit",
+          "sourceKind": "parameter",
+          "operationId": "apps_subscriptionGroups_getToManyRelated",
+          "location": "query",
+          "appleName": "limit"
+        }
+      ],
+      "response": {
+        "mode": "opaque",
+        "sources": [
+          { "operationId": "apps_subscriptionGroups_getToManyRelated", "statusCode": "200", "mediaType": "application/json" },
+          { "operationId": "subscriptions_prices_getToManyRelated", "statusCode": "200", "mediaType": "application/json" },
+          { "operationId": "subscriptions_subscriptionAvailability_getToOneRelated", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": []
+      },
+      "note": "The current inventory handler reads groups, then deprecated subscriptionAvailability and optional territory prices per included subscription. It does not use planAvailability and can omit subscriptions beyond the first included page."
+    },
+    {
+      "tool": "subscriptions_list",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "subscriptionGroups_subscriptions_getToManyRelated",
+          "method": "get",
+          "path": "/v1/subscriptionGroups/{id}/subscriptions",
+          "role": "primary",
+          "condition": null
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "group_id",
+          "sourceKind": "parameter",
+          "operationId": "subscriptionGroups_subscriptions_getToManyRelated",
+          "location": "path",
+          "appleName": "id"
+        },
+        {
+          "toolField": "limit",
+          "sourceKind": "parameter",
+          "operationId": "subscriptionGroups_subscriptions_getToManyRelated",
+          "location": "query",
+          "appleName": "limit"
+        },
+        {
+          "toolField": "next_url",
+          "sourceKind": "local",
+          "localRole": "Validated Apple pagination URL override."
+        }
+      ],
+      "response": {
+        "mode": "opaque",
+        "sources": [
+          { "operationId": "subscriptionGroups_subscriptions_getToManyRelated", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": []
+      },
+      "note": "Apple 4.4.1 operation identity and all public inputs are classified; response remains opaque, so the semantic mapping is partial."
+    },
+    {
+      "tool": "subscriptions_list_available_territories",
+      "kind": "direct",
+      "status": "deprecated",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "subscriptionAvailabilities_availableTerritories_getToManyRelated",
+          "method": "get",
+          "path": "/v1/subscriptionAvailabilities/{id}/availableTerritories",
+          "role": "primary",
+          "condition": null
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "availability_id",
+          "sourceKind": "parameter",
+          "operationId": "subscriptionAvailabilities_availableTerritories_getToManyRelated",
+          "location": "path",
+          "appleName": "id"
+        },
+        {
+          "toolField": "limit",
+          "sourceKind": "parameter",
+          "operationId": "subscriptionAvailabilities_availableTerritories_getToManyRelated",
+          "location": "query",
+          "appleName": "limit"
+        },
+        {
+          "toolField": "next_url",
+          "sourceKind": "local",
+          "localRole": "Validated Apple pagination URL override."
+        }
+      ],
+      "response": {
+        "mode": "opaque",
+        "sources": [
+          { "operationId": "subscriptionAvailabilities_availableTerritories_getToManyRelated", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": []
+      },
+      "note": "The current handler uses Apple 4.4.1 subscriptionAvailability, which Apple marks deprecated in favor of subscriptionPlanAvailabilities; the public tool cannot select planType."
+    },
+    {
+      "tool": "subscriptions_list_group_localizations",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "subscriptionGroups_subscriptionGroupLocalizations_getToManyRelated",
+          "method": "get",
+          "path": "/v1/subscriptionGroups/{id}/subscriptionGroupLocalizations",
+          "role": "primary",
+          "condition": null
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "subscription_group_id",
+          "sourceKind": "parameter",
+          "operationId": "subscriptionGroups_subscriptionGroupLocalizations_getToManyRelated",
+          "location": "path",
+          "appleName": "id"
+        },
+        {
+          "toolField": "limit",
+          "sourceKind": "parameter",
+          "operationId": "subscriptionGroups_subscriptionGroupLocalizations_getToManyRelated",
+          "location": "query",
+          "appleName": "limit"
+        },
+        {
+          "toolField": "next_url",
+          "sourceKind": "local",
+          "localRole": "Validated Apple pagination URL override for version localizations."
+        }
+      ],
+      "response": {
+        "mode": "opaque",
+        "sources": [
+          { "operationId": "subscriptionGroups_subscriptionGroupLocalizations_getToManyRelated", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": []
+      },
+      "note": "The current handler uses the non-deprecated product-scoped subscription-group localization operations documented by Apple 4.4.1; no subscriptionGroupVersion resolver is part of this tool."
+    },
+    {
+      "tool": "subscriptions_list_groups",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "apps_subscriptionGroups_getToManyRelated",
+          "method": "get",
+          "path": "/v1/apps/{id}/subscriptionGroups",
+          "role": "primary",
+          "condition": null
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "app_id",
+          "sourceKind": "parameter",
+          "operationId": "apps_subscriptionGroups_getToManyRelated",
+          "location": "path",
+          "appleName": "id"
+        },
+        {
+          "toolField": "limit",
+          "sourceKind": "parameter",
+          "operationId": "apps_subscriptionGroups_getToManyRelated",
+          "location": "query",
+          "appleName": "limit"
+        },
+        {
+          "toolField": "next_url",
+          "sourceKind": "local",
+          "localRole": "Validated Apple pagination URL override."
+        }
+      ],
+      "response": {
+        "mode": "opaque",
+        "sources": [
+          { "operationId": "apps_subscriptionGroups_getToManyRelated", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": []
+      },
+      "note": "Apple 4.4.1 operation identity and all public inputs are classified; response remains opaque, so the semantic mapping is partial."
+    },
+    {
+      "tool": "subscriptions_list_images",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "target",
+      "operations": [
+        {
+          "operationId": "subscriptions_images_getToManyRelated",
+          "method": "get",
+          "path": "/v1/subscriptions/{id}/images",
+          "role": "primary",
+          "condition": null
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "subscription_id",
+          "sourceKind": "parameter",
+          "operationId": "subscriptions_images_getToManyRelated",
+          "location": "path",
+          "appleName": "id"
+        },
+        {
+          "toolField": "limit",
+          "sourceKind": "parameter",
+          "operationId": "subscriptions_images_getToManyRelated",
+          "location": "query",
+          "appleName": "limit"
+        },
+        {
+          "toolField": "next_url",
+          "sourceKind": "local",
+          "localRole": "Validated Apple pagination URL override for version images."
+        }
+      ],
+      "response": {
+        "mode": "opaque",
+        "sources": [
+          { "operationId": "subscriptions_images_getToManyRelated", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": []
+      },
+      "note": "Apple 4.4.1 defines GET /v1/subscriptions/{id}/images. The current handler incorrectly calls /v1/subscriptions/{id}/subscriptionImages, which is absent from the specification; this mapping records the intended official operation and the implementation must be fixed."
+    },
+    {
+      "tool": "subscriptions_list_intro_offers",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "subscriptions_introductoryOffers_getToManyRelated",
+          "method": "get",
+          "path": "/v1/subscriptions/{id}/introductoryOffers",
+          "role": "primary",
+          "condition": null
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "subscription_id",
+          "sourceKind": "parameter",
+          "operationId": "subscriptions_introductoryOffers_getToManyRelated",
+          "location": "path",
+          "appleName": "id"
+        },
+        {
+          "toolField": "territory_id",
+          "sourceKind": "parameter",
+          "operationId": "subscriptions_introductoryOffers_getToManyRelated",
+          "location": "query",
+          "appleName": "filter[territory]"
+        },
+        {
+          "toolField": "limit",
+          "sourceKind": "parameter",
+          "operationId": "subscriptions_introductoryOffers_getToManyRelated",
+          "location": "query",
+          "appleName": "limit"
+        },
+        {
+          "toolField": "next_url",
+          "sourceKind": "local",
+          "localRole": "Validated Apple pagination URL override."
+        }
+      ],
+      "response": {
+        "mode": "opaque",
+        "sources": [
+          { "operationId": "subscriptions_introductoryOffers_getToManyRelated", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": []
+      },
+      "note": "Apple 4.4.1 operation identity and all public inputs are classified; response remains opaque, so the semantic mapping is partial."
+    },
+    {
+      "tool": "subscriptions_list_localizations",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "subscriptions_subscriptionLocalizations_getToManyRelated",
+          "method": "get",
+          "path": "/v1/subscriptions/{id}/subscriptionLocalizations",
+          "role": "primary",
+          "condition": null
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "subscription_id",
+          "sourceKind": "parameter",
+          "operationId": "subscriptions_subscriptionLocalizations_getToManyRelated",
+          "location": "path",
+          "appleName": "id"
+        },
+        {
+          "toolField": "next_url",
+          "sourceKind": "local",
+          "localRole": "Validated Apple pagination URL override for version localizations."
+        }
+      ],
+      "response": {
+        "mode": "opaque",
+        "sources": [
+          { "operationId": "subscriptions_subscriptionLocalizations_getToManyRelated", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": []
+      },
+      "note": "The current handler uses the non-deprecated product-scoped subscription localization operations documented by Apple 4.4.1; no subscriptionVersion resolver is part of this tool."
+    },
+    {
+      "tool": "subscriptions_list_offer_code_prices",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "subscriptionOfferCodes_prices_getToManyRelated",
+          "method": "get",
+          "path": "/v1/subscriptionOfferCodes/{id}/prices",
+          "role": "primary",
+          "condition": null
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "offer_code_id",
+          "sourceKind": "parameter",
+          "operationId": "subscriptionOfferCodes_prices_getToManyRelated",
+          "location": "path",
+          "appleName": "id"
+        },
+        {
+          "toolField": "territory_id",
+          "sourceKind": "parameter",
+          "operationId": "subscriptionOfferCodes_prices_getToManyRelated",
+          "location": "query",
+          "appleName": "filter[territory]"
+        },
+        {
+          "toolField": "limit",
+          "sourceKind": "parameter",
+          "operationId": "subscriptionOfferCodes_prices_getToManyRelated",
+          "location": "query",
+          "appleName": "limit"
+        },
+        {
+          "toolField": "next_url",
+          "sourceKind": "local",
+          "localRole": "Validated Apple pagination URL override."
+        }
+      ],
+      "response": {
+        "mode": "opaque",
+        "sources": [
+          { "operationId": "subscriptionOfferCodes_prices_getToManyRelated", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": []
+      },
+      "note": "Apple 4.4.1 operation identity and all public inputs are classified; response remains opaque, so the semantic mapping is partial."
+    },
+    {
+      "tool": "subscriptions_list_offer_codes",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "subscriptions_offerCodes_getToManyRelated",
+          "method": "get",
+          "path": "/v1/subscriptions/{id}/offerCodes",
+          "role": "primary",
+          "condition": null
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "subscription_id",
+          "sourceKind": "parameter",
+          "operationId": "subscriptions_offerCodes_getToManyRelated",
+          "location": "path",
+          "appleName": "id"
+        },
+        {
+          "toolField": "territory_id",
+          "sourceKind": "parameter",
+          "operationId": "subscriptions_offerCodes_getToManyRelated",
+          "location": "query",
+          "appleName": "filter[territory]"
+        },
+        {
+          "toolField": "limit",
+          "sourceKind": "parameter",
+          "operationId": "subscriptions_offerCodes_getToManyRelated",
+          "location": "query",
+          "appleName": "limit"
+        },
+        {
+          "toolField": "next_url",
+          "sourceKind": "local",
+          "localRole": "Validated Apple pagination URL override."
+        }
+      ],
+      "response": {
+        "mode": "opaque",
+        "sources": [
+          { "operationId": "subscriptions_offerCodes_getToManyRelated", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": []
+      },
+      "note": "Apple 4.4.1 operation identity and all public inputs are classified; response remains opaque, so the semantic mapping is partial."
+    },
+    {
+      "tool": "subscriptions_list_one_time_codes",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "subscriptionOfferCodes_oneTimeUseCodes_getToManyRelated",
+          "method": "get",
+          "path": "/v1/subscriptionOfferCodes/{id}/oneTimeUseCodes",
+          "role": "primary",
+          "condition": null
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "offer_code_id",
+          "sourceKind": "parameter",
+          "operationId": "subscriptionOfferCodes_oneTimeUseCodes_getToManyRelated",
+          "location": "path",
+          "appleName": "id"
+        },
+        {
+          "toolField": "limit",
+          "sourceKind": "parameter",
+          "operationId": "subscriptionOfferCodes_oneTimeUseCodes_getToManyRelated",
+          "location": "query",
+          "appleName": "limit"
+        },
+        {
+          "toolField": "next_url",
+          "sourceKind": "local",
+          "localRole": "Validated Apple pagination URL override."
+        }
+      ],
+      "response": {
+        "mode": "opaque",
+        "sources": [
+          { "operationId": "subscriptionOfferCodes_oneTimeUseCodes_getToManyRelated", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": []
+      },
+      "note": "Apple 4.4.1 operation identity and all public inputs are classified; response remains opaque, so the semantic mapping is partial."
+    },
+    {
+      "tool": "subscriptions_list_price_point_equalizations",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "subscriptionPricePoints_equalizations_getToManyRelated",
+          "method": "get",
+          "path": "/v1/subscriptionPricePoints/{id}/equalizations",
+          "role": "primary",
+          "condition": null
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "price_point_id",
+          "sourceKind": "parameter",
+          "operationId": "subscriptionPricePoints_equalizations_getToManyRelated",
+          "location": "path",
+          "appleName": "id"
+        },
+        {
+          "toolField": "subscription_id",
+          "sourceKind": "parameter",
+          "operationId": "subscriptionPricePoints_equalizations_getToManyRelated",
+          "location": "query",
+          "appleName": "filter[subscription]"
+        },
+        {
+          "toolField": "territory_id",
+          "sourceKind": "parameter",
+          "operationId": "subscriptionPricePoints_equalizations_getToManyRelated",
+          "location": "query",
+          "appleName": "filter[territory]"
+        },
+        {
+          "toolField": "limit",
+          "sourceKind": "parameter",
+          "operationId": "subscriptionPricePoints_equalizations_getToManyRelated",
+          "location": "query",
+          "appleName": "limit"
+        },
+        {
+          "toolField": "next_url",
+          "sourceKind": "local",
+          "localRole": "Validated Apple pagination URL override."
+        }
+      ],
+      "response": {
+        "mode": "opaque",
+        "sources": [
+          { "operationId": "subscriptionPricePoints_equalizations_getToManyRelated", "statusCode": "200", "mediaType": "application/json" },
+          { "operationId": "subscriptionPricePoints_equalizations_getToManyRelated", "statusCode": "200", "mediaType": "text/csv" }
+        ],
+        "fields": []
+      },
+      "note": "Maps current equalizations. Apple 4.4.1 also provides adjustedEqualizations, which this public tool does not expose."
+    },
+    {
+      "tool": "subscriptions_list_price_points",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "subscriptions_pricePoints_getToManyRelated",
+          "method": "get",
+          "path": "/v1/subscriptions/{id}/pricePoints",
+          "role": "primary",
+          "condition": null
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "subscription_id",
+          "sourceKind": "parameter",
+          "operationId": "subscriptions_pricePoints_getToManyRelated",
+          "location": "path",
+          "appleName": "id"
+        },
+        {
+          "toolField": "territory_id",
+          "sourceKind": "parameter",
+          "operationId": "subscriptions_pricePoints_getToManyRelated",
+          "location": "query",
+          "appleName": "filter[territory]"
+        },
+        {
+          "toolField": "limit",
+          "sourceKind": "parameter",
+          "operationId": "subscriptions_pricePoints_getToManyRelated",
+          "location": "query",
+          "appleName": "limit"
+        },
+        {
+          "toolField": "next_url",
+          "sourceKind": "local",
+          "localRole": "Validated Apple pagination URL override."
+        }
+      ],
+      "response": {
+        "mode": "opaque",
+        "sources": [
+          { "operationId": "subscriptions_pricePoints_getToManyRelated", "statusCode": "200", "mediaType": "application/json" },
+          { "operationId": "subscriptions_pricePoints_getToManyRelated", "statusCode": "200", "mediaType": "text/csv" }
+        ],
+        "fields": []
+      },
+      "note": "Apple 4.4.1 operation identity and all public inputs are classified; response remains opaque, so the semantic mapping is partial."
+    },
+    {
+      "tool": "subscriptions_list_prices",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "subscriptions_prices_getToManyRelated",
+          "method": "get",
+          "path": "/v1/subscriptions/{id}/prices",
+          "role": "primary",
+          "condition": null
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "subscription_id",
+          "sourceKind": "parameter",
+          "operationId": "subscriptions_prices_getToManyRelated",
+          "location": "path",
+          "appleName": "id"
+        },
+        {
+          "toolField": "territory_id",
+          "sourceKind": "parameter",
+          "operationId": "subscriptions_prices_getToManyRelated",
+          "location": "query",
+          "appleName": "filter[territory]"
+        },
+        {
+          "toolField": "price_point_id",
+          "sourceKind": "parameter",
+          "operationId": "subscriptions_prices_getToManyRelated",
+          "location": "query",
+          "appleName": "filter[subscriptionPricePoint]"
+        },
+        {
+          "toolField": "limit",
+          "sourceKind": "parameter",
+          "operationId": "subscriptions_prices_getToManyRelated",
+          "location": "query",
+          "appleName": "limit"
+        },
+        {
+          "toolField": "next_url",
+          "sourceKind": "local",
+          "localRole": "Validated Apple pagination URL override."
+        }
+      ],
+      "response": {
+        "mode": "opaque",
+        "sources": [
+          { "operationId": "subscriptions_prices_getToManyRelated", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": []
+      },
+      "note": "Apple 4.4 pricing is plan-aware; the public tool lacks filter[planType], so results may mix MONTHLY and UPFRONT plans."
+    },
+    {
+      "tool": "subscriptions_list_promotional_offer_prices",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "subscriptionPromotionalOffers_prices_getToManyRelated",
+          "method": "get",
+          "path": "/v1/subscriptionPromotionalOffers/{id}/prices",
+          "role": "primary",
+          "condition": null
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "promotional_offer_id",
+          "sourceKind": "parameter",
+          "operationId": "subscriptionPromotionalOffers_prices_getToManyRelated",
+          "location": "path",
+          "appleName": "id"
+        },
+        {
+          "toolField": "territory_id",
+          "sourceKind": "parameter",
+          "operationId": "subscriptionPromotionalOffers_prices_getToManyRelated",
+          "location": "query",
+          "appleName": "filter[territory]"
+        },
+        {
+          "toolField": "limit",
+          "sourceKind": "parameter",
+          "operationId": "subscriptionPromotionalOffers_prices_getToManyRelated",
+          "location": "query",
+          "appleName": "limit"
+        },
+        {
+          "toolField": "next_url",
+          "sourceKind": "local",
+          "localRole": "Validated Apple pagination URL override."
+        }
+      ],
+      "response": {
+        "mode": "opaque",
+        "sources": [
+          { "operationId": "subscriptionPromotionalOffers_prices_getToManyRelated", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": []
+      },
+      "note": "Apple 4.4.1 operation identity and all public inputs are classified; response remains opaque, so the semantic mapping is partial."
+    },
+    {
+      "tool": "subscriptions_list_promotional_offers",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "subscriptions_promotionalOffers_getToManyRelated",
+          "method": "get",
+          "path": "/v1/subscriptions/{id}/promotionalOffers",
+          "role": "primary",
+          "condition": null
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "subscription_id",
+          "sourceKind": "parameter",
+          "operationId": "subscriptions_promotionalOffers_getToManyRelated",
+          "location": "path",
+          "appleName": "id"
+        },
+        {
+          "toolField": "territory_id",
+          "sourceKind": "parameter",
+          "operationId": "subscriptions_promotionalOffers_getToManyRelated",
+          "location": "query",
+          "appleName": "filter[territory]"
+        },
+        {
+          "toolField": "limit",
+          "sourceKind": "parameter",
+          "operationId": "subscriptions_promotionalOffers_getToManyRelated",
+          "location": "query",
+          "appleName": "limit"
+        },
+        {
+          "toolField": "next_url",
+          "sourceKind": "local",
+          "localRole": "Validated Apple pagination URL override."
+        }
+      ],
+      "response": {
+        "mode": "opaque",
+        "sources": [
+          { "operationId": "subscriptions_promotionalOffers_getToManyRelated", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": []
+      },
+      "note": "Apple 4.4.1 operation identity and all public inputs are classified; response remains opaque, so the semantic mapping is partial."
+    },
+    {
+      "tool": "subscriptions_list_winback_offer_prices",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "winBackOffers_prices_getToManyRelated",
+          "method": "get",
+          "path": "/v1/winBackOffers/{id}/prices",
+          "role": "primary",
+          "condition": null
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "winback_offer_id",
+          "sourceKind": "parameter",
+          "operationId": "winBackOffers_prices_getToManyRelated",
+          "location": "path",
+          "appleName": "id"
+        },
+        {
+          "toolField": "territory_id",
+          "sourceKind": "parameter",
+          "operationId": "winBackOffers_prices_getToManyRelated",
+          "location": "query",
+          "appleName": "filter[territory]"
+        },
+        {
+          "toolField": "limit",
+          "sourceKind": "parameter",
+          "operationId": "winBackOffers_prices_getToManyRelated",
+          "location": "query",
+          "appleName": "limit"
+        },
+        {
+          "toolField": "next_url",
+          "sourceKind": "local",
+          "localRole": "Validated Apple pagination URL override."
+        }
+      ],
+      "response": {
+        "mode": "opaque",
+        "sources": [
+          { "operationId": "winBackOffers_prices_getToManyRelated", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": []
+      },
+      "note": "Apple 4.4.1 operation identity and all public inputs are classified; response remains opaque, so the semantic mapping is partial."
+    },
+    {
+      "tool": "subscriptions_list_winback_offers",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "subscriptions_winBackOffers_getToManyRelated",
+          "method": "get",
+          "path": "/v1/subscriptions/{id}/winBackOffers",
+          "role": "primary",
+          "condition": null
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "subscription_id",
+          "sourceKind": "parameter",
+          "operationId": "subscriptions_winBackOffers_getToManyRelated",
+          "location": "path",
+          "appleName": "id"
+        },
+        {
+          "toolField": "limit",
+          "sourceKind": "parameter",
+          "operationId": "subscriptions_winBackOffers_getToManyRelated",
+          "location": "query",
+          "appleName": "limit"
+        },
+        {
+          "toolField": "next_url",
+          "sourceKind": "local",
+          "localRole": "Validated Apple pagination URL override."
+        }
+      ],
+      "response": {
+        "mode": "opaque",
+        "sources": [
+          { "operationId": "subscriptions_winBackOffers_getToManyRelated", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": []
+      },
+      "note": "Apple 4.4.1 operation identity and all public inputs are classified; response remains opaque, so the semantic mapping is partial."
+    },
+    {
+      "tool": "subscriptions_prepare_offer_prices",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "subscriptions_pricePoints_getToManyRelated",
+          "method": "get",
+          "path": "/v1/subscriptions/{id}/pricePoints",
+          "role": "primary",
+          "condition": null
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "subscription_id",
+          "sourceKind": "parameter",
+          "operationId": "subscriptions_pricePoints_getToManyRelated",
+          "location": "path",
+          "appleName": "id"
+        },
+        {
+          "toolField": "territory_id",
+          "sourceKind": "parameter",
+          "operationId": "subscriptions_pricePoints_getToManyRelated",
+          "location": "query",
+          "appleName": "filter[territory]"
+        },
+        {
+          "toolField": "mode",
+          "sourceKind": "local",
+          "localRole": "Controls MCP-side offer requirements and result projection."
+        },
+        {
+          "toolField": "customer_price",
+          "sourceKind": "local",
+          "localRole": "Filters Apple price point results locally by exact customerPrice."
+        }
+      ],
+      "response": {
+        "mode": "opaque",
+        "sources": [
+          { "operationId": "subscriptions_pricePoints_getToManyRelated", "statusCode": "200", "mediaType": "application/json" },
+          { "operationId": "subscriptions_pricePoints_getToManyRelated", "statusCode": "200", "mediaType": "text/csv" }
+        ],
+        "fields": []
+      },
+      "note": "Reads Apple price points; mode and customer_price are MCP-side selection/projection inputs. PlanType/upfront filters are not exposed."
+    },
+    {
+      "tool": "subscriptions_pricing_summary",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "subscriptions_prices_getToManyRelated",
+          "method": "get",
+          "path": "/v1/subscriptions/{id}/prices",
+          "role": "primary",
+          "condition": null
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "subscription_id",
+          "sourceKind": "parameter",
+          "operationId": "subscriptions_prices_getToManyRelated",
+          "location": "path",
+          "appleName": "id"
+        },
+        {
+          "toolField": "territory_id",
+          "sourceKind": "parameter",
+          "operationId": "subscriptions_prices_getToManyRelated",
+          "location": "query",
+          "appleName": "filter[territory]"
+        }
+      ],
+      "response": {
+        "mode": "opaque",
+        "sources": [
+          { "operationId": "subscriptions_prices_getToManyRelated", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": []
+      },
+      "note": "Reads territory prices and summarizes locally. The public tool lacks planType and can conflate MONTHLY and UPFRONT schedules."
+    },
+    {
+      "tool": "subscriptions_set_availability",
+      "kind": "direct",
+      "status": "deprecated",
+      "effect": "write",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "subscriptionAvailabilities_createInstance",
+          "method": "post",
+          "path": "/v1/subscriptionAvailabilities",
+          "role": "primary",
+          "condition": null,
+          "inputs": [
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/type",
+              "fixedValue": "subscriptionAvailabilities"
+            },
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/relationships/subscription/data/type",
+              "fixedValue": "subscriptions"
+            }
+          ]
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "subscription_id",
+          "sourceKind": "requestBody",
+          "operationId": "subscriptionAvailabilities_createInstance",
+          "jsonPointer": "/data/relationships/subscription/data/id"
+        },
+        {
+          "toolField": "available_in_new_territories",
+          "sourceKind": "requestBody",
+          "operationId": "subscriptionAvailabilities_createInstance",
+          "jsonPointer": "/data/attributes/availableInNewTerritories"
+        },
+        {
+          "toolField": "territory_ids",
+          "sourceKind": "requestBody",
+          "operationId": "subscriptionAvailabilities_createInstance",
+          "jsonPointer": "/data/relationships/availableTerritories/data"
+        }
+      ],
+      "response": {
+        "mode": "opaque",
+        "sources": [
+          { "operationId": "subscriptionAvailabilities_createInstance", "statusCode": "201", "mediaType": "application/json" }
+        ],
+        "fields": []
+      },
+      "note": "The current handler uses Apple 4.4.1 subscriptionAvailability, which Apple marks deprecated in favor of subscriptionPlanAvailabilities; the public tool cannot select planType."
+    },
+    {
+      "tool": "subscriptions_submit",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "write",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "subscriptionSubmissions_createInstance",
+          "method": "post",
+          "path": "/v1/subscriptionSubmissions",
+          "role": "primary",
+          "condition": null,
+          "inputs": [
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/type",
+              "fixedValue": "subscriptionSubmissions"
+            },
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/relationships/subscription/data/type",
+              "fixedValue": "subscriptions"
+            }
+          ]
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "subscription_id",
+          "sourceKind": "requestBody",
+          "operationId": "subscriptionSubmissions_createInstance",
+          "jsonPointer": "/data/relationships/subscription/data/id"
+        }
+      ],
+      "response": {
+        "mode": "opaque",
+        "sources": [
+          { "operationId": "subscriptionSubmissions_createInstance", "statusCode": "201", "mediaType": "application/json" }
+        ],
+        "fields": []
+      },
+      "note": "The current handler and Apple 4.4.1 both submit the product-scoped subscription through POST /v1/subscriptionSubmissions; ReviewSubmissionItems/version resolution is not part of this tool."
+    },
+    {
+      "tool": "subscriptions_submit_group",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "write",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "subscriptionGroupSubmissions_createInstance",
+          "method": "post",
+          "path": "/v1/subscriptionGroupSubmissions",
+          "role": "primary",
+          "condition": null,
+          "inputs": [
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/type",
+              "fixedValue": "subscriptionGroupSubmissions"
+            },
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/relationships/subscriptionGroup/data/type",
+              "fixedValue": "subscriptionGroups"
+            }
+          ]
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "group_id",
+          "sourceKind": "requestBody",
+          "operationId": "subscriptionGroupSubmissions_createInstance",
+          "jsonPointer": "/data/relationships/subscriptionGroup/data/id"
+        }
+      ],
+      "response": {
+        "mode": "opaque",
+        "sources": [
+          { "operationId": "subscriptionGroupSubmissions_createInstance", "statusCode": "201", "mediaType": "application/json" }
+        ],
+        "fields": []
+      },
+      "note": "The current handler and Apple 4.4.1 both submit the product-scoped group through POST /v1/subscriptionGroupSubmissions; ReviewSubmissionItems/version resolution is not part of this tool."
+    },
+    {
+      "tool": "subscriptions_update",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "write",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "subscriptions_updateInstance",
+          "method": "patch",
+          "path": "/v1/subscriptions/{id}",
+          "role": "primary",
+          "condition": null,
+          "inputs": [
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/type",
+              "fixedValue": "subscriptions"
+            },
+            {
+              "sourceKind": "derived",
+              "jsonPointer": "/data/id",
+              "derivedFrom": [
+                "subscription_id"
+              ],
+              "localRole": "Reuse the public subscription ID as the JSON:API resource ID in the update body."
+            }
+          ]
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "subscription_id",
+          "sourceKind": "parameter",
+          "operationId": "subscriptions_updateInstance",
+          "location": "path",
+          "appleName": "id"
+        },
+        {
+          "toolField": "name",
+          "sourceKind": "requestBody",
+          "operationId": "subscriptions_updateInstance",
+          "jsonPointer": "/data/attributes/name"
+        },
+        {
+          "toolField": "family_sharable",
+          "sourceKind": "requestBody",
+          "operationId": "subscriptions_updateInstance",
+          "jsonPointer": "/data/attributes/familySharable"
+        },
+        {
+          "toolField": "group_level",
+          "sourceKind": "requestBody",
+          "operationId": "subscriptions_updateInstance",
+          "jsonPointer": "/data/attributes/groupLevel"
+        },
+        {
+          "toolField": "review_note",
+          "sourceKind": "requestBody",
+          "operationId": "subscriptions_updateInstance",
+          "jsonPointer": "/data/attributes/reviewNote"
+        }
+      ],
+      "response": {
+        "mode": "opaque",
+        "sources": [
+          { "operationId": "subscriptions_updateInstance", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": []
+      },
+      "note": "Apple 4.4.1 operation identity and all public inputs are classified; response remains opaque, so the semantic mapping is partial."
+    },
+    {
+      "tool": "subscriptions_update_custom_code",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "write",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "subscriptionOfferCodeCustomCodes_updateInstance",
+          "method": "patch",
+          "path": "/v1/subscriptionOfferCodeCustomCodes/{id}",
+          "role": "primary",
+          "condition": null,
+          "inputs": [
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/type",
+              "fixedValue": "subscriptionOfferCodeCustomCodes"
+            },
+            {
+              "sourceKind": "derived",
+              "jsonPointer": "/data/id",
+              "derivedFrom": [
+                "custom_code_id"
+              ],
+              "localRole": "Reuse the public custom-code ID as the JSON:API resource ID in the update body."
+            }
+          ]
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "custom_code_id",
+          "sourceKind": "parameter",
+          "operationId": "subscriptionOfferCodeCustomCodes_updateInstance",
+          "location": "path",
+          "appleName": "id"
+        },
+        {
+          "toolField": "active",
+          "sourceKind": "requestBody",
+          "operationId": "subscriptionOfferCodeCustomCodes_updateInstance",
+          "jsonPointer": "/data/attributes/active"
+        }
+      ],
+      "response": {
+        "mode": "opaque",
+        "sources": [
+          { "operationId": "subscriptionOfferCodeCustomCodes_updateInstance", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": []
+      },
+      "note": "Apple 4.4.1 operation identity and all public inputs are classified; response remains opaque, so the semantic mapping is partial."
+    },
+    {
+      "tool": "subscriptions_update_group",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "write",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "subscriptionGroups_updateInstance",
+          "method": "patch",
+          "path": "/v1/subscriptionGroups/{id}",
+          "role": "primary",
+          "condition": null,
+          "inputs": [
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/type",
+              "fixedValue": "subscriptionGroups"
+            },
+            {
+              "sourceKind": "derived",
+              "jsonPointer": "/data/id",
+              "derivedFrom": [
+                "group_id"
+              ],
+              "localRole": "Reuse the public group ID as the JSON:API resource ID in the update body."
+            }
+          ]
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "group_id",
+          "sourceKind": "parameter",
+          "operationId": "subscriptionGroups_updateInstance",
+          "location": "path",
+          "appleName": "id"
+        },
+        {
+          "toolField": "reference_name",
+          "sourceKind": "requestBody",
+          "operationId": "subscriptionGroups_updateInstance",
+          "jsonPointer": "/data/attributes/referenceName"
+        }
+      ],
+      "response": {
+        "mode": "opaque",
+        "sources": [
+          { "operationId": "subscriptionGroups_updateInstance", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": []
+      },
+      "note": "Apple 4.4.1 operation identity and all public inputs are classified; response remains opaque, so the semantic mapping is partial."
+    },
+    {
+      "tool": "subscriptions_update_group_localization",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "write",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "subscriptionGroupLocalizations_updateInstance",
+          "method": "patch",
+          "path": "/v1/subscriptionGroupLocalizations/{id}",
+          "role": "primary",
+          "condition": null,
+          "inputs": [
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/type",
+              "fixedValue": "subscriptionGroupLocalizations"
+            },
+            {
+              "sourceKind": "derived",
+              "jsonPointer": "/data/id",
+              "derivedFrom": [
+                "group_localization_id"
+              ],
+              "localRole": "Reuse the public group-localization ID as the JSON:API resource ID in the update body."
+            }
+          ]
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "group_localization_id",
+          "sourceKind": "parameter",
+          "operationId": "subscriptionGroupLocalizations_updateInstance",
+          "location": "path",
+          "appleName": "id"
+        },
+        {
+          "toolField": "name",
+          "sourceKind": "requestBody",
+          "operationId": "subscriptionGroupLocalizations_updateInstance",
+          "jsonPointer": "/data/attributes/name"
+        },
+        {
+          "toolField": "custom_app_name",
+          "sourceKind": "requestBody",
+          "operationId": "subscriptionGroupLocalizations_updateInstance",
+          "jsonPointer": "/data/attributes/customAppName"
+        }
+      ],
+      "response": {
+        "mode": "opaque",
+        "sources": [
+          { "operationId": "subscriptionGroupLocalizations_updateInstance", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": []
+      },
+      "note": "The current handler uses the non-deprecated product-scoped subscription-group localization operations documented by Apple 4.4.1; no subscriptionGroupVersion resolver is part of this tool."
+    },
+    {
+      "tool": "subscriptions_update_intro_offer",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "write",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "subscriptionIntroductoryOffers_updateInstance",
+          "method": "patch",
+          "path": "/v1/subscriptionIntroductoryOffers/{id}",
+          "role": "primary",
+          "condition": null,
+          "inputs": [
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/type",
+              "fixedValue": "subscriptionIntroductoryOffers"
+            },
+            {
+              "sourceKind": "derived",
+              "jsonPointer": "/data/id",
+              "derivedFrom": [
+                "intro_offer_id"
+              ],
+              "localRole": "Reuse the public introductory-offer ID as the JSON:API resource ID in the update body."
+            }
+          ]
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "intro_offer_id",
+          "sourceKind": "parameter",
+          "operationId": "subscriptionIntroductoryOffers_updateInstance",
+          "location": "path",
+          "appleName": "id"
+        },
+        {
+          "toolField": "end_date",
+          "sourceKind": "requestBody",
+          "operationId": "subscriptionIntroductoryOffers_updateInstance",
+          "jsonPointer": "/data/attributes/endDate"
+        }
+      ],
+      "response": {
+        "mode": "opaque",
+        "sources": [
+          { "operationId": "subscriptionIntroductoryOffers_updateInstance", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": []
+      },
+      "note": "Apple 4.4.1 operation identity and all public inputs are classified; response remains opaque, so the semantic mapping is partial."
+    },
+    {
+      "tool": "subscriptions_update_localization",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "write",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "subscriptionLocalizations_updateInstance",
+          "method": "patch",
+          "path": "/v1/subscriptionLocalizations/{id}",
+          "role": "primary",
+          "condition": null,
+          "inputs": [
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/type",
+              "fixedValue": "subscriptionLocalizations"
+            },
+            {
+              "sourceKind": "derived",
+              "jsonPointer": "/data/id",
+              "derivedFrom": [
+                "localization_id"
+              ],
+              "localRole": "Reuse the public localization ID as the JSON:API resource ID in the update body."
+            }
+          ]
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "localization_id",
+          "sourceKind": "parameter",
+          "operationId": "subscriptionLocalizations_updateInstance",
+          "location": "path",
+          "appleName": "id"
+        },
+        {
+          "toolField": "name",
+          "sourceKind": "requestBody",
+          "operationId": "subscriptionLocalizations_updateInstance",
+          "jsonPointer": "/data/attributes/name"
+        },
+        {
+          "toolField": "description",
+          "sourceKind": "requestBody",
+          "operationId": "subscriptionLocalizations_updateInstance",
+          "jsonPointer": "/data/attributes/description"
+        }
+      ],
+      "response": {
+        "mode": "opaque",
+        "sources": [
+          { "operationId": "subscriptionLocalizations_updateInstance", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": []
+      },
+      "note": "The current handler uses the non-deprecated product-scoped subscription localization operations documented by Apple 4.4.1; no subscriptionVersion resolver is part of this tool."
+    },
+    {
+      "tool": "subscriptions_update_offer_code",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "write",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "subscriptionOfferCodes_updateInstance",
+          "method": "patch",
+          "path": "/v1/subscriptionOfferCodes/{id}",
+          "role": "primary",
+          "condition": null,
+          "inputs": [
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/type",
+              "fixedValue": "subscriptionOfferCodes"
+            },
+            {
+              "sourceKind": "derived",
+              "jsonPointer": "/data/id",
+              "derivedFrom": [
+                "offer_code_id"
+              ],
+              "localRole": "Reuse the public offer-code ID as the JSON:API resource ID in the update body."
+            }
+          ]
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "offer_code_id",
+          "sourceKind": "parameter",
+          "operationId": "subscriptionOfferCodes_updateInstance",
+          "location": "path",
+          "appleName": "id"
+        },
+        {
+          "toolField": "active",
+          "sourceKind": "requestBody",
+          "operationId": "subscriptionOfferCodes_updateInstance",
+          "jsonPointer": "/data/attributes/active"
+        }
+      ],
+      "response": {
+        "mode": "opaque",
+        "sources": [
+          { "operationId": "subscriptionOfferCodes_updateInstance", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": []
+      },
+      "note": "Apple 4.4.1 operation identity and all public inputs are classified; response remains opaque, so the semantic mapping is partial."
+    },
+    {
+      "tool": "subscriptions_update_promotional_offer",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "write",
+      "implementationState": "broken",
+      "operations": [
+        {
+          "operationId": "subscriptionPromotionalOffers_updateInstance",
+          "method": "patch",
+          "path": "/v1/subscriptionPromotionalOffers/{id}",
+          "role": "primary",
+          "condition": null,
+          "inputs": [
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/type",
+              "fixedValue": "subscriptionPromotionalOffers"
+            },
+            {
+              "sourceKind": "derived",
+              "jsonPointer": "/data/id",
+              "derivedFrom": [
+                "promotional_offer_id"
+              ],
+              "localRole": "Reuse the public promotional-offer ID as the JSON:API resource ID in the update body."
+            },
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/relationships/prices/data/*/type",
+              "fixedValue": "subscriptionPromotionalOfferPrices"
+            },
+            {
+              "sourceKind": "derived",
+              "jsonPointer": "/data/relationships/prices/data/*/id",
+              "derivedFrom": [
+                "territory_ids",
+                "price_point_ids"
+              ],
+              "localRole": "Generate the same ${price-index} linkage IDs used by the optional inline promotional-offer price resources."
+            }
+          ]
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "promotional_offer_id",
+          "sourceKind": "parameter",
+          "operationId": "subscriptionPromotionalOffers_updateInstance",
+          "location": "path",
+          "appleName": "id"
+        },
+        {
+          "toolField": "territory_ids",
+          "sourceKind": "requestBody",
+          "operationId": "subscriptionPromotionalOffers_updateInstance",
+          "jsonPointer": "/included",
+          "localRole": "Zipped with price_point_ids into inline subscriptionPromotionalOfferPrices territory relationships."
+        },
+        {
+          "toolField": "price_point_ids",
+          "sourceKind": "requestBody",
+          "operationId": "subscriptionPromotionalOffers_updateInstance",
+          "jsonPointer": "/included",
+          "localRole": "Zipped with territory_ids into inline subscriptionPromotionalOfferPrices price-point relationships."
+        }
+      ],
+      "response": {
+        "mode": "opaque",
+        "sources": [
+          { "operationId": "subscriptionPromotionalOffers_updateInstance", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": []
+      },
+      "note": "Broken as built: the public schema requires only id; with both optional arrays omitted or empty, the handler sends an id/type-only no-op PATCH with no mutable attributes."
+    },
+    {
+      "tool": "subscriptions_update_winback_offer",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "write",
+      "implementationState": "broken",
+      "operations": [
+        {
+          "operationId": "winBackOffers_updateInstance",
+          "method": "patch",
+          "path": "/v1/winBackOffers/{id}",
+          "role": "primary",
+          "condition": null,
+          "inputs": [
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/type",
+              "fixedValue": "winBackOffers"
+            },
+            {
+              "sourceKind": "derived",
+              "jsonPointer": "/data/id",
+              "derivedFrom": [
+                "winback_offer_id"
+              ],
+              "localRole": "Reuse the public win-back-offer ID as the JSON:API resource ID in the update body."
+            }
+          ]
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "winback_offer_id",
+          "sourceKind": "parameter",
+          "operationId": "winBackOffers_updateInstance",
+          "location": "path",
+          "appleName": "id"
+        }
+      ],
+      "response": {
+        "mode": "opaque",
+        "sources": [
+          { "operationId": "winBackOffers_updateInstance", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": []
+      },
+      "note": "Broken as built: the public wrapper carries only the ID, so every mutable win-back attribute remains nil and the advertised update sends a no-op PATCH."
+    },
+    {
+      "tool": "subscriptions_upload_image",
+      "kind": "compound",
+      "status": "partial",
+      "effect": "write",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "subscriptionImages_createInstance",
+          "method": "post",
+          "path": "/v1/subscriptionImages",
+          "role": "primary",
+          "condition": null,
+          "inputs": [
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/type",
+              "fixedValue": "subscriptionImages"
+            },
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/relationships/subscription/data/type",
+              "fixedValue": "subscriptions"
+            }
+          ]
+        },
+        {
+          "operationId": "subscriptionImages_updateInstance",
+          "method": "patch",
+          "path": "/v1/subscriptionImages/{id}",
+          "role": "supporting",
+          "condition": null,
+          "inputs": [
+            {
+              "sourceKind": "derived",
+              "location": "path",
+              "appleName": "id",
+              "derivedFrom": [
+                "subscriptionImages_createInstance:/data/id"
+              ],
+              "localRole": "Use the reserved image ID returned by Apple as the commit path ID."
+            },
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/type",
+              "fixedValue": "subscriptionImages"
+            },
+            {
+              "sourceKind": "derived",
+              "jsonPointer": "/data/id",
+              "derivedFrom": [
+                "subscriptionImages_createInstance:/data/id"
+              ],
+              "localRole": "Use the reserved image ID returned by Apple as the commit resource ID."
+            },
+            {
+              "sourceKind": "derived",
+              "jsonPointer": "/data/attributes/sourceFileChecksum",
+              "derivedFrom": [
+                "file_path"
+              ],
+              "localRole": "Use the MD5 checksum produced while uploading the local file through Apple's presigned operations."
+            },
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/attributes/uploaded",
+              "fixedValue": true
+            }
+          ]
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "subscription_id",
+          "sourceKind": "requestBody",
+          "operationId": "subscriptionImages_createInstance",
+          "jsonPointer": "/data/relationships/subscription/data/id"
+        },
+        {
+          "toolField": "file_path",
+          "sourceKind": "derived",
+          "operationId": "subscriptionImages_createInstance",
+          "jsonPointer": "/data/attributes",
+          "localRole": "Derives fileName/fileSize for reserve, supplies binary upload bytes, and drives commit checksum.",
+          "derivedFrom": [
+            "file_path"
+          ]
+        }
+      ],
+      "response": {
+        "mode": "opaque",
+        "sources": [
+          { "operationId": "subscriptionImages_createInstance", "statusCode": "201", "mediaType": "application/json" },
+          { "operationId": "subscriptionImages_updateInstance", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": []
+      },
+      "note": "The current handler uses the non-deprecated product-scoped image reserve/commit operations documented by Apple 4.4.1; binary upload is external and no subscriptionVersion resolver is involved."
+    },
+    {
+      "tool": "subscriptions_upload_review_screenshot",
+      "kind": "compound",
+      "status": "partial",
+      "effect": "write",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "subscriptionAppStoreReviewScreenshots_createInstance",
+          "method": "post",
+          "path": "/v1/subscriptionAppStoreReviewScreenshots",
+          "role": "primary",
+          "condition": null,
+          "inputs": [
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/type",
+              "fixedValue": "subscriptionAppStoreReviewScreenshots"
+            },
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/relationships/subscription/data/type",
+              "fixedValue": "subscriptions"
+            }
+          ]
+        },
+        {
+          "operationId": "subscriptionAppStoreReviewScreenshots_updateInstance",
+          "method": "patch",
+          "path": "/v1/subscriptionAppStoreReviewScreenshots/{id}",
+          "role": "supporting",
+          "condition": null,
+          "inputs": [
+            {
+              "sourceKind": "derived",
+              "location": "path",
+              "appleName": "id",
+              "derivedFrom": [
+                "subscriptionAppStoreReviewScreenshots_createInstance:/data/id"
+              ],
+              "localRole": "Use the reserved screenshot ID returned by Apple as the commit path ID."
+            },
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/type",
+              "fixedValue": "subscriptionAppStoreReviewScreenshots"
+            },
+            {
+              "sourceKind": "derived",
+              "jsonPointer": "/data/id",
+              "derivedFrom": [
+                "subscriptionAppStoreReviewScreenshots_createInstance:/data/id"
+              ],
+              "localRole": "Use the reserved screenshot ID returned by Apple as the commit resource ID."
+            },
+            {
+              "sourceKind": "derived",
+              "jsonPointer": "/data/attributes/sourceFileChecksum",
+              "derivedFrom": [
+                "file_path"
+              ],
+              "localRole": "Use the MD5 checksum produced while uploading the local file through Apple's presigned operations."
+            },
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/attributes/uploaded",
+              "fixedValue": true
+            }
+          ]
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "subscription_id",
+          "sourceKind": "requestBody",
+          "operationId": "subscriptionAppStoreReviewScreenshots_createInstance",
+          "jsonPointer": "/data/relationships/subscription/data/id"
+        },
+        {
+          "toolField": "file_path",
+          "sourceKind": "derived",
+          "localRole": "Derives reserve metadata, supplies binary upload bytes, and drives the commit checksum.",
+          "operationId": "subscriptionAppStoreReviewScreenshots_createInstance",
+          "jsonPointer": "/data/attributes",
+          "derivedFrom": [
+            "file_path"
+          ]
+        }
+      ],
+      "response": {
+        "mode": "opaque",
+        "sources": [
+          { "operationId": "subscriptionAppStoreReviewScreenshots_createInstance", "statusCode": "201", "mediaType": "application/json" },
+          { "operationId": "subscriptionAppStoreReviewScreenshots_updateInstance", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": []
+      },
+      "note": "Reserve and commit are Apple operations; binary transfer to the returned upload URL is a local/external step."
+    }
+  ],
+  "implementationAliases": []
+}

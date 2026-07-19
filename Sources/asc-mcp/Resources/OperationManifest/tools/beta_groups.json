@@ -1,0 +1,524 @@
+{
+  "workerKey": "beta_groups",
+  "tools": [
+    {
+      "tool": "beta_groups_add_builds",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "write",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "betaGroups_builds_createToManyRelationship",
+          "method": "post",
+          "path": "/v1/betaGroups/{id}/relationships/builds",
+          "role": "primary"
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "group_id",
+          "sourceKind": "parameter",
+          "operationId": "betaGroups_builds_createToManyRelationship",
+          "location": "path",
+          "appleName": "id"
+        },
+        {
+          "toolField": "build_ids",
+          "sourceKind": "requestBody",
+          "operationId": "betaGroups_builds_createToManyRelationship",
+          "jsonPointer": "/data"
+        }
+      ],
+      "response": {
+        "mode": "local",
+        "sources": [
+          { "operationId": "betaGroups_builds_createToManyRelationship", "statusCode": "204" }
+        ],
+        "fields": [
+          {
+            "outputField": "success",
+            "localRole": "True after Apple's 204 no-content response."
+          },
+          {
+            "outputField": "message",
+            "localRole": "Local mutation confirmation."
+          }
+        ]
+      },
+      "note": "Exact relationship mutation; Apple returns no response document."
+    },
+    {
+      "tool": "beta_groups_add_testers",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "write",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "betaGroups_betaTesters_createToManyRelationship",
+          "method": "post",
+          "path": "/v1/betaGroups/{id}/relationships/betaTesters",
+          "role": "primary"
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "group_id",
+          "sourceKind": "parameter",
+          "operationId": "betaGroups_betaTesters_createToManyRelationship",
+          "location": "path",
+          "appleName": "id"
+        },
+        {
+          "toolField": "tester_ids",
+          "sourceKind": "requestBody",
+          "operationId": "betaGroups_betaTesters_createToManyRelationship",
+          "jsonPointer": "/data"
+        }
+      ],
+      "response": {
+        "mode": "local",
+        "sources": [
+          { "operationId": "betaGroups_betaTesters_createToManyRelationship", "statusCode": "204" }
+        ],
+        "fields": [
+          {
+            "outputField": "success",
+            "localRole": "True after Apple's 204 no-content response."
+          },
+          {
+            "outputField": "message",
+            "localRole": "Local mutation confirmation."
+          }
+        ]
+      },
+      "note": "Exact relationship mutation; Apple returns no response document."
+    },
+    {
+      "tool": "beta_groups_create",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "write",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "betaGroups_createInstance",
+          "method": "post",
+          "path": "/v1/betaGroups",
+          "role": "primary",
+          "inputs": [
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/type",
+              "fixedValue": "betaGroups"
+            },
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/relationships/app/data/type",
+              "fixedValue": "apps"
+            }
+          ]
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "app_id",
+          "sourceKind": "requestBody",
+          "operationId": "betaGroups_createInstance",
+          "jsonPointer": "/data/relationships/app/data/id"
+        },
+        {
+          "toolField": "name",
+          "sourceKind": "requestBody",
+          "operationId": "betaGroups_createInstance",
+          "jsonPointer": "/data/attributes/name"
+        },
+        {
+          "toolField": "is_internal_group",
+          "sourceKind": "requestBody",
+          "operationId": "betaGroups_createInstance",
+          "jsonPointer": "/data/attributes/isInternalGroup"
+        },
+        {
+          "toolField": "has_access_to_all_builds",
+          "sourceKind": "requestBody",
+          "operationId": "betaGroups_createInstance",
+          "jsonPointer": "/data/attributes/hasAccessToAllBuilds"
+        },
+        {
+          "toolField": "public_link_enabled",
+          "sourceKind": "requestBody",
+          "operationId": "betaGroups_createInstance",
+          "jsonPointer": "/data/attributes/publicLinkEnabled"
+        },
+        {
+          "toolField": "feedback_enabled",
+          "sourceKind": "requestBody",
+          "operationId": "betaGroups_createInstance",
+          "jsonPointer": "/data/attributes/feedbackEnabled"
+        }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          {
+            "operationId": "betaGroups_createInstance",
+            "statusCode": "201",
+            "mediaType": "application/json"
+          }
+        ],
+        "fields": [
+          {
+            "outputField": "beta_group",
+            "operationId": "betaGroups_createInstance",
+            "jsonPointer": "/data"
+          }
+        ]
+      },
+      "note": "Implemented attributes are valid. Public-link limit fields and optional initial builds/testers relationships available in 4.4.1 are not exposed."
+    },
+    {
+      "tool": "beta_groups_delete",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "destructive",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "betaGroups_deleteInstance",
+          "method": "delete",
+          "path": "/v1/betaGroups/{id}",
+          "role": "primary"
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "group_id",
+          "sourceKind": "parameter",
+          "operationId": "betaGroups_deleteInstance",
+          "location": "path",
+          "appleName": "id"
+        }
+      ],
+      "response": {
+        "mode": "local",
+        "sources": [
+          { "operationId": "betaGroups_deleteInstance", "statusCode": "204" }
+        ],
+        "fields": [
+          {
+            "outputField": "success",
+            "localRole": "True after Apple's 204 no-content response."
+          },
+          {
+            "outputField": "message",
+            "localRole": "Local deletion confirmation."
+          }
+        ]
+      },
+      "note": "Exact destructive operation; Apple returns no response document."
+    },
+    {
+      "tool": "beta_groups_list",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "betaGroups_getCollection",
+          "method": "get",
+          "path": "/v1/betaGroups",
+          "role": "primary"
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "app_id",
+          "sourceKind": "parameter",
+          "operationId": "betaGroups_getCollection",
+          "location": "query",
+          "appleName": "filter[app]"
+        },
+        {
+          "toolField": "limit",
+          "sourceKind": "parameter",
+          "operationId": "betaGroups_getCollection",
+          "location": "query",
+          "appleName": "limit"
+        },
+        {
+          "toolField": "is_internal",
+          "sourceKind": "parameter",
+          "operationId": "betaGroups_getCollection",
+          "location": "query",
+          "appleName": "filter[isInternalGroup]"
+        },
+        {
+          "toolField": "next_url",
+          "sourceKind": "local",
+          "localRole": "Validated pagination URL returned by Apple."
+        }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          {
+            "operationId": "betaGroups_getCollection",
+            "statusCode": "200",
+            "mediaType": "application/json"
+          }
+        ],
+        "fields": [
+          {
+            "outputField": "beta_groups",
+            "operationId": "betaGroups_getCollection",
+            "jsonPointer": "/data"
+          },
+          {
+            "outputField": "next_url",
+            "operationId": "betaGroups_getCollection",
+            "jsonPointer": "/links/next"
+          }
+        ]
+      },
+      "note": "Valid subset of collection filters. Apple also supports name, public-link, builds, id, sort, fields, include, and relationship limits."
+    },
+    {
+      "tool": "beta_groups_list_testers",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "betaGroups_betaTesters_getToManyRelated",
+          "method": "get",
+          "path": "/v1/betaGroups/{id}/betaTesters",
+          "role": "primary"
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "group_id",
+          "sourceKind": "parameter",
+          "operationId": "betaGroups_betaTesters_getToManyRelated",
+          "location": "path",
+          "appleName": "id"
+        },
+        {
+          "toolField": "limit",
+          "sourceKind": "parameter",
+          "operationId": "betaGroups_betaTesters_getToManyRelated",
+          "location": "query",
+          "appleName": "limit"
+        },
+        {
+          "toolField": "next_url",
+          "sourceKind": "local",
+          "localRole": "Validated pagination URL returned by Apple."
+        }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          {
+            "operationId": "betaGroups_betaTesters_getToManyRelated",
+            "statusCode": "200",
+            "mediaType": "application/json"
+          }
+        ],
+        "fields": [
+          {
+            "outputField": "beta_testers",
+            "operationId": "betaGroups_betaTesters_getToManyRelated",
+            "jsonPointer": "/data"
+          },
+          {
+            "outputField": "next_url",
+            "operationId": "betaGroups_betaTesters_getToManyRelated",
+            "jsonPointer": "/links/next"
+          }
+        ]
+      },
+      "note": "Exact related-resource list; the worker does not expose the corresponding group builds read."
+    },
+    {
+      "tool": "beta_groups_remove_builds",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "destructive",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "betaGroups_builds_deleteToManyRelationship",
+          "method": "delete",
+          "path": "/v1/betaGroups/{id}/relationships/builds",
+          "role": "primary"
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "group_id",
+          "sourceKind": "parameter",
+          "operationId": "betaGroups_builds_deleteToManyRelationship",
+          "location": "path",
+          "appleName": "id"
+        },
+        {
+          "toolField": "build_ids",
+          "sourceKind": "requestBody",
+          "operationId": "betaGroups_builds_deleteToManyRelationship",
+          "jsonPointer": "/data"
+        }
+      ],
+      "response": {
+        "mode": "local",
+        "sources": [
+          { "operationId": "betaGroups_builds_deleteToManyRelationship", "statusCode": "204" }
+        ],
+        "fields": [
+          {
+            "outputField": "success",
+            "localRole": "True after Apple's 204 no-content response."
+          },
+          {
+            "outputField": "message",
+            "localRole": "Local mutation confirmation."
+          }
+        ]
+      },
+      "note": "Exact relationship removal; Apple returns no response document."
+    },
+    {
+      "tool": "beta_groups_remove_testers",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "destructive",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "betaGroups_betaTesters_deleteToManyRelationship",
+          "method": "delete",
+          "path": "/v1/betaGroups/{id}/relationships/betaTesters",
+          "role": "primary"
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "group_id",
+          "sourceKind": "parameter",
+          "operationId": "betaGroups_betaTesters_deleteToManyRelationship",
+          "location": "path",
+          "appleName": "id"
+        },
+        {
+          "toolField": "tester_ids",
+          "sourceKind": "requestBody",
+          "operationId": "betaGroups_betaTesters_deleteToManyRelationship",
+          "jsonPointer": "/data"
+        }
+      ],
+      "response": {
+        "mode": "local",
+        "sources": [
+          { "operationId": "betaGroups_betaTesters_deleteToManyRelationship", "statusCode": "204" }
+        ],
+        "fields": [
+          {
+            "outputField": "success",
+            "localRole": "True after Apple's 204 no-content response."
+          },
+          {
+            "outputField": "message",
+            "localRole": "Local mutation confirmation."
+          }
+        ]
+      },
+      "note": "Exact relationship removal; Apple returns no response document."
+    },
+    {
+      "tool": "beta_groups_update",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "write",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "betaGroups_updateInstance",
+          "method": "patch",
+          "path": "/v1/betaGroups/{id}",
+          "role": "primary",
+          "inputs": [
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/type",
+              "fixedValue": "betaGroups"
+            },
+            {
+              "sourceKind": "derived",
+              "jsonPointer": "/data/id",
+              "derivedFrom": [
+                "group_id"
+              ],
+              "localRole": "Reuse the public beta-group ID as the JSON:API resource ID in the update body."
+            }
+          ]
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "group_id",
+          "sourceKind": "parameter",
+          "operationId": "betaGroups_updateInstance",
+          "location": "path",
+          "appleName": "id"
+        },
+        {
+          "toolField": "name",
+          "sourceKind": "requestBody",
+          "operationId": "betaGroups_updateInstance",
+          "jsonPointer": "/data/attributes/name"
+        },
+        {
+          "toolField": "public_link_enabled",
+          "sourceKind": "requestBody",
+          "operationId": "betaGroups_updateInstance",
+          "jsonPointer": "/data/attributes/publicLinkEnabled"
+        },
+        {
+          "toolField": "public_link_limit",
+          "sourceKind": "requestBody",
+          "operationId": "betaGroups_updateInstance",
+          "jsonPointer": "/data/attributes/publicLinkLimit"
+        },
+        {
+          "toolField": "feedback_enabled",
+          "sourceKind": "requestBody",
+          "operationId": "betaGroups_updateInstance",
+          "jsonPointer": "/data/attributes/feedbackEnabled"
+        }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          {
+            "operationId": "betaGroups_updateInstance",
+            "statusCode": "200",
+            "mediaType": "application/json"
+          }
+        ],
+        "fields": [
+          {
+            "outputField": "beta_group",
+            "operationId": "betaGroups_updateInstance",
+            "jsonPointer": "/data"
+          }
+        ]
+      },
+      "note": "Implemented fields are valid, but empty PATCH is currently possible and 4.4.1 publicLinkLimitEnabled plus Apple Silicon and Apple Vision availability flags are not exposed."
+    }
+  ],
+  "implementationAliases": []
+}

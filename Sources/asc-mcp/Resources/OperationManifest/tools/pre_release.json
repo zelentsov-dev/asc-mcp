@@ -1,0 +1,187 @@
+{
+  "workerKey": "pre_release",
+  "tools": [
+    {
+      "tool": "pre_release_get",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "preReleaseVersions_getInstance",
+          "method": "get",
+          "path": "/v1/preReleaseVersions/{id}",
+          "role": "primary"
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "pre_release_version_id",
+          "sourceKind": "parameter",
+          "operationId": "preReleaseVersions_getInstance",
+          "location": "path",
+          "appleName": "id"
+        }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          {
+            "operationId": "preReleaseVersions_getInstance",
+            "statusCode": "200",
+            "mediaType": "application/json"
+          }
+        ],
+        "fields": [
+          {
+            "outputField": "pre_release_version",
+            "operationId": "preReleaseVersions_getInstance",
+            "jsonPointer": "/data"
+          }
+        ]
+      },
+      "note": "Exact resource read; the model and formatter retain only id, type, version, and platform and drop relationships."
+    },
+    {
+      "tool": "pre_release_list",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "preReleaseVersions_getCollection",
+          "method": "get",
+          "path": "/v1/preReleaseVersions",
+          "role": "primary"
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "app_id",
+          "sourceKind": "parameter",
+          "operationId": "preReleaseVersions_getCollection",
+          "location": "query",
+          "appleName": "filter[app]"
+        },
+        {
+          "toolField": "platform",
+          "sourceKind": "parameter",
+          "operationId": "preReleaseVersions_getCollection",
+          "location": "query",
+          "appleName": "filter[platform]"
+        },
+        {
+          "toolField": "version",
+          "sourceKind": "parameter",
+          "operationId": "preReleaseVersions_getCollection",
+          "location": "query",
+          "appleName": "filter[version]"
+        },
+        {
+          "toolField": "sort",
+          "sourceKind": "parameter",
+          "operationId": "preReleaseVersions_getCollection",
+          "location": "query",
+          "appleName": "sort"
+        },
+        {
+          "toolField": "limit",
+          "sourceKind": "parameter",
+          "operationId": "preReleaseVersions_getCollection",
+          "location": "query",
+          "appleName": "limit"
+        },
+        {
+          "toolField": "next_url",
+          "sourceKind": "local",
+          "localRole": "Validated pagination URL returned by Apple."
+        }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          {
+            "operationId": "preReleaseVersions_getCollection",
+            "statusCode": "200",
+            "mediaType": "application/json"
+          }
+        ],
+        "fields": [
+          {
+            "outputField": "pre_release_versions",
+            "operationId": "preReleaseVersions_getCollection",
+            "jsonPointer": "/data"
+          },
+          {
+            "outputField": "next_url",
+            "operationId": "preReleaseVersions_getCollection",
+            "jsonPointer": "/links/next"
+          }
+        ]
+      },
+      "note": "Valid subset. Current Apple filters also cover build audience type, expiration, processing state, build version, build ids, sparse fields, includes, and relationship limits."
+    },
+    {
+      "tool": "pre_release_list_builds",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "preReleaseVersions_builds_getToManyRelated",
+          "method": "get",
+          "path": "/v1/preReleaseVersions/{id}/builds",
+          "role": "primary"
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "pre_release_version_id",
+          "sourceKind": "parameter",
+          "operationId": "preReleaseVersions_builds_getToManyRelated",
+          "location": "path",
+          "appleName": "id"
+        },
+        {
+          "toolField": "limit",
+          "sourceKind": "parameter",
+          "operationId": "preReleaseVersions_builds_getToManyRelated",
+          "location": "query",
+          "appleName": "limit"
+        },
+        {
+          "toolField": "next_url",
+          "sourceKind": "local",
+          "localRole": "Validated pagination URL returned by Apple."
+        }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          {
+            "operationId": "preReleaseVersions_builds_getToManyRelated",
+            "statusCode": "200",
+            "mediaType": "application/json"
+          }
+        ],
+        "fields": [
+          {
+            "outputField": "builds",
+            "operationId": "preReleaseVersions_builds_getToManyRelated",
+            "jsonPointer": "/data"
+          },
+          {
+            "outputField": "next_url",
+            "operationId": "preReleaseVersions_builds_getToManyRelated",
+            "jsonPointer": "/links/next"
+          }
+        ]
+      },
+      "note": "Exact related-resource list, but the output omits expiration, audience, encryption, and other current Build attributes."
+    }
+  ],
+  "implementationAliases": []
+}

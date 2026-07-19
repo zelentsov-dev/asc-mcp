@@ -1,0 +1,504 @@
+{
+  "workerKey": "screenshots",
+  "tools": [
+    {
+      "tool": "screenshots_create_preview_set",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "write",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "appPreviewSets_createInstance",
+          "method": "post",
+          "path": "/v1/appPreviewSets",
+          "role": "primary",
+          "inputs": [
+            { "sourceKind": "fixed", "jsonPointer": "/data/type", "fixedValue": "appPreviewSets" },
+            { "sourceKind": "fixed", "jsonPointer": "/data/relationships/appStoreVersionLocalization/data/type", "fixedValue": "appStoreVersionLocalizations" }
+          ]
+        }
+      ],
+      "fields": [
+        { "toolField": "localization_id", "sourceKind": "requestBody", "operationId": "appPreviewSets_createInstance", "jsonPointer": "/data/relationships/appStoreVersionLocalization/data/id" },
+        { "toolField": "preview_type", "sourceKind": "requestBody", "operationId": "appPreviewSets_createInstance", "jsonPointer": "/data/attributes/previewType" }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          { "operationId": "appPreviewSets_createInstance", "statusCode": "201", "mediaType": "application/json" }
+        ],
+        "fields": []
+      }
+    },
+    {
+      "tool": "screenshots_create_set",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "write",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "appScreenshotSets_createInstance",
+          "method": "post",
+          "path": "/v1/appScreenshotSets",
+          "role": "primary",
+          "inputs": [
+            { "sourceKind": "fixed", "jsonPointer": "/data/type", "fixedValue": "appScreenshotSets" },
+            { "sourceKind": "fixed", "jsonPointer": "/data/relationships/appStoreVersionLocalization/data/type", "fixedValue": "appStoreVersionLocalizations" }
+          ]
+        }
+      ],
+      "fields": [
+        { "toolField": "localization_id", "sourceKind": "requestBody", "operationId": "appScreenshotSets_createInstance", "jsonPointer": "/data/relationships/appStoreVersionLocalization/data/id" },
+        { "toolField": "display_type", "sourceKind": "requestBody", "operationId": "appScreenshotSets_createInstance", "jsonPointer": "/data/attributes/screenshotDisplayType" }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          { "operationId": "appScreenshotSets_createInstance", "statusCode": "201", "mediaType": "application/json" }
+        ],
+        "fields": []
+      }
+    },
+    {
+      "tool": "screenshots_delete",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "destructive",
+      "implementationState": "asBuilt",
+      "operations": [
+        { "operationId": "appScreenshots_deleteInstance", "method": "delete", "path": "/v1/appScreenshots/{id}", "role": "primary" }
+      ],
+      "fields": [
+        { "toolField": "screenshot_id", "sourceKind": "parameter", "operationId": "appScreenshots_deleteInstance", "location": "path", "appleName": "id" }
+      ],
+      "response": { "mode": "local", "sources": [{ "operationId": "appScreenshots_deleteInstance", "statusCode": "204" }], "fields": [] },
+      "note": "Apple returns 204; the MCP deletion confirmation is local."
+    },
+    {
+      "tool": "screenshots_delete_preview",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "destructive",
+      "implementationState": "asBuilt",
+      "operations": [
+        { "operationId": "appPreviews_deleteInstance", "method": "delete", "path": "/v1/appPreviews/{id}", "role": "primary" }
+      ],
+      "fields": [
+        { "toolField": "preview_id", "sourceKind": "parameter", "operationId": "appPreviews_deleteInstance", "location": "path", "appleName": "id" }
+      ],
+      "response": { "mode": "local", "sources": [{ "operationId": "appPreviews_deleteInstance", "statusCode": "204" }], "fields": [] },
+      "note": "Apple returns 204; the MCP deletion confirmation is local."
+    },
+    {
+      "tool": "screenshots_delete_preview_set",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "destructive",
+      "implementationState": "asBuilt",
+      "operations": [
+        { "operationId": "appPreviewSets_deleteInstance", "method": "delete", "path": "/v1/appPreviewSets/{id}", "role": "primary" }
+      ],
+      "fields": [
+        { "toolField": "set_id", "sourceKind": "parameter", "operationId": "appPreviewSets_deleteInstance", "location": "path", "appleName": "id" }
+      ],
+      "response": { "mode": "local", "sources": [{ "operationId": "appPreviewSets_deleteInstance", "statusCode": "204" }], "fields": [] },
+      "note": "Apple returns 204; the MCP deletion confirmation is local."
+    },
+    {
+      "tool": "screenshots_delete_set",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "destructive",
+      "implementationState": "asBuilt",
+      "operations": [
+        { "operationId": "appScreenshotSets_deleteInstance", "method": "delete", "path": "/v1/appScreenshotSets/{id}", "role": "primary" }
+      ],
+      "fields": [
+        { "toolField": "set_id", "sourceKind": "parameter", "operationId": "appScreenshotSets_deleteInstance", "location": "path", "appleName": "id" }
+      ],
+      "response": { "mode": "local", "sources": [{ "operationId": "appScreenshotSets_deleteInstance", "statusCode": "204" }], "fields": [] },
+      "note": "Apple returns 204; the MCP deletion confirmation is local."
+    },
+    {
+      "tool": "screenshots_get",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        { "operationId": "appScreenshots_getInstance", "method": "get", "path": "/v1/appScreenshots/{id}", "role": "primary" }
+      ],
+      "fields": [
+        { "toolField": "screenshot_id", "sourceKind": "parameter", "operationId": "appScreenshots_getInstance", "location": "path", "appleName": "id" }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          { "operationId": "appScreenshots_getInstance", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": []
+      }
+    },
+    {
+      "tool": "screenshots_get_preview",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        { "operationId": "appPreviews_getInstance", "method": "get", "path": "/v1/appPreviews/{id}", "role": "primary" }
+      ],
+      "fields": [
+        { "toolField": "preview_id", "sourceKind": "parameter", "operationId": "appPreviews_getInstance", "location": "path", "appleName": "id" }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          { "operationId": "appPreviews_getInstance", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": []
+      }
+    },
+    {
+      "tool": "screenshots_list",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        { "operationId": "appScreenshotSets_appScreenshots_getToManyRelated", "method": "get", "path": "/v1/appScreenshotSets/{id}/appScreenshots", "role": "primary" }
+      ],
+      "fields": [
+        { "toolField": "set_id", "sourceKind": "parameter", "operationId": "appScreenshotSets_appScreenshots_getToManyRelated", "location": "path", "appleName": "id" },
+        { "toolField": "limit", "sourceKind": "parameter", "operationId": "appScreenshotSets_appScreenshots_getToManyRelated", "location": "query", "appleName": "limit" },
+        { "toolField": "next_url", "sourceKind": "local", "localRole": "paginationContinuation" }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          { "operationId": "appScreenshotSets_appScreenshots_getToManyRelated", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": []
+      }
+    },
+    {
+      "tool": "screenshots_list_preview_sets",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        { "operationId": "appStoreVersionLocalizations_appPreviewSets_getToManyRelated", "method": "get", "path": "/v1/appStoreVersionLocalizations/{id}/appPreviewSets", "role": "primary" }
+      ],
+      "fields": [
+        { "toolField": "localization_id", "sourceKind": "parameter", "operationId": "appStoreVersionLocalizations_appPreviewSets_getToManyRelated", "location": "path", "appleName": "id" },
+        { "toolField": "limit", "sourceKind": "parameter", "operationId": "appStoreVersionLocalizations_appPreviewSets_getToManyRelated", "location": "query", "appleName": "limit" },
+        { "toolField": "next_url", "sourceKind": "local", "localRole": "paginationContinuation" }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          { "operationId": "appStoreVersionLocalizations_appPreviewSets_getToManyRelated", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": []
+      }
+    },
+    {
+      "tool": "screenshots_list_previews",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        { "operationId": "appPreviewSets_appPreviews_getToManyRelated", "method": "get", "path": "/v1/appPreviewSets/{id}/appPreviews", "role": "primary" }
+      ],
+      "fields": [
+        { "toolField": "set_id", "sourceKind": "parameter", "operationId": "appPreviewSets_appPreviews_getToManyRelated", "location": "path", "appleName": "id" },
+        { "toolField": "limit", "sourceKind": "parameter", "operationId": "appPreviewSets_appPreviews_getToManyRelated", "location": "query", "appleName": "limit" },
+        { "toolField": "next_url", "sourceKind": "local", "localRole": "paginationContinuation" }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          { "operationId": "appPreviewSets_appPreviews_getToManyRelated", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": []
+      }
+    },
+    {
+      "tool": "screenshots_list_sets",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        { "operationId": "appStoreVersionLocalizations_appScreenshotSets_getToManyRelated", "method": "get", "path": "/v1/appStoreVersionLocalizations/{id}/appScreenshotSets", "role": "primary" }
+      ],
+      "fields": [
+        { "toolField": "localization_id", "sourceKind": "parameter", "operationId": "appStoreVersionLocalizations_appScreenshotSets_getToManyRelated", "location": "path", "appleName": "id" },
+        { "toolField": "limit", "sourceKind": "parameter", "operationId": "appStoreVersionLocalizations_appScreenshotSets_getToManyRelated", "location": "query", "appleName": "limit" },
+        { "toolField": "next_url", "sourceKind": "local", "localRole": "paginationContinuation" }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          { "operationId": "appStoreVersionLocalizations_appScreenshotSets_getToManyRelated", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": []
+      }
+    },
+    {
+      "tool": "screenshots_reorder",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "write",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "appScreenshotSets_appScreenshots_replaceToManyRelationship",
+          "method": "patch",
+          "path": "/v1/appScreenshotSets/{id}/relationships/appScreenshots",
+          "role": "primary",
+          "inputs": [
+            { "sourceKind": "fixed", "jsonPointer": "/data/*/type", "fixedValue": "appScreenshots" }
+          ]
+        }
+      ],
+      "fields": [
+        { "toolField": "set_id", "sourceKind": "parameter", "operationId": "appScreenshotSets_appScreenshots_replaceToManyRelationship", "location": "path", "appleName": "id" },
+        { "toolField": "screenshot_ids", "sourceKind": "requestBody", "operationId": "appScreenshotSets_appScreenshots_replaceToManyRelationship", "jsonPointer": "/data", "derivedFrom": ["comma-separated MCP string"] }
+      ],
+      "response": { "mode": "local", "sources": [{ "operationId": "appScreenshotSets_appScreenshots_replaceToManyRelationship", "statusCode": "204" }], "fields": [] },
+      "note": "Apple returns 204; the handler expands screenshot_ids into ordered JSON:API linkage objects and returns a local confirmation."
+    },
+    {
+      "tool": "screenshots_upload",
+      "kind": "compound",
+      "status": "partial",
+      "effect": "write",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "appScreenshots_createInstance",
+          "method": "post",
+          "path": "/v1/appScreenshots",
+          "role": "supporting",
+          "condition": "Reserves the asset and returns signed upload operations.",
+          "inputs": [
+            { "sourceKind": "fixed", "jsonPointer": "/data/type", "fixedValue": "appScreenshots" },
+            {
+              "sourceKind": "derived",
+              "jsonPointer": "/data/attributes/fileName",
+              "derivedFrom": ["file_path"],
+              "localRole": "Derive the reservation file name from the local file path."
+            },
+            {
+              "sourceKind": "derived",
+              "jsonPointer": "/data/attributes/fileSize",
+              "derivedFrom": ["file_path"],
+              "localRole": "Read the local file size before reserving the asset."
+            },
+            { "sourceKind": "fixed", "jsonPointer": "/data/relationships/appScreenshotSet/data/type", "fixedValue": "appScreenshotSets" }
+          ]
+        },
+        {
+          "operationId": "appScreenshots_updateInstance",
+          "method": "patch",
+          "path": "/v1/appScreenshots/{id}",
+          "role": "primary",
+          "condition": "Commits the uploaded asset with sourceFileChecksum and uploaded=true.",
+          "inputs": [
+            {
+              "sourceKind": "derived",
+              "location": "path",
+              "appleName": "id",
+              "derivedFrom": ["appScreenshots_createInstance:/data/id"],
+              "localRole": "Use the screenshot ID returned by the reservation response."
+            },
+            {
+              "sourceKind": "derived",
+              "jsonPointer": "/data/id",
+              "derivedFrom": ["appScreenshots_createInstance:/data/id"],
+              "localRole": "Copy the reservation response ID into the commit resource identifier."
+            },
+            { "sourceKind": "fixed", "jsonPointer": "/data/type", "fixedValue": "appScreenshots" },
+            {
+              "sourceKind": "derived",
+              "jsonPointer": "/data/attributes/sourceFileChecksum",
+              "derivedFrom": ["file_path", "appScreenshots_createInstance:/data/attributes/uploadOperations"],
+              "localRole": "Use the checksum returned after uploading the local file through Apple's signed upload operations."
+            },
+            { "sourceKind": "fixed", "jsonPointer": "/data/attributes/uploaded", "fixedValue": true }
+          ]
+        }
+      ],
+      "fields": [
+        { "toolField": "set_id", "sourceKind": "requestBody", "operationId": "appScreenshots_createInstance", "jsonPointer": "/data/relationships/appScreenshotSet/data/id" },
+        { "toolField": "file_path", "sourceKind": "local", "localRole": "assetFileSource", "derivedFrom": ["fileName", "fileSize", "sourceFileChecksum"] }
+      ],
+      "response": {
+        "mode": "aggregate",
+        "sources": [
+          { "operationId": "appScreenshots_createInstance", "statusCode": "201", "mediaType": "application/json" },
+          { "operationId": "appScreenshots_updateInstance", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": []
+      },
+      "note": "The bytes are uploaded between reserve and commit to Apple-provided signed URLs; those external upload operations are runtime response data, not OpenAPI operations."
+    },
+    {
+      "tool": "screenshots_upload_batch",
+      "kind": "compound",
+      "status": "partial",
+      "effect": "write",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "appScreenshots_createInstance",
+          "method": "post",
+          "path": "/v1/appScreenshots",
+          "role": "supporting",
+          "condition": "Repeated once per local file to reserve each asset.",
+          "inputs": [
+            { "sourceKind": "fixed", "jsonPointer": "/data/type", "fixedValue": "appScreenshots" },
+            {
+              "sourceKind": "derived",
+              "jsonPointer": "/data/attributes/fileName",
+              "derivedFrom": ["file_paths"],
+              "localRole": "Derive each reservation file name from the current local path in the batch."
+            },
+            {
+              "sourceKind": "derived",
+              "jsonPointer": "/data/attributes/fileSize",
+              "derivedFrom": ["file_paths"],
+              "localRole": "Read each current local file size before reserving its asset."
+            },
+            { "sourceKind": "fixed", "jsonPointer": "/data/relationships/appScreenshotSet/data/type", "fixedValue": "appScreenshotSets" }
+          ]
+        },
+        {
+          "operationId": "appScreenshots_updateInstance",
+          "method": "patch",
+          "path": "/v1/appScreenshots/{id}",
+          "role": "primary",
+          "condition": "Repeated once per successfully uploaded local file to commit each asset.",
+          "inputs": [
+            {
+              "sourceKind": "derived",
+              "location": "path",
+              "appleName": "id",
+              "derivedFrom": ["appScreenshots_createInstance:/data/id"],
+              "localRole": "Use the current screenshot reservation ID for the matching batch item."
+            },
+            {
+              "sourceKind": "derived",
+              "jsonPointer": "/data/id",
+              "derivedFrom": ["appScreenshots_createInstance:/data/id"],
+              "localRole": "Copy the current reservation ID into the matching commit resource identifier."
+            },
+            { "sourceKind": "fixed", "jsonPointer": "/data/type", "fixedValue": "appScreenshots" },
+            {
+              "sourceKind": "derived",
+              "jsonPointer": "/data/attributes/sourceFileChecksum",
+              "derivedFrom": ["file_paths", "appScreenshots_createInstance:/data/attributes/uploadOperations"],
+              "localRole": "Use the checksum returned after uploading the current batch file through Apple's signed upload operations."
+            },
+            { "sourceKind": "fixed", "jsonPointer": "/data/attributes/uploaded", "fixedValue": true }
+          ]
+        }
+      ],
+      "fields": [
+        { "toolField": "set_id", "sourceKind": "requestBody", "operationId": "appScreenshots_createInstance", "jsonPointer": "/data/relationships/appScreenshotSet/data/id" },
+        { "toolField": "file_paths", "sourceKind": "local", "localRole": "batchAssetFileSources", "derivedFrom": ["per-file fileName", "per-file fileSize", "per-file sourceFileChecksum"] }
+      ],
+      "response": {
+        "mode": "aggregate",
+        "sources": [
+          { "operationId": "appScreenshots_createInstance", "statusCode": "201", "mediaType": "application/json" },
+          { "operationId": "appScreenshots_updateInstance", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": []
+      },
+      "note": "The two Apple operations and signed-URL byte upload are repeated per file; the MCP aggregates per-file success and failure results."
+    },
+    {
+      "tool": "screenshots_upload_preview",
+      "kind": "compound",
+      "status": "partial",
+      "effect": "write",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "appPreviews_createInstance",
+          "method": "post",
+          "path": "/v1/appPreviews",
+          "role": "supporting",
+          "condition": "Reserves the video asset and returns signed upload operations.",
+          "inputs": [
+            { "sourceKind": "fixed", "jsonPointer": "/data/type", "fixedValue": "appPreviews" },
+            {
+              "sourceKind": "derived",
+              "jsonPointer": "/data/attributes/fileName",
+              "derivedFrom": ["file_path"],
+              "localRole": "Derive the reservation file name from the local video path."
+            },
+            {
+              "sourceKind": "derived",
+              "jsonPointer": "/data/attributes/fileSize",
+              "derivedFrom": ["file_path"],
+              "localRole": "Read the local video size before reserving the asset."
+            },
+            { "sourceKind": "fixed", "jsonPointer": "/data/relationships/appPreviewSet/data/type", "fixedValue": "appPreviewSets" }
+          ]
+        },
+        {
+          "operationId": "appPreviews_updateInstance",
+          "method": "patch",
+          "path": "/v1/appPreviews/{id}",
+          "role": "primary",
+          "condition": "Commits the uploaded asset with sourceFileChecksum and uploaded=true.",
+          "inputs": [
+            {
+              "sourceKind": "derived",
+              "location": "path",
+              "appleName": "id",
+              "derivedFrom": ["appPreviews_createInstance:/data/id"],
+              "localRole": "Use the preview ID returned by the reservation response."
+            },
+            {
+              "sourceKind": "derived",
+              "jsonPointer": "/data/id",
+              "derivedFrom": ["appPreviews_createInstance:/data/id"],
+              "localRole": "Copy the reservation response ID into the commit resource identifier."
+            },
+            { "sourceKind": "fixed", "jsonPointer": "/data/type", "fixedValue": "appPreviews" },
+            {
+              "sourceKind": "derived",
+              "jsonPointer": "/data/attributes/sourceFileChecksum",
+              "derivedFrom": ["file_path", "appPreviews_createInstance:/data/attributes/uploadOperations"],
+              "localRole": "Use the checksum returned after uploading the local video through Apple's signed upload operations."
+            },
+            { "sourceKind": "fixed", "jsonPointer": "/data/attributes/uploaded", "fixedValue": true }
+          ]
+        }
+      ],
+      "fields": [
+        { "toolField": "set_id", "sourceKind": "requestBody", "operationId": "appPreviews_createInstance", "jsonPointer": "/data/relationships/appPreviewSet/data/id" },
+        { "toolField": "file_path", "sourceKind": "local", "localRole": "assetFileSource", "derivedFrom": ["fileName", "fileSize", "sourceFileChecksum"] },
+        { "toolField": "mime_type", "sourceKind": "requestBody", "operationId": "appPreviews_createInstance", "jsonPointer": "/data/attributes/mimeType" }
+      ],
+      "response": {
+        "mode": "aggregate",
+        "sources": [
+          { "operationId": "appPreviews_createInstance", "statusCode": "201", "mediaType": "application/json" },
+          { "operationId": "appPreviews_updateInstance", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": []
+      },
+      "note": "The video bytes are uploaded between reserve and commit to Apple-provided signed URLs; those external upload operations are runtime response data, not OpenAPI operations."
+    }
+  ],
+  "implementationAliases": []
+}

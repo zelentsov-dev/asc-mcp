@@ -1,0 +1,27 @@
+{
+  "workerKey": "local",
+  "tools": [
+    {
+      "tool": "local_status",
+      "kind": "local",
+      "status": "partial",
+      "effect": "local",
+      "implementationState": "asBuilt",
+      "operations": [],
+      "fields": [
+        {
+          "toolField": "value",
+          "sourceKind": "local",
+          "localRole": "fixtureInput"
+        }
+      ],
+      "response": {
+        "mode": "local",
+        "sources": [],
+        "fields": []
+      },
+      "note": "Local fixture helper."
+    }
+  ],
+  "implementationAliases": []
+}

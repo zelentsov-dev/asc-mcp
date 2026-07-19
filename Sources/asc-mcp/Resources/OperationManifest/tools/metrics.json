@@ -1,0 +1,250 @@
+{
+  "workerKey": "metrics",
+  "tools": [
+    {
+      "tool": "metrics_app_perf",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "apps_perfPowerMetrics_getToManyRelated",
+          "method": "get",
+          "path": "/v1/apps/{id}/perfPowerMetrics",
+          "role": "primary"
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "app_id",
+          "sourceKind": "parameter",
+          "operationId": "apps_perfPowerMetrics_getToManyRelated",
+          "location": "path",
+          "appleName": "id"
+        },
+        {
+          "toolField": "metric_type",
+          "sourceKind": "parameter",
+          "operationId": "apps_perfPowerMetrics_getToManyRelated",
+          "location": "query",
+          "appleName": "filter[metricType]"
+        }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          {
+            "operationId": "apps_perfPowerMetrics_getToManyRelated",
+            "statusCode": "200",
+            "mediaType": "application/vnd.apple.xcode-metrics+json"
+          }
+        ],
+        "fields": [
+          {
+            "outputField": "success",
+            "localRole": "successEnvelope"
+          },
+          {
+            "outputField": "metric_type",
+            "localRole": "requestEcho"
+          },
+          {
+            "outputField": "product_data",
+            "operationId": "apps_perfPowerMetrics_getToManyRelated",
+            "jsonPointer": "/productData",
+            "localRole": "snakeCaseProjection"
+          }
+        ]
+      },
+      "note": "Partial against OpenAPI 4.4.1: the public enum omits new STORAGE metrics and the tool lacks filter[platform] and filter[deviceType]. The projection drops top-level version and insights, metric errorMargin and recommendedMetricGoal; goal is modeled as Double although Apple defines a string. Apple's goalKeys field is deprecated and is neither modeled nor returned."
+    },
+    {
+      "tool": "metrics_build_diagnostics",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "builds_diagnosticSignatures_getToManyRelated",
+          "method": "get",
+          "path": "/v1/builds/{id}/diagnosticSignatures",
+          "role": "primary"
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "build_id",
+          "sourceKind": "parameter",
+          "operationId": "builds_diagnosticSignatures_getToManyRelated",
+          "location": "path",
+          "appleName": "id"
+        },
+        {
+          "toolField": "diagnostic_type",
+          "sourceKind": "parameter",
+          "operationId": "builds_diagnosticSignatures_getToManyRelated",
+          "location": "query",
+          "appleName": "filter[diagnosticType]"
+        },
+        {
+          "toolField": "limit",
+          "sourceKind": "parameter",
+          "operationId": "builds_diagnosticSignatures_getToManyRelated",
+          "location": "query",
+          "appleName": "limit"
+        },
+        {
+          "toolField": "next_url",
+          "sourceKind": "local",
+          "localRole": "paginationContinuation"
+        }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          {
+            "operationId": "builds_diagnosticSignatures_getToManyRelated",
+            "statusCode": "200",
+            "mediaType": "application/json"
+          }
+        ],
+        "fields": [
+          {
+            "outputField": "success",
+            "localRole": "successEnvelope"
+          },
+          {
+            "outputField": "diagnostic_signatures",
+            "operationId": "builds_diagnosticSignatures_getToManyRelated",
+            "jsonPointer": "/data",
+            "localRole": "signatureProjection"
+          },
+          {
+            "outputField": "count",
+            "operationId": "builds_diagnosticSignatures_getToManyRelated",
+            "jsonPointer": "/data",
+            "localRole": "pageCount"
+          },
+          {
+            "outputField": "next_url",
+            "operationId": "builds_diagnosticSignatures_getToManyRelated",
+            "jsonPointer": "/links/next"
+          }
+        ]
+      },
+      "note": "Partial: Apple 4.4.1 supports diagnosticType LAUNCHES, but the public enum only exposes DISK_WRITES and HANGS. Sparse fields are absent. DiagnosticInsight is decoded with a nonexistent referenceURL, so direction and referenceVersions are dropped."
+    },
+    {
+      "tool": "metrics_build_perf",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "builds_perfPowerMetrics_getToManyRelated",
+          "method": "get",
+          "path": "/v1/builds/{id}/perfPowerMetrics",
+          "role": "primary"
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "build_id",
+          "sourceKind": "parameter",
+          "operationId": "builds_perfPowerMetrics_getToManyRelated",
+          "location": "path",
+          "appleName": "id"
+        },
+        {
+          "toolField": "metric_type",
+          "sourceKind": "parameter",
+          "operationId": "builds_perfPowerMetrics_getToManyRelated",
+          "location": "query",
+          "appleName": "filter[metricType]"
+        }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          {
+            "operationId": "builds_perfPowerMetrics_getToManyRelated",
+            "statusCode": "200",
+            "mediaType": "application/vnd.apple.xcode-metrics+json"
+          }
+        ],
+        "fields": [
+          {
+            "outputField": "success",
+            "localRole": "successEnvelope"
+          },
+          {
+            "outputField": "metric_type",
+            "localRole": "requestEcho"
+          },
+          {
+            "outputField": "product_data",
+            "operationId": "builds_perfPowerMetrics_getToManyRelated",
+            "jsonPointer": "/productData",
+            "localRole": "snakeCaseProjection"
+          }
+        ]
+      },
+      "note": "Partial against OpenAPI 4.4.1: the public enum omits new STORAGE metrics and the tool lacks filter[platform] and filter[deviceType]. The projection drops top-level version and insights, metric errorMargin and recommendedMetricGoal; goal is modeled as Double although Apple defines a string. Apple's goalKeys field is deprecated and is neither modeled nor returned."
+    },
+    {
+      "tool": "metrics_get_diagnostic_logs",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "diagnosticSignatures_logs_getToManyRelated",
+          "method": "get",
+          "path": "/v1/diagnosticSignatures/{id}/logs",
+          "role": "primary"
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "signature_id",
+          "sourceKind": "parameter",
+          "operationId": "diagnosticSignatures_logs_getToManyRelated",
+          "location": "path",
+          "appleName": "id"
+        }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          {
+            "operationId": "diagnosticSignatures_logs_getToManyRelated",
+            "statusCode": "200",
+            "mediaType": "application/vnd.apple.diagnostic-logs+json"
+          }
+        ],
+        "fields": [
+          {
+            "outputField": "success",
+            "localRole": "successEnvelope"
+          },
+          {
+            "outputField": "signature_id",
+            "localRole": "requestEcho"
+          },
+          {
+            "outputField": "diagnostic_logs",
+            "operationId": "diagnosticSignatures_logs_getToManyRelated",
+            "jsonPointer": "/productData",
+            "localRole": "attemptedCallStackProjection"
+          }
+        ]
+      },
+      "note": "Partial and currently structurally unreliable: OpenAPI 4.4.1 defines callStackTree as an array of trees, while both raw and Codable paths expect an object or string; version, diagnosticInsights, diagnosticMetaData, and several frame fields are lost. Apple's limit parameter is not exposed."
+    }
+  ],
+  "implementationAliases": []
+}

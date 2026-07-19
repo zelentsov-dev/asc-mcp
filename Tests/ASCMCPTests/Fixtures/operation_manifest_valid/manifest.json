@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 1,
+  "specPin": {
+    "version": "4.3-test",
+    "sha256": "63b8d5f4134f5199a7edacf00c529cf41ae12935bfa2147968f77cd03abbdfd6",
+    "pathCount": 5,
+    "operationCount": 8
+  },
+  "scopeRules": [
+    {
+      "pathPrefix": "/v1/gameCenter",
+      "disposition": "outOfScope",
+      "reason": "Game Center is outside this fixture.",
+      "owner": "tests",
+      "reviewAtSpec": "4.3-test"
+    },
+    {
+      "pathPrefix": "/v1/actors",
+      "disposition": "outOfScope",
+      "reason": "Actors are outside this fixture.",
+      "owner": "tests",
+      "reviewAtSpec": "4.3-test"
+    }
+  ],
+  "waivers": [
+    {
+      "id": "fixture-apps-get-instance",
+      "operationId": "apps_getInstance",
+      "disposition": "outOfScope",
+      "reason": "Reading one app is outside this fixture contract.",
+      "owner": "tests",
+      "reviewAtSpec": "4.3-test"
+    }
+  ]
+}

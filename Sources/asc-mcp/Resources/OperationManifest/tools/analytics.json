@@ -1,0 +1,1030 @@
+{
+  "workerKey": "analytics",
+  "tools": [
+    {
+      "tool": "analytics_app_summary",
+      "kind": "compound",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "broken",
+      "operations": [
+        {
+          "invocationId": "downloads",
+          "operationId": "salesReports_getCollection",
+          "method": "get",
+          "path": "/v1/salesReports",
+          "role": "primary",
+          "condition": "Always: SALES + SUMMARY + DAILY.",
+          "inputs": [
+            { "sourceKind": "fixed", "location": "query", "appleName": "filter[reportType]", "fixedValue": ["SALES"] },
+            { "sourceKind": "fixed", "location": "query", "appleName": "filter[reportSubType]", "fixedValue": ["SUMMARY"] },
+            { "sourceKind": "fixed", "location": "query", "appleName": "filter[frequency]", "fixedValue": ["DAILY"] }
+          ]
+        },
+        {
+          "invocationId": "subscriptions",
+          "operationId": "salesReports_getCollection",
+          "method": "get",
+          "path": "/v1/salesReports",
+          "role": "supporting",
+          "condition": "Always: SUBSCRIPTION + SUMMARY + DAILY.",
+          "inputs": [
+            { "sourceKind": "fixed", "location": "query", "appleName": "filter[reportType]", "fixedValue": ["SUBSCRIPTION"] },
+            { "sourceKind": "fixed", "location": "query", "appleName": "filter[reportSubType]", "fixedValue": ["SUMMARY"] },
+            { "sourceKind": "fixed", "location": "query", "appleName": "filter[frequency]", "fixedValue": ["DAILY"] }
+          ]
+        },
+        {
+          "invocationId": "subscription-events",
+          "operationId": "salesReports_getCollection",
+          "method": "get",
+          "path": "/v1/salesReports",
+          "role": "supporting",
+          "condition": "Always: SUBSCRIPTION_EVENT + SUMMARY + DAILY.",
+          "inputs": [
+            { "sourceKind": "fixed", "location": "query", "appleName": "filter[reportType]", "fixedValue": ["SUBSCRIPTION_EVENT"] },
+            { "sourceKind": "fixed", "location": "query", "appleName": "filter[reportSubType]", "fixedValue": ["SUMMARY"] },
+            { "sourceKind": "fixed", "location": "query", "appleName": "filter[frequency]", "fixedValue": ["DAILY"] }
+          ]
+        },
+        {
+          "invocationId": "revenue",
+          "operationId": "salesReports_getCollection",
+          "method": "get",
+          "path": "/v1/salesReports",
+          "role": "supporting",
+          "condition": "Always: SUBSCRIBER + DETAILED + DAILY.",
+          "inputs": [
+            { "sourceKind": "fixed", "location": "query", "appleName": "filter[reportType]", "fixedValue": ["SUBSCRIBER"] },
+            { "sourceKind": "fixed", "location": "query", "appleName": "filter[reportSubType]", "fixedValue": ["DETAILED"] },
+            { "sourceKind": "fixed", "location": "query", "appleName": "filter[frequency]", "fixedValue": ["DAILY"] }
+          ]
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "report_date",
+          "sourceKind": "parameter",
+          "operationId": "salesReports_getCollection",
+          "invocationId": "downloads",
+          "location": "query",
+          "appleName": "filter[reportDate]"
+        },
+        {
+          "toolField": "report_date",
+          "sourceKind": "parameter",
+          "operationId": "salesReports_getCollection",
+          "invocationId": "subscriptions",
+          "location": "query",
+          "appleName": "filter[reportDate]"
+        },
+        {
+          "toolField": "report_date",
+          "sourceKind": "parameter",
+          "operationId": "salesReports_getCollection",
+          "invocationId": "subscription-events",
+          "location": "query",
+          "appleName": "filter[reportDate]"
+        },
+        {
+          "toolField": "report_date",
+          "sourceKind": "parameter",
+          "operationId": "salesReports_getCollection",
+          "invocationId": "revenue",
+          "location": "query",
+          "appleName": "filter[reportDate]"
+        },
+        {
+          "toolField": "app_id",
+          "sourceKind": "local",
+          "localRole": "postDownloadAppleIdentifierRowFilter"
+        },
+        {
+          "toolField": "vendor_number",
+          "sourceKind": "parameter",
+          "operationId": "salesReports_getCollection",
+          "invocationId": "downloads",
+          "location": "query",
+          "appleName": "filter[vendorNumber]",
+          "localRole": "optionalCompanyConfigFallback"
+        },
+        {
+          "toolField": "vendor_number",
+          "sourceKind": "parameter",
+          "operationId": "salesReports_getCollection",
+          "invocationId": "subscriptions",
+          "location": "query",
+          "appleName": "filter[vendorNumber]",
+          "localRole": "optionalCompanyConfigFallback"
+        },
+        {
+          "toolField": "vendor_number",
+          "sourceKind": "parameter",
+          "operationId": "salesReports_getCollection",
+          "invocationId": "subscription-events",
+          "location": "query",
+          "appleName": "filter[vendorNumber]",
+          "localRole": "optionalCompanyConfigFallback"
+        },
+        {
+          "toolField": "vendor_number",
+          "sourceKind": "parameter",
+          "operationId": "salesReports_getCollection",
+          "invocationId": "revenue",
+          "location": "query",
+          "appleName": "filter[vendorNumber]",
+          "localRole": "optionalCompanyConfigFallback"
+        }
+      ],
+      "response": {
+        "mode": "aggregate",
+        "sources": [
+          {
+            "operationId": "salesReports_getCollection",
+            "statusCode": "200",
+            "mediaType": "application/a-gzip",
+            "invocationIds": ["downloads", "subscriptions", "subscription-events", "revenue"]
+          }
+        ],
+        "fields": [
+          {
+            "outputField": "success",
+            "localRole": "orchestrationEnvelope"
+          },
+          {
+            "outputField": "report_date",
+            "localRole": "requestedDateEcho"
+          },
+          {
+            "outputField": "sections",
+            "operationId": "salesReports_getCollection",
+            "jsonPointer": "/",
+            "invocationIds": ["downloads", "subscriptions", "subscription-events", "revenue"],
+            "localRole": "fourGzipTSVParsesAndAggregations"
+          },
+          {
+            "outputField": "sections_succeeded",
+            "localRole": "successfulSectionCount"
+          },
+          {
+            "outputField": "sections_failed",
+            "localRole": "failedSectionCount"
+          },
+          {
+            "outputField": "app_id_filter",
+            "localRole": "appliedLocalRowFilterEcho"
+          }
+        ]
+      },
+      "note": "Compound local workflow over four salesReports downloads with independent section errors. Partial: SUBSCRIPTION_EVENT defaults to version 1_4 although OpenAPI 4.4.1 supports 1_3, so that section can fail; app_id filtering and all summaries are local TSV heuristics rather than Apple API fields."
+    },
+    {
+      "tool": "analytics_check_snapshot_status",
+      "kind": "compound",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "analyticsReportRequests_reports_getToManyRelated",
+          "method": "get",
+          "path": "/v1/analyticsReportRequests/{id}/reports",
+          "role": "primary",
+          "condition": "Paginates all reports with limit=200."
+        },
+        {
+          "operationId": "analyticsReports_instances_getToManyRelated",
+          "method": "get",
+          "path": "/v1/analyticsReports/{id}/instances",
+          "role": "supporting",
+          "condition": "Called once per locally filtered report with limit=1.",
+          "inputs": [
+            {
+              "sourceKind": "derived",
+              "location": "path",
+              "appleName": "id",
+              "derivedFrom": ["analyticsReportRequests_reports_getToManyRelated:/data/*/id"],
+              "localRole": "iterateFilteredReportIdentifiers"
+            }
+          ]
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "request_id",
+          "sourceKind": "parameter",
+          "operationId": "analyticsReportRequests_reports_getToManyRelated",
+          "location": "path",
+          "appleName": "id"
+        },
+        {
+          "toolField": "category",
+          "sourceKind": "local",
+          "localRole": "postFetchReportCategoryFilter"
+        }
+      ],
+      "response": {
+        "mode": "aggregate",
+        "sources": [
+          {
+            "operationId": "analyticsReportRequests_reports_getToManyRelated",
+            "statusCode": "200",
+            "mediaType": "application/json"
+          },
+          {
+            "operationId": "analyticsReports_instances_getToManyRelated",
+            "statusCode": "200",
+            "mediaType": "application/json"
+          }
+        ],
+        "fields": [
+          {
+            "outputField": "success",
+            "localRole": "orchestrationEnvelope"
+          },
+          {
+            "outputField": "request_id",
+            "localRole": "requestIdentifierEcho"
+          },
+          {
+            "outputField": "reports",
+            "operationId": "analyticsReportRequests_reports_getToManyRelated",
+            "jsonPointer": "/data",
+            "localRole": "joinedWithOneInstanceProbePerReport"
+          },
+          {
+            "outputField": "ready",
+            "localRole": "reportsWithAtLeastOneReturnedInstance"
+          },
+          {
+            "outputField": "pending",
+            "localRole": "reportsWithNoReturnedInstance"
+          }
+        ]
+      },
+      "note": "Partial local readiness heuristic, not an Apple status operation. Any one instance is labeled ready even though Apple can publish late corrections and privacy thresholds can suppress data; the N+1 probe does not establish snapshot completeness. category is filtered locally despite an Apple filter[category] parameter on the reports operation."
+    },
+    {
+      "tool": "analytics_create_report_request",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "write",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "analyticsReportRequests_createInstance",
+          "method": "post",
+          "path": "/v1/analyticsReportRequests",
+          "role": "primary",
+          "inputs": [
+            { "sourceKind": "fixed", "jsonPointer": "/data/type", "fixedValue": "analyticsReportRequests" },
+            { "sourceKind": "fixed", "jsonPointer": "/data/relationships/app/data/type", "fixedValue": "apps" }
+          ]
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "app_id",
+          "sourceKind": "requestBody",
+          "operationId": "analyticsReportRequests_createInstance",
+          "jsonPointer": "/data/relationships/app/data/id"
+        },
+        {
+          "toolField": "access_type",
+          "sourceKind": "requestBody",
+          "operationId": "analyticsReportRequests_createInstance",
+          "jsonPointer": "/data/attributes/accessType"
+        }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          {
+            "operationId": "analyticsReportRequests_createInstance",
+            "statusCode": "201",
+            "mediaType": "application/json"
+          }
+        ],
+        "fields": [
+          {
+            "outputField": "success",
+            "localRole": "successEnvelope"
+          },
+          {
+            "outputField": "report_request.id",
+            "operationId": "analyticsReportRequests_createInstance",
+            "jsonPointer": "/data/id"
+          },
+          {
+            "outputField": "report_request.access_type",
+            "operationId": "analyticsReportRequests_createInstance",
+            "jsonPointer": "/data/attributes/accessType"
+          },
+          {
+            "outputField": "report_request.stopped_due_to_inactivity",
+            "operationId": "analyticsReportRequests_createInstance",
+            "jsonPointer": "/data/attributes/stoppedDueToInactivity"
+          }
+        ]
+      },
+      "note": "Partial because the public tool has no explicit output schema or lifecycle guidance; Apple can take one to two days to produce the first instances and only Admin can create the request."
+    },
+    {
+      "tool": "analytics_financial_report",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "financeReports_getCollection",
+          "method": "get",
+          "path": "/v1/financeReports",
+          "role": "primary"
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "vendor_number",
+          "sourceKind": "parameter",
+          "operationId": "financeReports_getCollection",
+          "location": "query",
+          "appleName": "filter[vendorNumber]",
+          "localRole": "optionalCompanyConfigFallback"
+        },
+        {
+          "toolField": "region_code",
+          "sourceKind": "parameter",
+          "operationId": "financeReports_getCollection",
+          "location": "query",
+          "appleName": "filter[regionCode]"
+        },
+        {
+          "toolField": "report_date",
+          "sourceKind": "parameter",
+          "operationId": "financeReports_getCollection",
+          "location": "query",
+          "appleName": "filter[reportDate]"
+        },
+        {
+          "toolField": "report_type",
+          "sourceKind": "parameter",
+          "operationId": "financeReports_getCollection",
+          "location": "query",
+          "appleName": "filter[reportType]"
+        },
+        {
+          "toolField": "summary_only",
+          "sourceKind": "local",
+          "localRole": "selectAggregateOnlyOrIncludeRows"
+        },
+        {
+          "toolField": "limit",
+          "sourceKind": "local",
+          "localRole": "rawTSVRowProjectionLimit"
+        }
+      ],
+      "response": {
+        "mode": "aggregate",
+        "sources": [
+          {
+            "operationId": "financeReports_getCollection",
+            "statusCode": "200",
+            "mediaType": "application/a-gzip"
+          }
+        ],
+        "fields": [
+          {
+            "outputField": "success",
+            "localRole": "successEnvelope"
+          },
+          {
+            "outputField": "report_type",
+            "localRole": "requestEcho"
+          },
+          {
+            "outputField": "region_code",
+            "localRole": "requestEcho"
+          },
+          {
+            "outputField": "report_date",
+            "localRole": "requestEcho"
+          },
+          {
+            "outputField": "total_rows",
+            "operationId": "financeReports_getCollection",
+            "jsonPointer": "/",
+            "localRole": "parsedTSVRowCount"
+          },
+          {
+            "outputField": "summary",
+            "localRole": "localFinancialTSVAggregation"
+          },
+          {
+            "outputField": "rows",
+            "localRole": "optionalLimitedTSVProjection"
+          }
+        ]
+      },
+      "note": "All Apple 4.4.1 request parameters are bound. Partial because summary_only, limit, decompression, TSV parsing, and monetary aggregation are local behavior; the tool does not expose a typed output contract."
+    },
+    {
+      "tool": "analytics_get_instance",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "analyticsReportInstances_getInstance",
+          "method": "get",
+          "path": "/v1/analyticsReportInstances/{id}",
+          "role": "primary"
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "instance_id",
+          "sourceKind": "parameter",
+          "operationId": "analyticsReportInstances_getInstance",
+          "location": "path",
+          "appleName": "id"
+        }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          {
+            "operationId": "analyticsReportInstances_getInstance",
+            "statusCode": "200",
+            "mediaType": "application/json"
+          }
+        ],
+        "fields": [
+          {
+            "outputField": "success",
+            "localRole": "successEnvelope"
+          },
+          {
+            "outputField": "instance.id",
+            "operationId": "analyticsReportInstances_getInstance",
+            "jsonPointer": "/data/id"
+          },
+          {
+            "outputField": "instance.granularity",
+            "operationId": "analyticsReportInstances_getInstance",
+            "jsonPointer": "/data/attributes/granularity"
+          },
+          {
+            "outputField": "instance.processing_date",
+            "operationId": "analyticsReportInstances_getInstance",
+            "jsonPointer": "/data/attributes/processingDate"
+          }
+        ]
+      },
+      "note": "Partial projection without sparse-fields input or an explicit output schema."
+    },
+    {
+      "tool": "analytics_get_report",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "analyticsReports_getInstance",
+          "method": "get",
+          "path": "/v1/analyticsReports/{id}",
+          "role": "primary"
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "report_id",
+          "sourceKind": "parameter",
+          "operationId": "analyticsReports_getInstance",
+          "location": "path",
+          "appleName": "id"
+        }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          {
+            "operationId": "analyticsReports_getInstance",
+            "statusCode": "200",
+            "mediaType": "application/json"
+          }
+        ],
+        "fields": [
+          {
+            "outputField": "success",
+            "localRole": "successEnvelope"
+          },
+          {
+            "outputField": "report.id",
+            "operationId": "analyticsReports_getInstance",
+            "jsonPointer": "/data/id"
+          },
+          {
+            "outputField": "report.category",
+            "operationId": "analyticsReports_getInstance",
+            "jsonPointer": "/data/attributes/category"
+          },
+          {
+            "outputField": "report.name",
+            "operationId": "analyticsReports_getInstance",
+            "jsonPointer": "/data/attributes/name"
+          }
+        ]
+      },
+      "note": "Partial projection without sparse-fields input or an explicit output schema."
+    },
+    {
+      "tool": "analytics_list_instances",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "analyticsReports_instances_getToManyRelated",
+          "method": "get",
+          "path": "/v1/analyticsReports/{id}/instances",
+          "role": "primary"
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "report_id",
+          "sourceKind": "parameter",
+          "operationId": "analyticsReports_instances_getToManyRelated",
+          "location": "path",
+          "appleName": "id"
+        },
+        {
+          "toolField": "limit",
+          "sourceKind": "parameter",
+          "operationId": "analyticsReports_instances_getToManyRelated",
+          "location": "query",
+          "appleName": "limit"
+        },
+        {
+          "toolField": "next_url",
+          "sourceKind": "local",
+          "localRole": "paginationContinuation"
+        }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          {
+            "operationId": "analyticsReports_instances_getToManyRelated",
+            "statusCode": "200",
+            "mediaType": "application/json"
+          }
+        ],
+        "fields": [
+          {
+            "outputField": "success",
+            "localRole": "successEnvelope"
+          },
+          {
+            "outputField": "instances",
+            "operationId": "analyticsReports_instances_getToManyRelated",
+            "jsonPointer": "/data",
+            "localRole": "instanceProjection"
+          },
+          {
+            "outputField": "count",
+            "operationId": "analyticsReports_instances_getToManyRelated",
+            "jsonPointer": "/data",
+            "localRole": "pageCount"
+          },
+          {
+            "outputField": "next_url",
+            "operationId": "analyticsReports_instances_getToManyRelated",
+            "jsonPointer": "/links/next"
+          }
+        ]
+      },
+      "note": "Partial: Apple filter[granularity], filter[processingDate], and sparse fields are not exposed. Consumers must account for later processingDate corrections when selecting partitions."
+    },
+    {
+      "tool": "analytics_list_report_requests",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "apps_analyticsReportRequests_getToManyRelated",
+          "method": "get",
+          "path": "/v1/apps/{id}/analyticsReportRequests",
+          "role": "primary"
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "app_id",
+          "sourceKind": "parameter",
+          "operationId": "apps_analyticsReportRequests_getToManyRelated",
+          "location": "path",
+          "appleName": "id"
+        },
+        {
+          "toolField": "limit",
+          "sourceKind": "parameter",
+          "operationId": "apps_analyticsReportRequests_getToManyRelated",
+          "location": "query",
+          "appleName": "limit"
+        },
+        {
+          "toolField": "next_url",
+          "sourceKind": "local",
+          "localRole": "paginationContinuation"
+        }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          {
+            "operationId": "apps_analyticsReportRequests_getToManyRelated",
+            "statusCode": "200",
+            "mediaType": "application/json"
+          }
+        ],
+        "fields": [
+          {
+            "outputField": "success",
+            "localRole": "successEnvelope"
+          },
+          {
+            "outputField": "report_requests",
+            "operationId": "apps_analyticsReportRequests_getToManyRelated",
+            "jsonPointer": "/data",
+            "localRole": "requestProjection"
+          },
+          {
+            "outputField": "count",
+            "operationId": "apps_analyticsReportRequests_getToManyRelated",
+            "jsonPointer": "/data",
+            "localRole": "pageCount"
+          },
+          {
+            "outputField": "next_url",
+            "operationId": "apps_analyticsReportRequests_getToManyRelated",
+            "jsonPointer": "/links/next"
+          }
+        ]
+      },
+      "note": "Partial: filter[accessType], sparse fields, include=reports, and limit[reports] are not exposed."
+    },
+    {
+      "tool": "analytics_list_reports",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "analyticsReportRequests_reports_getToManyRelated",
+          "method": "get",
+          "path": "/v1/analyticsReportRequests/{id}/reports",
+          "role": "primary"
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "request_id",
+          "sourceKind": "parameter",
+          "operationId": "analyticsReportRequests_reports_getToManyRelated",
+          "location": "path",
+          "appleName": "id"
+        },
+        {
+          "toolField": "limit",
+          "sourceKind": "parameter",
+          "operationId": "analyticsReportRequests_reports_getToManyRelated",
+          "location": "query",
+          "appleName": "limit"
+        },
+        {
+          "toolField": "next_url",
+          "sourceKind": "local",
+          "localRole": "paginationContinuation"
+        }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          {
+            "operationId": "analyticsReportRequests_reports_getToManyRelated",
+            "statusCode": "200",
+            "mediaType": "application/json"
+          }
+        ],
+        "fields": [
+          {
+            "outputField": "success",
+            "localRole": "successEnvelope"
+          },
+          {
+            "outputField": "reports",
+            "operationId": "analyticsReportRequests_reports_getToManyRelated",
+            "jsonPointer": "/data",
+            "localRole": "reportProjection"
+          },
+          {
+            "outputField": "count",
+            "operationId": "analyticsReportRequests_reports_getToManyRelated",
+            "jsonPointer": "/data",
+            "localRole": "pageCount"
+          },
+          {
+            "outputField": "next_url",
+            "operationId": "analyticsReportRequests_reports_getToManyRelated",
+            "jsonPointer": "/links/next"
+          }
+        ]
+      },
+      "note": "Partial: Apple filter[name], filter[category], and sparse fields are not exposed."
+    },
+    {
+      "tool": "analytics_list_segments",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "analyticsReportInstances_segments_getToManyRelated",
+          "method": "get",
+          "path": "/v1/analyticsReportInstances/{id}/segments",
+          "role": "primary"
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "instance_id",
+          "sourceKind": "parameter",
+          "operationId": "analyticsReportInstances_segments_getToManyRelated",
+          "location": "path",
+          "appleName": "id"
+        },
+        {
+          "toolField": "limit",
+          "sourceKind": "parameter",
+          "operationId": "analyticsReportInstances_segments_getToManyRelated",
+          "location": "query",
+          "appleName": "limit"
+        },
+        {
+          "toolField": "next_url",
+          "sourceKind": "local",
+          "localRole": "paginationContinuation"
+        }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          {
+            "operationId": "analyticsReportInstances_segments_getToManyRelated",
+            "statusCode": "200",
+            "mediaType": "application/json"
+          }
+        ],
+        "fields": [
+          {
+            "outputField": "success",
+            "localRole": "successEnvelope"
+          },
+          {
+            "outputField": "segments.id",
+            "operationId": "analyticsReportInstances_segments_getToManyRelated",
+            "jsonPointer": "/data/*/id"
+          },
+          {
+            "outputField": "segments.checksum",
+            "operationId": "analyticsReportInstances_segments_getToManyRelated",
+            "jsonPointer": "/data/*/attributes/checksum"
+          },
+          {
+            "outputField": "segments.size_in_bytes",
+            "operationId": "analyticsReportInstances_segments_getToManyRelated",
+            "jsonPointer": "/data/*/attributes/sizeInBytes"
+          },
+          {
+            "outputField": "segments.url",
+            "operationId": "analyticsReportInstances_segments_getToManyRelated",
+            "jsonPointer": "/data/*/attributes/url"
+          },
+          {
+            "outputField": "next_url",
+            "operationId": "analyticsReportInstances_segments_getToManyRelated",
+            "jsonPointer": "/links/next"
+          }
+        ]
+      },
+      "note": "Partial: sparse fields are absent and the workflow only returns segment metadata. Apple's presigned URLs expire after five minutes; the tool does not immediately download all gzip TSV segments or verify sizeInBytes and MD5 checksum."
+    },
+    {
+      "tool": "analytics_sales_report",
+      "kind": "compound",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "broken",
+      "operations": [
+        {
+          "invocationId": "summary",
+          "operationId": "salesReports_getCollection",
+          "method": "get",
+          "path": "/v1/salesReports",
+          "role": "primary",
+          "condition": "Always downloads and parses one gzip TSV report."
+        },
+        {
+          "invocationId": "raw-rows-redownload",
+          "operationId": "salesReports_getCollection",
+          "method": "get",
+          "path": "/v1/salesReports",
+          "role": "conditional",
+          "condition": "When summary_only=false, downloads the same report a second time to recover rows for output."
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "vendor_number",
+          "sourceKind": "parameter",
+          "operationId": "salesReports_getCollection",
+          "invocationId": "summary",
+          "location": "query",
+          "appleName": "filter[vendorNumber]",
+          "localRole": "optionalCompanyConfigFallback"
+        },
+        {
+          "toolField": "vendor_number",
+          "sourceKind": "parameter",
+          "operationId": "salesReports_getCollection",
+          "invocationId": "raw-rows-redownload",
+          "location": "query",
+          "appleName": "filter[vendorNumber]",
+          "localRole": "optionalCompanyConfigFallback"
+        },
+        {
+          "toolField": "app_id",
+          "sourceKind": "local",
+          "localRole": "postDownloadAppleIdentifierRowFilter"
+        },
+        {
+          "toolField": "report_type",
+          "sourceKind": "parameter",
+          "operationId": "salesReports_getCollection",
+          "invocationId": "summary",
+          "location": "query",
+          "appleName": "filter[reportType]"
+        },
+        {
+          "toolField": "report_type",
+          "sourceKind": "parameter",
+          "operationId": "salesReports_getCollection",
+          "invocationId": "raw-rows-redownload",
+          "location": "query",
+          "appleName": "filter[reportType]"
+        },
+        {
+          "toolField": "report_sub_type",
+          "sourceKind": "parameter",
+          "operationId": "salesReports_getCollection",
+          "invocationId": "summary",
+          "location": "query",
+          "appleName": "filter[reportSubType]"
+        },
+        {
+          "toolField": "report_sub_type",
+          "sourceKind": "parameter",
+          "operationId": "salesReports_getCollection",
+          "invocationId": "raw-rows-redownload",
+          "location": "query",
+          "appleName": "filter[reportSubType]"
+        },
+        {
+          "toolField": "frequency",
+          "sourceKind": "parameter",
+          "operationId": "salesReports_getCollection",
+          "invocationId": "summary",
+          "location": "query",
+          "appleName": "filter[frequency]"
+        },
+        {
+          "toolField": "frequency",
+          "sourceKind": "parameter",
+          "operationId": "salesReports_getCollection",
+          "invocationId": "raw-rows-redownload",
+          "location": "query",
+          "appleName": "filter[frequency]"
+        },
+        {
+          "toolField": "report_date",
+          "sourceKind": "parameter",
+          "operationId": "salesReports_getCollection",
+          "invocationId": "summary",
+          "location": "query",
+          "appleName": "filter[reportDate]"
+        },
+        {
+          "toolField": "report_date",
+          "sourceKind": "parameter",
+          "operationId": "salesReports_getCollection",
+          "invocationId": "raw-rows-redownload",
+          "location": "query",
+          "appleName": "filter[reportDate]"
+        },
+        {
+          "toolField": "version",
+          "sourceKind": "parameter",
+          "operationId": "salesReports_getCollection",
+          "invocationId": "summary",
+          "location": "query",
+          "appleName": "filter[version]"
+        },
+        {
+          "toolField": "version",
+          "sourceKind": "parameter",
+          "operationId": "salesReports_getCollection",
+          "invocationId": "raw-rows-redownload",
+          "location": "query",
+          "appleName": "filter[version]"
+        },
+        {
+          "toolField": "summary_only",
+          "sourceKind": "local",
+          "localRole": "selectAggregateOnlyOrSecondFetchWithRows"
+        },
+        {
+          "toolField": "limit",
+          "sourceKind": "local",
+          "localRole": "rawTSVRowProjectionLimit"
+        }
+      ],
+      "response": {
+        "mode": "aggregate",
+        "sources": [
+          {
+            "operationId": "salesReports_getCollection",
+            "statusCode": "200",
+            "mediaType": "application/a-gzip",
+            "invocationIds": ["summary", "raw-rows-redownload"]
+          }
+        ],
+        "fields": [
+          {
+            "outputField": "success",
+            "localRole": "successEnvelope"
+          },
+          {
+            "outputField": "report_type",
+            "localRole": "requestEcho"
+          },
+          {
+            "outputField": "report_sub_type",
+            "localRole": "requestEcho"
+          },
+          {
+            "outputField": "frequency",
+            "localRole": "requestEcho"
+          },
+          {
+            "outputField": "report_date",
+            "localRole": "requestEcho"
+          },
+          {
+            "outputField": "version",
+            "localRole": "requestedOrLocalDefaultVersion"
+          },
+          {
+            "outputField": "total_rows",
+            "operationId": "salesReports_getCollection",
+            "jsonPointer": "/",
+            "invocationIds": ["summary"],
+            "localRole": "parsedTSVRowCount"
+          },
+          {
+            "outputField": "filtered_rows",
+            "localRole": "postDownloadAppFilterCount"
+          },
+          {
+            "outputField": "summary",
+            "localRole": "reportTypeSpecificTSVAggregation"
+          },
+          {
+            "outputField": "rows",
+            "localRole": "optionalLimitedTSVProjection"
+          }
+        ]
+      },
+      "note": "Partial against OpenAPI 4.4.1: public report_type omits FIRST_ANNUAL, INSTALLS, and WIN_BACK_ELIGIBILITY; report_sub_type exposes invalid OPT_IN and omits SUMMARY_INSTALL_TYPE, SUMMARY_TERRITORY, and SUMMARY_CHANNEL; SUBSCRIPTION_EVENT defaults to unsupported 1_4 instead of 1_3. app_id, summaries, and row limiting are local. summary_only=false performs a redundant second network download."
+    }
+  ],
+  "implementationAliases": []
+}

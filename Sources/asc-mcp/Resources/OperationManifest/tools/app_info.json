@@ -1,0 +1,427 @@
+{
+  "workerKey": "app_info",
+  "tools": [
+    {
+      "tool": "app_info_create_eula",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "write",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "endUserLicenseAgreements_createInstance",
+          "method": "post",
+          "path": "/v1/endUserLicenseAgreements",
+          "role": "primary",
+          "inputs": [
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/type",
+              "fixedValue": "endUserLicenseAgreements"
+            },
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/relationships/app/data/type",
+              "fixedValue": "apps"
+            },
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/relationships/territories/data/*/type",
+              "fixedValue": "territories"
+            }
+          ]
+        }
+      ],
+      "fields": [
+        { "toolField": "app_id", "sourceKind": "requestBody", "operationId": "endUserLicenseAgreements_createInstance", "jsonPointer": "/data/relationships/app/data/id" },
+        { "toolField": "agreement_text", "sourceKind": "requestBody", "operationId": "endUserLicenseAgreements_createInstance", "jsonPointer": "/data/attributes/agreementText" },
+        { "toolField": "territory_ids", "sourceKind": "requestBody", "operationId": "endUserLicenseAgreements_createInstance", "jsonPointer": "/data/relationships/territories/data/*/id" }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          { "operationId": "endUserLicenseAgreements_createInstance", "statusCode": "201", "mediaType": "application/json" }
+        ],
+        "fields": [
+          { "outputField": "success", "localRole": "successfulCreate" },
+          { "outputField": "eula", "operationId": "endUserLicenseAgreements_createInstance", "jsonPointer": "/data" },
+          { "outputField": "message", "localRole": "createConfirmation" }
+        ]
+      },
+      "note": "Direct create request covers Apple's required app and territories relationships; the response projection omits returned relationship detail and has no declared output schema."
+    },
+    {
+      "tool": "app_info_create_localization",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "write",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "appInfoLocalizations_createInstance",
+          "method": "post",
+          "path": "/v1/appInfoLocalizations",
+          "role": "primary",
+          "inputs": [
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/type",
+              "fixedValue": "appInfoLocalizations"
+            },
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/relationships/appInfo/data/type",
+              "fixedValue": "appInfos"
+            }
+          ]
+        }
+      ],
+      "fields": [
+        { "toolField": "info_id", "sourceKind": "requestBody", "operationId": "appInfoLocalizations_createInstance", "jsonPointer": "/data/relationships/appInfo/data/id" },
+        { "toolField": "locale", "sourceKind": "requestBody", "operationId": "appInfoLocalizations_createInstance", "jsonPointer": "/data/attributes/locale" },
+        { "toolField": "name", "sourceKind": "requestBody", "operationId": "appInfoLocalizations_createInstance", "jsonPointer": "/data/attributes/name" },
+        { "toolField": "subtitle", "sourceKind": "requestBody", "operationId": "appInfoLocalizations_createInstance", "jsonPointer": "/data/attributes/subtitle" },
+        { "toolField": "privacy_policy_url", "sourceKind": "requestBody", "operationId": "appInfoLocalizations_createInstance", "jsonPointer": "/data/attributes/privacyPolicyUrl" },
+        { "toolField": "privacy_choices_url", "sourceKind": "requestBody", "operationId": "appInfoLocalizations_createInstance", "jsonPointer": "/data/attributes/privacyChoicesUrl" },
+        { "toolField": "privacy_policy_text", "sourceKind": "requestBody", "operationId": "appInfoLocalizations_createInstance", "jsonPointer": "/data/attributes/privacyPolicyText" }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          { "operationId": "appInfoLocalizations_createInstance", "statusCode": "201", "mediaType": "application/json" }
+        ],
+        "fields": [
+          { "outputField": "success", "localRole": "successfulCreate" },
+          { "outputField": "localization", "operationId": "appInfoLocalizations_createInstance", "jsonPointer": "/data" }
+        ]
+      },
+      "note": "The MCP schema correctly requires Apple's current locale and name attributes; the handler relies on schema validation for name and the response remains an undeclared projection."
+    },
+    {
+      "tool": "app_info_delete_localization",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "destructive",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "appInfoLocalizations_deleteInstance",
+          "method": "delete",
+          "path": "/v1/appInfoLocalizations/{id}",
+          "role": "primary"
+        }
+      ],
+      "fields": [
+        { "toolField": "localization_id", "sourceKind": "parameter", "operationId": "appInfoLocalizations_deleteInstance", "location": "path", "appleName": "id" }
+      ],
+      "response": {
+        "mode": "local",
+        "sources": [
+          { "operationId": "appInfoLocalizations_deleteInstance", "statusCode": "204" }
+        ],
+        "fields": [
+          { "outputField": "success", "localRole": "successful204" },
+          { "outputField": "message", "localRole": "deleteConfirmation" }
+        ]
+      },
+      "note": "Apple returns 204 without content; the handler creates the confirmation locally."
+    },
+    {
+      "tool": "app_info_get",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "appInfos_getInstance",
+          "method": "get",
+          "path": "/v1/appInfos/{id}",
+          "role": "primary"
+        }
+      ],
+      "fields": [
+        { "toolField": "info_id", "sourceKind": "parameter", "operationId": "appInfos_getInstance", "location": "path", "appleName": "id" },
+        { "toolField": "include", "sourceKind": "parameter", "operationId": "appInfos_getInstance", "location": "query", "appleName": "include" }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          { "operationId": "appInfos_getInstance", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": [
+          { "outputField": "success", "localRole": "successfulRead" },
+          { "outputField": "app_info", "operationId": "appInfos_getInstance", "jsonPointer": "/data" },
+          { "outputField": "included_categories", "operationId": "appInfos_getInstance", "jsonPointer": "/included" },
+          { "outputField": "included_localizations", "operationId": "appInfos_getInstance", "jsonPointer": "/included" }
+        ]
+      },
+      "note": "Partial because the current decoder handles only included categories/localizations and omits current regional and territory age-rating response fields."
+    },
+    {
+      "tool": "app_info_get_eula",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "apps_endUserLicenseAgreement_getToOneRelated",
+          "method": "get",
+          "path": "/v1/apps/{id}/endUserLicenseAgreement",
+          "role": "primary"
+        }
+      ],
+      "fields": [
+        { "toolField": "app_id", "sourceKind": "parameter", "operationId": "apps_endUserLicenseAgreement_getToOneRelated", "location": "path", "appleName": "id" }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          { "operationId": "apps_endUserLicenseAgreement_getToOneRelated", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": [
+          { "outputField": "success", "localRole": "successfulRead" },
+          { "outputField": "eula", "operationId": "apps_endUserLicenseAgreement_getToOneRelated", "jsonPointer": "/data" }
+        ]
+      },
+      "note": "Direct related-resource read; the handler projects only agreementText and does not expose territories."
+    },
+    {
+      "tool": "app_info_list",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "apps_appInfos_getToManyRelated",
+          "method": "get",
+          "path": "/v1/apps/{id}/appInfos",
+          "role": "primary"
+        }
+      ],
+      "fields": [
+        { "toolField": "app_id", "sourceKind": "parameter", "operationId": "apps_appInfos_getToManyRelated", "location": "path", "appleName": "id" }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          { "operationId": "apps_appInfos_getToManyRelated", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": [
+          { "outputField": "success", "localRole": "successfulRead" },
+          { "outputField": "app_infos", "operationId": "apps_appInfos_getToManyRelated", "jsonPointer": "/data" },
+          { "outputField": "next_url", "operationId": "apps_appInfos_getToManyRelated", "jsonPointer": "/links/next" }
+        ]
+      },
+      "note": "Partial because the Apple collection is paginated but the tool exposes neither limit nor next_url input, and its AppInfo projection omits current age-rating attributes."
+    },
+    {
+      "tool": "app_info_list_localizations",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "appInfos_appInfoLocalizations_getToManyRelated",
+          "method": "get",
+          "path": "/v1/appInfos/{id}/appInfoLocalizations",
+          "role": "primary"
+        }
+      ],
+      "fields": [
+        { "toolField": "info_id", "sourceKind": "parameter", "operationId": "appInfos_appInfoLocalizations_getToManyRelated", "location": "path", "appleName": "id" }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          { "operationId": "appInfos_appInfoLocalizations_getToManyRelated", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": [
+          { "outputField": "success", "localRole": "successfulRead" },
+          { "outputField": "localizations", "operationId": "appInfos_appInfoLocalizations_getToManyRelated", "jsonPointer": "/data" },
+          { "outputField": "next_url", "operationId": "appInfos_appInfoLocalizations_getToManyRelated", "jsonPointer": "/links/next" }
+        ]
+      },
+      "note": "Partial because the operation is paginated but the current MCP input schema exposes no query filters, limit, include, or continuation URL."
+    },
+    {
+      "tool": "app_info_update",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "write",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "appInfos_updateInstance",
+          "method": "patch",
+          "path": "/v1/appInfos/{id}",
+          "role": "primary",
+          "inputs": [
+            {
+              "sourceKind": "derived",
+              "jsonPointer": "/data/id",
+              "derivedFrom": [
+                "info_id"
+              ],
+              "localRole": "Copy the public app info ID into the JSON:API update resource identifier."
+            },
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/type",
+              "fixedValue": "appInfos"
+            },
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/relationships/primaryCategory/data/type",
+              "fixedValue": "appCategories"
+            },
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/relationships/primarySubcategoryOne/data/type",
+              "fixedValue": "appCategories"
+            },
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/relationships/primarySubcategoryTwo/data/type",
+              "fixedValue": "appCategories"
+            },
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/relationships/secondaryCategory/data/type",
+              "fixedValue": "appCategories"
+            },
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/relationships/secondarySubcategoryOne/data/type",
+              "fixedValue": "appCategories"
+            },
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/relationships/secondarySubcategoryTwo/data/type",
+              "fixedValue": "appCategories"
+            }
+          ]
+        }
+      ],
+      "fields": [
+        { "toolField": "info_id", "sourceKind": "parameter", "operationId": "appInfos_updateInstance", "location": "path", "appleName": "id" },
+        { "toolField": "primary_category_id", "sourceKind": "requestBody", "operationId": "appInfos_updateInstance", "jsonPointer": "/data/relationships/primaryCategory/data/id" },
+        { "toolField": "secondary_category_id", "sourceKind": "requestBody", "operationId": "appInfos_updateInstance", "jsonPointer": "/data/relationships/secondaryCategory/data/id" },
+        { "toolField": "primary_subcategory_one_id", "sourceKind": "requestBody", "operationId": "appInfos_updateInstance", "jsonPointer": "/data/relationships/primarySubcategoryOne/data/id" },
+        { "toolField": "primary_subcategory_two_id", "sourceKind": "requestBody", "operationId": "appInfos_updateInstance", "jsonPointer": "/data/relationships/primarySubcategoryTwo/data/id" },
+        { "toolField": "secondary_subcategory_one_id", "sourceKind": "requestBody", "operationId": "appInfos_updateInstance", "jsonPointer": "/data/relationships/secondarySubcategoryOne/data/id" },
+        { "toolField": "secondary_subcategory_two_id", "sourceKind": "requestBody", "operationId": "appInfos_updateInstance", "jsonPointer": "/data/relationships/secondarySubcategoryTwo/data/id" }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          { "operationId": "appInfos_updateInstance", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": [
+          { "outputField": "success", "localRole": "successfulUpdate" },
+          { "outputField": "app_info", "operationId": "appInfos_updateInstance", "jsonPointer": "/data" }
+        ]
+      },
+      "note": "All six category relationships exposed by the tool map to Apple's update request; the current optional encoding cannot explicitly clear a relationship with data null."
+    },
+    {
+      "tool": "app_info_update_eula",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "write",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "endUserLicenseAgreements_updateInstance",
+          "method": "patch",
+          "path": "/v1/endUserLicenseAgreements/{id}",
+          "role": "primary",
+          "inputs": [
+            {
+              "sourceKind": "derived",
+              "jsonPointer": "/data/id",
+              "derivedFrom": [
+                "eula_id"
+              ],
+              "localRole": "Copy the public EULA ID into the JSON:API update resource identifier."
+            },
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/type",
+              "fixedValue": "endUserLicenseAgreements"
+            }
+          ]
+        }
+      ],
+      "fields": [
+        { "toolField": "eula_id", "sourceKind": "parameter", "operationId": "endUserLicenseAgreements_updateInstance", "location": "path", "appleName": "id" },
+        { "toolField": "agreement_text", "sourceKind": "requestBody", "operationId": "endUserLicenseAgreements_updateInstance", "jsonPointer": "/data/attributes/agreementText" }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          { "operationId": "endUserLicenseAgreements_updateInstance", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": [
+          { "outputField": "success", "localRole": "successfulUpdate" },
+          { "outputField": "eula", "operationId": "endUserLicenseAgreements_updateInstance", "jsonPointer": "/data" },
+          { "outputField": "message", "localRole": "updateConfirmation" }
+        ]
+      },
+      "note": "Partial because Apple also supports replacing the territories relationship in this PATCH, but the current MCP tool exposes only agreement_text."
+    },
+    {
+      "tool": "app_info_update_localization",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "write",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "appInfoLocalizations_updateInstance",
+          "method": "patch",
+          "path": "/v1/appInfoLocalizations/{id}",
+          "role": "primary",
+          "inputs": [
+            {
+              "sourceKind": "derived",
+              "jsonPointer": "/data/id",
+              "derivedFrom": [
+                "localization_id"
+              ],
+              "localRole": "Copy the public localization ID into the JSON:API update resource identifier."
+            },
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/type",
+              "fixedValue": "appInfoLocalizations"
+            }
+          ]
+        }
+      ],
+      "fields": [
+        { "toolField": "localization_id", "sourceKind": "parameter", "operationId": "appInfoLocalizations_updateInstance", "location": "path", "appleName": "id" },
+        { "toolField": "name", "sourceKind": "requestBody", "operationId": "appInfoLocalizations_updateInstance", "jsonPointer": "/data/attributes/name" },
+        { "toolField": "subtitle", "sourceKind": "requestBody", "operationId": "appInfoLocalizations_updateInstance", "jsonPointer": "/data/attributes/subtitle" },
+        { "toolField": "privacy_policy_url", "sourceKind": "requestBody", "operationId": "appInfoLocalizations_updateInstance", "jsonPointer": "/data/attributes/privacyPolicyUrl" },
+        { "toolField": "privacy_choices_url", "sourceKind": "requestBody", "operationId": "appInfoLocalizations_updateInstance", "jsonPointer": "/data/attributes/privacyChoicesUrl" },
+        { "toolField": "privacy_policy_text", "sourceKind": "requestBody", "operationId": "appInfoLocalizations_updateInstance", "jsonPointer": "/data/attributes/privacyPolicyText" }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          { "operationId": "appInfoLocalizations_updateInstance", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": [
+          { "outputField": "success", "localRole": "successfulUpdate" },
+          { "outputField": "localization", "operationId": "appInfoLocalizations_updateInstance", "jsonPointer": "/data" }
+        ]
+      },
+      "note": "Direct Apple localization PATCH with local metadata validation and response projection; partial until a structured output schema is declared."
+    }
+  ],
+  "implementationAliases": []
+}

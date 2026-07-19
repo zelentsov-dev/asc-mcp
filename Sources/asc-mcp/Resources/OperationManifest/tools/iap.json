@@ -1,0 +1,2386 @@
+{
+  "workerKey": "iap",
+  "tools": [
+    {
+      "tool": "iap_create",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "write",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "inAppPurchasesV2_createInstance",
+          "method": "post",
+          "path": "/v2/inAppPurchases",
+          "role": "primary",
+          "condition": null,
+          "inputs": [
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/type",
+              "fixedValue": "inAppPurchases"
+            },
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/relationships/app/data/type",
+              "fixedValue": "apps"
+            }
+          ]
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "app_id",
+          "sourceKind": "requestBody",
+          "operationId": "inAppPurchasesV2_createInstance",
+          "jsonPointer": "/data/relationships/app/data/id"
+        },
+        {
+          "toolField": "name",
+          "sourceKind": "requestBody",
+          "operationId": "inAppPurchasesV2_createInstance",
+          "jsonPointer": "/data/attributes/name"
+        },
+        {
+          "toolField": "product_id",
+          "sourceKind": "requestBody",
+          "operationId": "inAppPurchasesV2_createInstance",
+          "jsonPointer": "/data/attributes/productId"
+        },
+        {
+          "toolField": "iap_type",
+          "sourceKind": "requestBody",
+          "operationId": "inAppPurchasesV2_createInstance",
+          "jsonPointer": "/data/attributes/inAppPurchaseType"
+        },
+        {
+          "toolField": "review_note",
+          "sourceKind": "requestBody",
+          "operationId": "inAppPurchasesV2_createInstance",
+          "jsonPointer": "/data/attributes/reviewNote"
+        },
+        {
+          "toolField": "family_sharable",
+          "sourceKind": "requestBody",
+          "operationId": "inAppPurchasesV2_createInstance",
+          "jsonPointer": "/data/attributes/familySharable"
+        }
+      ],
+      "response": {
+        "mode": "opaque",
+        "sources": [
+          { "operationId": "inAppPurchasesV2_createInstance", "statusCode": "201", "mediaType": "application/json" }
+        ],
+        "fields": []
+      },
+      "note": "Apple 4.4.1 operation identity and all public inputs are classified; response remains opaque, so the semantic mapping is partial."
+    },
+    {
+      "tool": "iap_create_custom_code",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "write",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "inAppPurchaseOfferCodeCustomCodes_createInstance",
+          "method": "post",
+          "path": "/v1/inAppPurchaseOfferCodeCustomCodes",
+          "role": "primary",
+          "condition": null,
+          "inputs": [
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/type",
+              "fixedValue": "inAppPurchaseOfferCodeCustomCodes"
+            },
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/relationships/offerCode/data/type",
+              "fixedValue": "inAppPurchaseOfferCodes"
+            }
+          ]
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "offer_code_id",
+          "sourceKind": "requestBody",
+          "operationId": "inAppPurchaseOfferCodeCustomCodes_createInstance",
+          "jsonPointer": "/data/relationships/offerCode/data/id"
+        },
+        {
+          "toolField": "custom_code",
+          "sourceKind": "requestBody",
+          "operationId": "inAppPurchaseOfferCodeCustomCodes_createInstance",
+          "jsonPointer": "/data/attributes/customCode"
+        },
+        {
+          "toolField": "number_of_codes",
+          "sourceKind": "requestBody",
+          "operationId": "inAppPurchaseOfferCodeCustomCodes_createInstance",
+          "jsonPointer": "/data/attributes/numberOfCodes"
+        },
+        {
+          "toolField": "expiration_date",
+          "sourceKind": "requestBody",
+          "operationId": "inAppPurchaseOfferCodeCustomCodes_createInstance",
+          "jsonPointer": "/data/attributes/expirationDate"
+        }
+      ],
+      "response": {
+        "mode": "opaque",
+        "sources": [
+          { "operationId": "inAppPurchaseOfferCodeCustomCodes_createInstance", "statusCode": "201", "mediaType": "application/json" }
+        ],
+        "fields": []
+      },
+      "note": "Apple 4.4.1 operation identity and all public inputs are classified; response remains opaque, so the semantic mapping is partial."
+    },
+    {
+      "tool": "iap_create_localization",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "write",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "inAppPurchaseLocalizations_createInstance",
+          "method": "post",
+          "path": "/v1/inAppPurchaseLocalizations",
+          "role": "primary",
+          "condition": null,
+          "inputs": [
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/type",
+              "fixedValue": "inAppPurchaseLocalizations"
+            },
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/relationships/inAppPurchaseV2/data/type",
+              "fixedValue": "inAppPurchases"
+            }
+          ]
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "iap_id",
+          "sourceKind": "requestBody",
+          "operationId": "inAppPurchaseLocalizations_createInstance",
+          "jsonPointer": "/data/relationships/inAppPurchaseV2/data/id"
+        },
+        {
+          "toolField": "locale",
+          "sourceKind": "requestBody",
+          "operationId": "inAppPurchaseLocalizations_createInstance",
+          "jsonPointer": "/data/attributes/locale"
+        },
+        {
+          "toolField": "name",
+          "sourceKind": "requestBody",
+          "operationId": "inAppPurchaseLocalizations_createInstance",
+          "jsonPointer": "/data/attributes/name"
+        },
+        {
+          "toolField": "description",
+          "sourceKind": "requestBody",
+          "operationId": "inAppPurchaseLocalizations_createInstance",
+          "jsonPointer": "/data/attributes/description"
+        }
+      ],
+      "response": {
+        "mode": "opaque",
+        "sources": [
+          { "operationId": "inAppPurchaseLocalizations_createInstance", "statusCode": "201", "mediaType": "application/json" }
+        ],
+        "fields": []
+      },
+      "note": "The current handler uses the non-deprecated product-scoped localization operation documented by Apple 4.4.1; no version resolver is part of this tool."
+    },
+    {
+      "tool": "iap_create_offer_code",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "write",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "inAppPurchaseOfferCodes_createInstance",
+          "method": "post",
+          "path": "/v1/inAppPurchaseOfferCodes",
+          "role": "primary",
+          "condition": null,
+          "inputs": [
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/type",
+              "fixedValue": "inAppPurchaseOfferCodes"
+            },
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/relationships/inAppPurchase/data/type",
+              "fixedValue": "inAppPurchases"
+            },
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/relationships/prices/data/*/type",
+              "fixedValue": "inAppPurchaseOfferPrices"
+            },
+            {
+              "sourceKind": "derived",
+              "jsonPointer": "/data/relationships/prices/data/*/id",
+              "derivedFrom": [
+                "territory_ids",
+                "price_point_ids"
+              ],
+              "localRole": "Generate the same ${price-index} linkage IDs used by the inline offer-price resources."
+            }
+          ]
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "iap_id",
+          "sourceKind": "requestBody",
+          "operationId": "inAppPurchaseOfferCodes_createInstance",
+          "jsonPointer": "/data/relationships/inAppPurchase/data/id"
+        },
+        {
+          "toolField": "name",
+          "sourceKind": "requestBody",
+          "operationId": "inAppPurchaseOfferCodes_createInstance",
+          "jsonPointer": "/data/attributes/name"
+        },
+        {
+          "toolField": "customer_eligibilities",
+          "sourceKind": "requestBody",
+          "operationId": "inAppPurchaseOfferCodes_createInstance",
+          "jsonPointer": "/data/attributes/customerEligibilities"
+        },
+        {
+          "toolField": "territory_ids",
+          "sourceKind": "requestBody",
+          "operationId": "inAppPurchaseOfferCodes_createInstance",
+          "jsonPointer": "/included",
+          "localRole": "Zipped with price_point_ids into inline inAppPurchaseOfferPrices territory relationships."
+        },
+        {
+          "toolField": "price_point_ids",
+          "sourceKind": "requestBody",
+          "operationId": "inAppPurchaseOfferCodes_createInstance",
+          "jsonPointer": "/included",
+          "localRole": "Zipped with territory_ids into inline inAppPurchaseOfferPrices price-point relationships."
+        }
+      ],
+      "response": {
+        "mode": "opaque",
+        "sources": [
+          { "operationId": "inAppPurchaseOfferCodes_createInstance", "statusCode": "201", "mediaType": "application/json" }
+        ],
+        "fields": []
+      },
+      "note": "The 4.4.1 create body requires the IAP relationship, customer eligibilities, prices, and inline territory/price resources; all public inputs bind to that request body."
+    },
+    {
+      "tool": "iap_deactivate_custom_code",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "write",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "inAppPurchaseOfferCodeCustomCodes_updateInstance",
+          "method": "patch",
+          "path": "/v1/inAppPurchaseOfferCodeCustomCodes/{id}",
+          "role": "primary",
+          "condition": null,
+          "inputs": [
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/type",
+              "fixedValue": "inAppPurchaseOfferCodeCustomCodes"
+            },
+            {
+              "sourceKind": "derived",
+              "jsonPointer": "/data/id",
+              "derivedFrom": [
+                "custom_code_id"
+              ],
+              "localRole": "Reuse the public custom-code ID as the JSON:API resource ID in the update body."
+            },
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/attributes/active",
+              "fixedValue": false
+            }
+          ]
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "custom_code_id",
+          "sourceKind": "parameter",
+          "operationId": "inAppPurchaseOfferCodeCustomCodes_updateInstance",
+          "location": "path",
+          "appleName": "id"
+        }
+      ],
+      "response": {
+        "mode": "opaque",
+        "sources": [
+          { "operationId": "inAppPurchaseOfferCodeCustomCodes_updateInstance", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": []
+      },
+      "note": "Apple 4.4.1 operation identity and all public inputs are classified; response remains opaque, so the semantic mapping is partial."
+    },
+    {
+      "tool": "iap_deactivate_offer_code",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "write",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "inAppPurchaseOfferCodes_updateInstance",
+          "method": "patch",
+          "path": "/v1/inAppPurchaseOfferCodes/{id}",
+          "role": "primary",
+          "condition": null,
+          "inputs": [
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/type",
+              "fixedValue": "inAppPurchaseOfferCodes"
+            },
+            {
+              "sourceKind": "derived",
+              "jsonPointer": "/data/id",
+              "derivedFrom": [
+                "offer_code_id"
+              ],
+              "localRole": "Reuse the public offer-code ID as the JSON:API resource ID in the update body."
+            },
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/attributes/active",
+              "fixedValue": false
+            }
+          ]
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "offer_code_id",
+          "sourceKind": "parameter",
+          "operationId": "inAppPurchaseOfferCodes_updateInstance",
+          "location": "path",
+          "appleName": "id"
+        }
+      ],
+      "response": {
+        "mode": "opaque",
+        "sources": [
+          { "operationId": "inAppPurchaseOfferCodes_updateInstance", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": []
+      },
+      "note": "Apple 4.4.1 operation identity and all public inputs are classified; response remains opaque, so the semantic mapping is partial."
+    },
+    {
+      "tool": "iap_deactivate_one_time_code",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "write",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "inAppPurchaseOfferCodeOneTimeUseCodes_updateInstance",
+          "method": "patch",
+          "path": "/v1/inAppPurchaseOfferCodeOneTimeUseCodes/{id}",
+          "role": "primary",
+          "condition": null,
+          "inputs": [
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/type",
+              "fixedValue": "inAppPurchaseOfferCodeOneTimeUseCodes"
+            },
+            {
+              "sourceKind": "derived",
+              "jsonPointer": "/data/id",
+              "derivedFrom": [
+                "one_time_code_id"
+              ],
+              "localRole": "Reuse the public one-time-code ID as the JSON:API resource ID in the update body."
+            },
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/attributes/active",
+              "fixedValue": false
+            }
+          ]
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "one_time_code_id",
+          "sourceKind": "parameter",
+          "operationId": "inAppPurchaseOfferCodeOneTimeUseCodes_updateInstance",
+          "location": "path",
+          "appleName": "id"
+        }
+      ],
+      "response": {
+        "mode": "opaque",
+        "sources": [
+          { "operationId": "inAppPurchaseOfferCodeOneTimeUseCodes_updateInstance", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": []
+      },
+      "note": "Apple 4.4.1 operation identity and all public inputs are classified; response remains opaque, so the semantic mapping is partial."
+    },
+    {
+      "tool": "iap_delete",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "write",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "inAppPurchasesV2_deleteInstance",
+          "method": "delete",
+          "path": "/v2/inAppPurchases/{id}",
+          "role": "primary",
+          "condition": null
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "iap_id",
+          "sourceKind": "parameter",
+          "operationId": "inAppPurchasesV2_deleteInstance",
+          "location": "path",
+          "appleName": "id"
+        }
+      ],
+      "response": {
+        "mode": "opaque",
+        "sources": [
+          { "operationId": "inAppPurchasesV2_deleteInstance", "statusCode": "204" }
+        ],
+        "fields": []
+      },
+      "note": "Apple 4.4.1 operation identity and all public inputs are classified; response remains opaque, so the semantic mapping is partial."
+    },
+    {
+      "tool": "iap_delete_image",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "write",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "inAppPurchaseImages_deleteInstance",
+          "method": "delete",
+          "path": "/v1/inAppPurchaseImages/{id}",
+          "role": "primary",
+          "condition": null
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "image_id",
+          "sourceKind": "parameter",
+          "operationId": "inAppPurchaseImages_deleteInstance",
+          "location": "path",
+          "appleName": "id"
+        }
+      ],
+      "response": {
+        "mode": "opaque",
+        "sources": [
+          { "operationId": "inAppPurchaseImages_deleteInstance", "statusCode": "204" }
+        ],
+        "fields": []
+      },
+      "note": "The current handler and Apple 4.4.1 both use the non-deprecated product-scoped inAppPurchaseImages resource."
+    },
+    {
+      "tool": "iap_delete_localization",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "write",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "inAppPurchaseLocalizations_deleteInstance",
+          "method": "delete",
+          "path": "/v1/inAppPurchaseLocalizations/{id}",
+          "role": "primary",
+          "condition": null
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "localization_id",
+          "sourceKind": "parameter",
+          "operationId": "inAppPurchaseLocalizations_deleteInstance",
+          "location": "path",
+          "appleName": "id"
+        }
+      ],
+      "response": {
+        "mode": "opaque",
+        "sources": [
+          { "operationId": "inAppPurchaseLocalizations_deleteInstance", "statusCode": "204" }
+        ],
+        "fields": []
+      },
+      "note": "The current handler uses the non-deprecated product-scoped localization operation documented by Apple 4.4.1; no version resolver is part of this tool."
+    },
+    {
+      "tool": "iap_delete_review_screenshot",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "write",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "inAppPurchaseAppStoreReviewScreenshots_deleteInstance",
+          "method": "delete",
+          "path": "/v1/inAppPurchaseAppStoreReviewScreenshots/{id}",
+          "role": "primary",
+          "condition": null
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "screenshot_id",
+          "sourceKind": "parameter",
+          "operationId": "inAppPurchaseAppStoreReviewScreenshots_deleteInstance",
+          "location": "path",
+          "appleName": "id"
+        }
+      ],
+      "response": {
+        "mode": "opaque",
+        "sources": [
+          { "operationId": "inAppPurchaseAppStoreReviewScreenshots_deleteInstance", "statusCode": "204" }
+        ],
+        "fields": []
+      },
+      "note": "Apple 4.4.1 operation identity and all public inputs are classified; response remains opaque, so the semantic mapping is partial."
+    },
+    {
+      "tool": "iap_generate_one_time_codes",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "write",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "inAppPurchaseOfferCodeOneTimeUseCodes_createInstance",
+          "method": "post",
+          "path": "/v1/inAppPurchaseOfferCodeOneTimeUseCodes",
+          "role": "primary",
+          "condition": null,
+          "inputs": [
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/type",
+              "fixedValue": "inAppPurchaseOfferCodeOneTimeUseCodes"
+            },
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/relationships/offerCode/data/type",
+              "fixedValue": "inAppPurchaseOfferCodes"
+            }
+          ]
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "offer_code_id",
+          "sourceKind": "requestBody",
+          "operationId": "inAppPurchaseOfferCodeOneTimeUseCodes_createInstance",
+          "jsonPointer": "/data/relationships/offerCode/data/id"
+        },
+        {
+          "toolField": "number_of_codes",
+          "sourceKind": "requestBody",
+          "operationId": "inAppPurchaseOfferCodeOneTimeUseCodes_createInstance",
+          "jsonPointer": "/data/attributes/numberOfCodes"
+        },
+        {
+          "toolField": "expiration_date",
+          "sourceKind": "requestBody",
+          "operationId": "inAppPurchaseOfferCodeOneTimeUseCodes_createInstance",
+          "jsonPointer": "/data/attributes/expirationDate"
+        },
+        {
+          "toolField": "environment",
+          "sourceKind": "requestBody",
+          "operationId": "inAppPurchaseOfferCodeOneTimeUseCodes_createInstance",
+          "jsonPointer": "/data/attributes/environment"
+        }
+      ],
+      "response": {
+        "mode": "opaque",
+        "sources": [
+          { "operationId": "inAppPurchaseOfferCodeOneTimeUseCodes_createInstance", "statusCode": "201", "mediaType": "application/json" }
+        ],
+        "fields": []
+      },
+      "note": "Apple 4.4.1 operation identity and all public inputs are classified; response remains opaque, so the semantic mapping is partial."
+    },
+    {
+      "tool": "iap_get",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "inAppPurchasesV2_getInstance",
+          "method": "get",
+          "path": "/v2/inAppPurchases/{id}",
+          "role": "primary",
+          "condition": null
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "iap_id",
+          "sourceKind": "parameter",
+          "operationId": "inAppPurchasesV2_getInstance",
+          "location": "path",
+          "appleName": "id"
+        }
+      ],
+      "response": {
+        "mode": "opaque",
+        "sources": [
+          { "operationId": "inAppPurchasesV2_getInstance", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": []
+      },
+      "note": "Apple 4.4.1 operation identity and all public inputs are classified; response remains opaque, so the semantic mapping is partial."
+    },
+    {
+      "tool": "iap_get_availability",
+      "kind": "compound",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "inAppPurchasesV2_inAppPurchaseAvailability_getToOneRelated",
+          "method": "get",
+          "path": "/v2/inAppPurchases/{id}/inAppPurchaseAvailability",
+          "role": "primary",
+          "condition": null
+        },
+        {
+          "operationId": "inAppPurchaseAvailabilities_getInstance",
+          "method": "get",
+          "path": "/v1/inAppPurchaseAvailabilities/{id}",
+          "role": "conditional",
+          "condition": "availability_id is provided instead of iap_id"
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "availability_id",
+          "sourceKind": "parameter",
+          "operationId": "inAppPurchaseAvailabilities_getInstance",
+          "location": "path",
+          "appleName": "id"
+        },
+        {
+          "toolField": "iap_id",
+          "sourceKind": "parameter",
+          "operationId": "inAppPurchasesV2_inAppPurchaseAvailability_getToOneRelated",
+          "location": "path",
+          "appleName": "id"
+        },
+        {
+          "toolField": "include_territories",
+          "sourceKind": "derived",
+          "operationId": "inAppPurchasesV2_inAppPurchaseAvailability_getToOneRelated",
+          "location": "query",
+          "appleName": "include",
+          "derivedFrom": [
+            "include_territories"
+          ],
+          "localRole": "Maps true to include=availableTerritories and false to omission while preserving the fixed sparse-field query."
+        }
+      ],
+      "response": {
+        "mode": "opaque",
+        "sources": [
+          { "operationId": "inAppPurchaseAvailabilities_getInstance", "statusCode": "200", "mediaType": "application/json" },
+          { "operationId": "inAppPurchasesV2_inAppPurchaseAvailability_getToOneRelated", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": []
+      },
+      "note": "Apple 4.4.1 operation identity and all public inputs are classified; response remains opaque, so the semantic mapping is partial."
+    },
+    {
+      "tool": "iap_get_custom_code",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "inAppPurchaseOfferCodeCustomCodes_getInstance",
+          "method": "get",
+          "path": "/v1/inAppPurchaseOfferCodeCustomCodes/{id}",
+          "role": "primary",
+          "condition": null
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "custom_code_id",
+          "sourceKind": "parameter",
+          "operationId": "inAppPurchaseOfferCodeCustomCodes_getInstance",
+          "location": "path",
+          "appleName": "id"
+        }
+      ],
+      "response": {
+        "mode": "opaque",
+        "sources": [
+          { "operationId": "inAppPurchaseOfferCodeCustomCodes_getInstance", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": []
+      },
+      "note": "Apple 4.4.1 operation identity and all public inputs are classified; response remains opaque, so the semantic mapping is partial."
+    },
+    {
+      "tool": "iap_get_image",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "inAppPurchaseImages_getInstance",
+          "method": "get",
+          "path": "/v1/inAppPurchaseImages/{id}",
+          "role": "primary",
+          "condition": null
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "image_id",
+          "sourceKind": "parameter",
+          "operationId": "inAppPurchaseImages_getInstance",
+          "location": "path",
+          "appleName": "id"
+        }
+      ],
+      "response": {
+        "mode": "opaque",
+        "sources": [
+          { "operationId": "inAppPurchaseImages_getInstance", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": []
+      },
+      "note": "The current handler and Apple 4.4.1 both use the non-deprecated product-scoped inAppPurchaseImages resource."
+    },
+    {
+      "tool": "iap_get_offer_code",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "inAppPurchaseOfferCodes_getInstance",
+          "method": "get",
+          "path": "/v1/inAppPurchaseOfferCodes/{id}",
+          "role": "primary",
+          "condition": null
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "offer_code_id",
+          "sourceKind": "parameter",
+          "operationId": "inAppPurchaseOfferCodes_getInstance",
+          "location": "path",
+          "appleName": "id"
+        }
+      ],
+      "response": {
+        "mode": "opaque",
+        "sources": [
+          { "operationId": "inAppPurchaseOfferCodes_getInstance", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": []
+      },
+      "note": "Apple 4.4.1 operation identity and all public inputs are classified; response remains opaque, so the semantic mapping is partial."
+    },
+    {
+      "tool": "iap_get_one_time_code",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "inAppPurchaseOfferCodeOneTimeUseCodes_getInstance",
+          "method": "get",
+          "path": "/v1/inAppPurchaseOfferCodeOneTimeUseCodes/{id}",
+          "role": "primary",
+          "condition": null
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "one_time_code_id",
+          "sourceKind": "parameter",
+          "operationId": "inAppPurchaseOfferCodeOneTimeUseCodes_getInstance",
+          "location": "path",
+          "appleName": "id"
+        }
+      ],
+      "response": {
+        "mode": "opaque",
+        "sources": [
+          { "operationId": "inAppPurchaseOfferCodeOneTimeUseCodes_getInstance", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": []
+      },
+      "note": "Apple 4.4.1 operation identity and all public inputs are classified; response remains opaque, so the semantic mapping is partial."
+    },
+    {
+      "tool": "iap_get_one_time_code_values",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "inAppPurchaseOfferCodeOneTimeUseCodes_values_getToOneRelated",
+          "method": "get",
+          "path": "/v1/inAppPurchaseOfferCodeOneTimeUseCodes/{id}/values",
+          "role": "primary",
+          "condition": null
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "one_time_code_id",
+          "sourceKind": "parameter",
+          "operationId": "inAppPurchaseOfferCodeOneTimeUseCodes_values_getToOneRelated",
+          "location": "path",
+          "appleName": "id"
+        },
+        {
+          "toolField": "limit",
+          "sourceKind": "local",
+          "localRole": "Legacy schema field; Apple CSV operation has no query parameters.",
+          "omissionReason": "Not accepted by Apple 4.4.1 values operation."
+        },
+        {
+          "toolField": "next_url",
+          "sourceKind": "local",
+          "localRole": "Legacy schema field; Apple CSV operation is a single non-paginated response.",
+          "omissionReason": "Not accepted by Apple 4.4.1 values operation."
+        }
+      ],
+      "response": {
+        "mode": "opaque",
+        "sources": [
+          {
+            "operationId": "inAppPurchaseOfferCodeOneTimeUseCodes_values_getToOneRelated",
+            "statusCode": "200",
+            "mediaType": "text/csv"
+          }
+        ],
+        "fields": []
+      },
+      "note": "Apple returns text/csv and accepts no limit or pagination query. The public limit/next_url inputs are legacy-only and must be rejected or ignored deterministically; JSON decoding is not valid."
+    },
+    {
+      "tool": "iap_get_price_schedule",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "inAppPurchasesV2_iapPriceSchedule_getToOneRelated",
+          "method": "get",
+          "path": "/v2/inAppPurchases/{id}/iapPriceSchedule",
+          "role": "primary",
+          "condition": null
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "iap_id",
+          "sourceKind": "parameter",
+          "operationId": "inAppPurchasesV2_iapPriceSchedule_getToOneRelated",
+          "location": "path",
+          "appleName": "id"
+        }
+      ],
+      "response": {
+        "mode": "opaque",
+        "sources": [
+          { "operationId": "inAppPurchasesV2_iapPriceSchedule_getToOneRelated", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": []
+      },
+      "note": "Apple 4.4.1 operation identity and all public inputs are classified; response remains opaque, so the semantic mapping is partial."
+    },
+    {
+      "tool": "iap_get_promoted_purchase",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "inAppPurchasesV2_promotedPurchase_getToOneRelated",
+          "method": "get",
+          "path": "/v2/inAppPurchases/{id}/promotedPurchase",
+          "role": "primary",
+          "condition": null
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "iap_id",
+          "sourceKind": "parameter",
+          "operationId": "inAppPurchasesV2_promotedPurchase_getToOneRelated",
+          "location": "path",
+          "appleName": "id"
+        }
+      ],
+      "response": {
+        "mode": "opaque",
+        "sources": [
+          { "operationId": "inAppPurchasesV2_promotedPurchase_getToOneRelated", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": []
+      },
+      "note": "Apple 4.4.1 operation identity and all public inputs are classified; response remains opaque, so the semantic mapping is partial."
+    },
+    {
+      "tool": "iap_get_review_screenshot",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "inAppPurchasesV2_appStoreReviewScreenshot_getToOneRelated",
+          "method": "get",
+          "path": "/v2/inAppPurchases/{id}/appStoreReviewScreenshot",
+          "role": "primary",
+          "condition": null
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "iap_id",
+          "sourceKind": "parameter",
+          "operationId": "inAppPurchasesV2_appStoreReviewScreenshot_getToOneRelated",
+          "location": "path",
+          "appleName": "id"
+        }
+      ],
+      "response": {
+        "mode": "opaque",
+        "sources": [
+          { "operationId": "inAppPurchasesV2_appStoreReviewScreenshot_getToOneRelated", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": []
+      },
+      "note": "Apple 4.4.1 operation identity and all public inputs are classified; response remains opaque, so the semantic mapping is partial."
+    },
+    {
+      "tool": "iap_get_subscription_group",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "subscriptionGroups_getInstance",
+          "method": "get",
+          "path": "/v1/subscriptionGroups/{id}",
+          "role": "primary",
+          "condition": null
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "group_id",
+          "sourceKind": "parameter",
+          "operationId": "subscriptionGroups_getInstance",
+          "location": "path",
+          "appleName": "id"
+        },
+        {
+          "toolField": "include_subscriptions",
+          "sourceKind": "derived",
+          "operationId": "subscriptionGroups_getInstance",
+          "location": "query",
+          "appleName": "include",
+          "derivedFrom": [
+            "include_subscriptions"
+          ],
+          "localRole": "Maps true to include=subscriptions and false to omission."
+        }
+      ],
+      "response": {
+        "mode": "opaque",
+        "sources": [
+          { "operationId": "subscriptionGroups_getInstance", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": []
+      },
+      "note": "Apple 4.4.1 operation identity and all public inputs are classified; response remains opaque, so the semantic mapping is partial."
+    },
+    {
+      "tool": "iap_inventory",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "apps_inAppPurchasesV2_getToManyRelated",
+          "method": "get",
+          "path": "/v1/apps/{id}/inAppPurchasesV2",
+          "role": "primary",
+          "condition": null
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "app_id",
+          "sourceKind": "parameter",
+          "operationId": "apps_inAppPurchasesV2_getToManyRelated",
+          "location": "path",
+          "appleName": "id"
+        },
+        {
+          "toolField": "limit",
+          "sourceKind": "parameter",
+          "operationId": "apps_inAppPurchasesV2_getToManyRelated",
+          "location": "query",
+          "appleName": "limit"
+        },
+        {
+          "toolField": "next_url",
+          "sourceKind": "local",
+          "localRole": "Validated Apple pagination URL override."
+        }
+      ],
+      "response": {
+        "mode": "opaque",
+        "sources": [
+          { "operationId": "apps_inAppPurchasesV2_getToManyRelated", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": []
+      },
+      "note": "Single Apple collection read with includes; the MCP response is a local projection and does not currently surface all included resources."
+    },
+    {
+      "tool": "iap_list",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "apps_inAppPurchasesV2_getToManyRelated",
+          "method": "get",
+          "path": "/v1/apps/{id}/inAppPurchasesV2",
+          "role": "primary",
+          "condition": null
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "app_id",
+          "sourceKind": "parameter",
+          "operationId": "apps_inAppPurchasesV2_getToManyRelated",
+          "location": "path",
+          "appleName": "id"
+        },
+        {
+          "toolField": "limit",
+          "sourceKind": "parameter",
+          "operationId": "apps_inAppPurchasesV2_getToManyRelated",
+          "location": "query",
+          "appleName": "limit"
+        },
+        {
+          "toolField": "filter_state",
+          "sourceKind": "parameter",
+          "operationId": "apps_inAppPurchasesV2_getToManyRelated",
+          "location": "query",
+          "appleName": "filter[state]"
+        },
+        {
+          "toolField": "filter_type",
+          "sourceKind": "parameter",
+          "operationId": "apps_inAppPurchasesV2_getToManyRelated",
+          "location": "query",
+          "appleName": "filter[inAppPurchaseType]"
+        },
+        {
+          "toolField": "next_url",
+          "sourceKind": "local",
+          "localRole": "Validated Apple pagination URL override."
+        }
+      ],
+      "response": {
+        "mode": "opaque",
+        "sources": [
+          { "operationId": "apps_inAppPurchasesV2_getToManyRelated", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": []
+      },
+      "note": "Apple 4.4.1 operation identity and all public inputs are classified; response remains opaque, so the semantic mapping is partial."
+    },
+    {
+      "tool": "iap_list_available_territories",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "inAppPurchaseAvailabilities_availableTerritories_getToManyRelated",
+          "method": "get",
+          "path": "/v1/inAppPurchaseAvailabilities/{id}/availableTerritories",
+          "role": "primary",
+          "condition": null
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "availability_id",
+          "sourceKind": "parameter",
+          "operationId": "inAppPurchaseAvailabilities_availableTerritories_getToManyRelated",
+          "location": "path",
+          "appleName": "id"
+        },
+        {
+          "toolField": "limit",
+          "sourceKind": "parameter",
+          "operationId": "inAppPurchaseAvailabilities_availableTerritories_getToManyRelated",
+          "location": "query",
+          "appleName": "limit"
+        },
+        {
+          "toolField": "next_url",
+          "sourceKind": "local",
+          "localRole": "Validated Apple pagination URL override."
+        }
+      ],
+      "response": {
+        "mode": "opaque",
+        "sources": [
+          { "operationId": "inAppPurchaseAvailabilities_availableTerritories_getToManyRelated", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": []
+      },
+      "note": "Apple 4.4.1 operation identity and all public inputs are classified; response remains opaque, so the semantic mapping is partial."
+    },
+    {
+      "tool": "iap_list_images",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "target",
+      "operations": [
+        {
+          "operationId": "inAppPurchasesV2_images_getToManyRelated",
+          "method": "get",
+          "path": "/v2/inAppPurchases/{id}/images",
+          "role": "primary",
+          "condition": null
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "iap_id",
+          "sourceKind": "parameter",
+          "operationId": "inAppPurchasesV2_images_getToManyRelated",
+          "location": "path",
+          "appleName": "id"
+        },
+        {
+          "toolField": "limit",
+          "sourceKind": "parameter",
+          "operationId": "inAppPurchasesV2_images_getToManyRelated",
+          "location": "query",
+          "appleName": "limit"
+        },
+        {
+          "toolField": "next_url",
+          "sourceKind": "local",
+          "localRole": "Validated Apple pagination URL override for the version images collection."
+        }
+      ],
+      "response": {
+        "mode": "opaque",
+        "sources": [
+          { "operationId": "inAppPurchasesV2_images_getToManyRelated", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": []
+      },
+      "note": "Apple 4.4.1 defines GET /v2/inAppPurchases/{id}/images. The current handler incorrectly calls /v2/inAppPurchases/{id}/inAppPurchaseImages, which is absent from the specification; this mapping records the intended official operation and the implementation must be fixed."
+    },
+    {
+      "tool": "iap_list_localizations",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "inAppPurchasesV2_inAppPurchaseLocalizations_getToManyRelated",
+          "method": "get",
+          "path": "/v2/inAppPurchases/{id}/inAppPurchaseLocalizations",
+          "role": "primary",
+          "condition": null
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "iap_id",
+          "sourceKind": "parameter",
+          "operationId": "inAppPurchasesV2_inAppPurchaseLocalizations_getToManyRelated",
+          "location": "path",
+          "appleName": "id"
+        },
+        {
+          "toolField": "next_url",
+          "sourceKind": "local",
+          "localRole": "Validated Apple pagination URL override for the version localizations collection."
+        }
+      ],
+      "response": {
+        "mode": "opaque",
+        "sources": [
+          { "operationId": "inAppPurchasesV2_inAppPurchaseLocalizations_getToManyRelated", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": []
+      },
+      "note": "The current handler uses the non-deprecated product-scoped localization operation documented by Apple 4.4.1; no version resolver is part of this tool."
+    },
+    {
+      "tool": "iap_list_offer_code_prices",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "inAppPurchaseOfferCodes_prices_getToManyRelated",
+          "method": "get",
+          "path": "/v1/inAppPurchaseOfferCodes/{id}/prices",
+          "role": "primary",
+          "condition": null
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "offer_code_id",
+          "sourceKind": "parameter",
+          "operationId": "inAppPurchaseOfferCodes_prices_getToManyRelated",
+          "location": "path",
+          "appleName": "id"
+        },
+        {
+          "toolField": "territory_id",
+          "sourceKind": "parameter",
+          "operationId": "inAppPurchaseOfferCodes_prices_getToManyRelated",
+          "location": "query",
+          "appleName": "filter[territory]"
+        },
+        {
+          "toolField": "limit",
+          "sourceKind": "parameter",
+          "operationId": "inAppPurchaseOfferCodes_prices_getToManyRelated",
+          "location": "query",
+          "appleName": "limit"
+        },
+        {
+          "toolField": "next_url",
+          "sourceKind": "local",
+          "localRole": "Validated Apple pagination URL override."
+        }
+      ],
+      "response": {
+        "mode": "opaque",
+        "sources": [
+          { "operationId": "inAppPurchaseOfferCodes_prices_getToManyRelated", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": []
+      },
+      "note": "Apple 4.4.1 operation identity and all public inputs are classified; response remains opaque, so the semantic mapping is partial."
+    },
+    {
+      "tool": "iap_list_offer_codes",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "inAppPurchasesV2_offerCodes_getToManyRelated",
+          "method": "get",
+          "path": "/v2/inAppPurchases/{id}/offerCodes",
+          "role": "primary",
+          "condition": null
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "iap_id",
+          "sourceKind": "parameter",
+          "operationId": "inAppPurchasesV2_offerCodes_getToManyRelated",
+          "location": "path",
+          "appleName": "id"
+        },
+        {
+          "toolField": "limit",
+          "sourceKind": "parameter",
+          "operationId": "inAppPurchasesV2_offerCodes_getToManyRelated",
+          "location": "query",
+          "appleName": "limit"
+        },
+        {
+          "toolField": "next_url",
+          "sourceKind": "local",
+          "localRole": "Validated Apple pagination URL override."
+        }
+      ],
+      "response": {
+        "mode": "opaque",
+        "sources": [
+          { "operationId": "inAppPurchasesV2_offerCodes_getToManyRelated", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": []
+      },
+      "note": "Apple 4.4.1 operation identity and all public inputs are classified; response remains opaque, so the semantic mapping is partial."
+    },
+    {
+      "tool": "iap_list_one_time_codes",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "inAppPurchaseOfferCodes_oneTimeUseCodes_getToManyRelated",
+          "method": "get",
+          "path": "/v1/inAppPurchaseOfferCodes/{id}/oneTimeUseCodes",
+          "role": "primary",
+          "condition": null
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "offer_code_id",
+          "sourceKind": "parameter",
+          "operationId": "inAppPurchaseOfferCodes_oneTimeUseCodes_getToManyRelated",
+          "location": "path",
+          "appleName": "id"
+        },
+        {
+          "toolField": "limit",
+          "sourceKind": "parameter",
+          "operationId": "inAppPurchaseOfferCodes_oneTimeUseCodes_getToManyRelated",
+          "location": "query",
+          "appleName": "limit"
+        },
+        {
+          "toolField": "next_url",
+          "sourceKind": "local",
+          "localRole": "Validated Apple pagination URL override."
+        }
+      ],
+      "response": {
+        "mode": "opaque",
+        "sources": [
+          { "operationId": "inAppPurchaseOfferCodes_oneTimeUseCodes_getToManyRelated", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": []
+      },
+      "note": "Apple 4.4.1 operation identity and all public inputs are classified; response remains opaque, so the semantic mapping is partial."
+    },
+    {
+      "tool": "iap_list_price_point_equalizations",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "inAppPurchasePricePoints_equalizations_getToManyRelated",
+          "method": "get",
+          "path": "/v1/inAppPurchasePricePoints/{id}/equalizations",
+          "role": "primary",
+          "condition": null
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "price_point_id",
+          "sourceKind": "parameter",
+          "operationId": "inAppPurchasePricePoints_equalizations_getToManyRelated",
+          "location": "path",
+          "appleName": "id"
+        },
+        {
+          "toolField": "iap_id",
+          "sourceKind": "parameter",
+          "operationId": "inAppPurchasePricePoints_equalizations_getToManyRelated",
+          "location": "query",
+          "appleName": "filter[inAppPurchaseV2]"
+        },
+        {
+          "toolField": "territory_id",
+          "sourceKind": "parameter",
+          "operationId": "inAppPurchasePricePoints_equalizations_getToManyRelated",
+          "location": "query",
+          "appleName": "filter[territory]"
+        },
+        {
+          "toolField": "limit",
+          "sourceKind": "parameter",
+          "operationId": "inAppPurchasePricePoints_equalizations_getToManyRelated",
+          "location": "query",
+          "appleName": "limit"
+        },
+        {
+          "toolField": "next_url",
+          "sourceKind": "local",
+          "localRole": "Validated Apple pagination URL override."
+        }
+      ],
+      "response": {
+        "mode": "opaque",
+        "sources": [
+          { "operationId": "inAppPurchasePricePoints_equalizations_getToManyRelated", "statusCode": "200", "mediaType": "application/json" },
+          { "operationId": "inAppPurchasePricePoints_equalizations_getToManyRelated", "statusCode": "200", "mediaType": "text/csv" }
+        ],
+        "fields": []
+      },
+      "note": "Apple 4.4.1 operation identity and all public inputs are classified; response remains opaque, so the semantic mapping is partial."
+    },
+    {
+      "tool": "iap_list_price_points",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "inAppPurchasesV2_pricePoints_getToManyRelated",
+          "method": "get",
+          "path": "/v2/inAppPurchases/{id}/pricePoints",
+          "role": "primary",
+          "condition": null
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "iap_id",
+          "sourceKind": "parameter",
+          "operationId": "inAppPurchasesV2_pricePoints_getToManyRelated",
+          "location": "path",
+          "appleName": "id"
+        },
+        {
+          "toolField": "territory_id",
+          "sourceKind": "parameter",
+          "operationId": "inAppPurchasesV2_pricePoints_getToManyRelated",
+          "location": "query",
+          "appleName": "filter[territory]"
+        },
+        {
+          "toolField": "territory",
+          "sourceKind": "derived",
+          "operationId": "inAppPurchasesV2_pricePoints_getToManyRelated",
+          "location": "query",
+          "appleName": "filter[territory]",
+          "derivedFrom": [
+            "territory"
+          ],
+          "localRole": "Deprecated public alias normalized to Apple filter[territory]."
+        },
+        {
+          "toolField": "limit",
+          "sourceKind": "parameter",
+          "operationId": "inAppPurchasesV2_pricePoints_getToManyRelated",
+          "location": "query",
+          "appleName": "limit"
+        },
+        {
+          "toolField": "next_url",
+          "sourceKind": "local",
+          "localRole": "Validated Apple pagination URL override."
+        }
+      ],
+      "response": {
+        "mode": "opaque",
+        "sources": [
+          { "operationId": "inAppPurchasesV2_pricePoints_getToManyRelated", "statusCode": "200", "mediaType": "application/json" },
+          { "operationId": "inAppPurchasesV2_pricePoints_getToManyRelated", "statusCode": "200", "mediaType": "text/csv" }
+        ],
+        "fields": []
+      },
+      "note": "Apple 4.4.1 operation identity and all public inputs are classified; response remains opaque, so the semantic mapping is partial."
+    },
+    {
+      "tool": "iap_list_subscriptions",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "apps_subscriptionGroups_getToManyRelated",
+          "method": "get",
+          "path": "/v1/apps/{id}/subscriptionGroups",
+          "role": "primary",
+          "condition": null
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "app_id",
+          "sourceKind": "parameter",
+          "operationId": "apps_subscriptionGroups_getToManyRelated",
+          "location": "path",
+          "appleName": "id"
+        },
+        {
+          "toolField": "limit",
+          "sourceKind": "parameter",
+          "operationId": "apps_subscriptionGroups_getToManyRelated",
+          "location": "query",
+          "appleName": "limit"
+        },
+        {
+          "toolField": "next_url",
+          "sourceKind": "local",
+          "localRole": "Validated Apple pagination URL override."
+        }
+      ],
+      "response": {
+        "mode": "opaque",
+        "sources": [
+          { "operationId": "apps_subscriptionGroups_getToManyRelated", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": []
+      },
+      "note": "Apple 4.4.1 operation identity and all public inputs are classified; response remains opaque, so the semantic mapping is partial."
+    },
+    {
+      "tool": "iap_prepare_offer_prices",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "inAppPurchasesV2_pricePoints_getToManyRelated",
+          "method": "get",
+          "path": "/v2/inAppPurchases/{id}/pricePoints",
+          "role": "primary",
+          "condition": null
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "iap_id",
+          "sourceKind": "parameter",
+          "operationId": "inAppPurchasesV2_pricePoints_getToManyRelated",
+          "location": "path",
+          "appleName": "id"
+        },
+        {
+          "toolField": "territory_id",
+          "sourceKind": "parameter",
+          "operationId": "inAppPurchasesV2_pricePoints_getToManyRelated",
+          "location": "query",
+          "appleName": "filter[territory]"
+        },
+        {
+          "toolField": "customer_price",
+          "sourceKind": "local",
+          "localRole": "Filters Apple price point results locally by exact customerPrice."
+        }
+      ],
+      "response": {
+        "mode": "opaque",
+        "sources": [
+          { "operationId": "inAppPurchasesV2_pricePoints_getToManyRelated", "statusCode": "200", "mediaType": "application/json" },
+          { "operationId": "inAppPurchasesV2_pricePoints_getToManyRelated", "statusCode": "200", "mediaType": "text/csv" }
+        ],
+        "fields": []
+      },
+      "note": "Apple price points are read directly; customer_price is an MCP-side exact-match projection."
+    },
+    {
+      "tool": "iap_pricing_summary",
+      "kind": "compound",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "inAppPurchasesV2_iapPriceSchedule_getToOneRelated",
+          "method": "get",
+          "path": "/v2/inAppPurchases/{id}/iapPriceSchedule",
+          "role": "primary",
+          "condition": null
+        },
+        {
+          "operationId": "inAppPurchasePriceSchedules_manualPrices_getToManyRelated",
+          "method": "get",
+          "path": "/v1/inAppPurchasePriceSchedules/{id}/manualPrices",
+          "role": "supporting",
+          "condition": null,
+          "inputs": [
+            {
+              "sourceKind": "derived",
+              "location": "path",
+              "appleName": "id",
+              "derivedFrom": [
+                "inAppPurchasesV2_iapPriceSchedule_getToOneRelated:/data/id"
+              ],
+              "localRole": "Use the price-schedule ID returned by the primary schedule lookup."
+            }
+          ]
+        },
+        {
+          "operationId": "inAppPurchasePriceSchedules_automaticPrices_getToManyRelated",
+          "method": "get",
+          "path": "/v1/inAppPurchasePriceSchedules/{id}/automaticPrices",
+          "role": "supporting",
+          "condition": null,
+          "inputs": [
+            {
+              "sourceKind": "derived",
+              "location": "path",
+              "appleName": "id",
+              "derivedFrom": [
+                "inAppPurchasesV2_iapPriceSchedule_getToOneRelated:/data/id"
+              ],
+              "localRole": "Use the price-schedule ID returned by the primary schedule lookup."
+            }
+          ]
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "iap_id",
+          "sourceKind": "parameter",
+          "operationId": "inAppPurchasesV2_iapPriceSchedule_getToOneRelated",
+          "location": "path",
+          "appleName": "id"
+        },
+        {
+          "toolField": "territory_id",
+          "sourceKind": "derived",
+          "operationId": "inAppPurchasePriceSchedules_manualPrices_getToManyRelated",
+          "location": "query",
+          "appleName": "filter[territory]",
+          "localRole": "Applies the selected territory to the manualPrices supporting read.",
+          "derivedFrom": [
+            "territory_id"
+          ]
+        },
+        {
+          "toolField": "territory_id",
+          "sourceKind": "derived",
+          "operationId": "inAppPurchasePriceSchedules_automaticPrices_getToManyRelated",
+          "location": "query",
+          "appleName": "filter[territory]",
+          "localRole": "Applies the selected territory to the automaticPrices supporting read.",
+          "derivedFrom": [
+            "territory_id"
+          ]
+        }
+      ],
+      "response": {
+        "mode": "opaque",
+        "sources": [
+          { "operationId": "inAppPurchasePriceSchedules_automaticPrices_getToManyRelated", "statusCode": "200", "mediaType": "application/json" },
+          { "operationId": "inAppPurchasePriceSchedules_manualPrices_getToManyRelated", "statusCode": "200", "mediaType": "application/json" },
+          { "operationId": "inAppPurchasesV2_iapPriceSchedule_getToOneRelated", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": []
+      },
+      "note": "Reads the schedule, then both price collections; territory_id is applied to both collection filters and results are summarized locally."
+    },
+    {
+      "tool": "iap_set_availability",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "write",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "inAppPurchaseAvailabilities_createInstance",
+          "method": "post",
+          "path": "/v1/inAppPurchaseAvailabilities",
+          "role": "primary",
+          "condition": null,
+          "inputs": [
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/type",
+              "fixedValue": "inAppPurchaseAvailabilities"
+            },
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/relationships/inAppPurchase/data/type",
+              "fixedValue": "inAppPurchases"
+            }
+          ]
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "iap_id",
+          "sourceKind": "requestBody",
+          "operationId": "inAppPurchaseAvailabilities_createInstance",
+          "jsonPointer": "/data/relationships/inAppPurchase/data/id"
+        },
+        {
+          "toolField": "available_in_new_territories",
+          "sourceKind": "requestBody",
+          "operationId": "inAppPurchaseAvailabilities_createInstance",
+          "jsonPointer": "/data/attributes/availableInNewTerritories"
+        },
+        {
+          "toolField": "territory_ids",
+          "sourceKind": "requestBody",
+          "operationId": "inAppPurchaseAvailabilities_createInstance",
+          "jsonPointer": "/data/relationships/availableTerritories/data"
+        }
+      ],
+      "response": {
+        "mode": "opaque",
+        "sources": [
+          { "operationId": "inAppPurchaseAvailabilities_createInstance", "statusCode": "201", "mediaType": "application/json" }
+        ],
+        "fields": []
+      },
+      "note": "Apple 4.4.1 operation identity and all public inputs are classified; response remains opaque, so the semantic mapping is partial."
+    },
+    {
+      "tool": "iap_set_price_schedule",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "write",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "inAppPurchasePriceSchedules_createInstance",
+          "method": "post",
+          "path": "/v1/inAppPurchasePriceSchedules",
+          "role": "primary",
+          "condition": null,
+          "inputs": [
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/type",
+              "fixedValue": "inAppPurchasePriceSchedules"
+            },
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/relationships/inAppPurchase/data/type",
+              "fixedValue": "inAppPurchases"
+            },
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/relationships/baseTerritory/data/type",
+              "fixedValue": "territories"
+            }
+          ]
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "iap_id",
+          "sourceKind": "requestBody",
+          "operationId": "inAppPurchasePriceSchedules_createInstance",
+          "jsonPointer": "/data/relationships/inAppPurchase/data/id"
+        },
+        {
+          "toolField": "base_territory_id",
+          "sourceKind": "requestBody",
+          "operationId": "inAppPurchasePriceSchedules_createInstance",
+          "jsonPointer": "/data/relationships/baseTerritory/data/id"
+        },
+        {
+          "toolField": "manual_price_ids",
+          "sourceKind": "requestBody",
+          "operationId": "inAppPurchasePriceSchedules_createInstance",
+          "jsonPointer": "/data/relationships/manualPrices/data"
+        }
+      ],
+      "response": {
+        "mode": "opaque",
+        "sources": [
+          { "operationId": "inAppPurchasePriceSchedules_createInstance", "statusCode": "201", "mediaType": "application/json" }
+        ],
+        "fields": []
+      },
+      "note": "The Apple request uses inline manual price resources. The current comma-separated manual_price_ids surface cannot fully express start/end dates, so this mapping remains partial."
+    },
+    {
+      "tool": "iap_submit_for_review",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "write",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "inAppPurchaseSubmissions_createInstance",
+          "method": "post",
+          "path": "/v1/inAppPurchaseSubmissions",
+          "role": "primary",
+          "condition": null,
+          "inputs": [
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/type",
+              "fixedValue": "inAppPurchaseSubmissions"
+            },
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/relationships/inAppPurchaseV2/data/type",
+              "fixedValue": "inAppPurchases"
+            }
+          ]
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "iap_id",
+          "sourceKind": "requestBody",
+          "operationId": "inAppPurchaseSubmissions_createInstance",
+          "jsonPointer": "/data/relationships/inAppPurchaseV2/data/id"
+        }
+      ],
+      "response": {
+        "mode": "opaque",
+        "sources": [
+          { "operationId": "inAppPurchaseSubmissions_createInstance", "statusCode": "201", "mediaType": "application/json" }
+        ],
+        "fields": []
+      },
+      "note": "The current handler and Apple 4.4.1 both submit the product-scoped IAP through POST /v1/inAppPurchaseSubmissions; ReviewSubmissionItems/version resolution is not part of this tool."
+    },
+    {
+      "tool": "iap_update",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "write",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "inAppPurchasesV2_updateInstance",
+          "method": "patch",
+          "path": "/v2/inAppPurchases/{id}",
+          "role": "primary",
+          "condition": null,
+          "inputs": [
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/type",
+              "fixedValue": "inAppPurchases"
+            },
+            {
+              "sourceKind": "derived",
+              "jsonPointer": "/data/id",
+              "derivedFrom": [
+                "iap_id"
+              ],
+              "localRole": "Reuse the public IAP ID as the JSON:API resource ID in the update body."
+            }
+          ]
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "iap_id",
+          "sourceKind": "parameter",
+          "operationId": "inAppPurchasesV2_updateInstance",
+          "location": "path",
+          "appleName": "id"
+        },
+        {
+          "toolField": "name",
+          "sourceKind": "requestBody",
+          "operationId": "inAppPurchasesV2_updateInstance",
+          "jsonPointer": "/data/attributes/name"
+        },
+        {
+          "toolField": "review_note",
+          "sourceKind": "requestBody",
+          "operationId": "inAppPurchasesV2_updateInstance",
+          "jsonPointer": "/data/attributes/reviewNote"
+        },
+        {
+          "toolField": "family_sharable",
+          "sourceKind": "requestBody",
+          "operationId": "inAppPurchasesV2_updateInstance",
+          "jsonPointer": "/data/attributes/familySharable"
+        }
+      ],
+      "response": {
+        "mode": "opaque",
+        "sources": [
+          { "operationId": "inAppPurchasesV2_updateInstance", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": []
+      },
+      "note": "Apple 4.4.1 operation identity and all public inputs are classified; response remains opaque, so the semantic mapping is partial."
+    },
+    {
+      "tool": "iap_update_custom_code",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "write",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "inAppPurchaseOfferCodeCustomCodes_updateInstance",
+          "method": "patch",
+          "path": "/v1/inAppPurchaseOfferCodeCustomCodes/{id}",
+          "role": "primary",
+          "condition": null,
+          "inputs": [
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/type",
+              "fixedValue": "inAppPurchaseOfferCodeCustomCodes"
+            },
+            {
+              "sourceKind": "derived",
+              "jsonPointer": "/data/id",
+              "derivedFrom": [
+                "custom_code_id"
+              ],
+              "localRole": "Reuse the public custom-code ID as the JSON:API resource ID in the update body."
+            }
+          ]
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "custom_code_id",
+          "sourceKind": "parameter",
+          "operationId": "inAppPurchaseOfferCodeCustomCodes_updateInstance",
+          "location": "path",
+          "appleName": "id"
+        },
+        {
+          "toolField": "active",
+          "sourceKind": "requestBody",
+          "operationId": "inAppPurchaseOfferCodeCustomCodes_updateInstance",
+          "jsonPointer": "/data/attributes/active"
+        }
+      ],
+      "response": {
+        "mode": "opaque",
+        "sources": [
+          { "operationId": "inAppPurchaseOfferCodeCustomCodes_updateInstance", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": []
+      },
+      "note": "Apple 4.4.1 operation identity and all public inputs are classified; response remains opaque, so the semantic mapping is partial."
+    },
+    {
+      "tool": "iap_update_localization",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "write",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "inAppPurchaseLocalizations_updateInstance",
+          "method": "patch",
+          "path": "/v1/inAppPurchaseLocalizations/{id}",
+          "role": "primary",
+          "condition": null,
+          "inputs": [
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/type",
+              "fixedValue": "inAppPurchaseLocalizations"
+            },
+            {
+              "sourceKind": "derived",
+              "jsonPointer": "/data/id",
+              "derivedFrom": [
+                "localization_id"
+              ],
+              "localRole": "Reuse the public localization ID as the JSON:API resource ID in the update body."
+            }
+          ]
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "localization_id",
+          "sourceKind": "parameter",
+          "operationId": "inAppPurchaseLocalizations_updateInstance",
+          "location": "path",
+          "appleName": "id"
+        },
+        {
+          "toolField": "name",
+          "sourceKind": "requestBody",
+          "operationId": "inAppPurchaseLocalizations_updateInstance",
+          "jsonPointer": "/data/attributes/name"
+        },
+        {
+          "toolField": "description",
+          "sourceKind": "requestBody",
+          "operationId": "inAppPurchaseLocalizations_updateInstance",
+          "jsonPointer": "/data/attributes/description"
+        }
+      ],
+      "response": {
+        "mode": "opaque",
+        "sources": [
+          { "operationId": "inAppPurchaseLocalizations_updateInstance", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": []
+      },
+      "note": "The current handler uses the non-deprecated product-scoped localization operation documented by Apple 4.4.1; no version resolver is part of this tool."
+    },
+    {
+      "tool": "iap_update_offer_code",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "write",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "inAppPurchaseOfferCodes_updateInstance",
+          "method": "patch",
+          "path": "/v1/inAppPurchaseOfferCodes/{id}",
+          "role": "primary",
+          "condition": null,
+          "inputs": [
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/type",
+              "fixedValue": "inAppPurchaseOfferCodes"
+            },
+            {
+              "sourceKind": "derived",
+              "jsonPointer": "/data/id",
+              "derivedFrom": [
+                "offer_code_id"
+              ],
+              "localRole": "Reuse the public offer-code ID as the JSON:API resource ID in the update body."
+            }
+          ]
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "offer_code_id",
+          "sourceKind": "parameter",
+          "operationId": "inAppPurchaseOfferCodes_updateInstance",
+          "location": "path",
+          "appleName": "id"
+        },
+        {
+          "toolField": "active",
+          "sourceKind": "requestBody",
+          "operationId": "inAppPurchaseOfferCodes_updateInstance",
+          "jsonPointer": "/data/attributes/active"
+        }
+      ],
+      "response": {
+        "mode": "opaque",
+        "sources": [
+          { "operationId": "inAppPurchaseOfferCodes_updateInstance", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": []
+      },
+      "note": "Apple 4.4.1 operation identity and all public inputs are classified; response remains opaque, so the semantic mapping is partial."
+    },
+    {
+      "tool": "iap_update_one_time_code",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "write",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "inAppPurchaseOfferCodeOneTimeUseCodes_updateInstance",
+          "method": "patch",
+          "path": "/v1/inAppPurchaseOfferCodeOneTimeUseCodes/{id}",
+          "role": "primary",
+          "condition": null,
+          "inputs": [
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/type",
+              "fixedValue": "inAppPurchaseOfferCodeOneTimeUseCodes"
+            },
+            {
+              "sourceKind": "derived",
+              "jsonPointer": "/data/id",
+              "derivedFrom": [
+                "one_time_code_id"
+              ],
+              "localRole": "Reuse the public one-time-code ID as the JSON:API resource ID in the update body."
+            }
+          ]
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "one_time_code_id",
+          "sourceKind": "parameter",
+          "operationId": "inAppPurchaseOfferCodeOneTimeUseCodes_updateInstance",
+          "location": "path",
+          "appleName": "id"
+        },
+        {
+          "toolField": "active",
+          "sourceKind": "requestBody",
+          "operationId": "inAppPurchaseOfferCodeOneTimeUseCodes_updateInstance",
+          "jsonPointer": "/data/attributes/active"
+        }
+      ],
+      "response": {
+        "mode": "opaque",
+        "sources": [
+          { "operationId": "inAppPurchaseOfferCodeOneTimeUseCodes_updateInstance", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": []
+      },
+      "note": "Apple 4.4.1 operation identity and all public inputs are classified; response remains opaque, so the semantic mapping is partial."
+    },
+    {
+      "tool": "iap_upload_image",
+      "kind": "compound",
+      "status": "partial",
+      "effect": "write",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "inAppPurchaseImages_createInstance",
+          "method": "post",
+          "path": "/v1/inAppPurchaseImages",
+          "role": "primary",
+          "condition": null,
+          "inputs": [
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/type",
+              "fixedValue": "inAppPurchaseImages"
+            },
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/relationships/inAppPurchase/data/type",
+              "fixedValue": "inAppPurchases"
+            }
+          ]
+        },
+        {
+          "operationId": "inAppPurchaseImages_updateInstance",
+          "method": "patch",
+          "path": "/v1/inAppPurchaseImages/{id}",
+          "role": "supporting",
+          "condition": null,
+          "inputs": [
+            {
+              "sourceKind": "derived",
+              "location": "path",
+              "appleName": "id",
+              "derivedFrom": [
+                "inAppPurchaseImages_createInstance:/data/id"
+              ],
+              "localRole": "Use the reserved image ID returned by Apple as the commit path ID."
+            },
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/type",
+              "fixedValue": "inAppPurchaseImages"
+            },
+            {
+              "sourceKind": "derived",
+              "jsonPointer": "/data/id",
+              "derivedFrom": [
+                "inAppPurchaseImages_createInstance:/data/id"
+              ],
+              "localRole": "Use the reserved image ID returned by Apple as the commit resource ID."
+            },
+            {
+              "sourceKind": "derived",
+              "jsonPointer": "/data/attributes/sourceFileChecksum",
+              "derivedFrom": [
+                "file_path"
+              ],
+              "localRole": "Use the MD5 checksum produced while uploading the local file through Apple's presigned operations."
+            },
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/attributes/uploaded",
+              "fixedValue": true
+            }
+          ]
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "iap_id",
+          "sourceKind": "requestBody",
+          "operationId": "inAppPurchaseImages_createInstance",
+          "jsonPointer": "/data/relationships/inAppPurchase/data/id"
+        },
+        {
+          "toolField": "file_path",
+          "sourceKind": "derived",
+          "operationId": "inAppPurchaseImages_createInstance",
+          "jsonPointer": "/data/attributes",
+          "localRole": "Derives fileName/fileSize for reserve, supplies binary upload bytes, and drives commit checksum.",
+          "derivedFrom": [
+            "file_path"
+          ]
+        }
+      ],
+      "response": {
+        "mode": "opaque",
+        "sources": [
+          { "operationId": "inAppPurchaseImages_createInstance", "statusCode": "201", "mediaType": "application/json" },
+          { "operationId": "inAppPurchaseImages_updateInstance", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": []
+      },
+      "note": "The current handler uses the non-deprecated product-scoped image resource documented by Apple 4.4.1; reserve and commit are Apple operations and binary upload is external."
+    },
+    {
+      "tool": "iap_upload_review_screenshot",
+      "kind": "compound",
+      "status": "partial",
+      "effect": "write",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "inAppPurchaseAppStoreReviewScreenshots_createInstance",
+          "method": "post",
+          "path": "/v1/inAppPurchaseAppStoreReviewScreenshots",
+          "role": "primary",
+          "condition": null,
+          "inputs": [
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/type",
+              "fixedValue": "inAppPurchaseAppStoreReviewScreenshots"
+            },
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/relationships/inAppPurchaseV2/data/type",
+              "fixedValue": "inAppPurchases"
+            }
+          ]
+        },
+        {
+          "operationId": "inAppPurchaseAppStoreReviewScreenshots_updateInstance",
+          "method": "patch",
+          "path": "/v1/inAppPurchaseAppStoreReviewScreenshots/{id}",
+          "role": "supporting",
+          "condition": null,
+          "inputs": [
+            {
+              "sourceKind": "derived",
+              "location": "path",
+              "appleName": "id",
+              "derivedFrom": [
+                "inAppPurchaseAppStoreReviewScreenshots_createInstance:/data/id"
+              ],
+              "localRole": "Use the reserved screenshot ID returned by Apple as the commit path ID."
+            },
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/type",
+              "fixedValue": "inAppPurchaseAppStoreReviewScreenshots"
+            },
+            {
+              "sourceKind": "derived",
+              "jsonPointer": "/data/id",
+              "derivedFrom": [
+                "inAppPurchaseAppStoreReviewScreenshots_createInstance:/data/id"
+              ],
+              "localRole": "Use the reserved screenshot ID returned by Apple as the commit resource ID."
+            },
+            {
+              "sourceKind": "derived",
+              "jsonPointer": "/data/attributes/sourceFileChecksum",
+              "derivedFrom": [
+                "file_path"
+              ],
+              "localRole": "Use the MD5 checksum produced while uploading the local file through Apple's presigned operations."
+            },
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/attributes/uploaded",
+              "fixedValue": true
+            }
+          ]
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "iap_id",
+          "sourceKind": "requestBody",
+          "operationId": "inAppPurchaseAppStoreReviewScreenshots_createInstance",
+          "jsonPointer": "/data/relationships/inAppPurchaseV2/data/id"
+        },
+        {
+          "toolField": "file_path",
+          "sourceKind": "derived",
+          "localRole": "Derives reserve metadata, supplies binary upload bytes, and drives the commit checksum.",
+          "operationId": "inAppPurchaseAppStoreReviewScreenshots_createInstance",
+          "jsonPointer": "/data/attributes",
+          "derivedFrom": [
+            "file_path"
+          ]
+        }
+      ],
+      "response": {
+        "mode": "opaque",
+        "sources": [
+          { "operationId": "inAppPurchaseAppStoreReviewScreenshots_createInstance", "statusCode": "201", "mediaType": "application/json" },
+          { "operationId": "inAppPurchaseAppStoreReviewScreenshots_updateInstance", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": []
+      },
+      "note": "Reserve and commit are Apple operations; binary transfer to the returned upload URL is a local/external step."
+    }
+  ],
+  "implementationAliases": []
+}

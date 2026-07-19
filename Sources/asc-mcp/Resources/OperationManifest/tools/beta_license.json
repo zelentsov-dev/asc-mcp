@@ -1,0 +1,170 @@
+{
+  "workerKey": "beta_license",
+  "tools": [
+    {
+      "tool": "beta_license_get",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "betaLicenseAgreements_getInstance",
+          "method": "get",
+          "path": "/v1/betaLicenseAgreements/{id}",
+          "role": "primary"
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "beta_license_agreement_id",
+          "sourceKind": "parameter",
+          "operationId": "betaLicenseAgreements_getInstance",
+          "location": "path",
+          "appleName": "id"
+        }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          {
+            "operationId": "betaLicenseAgreements_getInstance",
+            "statusCode": "200",
+            "mediaType": "application/json"
+          }
+        ],
+        "fields": [
+          {
+            "outputField": "beta_license_agreement",
+            "operationId": "betaLicenseAgreements_getInstance",
+            "jsonPointer": "/data"
+          }
+        ]
+      },
+      "note": "Exact resource read; the current model and formatter omit links and the documented app relationship."
+    },
+    {
+      "tool": "beta_license_list",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "betaLicenseAgreements_getCollection",
+          "method": "get",
+          "path": "/v1/betaLicenseAgreements",
+          "role": "primary"
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "app_id",
+          "sourceKind": "parameter",
+          "operationId": "betaLicenseAgreements_getCollection",
+          "location": "query",
+          "appleName": "filter[app]"
+        },
+        {
+          "toolField": "limit",
+          "sourceKind": "parameter",
+          "operationId": "betaLicenseAgreements_getCollection",
+          "location": "query",
+          "appleName": "limit"
+        },
+        {
+          "toolField": "next_url",
+          "sourceKind": "local",
+          "localRole": "Validated pagination URL returned by Apple."
+        }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          {
+            "operationId": "betaLicenseAgreements_getCollection",
+            "statusCode": "200",
+            "mediaType": "application/json"
+          }
+        ],
+        "fields": [
+          {
+            "outputField": "beta_license_agreements",
+            "operationId": "betaLicenseAgreements_getCollection",
+            "jsonPointer": "/data"
+          },
+          {
+            "outputField": "next_url",
+            "operationId": "betaLicenseAgreements_getCollection",
+            "jsonPointer": "/links/next"
+          }
+        ]
+      },
+      "note": "Valid filter subset; sparse fields and app include are not exposed and the response projection drops the app relationship."
+    },
+    {
+      "tool": "beta_license_update",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "write",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "betaLicenseAgreements_updateInstance",
+          "method": "patch",
+          "path": "/v1/betaLicenseAgreements/{id}",
+          "role": "primary",
+          "inputs": [
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/type",
+              "fixedValue": "betaLicenseAgreements"
+            },
+            {
+              "sourceKind": "derived",
+              "jsonPointer": "/data/id",
+              "derivedFrom": [
+                "beta_license_agreement_id"
+              ],
+              "localRole": "Reuse the public beta-license-agreement ID as the JSON:API resource ID in the update body."
+            }
+          ]
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "beta_license_agreement_id",
+          "sourceKind": "parameter",
+          "operationId": "betaLicenseAgreements_updateInstance",
+          "location": "path",
+          "appleName": "id"
+        },
+        {
+          "toolField": "agreement_text",
+          "sourceKind": "requestBody",
+          "operationId": "betaLicenseAgreements_updateInstance",
+          "jsonPointer": "/data/attributes/agreementText"
+        }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          {
+            "operationId": "betaLicenseAgreements_updateInstance",
+            "statusCode": "200",
+            "mediaType": "application/json"
+          }
+        ],
+        "fields": [
+          {
+            "outputField": "beta_license_agreement",
+            "operationId": "betaLicenseAgreements_updateInstance",
+            "jsonPointer": "/data"
+          }
+        ]
+      },
+      "note": "Correct writable attribute, but the MCP schema requires only the id and therefore allows an empty PATCH when agreement_text is omitted."
+    }
+  ],
+  "implementationAliases": []
+}

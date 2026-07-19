@@ -1,0 +1,254 @@
+{
+  "workerKey": "builds",
+  "tools": [
+    {
+      "tool": "builds_find_by_number",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "builds_getCollection",
+          "method": "get",
+          "path": "/v1/builds",
+          "role": "primary"
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "app_id",
+          "sourceKind": "parameter",
+          "operationId": "builds_getCollection",
+          "location": "query",
+          "appleName": "filter[app]"
+        },
+        {
+          "toolField": "build_number",
+          "sourceKind": "parameter",
+          "operationId": "builds_getCollection",
+          "location": "query",
+          "appleName": "filter[version]"
+        }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          {
+            "operationId": "builds_getCollection",
+            "statusCode": "200",
+            "mediaType": "application/json"
+          }
+        ],
+        "fields": [
+          {
+            "outputField": "build",
+            "operationId": "builds_getCollection",
+            "jsonPointer": "/data/*",
+            "localRole": "firstMatchingBuildProjection"
+          },
+          {
+            "outputField": "success",
+            "localRole": "True when a matching build exists; false is a local empty-result projection."
+          }
+        ]
+      },
+      "note": "Exact filter workflow; the handler fixes include and limit values locally and projects only the first matching build."
+    },
+    {
+      "tool": "builds_get",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "builds_getInstance",
+          "method": "get",
+          "path": "/v1/builds/{id}",
+          "role": "primary"
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "build_id",
+          "sourceKind": "parameter",
+          "operationId": "builds_getInstance",
+          "location": "path",
+          "appleName": "id"
+        },
+        {
+          "toolField": "include_beta_detail",
+          "sourceKind": "parameter",
+          "operationId": "builds_getInstance",
+          "location": "query",
+          "appleName": "include"
+        },
+        {
+          "toolField": "include_app",
+          "sourceKind": "parameter",
+          "operationId": "builds_getInstance",
+          "location": "query",
+          "appleName": "include"
+        }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          {
+            "operationId": "builds_getInstance",
+            "statusCode": "200",
+            "mediaType": "application/json"
+          }
+        ],
+        "fields": [
+          {
+            "outputField": "build",
+            "operationId": "builds_getInstance",
+            "jsonPointer": "/data"
+          },
+          {
+            "outputField": "included",
+            "operationId": "builds_getInstance",
+            "jsonPointer": "/included"
+          }
+        ]
+      },
+      "note": "The two booleans derive the comma-separated include parameter; preReleaseVersion and buildBundles are always added. Output is a reduced projection and has no MCP output schema."
+    },
+    {
+      "tool": "builds_list",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "builds_getCollection",
+          "method": "get",
+          "path": "/v1/builds",
+          "role": "primary"
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "app_id",
+          "sourceKind": "parameter",
+          "operationId": "builds_getCollection",
+          "location": "query",
+          "appleName": "filter[app]"
+        },
+        {
+          "toolField": "version",
+          "sourceKind": "parameter",
+          "operationId": "builds_getCollection",
+          "location": "query",
+          "appleName": "filter[version]"
+        },
+        {
+          "toolField": "processing_state",
+          "sourceKind": "parameter",
+          "operationId": "builds_getCollection",
+          "location": "query",
+          "appleName": "filter[processingState]"
+        },
+        {
+          "toolField": "expired",
+          "sourceKind": "parameter",
+          "operationId": "builds_getCollection",
+          "location": "query",
+          "appleName": "filter[expired]"
+        },
+        {
+          "toolField": "limit",
+          "sourceKind": "parameter",
+          "operationId": "builds_getCollection",
+          "location": "query",
+          "appleName": "limit"
+        },
+        {
+          "toolField": "sort",
+          "sourceKind": "parameter",
+          "operationId": "builds_getCollection",
+          "location": "query",
+          "appleName": "sort"
+        },
+        {
+          "toolField": "next_url",
+          "sourceKind": "local",
+          "localRole": "Validated pagination URL from a prior Apple response; its path and query replace the initial request."
+        }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          {
+            "operationId": "builds_getCollection",
+            "statusCode": "200",
+            "mediaType": "application/json"
+          }
+        ],
+        "fields": [
+          {
+            "outputField": "builds",
+            "operationId": "builds_getCollection",
+            "jsonPointer": "/data"
+          },
+          {
+            "outputField": "next_url",
+            "operationId": "builds_getCollection",
+            "jsonPointer": "/links/next"
+          },
+          {
+            "outputField": "count",
+            "localRole": "Count of projected resources returned on this page."
+          }
+        ]
+      },
+      "note": "Apple makes filter[app] optional, but the public tool requires app_id. The handler requests included resources but drops them and omits several current Build attributes."
+    },
+    {
+      "tool": "builds_list_for_version",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "appStoreVersions_build_getToOneRelated",
+          "method": "get",
+          "path": "/v1/appStoreVersions/{id}/build",
+          "role": "primary"
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "version_id",
+          "sourceKind": "parameter",
+          "operationId": "appStoreVersions_build_getToOneRelated",
+          "location": "path",
+          "appleName": "id"
+        }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          {
+            "operationId": "appStoreVersions_build_getToOneRelated",
+            "statusCode": "200",
+            "mediaType": "application/json"
+          }
+        ],
+        "fields": [
+          {
+            "outputField": "build",
+            "operationId": "appStoreVersions_build_getToOneRelated",
+            "jsonPointer": "/data"
+          }
+        ]
+      },
+      "note": "Despite the public name and description, Apple returns the single build related to an App Store version, not a build collection."
+    }
+  ],
+  "implementationAliases": []
+}

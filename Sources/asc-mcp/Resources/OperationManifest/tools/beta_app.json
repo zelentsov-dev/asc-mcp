@@ -1,0 +1,632 @@
+{
+  "workerKey": "beta_app",
+  "tools": [
+    {
+      "tool": "beta_app_create_localization",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "write",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "betaAppLocalizations_createInstance",
+          "method": "post",
+          "path": "/v1/betaAppLocalizations",
+          "role": "primary",
+          "inputs": [
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/type",
+              "fixedValue": "betaAppLocalizations"
+            },
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/relationships/app/data/type",
+              "fixedValue": "apps"
+            }
+          ]
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "app_id",
+          "sourceKind": "requestBody",
+          "operationId": "betaAppLocalizations_createInstance",
+          "jsonPointer": "/data/relationships/app/data/id"
+        },
+        {
+          "toolField": "locale",
+          "sourceKind": "requestBody",
+          "operationId": "betaAppLocalizations_createInstance",
+          "jsonPointer": "/data/attributes/locale"
+        },
+        {
+          "toolField": "feedback_email",
+          "sourceKind": "requestBody",
+          "operationId": "betaAppLocalizations_createInstance",
+          "jsonPointer": "/data/attributes/feedbackEmail"
+        },
+        {
+          "toolField": "marketing_url",
+          "sourceKind": "requestBody",
+          "operationId": "betaAppLocalizations_createInstance",
+          "jsonPointer": "/data/attributes/marketingUrl"
+        },
+        {
+          "toolField": "privacy_policy_url",
+          "sourceKind": "requestBody",
+          "operationId": "betaAppLocalizations_createInstance",
+          "jsonPointer": "/data/attributes/privacyPolicyUrl"
+        },
+        {
+          "toolField": "tv_os_privacy_policy",
+          "sourceKind": "requestBody",
+          "operationId": "betaAppLocalizations_createInstance",
+          "jsonPointer": "/data/attributes/tvOsPrivacyPolicy"
+        },
+        {
+          "toolField": "description",
+          "sourceKind": "requestBody",
+          "operationId": "betaAppLocalizations_createInstance",
+          "jsonPointer": "/data/attributes/description"
+        }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          {
+            "operationId": "betaAppLocalizations_createInstance",
+            "statusCode": "201",
+            "mediaType": "application/json"
+          }
+        ],
+        "fields": [
+          {
+            "outputField": "localization",
+            "operationId": "betaAppLocalizations_createInstance",
+            "jsonPointer": "/data"
+          }
+        ]
+      },
+      "note": "All public fields map to the current BetaAppLocalizationCreateRequest; handler validation remains limited."
+    },
+    {
+      "tool": "beta_app_delete_localization",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "destructive",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "betaAppLocalizations_deleteInstance",
+          "method": "delete",
+          "path": "/v1/betaAppLocalizations/{id}",
+          "role": "primary"
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "localization_id",
+          "sourceKind": "parameter",
+          "operationId": "betaAppLocalizations_deleteInstance",
+          "location": "path",
+          "appleName": "id"
+        }
+      ],
+      "response": {
+        "mode": "local",
+        "sources": [
+          { "operationId": "betaAppLocalizations_deleteInstance", "statusCode": "204" }
+        ],
+        "fields": [
+          {
+            "outputField": "success",
+            "localRole": "True after Apple's 204 no-content response."
+          },
+          {
+            "outputField": "message",
+            "localRole": "Local deletion confirmation."
+          }
+        ]
+      },
+      "note": "Exact destructive operation; Apple returns no response document."
+    },
+    {
+      "tool": "beta_app_get_localization",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "betaAppLocalizations_getInstance",
+          "method": "get",
+          "path": "/v1/betaAppLocalizations/{id}",
+          "role": "primary"
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "localization_id",
+          "sourceKind": "parameter",
+          "operationId": "betaAppLocalizations_getInstance",
+          "location": "path",
+          "appleName": "id"
+        }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          {
+            "operationId": "betaAppLocalizations_getInstance",
+            "statusCode": "200",
+            "mediaType": "application/json"
+          }
+        ],
+        "fields": [
+          {
+            "outputField": "localization",
+            "operationId": "betaAppLocalizations_getInstance",
+            "jsonPointer": "/data"
+          }
+        ]
+      },
+      "note": "Exact resource read with a reduced attribute projection."
+    },
+    {
+      "tool": "beta_app_get_review_details",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "apps_betaAppReviewDetail_getToOneRelated",
+          "method": "get",
+          "path": "/v1/apps/{id}/betaAppReviewDetail",
+          "role": "primary"
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "app_id",
+          "sourceKind": "parameter",
+          "operationId": "apps_betaAppReviewDetail_getToOneRelated",
+          "location": "path",
+          "appleName": "id"
+        }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          {
+            "operationId": "apps_betaAppReviewDetail_getToOneRelated",
+            "statusCode": "200",
+            "mediaType": "application/json"
+          }
+        ],
+        "fields": [
+          {
+            "outputField": "review_detail",
+            "operationId": "apps_betaAppReviewDetail_getToOneRelated",
+            "jsonPointer": "/data"
+          }
+        ]
+      },
+      "note": "Exact app-related review-detail read; direct collection and instance reads are not exposed."
+    },
+    {
+      "tool": "beta_app_get_submission",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "betaAppReviewSubmissions_getInstance",
+          "method": "get",
+          "path": "/v1/betaAppReviewSubmissions/{id}",
+          "role": "primary"
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "submission_id",
+          "sourceKind": "parameter",
+          "operationId": "betaAppReviewSubmissions_getInstance",
+          "location": "path",
+          "appleName": "id"
+        }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          {
+            "operationId": "betaAppReviewSubmissions_getInstance",
+            "statusCode": "200",
+            "mediaType": "application/json"
+          }
+        ],
+        "fields": [
+          {
+            "outputField": "submission",
+            "operationId": "betaAppReviewSubmissions_getInstance",
+            "jsonPointer": "/data"
+          }
+        ]
+      },
+      "note": "The current response model and formatter omit the documented build relationship, so the projection cannot identify the submitted build."
+    },
+    {
+      "tool": "beta_app_list_localizations",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "apps_betaAppLocalizations_getToManyRelated",
+          "method": "get",
+          "path": "/v1/apps/{id}/betaAppLocalizations",
+          "role": "primary"
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "app_id",
+          "sourceKind": "parameter",
+          "operationId": "apps_betaAppLocalizations_getToManyRelated",
+          "location": "path",
+          "appleName": "id"
+        },
+        {
+          "toolField": "limit",
+          "sourceKind": "parameter",
+          "operationId": "apps_betaAppLocalizations_getToManyRelated",
+          "location": "query",
+          "appleName": "limit"
+        },
+        {
+          "toolField": "next_url",
+          "sourceKind": "local",
+          "localRole": "Validated pagination URL returned by Apple."
+        }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          {
+            "operationId": "apps_betaAppLocalizations_getToManyRelated",
+            "statusCode": "200",
+            "mediaType": "application/json"
+          }
+        ],
+        "fields": [
+          {
+            "outputField": "localizations",
+            "operationId": "apps_betaAppLocalizations_getToManyRelated",
+            "jsonPointer": "/data"
+          },
+          {
+            "outputField": "next_url",
+            "operationId": "apps_betaAppLocalizations_getToManyRelated",
+            "jsonPointer": "/links/next"
+          }
+        ]
+      },
+      "note": "Exact app-related localization list; locale filtering and sparse fields are not exposed."
+    },
+    {
+      "tool": "beta_app_list_submissions",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "betaAppReviewSubmissions_getCollection",
+          "method": "get",
+          "path": "/v1/betaAppReviewSubmissions",
+          "role": "primary"
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "build_id",
+          "sourceKind": "parameter",
+          "operationId": "betaAppReviewSubmissions_getCollection",
+          "location": "query",
+          "appleName": "filter[build]"
+        },
+        {
+          "toolField": "review_state",
+          "sourceKind": "parameter",
+          "operationId": "betaAppReviewSubmissions_getCollection",
+          "location": "query",
+          "appleName": "filter[betaReviewState]"
+        },
+        {
+          "toolField": "limit",
+          "sourceKind": "parameter",
+          "operationId": "betaAppReviewSubmissions_getCollection",
+          "location": "query",
+          "appleName": "limit"
+        },
+        {
+          "toolField": "next_url",
+          "sourceKind": "local",
+          "localRole": "Validated pagination URL returned by Apple."
+        }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          {
+            "operationId": "betaAppReviewSubmissions_getCollection",
+            "statusCode": "200",
+            "mediaType": "application/json"
+          }
+        ],
+        "fields": [
+          {
+            "outputField": "submissions",
+            "operationId": "betaAppReviewSubmissions_getCollection",
+            "jsonPointer": "/data"
+          },
+          {
+            "outputField": "next_url",
+            "operationId": "betaAppReviewSubmissions_getCollection",
+            "jsonPointer": "/links/next"
+          }
+        ]
+      },
+      "note": "Correctly requires Apple's required filter[build]. The projection still drops each submission's build relationship."
+    },
+    {
+      "tool": "beta_app_submit_for_review",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "write",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "betaAppReviewSubmissions_createInstance",
+          "method": "post",
+          "path": "/v1/betaAppReviewSubmissions",
+          "role": "primary",
+          "inputs": [
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/type",
+              "fixedValue": "betaAppReviewSubmissions"
+            },
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/relationships/build/data/type",
+              "fixedValue": "builds"
+            }
+          ]
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "build_id",
+          "sourceKind": "requestBody",
+          "operationId": "betaAppReviewSubmissions_createInstance",
+          "jsonPointer": "/data/relationships/build/data/id"
+        }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          {
+            "operationId": "betaAppReviewSubmissions_createInstance",
+            "statusCode": "201",
+            "mediaType": "application/json"
+          }
+        ],
+        "fields": [
+          {
+            "outputField": "submission",
+            "operationId": "betaAppReviewSubmissions_createInstance",
+            "jsonPointer": "/data"
+          }
+        ]
+      },
+      "note": "Exact external beta-review submission operation; output drops the returned build relationship."
+    },
+    {
+      "tool": "beta_app_update_localization",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "write",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "betaAppLocalizations_updateInstance",
+          "method": "patch",
+          "path": "/v1/betaAppLocalizations/{id}",
+          "role": "primary",
+          "inputs": [
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/type",
+              "fixedValue": "betaAppLocalizations"
+            },
+            {
+              "sourceKind": "derived",
+              "jsonPointer": "/data/id",
+              "derivedFrom": [
+                "localization_id"
+              ],
+              "localRole": "Reuse the public localization ID as the JSON:API resource ID in the update body."
+            }
+          ]
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "localization_id",
+          "sourceKind": "parameter",
+          "operationId": "betaAppLocalizations_updateInstance",
+          "location": "path",
+          "appleName": "id"
+        },
+        {
+          "toolField": "feedback_email",
+          "sourceKind": "requestBody",
+          "operationId": "betaAppLocalizations_updateInstance",
+          "jsonPointer": "/data/attributes/feedbackEmail"
+        },
+        {
+          "toolField": "marketing_url",
+          "sourceKind": "requestBody",
+          "operationId": "betaAppLocalizations_updateInstance",
+          "jsonPointer": "/data/attributes/marketingUrl"
+        },
+        {
+          "toolField": "privacy_policy_url",
+          "sourceKind": "requestBody",
+          "operationId": "betaAppLocalizations_updateInstance",
+          "jsonPointer": "/data/attributes/privacyPolicyUrl"
+        },
+        {
+          "toolField": "tv_os_privacy_policy",
+          "sourceKind": "requestBody",
+          "operationId": "betaAppLocalizations_updateInstance",
+          "jsonPointer": "/data/attributes/tvOsPrivacyPolicy"
+        },
+        {
+          "toolField": "description",
+          "sourceKind": "requestBody",
+          "operationId": "betaAppLocalizations_updateInstance",
+          "jsonPointer": "/data/attributes/description"
+        }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          {
+            "operationId": "betaAppLocalizations_updateInstance",
+            "statusCode": "200",
+            "mediaType": "application/json"
+          }
+        ],
+        "fields": [
+          {
+            "outputField": "localization",
+            "operationId": "betaAppLocalizations_updateInstance",
+            "jsonPointer": "/data"
+          }
+        ]
+      },
+      "note": "All public writable fields are valid; the handler can still send an empty attributes object because no at-least-one-update guard is enforced."
+    },
+    {
+      "tool": "beta_app_update_review_details",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "write",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "betaAppReviewDetails_updateInstance",
+          "method": "patch",
+          "path": "/v1/betaAppReviewDetails/{id}",
+          "role": "primary",
+          "inputs": [
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/type",
+              "fixedValue": "betaAppReviewDetails"
+            },
+            {
+              "sourceKind": "derived",
+              "jsonPointer": "/data/id",
+              "derivedFrom": [
+                "review_detail_id"
+              ],
+              "localRole": "Reuse the public review-detail ID as the JSON:API resource ID in the update body."
+            }
+          ]
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "review_detail_id",
+          "sourceKind": "parameter",
+          "operationId": "betaAppReviewDetails_updateInstance",
+          "location": "path",
+          "appleName": "id"
+        },
+        {
+          "toolField": "contact_first_name",
+          "sourceKind": "requestBody",
+          "operationId": "betaAppReviewDetails_updateInstance",
+          "jsonPointer": "/data/attributes/contactFirstName"
+        },
+        {
+          "toolField": "contact_last_name",
+          "sourceKind": "requestBody",
+          "operationId": "betaAppReviewDetails_updateInstance",
+          "jsonPointer": "/data/attributes/contactLastName"
+        },
+        {
+          "toolField": "contact_phone",
+          "sourceKind": "requestBody",
+          "operationId": "betaAppReviewDetails_updateInstance",
+          "jsonPointer": "/data/attributes/contactPhone"
+        },
+        {
+          "toolField": "contact_email",
+          "sourceKind": "requestBody",
+          "operationId": "betaAppReviewDetails_updateInstance",
+          "jsonPointer": "/data/attributes/contactEmail"
+        },
+        {
+          "toolField": "demo_account_name",
+          "sourceKind": "requestBody",
+          "operationId": "betaAppReviewDetails_updateInstance",
+          "jsonPointer": "/data/attributes/demoAccountName"
+        },
+        {
+          "toolField": "demo_account_password",
+          "sourceKind": "requestBody",
+          "operationId": "betaAppReviewDetails_updateInstance",
+          "jsonPointer": "/data/attributes/demoAccountPassword"
+        },
+        {
+          "toolField": "demo_account_required",
+          "sourceKind": "requestBody",
+          "operationId": "betaAppReviewDetails_updateInstance",
+          "jsonPointer": "/data/attributes/demoAccountRequired"
+        },
+        {
+          "toolField": "notes",
+          "sourceKind": "requestBody",
+          "operationId": "betaAppReviewDetails_updateInstance",
+          "jsonPointer": "/data/attributes/notes"
+        }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          {
+            "operationId": "betaAppReviewDetails_updateInstance",
+            "statusCode": "200",
+            "mediaType": "application/json"
+          }
+        ],
+        "fields": [
+          {
+            "outputField": "review_detail",
+            "operationId": "betaAppReviewDetails_updateInstance",
+            "jsonPointer": "/data"
+          }
+        ]
+      },
+      "note": "All public fields map to 4.4.1 writable attributes. Empty PATCH remains possible, and the response projection includes sensitive demo credentials."
+    }
+  ],
+  "implementationAliases": []
+}

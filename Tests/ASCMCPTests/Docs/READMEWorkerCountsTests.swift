@@ -1,5 +1,6 @@
 import Foundation
 import Testing
+@testable import asc_mcp
 
 @Suite("README Worker Count Tests")
 struct READMEWorkerCountsTests {

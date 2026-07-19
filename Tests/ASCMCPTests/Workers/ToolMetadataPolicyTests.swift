@@ -77,6 +77,13 @@ struct ToolMetadataPolicyTests {
         #expect(xcodeCloudStart.annotations.readOnlyHint == false)
         #expect(xcodeCloudStart.annotations.destructiveHint == false)
         #expect(xcodeCloudStart.annotations.idempotentHint == false)
+
+        let reviewSummarizations = ToolMetadataPolicy.apply(
+            to: Self.sampleTool(named: "reviews_summarizations")
+        )
+        #expect(reviewSummarizations.annotations.readOnlyHint == true)
+        #expect(reviewSummarizations.annotations.destructiveHint == false)
+        #expect(reviewSummarizations.annotations.idempotentHint == true)
     }
 
     @Test("max result metadata follows policy")

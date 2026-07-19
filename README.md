@@ -47,7 +47,7 @@
 - **Analytics & Metrics** — sales/financial reports, analytics reports, performance metrics, diagnostics
 - **Metadata management** — localized descriptions, keywords, What's New across all locales
 - **MCP 2025-11-25 surface** — tool annotations, output schemas for stable tools, structured JSON results, and safe result-size metadata
-- **OpenAPI drift tooling** — generate coverage reports from Apple's official App Store Connect OpenAPI specification
+- **OpenAPI contract tooling** — compare the live 389-tool worker catalog and semantic manifest with Apple's official App Store Connect OpenAPI specification
 
 ## Quick Start
 
@@ -121,7 +121,9 @@ claude mcp add asc-mcp -- $(pwd)/.build/release/asc-mcp
 > For convenience, copy the binary to a location in your PATH:
 > ```bash
 > cp .build/release/asc-mcp /usr/local/bin/asc-mcp
+> cp -R .build/release/asc-mcp_asc-mcp.bundle /usr/local/bin/
 > ```
+> Keep the resource bundle beside the executable; it contains the versioned OpenAPI operation contract used by release checks.
 
 ## Configuration
 
@@ -400,23 +402,33 @@ asc-mcp --read-only --workers apps,builds,reviews,analytics
 
 In this mode, read tools such as `*_list`, `*_get`, `*_search`, `*_status`, `*_verify`, `*_parse`, `*_triage`, `auth_*`, analytics, and metrics remain available. Tools that can create, update, upload, submit, release, delete, revoke, clear, cancel, or otherwise mutate App Store Connect are blocked before their worker handler runs. `company_switch` remains available because it changes only the local active company context.
 
-### OpenAPI Drift Tooling
+### OpenAPI Contract and Drift Tooling
 
-Use the built-in OpenAPI coverage command to compare the maintained `asc-mcp` coverage map with Apple's latest App Store Connect OpenAPI specification. This command does **not** load App Store Connect credentials, does **not** start the MCP server, and does **not** call Apple APIs beyond your explicit spec download.
+Use the operation-contract command to compare the actual credential-free `WorkerManager` catalog with the semantic manifest and the pinned Apple App Store Connect OpenAPI specification. The production manifest records exact Apple `operationId`, HTTP method, path, invocation-scoped input bindings, typed fixed values, response lineage, local workflows, implementation state, deprecated aliases, and deliberately deferred operations. The command does **not** load App Store Connect credentials or start the MCP server.
 
 ```bash
 rm -rf /tmp/asc-openapi
 mkdir -p /tmp/asc-openapi
 curl -L --fail -o /tmp/asc-openapi/spec.zip \
   https://developer.apple.com/sample-code/app-store-connect/app-store-connect-openapi-specification.zip
-unzip -q /tmp/asc-openapi/spec.zip -d /tmp/asc-openapi
+spec_entry="$(unzip -Z1 /tmp/asc-openapi/spec.zip | grep -E '(^|/)openapi\.oas[^/]*\.json$')"
+test "$(echo "$spec_entry" | grep -c .)" -eq 1
+unzip -p /tmp/asc-openapi/spec.zip "$spec_entry" > /tmp/asc-openapi/openapi.oas.json
 
-swift run asc-mcp openapi-coverage \
+swift run asc-mcp openapi-contract-check \
   --spec /tmp/asc-openapi/openapi.oas.json \
-  --output ASC-OPENAPI-COVERAGE-GENERATED.md
+  --json-output /tmp/asc-openapi/operation-contract.json \
+  --markdown-output /tmp/asc-openapi/operation-contract.md \
+  --structural-strict
 ```
 
-The generated report records Apple spec metadata, path and operation counts, domain status, P0/P1 gaps, missing domains, and unclassified paths. The current checked-in report is [`ASC-OPENAPI-COVERAGE-GENERATED.md`](ASC-OPENAPI-COVERAGE-GENERATED.md), generated from App Store Connect API 4.3.
+The manifest is pinned to Apple API 4.4.1 by version, SHA-256, path count, and operation count. It currently maps 361 Apple operations, explicitly defers 539, and scopes out 363, covering all 1,263 operations without overlap. CI fails when the Apple document changes, a mapped operation moves or disappears, a public tool or worker drifts from the manifest, an input field loses its binding, response lineage becomes invalid, or a deferred decision expires. Unexposed optional Apple parameters are warnings so they remain visible in the generated backlog.
+
+`--structural-strict` is the merge-time ratchet while remediation is phased: every declared `target` or `broken` tool remains an error in reports, and a regression test pins their exact state. The current baseline is 16 target implementations and 11 broken implementations. Tagged CI additionally runs `--strict`, so releases remain blocked until all declared implementation drift is fixed and moved to `asBuilt`.
+
+This gate proves operation identity, top-level MCP field ownership, required Apple inputs, typed internal values, and response source/pointer lineage. Full MCP type/enum/range parity and complete typed response schemas remain separate optimization phases; the current mapping status is 381 partial and 8 deprecated.
+
+The older `openapi-coverage` command remains available for the high-level domain report in [`ASC-OPENAPI-COVERAGE-GENERATED.md`](ASC-OPENAPI-COVERAGE-GENERATED.md). The operation contract is the authoritative release gate.
 
 **Available worker names:**
 

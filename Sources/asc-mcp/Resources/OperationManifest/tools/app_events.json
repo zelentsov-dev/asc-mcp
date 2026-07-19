@@ -1,0 +1,617 @@
+{
+  "workerKey": "app_events",
+  "tools": [
+    {
+      "tool": "app_events_create",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "write",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "appEvents_createInstance",
+          "method": "post",
+          "path": "/v1/appEvents",
+          "role": "primary",
+          "inputs": [
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/type",
+              "fixedValue": "appEvents"
+            },
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/relationships/app/data/type",
+              "fixedValue": "apps"
+            }
+          ]
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "app_id",
+          "sourceKind": "requestBody",
+          "operationId": "appEvents_createInstance",
+          "jsonPointer": "/data/relationships/app/data/id"
+        },
+        {
+          "toolField": "reference_name",
+          "sourceKind": "requestBody",
+          "operationId": "appEvents_createInstance",
+          "jsonPointer": "/data/attributes/referenceName"
+        },
+        {
+          "toolField": "badge",
+          "sourceKind": "requestBody",
+          "operationId": "appEvents_createInstance",
+          "jsonPointer": "/data/attributes/badge"
+        },
+        {
+          "toolField": "deep_link",
+          "sourceKind": "requestBody",
+          "operationId": "appEvents_createInstance",
+          "jsonPointer": "/data/attributes/deepLink"
+        },
+        {
+          "toolField": "purchase_requirement",
+          "sourceKind": "requestBody",
+          "operationId": "appEvents_createInstance",
+          "jsonPointer": "/data/attributes/purchaseRequirement"
+        },
+        {
+          "toolField": "purpose",
+          "sourceKind": "requestBody",
+          "operationId": "appEvents_createInstance",
+          "jsonPointer": "/data/attributes/purpose"
+        },
+        {
+          "toolField": "territory_schedules",
+          "sourceKind": "requestBody",
+          "operationId": "appEvents_createInstance",
+          "jsonPointer": "/data/attributes/territorySchedules",
+          "localRole": "Decode the MCP JSON string into Apple's territorySchedules array before encoding the request."
+        }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          {
+            "operationId": "appEvents_createInstance",
+            "statusCode": "201",
+            "mediaType": "application/json"
+          }
+        ],
+        "fields": [
+          {
+            "outputField": "success",
+            "localRole": "Set true after Apple creates the event."
+          },
+          {
+            "outputField": "app_event",
+            "operationId": "appEvents_createInstance",
+            "jsonPointer": "/data"
+          }
+        ]
+      },
+      "note": "Direct create operation is current. Mapping is partial because invalid territory_schedules JSON is silently omitted, primaryLocale and priority are not exposed, and the tool has no outputSchema."
+    },
+    {
+      "tool": "app_events_create_localization",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "write",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "appEventLocalizations_createInstance",
+          "method": "post",
+          "path": "/v1/appEventLocalizations",
+          "role": "primary",
+          "inputs": [
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/type",
+              "fixedValue": "appEventLocalizations"
+            },
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/relationships/appEvent/data/type",
+              "fixedValue": "appEvents"
+            }
+          ]
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "event_id",
+          "sourceKind": "requestBody",
+          "operationId": "appEventLocalizations_createInstance",
+          "jsonPointer": "/data/relationships/appEvent/data/id"
+        },
+        {
+          "toolField": "locale",
+          "sourceKind": "requestBody",
+          "operationId": "appEventLocalizations_createInstance",
+          "jsonPointer": "/data/attributes/locale"
+        },
+        {
+          "toolField": "name",
+          "sourceKind": "requestBody",
+          "operationId": "appEventLocalizations_createInstance",
+          "jsonPointer": "/data/attributes/name"
+        },
+        {
+          "toolField": "short_description",
+          "sourceKind": "requestBody",
+          "operationId": "appEventLocalizations_createInstance",
+          "jsonPointer": "/data/attributes/shortDescription"
+        },
+        {
+          "toolField": "long_description",
+          "sourceKind": "requestBody",
+          "operationId": "appEventLocalizations_createInstance",
+          "jsonPointer": "/data/attributes/longDescription"
+        }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          {
+            "operationId": "appEventLocalizations_createInstance",
+            "statusCode": "201",
+            "mediaType": "application/json"
+          }
+        ],
+        "fields": [
+          {
+            "outputField": "success",
+            "localRole": "Set true after Apple creates the localization."
+          },
+          {
+            "outputField": "localization",
+            "operationId": "appEventLocalizations_createInstance",
+            "jsonPointer": "/data"
+          }
+        ]
+      },
+      "note": "Current direct localization create operation; partial because the MCP output projection has no outputSchema."
+    },
+    {
+      "tool": "app_events_delete",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "destructive",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "appEvents_deleteInstance",
+          "method": "delete",
+          "path": "/v1/appEvents/{id}",
+          "role": "primary"
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "event_id",
+          "sourceKind": "parameter",
+          "operationId": "appEvents_deleteInstance",
+          "location": "path",
+          "appleName": "id"
+        }
+      ],
+      "response": {
+        "mode": "local",
+        "sources": [
+          { "operationId": "appEvents_deleteInstance", "statusCode": "204" }
+        ],
+        "fields": [
+          {
+            "outputField": "success",
+            "localRole": "Set true after Apple's empty 204 response."
+          },
+          {
+            "outputField": "message",
+            "localRole": "Build a deterministic confirmation from event_id."
+          }
+        ]
+      },
+      "note": "Apple returns 204 with no media type; the MCP confirmation is local and has no outputSchema."
+    },
+    {
+      "tool": "app_events_delete_localization",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "destructive",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "appEventLocalizations_deleteInstance",
+          "method": "delete",
+          "path": "/v1/appEventLocalizations/{id}",
+          "role": "primary"
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "localization_id",
+          "sourceKind": "parameter",
+          "operationId": "appEventLocalizations_deleteInstance",
+          "location": "path",
+          "appleName": "id"
+        }
+      ],
+      "response": {
+        "mode": "local",
+        "sources": [
+          { "operationId": "appEventLocalizations_deleteInstance", "statusCode": "204" }
+        ],
+        "fields": [
+          {
+            "outputField": "success",
+            "localRole": "Set true after Apple's empty 204 response."
+          },
+          {
+            "outputField": "message",
+            "localRole": "Build a deterministic confirmation from localization_id."
+          }
+        ]
+      },
+      "note": "Apple returns 204 with no media type; the MCP confirmation is local and has no outputSchema."
+    },
+    {
+      "tool": "app_events_get",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "appEvents_getInstance",
+          "method": "get",
+          "path": "/v1/appEvents/{id}",
+          "role": "primary"
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "event_id",
+          "sourceKind": "parameter",
+          "operationId": "appEvents_getInstance",
+          "location": "path",
+          "appleName": "id"
+        },
+        {
+          "toolField": "include",
+          "sourceKind": "parameter",
+          "operationId": "appEvents_getInstance",
+          "location": "query",
+          "appleName": "include"
+        }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          {
+            "operationId": "appEvents_getInstance",
+            "statusCode": "200",
+            "mediaType": "application/json"
+          }
+        ],
+        "fields": [
+          {
+            "outputField": "success",
+            "localRole": "Set true after a successful Apple response."
+          },
+          {
+            "outputField": "app_event",
+            "operationId": "appEvents_getInstance",
+            "jsonPointer": "/data"
+          },
+          {
+            "outputField": "localizations",
+            "operationId": "appEvents_getInstance",
+            "jsonPointer": "/included",
+            "localRole": "Project included appEventLocalizations resources."
+          }
+        ]
+      },
+      "note": "Current direct get operation; partial because the formatter omits current priority, primaryLocale and archivedTerritorySchedules fields and the tool has no outputSchema."
+    },
+    {
+      "tool": "app_events_list",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "apps_appEvents_getToManyRelated",
+          "method": "get",
+          "path": "/v1/apps/{id}/appEvents",
+          "role": "primary"
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "app_id",
+          "sourceKind": "parameter",
+          "operationId": "apps_appEvents_getToManyRelated",
+          "location": "path",
+          "appleName": "id"
+        },
+        {
+          "toolField": "limit",
+          "sourceKind": "parameter",
+          "operationId": "apps_appEvents_getToManyRelated",
+          "location": "query",
+          "appleName": "limit"
+        },
+        {
+          "toolField": "next_url",
+          "sourceKind": "local",
+          "localRole": "Parse an Apple pagination URL and replay its path and query for this related collection operation."
+        }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          {
+            "operationId": "apps_appEvents_getToManyRelated",
+            "statusCode": "200",
+            "mediaType": "application/json"
+          }
+        ],
+        "fields": [
+          {
+            "outputField": "success",
+            "localRole": "Set true after a successful Apple response."
+          },
+          {
+            "outputField": "app_events",
+            "operationId": "apps_appEvents_getToManyRelated",
+            "jsonPointer": "/data"
+          },
+          {
+            "outputField": "count",
+            "localRole": "Count the projected app event resources."
+          },
+          {
+            "outputField": "next_url",
+            "operationId": "apps_appEvents_getToManyRelated",
+            "jsonPointer": "/links/next"
+          }
+        ]
+      },
+      "note": "Current related collection operation with working pagination; partial because the formatter omits current event fields and the tool has no outputSchema."
+    },
+    {
+      "tool": "app_events_list_localizations",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "appEvents_localizations_getToManyRelated",
+          "method": "get",
+          "path": "/v1/appEvents/{id}/localizations",
+          "role": "primary"
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "event_id",
+          "sourceKind": "parameter",
+          "operationId": "appEvents_localizations_getToManyRelated",
+          "location": "path",
+          "appleName": "id"
+        }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          {
+            "operationId": "appEvents_localizations_getToManyRelated",
+            "statusCode": "200",
+            "mediaType": "application/json"
+          }
+        ],
+        "fields": [
+          {
+            "outputField": "success",
+            "localRole": "Set true after a successful Apple response."
+          },
+          {
+            "outputField": "localizations",
+            "operationId": "appEvents_localizations_getToManyRelated",
+            "jsonPointer": "/data"
+          },
+          {
+            "outputField": "count",
+            "localRole": "Count the projected localization resources."
+          },
+          {
+            "outputField": "next_url",
+            "operationId": "appEvents_localizations_getToManyRelated",
+            "jsonPointer": "/links/next"
+          }
+        ]
+      },
+      "note": "Current related collection operation, but the MCP schema exposes neither limit nor next_url for following the returned pagination link and has no outputSchema."
+    },
+    {
+      "tool": "app_events_update",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "write",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "appEvents_updateInstance",
+          "method": "patch",
+          "path": "/v1/appEvents/{id}",
+          "role": "primary",
+          "inputs": [
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/type",
+              "fixedValue": "appEvents"
+            }
+          ]
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "event_id",
+          "sourceKind": "parameter",
+          "operationId": "appEvents_updateInstance",
+          "location": "path",
+          "appleName": "id"
+        },
+        {
+          "toolField": "event_id",
+          "sourceKind": "requestBody",
+          "operationId": "appEvents_updateInstance",
+          "jsonPointer": "/data/id"
+        },
+        {
+          "toolField": "reference_name",
+          "sourceKind": "requestBody",
+          "operationId": "appEvents_updateInstance",
+          "jsonPointer": "/data/attributes/referenceName"
+        },
+        {
+          "toolField": "badge",
+          "sourceKind": "requestBody",
+          "operationId": "appEvents_updateInstance",
+          "jsonPointer": "/data/attributes/badge"
+        },
+        {
+          "toolField": "deep_link",
+          "sourceKind": "requestBody",
+          "operationId": "appEvents_updateInstance",
+          "jsonPointer": "/data/attributes/deepLink"
+        },
+        {
+          "toolField": "purchase_requirement",
+          "sourceKind": "requestBody",
+          "operationId": "appEvents_updateInstance",
+          "jsonPointer": "/data/attributes/purchaseRequirement"
+        },
+        {
+          "toolField": "purpose",
+          "sourceKind": "requestBody",
+          "operationId": "appEvents_updateInstance",
+          "jsonPointer": "/data/attributes/purpose"
+        },
+        {
+          "toolField": "territory_schedules",
+          "sourceKind": "requestBody",
+          "operationId": "appEvents_updateInstance",
+          "jsonPointer": "/data/attributes/territorySchedules",
+          "localRole": "Decode the MCP JSON string into Apple's territorySchedules array before encoding the request."
+        }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          {
+            "operationId": "appEvents_updateInstance",
+            "statusCode": "200",
+            "mediaType": "application/json"
+          }
+        ],
+        "fields": [
+          {
+            "outputField": "success",
+            "localRole": "Set true after Apple updates the event."
+          },
+          {
+            "outputField": "app_event",
+            "operationId": "appEvents_updateInstance",
+            "jsonPointer": "/data"
+          }
+        ]
+      },
+      "note": "Direct update operation is current. Mapping is partial because invalid territory_schedules JSON is silently omitted, primaryLocale and priority are not exposed, and the tool has no outputSchema."
+    },
+    {
+      "tool": "app_events_update_localization",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "write",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "appEventLocalizations_updateInstance",
+          "method": "patch",
+          "path": "/v1/appEventLocalizations/{id}",
+          "role": "primary",
+          "inputs": [
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/type",
+              "fixedValue": "appEventLocalizations"
+            }
+          ]
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "localization_id",
+          "sourceKind": "parameter",
+          "operationId": "appEventLocalizations_updateInstance",
+          "location": "path",
+          "appleName": "id"
+        },
+        {
+          "toolField": "localization_id",
+          "sourceKind": "requestBody",
+          "operationId": "appEventLocalizations_updateInstance",
+          "jsonPointer": "/data/id"
+        },
+        {
+          "toolField": "name",
+          "sourceKind": "requestBody",
+          "operationId": "appEventLocalizations_updateInstance",
+          "jsonPointer": "/data/attributes/name"
+        },
+        {
+          "toolField": "short_description",
+          "sourceKind": "requestBody",
+          "operationId": "appEventLocalizations_updateInstance",
+          "jsonPointer": "/data/attributes/shortDescription"
+        },
+        {
+          "toolField": "long_description",
+          "sourceKind": "requestBody",
+          "operationId": "appEventLocalizations_updateInstance",
+          "jsonPointer": "/data/attributes/longDescription"
+        }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          {
+            "operationId": "appEventLocalizations_updateInstance",
+            "statusCode": "200",
+            "mediaType": "application/json"
+          }
+        ],
+        "fields": [
+          {
+            "outputField": "success",
+            "localRole": "Set true after Apple updates the localization."
+          },
+          {
+            "outputField": "localization",
+            "operationId": "appEventLocalizations_updateInstance",
+            "jsonPointer": "/data"
+          }
+        ]
+      },
+      "note": "Current direct localization update operation; partial because the MCP output projection has no outputSchema."
+    }
+  ],
+  "implementationAliases": []
+}

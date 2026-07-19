@@ -38,5 +38,46 @@ jobs:
             --generated-at 2026-05-07
           test -s /tmp/asc_openapi_coverage.md
 
+      - name: App Store Connect operation contract
+        run: |
+          rm -rf /tmp/asc_openapi_contract
+          mkdir -p /tmp/asc_openapi_contract
+          curl -L --fail --retry 3 --retry-all-errors \
+            -o /tmp/asc_openapi_contract/spec.zip \
+            https://developer.apple.com/sample-code/app-store-connect/app-store-connect-openapi-specification.zip
+          spec_entry="$(unzip -Z1 /tmp/asc_openapi_contract/spec.zip | grep -E '(^|/)openapi\.oas[^/]*\.json$')"
+          test -n "$spec_entry"
+          test "$(echo "$spec_entry" | grep -c .)" -eq 1
+          unzip -p /tmp/asc_openapi_contract/spec.zip "$spec_entry" \
+            > /tmp/asc_openapi_contract/openapi.oas.json
+          swift run asc-mcp openapi-contract-check \
+            --spec /tmp/asc_openapi_contract/openapi.oas.json \
+            --json-output /tmp/asc_openapi_contract/report.json \
+            --markdown-output /tmp/asc_openapi_contract/report.md \
+            --structural-strict
+          mkdir -p /tmp/asc_openapi_contract/relocated
+          cp .build/release/asc-mcp /tmp/asc_openapi_contract/relocated/
+          cp -R .build/release/asc-mcp_asc-mcp.bundle /tmp/asc_openapi_contract/relocated/
+          /tmp/asc_openapi_contract/relocated/asc-mcp openapi-contract-check \
+            --spec /tmp/asc_openapi_contract/openapi.oas.json \
+            --structural-strict
+
+      - name: Upload operation contract report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-store-connect-operation-contract
+          path: |
+            /tmp/asc_openapi_contract/report.json
+            /tmp/asc_openapi_contract/report.md
+          if-no-files-found: ignore
+
       - name: Test
         run: swift test
+
+      - name: App Store Connect release contract
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          /tmp/asc_openapi_contract/relocated/asc-mcp openapi-contract-check \
+            --spec /tmp/asc_openapi_contract/openapi.oas.json \
+            --strict

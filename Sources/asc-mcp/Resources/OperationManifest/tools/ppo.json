@@ -1,0 +1,304 @@
+{
+  "workerKey": "ppo",
+  "tools": [
+    {
+      "tool": "ppo_create_experiment",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "write",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "appStoreVersionExperimentsV2_createInstance",
+          "method": "post",
+          "path": "/v2/appStoreVersionExperiments",
+          "role": "primary",
+          "inputs": [
+            { "sourceKind": "fixed", "jsonPointer": "/data/type", "fixedValue": "appStoreVersionExperiments" },
+            { "sourceKind": "fixed", "jsonPointer": "/data/relationships/app/data/type", "fixedValue": "apps" }
+          ]
+        }
+      ],
+      "fields": [
+        { "toolField": "app_id", "sourceKind": "requestBody", "operationId": "appStoreVersionExperimentsV2_createInstance", "jsonPointer": "/data/relationships/app/data/id" },
+        { "toolField": "name", "sourceKind": "requestBody", "operationId": "appStoreVersionExperimentsV2_createInstance", "jsonPointer": "/data/attributes/name" },
+        { "toolField": "traffic_proportion", "sourceKind": "requestBody", "operationId": "appStoreVersionExperimentsV2_createInstance", "jsonPointer": "/data/attributes/trafficProportion" },
+        { "toolField": "platform", "sourceKind": "requestBody", "operationId": "appStoreVersionExperimentsV2_createInstance", "jsonPointer": "/data/attributes/platform" }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          { "operationId": "appStoreVersionExperimentsV2_createInstance", "statusCode": "201", "mediaType": "application/json" }
+        ],
+        "fields": [
+          { "outputField": "success", "localRole": "successfulCreate" },
+          { "outputField": "experiment", "operationId": "appStoreVersionExperimentsV2_createInstance", "jsonPointer": "/data" }
+        ]
+      },
+      "note": "The handler uses the current V2 create operation and defaults platform to IOS locally. Mapping is partial because the MCP platform enum omits Apple's current VISION_OS value and no output schema is declared."
+    },
+    {
+      "tool": "ppo_create_treatment",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "write",
+      "implementationState": "target",
+      "operations": [
+        {
+          "operationId": "appStoreVersionExperimentTreatments_createInstance",
+          "method": "post",
+          "path": "/v1/appStoreVersionExperimentTreatments",
+          "role": "primary",
+          "inputs": [
+            { "sourceKind": "fixed", "jsonPointer": "/data/type", "fixedValue": "appStoreVersionExperimentTreatments" }
+          ]
+        }
+      ],
+      "fields": [
+        { "toolField": "experiment_id", "sourceKind": "requestBody", "operationId": "appStoreVersionExperimentTreatments_createInstance", "jsonPointer": "/data/relationships/appStoreVersionExperimentV2/data/id" },
+        { "toolField": "name", "sourceKind": "requestBody", "operationId": "appStoreVersionExperimentTreatments_createInstance", "jsonPointer": "/data/attributes/name" }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          { "operationId": "appStoreVersionExperimentTreatments_createInstance", "statusCode": "201", "mediaType": "application/json" }
+        ],
+        "fields": [
+          { "outputField": "success", "localRole": "successfulCreate" },
+          { "outputField": "treatment", "operationId": "appStoreVersionExperimentTreatments_createInstance", "jsonPointer": "/data" }
+        ]
+      },
+      "note": "Intended current contract binds the treatment to appStoreVersionExperimentV2. The present Swift request instead sends the legacy appStoreVersionExperiment relationship, so this operation is expected to fail for IDs returned by the V2 experiment tools until the handler is corrected."
+    },
+    {
+      "tool": "ppo_create_treatment_localization",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "write",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "appStoreVersionExperimentTreatmentLocalizations_createInstance",
+          "method": "post",
+          "path": "/v1/appStoreVersionExperimentTreatmentLocalizations",
+          "role": "primary",
+          "inputs": [
+            { "sourceKind": "fixed", "jsonPointer": "/data/type", "fixedValue": "appStoreVersionExperimentTreatmentLocalizations" },
+            { "sourceKind": "fixed", "jsonPointer": "/data/relationships/appStoreVersionExperimentTreatment/data/type", "fixedValue": "appStoreVersionExperimentTreatments" }
+          ]
+        }
+      ],
+      "fields": [
+        { "toolField": "treatment_id", "sourceKind": "requestBody", "operationId": "appStoreVersionExperimentTreatmentLocalizations_createInstance", "jsonPointer": "/data/relationships/appStoreVersionExperimentTreatment/data/id" },
+        { "toolField": "locale", "sourceKind": "requestBody", "operationId": "appStoreVersionExperimentTreatmentLocalizations_createInstance", "jsonPointer": "/data/attributes/locale" }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          { "operationId": "appStoreVersionExperimentTreatmentLocalizations_createInstance", "statusCode": "201", "mediaType": "application/json" }
+        ],
+        "fields": [
+          { "outputField": "success", "localRole": "successfulCreate" },
+          { "outputField": "localization", "operationId": "appStoreVersionExperimentTreatmentLocalizations_createInstance", "jsonPointer": "/data" }
+        ]
+      },
+      "note": "Direct localization create operation; mapping remains partial because the tool has no declared output schema and the worker has no treatment-localization media lifecycle."
+    },
+    {
+      "tool": "ppo_delete_experiment",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "destructive",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "appStoreVersionExperimentsV2_deleteInstance",
+          "method": "delete",
+          "path": "/v2/appStoreVersionExperiments/{id}",
+          "role": "primary"
+        }
+      ],
+      "fields": [
+        { "toolField": "experiment_id", "sourceKind": "parameter", "operationId": "appStoreVersionExperimentsV2_deleteInstance", "location": "path", "appleName": "id" }
+      ],
+      "response": {
+        "mode": "local",
+        "sources": [
+          { "operationId": "appStoreVersionExperimentsV2_deleteInstance", "statusCode": "204" }
+        ],
+        "fields": [
+          { "outputField": "success", "localRole": "successful204" },
+          { "outputField": "message", "localRole": "deleteConfirmation" }
+        ]
+      },
+      "note": "Apple returns 204 without content; the handler constructs the deletion confirmation locally."
+    },
+    {
+      "tool": "ppo_get_experiment",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "appStoreVersionExperimentsV2_getInstance",
+          "method": "get",
+          "path": "/v2/appStoreVersionExperiments/{id}",
+          "role": "primary"
+        }
+      ],
+      "fields": [
+        { "toolField": "experiment_id", "sourceKind": "parameter", "operationId": "appStoreVersionExperimentsV2_getInstance", "location": "path", "appleName": "id" }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          { "operationId": "appStoreVersionExperimentsV2_getInstance", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": [
+          { "outputField": "success", "localRole": "successfulRead" },
+          { "outputField": "experiment", "operationId": "appStoreVersionExperimentsV2_getInstance", "jsonPointer": "/data" }
+        ]
+      },
+      "note": "Direct V2 experiment read with a narrow local attribute projection and no declared output schema."
+    },
+    {
+      "tool": "ppo_list_experiments",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "apps_appStoreVersionExperimentsV2_getToManyRelated",
+          "method": "get",
+          "path": "/v1/apps/{id}/appStoreVersionExperimentsV2",
+          "role": "primary"
+        }
+      ],
+      "fields": [
+        { "toolField": "app_id", "sourceKind": "parameter", "operationId": "apps_appStoreVersionExperimentsV2_getToManyRelated", "location": "path", "appleName": "id" },
+        { "toolField": "limit", "sourceKind": "parameter", "operationId": "apps_appStoreVersionExperimentsV2_getToManyRelated", "location": "query", "appleName": "limit" },
+        { "toolField": "next_url", "sourceKind": "local", "localRole": "paginationContinuation" }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          { "operationId": "apps_appStoreVersionExperimentsV2_getToManyRelated", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": [
+          { "outputField": "success", "localRole": "successfulRead" },
+          { "outputField": "experiments", "operationId": "apps_appStoreVersionExperimentsV2_getToManyRelated", "jsonPointer": "/data" },
+          { "outputField": "next_url", "operationId": "apps_appStoreVersionExperimentsV2_getToManyRelated", "jsonPointer": "/links/next" }
+        ]
+      },
+      "note": "Direct paginated V2 experiment relationship read; current tool does not expose Apple's state filter, fields, include, or nested limits."
+    },
+    {
+      "tool": "ppo_list_treatment_localizations",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "appStoreVersionExperimentTreatments_appStoreVersionExperimentTreatmentLocalizations_getToManyRelated",
+          "method": "get",
+          "path": "/v1/appStoreVersionExperimentTreatments/{id}/appStoreVersionExperimentTreatmentLocalizations",
+          "role": "primary"
+        }
+      ],
+      "fields": [
+        { "toolField": "treatment_id", "sourceKind": "parameter", "operationId": "appStoreVersionExperimentTreatments_appStoreVersionExperimentTreatmentLocalizations_getToManyRelated", "location": "path", "appleName": "id" },
+        { "toolField": "limit", "sourceKind": "parameter", "operationId": "appStoreVersionExperimentTreatments_appStoreVersionExperimentTreatmentLocalizations_getToManyRelated", "location": "query", "appleName": "limit" },
+        { "toolField": "next_url", "sourceKind": "local", "localRole": "paginationContinuation" }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          { "operationId": "appStoreVersionExperimentTreatments_appStoreVersionExperimentTreatmentLocalizations_getToManyRelated", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": [
+          { "outputField": "success", "localRole": "successfulRead" },
+          { "outputField": "localizations", "operationId": "appStoreVersionExperimentTreatments_appStoreVersionExperimentTreatmentLocalizations_getToManyRelated", "jsonPointer": "/data" },
+          { "outputField": "next_url", "operationId": "appStoreVersionExperimentTreatments_appStoreVersionExperimentTreatmentLocalizations_getToManyRelated", "jsonPointer": "/links/next" }
+        ]
+      },
+      "note": "Direct paginated localization read; current tool does not expose Apple's locale filter, fields, include, or nested media-set limits."
+    },
+    {
+      "tool": "ppo_list_treatments",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "appStoreVersionExperimentsV2_appStoreVersionExperimentTreatments_getToManyRelated",
+          "method": "get",
+          "path": "/v2/appStoreVersionExperiments/{id}/appStoreVersionExperimentTreatments",
+          "role": "primary"
+        }
+      ],
+      "fields": [
+        { "toolField": "experiment_id", "sourceKind": "parameter", "operationId": "appStoreVersionExperimentsV2_appStoreVersionExperimentTreatments_getToManyRelated", "location": "path", "appleName": "id" },
+        { "toolField": "limit", "sourceKind": "parameter", "operationId": "appStoreVersionExperimentsV2_appStoreVersionExperimentTreatments_getToManyRelated", "location": "query", "appleName": "limit" },
+        { "toolField": "next_url", "sourceKind": "local", "localRole": "paginationContinuation" }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          { "operationId": "appStoreVersionExperimentsV2_appStoreVersionExperimentTreatments_getToManyRelated", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": [
+          { "outputField": "success", "localRole": "successfulRead" },
+          { "outputField": "treatments", "operationId": "appStoreVersionExperimentsV2_appStoreVersionExperimentTreatments_getToManyRelated", "jsonPointer": "/data" },
+          { "outputField": "next_url", "operationId": "appStoreVersionExperimentsV2_appStoreVersionExperimentTreatments_getToManyRelated", "jsonPointer": "/links/next" }
+        ]
+      },
+      "note": "Direct paginated V2 treatment relationship read with a narrow response projection."
+    },
+    {
+      "tool": "ppo_update_experiment",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "write",
+      "implementationState": "target",
+      "operations": [
+        {
+          "operationId": "appStoreVersionExperimentsV2_updateInstance",
+          "method": "patch",
+          "path": "/v2/appStoreVersionExperiments/{id}",
+          "role": "primary",
+          "inputs": [
+            { "sourceKind": "fixed", "jsonPointer": "/data/type", "fixedValue": "appStoreVersionExperiments" },
+            {
+              "sourceKind": "derived",
+              "jsonPointer": "/data/id",
+              "derivedFrom": ["experiment_id"],
+              "localRole": "copyPathIdentifierToRequestBody"
+            }
+          ]
+        }
+      ],
+      "fields": [
+        { "toolField": "experiment_id", "sourceKind": "parameter", "operationId": "appStoreVersionExperimentsV2_updateInstance", "location": "path", "appleName": "id" },
+        { "toolField": "name", "sourceKind": "requestBody", "operationId": "appStoreVersionExperimentsV2_updateInstance", "jsonPointer": "/data/attributes/name" },
+        { "toolField": "traffic_proportion", "sourceKind": "requestBody", "operationId": "appStoreVersionExperimentsV2_updateInstance", "jsonPointer": "/data/attributes/trafficProportion" },
+        { "toolField": "state", "sourceKind": "derived", "operationId": "appStoreVersionExperimentsV2_updateInstance", "jsonPointer": "/data/attributes/started", "localRole": "mapStartStopToStartedBoolean", "derivedFrom": ["state"] }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          { "operationId": "appStoreVersionExperimentsV2_updateInstance", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": [
+          { "outputField": "success", "localRole": "successfulUpdate" },
+          { "outputField": "experiment", "operationId": "appStoreVersionExperimentsV2_updateInstance", "jsonPointer": "/data" }
+        ]
+      },
+      "note": "Intended V2 contract derives started=true from START and started=false from STOP. The current handler instead sends a string attribute named state, which is absent from AppStoreVersionExperimentV2UpdateRequest, so lifecycle updates remain broken until the Swift model and handler perform this conversion."
+    }
+  ],
+  "implementationAliases": []
+}

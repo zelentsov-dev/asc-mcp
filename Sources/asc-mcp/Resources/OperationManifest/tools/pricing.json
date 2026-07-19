@@ -1,0 +1,638 @@
+{
+  "workerKey": "pricing",
+  "tools": [
+    {
+      "tool": "pricing_create_availability",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "write",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "appAvailabilitiesV2_createInstance",
+          "method": "post",
+          "path": "/v2/appAvailabilities",
+          "role": "primary",
+          "inputs": [
+            { "sourceKind": "fixed", "jsonPointer": "/data/type", "fixedValue": "appAvailabilities" },
+            { "sourceKind": "fixed", "jsonPointer": "/data/relationships/app/data/type", "fixedValue": "apps" },
+            { "sourceKind": "fixed", "jsonPointer": "/data/relationships/territoryAvailabilities/data/*/type", "fixedValue": "territoryAvailabilities" }
+          ]
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "app_id",
+          "sourceKind": "requestBody",
+          "operationId": "appAvailabilitiesV2_createInstance",
+          "jsonPointer": "/data/relationships/app/data/id"
+        },
+        {
+          "toolField": "available_in_new_territories",
+          "sourceKind": "requestBody",
+          "operationId": "appAvailabilitiesV2_createInstance",
+          "jsonPointer": "/data/attributes/availableInNewTerritories"
+        },
+        {
+          "toolField": "territory_ids",
+          "sourceKind": "requestBody",
+          "operationId": "appAvailabilitiesV2_createInstance",
+          "jsonPointer": "/data/relationships/territoryAvailabilities/data",
+          "localRole": "Map each supplied ID to a territoryAvailabilities resource identifier."
+        }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          {
+            "operationId": "appAvailabilitiesV2_createInstance",
+            "statusCode": "201",
+            "mediaType": "application/json"
+          }
+        ],
+        "fields": [
+          {
+            "outputField": "success",
+            "localRole": "Set true after Apple accepts the create request."
+          },
+          {
+            "outputField": "availability.id",
+            "operationId": "appAvailabilitiesV2_createInstance",
+            "jsonPointer": "/data/id"
+          },
+          {
+            "outputField": "availability.type",
+            "operationId": "appAvailabilitiesV2_createInstance",
+            "jsonPointer": "/data/type"
+          },
+          {
+            "outputField": "availability.availableInNewTerritories",
+            "operationId": "appAvailabilitiesV2_createInstance",
+            "jsonPointer": "/data/attributes/availableInNewTerritories"
+          }
+        ]
+      },
+      "note": "The direct Apple operation is current. Mapping remains partial because the MCP tool has no outputSchema and exposes only relationship IDs, not Apple's optional inline TerritoryAvailabilityInlineCreate resources."
+    },
+    {
+      "tool": "pricing_get_availability",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "apps_appAvailabilityV2_getToOneRelated",
+          "method": "get",
+          "path": "/v1/apps/{id}/appAvailabilityV2",
+          "role": "primary"
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "app_id",
+          "sourceKind": "parameter",
+          "operationId": "apps_appAvailabilityV2_getToOneRelated",
+          "location": "path",
+          "appleName": "id"
+        }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          {
+            "operationId": "apps_appAvailabilityV2_getToOneRelated",
+            "statusCode": "200",
+            "mediaType": "application/json"
+          }
+        ],
+        "fields": [
+          {
+            "outputField": "success",
+            "localRole": "Set true after a successful Apple response."
+          },
+          {
+            "outputField": "availability.id",
+            "operationId": "apps_appAvailabilityV2_getToOneRelated",
+            "jsonPointer": "/data/id"
+          },
+          {
+            "outputField": "availability.type",
+            "operationId": "apps_appAvailabilityV2_getToOneRelated",
+            "jsonPointer": "/data/type"
+          },
+          {
+            "outputField": "availability.availableInNewTerritories",
+            "operationId": "apps_appAvailabilityV2_getToOneRelated",
+            "jsonPointer": "/data/attributes/availableInNewTerritories"
+          }
+        ]
+      },
+      "note": "Current direct relationship read; partial because the MCP projection omits relationships and has no outputSchema."
+    },
+    {
+      "tool": "pricing_get_availability_v2",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "appAvailabilitiesV2_getInstance",
+          "method": "get",
+          "path": "/v2/appAvailabilities/{id}",
+          "role": "primary"
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "availability_id",
+          "sourceKind": "parameter",
+          "operationId": "appAvailabilitiesV2_getInstance",
+          "location": "path",
+          "appleName": "id"
+        }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          {
+            "operationId": "appAvailabilitiesV2_getInstance",
+            "statusCode": "200",
+            "mediaType": "application/json"
+          }
+        ],
+        "fields": [
+          {
+            "outputField": "success",
+            "localRole": "Set true after a successful Apple response."
+          },
+          {
+            "outputField": "availability.id",
+            "operationId": "appAvailabilitiesV2_getInstance",
+            "jsonPointer": "/data/id"
+          },
+          {
+            "outputField": "availability.type",
+            "operationId": "appAvailabilitiesV2_getInstance",
+            "jsonPointer": "/data/type"
+          },
+          {
+            "outputField": "availability.availableInNewTerritories",
+            "operationId": "appAvailabilitiesV2_getInstance",
+            "jsonPointer": "/data/attributes/availableInNewTerritories"
+          }
+        ]
+      },
+      "note": "Current direct V2 read; partial because the MCP projection omits relationships and has no outputSchema."
+    },
+    {
+      "tool": "pricing_get_price_schedule",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "apps_appPriceSchedule_getToOneRelated",
+          "method": "get",
+          "path": "/v1/apps/{id}/appPriceSchedule",
+          "role": "primary"
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "app_id",
+          "sourceKind": "parameter",
+          "operationId": "apps_appPriceSchedule_getToOneRelated",
+          "location": "path",
+          "appleName": "id"
+        }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          {
+            "operationId": "apps_appPriceSchedule_getToOneRelated",
+            "statusCode": "200",
+            "mediaType": "application/json"
+          }
+        ],
+        "fields": [
+          {
+            "outputField": "success",
+            "localRole": "Set true after a successful Apple response."
+          },
+          {
+            "outputField": "price_schedule.id",
+            "operationId": "apps_appPriceSchedule_getToOneRelated",
+            "jsonPointer": "/data/id"
+          },
+          {
+            "outputField": "price_schedule.type",
+            "operationId": "apps_appPriceSchedule_getToOneRelated",
+            "jsonPointer": "/data/type"
+          },
+          {
+            "outputField": "price_schedule.base_territory_id",
+            "operationId": "apps_appPriceSchedule_getToOneRelated",
+            "jsonPointer": "/data/relationships/baseTerritory/data/id"
+          },
+          {
+            "outputField": "price_schedule.manual_prices",
+            "operationId": "apps_appPriceSchedule_getToOneRelated",
+            "jsonPointer": "/included",
+            "localRole": "Project included appPrices whose manual attribute is true."
+          },
+          {
+            "outputField": "price_schedule.automatic_prices",
+            "operationId": "apps_appPriceSchedule_getToOneRelated",
+            "jsonPointer": "/included",
+            "localRole": "Project included appPrices whose manual attribute is not true."
+          },
+          {
+            "outputField": "price_schedule.territories",
+            "operationId": "apps_appPriceSchedule_getToOneRelated",
+            "jsonPointer": "/included",
+            "localRole": "Project included territory resources."
+          }
+        ]
+      },
+      "note": "Handler fixes include=manualPrices,automaticPrices,baseTerritory but does not expose nested relationship limits; partial because included collections may truncate and the tool has no outputSchema."
+    },
+    {
+      "tool": "pricing_list_price_points",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "apps_appPricePoints_getToManyRelated",
+          "method": "get",
+          "path": "/v1/apps/{id}/appPricePoints",
+          "role": "primary"
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "app_id",
+          "sourceKind": "parameter",
+          "operationId": "apps_appPricePoints_getToManyRelated",
+          "location": "path",
+          "appleName": "id"
+        },
+        {
+          "toolField": "territory_id",
+          "sourceKind": "parameter",
+          "operationId": "apps_appPricePoints_getToManyRelated",
+          "location": "query",
+          "appleName": "filter[territory]"
+        },
+        {
+          "toolField": "limit",
+          "sourceKind": "parameter",
+          "operationId": "apps_appPricePoints_getToManyRelated",
+          "location": "query",
+          "appleName": "limit"
+        },
+        {
+          "toolField": "next_url",
+          "sourceKind": "local",
+          "localRole": "Parse an Apple pagination URL and replay its path and query for this collection operation."
+        }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          { "operationId": "apps_appPricePoints_getToManyRelated", "statusCode": "200", "mediaType": "application/json" },
+          { "operationId": "apps_appPricePoints_getToManyRelated", "statusCode": "200", "mediaType": "text/csv" }
+        ],
+        "fields": [
+          {
+            "outputField": "success",
+            "localRole": "Set true after a successful Apple response."
+          },
+          {
+            "outputField": "price_points",
+            "operationId": "apps_appPricePoints_getToManyRelated",
+            "jsonPointer": "/data"
+          },
+          {
+            "outputField": "count",
+            "localRole": "Count the projected price point resources."
+          },
+          {
+            "outputField": "next_url",
+            "operationId": "apps_appPricePoints_getToManyRelated",
+            "jsonPointer": "/links/next"
+          }
+        ]
+      },
+      "note": "Current collection operation with working pagination; partial because the MCP projection and output shape are not declared by outputSchema."
+    },
+    {
+      "tool": "pricing_list_territories",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "territories_getCollection",
+          "method": "get",
+          "path": "/v1/territories",
+          "role": "primary"
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "limit",
+          "sourceKind": "parameter",
+          "operationId": "territories_getCollection",
+          "location": "query",
+          "appleName": "limit"
+        },
+        {
+          "toolField": "next_url",
+          "sourceKind": "local",
+          "localRole": "Parse an Apple pagination URL and replay its path and query for this collection operation."
+        }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          {
+            "operationId": "territories_getCollection",
+            "statusCode": "200",
+            "mediaType": "application/json"
+          }
+        ],
+        "fields": [
+          {
+            "outputField": "success",
+            "localRole": "Set true after a successful Apple response."
+          },
+          {
+            "outputField": "territories",
+            "operationId": "territories_getCollection",
+            "jsonPointer": "/data"
+          },
+          {
+            "outputField": "count",
+            "localRole": "Count the projected territory resources."
+          },
+          {
+            "outputField": "next_url",
+            "operationId": "territories_getCollection",
+            "jsonPointer": "/links/next"
+          }
+        ]
+      },
+      "note": "Current collection operation with working pagination; partial because the MCP projection and output shape are not declared by outputSchema."
+    },
+    {
+      "tool": "pricing_list_territory_availabilities",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "appAvailabilitiesV2_territoryAvailabilities_getToManyRelated",
+          "method": "get",
+          "path": "/v2/appAvailabilities/{id}/territoryAvailabilities",
+          "role": "primary"
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "availability_id",
+          "sourceKind": "parameter",
+          "operationId": "appAvailabilitiesV2_territoryAvailabilities_getToManyRelated",
+          "location": "path",
+          "appleName": "id"
+        },
+        {
+          "toolField": "limit",
+          "sourceKind": "parameter",
+          "operationId": "appAvailabilitiesV2_territoryAvailabilities_getToManyRelated",
+          "location": "query",
+          "appleName": "limit"
+        },
+        {
+          "toolField": "next_url",
+          "sourceKind": "local",
+          "localRole": "Parse an Apple pagination URL and replay its path and query for this related collection operation."
+        }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          {
+            "operationId": "appAvailabilitiesV2_territoryAvailabilities_getToManyRelated",
+            "statusCode": "200",
+            "mediaType": "application/json"
+          }
+        ],
+        "fields": [
+          {
+            "outputField": "success",
+            "localRole": "Set true after a successful Apple response."
+          },
+          {
+            "outputField": "territory_availabilities",
+            "operationId": "appAvailabilitiesV2_territoryAvailabilities_getToManyRelated",
+            "jsonPointer": "/data"
+          },
+          {
+            "outputField": "count",
+            "localRole": "Count the projected territory availability resources."
+          },
+          {
+            "outputField": "next_url",
+            "operationId": "appAvailabilitiesV2_territoryAvailabilities_getToManyRelated",
+            "jsonPointer": "/links/next"
+          }
+        ]
+      },
+      "note": "Current V2 related collection operation with working pagination; partial because the MCP output has no outputSchema."
+    },
+    {
+      "tool": "pricing_list_territory_availability",
+      "kind": "compound",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "target",
+      "operations": [
+        {
+          "operationId": "apps_appAvailabilityV2_getToOneRelated",
+          "method": "get",
+          "path": "/v1/apps/{id}/appAvailabilityV2",
+          "role": "conditional",
+          "condition": "When next_url is absent, resolve the app availability ID for app_id."
+        },
+        {
+          "operationId": "appAvailabilitiesV2_territoryAvailabilities_getToManyRelated",
+          "method": "get",
+          "path": "/v2/appAvailabilities/{id}/territoryAvailabilities",
+          "role": "primary",
+          "condition": "Use the resolved availability ID, or replay the supplied next_url for subsequent pages.",
+          "inputs": [
+            {
+              "sourceKind": "derived",
+              "location": "path",
+              "appleName": "id",
+              "derivedFrom": ["apps_appAvailabilityV2_getToOneRelated:/data/id"],
+              "localRole": "useResolvedAppAvailabilityIdentifier"
+            }
+          ]
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "app_id",
+          "sourceKind": "parameter",
+          "operationId": "apps_appAvailabilityV2_getToOneRelated",
+          "location": "path",
+          "appleName": "id"
+        },
+        {
+          "toolField": "limit",
+          "sourceKind": "parameter",
+          "operationId": "appAvailabilitiesV2_territoryAvailabilities_getToManyRelated",
+          "location": "query",
+          "appleName": "limit"
+        },
+        {
+          "toolField": "next_url",
+          "sourceKind": "local",
+          "localRole": "Parse the related-collection pagination URL and replay its path and query."
+        }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          { "operationId": "appAvailabilitiesV2_territoryAvailabilities_getToManyRelated", "statusCode": "200", "mediaType": "application/json" },
+          { "operationId": "apps_appAvailabilityV2_getToOneRelated", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": [
+          {
+            "outputField": "success",
+            "localRole": "Set true after the related collection is fetched."
+          },
+          {
+            "outputField": "territory_availabilities",
+            "operationId": "appAvailabilitiesV2_territoryAvailabilities_getToManyRelated",
+            "jsonPointer": "/data"
+          },
+          {
+            "outputField": "count",
+            "localRole": "Count the projected territory availability resources."
+          },
+          {
+            "outputField": "next_url",
+            "operationId": "appAvailabilitiesV2_territoryAvailabilities_getToManyRelated",
+            "jsonPointer": "/links/next"
+          }
+        ]
+      },
+      "note": "Intended current Apple workflow is resolve-then-list. The existing handler instead reads one appAvailabilityV2 response with a fixed nested limit of 50 and ignores both MCP limit and next_url, so this mapping is intentionally partial."
+    },
+    {
+      "tool": "pricing_set_price_schedule",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "write",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "appPriceSchedules_createInstance",
+          "method": "post",
+          "path": "/v1/appPriceSchedules",
+          "role": "primary",
+          "inputs": [
+            { "sourceKind": "fixed", "jsonPointer": "/data/type", "fixedValue": "appPriceSchedules" },
+            { "sourceKind": "fixed", "jsonPointer": "/data/relationships/app/data/type", "fixedValue": "apps" },
+            { "sourceKind": "fixed", "jsonPointer": "/data/relationships/baseTerritory/data/type", "fixedValue": "territories" },
+            { "sourceKind": "fixed", "jsonPointer": "/data/relationships/manualPrices/data/*/type", "fixedValue": "appPrices" },
+            {
+              "sourceKind": "derived",
+              "jsonPointer": "/data/relationships/manualPrices/data/*/id",
+              "derivedFrom": ["local:inlinePriceId"],
+              "localRole": "reuseGeneratedInlinePriceIdentifier"
+            },
+            { "sourceKind": "fixed", "jsonPointer": "/included/*/type", "fixedValue": "appPrices" },
+            {
+              "sourceKind": "derived",
+              "jsonPointer": "/included/*/id",
+              "derivedFrom": ["local:inlinePriceId"],
+              "localRole": "reuseGeneratedInlinePriceIdentifier"
+            },
+            { "sourceKind": "fixed", "jsonPointer": "/included/*/relationships/appPricePoint/data/type", "fixedValue": "appPricePoints" },
+            {
+              "sourceKind": "derived",
+              "jsonPointer": "/included/*/relationships/appPricePoint/data/id",
+              "derivedFrom": ["price_point_id"],
+              "localRole": "embedSelectedAppPricePointIdentifier"
+            }
+          ]
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "app_id",
+          "sourceKind": "requestBody",
+          "operationId": "appPriceSchedules_createInstance",
+          "jsonPointer": "/data/relationships/app/data/id"
+        },
+        {
+          "toolField": "base_territory_id",
+          "sourceKind": "requestBody",
+          "operationId": "appPriceSchedules_createInstance",
+          "jsonPointer": "/data/relationships/baseTerritory/data/id"
+        },
+        {
+          "toolField": "price_point_id",
+          "sourceKind": "requestBody",
+          "operationId": "appPriceSchedules_createInstance",
+          "jsonPointer": "/included",
+          "localRole": "Build one inline appPrices resource and link it from data.relationships.manualPrices."
+        }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          {
+            "operationId": "appPriceSchedules_createInstance",
+            "statusCode": "201",
+            "mediaType": "application/json"
+          }
+        ],
+        "fields": [
+          {
+            "outputField": "success",
+            "localRole": "Set true after Apple creates the schedule."
+          },
+          {
+            "outputField": "price_schedule.id",
+            "operationId": "appPriceSchedules_createInstance",
+            "jsonPointer": "/data/id"
+          },
+          {
+            "outputField": "price_schedule.type",
+            "operationId": "appPriceSchedules_createInstance",
+            "jsonPointer": "/data/type"
+          },
+          {
+            "outputField": "price_schedule.base_territory_id",
+            "operationId": "appPriceSchedules_createInstance",
+            "jsonPointer": "/data/relationships/baseTerritory/data/id"
+          }
+        ]
+      },
+      "note": "Current create operation is valid, but the tool cannot express AppPriceV2InlineCreate startDate/endDate or multiple manual prices and has no outputSchema."
+    }
+  ],
+  "implementationAliases": []
+}

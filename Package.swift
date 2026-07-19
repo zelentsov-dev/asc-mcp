@@ -20,6 +20,9 @@ let package = Package(
             dependencies: [
                 .product(name: "MCP", package: "swift-sdk")
             ],
+            resources: [
+                .copy("Resources/OperationManifest")
+            ],
             swiftSettings: [
                 .swiftLanguageMode(.v6)
             ]

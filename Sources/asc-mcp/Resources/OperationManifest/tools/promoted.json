@@ -1,0 +1,325 @@
+{
+  "workerKey": "promoted",
+  "tools": [
+    {
+      "tool": "promoted_create",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "write",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "promotedPurchases_createInstance",
+          "method": "post",
+          "path": "/v1/promotedPurchases",
+          "role": "primary",
+          "condition": null,
+          "inputs": [
+            { "sourceKind": "fixed", "jsonPointer": "/data/type", "fixedValue": "promotedPurchases" },
+            { "sourceKind": "fixed", "jsonPointer": "/data/relationships/app/data/type", "fixedValue": "apps" }
+          ]
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "app_id",
+          "sourceKind": "requestBody",
+          "operationId": "promotedPurchases_createInstance",
+          "jsonPointer": "/data/relationships/app/data/id"
+        },
+        {
+          "toolField": "visible",
+          "sourceKind": "requestBody",
+          "operationId": "promotedPurchases_createInstance",
+          "jsonPointer": "/data/attributes/visibleForAllUsers"
+        },
+        {
+          "toolField": "enabled",
+          "sourceKind": "requestBody",
+          "operationId": "promotedPurchases_createInstance",
+          "jsonPointer": "/data/attributes/enabled"
+        },
+        {
+          "toolField": "iap_id",
+          "sourceKind": "requestBody",
+          "operationId": "promotedPurchases_createInstance",
+          "jsonPointer": "/data/relationships/inAppPurchaseV2/data/id"
+        },
+        {
+          "toolField": "subscription_id",
+          "sourceKind": "requestBody",
+          "operationId": "promotedPurchases_createInstance",
+          "jsonPointer": "/data/relationships/subscription/data/id"
+        }
+      ],
+      "response": {
+        "mode": "opaque",
+        "sources": [
+          { "operationId": "promotedPurchases_createInstance", "statusCode": "201", "mediaType": "application/json" }
+        ],
+        "fields": []
+      },
+      "note": "Create binds app and exactly one product relationship plus visibility state. The public schema does not enforce the exactly-one IAP/subscription invariant, so mapping remains partial."
+    },
+    {
+      "tool": "promoted_delete",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "write",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "promotedPurchases_deleteInstance",
+          "method": "delete",
+          "path": "/v1/promotedPurchases/{id}",
+          "role": "primary",
+          "condition": null
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "promoted_purchase_id",
+          "sourceKind": "parameter",
+          "operationId": "promotedPurchases_deleteInstance",
+          "location": "path",
+          "appleName": "id"
+        }
+      ],
+      "response": {
+        "mode": "opaque",
+        "sources": [
+          { "operationId": "promotedPurchases_deleteInstance", "statusCode": "204" }
+        ],
+        "fields": []
+      },
+      "note": "Apple 4.4.1 operation identity and all public inputs are classified; response remains opaque, so the semantic mapping is partial."
+    },
+    {
+      "tool": "promoted_delete_image",
+      "kind": "local",
+      "status": "deprecated",
+      "effect": "write",
+      "implementationState": "target",
+      "operations": [],
+      "fields": [
+        {
+          "toolField": "image_id",
+          "sourceKind": "local",
+          "localRole": "Accepted only to produce a deterministic deprecation response; no Apple request is sent.",
+          "omissionReason": "Promoted purchase image endpoints were removed; use version-scoped IAP or subscription images."
+        }
+      ],
+      "response": {
+        "mode": "local",
+        "sources": [],
+        "fields": []
+      },
+      "note": "Target contract: Apple 4.4.1 has no promotedPurchaseImages resource or promotionImage relationship, while current Swift still calls those absent endpoints. Replace them with current in-app-purchase or subscription image resources, or deterministic deprecation."
+    },
+    {
+      "tool": "promoted_get",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "promotedPurchases_getInstance",
+          "method": "get",
+          "path": "/v1/promotedPurchases/{id}",
+          "role": "primary",
+          "condition": null
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "promoted_purchase_id",
+          "sourceKind": "parameter",
+          "operationId": "promotedPurchases_getInstance",
+          "location": "path",
+          "appleName": "id"
+        }
+      ],
+      "response": {
+        "mode": "opaque",
+        "sources": [
+          { "operationId": "promotedPurchases_getInstance", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": []
+      },
+      "note": "Apple 4.4.1 operation identity and all public inputs are classified; response remains opaque, so the semantic mapping is partial."
+    },
+    {
+      "tool": "promoted_get_image",
+      "kind": "local",
+      "status": "deprecated",
+      "effect": "read",
+      "implementationState": "target",
+      "operations": [],
+      "fields": [
+        {
+          "toolField": "image_id",
+          "sourceKind": "local",
+          "localRole": "Accepted only to produce a deterministic deprecation response; no Apple request is sent.",
+          "omissionReason": "Promoted purchase image endpoints were removed; use version-scoped IAP or subscription images."
+        }
+      ],
+      "response": {
+        "mode": "local",
+        "sources": [],
+        "fields": []
+      },
+      "note": "Target contract: Apple 4.4.1 has no promotedPurchaseImages resource or promotionImage relationship, while current Swift still calls those absent endpoints. Replace them with current in-app-purchase or subscription image resources, or deterministic deprecation."
+    },
+    {
+      "tool": "promoted_get_image_for_purchase",
+      "kind": "local",
+      "status": "deprecated",
+      "effect": "read",
+      "implementationState": "target",
+      "operations": [],
+      "fields": [
+        {
+          "toolField": "promoted_purchase_id",
+          "sourceKind": "local",
+          "localRole": "Accepted only to produce a deterministic deprecation response; no Apple request is sent.",
+          "omissionReason": "Promoted purchase image endpoints were removed; use version-scoped IAP or subscription images."
+        }
+      ],
+      "response": {
+        "mode": "local",
+        "sources": [],
+        "fields": []
+      },
+      "note": "Target contract: Apple 4.4.1 has no promotedPurchaseImages resource or promotionImage relationship, while current Swift still calls those absent endpoints. Replace them with current in-app-purchase or subscription image resources, or deterministic deprecation."
+    },
+    {
+      "tool": "promoted_list",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "apps_promotedPurchases_getToManyRelated",
+          "method": "get",
+          "path": "/v1/apps/{id}/promotedPurchases",
+          "role": "primary",
+          "condition": null
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "app_id",
+          "sourceKind": "parameter",
+          "operationId": "apps_promotedPurchases_getToManyRelated",
+          "location": "path",
+          "appleName": "id"
+        },
+        {
+          "toolField": "limit",
+          "sourceKind": "parameter",
+          "operationId": "apps_promotedPurchases_getToManyRelated",
+          "location": "query",
+          "appleName": "limit"
+        },
+        {
+          "toolField": "next_url",
+          "sourceKind": "local",
+          "localRole": "Validated Apple pagination URL override."
+        }
+      ],
+      "response": {
+        "mode": "opaque",
+        "sources": [
+          { "operationId": "apps_promotedPurchases_getToManyRelated", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": []
+      },
+      "note": "Apple 4.4.1 operation identity and all public inputs are classified; response remains opaque, so the semantic mapping is partial."
+    },
+    {
+      "tool": "promoted_update",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "write",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "promotedPurchases_updateInstance",
+          "method": "patch",
+          "path": "/v1/promotedPurchases/{id}",
+          "role": "primary",
+          "condition": null,
+          "inputs": [
+            {
+              "sourceKind": "derived",
+              "jsonPointer": "/data/id",
+              "derivedFrom": ["promoted_purchase_id"],
+              "localRole": "copyPathIdentifierIntoResourceBody"
+            },
+            { "sourceKind": "fixed", "jsonPointer": "/data/type", "fixedValue": "promotedPurchases" }
+          ]
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "promoted_purchase_id",
+          "sourceKind": "parameter",
+          "operationId": "promotedPurchases_updateInstance",
+          "location": "path",
+          "appleName": "id"
+        },
+        {
+          "toolField": "visible",
+          "sourceKind": "requestBody",
+          "operationId": "promotedPurchases_updateInstance",
+          "jsonPointer": "/data/attributes/visibleForAllUsers"
+        },
+        {
+          "toolField": "enabled",
+          "sourceKind": "requestBody",
+          "operationId": "promotedPurchases_updateInstance",
+          "jsonPointer": "/data/attributes/enabled"
+        }
+      ],
+      "response": {
+        "mode": "opaque",
+        "sources": [
+          { "operationId": "promotedPurchases_updateInstance", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": []
+      },
+      "note": "Apple 4.4.1 operation identity and all public inputs are classified; response remains opaque, so the semantic mapping is partial."
+    },
+    {
+      "tool": "promoted_upload_image",
+      "kind": "local",
+      "status": "deprecated",
+      "effect": "write",
+      "implementationState": "target",
+      "operations": [],
+      "fields": [
+        {
+          "toolField": "promoted_purchase_id",
+          "sourceKind": "local",
+          "localRole": "Accepted only to produce a deterministic deprecation response; no Apple request is sent.",
+          "omissionReason": "Promoted purchase image endpoints were removed; use version-scoped IAP or subscription images."
+        },
+        {
+          "toolField": "file_path",
+          "sourceKind": "local",
+          "localRole": "Accepted only to produce a deterministic deprecation response; no Apple request is sent.",
+          "omissionReason": "Promoted purchase image endpoints were removed; use version-scoped IAP or subscription images."
+        }
+      ],
+      "response": {
+        "mode": "local",
+        "sources": [],
+        "fields": []
+      },
+      "note": "Target contract: Apple 4.4.1 has no promotedPurchaseImages resource or promotionImage relationship, while current Swift still calls those absent endpoints. Replace them with current in-app-purchase or subscription image resources, or deterministic deprecation."
+    }
+  ],
+  "implementationAliases": []
+}

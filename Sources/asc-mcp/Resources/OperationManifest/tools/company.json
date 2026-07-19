@@ -1,0 +1,60 @@
+{
+  "workerKey": "company",
+  "tools": [
+    {
+      "tool": "company_current",
+      "kind": "local",
+      "status": "partial",
+      "effect": "local",
+      "implementationState": "asBuilt",
+      "operations": [],
+      "fields": [],
+      "response": {
+        "mode": "local",
+        "sources": [],
+        "fields": [
+          { "outputField": "currentCompany", "localRole": "CompaniesManager active configuration with credential identifiers masked" }
+        ]
+      },
+      "note": "Local configuration lookup; no App Store Connect REST operation is called. The response intentionally projects masked key and issuer identifiers rather than credentials."
+    },
+    {
+      "tool": "company_list",
+      "kind": "local",
+      "status": "partial",
+      "effect": "local",
+      "implementationState": "asBuilt",
+      "operations": [],
+      "fields": [],
+      "response": {
+        "mode": "local",
+        "sources": [],
+        "fields": [
+          { "outputField": "companies", "localRole": "CompaniesManager configured companies with masked key IDs" },
+          { "outputField": "currentCompanyId", "localRole": "CompaniesManager active company identifier" }
+        ]
+      },
+      "note": "Local server configuration inventory; it is not the App Store Connect Users API and does not discover provider organizations from Apple."
+    },
+    {
+      "tool": "company_switch",
+      "kind": "local",
+      "status": "partial",
+      "effect": "write",
+      "implementationState": "asBuilt",
+      "operations": [],
+      "fields": [
+        { "toolField": "company", "sourceKind": "local", "localRole": "exact configured company ID or first case-insensitive partial name match" }
+      ],
+      "response": {
+        "mode": "local",
+        "sources": [],
+        "fields": [
+          { "outputField": "company", "localRole": "new active company with masked credential identifiers" }
+        ]
+      },
+      "note": "Local credential-context switch followed by dependent worker reinitialization; no Apple REST operation is called. Partial-name selection returns the first configured match and does not reject ambiguous matches."
+    }
+  ],
+  "implementationAliases": []
+}

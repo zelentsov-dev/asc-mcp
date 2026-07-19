@@ -1,0 +1,273 @@
+{
+  "workerKey": "custom_pages",
+  "tools": [
+    {
+      "tool": "custom_pages_create",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "write",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "appCustomProductPages_createInstance",
+          "method": "post",
+          "path": "/v1/appCustomProductPages",
+          "role": "primary",
+          "inputs": [
+            { "sourceKind": "fixed", "jsonPointer": "/data/type", "fixedValue": "appCustomProductPages" },
+            { "sourceKind": "fixed", "jsonPointer": "/data/relationships/app/data/type", "fixedValue": "apps" }
+          ]
+        }
+      ],
+      "fields": [
+        { "toolField": "app_id", "sourceKind": "requestBody", "operationId": "appCustomProductPages_createInstance", "jsonPointer": "/data/relationships/app/data/id" },
+        { "toolField": "name", "sourceKind": "requestBody", "operationId": "appCustomProductPages_createInstance", "jsonPointer": "/data/attributes/name" },
+        { "toolField": "locale", "sourceKind": "requestBody", "operationId": "appCustomProductPages_createInstance", "jsonPointer": "/included/*/attributes/locale" },
+        { "toolField": "promotional_text", "sourceKind": "requestBody", "operationId": "appCustomProductPages_createInstance", "jsonPointer": "/included/*/attributes/promotionalText" },
+        { "toolField": "template_version_id", "sourceKind": "requestBody", "operationId": "appCustomProductPages_createInstance", "jsonPointer": "/data/relationships/appStoreVersionTemplate/data/id" }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          { "operationId": "appCustomProductPages_createInstance", "statusCode": "201", "mediaType": "application/json" }
+        ],
+        "fields": []
+      },
+      "note": "Apple supports inline creation of the first version and localization in this POST. The current handler correctly uses inline resources but ignores template_version_id even though Apple 4.4.1 supports appStoreVersionTemplate."
+    },
+    {
+      "tool": "custom_pages_create_localization",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "write",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "appCustomProductPageLocalizations_createInstance",
+          "method": "post",
+          "path": "/v1/appCustomProductPageLocalizations",
+          "role": "primary",
+          "inputs": [
+            { "sourceKind": "fixed", "jsonPointer": "/data/type", "fixedValue": "appCustomProductPageLocalizations" },
+            { "sourceKind": "fixed", "jsonPointer": "/data/relationships/appCustomProductPageVersion/data/type", "fixedValue": "appCustomProductPageVersions" }
+          ]
+        }
+      ],
+      "fields": [
+        { "toolField": "version_id", "sourceKind": "requestBody", "operationId": "appCustomProductPageLocalizations_createInstance", "jsonPointer": "/data/relationships/appCustomProductPageVersion/data/id" },
+        { "toolField": "locale", "sourceKind": "requestBody", "operationId": "appCustomProductPageLocalizations_createInstance", "jsonPointer": "/data/attributes/locale" },
+        { "toolField": "promotional_text", "sourceKind": "requestBody", "operationId": "appCustomProductPageLocalizations_createInstance", "jsonPointer": "/data/attributes/promotionalText" }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          { "operationId": "appCustomProductPageLocalizations_createInstance", "statusCode": "201", "mediaType": "application/json" }
+        ],
+        "fields": []
+      }
+    },
+    {
+      "tool": "custom_pages_create_version",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "write",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "appCustomProductPageVersions_createInstance",
+          "method": "post",
+          "path": "/v1/appCustomProductPageVersions",
+          "role": "primary",
+          "inputs": [
+            { "sourceKind": "fixed", "jsonPointer": "/data/type", "fixedValue": "appCustomProductPageVersions" },
+            { "sourceKind": "fixed", "jsonPointer": "/data/relationships/appCustomProductPage/data/type", "fixedValue": "appCustomProductPages" }
+          ]
+        }
+      ],
+      "fields": [
+        { "toolField": "page_id", "sourceKind": "requestBody", "operationId": "appCustomProductPageVersions_createInstance", "jsonPointer": "/data/relationships/appCustomProductPage/data/id" }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          { "operationId": "appCustomProductPageVersions_createInstance", "statusCode": "201", "mediaType": "application/json" }
+        ],
+        "fields": []
+      },
+      "note": "Apple 4.4.1 also accepts optional deepLink and inline localizations, which this narrow MCP tool does not expose."
+    },
+    {
+      "tool": "custom_pages_delete",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "destructive",
+      "implementationState": "asBuilt",
+      "operations": [
+        { "operationId": "appCustomProductPages_deleteInstance", "method": "delete", "path": "/v1/appCustomProductPages/{id}", "role": "primary" }
+      ],
+      "fields": [
+        { "toolField": "page_id", "sourceKind": "parameter", "operationId": "appCustomProductPages_deleteInstance", "location": "path", "appleName": "id" }
+      ],
+      "response": { "mode": "local", "sources": [{ "operationId": "appCustomProductPages_deleteInstance", "statusCode": "204" }], "fields": [] },
+      "note": "Apple returns 204; the MCP deletion confirmation is local."
+    },
+    {
+      "tool": "custom_pages_get",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        { "operationId": "appCustomProductPages_getInstance", "method": "get", "path": "/v1/appCustomProductPages/{id}", "role": "primary" }
+      ],
+      "fields": [
+        { "toolField": "page_id", "sourceKind": "parameter", "operationId": "appCustomProductPages_getInstance", "location": "path", "appleName": "id" }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          { "operationId": "appCustomProductPages_getInstance", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": []
+      }
+    },
+    {
+      "tool": "custom_pages_list",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        { "operationId": "apps_appCustomProductPages_getToManyRelated", "method": "get", "path": "/v1/apps/{id}/appCustomProductPages", "role": "primary" }
+      ],
+      "fields": [
+        { "toolField": "app_id", "sourceKind": "parameter", "operationId": "apps_appCustomProductPages_getToManyRelated", "location": "path", "appleName": "id" },
+        { "toolField": "limit", "sourceKind": "parameter", "operationId": "apps_appCustomProductPages_getToManyRelated", "location": "query", "appleName": "limit" },
+        { "toolField": "next_url", "sourceKind": "local", "localRole": "paginationContinuation" }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          { "operationId": "apps_appCustomProductPages_getToManyRelated", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": []
+      }
+    },
+    {
+      "tool": "custom_pages_list_localizations",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        { "operationId": "appCustomProductPageVersions_appCustomProductPageLocalizations_getToManyRelated", "method": "get", "path": "/v1/appCustomProductPageVersions/{id}/appCustomProductPageLocalizations", "role": "primary" }
+      ],
+      "fields": [
+        { "toolField": "version_id", "sourceKind": "parameter", "operationId": "appCustomProductPageVersions_appCustomProductPageLocalizations_getToManyRelated", "location": "path", "appleName": "id" },
+        { "toolField": "limit", "sourceKind": "parameter", "operationId": "appCustomProductPageVersions_appCustomProductPageLocalizations_getToManyRelated", "location": "query", "appleName": "limit" },
+        { "toolField": "next_url", "sourceKind": "local", "localRole": "paginationContinuation" }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          { "operationId": "appCustomProductPageVersions_appCustomProductPageLocalizations_getToManyRelated", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": []
+      }
+    },
+    {
+      "tool": "custom_pages_list_versions",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        { "operationId": "appCustomProductPages_appCustomProductPageVersions_getToManyRelated", "method": "get", "path": "/v1/appCustomProductPages/{id}/appCustomProductPageVersions", "role": "primary" }
+      ],
+      "fields": [
+        { "toolField": "page_id", "sourceKind": "parameter", "operationId": "appCustomProductPages_appCustomProductPageVersions_getToManyRelated", "location": "path", "appleName": "id" },
+        { "toolField": "limit", "sourceKind": "parameter", "operationId": "appCustomProductPages_appCustomProductPageVersions_getToManyRelated", "location": "query", "appleName": "limit" },
+        { "toolField": "next_url", "sourceKind": "local", "localRole": "paginationContinuation" }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          { "operationId": "appCustomProductPages_appCustomProductPageVersions_getToManyRelated", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": []
+      }
+    },
+    {
+      "tool": "custom_pages_update",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "write",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "appCustomProductPages_updateInstance",
+          "method": "patch",
+          "path": "/v1/appCustomProductPages/{id}",
+          "role": "primary",
+          "inputs": [
+            { "sourceKind": "fixed", "jsonPointer": "/data/type", "fixedValue": "appCustomProductPages" },
+            {
+              "sourceKind": "derived",
+              "jsonPointer": "/data/id",
+              "derivedFrom": ["page_id"],
+              "localRole": "copyPathIdentifierToRequestBody"
+            }
+          ]
+        }
+      ],
+      "fields": [
+        { "toolField": "page_id", "sourceKind": "parameter", "operationId": "appCustomProductPages_updateInstance", "location": "path", "appleName": "id" },
+        { "toolField": "name", "sourceKind": "requestBody", "operationId": "appCustomProductPages_updateInstance", "jsonPointer": "/data/attributes/name" },
+        { "toolField": "visible", "sourceKind": "requestBody", "operationId": "appCustomProductPages_updateInstance", "jsonPointer": "/data/attributes/visible" }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          { "operationId": "appCustomProductPages_updateInstance", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": []
+      }
+    },
+    {
+      "tool": "custom_pages_update_localization",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "write",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "appCustomProductPageLocalizations_updateInstance",
+          "method": "patch",
+          "path": "/v1/appCustomProductPageLocalizations/{id}",
+          "role": "primary",
+          "inputs": [
+            { "sourceKind": "fixed", "jsonPointer": "/data/type", "fixedValue": "appCustomProductPageLocalizations" },
+            {
+              "sourceKind": "derived",
+              "jsonPointer": "/data/id",
+              "derivedFrom": ["localization_id"],
+              "localRole": "copyPathIdentifierToRequestBody"
+            }
+          ]
+        }
+      ],
+      "fields": [
+        { "toolField": "localization_id", "sourceKind": "parameter", "operationId": "appCustomProductPageLocalizations_updateInstance", "location": "path", "appleName": "id" },
+        { "toolField": "promotional_text", "sourceKind": "requestBody", "operationId": "appCustomProductPageLocalizations_updateInstance", "jsonPointer": "/data/attributes/promotionalText" }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          { "operationId": "appCustomProductPageLocalizations_updateInstance", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": []
+      }
+    }
+  ],
+  "implementationAliases": []
+}
