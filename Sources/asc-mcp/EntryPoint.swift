@@ -4,6 +4,11 @@ import MCP
 @main
 struct ASCMCPApp {
     static func main() async throws {
+        if let output = ASCCommandLineInfo.output(arguments: CommandLine.arguments) {
+            print(output)
+            return
+        }
+
         do {
             if try await ASCOperationContractCommand.runIfRequested(arguments: CommandLine.arguments) {
                 return
