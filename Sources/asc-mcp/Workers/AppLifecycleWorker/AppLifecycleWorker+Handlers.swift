@@ -778,9 +778,16 @@ extension AppLifecycleWorker {
             return MCPResult.error(error.localizedDescription)
         }
 
+        let endpoint: String
+        do {
+            endpoint = "/v1/appStoreVersionPhasedReleases/\(try ASCPathSegment.encode(phasedReleaseId))"
+        } catch {
+            return MCPResult.error(error.localizedDescription)
+        }
+
         do {
             _ = try await httpClient.delete(
-                "/v1/appStoreVersionPhasedReleases/\(try ASCPathSegment.encode(phasedReleaseId))"
+                endpoint
             )
             return MCPResult.jsonObject([
                 "success": true,
@@ -1225,8 +1232,15 @@ extension AppLifecycleWorker {
             return MCPResult.error(error.localizedDescription)
         }
 
+        let endpoint: String
         do {
-            _ = try await httpClient.delete("/v1/appStoreVersions/\(try ASCPathSegment.encode(versionId))")
+            endpoint = "/v1/appStoreVersions/\(try ASCPathSegment.encode(versionId))"
+        } catch {
+            return MCPResult.error(error.localizedDescription)
+        }
+
+        do {
+            _ = try await httpClient.delete(endpoint)
 
             let result: [String: Any] = [
                 "success": true,

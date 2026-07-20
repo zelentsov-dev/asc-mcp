@@ -215,7 +215,8 @@ struct AppLifecycleReliabilityTests {
         let invalidArguments: [[String: Value]] = [
             ["version_id": .string("ver-1")],
             ["version_id": .string("ver-1"), "confirm_version_id": .string("ver-2")],
-            ["version_id": .string(" ver-1 "), "confirm_version_id": .string(" ver-1 ")]
+            ["version_id": .string(" ver-1 "), "confirm_version_id": .string(" ver-1 ")],
+            ["version_id": .string("ver/1"), "confirm_version_id": .string("ver/1")]
         ]
 
         for arguments in invalidArguments {
