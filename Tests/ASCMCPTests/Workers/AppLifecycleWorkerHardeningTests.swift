@@ -255,6 +255,42 @@ struct AppLifecycleWorkerHardeningTests {
         }
     }
 
+    @Test("phased release mutations proceed after exact confirmations")
+    func phasedReleaseMutationsAcceptExactConfirmations() async throws {
+        let transport = TestHTTPTransport(responses: [
+            .init(statusCode: 201, body: #"{"data":{"type":"appStoreVersionPhasedReleases","id":"phase-1","attributes":{"phasedReleaseState":"ACTIVE"}}}"#),
+            .init(statusCode: 200, body: #"{"data":{"type":"appStoreVersionPhasedReleases","id":"phase-1","attributes":{"phasedReleaseState":"COMPLETE"}}}"#)
+        ])
+        let worker = try await makeWorker(transport: transport)
+
+        let create = try await worker.handleTool(.init(
+            name: "app_versions_create_phased_release",
+            arguments: [
+                "version_id": .string("ver-1"),
+                "phased_release_state": .string("ACTIVE"),
+                "confirm_version_id": .string("ver-1")
+            ]
+        ))
+        let complete = try await worker.handleTool(.init(
+            name: "app_versions_update_phased_release",
+            arguments: [
+                "phased_release_id": .string("phase-1"),
+                "phased_release_state": .string("COMPLETE"),
+                "confirm_phased_release_id": .string("phase-1")
+            ]
+        ))
+
+        #expect(create.isError != true)
+        #expect(complete.isError != true)
+        let requests = await transport.recordedRequests()
+        #expect(requests.map(\.httpMethod) == ["POST", "PATCH"])
+        #expect(requests[0].url?.path == "/v1/appStoreVersionPhasedReleases")
+        #expect(requests[1].url?.path == "/v1/appStoreVersionPhasedReleases/phase-1")
+        let bodies = await transport.recordedBodyStrings()
+        #expect(bodies[0].contains(#""phasedReleaseState":"ACTIVE""#))
+        #expect(bodies[1].contains(#""phasedReleaseState":"COMPLETE""#))
+    }
+
     @Test("phased release handlers reject workflow-incompatible states")
     func phasedReleaseHandlersRejectWrongStateSubsets() async throws {
         let cases: [(String, [String: Value])] = [
