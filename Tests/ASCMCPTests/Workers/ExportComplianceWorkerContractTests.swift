@@ -1809,12 +1809,14 @@ private func exportComplianceNextURL(
 }
 
 private func exportComplianceQuery(_ request: URLRequest) throws -> [String: String] {
-    let components = try #require(URLComponents(url: try #require(request.url), resolvingAgainstBaseURL: false))
+    let url = try #require(request.url)
+    let components = try #require(URLComponents(url: url, resolvingAgainstBaseURL: false))
     return Dictionary(uniqueKeysWithValues: (components.queryItems ?? []).map { ($0.name, $0.value ?? "") })
 }
 
 private func exportComplianceEncodedPath(_ request: URLRequest) throws -> String {
-    try #require(URLComponents(url: try #require(request.url), resolvingAgainstBaseURL: false)).percentEncodedPath
+    let url = try #require(request.url)
+    return try #require(URLComponents(url: url, resolvingAgainstBaseURL: false)).percentEncodedPath
 }
 
 private func exportComplianceJSONObject(_ request: URLRequest) throws -> [String: Any] {
