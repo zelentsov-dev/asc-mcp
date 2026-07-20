@@ -1370,6 +1370,7 @@ struct BetaAppWorkerContractTests {
         let getLocalization = try #require(manifest.mapping(for: "beta_app_get_localization"))
         let getSubmission = try #require(manifest.mapping(for: "beta_app_get_submission"))
         let listSubmissions = try #require(manifest.mapping(for: "beta_app_list_submissions"))
+        let submitForReview = try #require(manifest.mapping(for: "beta_app_submit_for_review"))
 
         let localizationOperation = try #require(getLocalization.operations.first)
         let localizationInclude = try #require(localizationOperation.optionalParameterClassifications?.first {
@@ -1404,6 +1405,18 @@ struct BetaAppWorkerContractTests {
         #expect(!manifest.index.waivers.contains {
             $0.operationID == "betaAppReviewSubmissions_build_getToOneRelationship"
         })
+        let submitOutputFields = Set(submitForReview.response.fields.map(\.outputField))
+        #expect(submitOutputFields.isSuperset(of: [
+            "error",
+            "operationCommitted",
+            "operationCommitState",
+            "retrySafe",
+            "submissionId",
+            "submissionIdKnown",
+            "requestedBuildId",
+            "inspection.tool",
+            "inspection.arguments.build_id"
+        ]))
         #expect(manifest.index.specPin.version == "4.4.1")
         #expect(manifest.index.specPin.sha256 == "ed0202ef37155b9334772482d2ea0be688c3046b284c895bcbea5455fbe54fd8")
     }

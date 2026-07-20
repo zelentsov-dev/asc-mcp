@@ -794,6 +794,42 @@
           {
             "outputField": "success",
             "localRole": "True after Apple's 201 response identity and Build lineage are validated. Successful responses that cannot be decoded or validated are explicitly non-retryable until the existing submission is inspected."
+          },
+          {
+            "outputField": "error",
+            "localRole": "Redacted decoding, identity, lineage, or ambiguous transport failure for unsuccessful create outcomes."
+          },
+          {
+            "outputField": "operationCommitted",
+            "localRole": "True when Apple returned a successful POST response but the response body or decoded lineage could not be accepted safely."
+          },
+          {
+            "outputField": "operationCommitState",
+            "localRole": "Set to unknown when a network failure prevents determining whether Apple committed the non-idempotent POST."
+          },
+          {
+            "outputField": "retrySafe",
+            "localRole": "False for every committed or commit-unknown create failure to prevent a duplicate beta review submission."
+          },
+          {
+            "outputField": "submissionId",
+            "localRole": "Decoded submission identifier when Apple committed the POST and post-response validation failed."
+          },
+          {
+            "outputField": "submissionIdKnown",
+            "localRole": "False when a malformed successful response or network failure leaves the created submission identifier unavailable."
+          },
+          {
+            "outputField": "requestedBuildId",
+            "localRole": "Echo the validated build_id needed to inspect the existing or potentially committed submission."
+          },
+          {
+            "outputField": "inspection.tool",
+            "localRole": "Use beta_app_list_submissions to reconcile an existing or potentially committed submission before retrying."
+          },
+          {
+            "outputField": "inspection.arguments.build_id",
+            "localRole": "Pass the validated requested Build identifier to the inspection tool."
           }
         ]
       },
