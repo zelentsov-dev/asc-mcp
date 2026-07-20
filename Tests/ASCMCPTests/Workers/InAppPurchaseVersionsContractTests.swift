@@ -212,7 +212,7 @@ struct InAppPurchaseVersionsContractTests {
             responseBody: #"{"data":{"type":"inAppPurchaseLocalizations","id":"loc-1"}}"#
         )
     ])
-    func acceptedCreateFailuresAreCommittedUnverified(
+    fileprivate func acceptedCreateFailuresAreCommittedUnverified(
         _ testCase: IAPV4AcceptedMutationCase
     ) async throws {
         let transport = TestHTTPTransport(responses: [
@@ -291,7 +291,7 @@ struct InAppPurchaseVersionsContractTests {
             responseBody: #"{"data":{"type":"inAppPurchaseVersions","id":"iap-version-1"},"links":{"self":"https://api.example.test/v1/inAppPurchaseVersions/other-version"}}"#
         )
     ])
-    func readsRejectMalformedIdentityAndLinks(_ testCase: IAPV4InvalidReadCase) async throws {
+    fileprivate func readsRejectMalformedIdentityAndLinks(_ testCase: IAPV4InvalidReadCase) async throws {
         let transport = TestHTTPTransport(responses: [
             .init(statusCode: 200, body: testCase.responseBody)
         ])
@@ -557,7 +557,7 @@ struct InAppPurchaseVersionsContractTests {
         IAPV4InvalidListArguments(arguments: ["iap_id": .string("iap-1"), "limit": .int(0)]),
         IAPV4InvalidListArguments(arguments: ["iap_id": .string("iap-1"), "limit": .int(201)])
     ])
-    func listVersionsRejectsInvalidArguments(_ testCase: IAPV4InvalidListArguments) async throws {
+    fileprivate func listVersionsRejectsInvalidArguments(_ testCase: IAPV4InvalidListArguments) async throws {
         let transport = TestHTTPTransport(responses: [])
         let worker = try await iapV4Worker(transport)
 
@@ -623,7 +623,7 @@ struct InAppPurchaseVersionsContractTests {
         IAPV4NullableCase.value,
         IAPV4NullableCase.null
     ])
-    func createLocalizationPreservesTriState(_ nullableCase: IAPV4NullableCase) async throws {
+    fileprivate func createLocalizationPreservesTriState(_ nullableCase: IAPV4NullableCase) async throws {
         let transport = TestHTTPTransport(responses: [
             .init(statusCode: 201, body: iapV4LocalizationResponse())
         ])
@@ -691,7 +691,7 @@ struct InAppPurchaseVersionsContractTests {
             responseBody: #"{"data":{"type":"inAppPurchaseLocalizations","id":"other-loc"},"links":{"self":"https://api.example.test/v2/inAppPurchaseLocalizations/loc-1"}}"#
         )
     ])
-    func invalidAcceptedUpdateIsCommittedUnverified(
+    fileprivate func invalidAcceptedUpdateIsCommittedUnverified(
         _ testCase: IAPV4UpdateResponseCase
     ) async throws {
         let transport = TestHTTPTransport(responses: [
@@ -843,7 +843,7 @@ struct InAppPurchaseVersionsContractTests {
     }
 
     @Test("versioned deletes require exact confirmation before transport", arguments: IAPV4DeleteTarget.allCases)
-    func deletesRequireExactConfirmation(_ target: IAPV4DeleteTarget) async throws {
+    fileprivate func deletesRequireExactConfirmation(_ target: IAPV4DeleteTarget) async throws {
         let transport = TestHTTPTransport(responses: [])
         let worker = try await iapV4Worker(transport)
 
@@ -872,7 +872,7 @@ struct InAppPurchaseVersionsContractTests {
         IAPV4DeleteResponseCase(target: .image, statusCode: 202, expectedState: "committed_unverified"),
         IAPV4DeleteResponseCase(target: .image, statusCode: 500, expectedState: "commit_unknown")
     ])
-    func deletesClassifyExactHTTPOutcomes(_ testCase: IAPV4DeleteResponseCase) async throws {
+    fileprivate func deletesClassifyExactHTTPOutcomes(_ testCase: IAPV4DeleteResponseCase) async throws {
         let transport = TestHTTPTransport(responses: [
             .init(statusCode: testCase.statusCode, body: "")
         ])

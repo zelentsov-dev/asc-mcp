@@ -52,7 +52,7 @@ struct IAPLegacyDeprecationTests {
     }
 
     @Test("legacy non-upload tools preserve their Apple operation and add a structured warning", arguments: IAPLegacyCase.allCases)
-    func legacyToolPreservesOperation(_ testCase: IAPLegacyCase) async throws {
+    fileprivate func legacyToolPreservesOperation(_ testCase: IAPLegacyCase) async throws {
         let transport = TestHTTPTransport(responses: [
             .init(statusCode: testCase.statusCode, body: testCase.responseBody)
         ])
@@ -139,7 +139,7 @@ struct IAPLegacyDeprecationTests {
             expectedCommitState: "committed_unverified"
         )
     ])
-    func legacyDeletesPreserveTypedAmbiguousOutcomes(
+    fileprivate func legacyDeletesPreserveTypedAmbiguousOutcomes(
         _ testCase: IAPLegacyDeleteFailureCase
     ) async throws {
         let transport = TestHTTPTransport(responses: [
