@@ -6,11 +6,18 @@ import Foundation
 struct AppInfoModelTests {
     @Test func decodeAppInfo() throws {
         let json = """
-        {"type":"appInfos","id":"ai-1","attributes":{"appStoreState":"READY_FOR_SALE","appStoreAgeRating":"FOUR_PLUS","state":"ACCEPTED"}}
+        {"type":"appInfos","id":"ai-1","attributes":{"appStoreState":"READY_FOR_SALE","appStoreAgeRating":"FOUR_PLUS","australiaAgeRating":"FIFTEEN","franceAgeRating":"EIGHTEEN","koreaAgeRating":"FIFTEEN","state":"ACCEPTED"},"relationships":{"app":{"data":{"type":"apps","id":"app-1"}},"ageRatingDeclaration":{"data":{"type":"ageRatingDeclarations","id":"age-1"}},"appInfoLocalizations":{"data":[{"type":"appInfoLocalizations","id":"loc-1"}]},"territoryAgeRatings":{"data":[{"type":"territoryAgeRatings","id":"rating-1"}]}}}
         """.data(using: .utf8)!
         let info = try JSONDecoder().decode(ASCAppInfo.self, from: json)
         #expect(info.id == "ai-1")
         #expect(info.attributes?.appStoreAgeRating == "FOUR_PLUS")
+        #expect(info.attributes?.australiaAgeRating == "FIFTEEN")
+        #expect(info.attributes?.franceAgeRating == "EIGHTEEN")
+        #expect(info.attributes?.koreaAgeRating == "FIFTEEN")
+        #expect(info.relationships?.app?.data?.id == "app-1")
+        #expect(info.relationships?.ageRatingDeclaration?.data?.id == "age-1")
+        #expect(info.relationships?.appInfoLocalizations?.data?.map(\.id) == ["loc-1"])
+        #expect(info.relationships?.territoryAgeRatings?.data?.map(\.id) == ["rating-1"])
     }
 
     @Test func appInfoLocalization() throws {
@@ -51,6 +58,33 @@ struct AppInfoModelTests {
             #expect(loc.id == "ail-1")
         } else {
             Issue.record("Expected appInfoLocalization")
+        }
+    }
+
+    @Test func appInfoIncludedCurrentResourcesAndUnknownFallback() throws {
+        let json = """
+        [
+          {"type":"apps","id":"app-1","attributes":{"name":"Example"}},
+          {"type":"ageRatingDeclarations","id":"age-1","attributes":{"gambling":true}},
+          {"type":"futureResources","id":"future-1","attributes":{"enabled":true}}
+        ]
+        """.data(using: .utf8)!
+        let included = try JSONDecoder().decode([ASCAppInfoIncludedResource].self, from: json)
+
+        if case .app(let app) = included[0] {
+            #expect(app.id == "app-1")
+        } else {
+            Issue.record("Expected app")
+        }
+        if case .ageRatingDeclaration(let declaration) = included[1] {
+            #expect(declaration.id == "age-1")
+        } else {
+            Issue.record("Expected age rating declaration")
+        }
+        if case .unknown = included[2] {
+            #expect(Bool(true))
+        } else {
+            Issue.record("Expected forward-compatible unknown resource")
         }
     }
 

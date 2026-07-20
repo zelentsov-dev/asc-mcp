@@ -22,6 +22,19 @@ extension AppInfoWorker {
                     "app_id": .object([
                         "type": .string("string"),
                         "description": .string("App Store Connect app ID")
+                    ]),
+                    "include": stringOrArrayEnumSchema(
+                        "Related resources to include",
+                        values: appInfoIncludeValues
+                    ),
+                    "limit": boundedIntegerSchema("Max results (default: 25, max: 200)", maximum: 200),
+                    "localizations_limit": boundedIntegerSchema(
+                        "Max included app info localizations (max: 50)",
+                        maximum: 50
+                    ),
+                    "next_url": .object([
+                        "type": .string("string"),
+                        "description": .string("Pagination URL from previous response to fetch next page")
                     ])
                 ]),
                 "required": .array([.string("app_id")])
@@ -41,10 +54,14 @@ extension AppInfoWorker {
                         "type": .string("string"),
                         "description": .string("App info ID")
                     ]),
-                    "include": .object([
-                        "type": .string("string"),
-                        "description": .string("Comma-separated list of related resources to include: primaryCategory, primarySubcategoryOne, primarySubcategoryTwo, secondaryCategory, secondarySubcategoryOne, secondarySubcategoryTwo, appInfoLocalizations")
-                    ])
+                    "include": stringOrArrayEnumSchema(
+                        "Related resources to include",
+                        values: appInfoIncludeValues
+                    ),
+                    "localizations_limit": boundedIntegerSchema(
+                        "Max included app info localizations (max: 50)",
+                        maximum: 50
+                    )
                 ]),
                 "required": .array([.string("info_id")])
             ])
@@ -104,6 +121,16 @@ extension AppInfoWorker {
                     "info_id": .object([
                         "type": .string("string"),
                         "description": .string("App info ID")
+                    ]),
+                    "locale": stringOrArraySchema("Filter by one or more locale codes"),
+                    "include": stringOrArrayEnumSchema(
+                        "Related resources to include",
+                        values: ["appInfo"]
+                    ),
+                    "limit": boundedIntegerSchema("Max results (default: 25, max: 200)", maximum: 200),
+                    "next_url": .object([
+                        "type": .string("string"),
+                        "description": .string("Pagination URL from previous response to fetch next page")
                     ])
                 ]),
                 "required": .array([.string("info_id")])
@@ -124,23 +151,23 @@ extension AppInfoWorker {
                         "description": .string("App info localization ID")
                     ]),
                     "name": .object([
-                        "type": .string("string"),
+                        "type": .array([.string("string"), .string("null")]),
                         "description": .string("App name for this locale")
                     ]),
                     "subtitle": .object([
-                        "type": .string("string"),
+                        "type": .array([.string("string"), .string("null")]),
                         "description": .string("App subtitle for this locale (max 30 characters)")
                     ]),
                     "privacy_policy_url": .object([
-                        "type": .string("string"),
+                        "type": .array([.string("string"), .string("null")]),
                         "description": .string("Privacy policy URL")
                     ]),
                     "privacy_choices_url": .object([
-                        "type": .string("string"),
+                        "type": .array([.string("string"), .string("null")]),
                         "description": .string("Privacy choices URL")
                     ]),
                     "privacy_policy_text": .object([
-                        "type": .string("string"),
+                        "type": .array([.string("string"), .string("null")]),
                         "description": .string("Privacy policy text (for China mainland)")
                     ])
                 ]),
@@ -188,19 +215,19 @@ extension AppInfoWorker {
                         "description": .string("App name for this locale")
                     ]),
                     "subtitle": .object([
-                        "type": .string("string"),
+                        "type": .array([.string("string"), .string("null")]),
                         "description": .string("App subtitle for this locale (max 30 characters)")
                     ]),
                     "privacy_policy_url": .object([
-                        "type": .string("string"),
+                        "type": .array([.string("string"), .string("null")]),
                         "description": .string("Privacy policy URL")
                     ]),
                     "privacy_choices_url": .object([
-                        "type": .string("string"),
+                        "type": .array([.string("string"), .string("null")]),
                         "description": .string("Privacy choices URL")
                     ]),
                     "privacy_policy_text": .object([
-                        "type": .string("string"),
+                        "type": .array([.string("string"), .string("null")]),
                         "description": .string("Privacy policy text (for China mainland)")
                     ])
                 ]),
@@ -248,7 +275,9 @@ extension AppInfoWorker {
                         "description": .string("Array of territory IDs where EULA applies (e.g. [\"USA\", \"GBR\", \"RUS\"])"),
                         "items": .object([
                             "type": .string("string")
-                        ])
+                        ]),
+                        "minItems": .int(1),
+                        "uniqueItems": .bool(true)
                     ])
                 ]),
                 "required": .array([.string("app_id"), .string("agreement_text"), .string("territory_ids")])
@@ -269,12 +298,77 @@ extension AppInfoWorker {
                         "description": .string("EULA resource ID")
                     ]),
                     "agreement_text": .object([
-                        "type": .string("string"),
+                        "type": .array([.string("string"), .string("null")]),
                         "description": .string("Updated EULA agreement text")
+                    ]),
+                    "territory_ids": .object([
+                        "type": .string("array"),
+                        "description": .string("Replacement territory IDs where the EULA applies; pass an empty array to clear the relationship"),
+                        "items": .object(["type": .string("string")]),
+                        "uniqueItems": .bool(true)
                     ])
                 ]),
                 "required": .array([.string("eula_id")])
             ])
         )
+    }
+
+    private var appInfoIncludeValues: [String] {
+        [
+            "app",
+            "ageRatingDeclaration",
+            "appInfoLocalizations",
+            "primaryCategory",
+            "primarySubcategoryOne",
+            "primarySubcategoryTwo",
+            "secondaryCategory",
+            "secondarySubcategoryOne",
+            "secondarySubcategoryTwo"
+        ]
+    }
+
+    private func boundedIntegerSchema(_ description: String, maximum: Int) -> Value {
+        .object([
+            "type": .string("integer"),
+            "description": .string(description),
+            "minimum": .int(1),
+            "maximum": .int(maximum)
+        ])
+    }
+
+    private func stringOrArraySchema(_ description: String) -> Value {
+        .object([
+            "description": .string(description),
+            "oneOf": .array([
+                .object(["type": .string("string")]),
+                .object([
+                    "type": .string("array"),
+                    "items": .object(["type": .string("string")]),
+                    "minItems": .int(1),
+                    "uniqueItems": .bool(true)
+                ])
+            ])
+        ])
+    }
+
+    private func stringOrArrayEnumSchema(_ description: String, values: [String]) -> Value {
+        let enumValues = Value.array(values.map(Value.string))
+        return .object([
+            "description": .string(description),
+            "oneOf": .array([
+                .object([
+                    "type": .string("string")
+                ]),
+                .object([
+                    "type": .string("array"),
+                    "items": .object([
+                        "type": .string("string"),
+                        "enum": enumValues
+                    ]),
+                    "minItems": .int(1),
+                    "uniqueItems": .bool(true)
+                ])
+            ])
+        ])
     }
 }

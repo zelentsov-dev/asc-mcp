@@ -5,7 +5,9 @@ import Foundation
 /// App events list response
 public struct ASCAppEventsResponse: Codable, Sendable {
     public let data: [ASCAppEvent]
+    public let included: [ASCAppEventIncludedResource]?
     public let links: ASCPagedDocumentLinks?
+    public let meta: ASCPagingInformation?
 }
 
 /// App event single response with optional included resources
@@ -28,6 +30,8 @@ public struct AppEventAttributes: Codable, Sendable {
     public let badge: String?
     public let deepLink: String?
     public let purchaseRequirement: String?
+    public let primaryLocale: String?
+    public let priority: String?
     public let purpose: String?
     public let eventState: String?
     public let archivedTerritorySchedules: [TerritorySchedule]?
@@ -52,7 +56,9 @@ public struct AppEventRelationships: Codable, Sendable {
 /// App event localizations list response
 public struct ASCAppEventLocalizationsResponse: Codable, Sendable {
     public let data: [ASCAppEventLocalization]
+    public let included: [JSONValue]?
     public let links: ASCPagedDocumentLinks?
+    public let meta: ASCPagingInformation?
 }
 
 /// App event localization resource
@@ -60,6 +66,7 @@ public struct ASCAppEventLocalization: Codable, Sendable {
     public let type: String
     public let id: String
     public let attributes: AppEventLocalizationAttributes?
+    public let relationships: AppEventLocalizationRelationships?
 }
 
 /// App event localization attributes
@@ -70,11 +77,18 @@ public struct AppEventLocalizationAttributes: Codable, Sendable {
     public let longDescription: String?
 }
 
+public struct AppEventLocalizationRelationships: Codable, Sendable {
+    public let appEvent: ASCRelationship?
+    public let appEventScreenshots: ASCRelationshipMultiple?
+    public let appEventVideoClips: ASCRelationshipMultiple?
+}
+
 // MARK: - Included Resources
 
 /// Polymorphic included resource for app event responses
 public enum ASCAppEventIncludedResource: Codable, Sendable {
     case localization(ASCAppEventLocalization)
+    case unknown(JSONValue)
 
     private enum CodingKeys: String, CodingKey {
         case type
@@ -89,11 +103,7 @@ public enum ASCAppEventIncludedResource: Codable, Sendable {
             let loc = try ASCAppEventLocalization(from: decoder)
             self = .localization(loc)
         default:
-            throw DecodingError.dataCorruptedError(
-                forKey: .type,
-                in: container,
-                debugDescription: "Unknown included resource type: \(type)"
-            )
+            self = .unknown(try JSONValue(from: decoder))
         }
     }
 
@@ -101,6 +111,39 @@ public enum ASCAppEventIncludedResource: Codable, Sendable {
         switch self {
         case .localization(let loc):
             try loc.encode(to: encoder)
+        case .unknown(let value):
+            try value.encode(to: encoder)
+        }
+    }
+}
+
+/// Encodes either a concrete app-event attribute value or an explicit JSON null.
+public enum AppEventNullable<Value: Codable & Sendable>: Codable, Sendable {
+    case value(Value)
+    case null
+
+    /// Decodes a concrete value or JSON null.
+    /// - Parameter decoder: Decoder positioned at the attribute value.
+    /// - Throws: A decoding error when the concrete value does not match `Value`.
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        if container.decodeNil() {
+            self = .null
+        } else {
+            self = .value(try container.decode(Value.self))
+        }
+    }
+
+    /// Encodes the concrete value or JSON null.
+    /// - Parameter encoder: Encoder for the attribute value.
+    /// - Throws: An encoding error from the concrete value.
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        switch self {
+        case .value(let value):
+            try container.encode(value)
+        case .null:
+            try container.encodeNil()
         }
     }
 }
@@ -119,11 +162,13 @@ public struct CreateAppEventRequest: Codable, Sendable {
 
     public struct CreateAppEventAttributes: Codable, Sendable {
         public let referenceName: String
-        public let badge: String?
-        public let deepLink: String?
-        public let purchaseRequirement: String?
-        public let purpose: String?
-        public let territorySchedules: [TerritorySchedule]?
+        public let badge: AppEventNullable<String>?
+        public let deepLink: AppEventNullable<String>?
+        public let purchaseRequirement: AppEventNullable<String>?
+        public let primaryLocale: AppEventNullable<String>?
+        public let priority: AppEventNullable<String>?
+        public let purpose: AppEventNullable<String>?
+        public let territorySchedules: AppEventNullable<[TerritorySchedule]>?
     }
 
     public struct CreateAppEventRelationships: Codable, Sendable {
@@ -146,12 +191,25 @@ public struct UpdateAppEventRequest: Codable, Sendable {
     }
 
     public struct UpdateAppEventAttributes: Codable, Sendable {
-        public let referenceName: String?
-        public let badge: String?
-        public let deepLink: String?
-        public let purchaseRequirement: String?
-        public let purpose: String?
-        public let territorySchedules: [TerritorySchedule]?
+        public let referenceName: AppEventNullable<String>?
+        public let badge: AppEventNullable<String>?
+        public let deepLink: AppEventNullable<String>?
+        public let purchaseRequirement: AppEventNullable<String>?
+        public let primaryLocale: AppEventNullable<String>?
+        public let priority: AppEventNullable<String>?
+        public let purpose: AppEventNullable<String>?
+        public let territorySchedules: AppEventNullable<[TerritorySchedule]>?
+
+        var hasChanges: Bool {
+            referenceName != nil ||
+                badge != nil ||
+                deepLink != nil ||
+                purchaseRequirement != nil ||
+                primaryLocale != nil ||
+                priority != nil ||
+                purpose != nil ||
+                territorySchedules != nil
+        }
     }
 }
 
@@ -169,9 +227,9 @@ public struct CreateAppEventLocalizationRequest: Codable, Sendable {
 
     public struct Attributes: Codable, Sendable {
         public let locale: String
-        public let name: String?
-        public let shortDescription: String?
-        public let longDescription: String?
+        public let name: AppEventNullable<String>?
+        public let shortDescription: AppEventNullable<String>?
+        public let longDescription: AppEventNullable<String>?
     }
 
     public struct Relationships: Codable, Sendable {
@@ -194,9 +252,13 @@ public struct UpdateAppEventLocalizationRequest: Codable, Sendable {
     }
 
     public struct Attributes: Codable, Sendable {
-        public let name: String?
-        public let shortDescription: String?
-        public let longDescription: String?
+        public let name: AppEventNullable<String>?
+        public let shortDescription: AppEventNullable<String>?
+        public let longDescription: AppEventNullable<String>?
+
+        var hasChanges: Bool {
+            name != nil || shortDescription != nil || longDescription != nil
+        }
     }
 }
 

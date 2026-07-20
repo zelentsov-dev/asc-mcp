@@ -12,6 +12,11 @@ extension AccessibilityWorker {
             return MCPResult.error("Required parameter 'app_id' is missing")
         }
 
+        for field in ["device_family", "state", "fields"] {
+            if let error = stringListValidationError(arguments[field], field: field) {
+                return MCPResult.error(error)
+            }
+        }
         if let invalid = firstInvalidDeviceFamily(arguments["device_family"]) {
             return MCPResult.error("Unsupported device_family '\(invalid)'. Valid values: \(ASCAccessibilityDeviceFamily.validRawValues.joined(separator: ", "))")
         }
@@ -31,6 +36,9 @@ extension AccessibilityWorker {
                 }
                 if let states = parseStringList(arguments["state"]) {
                     requiredParameters["filter[state]"] = states.joined(separator: ",")
+                }
+                if let fields = parseStringList(arguments["fields"]) {
+                    requiredParameters["fields[accessibilityDeclarations]"] = fields.joined(separator: ",")
                 }
                 response = try await httpClient.getPage(
                     nextURL,
@@ -74,6 +82,9 @@ extension AccessibilityWorker {
         guard let arguments = params.arguments,
               let declarationID = arguments["declaration_id"]?.stringValue else {
             return MCPResult.error("Required parameter 'declaration_id' is missing")
+        }
+        if let error = stringListValidationError(arguments["fields"], field: "fields") {
+            return MCPResult.error(error)
         }
         if let invalid = firstInvalidField(arguments["fields"]) {
             return MCPResult.error("Unsupported field '\(invalid)'. Valid values: \(ASCAccessibilityDeclarationFields.all.joined(separator: ", "))")
@@ -134,15 +145,15 @@ extension AccessibilityWorker {
             return MCPResult.error("Required parameter 'declaration_id' is missing")
         }
 
-        let attributes = ASCAccessibilityDeclarationUpdateRequest.Attributes(
-            publish: arguments["publish"]?.boolValue,
-            supports: supportAttributes(from: arguments)
-        )
-        guard attributes.hasChanges else {
-            return MCPResult.error("At least one update field is required: publish or one supports_* flag")
-        }
-
         do {
+            let attributes = ASCAccessibilityDeclarationUpdateRequest.Attributes(
+                publish: try nullableBooleanValue(arguments["publish"], field: "publish"),
+                supports: try updateSupportAttributes(from: arguments)
+            )
+            guard attributes.hasChanges else {
+                return MCPResult.error("At least one update field is required: publish or one supports_* flag")
+            }
+
             let request = ASCAccessibilityDeclarationUpdateRequest(declarationID: declarationID, attributes: attributes)
             let response = try await httpClient.patch("/v1/accessibilityDeclarations/\(try ASCPathSegment.encode(declarationID))", body: request, as: ASCAccessibilityDeclarationResponse.self)
             return MCPResult.jsonObject([
@@ -233,6 +244,54 @@ extension AccessibilityWorker {
         )
     }
 
+    private func updateSupportAttributes(
+        from arguments: [String: Value]
+    ) throws -> ASCAccessibilityDeclarationUpdateSupportAttributes {
+        ASCAccessibilityDeclarationUpdateSupportAttributes(
+            supportsAudioDescriptions: try nullableBooleanValue(
+                arguments["supports_audio_descriptions"],
+                field: "supports_audio_descriptions"
+            ),
+            supportsCaptions: try nullableBooleanValue(arguments["supports_captions"], field: "supports_captions"),
+            supportsDarkInterface: try nullableBooleanValue(
+                arguments["supports_dark_interface"],
+                field: "supports_dark_interface"
+            ),
+            supportsDifferentiateWithoutColorAlone: try nullableBooleanValue(
+                arguments["supports_differentiate_without_color_alone"],
+                field: "supports_differentiate_without_color_alone"
+            ),
+            supportsLargerText: try nullableBooleanValue(arguments["supports_larger_text"], field: "supports_larger_text"),
+            supportsReducedMotion: try nullableBooleanValue(
+                arguments["supports_reduced_motion"],
+                field: "supports_reduced_motion"
+            ),
+            supportsSufficientContrast: try nullableBooleanValue(
+                arguments["supports_sufficient_contrast"],
+                field: "supports_sufficient_contrast"
+            ),
+            supportsVoiceControl: try nullableBooleanValue(
+                arguments["supports_voice_control"],
+                field: "supports_voice_control"
+            ),
+            supportsVoiceover: try nullableBooleanValue(arguments["supports_voiceover"], field: "supports_voiceover")
+        )
+    }
+
+    private func nullableBooleanValue(
+        _ value: Value?,
+        field: String
+    ) throws -> ASCAccessibilityNullableBool? {
+        guard let value else { return nil }
+        if value.isNull {
+            return .null
+        }
+        guard let boolean = value.boolValue else {
+            throw AccessibilityArgumentError("'\(field)' must be a boolean or null")
+        }
+        return .value(boolean)
+    }
+
     private func parseStringList(_ value: Value?) -> [String]? {
         if let string = value?.stringValue {
             return string
@@ -244,6 +303,32 @@ extension AccessibilityWorker {
             .compactMap(\.stringValue)
             .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
             .filter { !$0.isEmpty }
+    }
+
+    private func stringListValidationError(_ value: Value?, field: String) -> String? {
+        guard let value else { return nil }
+        let values: [String]
+        if let string = value.stringValue {
+            values = string
+                .split(separator: ",", omittingEmptySubsequences: false)
+                .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+        } else if let array = value.arrayValue {
+            let parsed = array.compactMap(\.stringValue)
+            guard parsed.count == array.count else {
+                return "'\(field)' must contain only strings"
+            }
+            values = parsed.map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+        } else {
+            return "'\(field)' must be a string or array of strings"
+        }
+
+        guard !values.isEmpty, values.allSatisfy({ !$0.isEmpty }) else {
+            return "'\(field)' must contain at least one non-empty value"
+        }
+        guard Set(values).count == values.count else {
+            return "'\(field)' must not contain duplicate values"
+        }
+        return nil
     }
 
     private func firstInvalidDeviceFamily(_ value: Value?) -> String? {
@@ -299,4 +384,14 @@ extension AccessibilityWorker {
             "type": identifier.type
         ]
     }
+}
+
+private struct AccessibilityArgumentError: LocalizedError {
+    let message: String
+
+    init(_ message: String) {
+        self.message = message
+    }
+
+    var errorDescription: String? { message }
 }

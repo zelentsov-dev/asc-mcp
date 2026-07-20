@@ -158,6 +158,81 @@ public struct ASCAccessibilityDeclarationSupportAttributes: Codable, Sendable {
     }
 }
 
+public enum ASCAccessibilityNullableBool: Codable, Equatable, Sendable {
+    case value(Bool)
+    case null
+
+    /// Decodes either a Boolean value or an explicit JSON null.
+    /// - Parameter decoder: Decoder positioned at the nullable Boolean value.
+    /// - Throws: A decoding error when the value is neither a Boolean nor null.
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        if container.decodeNil() {
+            self = .null
+        } else {
+            self = .value(try container.decode(Bool.self))
+        }
+    }
+
+    /// Encodes a Boolean value or an explicit JSON null without collapsing it into omission.
+    /// - Parameter encoder: Encoder receiving the nullable Boolean value.
+    /// - Throws: An encoding error from the supplied encoder.
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        switch self {
+        case .value(let value):
+            try container.encode(value)
+        case .null:
+            try container.encodeNil()
+        }
+    }
+}
+
+public struct ASCAccessibilityDeclarationUpdateSupportAttributes: Codable, Sendable {
+    public let supportsAudioDescriptions: ASCAccessibilityNullableBool?
+    public let supportsCaptions: ASCAccessibilityNullableBool?
+    public let supportsDarkInterface: ASCAccessibilityNullableBool?
+    public let supportsDifferentiateWithoutColorAlone: ASCAccessibilityNullableBool?
+    public let supportsLargerText: ASCAccessibilityNullableBool?
+    public let supportsReducedMotion: ASCAccessibilityNullableBool?
+    public let supportsSufficientContrast: ASCAccessibilityNullableBool?
+    public let supportsVoiceControl: ASCAccessibilityNullableBool?
+    public let supportsVoiceover: ASCAccessibilityNullableBool?
+
+    /// Creates nullable accessibility support flags for an update request.
+    /// - Parameters:
+    ///   - supportsAudioDescriptions: Boolean value, explicit null, or omission.
+    ///   - supportsCaptions: Boolean value, explicit null, or omission.
+    ///   - supportsDarkInterface: Boolean value, explicit null, or omission.
+    ///   - supportsDifferentiateWithoutColorAlone: Boolean value, explicit null, or omission.
+    ///   - supportsLargerText: Boolean value, explicit null, or omission.
+    ///   - supportsReducedMotion: Boolean value, explicit null, or omission.
+    ///   - supportsSufficientContrast: Boolean value, explicit null, or omission.
+    ///   - supportsVoiceControl: Boolean value, explicit null, or omission.
+    ///   - supportsVoiceover: Boolean value, explicit null, or omission.
+    public init(
+        supportsAudioDescriptions: ASCAccessibilityNullableBool? = nil,
+        supportsCaptions: ASCAccessibilityNullableBool? = nil,
+        supportsDarkInterface: ASCAccessibilityNullableBool? = nil,
+        supportsDifferentiateWithoutColorAlone: ASCAccessibilityNullableBool? = nil,
+        supportsLargerText: ASCAccessibilityNullableBool? = nil,
+        supportsReducedMotion: ASCAccessibilityNullableBool? = nil,
+        supportsSufficientContrast: ASCAccessibilityNullableBool? = nil,
+        supportsVoiceControl: ASCAccessibilityNullableBool? = nil,
+        supportsVoiceover: ASCAccessibilityNullableBool? = nil
+    ) {
+        self.supportsAudioDescriptions = supportsAudioDescriptions
+        self.supportsCaptions = supportsCaptions
+        self.supportsDarkInterface = supportsDarkInterface
+        self.supportsDifferentiateWithoutColorAlone = supportsDifferentiateWithoutColorAlone
+        self.supportsLargerText = supportsLargerText
+        self.supportsReducedMotion = supportsReducedMotion
+        self.supportsSufficientContrast = supportsSufficientContrast
+        self.supportsVoiceControl = supportsVoiceControl
+        self.supportsVoiceover = supportsVoiceover
+    }
+}
+
 public struct ASCAccessibilityDeclarationResponse: Codable, Sendable {
     public let data: ASCAccessibilityDeclaration
     public let links: ASCResourceLinks?
@@ -288,22 +363,25 @@ public struct ASCAccessibilityDeclarationUpdateRequest: Codable, Sendable {
     }
 
     public struct Attributes: Codable, Sendable {
-        public let publish: Bool?
-        public let supportsAudioDescriptions: Bool?
-        public let supportsCaptions: Bool?
-        public let supportsDarkInterface: Bool?
-        public let supportsDifferentiateWithoutColorAlone: Bool?
-        public let supportsLargerText: Bool?
-        public let supportsReducedMotion: Bool?
-        public let supportsSufficientContrast: Bool?
-        public let supportsVoiceControl: Bool?
-        public let supportsVoiceover: Bool?
+        public let publish: ASCAccessibilityNullableBool?
+        public let supportsAudioDescriptions: ASCAccessibilityNullableBool?
+        public let supportsCaptions: ASCAccessibilityNullableBool?
+        public let supportsDarkInterface: ASCAccessibilityNullableBool?
+        public let supportsDifferentiateWithoutColorAlone: ASCAccessibilityNullableBool?
+        public let supportsLargerText: ASCAccessibilityNullableBool?
+        public let supportsReducedMotion: ASCAccessibilityNullableBool?
+        public let supportsSufficientContrast: ASCAccessibilityNullableBool?
+        public let supportsVoiceControl: ASCAccessibilityNullableBool?
+        public let supportsVoiceover: ASCAccessibilityNullableBool?
 
         /// Creates update attributes for an accessibility declaration.
         /// - Parameters:
-        ///   - publish: Whether Apple should publish the declaration.
-        ///   - supports: Optional accessibility support flags to update.
-        public init(publish: Bool? = nil, supports: ASCAccessibilityDeclarationSupportAttributes = .init()) {
+        ///   - publish: Boolean value, explicit null, or omission for Apple's publish attribute.
+        ///   - supports: Nullable accessibility support flags to update.
+        public init(
+            publish: ASCAccessibilityNullableBool? = nil,
+            supports: ASCAccessibilityDeclarationUpdateSupportAttributes = .init()
+        ) {
             self.publish = publish
             self.supportsAudioDescriptions = supports.supportsAudioDescriptions
             self.supportsCaptions = supports.supportsCaptions

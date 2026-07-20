@@ -17,8 +17,23 @@ extension AppEventsWorker {
                     ]),
                     "limit": .object([
                         "type": .string("integer"),
-                        "description": .string("Max results (default: 25, max: 200)")
+                        "description": .string("Max results (default: 25, max: 200)"),
+                        "minimum": .int(1),
+                        "maximum": .int(200)
                     ]),
+                    "event_states": stringOrArrayEnumSchema(
+                        "Filter by one or more event states",
+                        values: appEventStates
+                    ),
+                    "event_ids": stringOrArraySchema("Filter by one or more app event IDs"),
+                    "include": stringOrArrayEnumSchema(
+                        "Related resources to include",
+                        values: ["localizations"]
+                    ),
+                    "localizations_limit": boundedIntegerSchema(
+                        "Max included localizations (max: 50)",
+                        maximum: 50
+                    ),
                     "next_url": .object([
                         "type": .string("string"),
                         "description": .string("Pagination URL from previous response to fetch next page")
@@ -40,10 +55,14 @@ extension AppEventsWorker {
                         "type": .string("string"),
                         "description": .string("App event ID")
                     ]),
-                    "include": .object([
-                        "type": .string("string"),
-                        "description": .string("Comma-separated related resources to include (e.g. 'localizations')")
-                    ])
+                    "include": stringOrArrayEnumSchema(
+                        "Related resources to include",
+                        values: ["localizations"]
+                    ),
+                    "localizations_limit": boundedIntegerSchema(
+                        "Max included localizations (max: 50)",
+                        maximum: 50
+                    )
                 ]),
                 "required": .array([.string("event_id")])
             ])
@@ -65,26 +84,20 @@ extension AppEventsWorker {
                         "type": .string("string"),
                         "description": .string("Internal reference name for the event")
                     ]),
-                    "badge": .object([
-                        "type": .string("string"),
-                        "description": .string("Event badge: LIVE_EVENT, PREMIERE, CHALLENGE, COMPETITION, NEW_SEASON, MAJOR_UPDATE, SPECIAL_EVENT")
-                    ]),
+                    "badge": nullableEnumSchema("Event badge", values: appEventBadges),
                     "deep_link": .object([
-                        "type": .string("string"),
-                        "description": .string("Deep link URL to open the event in the app")
+                        "type": .array([.string("string"), .string("null")]),
+                        "format": .string("uri"),
+                        "description": .string("Absolute deep-link URI to open the event in the app; null clears it")
                     ]),
-                    "purchase_requirement": .object([
-                        "type": .string("string"),
-                        "description": .string("Purchase requirement: NO_COST_ASSOCIATED, IN_APP_PURCHASE, SUBSCRIPTION, IN_APP_PURCHASE_AND_SUBSCRIPTION, IN_APP_PURCHASE_OR_SUBSCRIPTION")
-                    ]),
-                    "purpose": .object([
-                        "type": .string("string"),
-                        "description": .string("Event purpose: APPROPRIATE_FOR_ALL_USERS, ATTRACT_NEW_USERS, KEEP_ACTIVE_USERS_INFORMED, BRING_BACK_LAPSED_USERS")
-                    ]),
-                    "territory_schedules": .object([
-                        "type": .string("string"),
-                        "description": .string("JSON array of territory schedules: [{\"territories\":[\"USA\"],\"publishStart\":\"2025-01-01T00:00:00Z\",\"eventStart\":\"2025-01-01T00:00:00Z\",\"eventEnd\":\"2025-01-07T00:00:00Z\"}]")
-                    ])
+                    "purchase_requirement": nullableEnumSchema(
+                        "Purchase requirement",
+                        values: purchaseRequirements
+                    ),
+                    "primary_locale": nullableStringSchema("Primary locale code for the event"),
+                    "priority": nullableEnumSchema("Event priority", values: ["HIGH", "NORMAL"]),
+                    "purpose": nullableEnumSchema("Event purpose", values: appEventPurposes),
+                    "territory_schedules": territorySchedulesSchema()
                 ]),
                 "required": .array([.string("app_id"), .string("reference_name")])
             ])
@@ -103,29 +116,23 @@ extension AppEventsWorker {
                         "description": .string("App event ID")
                     ]),
                     "reference_name": .object([
-                        "type": .string("string"),
+                        "type": .array([.string("string"), .string("null")]),
                         "description": .string("New reference name")
                     ]),
-                    "badge": .object([
-                        "type": .string("string"),
-                        "description": .string("Event badge: LIVE_EVENT, PREMIERE, CHALLENGE, COMPETITION, NEW_SEASON, MAJOR_UPDATE, SPECIAL_EVENT")
-                    ]),
+                    "badge": nullableEnumSchema("Event badge", values: appEventBadges),
                     "deep_link": .object([
-                        "type": .string("string"),
-                        "description": .string("Deep link URL to open the event in the app")
+                        "type": .array([.string("string"), .string("null")]),
+                        "format": .string("uri"),
+                        "description": .string("Absolute deep-link URI to open the event in the app; null clears it")
                     ]),
-                    "purchase_requirement": .object([
-                        "type": .string("string"),
-                        "description": .string("Purchase requirement: NO_COST_ASSOCIATED, IN_APP_PURCHASE, SUBSCRIPTION, IN_APP_PURCHASE_AND_SUBSCRIPTION, IN_APP_PURCHASE_OR_SUBSCRIPTION")
-                    ]),
-                    "purpose": .object([
-                        "type": .string("string"),
-                        "description": .string("Event purpose: APPROPRIATE_FOR_ALL_USERS, ATTRACT_NEW_USERS, KEEP_ACTIVE_USERS_INFORMED, BRING_BACK_LAPSED_USERS")
-                    ]),
-                    "territory_schedules": .object([
-                        "type": .string("string"),
-                        "description": .string("JSON array of territory schedules: [{\"territories\":[\"USA\"],\"publishStart\":\"2025-01-01T00:00:00Z\",\"eventStart\":\"2025-01-01T00:00:00Z\",\"eventEnd\":\"2025-01-07T00:00:00Z\"}]")
-                    ])
+                    "purchase_requirement": nullableEnumSchema(
+                        "Purchase requirement",
+                        values: purchaseRequirements
+                    ),
+                    "primary_locale": nullableStringSchema("Primary locale code for the event"),
+                    "priority": nullableEnumSchema("Event priority", values: ["HIGH", "NORMAL"]),
+                    "purpose": nullableEnumSchema("Event purpose", values: appEventPurposes),
+                    "territory_schedules": territorySchedulesSchema()
                 ]),
                 "required": .array([.string("event_id")])
             ])
@@ -159,6 +166,23 @@ extension AppEventsWorker {
                     "event_id": .object([
                         "type": .string("string"),
                         "description": .string("App event ID")
+                    ]),
+                    "include": stringOrArrayEnumSchema(
+                        "Related resources to include",
+                        values: ["appEvent", "appEventScreenshots", "appEventVideoClips"]
+                    ),
+                    "limit": boundedIntegerSchema("Max results (default: 25, max: 200)", maximum: 200),
+                    "screenshots_limit": boundedIntegerSchema(
+                        "Max included screenshots (max: 50)",
+                        maximum: 50
+                    ),
+                    "video_clips_limit": boundedIntegerSchema(
+                        "Max included video clips (max: 50)",
+                        maximum: 50
+                    ),
+                    "next_url": .object([
+                        "type": .string("string"),
+                        "description": .string("Pagination URL from previous response to fetch next page")
                     ])
                 ]),
                 "required": .array([.string("event_id")])
@@ -183,15 +207,15 @@ extension AppEventsWorker {
                         "description": .string("Locale code (e.g. en-US, ru-RU, de-DE, ja, zh-Hans)")
                     ]),
                     "name": .object([
-                        "type": .string("string"),
+                        "type": .array([.string("string"), .string("null")]),
                         "description": .string("Localized event name (max 30 characters)")
                     ]),
                     "short_description": .object([
-                        "type": .string("string"),
+                        "type": .array([.string("string"), .string("null")]),
                         "description": .string("Localized short description (max 120 characters)")
                     ]),
                     "long_description": .object([
-                        "type": .string("string"),
+                        "type": .array([.string("string"), .string("null")]),
                         "description": .string("Localized long description (max 500 characters)")
                     ])
                 ]),
@@ -213,15 +237,15 @@ extension AppEventsWorker {
                         "description": .string("App event localization ID")
                     ]),
                     "name": .object([
-                        "type": .string("string"),
+                        "type": .array([.string("string"), .string("null")]),
                         "description": .string("Localized event name (max 30 characters)")
                     ]),
                     "short_description": .object([
-                        "type": .string("string"),
+                        "type": .array([.string("string"), .string("null")]),
                         "description": .string("Localized short description (max 120 characters)")
                     ]),
                     "long_description": .object([
-                        "type": .string("string"),
+                        "type": .array([.string("string"), .string("null")]),
                         "description": .string("Localized long description (max 500 characters)")
                     ])
                 ]),
@@ -246,5 +270,117 @@ extension AppEventsWorker {
                 "required": .array([.string("localization_id")])
             ])
         )
+    }
+
+    private var appEventStates: [String] {
+        [
+            "DRAFT",
+            "READY_FOR_REVIEW",
+            "WAITING_FOR_REVIEW",
+            "IN_REVIEW",
+            "REJECTED",
+            "ACCEPTED",
+            "APPROVED",
+            "PUBLISHED",
+            "PAST",
+            "ARCHIVED"
+        ]
+    }
+
+    private var appEventBadges: [String] {
+        ["LIVE_EVENT", "PREMIERE", "CHALLENGE", "COMPETITION", "NEW_SEASON", "MAJOR_UPDATE", "SPECIAL_EVENT"]
+    }
+
+    private var appEventPurposes: [String] {
+        ["APPROPRIATE_FOR_ALL_USERS", "ATTRACT_NEW_USERS", "KEEP_ACTIVE_USERS_INFORMED", "BRING_BACK_LAPSED_USERS"]
+    }
+
+    private var purchaseRequirements: [String] {
+        ["NO_COST_ASSOCIATED", "IN_APP_PURCHASE"]
+    }
+
+    private func boundedIntegerSchema(_ description: String, maximum: Int) -> Value {
+        .object([
+            "type": .string("integer"),
+            "description": .string(description),
+            "minimum": .int(1),
+            "maximum": .int(maximum)
+        ])
+    }
+
+    private func nullableStringSchema(_ description: String) -> Value {
+        .object([
+            "type": .array([.string("string"), .string("null")]),
+            "description": .string(description)
+        ])
+    }
+
+    private func nullableEnumSchema(_ description: String, values: [String]) -> Value {
+        .object([
+            "type": .array([.string("string"), .string("null")]),
+            "description": .string(description),
+            "enum": .array(values.map(Value.string) + [.null])
+        ])
+    }
+
+    private func stringOrArraySchema(_ description: String) -> Value {
+        .object([
+            "description": .string(description),
+            "oneOf": .array([
+                .object(["type": .string("string")]),
+                .object([
+                    "type": .string("array"),
+                    "items": .object(["type": .string("string")]),
+                    "minItems": .int(1),
+                    "uniqueItems": .bool(true)
+                ])
+            ])
+        ])
+    }
+
+    private func stringOrArrayEnumSchema(_ description: String, values: [String]) -> Value {
+        let enumValues = Value.array(values.map(Value.string))
+        return .object([
+            "description": .string(description + ": " + values.joined(separator: ", ")),
+            "oneOf": .array([
+                .object(["type": .string("string")]),
+                .object([
+                    "type": .string("array"),
+                    "items": .object([
+                        "type": .string("string"),
+                        "enum": enumValues
+                    ]),
+                    "minItems": .int(1),
+                    "uniqueItems": .bool(true)
+                ])
+            ])
+        ])
+    }
+
+    private func territorySchedulesSchema() -> Value {
+        let schedule = Value.object([
+            "type": .string("object"),
+            "properties": .object([
+                "territories": .object([
+                    "type": .string("array"),
+                    "items": .object(["type": .string("string")])
+                ]),
+                "publishStart": .object(["type": .string("string"), "format": .string("date-time")]),
+                "eventStart": .object(["type": .string("string"), "format": .string("date-time")]),
+                "eventEnd": .object(["type": .string("string"), "format": .string("date-time")])
+            ]),
+            "additionalProperties": .bool(false)
+        ])
+        return .object([
+            "description": .string("Territory schedule array. A JSON-encoded array string remains accepted for backward compatibility."),
+            "oneOf": .array([
+                .object([
+                    "type": .string("array"),
+                    "items": schedule
+                ]),
+                .object(["type": .string("string")]),
+                .object(["type": .string("null")])
+            ])
+        ])
     }
 }

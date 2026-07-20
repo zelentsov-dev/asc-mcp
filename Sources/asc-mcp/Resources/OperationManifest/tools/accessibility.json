@@ -144,7 +144,7 @@
           { "outputField": "next_url", "operationId": "apps_accessibilityDeclarations_getToManyRelated", "jsonPointer": "/links/next" }
         ]
       },
-      "note": "The Apple operation supports multi-value deviceFamily and state filters, but the current public JSON schema exposes each as a single enum string; the handler itself also accepts comma-separated values."
+      "note": "The current public schema and handler support scalar, comma-separated, or array deviceFamily and state filters, bounded pagination, sparse fields, and secure continuation URLs that preserve active filters and fieldsets; partial only because the tool has no outputSchema."
     },
     {
       "tool": "accessibility_list_relationships",
@@ -210,7 +210,7 @@
       ],
       "fields": [
         { "toolField": "declaration_id", "sourceKind": "parameter", "operationId": "accessibilityDeclarations_updateInstance", "location": "path", "appleName": "id" },
-        { "toolField": "publish", "sourceKind": "requestBody", "operationId": "accessibilityDeclarations_updateInstance", "jsonPointer": "/data/attributes/publish" },
+        { "toolField": "publish", "sourceKind": "requestBody", "operationId": "accessibilityDeclarations_updateInstance", "jsonPointer": "/data/attributes/publish", "localRole": "Preserve Boolean values and explicit JSON null distinctly from omission." },
         { "toolField": "supports_audio_descriptions", "sourceKind": "requestBody", "operationId": "accessibilityDeclarations_updateInstance", "jsonPointer": "/data/attributes/supportsAudioDescriptions" },
         { "toolField": "supports_captions", "sourceKind": "requestBody", "operationId": "accessibilityDeclarations_updateInstance", "jsonPointer": "/data/attributes/supportsCaptions" },
         { "toolField": "supports_dark_interface", "sourceKind": "requestBody", "operationId": "accessibilityDeclarations_updateInstance", "jsonPointer": "/data/attributes/supportsDarkInterface" },
@@ -231,7 +231,7 @@
           { "outputField": "accessibility_declaration", "operationId": "accessibilityDeclarations_updateInstance", "jsonPointer": "/data" }
         ]
       },
-      "note": "The payload covers all current Apple update attributes; Apple permits support-flag edits only while the declaration is in DRAFT, with publish transitioning it out of that editable state."
+      "note": "The payload covers all current Apple update attributes and preserves an explicit JSON null for publish and every nullable supports attribute distinctly from omission; a null-only request is therefore a real update rather than a no-op. Apple permits support-flag edits only while the declaration is in DRAFT, with publish transitioning it out of that editable state."
     }
   ],
   "implementationAliases": []

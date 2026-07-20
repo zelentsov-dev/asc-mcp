@@ -5,7 +5,9 @@ import Foundation
 /// App infos response
 public struct ASCAppInfosResponse: Codable, Sendable {
     public let data: [ASCAppInfo]
+    public let included: [ASCAppInfoIncludedResource]?
     public let links: ASCPagedDocumentLinks?
+    public let meta: ASCPagingInformation?
 }
 
 /// App info single response
@@ -26,8 +28,11 @@ public struct ASCAppInfo: Codable, Sendable {
 public struct AppInfoAttributes: Codable, Sendable {
     public let appStoreState: String?
     public let appStoreAgeRating: String?
+    public let australiaAgeRating: String?
     public let brazilAgeRating: String?
     public let brazilAgeRatingV2: String?
+    public let franceAgeRating: String?
+    public let koreaAgeRating: String?
     public let kidsAgeBand: String?
     public let state: String?
 }
@@ -43,6 +48,7 @@ public struct AppInfoRelationships: Codable, Sendable {
     public let secondarySubcategoryOne: ASCRelationship?
     public let secondarySubcategoryTwo: ASCRelationship?
     public let appInfoLocalizations: ASCRelationshipMultiple?
+    public let territoryAgeRatings: ASCRelationshipMultiple?
 }
 
 // MARK: - App Info Localization Models
@@ -50,7 +56,9 @@ public struct AppInfoRelationships: Codable, Sendable {
 /// App info localizations response
 public struct ASCAppInfoLocalizationsResponse: Codable, Sendable {
     public let data: [ASCAppInfoLocalization]
+    public let included: [ASCAppInfo]?
     public let links: ASCPagedDocumentLinks?
+    public let meta: ASCPagingInformation?
 }
 
 /// App info localization single response
@@ -63,6 +71,7 @@ public struct ASCAppInfoLocalization: Codable, Sendable {
     public let type: String
     public let id: String
     public let attributes: AppInfoLocalizationAttributes?
+    public let relationships: AppInfoLocalizationRelationships?
 }
 
 /// App info localization attributes
@@ -73,6 +82,10 @@ public struct AppInfoLocalizationAttributes: Codable, Sendable {
     public let privacyPolicyUrl: String?
     public let privacyChoicesUrl: String?
     public let privacyPolicyText: String?
+}
+
+public struct AppInfoLocalizationRelationships: Codable, Sendable {
+    public let appInfo: ASCRelationship?
 }
 
 // MARK: - App Info Update Request
@@ -94,6 +107,15 @@ public struct UpdateAppInfoRequest: Codable, Sendable {
         public let secondaryCategory: CategoryRelationship?
         public let secondarySubcategoryOne: CategoryRelationship?
         public let secondarySubcategoryTwo: CategoryRelationship?
+
+        var hasChanges: Bool {
+            primaryCategory != nil ||
+                primarySubcategoryOne != nil ||
+                primarySubcategoryTwo != nil ||
+                secondaryCategory != nil ||
+                secondarySubcategoryOne != nil ||
+                secondarySubcategoryTwo != nil
+        }
     }
 
     public struct CategoryRelationship: Codable, Sendable {
@@ -114,11 +136,11 @@ public struct UpdateAppInfoLocalizationRequest: Codable, Sendable {
     }
 
     public struct UpdateAppInfoLocalizationAttributes: Codable, Sendable {
-        public let name: String?
-        public let subtitle: String?
-        public let privacyPolicyUrl: String?
-        public let privacyChoicesUrl: String?
-        public let privacyPolicyText: String?
+        public let name: JSONValue?
+        public let subtitle: JSONValue?
+        public let privacyPolicyUrl: JSONValue?
+        public let privacyChoicesUrl: JSONValue?
+        public let privacyPolicyText: JSONValue?
     }
 }
 
@@ -134,11 +156,11 @@ public struct CreateAppInfoLocalizationRequest: Codable, Sendable {
 
     public struct CreateAppInfoLocalizationAttributes: Codable, Sendable {
         public let locale: String
-        public let name: String?
-        public let subtitle: String?
-        public let privacyPolicyUrl: String?
-        public let privacyChoicesUrl: String?
-        public let privacyPolicyText: String?
+        public let name: String
+        public let subtitle: JSONValue?
+        public let privacyPolicyUrl: JSONValue?
+        public let privacyChoicesUrl: JSONValue?
+        public let privacyPolicyText: JSONValue?
     }
 
     public struct CreateAppInfoLocalizationRelationships: Codable, Sendable {
@@ -154,8 +176,11 @@ public struct CreateAppInfoLocalizationRequest: Codable, Sendable {
 
 /// Included resources for app info response
 public enum ASCAppInfoIncludedResource: Codable, Sendable {
+    case app(ASCAppInfoIncludedApp)
+    case ageRatingDeclaration(ASCAgeRatingDeclaration)
     case appCategory(ASCAppCategory)
     case appInfoLocalization(ASCAppInfoLocalization)
+    case unknown(JSONValue)
 
     private enum CodingKeys: String, CodingKey {
         case type
@@ -166,6 +191,10 @@ public enum ASCAppInfoIncludedResource: Codable, Sendable {
         let type = try container.decode(String.self, forKey: .type)
 
         switch type {
+        case "apps":
+            self = .app(try ASCAppInfoIncludedApp(from: decoder))
+        case "ageRatingDeclarations":
+            self = .ageRatingDeclaration(try ASCAgeRatingDeclaration(from: decoder))
         case "appCategories":
             let category = try ASCAppCategory(from: decoder)
             self = .appCategory(category)
@@ -173,22 +202,39 @@ public enum ASCAppInfoIncludedResource: Codable, Sendable {
             let localization = try ASCAppInfoLocalization(from: decoder)
             self = .appInfoLocalization(localization)
         default:
-            throw DecodingError.dataCorruptedError(
-                forKey: .type,
-                in: container,
-                debugDescription: "Unknown included resource type: \(type)"
-            )
+            self = .unknown(try JSONValue(from: decoder))
         }
     }
 
     public func encode(to encoder: Encoder) throws {
         switch self {
+        case .app(let app):
+            try app.encode(to: encoder)
+        case .ageRatingDeclaration(let declaration):
+            try declaration.encode(to: encoder)
         case .appCategory(let category):
             try category.encode(to: encoder)
         case .appInfoLocalization(let localization):
             try localization.encode(to: encoder)
+        case .unknown(let value):
+            try value.encode(to: encoder)
         }
     }
+}
+
+public struct ASCAppInfoIncludedApp: Codable, Sendable {
+    public let type: String
+    public let id: String
+    public let attributes: [String: JSONValue]?
+    public let relationships: [String: JSONValue]?
+    public let links: [String: JSONValue]?
+}
+
+public struct ASCAgeRatingDeclaration: Codable, Sendable {
+    public let type: String
+    public let id: String
+    public let attributes: [String: JSONValue]?
+    public let links: [String: JSONValue]?
 }
 
 /// App category
@@ -196,6 +242,8 @@ public struct ASCAppCategory: Codable, Sendable {
     public let type: String
     public let id: String
     public let attributes: AppCategoryAttributes?
+    public let relationships: [String: JSONValue]?
+    public let links: [String: JSONValue]?
 }
 
 /// App category attributes
@@ -215,11 +263,17 @@ public struct ASCEULA: Codable, Sendable {
     public let type: String
     public let id: String
     public let attributes: EULAAttributes?
+    public let relationships: EULARelationships?
 }
 
 /// EULA attributes
 public struct EULAAttributes: Codable, Sendable {
     public let agreementText: String?
+}
+
+public struct EULARelationships: Codable, Sendable {
+    public let app: ASCRelationship?
+    public let territories: ASCRelationshipMultiple?
 }
 
 /// Create EULA request
@@ -257,10 +311,19 @@ public struct UpdateEULARequest: Encodable, Sendable {
     public struct UpdateEULAData: Encodable, Sendable {
         public let type = "endUserLicenseAgreements"
         public let id: String
-        public let attributes: UpdateEULAAttributes
+        public let attributes: UpdateEULAAttributes?
+        public let relationships: UpdateEULARelationships?
     }
 
     public struct UpdateEULAAttributes: Encodable, Sendable {
-        public let agreementText: String?
+        public let agreementText: JSONValue?
+    }
+
+    public struct UpdateEULARelationships: Encodable, Sendable {
+        public let territories: TerritoriesRelationship
+    }
+
+    public struct TerritoriesRelationship: Encodable, Sendable {
+        public let data: [ASCResourceIdentifier]
     }
 }

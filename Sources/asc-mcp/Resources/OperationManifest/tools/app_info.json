@@ -48,7 +48,7 @@
           { "outputField": "message", "localRole": "createConfirmation" }
         ]
       },
-      "note": "Direct create request covers Apple's required app and territories relationships; the response projection omits returned relationship detail and has no declared output schema."
+      "note": "Direct create request covers Apple's required app and territories relationships, validates non-empty unique territory IDs, and projects returned relationship detail; partial only because the tool has no declared output schema."
     },
     {
       "tool": "app_info_create_localization",
@@ -95,7 +95,7 @@
           { "outputField": "localization", "operationId": "appInfoLocalizations_createInstance", "jsonPointer": "/data" }
         ]
       },
-      "note": "The MCP schema correctly requires Apple's current locale and name attributes; the handler relies on schema validation for name and the response remains an undeclared projection."
+      "note": "The MCP schema requires Apple's locale and name attributes and preserves explicit null for every nullable optional localization attribute; partial only because the response projection has no outputSchema."
     },
     {
       "tool": "app_info_delete_localization",
@@ -142,7 +142,8 @@
       ],
       "fields": [
         { "toolField": "info_id", "sourceKind": "parameter", "operationId": "appInfos_getInstance", "location": "path", "appleName": "id" },
-        { "toolField": "include", "sourceKind": "parameter", "operationId": "appInfos_getInstance", "location": "query", "appleName": "include" }
+        { "toolField": "include", "sourceKind": "parameter", "operationId": "appInfos_getInstance", "location": "query", "appleName": "include" },
+        { "toolField": "localizations_limit", "sourceKind": "parameter", "operationId": "appInfos_getInstance", "location": "query", "appleName": "limit[appInfoLocalizations]" }
       ],
       "response": {
         "mode": "projection",
@@ -152,11 +153,14 @@
         "fields": [
           { "outputField": "success", "localRole": "successfulRead" },
           { "outputField": "app_info", "operationId": "appInfos_getInstance", "jsonPointer": "/data" },
+          { "outputField": "included_apps", "operationId": "appInfos_getInstance", "jsonPointer": "/included" },
+          { "outputField": "included_age_rating_declarations", "operationId": "appInfos_getInstance", "jsonPointer": "/included" },
           { "outputField": "included_categories", "operationId": "appInfos_getInstance", "jsonPointer": "/included" },
-          { "outputField": "included_localizations", "operationId": "appInfos_getInstance", "jsonPointer": "/included" }
+          { "outputField": "included_localizations", "operationId": "appInfos_getInstance", "jsonPointer": "/included" },
+          { "outputField": "included_unknown", "operationId": "appInfos_getInstance", "jsonPointer": "/included" }
         ]
       },
-      "note": "Partial because the current decoder handles only included categories/localizations and omits current regional and territory age-rating response fields."
+      "note": "The current AppInfo projection preserves regional ratings, relationship identifiers, included apps, age-rating declarations, categories, localizations, and unknown future included resources; partial only because the tool has no outputSchema."
     },
     {
       "tool": "app_info_get_eula",
@@ -185,7 +189,7 @@
           { "outputField": "eula", "operationId": "apps_endUserLicenseAgreement_getToOneRelated", "jsonPointer": "/data" }
         ]
       },
-      "note": "Direct related-resource read; the handler projects only agreementText and does not expose territories."
+      "note": "Direct related-resource read that projects agreement text plus app and territory relationship identifiers; partial only because the tool has no outputSchema."
     },
     {
       "tool": "app_info_list",
@@ -202,7 +206,11 @@
         }
       ],
       "fields": [
-        { "toolField": "app_id", "sourceKind": "parameter", "operationId": "apps_appInfos_getToManyRelated", "location": "path", "appleName": "id" }
+        { "toolField": "app_id", "sourceKind": "parameter", "operationId": "apps_appInfos_getToManyRelated", "location": "path", "appleName": "id" },
+        { "toolField": "include", "sourceKind": "parameter", "operationId": "apps_appInfos_getToManyRelated", "location": "query", "appleName": "include" },
+        { "toolField": "limit", "sourceKind": "parameter", "operationId": "apps_appInfos_getToManyRelated", "location": "query", "appleName": "limit" },
+        { "toolField": "localizations_limit", "sourceKind": "parameter", "operationId": "apps_appInfos_getToManyRelated", "location": "query", "appleName": "limit[appInfoLocalizations]" },
+        { "toolField": "next_url", "sourceKind": "local", "localRole": "Validate and follow Apple's pagination URL for this exact appInfos collection while preserving requested include and nested-limit controls." }
       ],
       "response": {
         "mode": "projection",
@@ -212,10 +220,17 @@
         "fields": [
           { "outputField": "success", "localRole": "successfulRead" },
           { "outputField": "app_infos", "operationId": "apps_appInfos_getToManyRelated", "jsonPointer": "/data" },
-          { "outputField": "next_url", "operationId": "apps_appInfos_getToManyRelated", "jsonPointer": "/links/next" }
+          { "outputField": "count", "localRole": "projectedResourceCount" },
+          { "outputField": "next_url", "operationId": "apps_appInfos_getToManyRelated", "jsonPointer": "/links/next" },
+          { "outputField": "total", "operationId": "apps_appInfos_getToManyRelated", "jsonPointer": "/meta/paging/total" },
+          { "outputField": "included_apps", "operationId": "apps_appInfos_getToManyRelated", "jsonPointer": "/included" },
+          { "outputField": "included_age_rating_declarations", "operationId": "apps_appInfos_getToManyRelated", "jsonPointer": "/included" },
+          { "outputField": "included_categories", "operationId": "apps_appInfos_getToManyRelated", "jsonPointer": "/included" },
+          { "outputField": "included_localizations", "operationId": "apps_appInfos_getToManyRelated", "jsonPointer": "/included" },
+          { "outputField": "included_unknown", "operationId": "apps_appInfos_getToManyRelated", "jsonPointer": "/included" }
         ]
       },
-      "note": "Partial because the Apple collection is paginated but the tool exposes neither limit nor next_url input, and its AppInfo projection omits current age-rating attributes."
+      "note": "Current related collection with bounded pagination, include and nested localization controls, regional rating attributes, paging totals, relationship identifiers, and included-resource projections; partial only because the tool has no outputSchema."
     },
     {
       "tool": "app_info_list_localizations",
@@ -232,7 +247,11 @@
         }
       ],
       "fields": [
-        { "toolField": "info_id", "sourceKind": "parameter", "operationId": "appInfos_appInfoLocalizations_getToManyRelated", "location": "path", "appleName": "id" }
+        { "toolField": "info_id", "sourceKind": "parameter", "operationId": "appInfos_appInfoLocalizations_getToManyRelated", "location": "path", "appleName": "id" },
+        { "toolField": "locale", "sourceKind": "parameter", "operationId": "appInfos_appInfoLocalizations_getToManyRelated", "location": "query", "appleName": "filter[locale]" },
+        { "toolField": "include", "sourceKind": "parameter", "operationId": "appInfos_appInfoLocalizations_getToManyRelated", "location": "query", "appleName": "include" },
+        { "toolField": "limit", "sourceKind": "parameter", "operationId": "appInfos_appInfoLocalizations_getToManyRelated", "location": "query", "appleName": "limit" },
+        { "toolField": "next_url", "sourceKind": "local", "localRole": "Validate and follow Apple's pagination URL for this exact localization collection while preserving locale and include controls." }
       ],
       "response": {
         "mode": "projection",
@@ -242,10 +261,13 @@
         "fields": [
           { "outputField": "success", "localRole": "successfulRead" },
           { "outputField": "localizations", "operationId": "appInfos_appInfoLocalizations_getToManyRelated", "jsonPointer": "/data" },
-          { "outputField": "next_url", "operationId": "appInfos_appInfoLocalizations_getToManyRelated", "jsonPointer": "/links/next" }
+          { "outputField": "count", "localRole": "projectedResourceCount" },
+          { "outputField": "next_url", "operationId": "appInfos_appInfoLocalizations_getToManyRelated", "jsonPointer": "/links/next" },
+          { "outputField": "total", "operationId": "appInfos_appInfoLocalizations_getToManyRelated", "jsonPointer": "/meta/paging/total" },
+          { "outputField": "included_app_infos", "operationId": "appInfos_appInfoLocalizations_getToManyRelated", "jsonPointer": "/included" }
         ]
       },
-      "note": "Partial because the operation is paginated but the current MCP input schema exposes no query filters, limit, include, or continuation URL."
+      "note": "Current related collection with locale filtering, include, bounded pagination, paging totals, parent relationship IDs, and included AppInfo projection; partial only because the tool has no outputSchema."
     },
     {
       "tool": "app_info_update",
@@ -325,7 +347,7 @@
           { "outputField": "app_info", "operationId": "appInfos_updateInstance", "jsonPointer": "/data" }
         ]
       },
-      "note": "All six category relationships exposed by the tool map to Apple's update request; the current optional encoding cannot explicitly clear a relationship with data null."
+      "note": "All six category relationships in Apple's current update request are exposed and validated, and no-op updates are rejected before network access; partial only because the tool has no outputSchema."
     },
     {
       "tool": "app_info_update_eula",
@@ -352,13 +374,19 @@
               "sourceKind": "fixed",
               "jsonPointer": "/data/type",
               "fixedValue": "endUserLicenseAgreements"
+            },
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/relationships/territories/data/*/type",
+              "fixedValue": "territories"
             }
           ]
         }
       ],
       "fields": [
         { "toolField": "eula_id", "sourceKind": "parameter", "operationId": "endUserLicenseAgreements_updateInstance", "location": "path", "appleName": "id" },
-        { "toolField": "agreement_text", "sourceKind": "requestBody", "operationId": "endUserLicenseAgreements_updateInstance", "jsonPointer": "/data/attributes/agreementText" }
+        { "toolField": "agreement_text", "sourceKind": "requestBody", "operationId": "endUserLicenseAgreements_updateInstance", "jsonPointer": "/data/attributes/agreementText" },
+        { "toolField": "territory_ids", "sourceKind": "requestBody", "operationId": "endUserLicenseAgreements_updateInstance", "jsonPointer": "/data/relationships/territories/data/*/id" }
       ],
       "response": {
         "mode": "projection",
@@ -371,7 +399,7 @@
           { "outputField": "message", "localRole": "updateConfirmation" }
         ]
       },
-      "note": "Partial because Apple also supports replacing the territories relationship in this PATCH, but the current MCP tool exposes only agreement_text."
+      "note": "The PATCH preserves explicit null agreementText and replaces or clears Apple's territories relationship with strict ID validation; no-op updates fail before network access. Partial only because the tool has no outputSchema."
     },
     {
       "tool": "app_info_update_localization",
@@ -420,7 +448,7 @@
           { "outputField": "localization", "operationId": "appInfoLocalizations_updateInstance", "jsonPointer": "/data" }
         ]
       },
-      "note": "Direct Apple localization PATCH with local metadata validation and response projection; partial until a structured output schema is declared."
+      "note": "Direct Apple localization PATCH with explicit-null preservation, no-op rejection, local metadata validation, and response projection; partial until a structured output schema is declared."
     }
   ],
   "implementationAliases": []

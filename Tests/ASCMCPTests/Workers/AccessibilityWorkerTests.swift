@@ -50,6 +50,17 @@ struct AccessibilityWorkerTests {
         )
         #expect(invalidState.isError == true)
 
+        let malformedFilter = try await worker.handleTool(
+            CallTool.Parameters(
+                name: "accessibility_list",
+                arguments: [
+                    "app_id": .string("app-1"),
+                    "device_family": .array([.string("IPHONE"), .int(1)])
+                ]
+            )
+        )
+        #expect(malformedFilter.isError == true)
+
         let emptyUpdate = try await worker.handleTool(
             CallTool.Parameters(
                 name: "accessibility_update",
@@ -95,10 +106,10 @@ struct AccessibilityWorkerTests {
         let update = ASCAccessibilityDeclarationUpdateRequest(
             declarationID: "decl-1",
             attributes: .init(
-                publish: true,
+                publish: .value(true),
                 supports: .init(
-                    supportsAudioDescriptions: true,
-                    supportsVoiceControl: false
+                    supportsAudioDescriptions: .value(true),
+                    supportsVoiceControl: .value(false)
                 )
             )
         )
@@ -115,6 +126,202 @@ struct AccessibilityWorkerTests {
         #expect(updateAttributes["supportsAudioDescriptions"] as? Bool == true)
         #expect(updateAttributes["supportsVoiceControl"] as? Bool == false)
         #expect(updateAttributes["supportsCaptions"] == nil)
+
+        let clear = ASCAccessibilityDeclarationUpdateRequest(
+            declarationID: "decl-1",
+            attributes: .init(
+                publish: .null,
+                supports: .init(
+                    supportsAudioDescriptions: .null,
+                    supportsCaptions: .null,
+                    supportsDarkInterface: .null,
+                    supportsDifferentiateWithoutColorAlone: .null,
+                    supportsLargerText: .null,
+                    supportsReducedMotion: .null,
+                    supportsSufficientContrast: .null,
+                    supportsVoiceControl: .null,
+                    supportsVoiceover: .null
+                )
+            )
+        )
+        let clearJSON = try jsonObject(clear)
+        let clearData = try #require(clearJSON["data"] as? [String: Any])
+        let clearAttributes = try #require(clearData["attributes"] as? [String: Any])
+        for field in [
+            "publish",
+            "supportsAudioDescriptions",
+            "supportsCaptions",
+            "supportsDarkInterface",
+            "supportsDifferentiateWithoutColorAlone",
+            "supportsLargerText",
+            "supportsReducedMotion",
+            "supportsSufficientContrast",
+            "supportsVoiceControl",
+            "supportsVoiceover"
+        ] {
+            #expect(clearAttributes[field] is NSNull)
+        }
+    }
+
+    @Test("update schema exposes nullable booleans while create remains boolean-only")
+    func updateSchemaExposesNullableBooleans() async throws {
+        let worker = AccessibilityWorker(httpClient: try await TestFactory.makeHTTPClient())
+        let tools = await worker.getTools()
+        let create = try #require(tools.first { $0.name == "accessibility_create" })
+        let update = try #require(tools.first { $0.name == "accessibility_update" })
+        let createProperties = try accessibilityProperties(create)
+        let updateProperties = try accessibilityProperties(update)
+
+        let supportFields = [
+            "supports_audio_descriptions",
+            "supports_captions",
+            "supports_dark_interface",
+            "supports_differentiate_without_color_alone",
+            "supports_larger_text",
+            "supports_reduced_motion",
+            "supports_sufficient_contrast",
+            "supports_voice_control",
+            "supports_voiceover"
+        ]
+        for field in supportFields {
+            #expect(createProperties[field]?.objectValue?["type"]?.stringValue == "boolean")
+            #expect(try accessibilityStrings(updateProperties[field]?.objectValue?["type"]) == ["boolean", "null"])
+        }
+        #expect(try accessibilityStrings(updateProperties["publish"]?.objectValue?["type"]) == ["boolean", "null"])
+    }
+
+    @Test("null-only update preserves every nullable Apple attribute")
+    func nullOnlyUpdatePreservesNullableAttributes() async throws {
+        let transport = TestHTTPTransport(responses: [
+            .init(statusCode: 200, body: #"{"data":{"type":"accessibilityDeclarations","id":"decl-1","attributes":{"deviceFamily":"IPHONE","state":"DRAFT"}}}"#)
+        ])
+        let client = await HTTPClient(
+            jwtService: try TestFactory.makeJWTService(),
+            baseURL: "https://api.example.test",
+            transport: transport,
+            maxRetries: 1
+        )
+        let worker = AccessibilityWorker(httpClient: client)
+        let nullableFields = [
+            "publish",
+            "supports_audio_descriptions",
+            "supports_captions",
+            "supports_dark_interface",
+            "supports_differentiate_without_color_alone",
+            "supports_larger_text",
+            "supports_reduced_motion",
+            "supports_sufficient_contrast",
+            "supports_voice_control",
+            "supports_voiceover"
+        ]
+        var arguments = Dictionary(uniqueKeysWithValues: nullableFields.map { ($0, Value.null) })
+        arguments["declaration_id"] = .string("decl-1")
+
+        let result = try await worker.handleTool(CallTool.Parameters(
+            name: "accessibility_update",
+            arguments: arguments
+        ))
+
+        #expect(result.isError != true)
+        #expect(await transport.requestCount() == 1)
+        let request = try #require(await transport.recordedRequests().first)
+        let body = try #require(request.httpBody)
+        let object = try #require(JSONSerialization.jsonObject(with: body) as? [String: Any])
+        let data = try #require(object["data"] as? [String: Any])
+        let attributes = try #require(data["attributes"] as? [String: Any])
+        for field in [
+            "publish",
+            "supportsAudioDescriptions",
+            "supportsCaptions",
+            "supportsDarkInterface",
+            "supportsDifferentiateWithoutColorAlone",
+            "supportsLargerText",
+            "supportsReducedMotion",
+            "supportsSufficientContrast",
+            "supportsVoiceControl",
+            "supportsVoiceover"
+        ] {
+            #expect(attributes[field] is NSNull)
+        }
+    }
+
+    @Test("list schema accepts multi-value filters and bounds Apple limit")
+    func listSchemaSupportsMultiValueFilters() async throws {
+        let worker = AccessibilityWorker(httpClient: try await TestFactory.makeHTTPClient())
+        let tool = try #require(await worker.getTools().first { $0.name == "accessibility_list" })
+        guard case .object(let schema) = tool.inputSchema,
+              case .object(let properties)? = schema["properties"],
+              case .object(let deviceFamily)? = properties["device_family"],
+              case .array(let deviceFamilyAlternatives)? = deviceFamily["oneOf"],
+              case .object(let state)? = properties["state"],
+              case .array(let stateAlternatives)? = state["oneOf"],
+              case .object(let limit)? = properties["limit"] else {
+            Issue.record("Expected accessibility_list contract schema")
+            return
+        }
+
+        #expect(deviceFamilyAlternatives.count == 2)
+        #expect(stateAlternatives.count == 2)
+        #expect(limit["minimum"]?.intValue == 1)
+        #expect(limit["maximum"]?.intValue == 200)
+    }
+
+    @Test("list sends multi-value filters and sparse fields using Apple query names")
+    func listSendsMultiValueFilters() async throws {
+        let transport = TestHTTPTransport(responses: [
+            .init(statusCode: 200, body: #"{"data":[]}"#)
+        ])
+        let client = await HTTPClient(
+            jwtService: try TestFactory.makeJWTService(),
+            baseURL: "https://api.example.test",
+            transport: transport,
+            maxRetries: 1
+        )
+        let worker = AccessibilityWorker(httpClient: client)
+
+        let result = try await worker.handleTool(CallTool.Parameters(
+            name: "accessibility_list",
+            arguments: [
+                "app_id": .string("app-1"),
+                "device_family": .array([.string("IPHONE"), .string("IPAD")]),
+                "state": .array([.string("DRAFT"), .string("PUBLISHED")]),
+                "fields": .array([.string("deviceFamily"), .string("state")]),
+                "limit": .int(500)
+            ]
+        ))
+
+        #expect(result.isError != true)
+        let request = try #require(await transport.recordedRequests().first)
+        let components = try #require(URLComponents(url: try #require(request.url), resolvingAgainstBaseURL: false))
+        let query = Dictionary(uniqueKeysWithValues: (components.queryItems ?? []).map { ($0.name, $0.value ?? "") })
+        #expect(query["filter[deviceFamily]"] == "IPHONE,IPAD")
+        #expect(query["filter[state]"] == "DRAFT,PUBLISHED")
+        #expect(query["fields[accessibilityDeclarations]"] == "deviceFamily,state")
+        #expect(query["limit"] == "200")
+    }
+
+    @Test("pagination continuation preserves sparse fieldsets")
+    func paginationPreservesFields() async throws {
+        let transport = TestHTTPTransport(responses: [])
+        let client = await HTTPClient(
+            jwtService: try TestFactory.makeJWTService(),
+            baseURL: "https://api.example.test",
+            transport: transport,
+            maxRetries: 1
+        )
+        let worker = AccessibilityWorker(httpClient: client)
+
+        let result = try await worker.handleTool(CallTool.Parameters(
+            name: "accessibility_list",
+            arguments: [
+                "app_id": .string("app-1"),
+                "fields": .array([.string("deviceFamily"), .string("state")]),
+                "next_url": .string("https://api.example.test/v1/apps/app-1/accessibilityDeclarations?cursor=next&limit=25")
+            ]
+        ))
+
+        #expect(result.isError == true)
+        #expect(await transport.requestCount() == 0)
     }
 
     @Test("response models decode Apple accessibility declarations")
@@ -154,4 +361,24 @@ struct AccessibilityWorkerTests {
         let data = try JSONEncoder().encode(value)
         return try #require(JSONSerialization.jsonObject(with: data) as? [String: Any])
     }
+}
+
+private func accessibilityProperties(_ tool: Tool) throws -> [String: Value] {
+    guard case .object(let schema) = tool.inputSchema,
+          case .object(let properties)? = schema["properties"] else {
+        throw AccessibilityWorkerTestError.expectedObject
+    }
+    return properties
+}
+
+private func accessibilityStrings(_ value: Value?) throws -> [String] {
+    guard case .array(let values) = value else {
+        throw AccessibilityWorkerTestError.expectedArray
+    }
+    return values.compactMap(\.stringValue)
+}
+
+private enum AccessibilityWorkerTestError: Error {
+    case expectedObject
+    case expectedArray
 }

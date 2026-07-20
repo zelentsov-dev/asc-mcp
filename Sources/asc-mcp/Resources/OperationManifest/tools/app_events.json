@@ -50,13 +50,27 @@
           "toolField": "deep_link",
           "sourceKind": "requestBody",
           "operationId": "appEvents_createInstance",
-          "jsonPointer": "/data/attributes/deepLink"
+          "jsonPointer": "/data/attributes/deepLink",
+          "localRole": "Validate each non-null value as an absolute URI before network access."
         },
         {
           "toolField": "purchase_requirement",
           "sourceKind": "requestBody",
           "operationId": "appEvents_createInstance",
-          "jsonPointer": "/data/attributes/purchaseRequirement"
+          "jsonPointer": "/data/attributes/purchaseRequirement",
+          "localRole": "Accept only NO_COST_ASSOCIATED, IN_APP_PURCHASE, or explicit null before network access."
+        },
+        {
+          "toolField": "primary_locale",
+          "sourceKind": "requestBody",
+          "operationId": "appEvents_createInstance",
+          "jsonPointer": "/data/attributes/primaryLocale"
+        },
+        {
+          "toolField": "priority",
+          "sourceKind": "requestBody",
+          "operationId": "appEvents_createInstance",
+          "jsonPointer": "/data/attributes/priority"
         },
         {
           "toolField": "purpose",
@@ -69,7 +83,7 @@
           "sourceKind": "requestBody",
           "operationId": "appEvents_createInstance",
           "jsonPointer": "/data/attributes/territorySchedules",
-          "localRole": "Decode the MCP JSON string into Apple's territorySchedules array before encoding the request."
+          "localRole": "Strictly validate a structured array or backward-compatible JSON array string before encoding Apple's territorySchedules attribute."
         }
       ],
       "response": {
@@ -93,7 +107,7 @@
           }
         ]
       },
-      "note": "Direct create operation is current. Mapping is partial because invalid territory_schedules JSON is silently omitted, primaryLocale and priority are not exposed, and the tool has no outputSchema."
+      "note": "The current create contract exposes every Apple 4.4.1 attribute, preserves explicit null, validates each non-null deep link as an absolute URI, restricts purchase requirements to the current supported values, strictly validates territory schedules, and rejects malformed values before network access; partial only because the tool has no outputSchema."
     },
     {
       "tool": "app_events_create_localization",
@@ -174,7 +188,7 @@
           }
         ]
       },
-      "note": "Current direct localization create operation; partial because the MCP output projection has no outputSchema."
+      "note": "Current direct localization create operation preserving explicit null for Apple's nullable optional copy fields; partial because the MCP output projection has no outputSchema."
     },
     {
       "tool": "app_events_delete",
@@ -286,6 +300,13 @@
           "operationId": "appEvents_getInstance",
           "location": "query",
           "appleName": "include"
+        },
+        {
+          "toolField": "localizations_limit",
+          "sourceKind": "parameter",
+          "operationId": "appEvents_getInstance",
+          "location": "query",
+          "appleName": "limit[localizations]"
         }
       ],
       "response": {
@@ -312,10 +333,16 @@
             "operationId": "appEvents_getInstance",
             "jsonPointer": "/included",
             "localRole": "Project included appEventLocalizations resources."
+          },
+          {
+            "outputField": "included_unknown",
+            "operationId": "appEvents_getInstance",
+            "jsonPointer": "/included",
+            "localRole": "Preserve unknown future included resource types."
           }
         ]
       },
-      "note": "Current direct get operation; partial because the formatter omits current priority, primaryLocale and archivedTerritorySchedules fields and the tool has no outputSchema."
+      "note": "Current direct get exposes include and nested-localization limit controls and projects priority, primaryLocale, active and archived schedules, relationship IDs, localizations, and unknown future included resources; partial only because the tool has no outputSchema."
     },
     {
       "tool": "app_events_list",
@@ -340,6 +367,27 @@
           "appleName": "id"
         },
         {
+          "toolField": "event_states",
+          "sourceKind": "parameter",
+          "operationId": "apps_appEvents_getToManyRelated",
+          "location": "query",
+          "appleName": "filter[eventState]"
+        },
+        {
+          "toolField": "event_ids",
+          "sourceKind": "parameter",
+          "operationId": "apps_appEvents_getToManyRelated",
+          "location": "query",
+          "appleName": "filter[id]"
+        },
+        {
+          "toolField": "include",
+          "sourceKind": "parameter",
+          "operationId": "apps_appEvents_getToManyRelated",
+          "location": "query",
+          "appleName": "include"
+        },
+        {
           "toolField": "limit",
           "sourceKind": "parameter",
           "operationId": "apps_appEvents_getToManyRelated",
@@ -347,9 +395,16 @@
           "appleName": "limit"
         },
         {
+          "toolField": "localizations_limit",
+          "sourceKind": "parameter",
+          "operationId": "apps_appEvents_getToManyRelated",
+          "location": "query",
+          "appleName": "limit[localizations]"
+        },
+        {
           "toolField": "next_url",
           "sourceKind": "local",
-          "localRole": "Parse an Apple pagination URL and replay its path and query for this related collection operation."
+          "localRole": "Validate and follow Apple's pagination URL for this exact collection while preserving active filters, include, and nested limit."
         }
       ],
       "response": {
@@ -379,10 +434,25 @@
             "outputField": "next_url",
             "operationId": "apps_appEvents_getToManyRelated",
             "jsonPointer": "/links/next"
+          },
+          {
+            "outputField": "total",
+            "operationId": "apps_appEvents_getToManyRelated",
+            "jsonPointer": "/meta/paging/total"
+          },
+          {
+            "outputField": "included_localizations",
+            "operationId": "apps_appEvents_getToManyRelated",
+            "jsonPointer": "/included"
+          },
+          {
+            "outputField": "included_unknown",
+            "operationId": "apps_appEvents_getToManyRelated",
+            "jsonPointer": "/included"
           }
         ]
       },
-      "note": "Current related collection operation with working pagination; partial because the formatter omits current event fields and the tool has no outputSchema."
+      "note": "Current related collection with multi-value state and ID filters, include, bounded nested pagination, paging totals, current event fields, relationship IDs, and included localization projections; partial only because the tool has no outputSchema."
     },
     {
       "tool": "app_events_list_localizations",
@@ -405,6 +475,39 @@
           "operationId": "appEvents_localizations_getToManyRelated",
           "location": "path",
           "appleName": "id"
+        },
+        {
+          "toolField": "include",
+          "sourceKind": "parameter",
+          "operationId": "appEvents_localizations_getToManyRelated",
+          "location": "query",
+          "appleName": "include"
+        },
+        {
+          "toolField": "limit",
+          "sourceKind": "parameter",
+          "operationId": "appEvents_localizations_getToManyRelated",
+          "location": "query",
+          "appleName": "limit"
+        },
+        {
+          "toolField": "screenshots_limit",
+          "sourceKind": "parameter",
+          "operationId": "appEvents_localizations_getToManyRelated",
+          "location": "query",
+          "appleName": "limit[appEventScreenshots]"
+        },
+        {
+          "toolField": "video_clips_limit",
+          "sourceKind": "parameter",
+          "operationId": "appEvents_localizations_getToManyRelated",
+          "location": "query",
+          "appleName": "limit[appEventVideoClips]"
+        },
+        {
+          "toolField": "next_url",
+          "sourceKind": "local",
+          "localRole": "Validate and follow Apple's pagination URL for this exact localization collection while preserving include and nested relationship limits."
         }
       ],
       "response": {
@@ -434,10 +537,20 @@
             "outputField": "next_url",
             "operationId": "appEvents_localizations_getToManyRelated",
             "jsonPointer": "/links/next"
+          },
+          {
+            "outputField": "total",
+            "operationId": "appEvents_localizations_getToManyRelated",
+            "jsonPointer": "/meta/paging/total"
+          },
+          {
+            "outputField": "included",
+            "operationId": "appEvents_localizations_getToManyRelated",
+            "jsonPointer": "/included"
           }
         ]
       },
-      "note": "Current related collection operation, but the MCP schema exposes neither limit nor next_url for following the returned pagination link and has no outputSchema."
+      "note": "Current related collection with include, bounded base and relationship limits, secure continuation URLs, paging totals, relationship IDs, and heterogeneous included-resource projection; partial only because the tool has no outputSchema."
     },
     {
       "tool": "app_events_update",
@@ -490,13 +603,27 @@
           "toolField": "deep_link",
           "sourceKind": "requestBody",
           "operationId": "appEvents_updateInstance",
-          "jsonPointer": "/data/attributes/deepLink"
+          "jsonPointer": "/data/attributes/deepLink",
+          "localRole": "Validate each non-null value as an absolute URI before network access."
         },
         {
           "toolField": "purchase_requirement",
           "sourceKind": "requestBody",
           "operationId": "appEvents_updateInstance",
-          "jsonPointer": "/data/attributes/purchaseRequirement"
+          "jsonPointer": "/data/attributes/purchaseRequirement",
+          "localRole": "Accept only NO_COST_ASSOCIATED, IN_APP_PURCHASE, or explicit null before network access."
+        },
+        {
+          "toolField": "primary_locale",
+          "sourceKind": "requestBody",
+          "operationId": "appEvents_updateInstance",
+          "jsonPointer": "/data/attributes/primaryLocale"
+        },
+        {
+          "toolField": "priority",
+          "sourceKind": "requestBody",
+          "operationId": "appEvents_updateInstance",
+          "jsonPointer": "/data/attributes/priority"
         },
         {
           "toolField": "purpose",
@@ -509,7 +636,7 @@
           "sourceKind": "requestBody",
           "operationId": "appEvents_updateInstance",
           "jsonPointer": "/data/attributes/territorySchedules",
-          "localRole": "Decode the MCP JSON string into Apple's territorySchedules array before encoding the request."
+          "localRole": "Strictly validate a structured array or backward-compatible JSON array string before encoding Apple's nullable territorySchedules attribute."
         }
       ],
       "response": {
@@ -533,7 +660,7 @@
           }
         ]
       },
-      "note": "Direct update operation is current. Mapping is partial because invalid territory_schedules JSON is silently omitted, primaryLocale and priority are not exposed, and the tool has no outputSchema."
+      "note": "The current update contract exposes every Apple 4.4.1 writable attribute, preserves explicit null, validates each non-null deep link as an absolute URI, restricts purchase requirements to the current supported values, strictly validates territory schedules, and rejects no-op or malformed updates before network access; partial only because the tool has no outputSchema."
     },
     {
       "tool": "app_events_update_localization",
@@ -610,7 +737,7 @@
           }
         ]
       },
-      "note": "Current direct localization update operation; partial because the MCP output projection has no outputSchema."
+      "note": "Current direct localization update operation preserves explicit null and rejects no-op updates before network access; partial because the MCP output projection has no outputSchema."
     }
   ],
   "implementationAliases": []
