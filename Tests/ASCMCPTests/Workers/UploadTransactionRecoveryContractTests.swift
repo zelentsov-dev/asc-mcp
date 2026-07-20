@@ -388,8 +388,13 @@ struct UploadTransactionRecoveryContractTests {
         let fileURL = try uploadRecoveryFile(Data("hello".utf8))
         defer { try? FileManager.default.removeItem(at: fileURL) }
         let flow = UploadFlow.screenshot
+        let resourceID = "asset-0123456789abcdef0123456789"
         let apiTransport = TestHTTPTransport(responses: [
-            .init(statusCode: 201, body: uploadRecoveryResponse(flow: flow, state: flow.pendingState)),
+            .init(statusCode: 201, body: uploadRecoveryResponse(
+                flow: flow,
+                state: flow.pendingState,
+                id: resourceID
+            )),
             .init(statusCode: 500, body: uploadRecoveryAPIError(status: 500))
         ])
 
@@ -402,13 +407,19 @@ struct UploadTransactionRecoveryContractTests {
 
         #expect(result.isError == true)
         let payload = try uploadRecoveryObject(result.structuredContent)
-        #expect(payload["screenshot_id"] == .string("asset-1"))
+        #expect(payload["resourceId"] == .string(resourceID))
+        #expect(payload["screenshot_id"] == .string(resourceID))
         #expect(payload["reservationDeleted"] == .bool(false))
         let cleanup = try uploadRecoveryValueObject(payload["cleanup"])
         #expect(cleanup["status"] == .string("failed"))
         #expect(cleanup["tool"] == .string("screenshots_delete"))
         let arguments = try uploadRecoveryValueObject(cleanup["arguments"])
-        #expect(arguments["screenshot_id"] == .string("asset-1"))
+        #expect(arguments["screenshot_id"] == .string(resourceID))
+        guard case .text(let humanText, _, _) = result.content.first else {
+            Issue.record("Expected human-readable recovery guidance")
+            return
+        }
+        #expect(humanText.contains(resourceID))
     }
 
     @Test("rollback 404 is treated as an already absent reservation")

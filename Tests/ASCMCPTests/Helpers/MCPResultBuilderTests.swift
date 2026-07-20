@@ -74,13 +74,14 @@ struct MCPResultBuilderTests {
     func errorResultRedactsCredentials() throws {
         let bearer = "abc_def-123~+/=="
         let base64URL = "eyJhbGciOiJFUzI1NiJ9_AbCdEfGhIjKlMnOpQrStUvWxYz0123456789"
+        let apiKeySecret = "APIKEY_ABCDEFGHIJKLMNOPQRSTUVWXYZ012345"
         let lowerSnakeSecret = "api_token_abcdefghijklmnopqrstuvwxyz012345"
         let upperSnakeSecret = "TOKEN_ABCDEFGHIJKLMNOPQRSTUVWXYZ012345"
         let prefixedSecret = "internal_secret-A1B2C3D4"
         let privateKeyPath = "/tmp/AuthKey_ABC123.p8"
         let privateKey = "-----BEGIN PRIVATE KEY-----\nabcdefghijklmnopqrstuvwxyzABCD\n-----END PRIVATE KEY-----"
         let result = MCPResult.error(
-            "bearer \(bearer), token \(base64URL), lower \(lowerSnakeSecret), upper \(upperSnakeSecret), prefixed \(prefixedSecret), key \(privateKeyPath)\n\(privateKey)"
+            "bearer \(bearer), token \(base64URL), API key \(apiKeySecret), lower \(lowerSnakeSecret), upper \(upperSnakeSecret), prefixed \(prefixedSecret), resource id: \(lowerSnakeSecret), key \(privateKeyPath)\n\(privateKey)"
         )
 
         guard case .text(let text, _, _) = result.content.first,
@@ -100,11 +101,83 @@ struct MCPResultBuilderTests {
         #expect(error.contains("[REDACTED_PRIVATE_KEY]"))
         #expect(!text.contains(bearer))
         #expect(!text.contains(base64URL))
+        #expect(!text.contains(apiKeySecret))
         #expect(!text.contains(lowerSnakeSecret))
         #expect(!text.contains(upperSnakeSecret))
         #expect(!text.contains(prefixedSecret))
         #expect(!text.contains(privateKeyPath))
         #expect(!text.contains(privateKey))
+    }
+
+    @Test("identifier fields do not exempt credential-like values")
+    func identifierFieldsDoNotExemptCredentials() throws {
+        let token = "api_token_abcdefghijklmnopqrstuvwxyz012345"
+        let apiKey = "APIKEY_ABCDEFGHIJKLMNOPQRSTUVWXYZ012345"
+        let result = MCPResult.json(
+            .object([
+                "success": .bool(false),
+                "error": .string("Invalid recovery identifiers"),
+                "resourceId": .string(token),
+                "details": .object([
+                    "attachment_id": .string(apiKey)
+                ])
+            ]),
+            text: "Error: resource id: \(token); attachment_id '\(apiKey)'",
+            isError: true
+        )
+
+        guard case .object(let payload)? = result.structuredContent,
+              case .object(let details)? = payload["details"],
+              case .text(let humanText, _, _) = result.content.first else {
+            Issue.record("Expected canonical credential error")
+            return
+        }
+
+        #expect(payload["resourceId"] == .string("[REDACTED]"))
+        #expect(details["attachment_id"] == .string("[REDACTED]"))
+        #expect(!humanText.contains(token))
+        #expect(!humanText.contains(apiKey))
+        #expect(try exactJSONMirror(from: result) == structuredJSON(from: result))
+    }
+
+    @Test("transport normalization redacts short credential assignments")
+    func transportNormalizationRedactsShortCredentialAssignments() throws {
+        let raw = CallTool.Result(
+            content: [MCPContent.text(
+                #"Error: request api_token=short-secret; body {"password":"tiny","authorization": "brief"}"#
+            )],
+            structuredContent: .object([
+                "error": .string("Bad request"),
+                "api_token": .string("short-secret"),
+                "details": .object([
+                    "password": .string("tiny"),
+                    "authorization": .string("brief")
+                ])
+            ]),
+            isError: true
+        )
+
+        let normalized = MCPResult.normalizeForTransport(raw)
+
+        guard case .text(let humanText, _, _) = normalized.content.first,
+              case .object(let payload)? = normalized.structuredContent,
+              case .object(let details)? = payload["details"] else {
+            Issue.record("Expected normalized short-credential error")
+            return
+        }
+
+        #expect(!humanText.contains("short-secret"))
+        #expect(!humanText.contains("tiny"))
+        #expect(!humanText.contains("brief"))
+        #expect(payload["api_token"] == .string("[REDACTED]"))
+        #expect(details["password"] == .string("[REDACTED]"))
+        #expect(details["authorization"] == .string("[REDACTED]"))
+        let mirror = try exactJSONMirror(from: normalized)
+        #expect(!mirror.contains("short-secret"))
+        #expect(!mirror.contains("tiny"))
+        #expect(!mirror.contains("brief"))
+        #expect(mirror == (try structuredJSON(from: normalized)))
+        #expect(MCPResult.normalizeForTransport(normalized) == normalized)
     }
 
     @Test("fromAny handles nulls, dates, and nested dictionaries")

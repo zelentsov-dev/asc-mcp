@@ -67,7 +67,9 @@ enum MCPResult {
             guard case .text(let text, _, _) = content else { return true }
             return !isJSONMirror(text, of: rawMirrors)
         }.map(redactErrorText)
-        let originalStructured = result.structuredContent.map(MCPValueSanitizer.sanitizeError)
+        let originalStructured = result.structuredContent.map {
+            MCPValueSanitizer.sanitizeError($0)
+        }
         let originalMirrors = originalStructured.map { [$0] } ?? []
         let humanText = redactedContent.compactMap { content -> String? in
             guard case .text(let text, _, _) = content,
@@ -223,18 +225,24 @@ enum MCPValueSanitizer {
         }
     }
 
-    static func sanitizeError(_ value: Value) -> Value {
+    static func sanitizeError(_ value: Value, key: String? = nil) -> Value {
         switch value {
         case .object(let object):
             var sanitized: [String: Value] = [:]
             for (key, child) in object {
-                sanitized[key] = isSensitiveKey(key) ? .string("[REDACTED]") : sanitizeError(child)
+                sanitized[key] = isSensitiveKey(key)
+                    ? .string("[REDACTED]")
+                    : sanitizeError(child, key: key)
             }
             return .object(sanitized)
         case .array(let array):
-            return .array(array.map(sanitizeError))
+            return .array(array.map { sanitizeError($0, key: key) })
         case .string(let string):
-            return .string(Redactor.redact(string))
+            return .string(
+                isIdentifierKey(key)
+                    ? Redactor.redactPreservingOpaqueIdentifiers(string)
+                    : Redactor.redact(string)
+            )
         case .double(let number) where !number.isFinite:
             return .null
         default:
@@ -260,6 +268,15 @@ enum MCPValueSanitizer {
             lower.hasSuffix("_token") ||
             lower.hasSuffix("-token") ||
             (normalized.hasSuffix("token") && !normalized.hasPrefix("has"))
+    }
+
+    private static func isIdentifierKey(_ key: String?) -> Bool {
+        guard let key else { return false }
+        return key == "id" ||
+            key.hasSuffix("Id") ||
+            key.hasSuffix("ID") ||
+            key.lowercased().hasSuffix("_id") ||
+            key.lowercased().hasSuffix("-id")
     }
 }
 

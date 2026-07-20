@@ -325,6 +325,48 @@ struct AppsWorkerReliabilityTests {
         #expect(mirror == (try MCPValue.compactJSONString(from: .object(payload))))
     }
 
+    @Test("metadata state-selection error preserves long App Store states")
+    func metadataStateSelectionErrorPreservesLongStates() async throws {
+        let requestedState = "WAITING_FOR_EXPORT_COMPLIANCE"
+        let availableStates = ["PREPARE_FOR_SUBMISSION", "READY_FOR_DISTRIBUTION"]
+        let transport = TestHTTPTransport(responses: [
+            .init(statusCode: 200, body: versionsPage(
+                versions: availableStates.enumerated().map { index, state in
+                    version(
+                        id: "ver-\(index)",
+                        appVersionState: state,
+                        appStoreState: nil,
+                        platform: "IOS"
+                    )
+                },
+                next: nil
+            ))
+        ])
+        let worker = try await makeAppsReliabilityWorker(transport)
+
+        let result = try await worker.handleTool(.init(
+            name: "apps_get_metadata",
+            arguments: [
+                "app_id": .string("app-1"),
+                "version_state": .string(requestedState)
+            ]
+        ))
+
+        #expect(result.isError == true)
+        guard case .object(let payload)? = result.structuredContent,
+              case .string(let error)? = payload["error"],
+              case .text(let humanText, _, _) = result.content.first else {
+            Issue.record("Expected canonical state-selection error")
+            return
+        }
+        #expect(error.contains(requestedState))
+        for state in availableStates {
+            #expect(error.contains(state))
+        }
+        #expect(humanText == "Error: \(error)")
+        #expect(!error.contains("[REDACTED]"))
+    }
+
     @Test("metadata version pagination rejects missing or changed fixed limit")
     func metadataVersionPaginationRequiresFixedLimit() async throws {
         let projection = "platform%2CversionString%2CappVersionState%2CappStoreState%2CcreatedDate"
