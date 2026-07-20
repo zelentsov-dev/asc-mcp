@@ -58,12 +58,19 @@ extension IntroductoryOffersWorker {
                         "description": .string("Number of periods for the offer")
                     ]),
                     "start_date": .object([
-                        "type": .string("string"),
-                        "description": .string("Start date (ISO 8601 format, e.g. 2026-01-01)")
+                        "type": .array([.string("string"), .string("null")]),
+                        "description": .string("Start date in YYYY-MM-DD format, or null to use Apple's default"),
+                        "format": .string("date")
                     ]),
                     "end_date": .object([
-                        "type": .string("string"),
-                        "description": .string("End date (ISO 8601 format, optional)")
+                        "type": .array([.string("string"), .string("null")]),
+                        "description": .string("End date in YYYY-MM-DD format, or null for no end date"),
+                        "format": .string("date")
+                    ]),
+                    "target_subscription_plan_type": .object([
+                        "type": .array([.string("string"), .string("null")]),
+                        "description": .string("Target subscription plan type, or null to use Apple's default"),
+                        "enum": .array([.string("MONTHLY"), .string("UPFRONT"), .null])
                     ]),
                     "territory_id": .object([
                         "type": .string("string"),

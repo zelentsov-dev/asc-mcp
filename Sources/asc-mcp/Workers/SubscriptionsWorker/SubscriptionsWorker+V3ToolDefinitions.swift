@@ -8,7 +8,7 @@ extension SubscriptionsWorker {
             simpleTool("subscriptions_get_group", "Get a subscription group", ["group_id": "Subscription group ID"], ["group_id"]),
             simpleTool("subscriptions_submit_group", "Submit a subscription group for review", ["group_id": "Subscription group ID"], ["group_id"]),
             simpleTool("subscriptions_get_localization", "Get a subscription localization", ["localization_id": "Subscription localization ID"], ["localization_id"]),
-            simpleTool("subscriptions_create_price", "Create a subscription price for a territory and price point", ["subscription_id": "Subscription ID", "territory_id": "Territory ID", "price_point_id": "Subscription price point ID", "start_date": "Optional ISO date"], ["subscription_id", "territory_id", "price_point_id"]),
+            simpleTool("subscriptions_create_price", "Create a subscription price for a territory and price point", ["subscription_id": "Subscription ID", "territory_id": "Territory ID", "price_point_id": "Subscription price point ID", "start_date": "Optional date in YYYY-MM-DD format; pass null to request an immediate price", "plan_type": "Optional subscription plan type; pass null to use Apple's default", "preserve_current_price": "Whether to preserve the current subscriber price; pass null to use Apple's default"], ["subscription_id", "territory_id", "price_point_id"]),
             simpleTool("subscriptions_get_price_point", "Get one subscription price point", ["price_point_id": "Subscription price point ID"], ["price_point_id"]),
             simpleTool("subscriptions_list_price_point_equalizations", "List equivalent subscription price points", ["price_point_id": "Subscription price point ID", "subscription_id": "Optional subscription filter", "territory_id": "Optional territory filter", "limit": "Max results, up to 8000", "next_url": "Pagination URL"], ["price_point_id"]),
             simpleTool("subscriptions_get_availability", "Deprecated compatibility read for Apple's legacy subscriptionAvailability resource. Apple 4.4.1 replaces it with plan-type-aware subscriptionPlanAvailabilities.", ["subscription_id": "Subscription ID"], ["subscription_id"]),
@@ -19,7 +19,7 @@ extension SubscriptionsWorker {
             subscriptionPricingSummaryTool(),
             simpleTool("subscriptions_prepare_offer_prices", "Find subscription price point candidates for offer creation", ["subscription_id": "Subscription ID", "territory_id": "Territory ID", "mode": "Offer mode", "customer_price": "Optional customer price to match"], ["subscription_id", "territory_id", "mode"]),
             simpleTool("subscriptions_list_intro_offers", "List introductory offers", ["subscription_id": "Subscription ID", "territory_id": "Optional territory filter", "limit": "Max results", "next_url": "Pagination URL"], ["subscription_id"]),
-            simpleTool("subscriptions_create_intro_offer", "Create an introductory offer", ["subscription_id": "Subscription ID", "duration": "Offer duration", "offer_mode": "Offer mode", "number_of_periods": "Number of periods", "territory_id": "Territory ID", "price_point_id": "Price point ID for paid modes"], ["subscription_id", "duration", "offer_mode", "number_of_periods"]),
+            simpleTool("subscriptions_create_intro_offer", "Create an introductory offer", ["subscription_id": "Subscription ID", "duration": "Offer duration", "offer_mode": "Offer mode", "number_of_periods": "Number of periods", "start_date": "Optional start date in YYYY-MM-DD format; pass null to use Apple's default", "end_date": "Optional end date in YYYY-MM-DD format; pass null for no end date", "target_subscription_plan_type": "Optional target subscription plan type; pass null to use Apple's default", "territory_id": "Territory ID", "price_point_id": "Price point ID for paid modes"], ["subscription_id", "duration", "offer_mode", "number_of_periods"]),
             simpleTool("subscriptions_update_intro_offer", "Update an introductory offer", ["intro_offer_id": "Introductory offer ID", "end_date": "End date"], ["intro_offer_id"]),
             simpleTool("subscriptions_delete_intro_offer", "Delete an introductory offer", ["intro_offer_id": "Introductory offer ID"], ["intro_offer_id"]),
             simpleTool("subscriptions_list_promotional_offers", "List promotional offers", ["subscription_id": "Subscription ID", "territory_id": "Optional territory filter", "limit": "Max results", "next_url": "Pagination URL"], ["subscription_id"]),
@@ -127,7 +127,7 @@ extension SubscriptionsWorker {
             ? "array"
             : (key == "limit" || key == "number_of_periods" || key == "number_of_codes" || key == "period_count" || key.hasSuffix("_months") || key.hasSuffix("_months_min") || key.hasSuffix("_months_max")
                 ? "integer"
-                : (key == "active" || key == "available_in_new_territories" || key == "auto_renew_enabled" ? "boolean" : "string"))
+                : (key == "active" || key == "available_in_new_territories" || key == "auto_renew_enabled" || key == "preserve_current_price" ? "boolean" : "string"))
         let nullableWinBackFields: Set<String> = [
             "eligibility_duration_months",
             "eligibility_time_since_last_months_min",
@@ -138,7 +138,11 @@ extension SubscriptionsWorker {
             "priority",
             "promotion_intent"
         ]
-        let isNullable = toolName == "subscriptions_update_winback_offer" && nullableWinBackFields.contains(key)
+        let nullableCreatePriceFields: Set<String> = ["start_date", "plan_type", "preserve_current_price"]
+        let nullableIntroductoryOfferFields: Set<String> = ["start_date", "end_date", "target_subscription_plan_type"]
+        let isNullable = (toolName == "subscriptions_update_winback_offer" && nullableWinBackFields.contains(key)) ||
+            (toolName == "subscriptions_create_price" && nullableCreatePriceFields.contains(key)) ||
+            (toolName == "subscriptions_create_intro_offer" && nullableIntroductoryOfferFields.contains(key))
         var schema: [String: Value] = [
             "type": isNullable ? .array([.string(baseType), .string("null")]) : .string(baseType),
             "description": .string(description)
@@ -167,6 +171,7 @@ extension SubscriptionsWorker {
             "offer_mode": ["PAY_AS_YOU_GO", "PAY_UP_FRONT", "FREE_TRIAL"],
             "mode": ["PAY_AS_YOU_GO", "PAY_UP_FRONT", "FREE_TRIAL"],
             "duration": ["THREE_DAYS", "ONE_WEEK", "TWO_WEEKS", "ONE_MONTH", "TWO_MONTHS", "THREE_MONTHS", "SIX_MONTHS", "ONE_YEAR"],
+            "plan_type": ["MONTHLY", "UPFRONT"],
             "target_subscription_plan_type": ["MONTHLY", "UPFRONT"],
             "priority": ["HIGH", "NORMAL"],
             "promotion_intent": ["NOT_PROMOTED", "USE_AUTO_GENERATED_ASSETS"],

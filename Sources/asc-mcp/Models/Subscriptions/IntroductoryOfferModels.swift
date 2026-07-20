@@ -27,6 +27,7 @@ public struct IntroductoryOfferAttributes: Codable, Sendable {
     public let numberOfPeriods: Int?
     public let startDate: String?
     public let endDate: String?
+    public let targetSubscriptionPlanType: String?
 }
 
 // MARK: - Introductory Offer Request Models
@@ -45,8 +46,9 @@ public struct CreateIntroductoryOfferRequest: Codable, Sendable {
         public let duration: String
         public let offerMode: String
         public let numberOfPeriods: Int
-        public let startDate: String?
-        public let endDate: String?
+        public let startDate: NullableAttributeValue?
+        public let endDate: NullableAttributeValue?
+        public let targetSubscriptionPlanType: NullableAttributeValue?
     }
 
     public struct Relationships: Codable, Sendable {

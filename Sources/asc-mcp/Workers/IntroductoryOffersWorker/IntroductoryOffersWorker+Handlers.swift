@@ -89,7 +89,15 @@ extension IntroductoryOffersWorker {
         }
 
         do {
-            // Build relationships
+            let startDate = try nullableIntroductoryOfferDate("start_date", from: arguments)
+            let endDate = try nullableIntroductoryOfferDate("end_date", from: arguments)
+            let targetSubscriptionPlanType = try nullableIntroductoryOfferPlanType(from: arguments)
+            if case .string(let start)? = startDate,
+               case .string(let end)? = endDate,
+               start > end {
+                throw IntroductoryOfferInputError("start_date must be earlier than or equal to end_date")
+            }
+
             let subscriptionRel = CreateIntroductoryOfferRequest.SubscriptionRelationship(
                 data: ASCResourceIdentifier(type: "subscriptions", id: subscriptionId)
             )
@@ -114,8 +122,9 @@ extension IntroductoryOffersWorker {
                         duration: duration,
                         offerMode: offerMode,
                         numberOfPeriods: numberOfPeriods,
-                        startDate: arguments["start_date"]?.stringValue,
-                        endDate: arguments["end_date"]?.stringValue
+                        startDate: startDate,
+                        endDate: endDate,
+                        targetSubscriptionPlanType: targetSubscriptionPlanType
                     ),
                     relationships: CreateIntroductoryOfferRequest.Relationships(
                         subscription: subscriptionRel,
@@ -231,7 +240,79 @@ extension IntroductoryOffersWorker {
             "offerMode": offer.attributes.offerMode.jsonSafe,
             "numberOfPeriods": offer.attributes.numberOfPeriods.jsonSafe,
             "startDate": offer.attributes.startDate.jsonSafe,
-            "endDate": offer.attributes.endDate.jsonSafe
+            "endDate": offer.attributes.endDate.jsonSafe,
+            "targetSubscriptionPlanType": offer.attributes.targetSubscriptionPlanType.jsonSafe
         ]
     }
+
+    private func nullableIntroductoryOfferDate(
+        _ name: String,
+        from arguments: [String: Value]
+    ) throws -> NullableAttributeValue? {
+        guard let value = arguments[name] else {
+            return nil
+        }
+        if value.isNull {
+            return .null
+        }
+        guard let string = value.stringValue, isValidIntroductoryOfferDate(string) else {
+            throw IntroductoryOfferInputError("\(name) must be a valid date in YYYY-MM-DD format or null")
+        }
+        return .string(string)
+    }
+
+    private func nullableIntroductoryOfferPlanType(
+        from arguments: [String: Value]
+    ) throws -> NullableAttributeValue? {
+        guard let value = arguments["target_subscription_plan_type"] else {
+            return nil
+        }
+        if value.isNull {
+            return .null
+        }
+        let allowedValues: Set<String> = ["MONTHLY", "UPFRONT"]
+        guard let string = value.stringValue, allowedValues.contains(string) else {
+            throw IntroductoryOfferInputError("target_subscription_plan_type must be null or one of: MONTHLY, UPFRONT")
+        }
+        return .string(string)
+    }
+
+    private func isValidIntroductoryOfferDate(_ value: String) -> Bool {
+        let parts = value.split(separator: "-", omittingEmptySubsequences: false)
+        guard parts.count == 3,
+              parts[0].count == 4,
+              parts[1].count == 2,
+              parts[2].count == 2,
+              parts.allSatisfy({ $0.allSatisfy(\.isNumber) }),
+              let year = Int(parts[0]),
+              year >= 1,
+              let month = Int(parts[1]),
+              let day = Int(parts[2]) else {
+            return false
+        }
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 0)!
+        let components = DateComponents(
+            calendar: calendar,
+            timeZone: calendar.timeZone,
+            year: year,
+            month: month,
+            day: day
+        )
+        guard let date = calendar.date(from: components) else {
+            return false
+        }
+        let resolved = calendar.dateComponents([.year, .month, .day], from: date)
+        return resolved.year == year && resolved.month == month && resolved.day == day
+    }
+}
+
+private struct IntroductoryOfferInputError: LocalizedError, Sendable {
+    let message: String
+
+    init(_ message: String) {
+        self.message = message
+    }
+
+    var errorDescription: String? { message }
 }

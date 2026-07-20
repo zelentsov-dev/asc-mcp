@@ -157,6 +157,7 @@ public struct UpdateSubscriptionRequest: Codable, Sendable {
         public let familySharable: Bool?
         public let groupLevel: Int?
         public let reviewNote: String?
+        public let subscriptionPeriod: NullableAttributeValue?
     }
 }
 

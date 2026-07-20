@@ -165,8 +165,24 @@ extension SubscriptionsWorker {
         }
 
         var attributes: [String: Any] = [:]
-        if let startDate = arguments["start_date"]?.stringValue {
-            attributes["startDate"] = startDate
+        if let error = setNullableSubscriptionPriceDate(
+            arguments["start_date"],
+            attribute: "startDate",
+            attributes: &attributes
+        ) {
+            return MCPResult.error(error)
+        }
+        if let error = setNullableSubscriptionPricePlanType(
+            arguments["plan_type"],
+            attributes: &attributes
+        ) {
+            return MCPResult.error(error)
+        }
+        if let error = setNullableSubscriptionPricePreservation(
+            arguments["preserve_current_price"],
+            attributes: &attributes
+        ) {
+            return MCPResult.error(error)
         }
         let body: [String: Any] = [
             "data": [
@@ -180,6 +196,91 @@ extension SubscriptionsWorker {
             ]
         ]
         return try await postResource(endpoint: "/v1/subscriptionPrices", body: body, key: "price")
+    }
+
+    private func setNullableSubscriptionPriceDate(
+        _ value: Value?,
+        attribute: String,
+        attributes: inout [String: Any]
+    ) -> String? {
+        guard let value else {
+            return nil
+        }
+        if value.isNull {
+            attributes[attribute] = NSNull()
+            return nil
+        }
+        guard let string = value.stringValue, isValidSubscriptionPriceDate(string) else {
+            return "start_date must be a valid date in YYYY-MM-DD format or null"
+        }
+        attributes[attribute] = string
+        return nil
+    }
+
+    private func setNullableSubscriptionPricePlanType(
+        _ value: Value?,
+        attributes: inout [String: Any]
+    ) -> String? {
+        guard let value else {
+            return nil
+        }
+        if value.isNull {
+            attributes["planType"] = NSNull()
+            return nil
+        }
+        let allowedValues: Set<String> = ["MONTHLY", "UPFRONT"]
+        guard let string = value.stringValue, allowedValues.contains(string) else {
+            return "plan_type must be null or one of: MONTHLY, UPFRONT"
+        }
+        attributes["planType"] = string
+        return nil
+    }
+
+    private func setNullableSubscriptionPricePreservation(
+        _ value: Value?,
+        attributes: inout [String: Any]
+    ) -> String? {
+        guard let value else {
+            return nil
+        }
+        if value.isNull {
+            attributes["preserveCurrentPrice"] = NSNull()
+            return nil
+        }
+        guard let bool = value.boolValue else {
+            return "preserve_current_price must be a boolean or null"
+        }
+        attributes["preserveCurrentPrice"] = bool
+        return nil
+    }
+
+    private func isValidSubscriptionPriceDate(_ value: String) -> Bool {
+        let parts = value.split(separator: "-", omittingEmptySubsequences: false)
+        guard parts.count == 3,
+              parts[0].count == 4,
+              parts[1].count == 2,
+              parts[2].count == 2,
+              parts.allSatisfy({ $0.allSatisfy(\.isNumber) }),
+              let year = Int(parts[0]),
+              year >= 1,
+              let month = Int(parts[1]),
+              let day = Int(parts[2]) else {
+            return false
+        }
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 0)!
+        let components = DateComponents(
+            calendar: calendar,
+            timeZone: calendar.timeZone,
+            year: year,
+            month: month,
+            day: day
+        )
+        guard let date = calendar.date(from: components) else {
+            return false
+        }
+        let resolved = calendar.dateComponents([.year, .month, .day], from: date)
+        return resolved.year == year && resolved.month == month && resolved.day == day
     }
 
     func getSubscriptionPricePoint(_ params: CallTool.Parameters) async throws -> CallTool.Result {

@@ -268,6 +268,15 @@
           "path": "/v1/subscriptionIntroductoryOffers",
           "role": "primary",
           "condition": null,
+          "optionalParameterClassifications": [
+            {
+              "location": "body",
+              "appleName": "/included",
+              "disposition": "intentionallyOmitted",
+              "reason": "The tool links an existing subscription price point by ID. Apple's inline price-point graph adds no independent caller value and would duplicate typed price-point discovery and validation.",
+              "reviewAtSpec": "4.4.1"
+            }
+          ],
           "inputs": [
             {
               "sourceKind": "fixed",
@@ -320,6 +329,24 @@
           "jsonPointer": "/data/attributes/numberOfPeriods"
         },
         {
+          "toolField": "start_date",
+          "sourceKind": "requestBody",
+          "operationId": "subscriptionIntroductoryOffers_createInstance",
+          "jsonPointer": "/data/attributes/startDate"
+        },
+        {
+          "toolField": "end_date",
+          "sourceKind": "requestBody",
+          "operationId": "subscriptionIntroductoryOffers_createInstance",
+          "jsonPointer": "/data/attributes/endDate"
+        },
+        {
+          "toolField": "target_subscription_plan_type",
+          "sourceKind": "requestBody",
+          "operationId": "subscriptionIntroductoryOffers_createInstance",
+          "jsonPointer": "/data/attributes/targetSubscriptionPlanType"
+        },
+        {
           "toolField": "territory_id",
           "sourceKind": "requestBody",
           "operationId": "subscriptionIntroductoryOffers_createInstance",
@@ -339,7 +366,7 @@
         ],
         "fields": []
       },
-      "note": "Apple 4.4.1 operation identity and all public inputs are classified; response remains opaque, so the semantic mapping is partial."
+      "note": "Preserves Apple's nullable date and target-plan inputs while keeping inline price-point creation behind the dedicated typed price workflow."
     },
     {
       "tool": "subscriptions_create_localization",
@@ -584,6 +611,18 @@
           "sourceKind": "requestBody",
           "operationId": "subscriptionPrices_createInstance",
           "jsonPointer": "/data/attributes/startDate"
+        },
+        {
+          "toolField": "plan_type",
+          "sourceKind": "requestBody",
+          "operationId": "subscriptionPrices_createInstance",
+          "jsonPointer": "/data/attributes/planType"
+        },
+        {
+          "toolField": "preserve_current_price",
+          "sourceKind": "requestBody",
+          "operationId": "subscriptionPrices_createInstance",
+          "jsonPointer": "/data/attributes/preserveCurrentPrice"
         }
       ],
       "response": {
@@ -593,7 +632,7 @@
         ],
         "fields": []
       },
-      "note": "Creates one subscription price. Apple 4.4 adds planType and preserveCurrentPrice; the public surface cannot express them, so mapping remains partial."
+      "note": "Creates one subscription price and preserves omission, concrete values, and explicit null for every nullable Apple 4.4.1 price attribute."
     },
     {
       "tool": "subscriptions_create_promotional_offer",
@@ -3917,6 +3956,36 @@
           "path": "/v1/subscriptions/{id}",
           "role": "primary",
           "condition": null,
+          "optionalParameterClassifications": [
+            {
+              "location": "body",
+              "appleName": "/data/relationships/introductoryOffers",
+              "disposition": "intentionallyOmitted",
+              "reason": "The general subscription update remains attribute-only; dedicated introductory-offer tools manage this relationship without exposing a replacement-capable inline graph.",
+              "reviewAtSpec": "4.4.1"
+            },
+            {
+              "location": "body",
+              "appleName": "/data/relationships/prices",
+              "disposition": "intentionallyOmitted",
+              "reason": "The general subscription update remains attribute-only; dedicated price tools validate territory and price-point identifiers without exposing a replacement-capable inline graph.",
+              "reviewAtSpec": "4.4.1"
+            },
+            {
+              "location": "body",
+              "appleName": "/data/relationships/promotionalOffers",
+              "disposition": "intentionallyOmitted",
+              "reason": "The general subscription update remains attribute-only; dedicated promotional-offer tools preserve offer and pricing invariants without exposing a replacement-capable inline graph.",
+              "reviewAtSpec": "4.4.1"
+            },
+            {
+              "location": "body",
+              "appleName": "/included",
+              "disposition": "intentionallyOmitted",
+              "reason": "Apple's included resources form the inline create graph coupled to the omitted offer and price relationships; dedicated typed lifecycle tools provide safer validated mutations and returned resource IDs.",
+              "reviewAtSpec": "4.4.1"
+            }
+          ],
           "inputs": [
             {
               "sourceKind": "fixed",
@@ -3965,6 +4034,12 @@
           "sourceKind": "requestBody",
           "operationId": "subscriptions_updateInstance",
           "jsonPointer": "/data/attributes/reviewNote"
+        },
+        {
+          "toolField": "subscription_period",
+          "sourceKind": "requestBody",
+          "operationId": "subscriptions_updateInstance",
+          "jsonPointer": "/data/attributes/subscriptionPeriod"
         }
       ],
       "response": {
@@ -3974,7 +4049,7 @@
         ],
         "fields": []
       },
-      "note": "Apple 4.4.1 operation identity and all public inputs are classified; response remains opaque, so the semantic mapping is partial."
+      "note": "Updates subscription metadata with nullable subscriptionPeriod support. Offer and price relationship graphs remain intentionally delegated to dedicated typed lifecycle tools."
     },
     {
       "tool": "subscriptions_update_custom_code",

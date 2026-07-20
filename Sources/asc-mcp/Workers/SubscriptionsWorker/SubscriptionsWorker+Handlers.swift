@@ -206,7 +206,22 @@ extension SubscriptionsWorker {
             )
         }
 
+        let mutableFields: Set<String> = [
+            "name",
+            "family_sharable",
+            "group_level",
+            "review_note",
+            "subscription_period"
+        ]
+        guard arguments.keys.contains(where: mutableFields.contains) else {
+            return CallTool.Result(
+                content: [MCPContent.text("Error: At least one mutable subscription field is required")],
+                isError: true
+            )
+        }
+
         do {
+            let subscriptionPeriod = try nullableSubscriptionPeriod(from: arguments)
             let request = UpdateSubscriptionRequest(
                 data: UpdateSubscriptionRequest.UpdateData(
                     id: subscriptionId,
@@ -214,7 +229,8 @@ extension SubscriptionsWorker {
                         name: arguments["name"]?.stringValue,
                         familySharable: arguments["family_sharable"]?.boolValue,
                         groupLevel: arguments["group_level"]?.intValue,
-                        reviewNote: arguments["review_note"]?.stringValue
+                        reviewNote: arguments["review_note"]?.stringValue,
+                        subscriptionPeriod: subscriptionPeriod
                     )
                 )
             )
@@ -240,6 +256,31 @@ extension SubscriptionsWorker {
                 isError: true
             )
         }
+    }
+
+    private func nullableSubscriptionPeriod(
+        from arguments: [String: Value]
+    ) throws -> NullableAttributeValue? {
+        guard let value = arguments["subscription_period"] else {
+            return nil
+        }
+        if value.isNull {
+            return .null
+        }
+        let allowedValues: Set<String> = [
+            "ONE_WEEK",
+            "ONE_MONTH",
+            "TWO_MONTHS",
+            "THREE_MONTHS",
+            "SIX_MONTHS",
+            "ONE_YEAR"
+        ]
+        guard let string = value.stringValue, allowedValues.contains(string) else {
+            throw SubscriptionUpdateInputError(
+                "subscription_period must be null or one of: \(allowedValues.sorted().joined(separator: ", "))"
+            )
+        }
+        return .string(string)
     }
 
     /// Deletes a subscription
@@ -1404,4 +1445,14 @@ extension SubscriptionsWorker {
             "referenceName": group.attributes.referenceName.jsonSafe
         ]
     }
+}
+
+private struct SubscriptionUpdateInputError: LocalizedError, Sendable {
+    let message: String
+
+    init(_ message: String) {
+        self.message = message
+    }
+
+    var errorDescription: String? { message }
 }

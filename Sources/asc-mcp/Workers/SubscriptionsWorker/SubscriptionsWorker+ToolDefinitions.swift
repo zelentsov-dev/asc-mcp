@@ -105,6 +105,7 @@ extension SubscriptionsWorker {
             description: "Update an existing subscription",
             inputSchema: .object([
                 "type": .string("object"),
+                "minProperties": .int(2),
                 "properties": .object([
                     "subscription_id": .object([
                         "type": .string("string"),
@@ -125,6 +126,19 @@ extension SubscriptionsWorker {
                     "review_note": .object([
                         "type": .string("string"),
                         "description": .string("Notes for App Review")
+                    ]),
+                    "subscription_period": .object([
+                        "type": .array([.string("string"), .string("null")]),
+                        "description": .string("Subscription period, or null to clear Apple's nullable value"),
+                        "enum": .array([
+                            .string("ONE_WEEK"),
+                            .string("ONE_MONTH"),
+                            .string("TWO_MONTHS"),
+                            .string("THREE_MONTHS"),
+                            .string("SIX_MONTHS"),
+                            .string("ONE_YEAR"),
+                            .null
+                        ])
                     ])
                 ]),
                 "required": .array([.string("subscription_id")])
