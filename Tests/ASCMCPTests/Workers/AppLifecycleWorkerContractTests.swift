@@ -59,6 +59,9 @@ struct AppLifecycleWorkerContractTests {
                   "build": { "data": { "type": "builds", "id": "build-1" } }
                 }
               },
+              "links": {
+                "self": "https://api.example.test/v1/appStoreVersions/ver-1"
+              },
               "included": [
                 {
                   "type": "builds",

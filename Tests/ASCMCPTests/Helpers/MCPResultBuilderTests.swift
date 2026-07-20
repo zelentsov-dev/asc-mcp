@@ -145,7 +145,8 @@ struct MCPResultBuilderTests {
                 "error": .string("Cleanup requires inspection"),
                 "details": .object([
                     "status": .string("committed_unverified"),
-                    "providerStatus": .string("api_token=short-secret")
+                    "providerStatus": .string("opaque_abcdefghijklmnopqrstuvwxyz012345"),
+                    "credentialStatus": .string("api_token=short-secret")
                 ])
             ]),
             isError: true
@@ -158,7 +159,8 @@ struct MCPResultBuilderTests {
         }
 
         #expect(details["status"] == .string("committed_unverified"))
-        #expect(details["providerStatus"] == .string("api_token=[REDACTED]"))
+        #expect(details["providerStatus"] == .string("[REDACTED]"))
+        #expect(details["credentialStatus"] == .string("api_token=[REDACTED]"))
     }
 
     @Test("human text cannot forge an unknown DELETE outcome")

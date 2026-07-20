@@ -30,6 +30,7 @@ enum Redactor {
             "create_review_submission_item",
             "confirm_review_submission",
             "review_submission_id",
+            "committed_unverified",
             "absolute-path-to-the-exact-reserved-bytes"
         ]
         if let manifest = try? ASCOperationManifestBundle.loadBundled() {
