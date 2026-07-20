@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.13.0] - 2026-07-20
+
+### Changed
+
+- Bind all 55 reviewed public and internal pagination scopes to their exact App Store Connect collection path and originating effective query.
+- Require Apple's continuation URLs to preserve every active filter, include, field projection, relationship identifier, and effective page size while adding a non-empty cursor.
+
+### Fixed
+
+- Reject continuation URLs that change a parent resource, collection path, filter value, projection, include set, limit, origin, port, or URL authority before any network request.
+- Reject missing or blank cursors, duplicate query names, unexpected query parameters, credentials, fragments, and non-canonical path encodings across the affected workers.
+- Apply the same validation to internal multi-page aggregation loops so server-provided links cannot silently cross query scopes.
+
+### Compatibility
+
+- No public MCP tool or required input was added, removed, or renamed.
+- Existing valid Apple continuation URLs remain accepted; manually supplied `next_url` values must now match the complete originating request scope exactly.
+- The Apple 4.4.1 operation mapping and fully classified optional-input pin remain unchanged.
+
 ## [3.12.0] - 2026-07-20
 
 ### Changed
