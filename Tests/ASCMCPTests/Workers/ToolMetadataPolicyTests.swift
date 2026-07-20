@@ -9,7 +9,7 @@ struct ToolMetadataPolicyTests {
     func allToolsReceiveAnnotationsAndMeta() async throws {
         let tools = try await TestFactory.collectAllWorkerTools().map(ToolMetadataPolicy.apply)
 
-        #expect(tools.count == 401)
+        #expect(tools.count == 403)
         for tool in tools {
             #expect(tool.annotations.isEmpty == false)
             #expect(tool.annotations.openWorldHint == true)

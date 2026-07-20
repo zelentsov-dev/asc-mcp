@@ -7,6 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.15.0] - 2026-07-20
+
+### Added
+
+- Added `app_versions_get_age_rating_declaration` for reading the complete App Info age-rating questionnaire.
+- Added `app_versions_list_territory_age_ratings` for calculated per-territory ratings, included territory currency data, and validated pagination.
+
+### Changed
+
+- `app_versions_list` now supports Apple's array-valued platform and state filters, validates non-empty unique values, and preserves the complete effective query across continuation requests.
+- Phased-release creation now defaults to `INACTIVE`; starting an `ACTIVE` rollout and completing a rollout require exact resource-ID confirmation.
+- Age-rating updates accept an authoritative `app_info_id` directly while retaining the version-based compatibility path with strict App Info selection.
+- Version reads exclude deprecated submission data and sensitive review details from their default projection.
+
+### Fixed
+
+- Reject malformed version resources, ambiguous App Info selection, invalid age-rating values and URLs, and inconsistent review-detail relationships before returning misleading success.
+- Require the exact phased-release ID before deleting an eligible planned rollout.
+
+### Compatibility
+
+- The public surface grows from 401 to 403 tools; no existing tool was removed or renamed.
+- `app_versions_delete_phased_release` now requires `confirm_phased_release_id`; creating an `ACTIVE` phased release requires `confirm_version_id`, and changing a phased release to `COMPLETE` requires `confirm_phased_release_id`.
+- The operation manifest maps 375 Apple operations, explicitly defers 525, and scopes out 363; all 1,263 pinned Apple 4.4.1 operations remain accounted for without overlap.
+- The optional-input pin is fully classified at 2,265 total: 838 bound, 40 internally controlled, 1,387 intentionally omitted, and 0 unclassified.
+
 ## [3.14.0] - 2026-07-20
 
 ### Added
