@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.7.0] - 2026-07-20
+
+### Changed
+
+- Failed MCP tool calls now expose a canonical structured result with `success: false`, a stable `error` message, and `details`, while retaining the first human-readable text block.
+- Error results preserve content annotations, non-text content, and MCP `_meta`, and append exactly one compact JSON text mirror for clients that do not consume `structuredContent`.
+- Typed output schemas for `apps_list`, `apps_search`, `apps_get_details`, and `webhooks_verify_signature` now admit the canonical error shape without changing their successful result fields.
+
+### Fixed
+
+- Normalize direct worker errors and converted thrown errors at the central `WorkerManager` transport boundary so all 390 tools return consistent machine-readable failures.
+- Redact sensitive error values before transport while preserving semantic identifiers and stable redaction markers across repeated normalization.
+- Return canonical structured errors from the three `apps_get_metadata` no-version, missing-state, and missing-localization paths instead of embedding an entire JSON object inside the `error` string.
+
+### Compatibility
+
+- No public MCP tool or input was added, removed, or renamed; successful tool results remain unchanged.
+- Error results retain their first human-readable text block and may now include an additional compact JSON text mirror plus `structuredContent`; clients assuming exactly one error content block should select the first human block or consume `structuredContent`.
+- The strict contract pin remains unchanged at 2,154 optional Apple inputs: 730 bound, 6 internally controlled, 1,010 intentionally omitted, and 408 still queued for domain review.
+
 ## [3.6.0] - 2026-07-20
 
 ### Changed
