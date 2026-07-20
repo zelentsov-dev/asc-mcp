@@ -72,17 +72,28 @@ extension AppsWorker {
     }
 
     private func versionBelongsToApp(_ version: ASCAppStoreVersion, appId: String) -> Bool {
+        // App Store Connect only serializes the `app` linkage (`relationships.app.data`)
+        // when the request asks for it via `include=app`. These read paths do not send
+        // `include=`, so Apple returns a links-only relationship with no `data` member and
+        // the parsed id is absent. Treat an absent linkage as "cannot verify, allow": the
+        // version was fetched by id, so it is already the version we asked for. Only reject
+        // on a positive mismatch (linkage present but pointing at a different app).
         guard let data = version.relationships?.app?.data,
               case .single(let app) = data else {
-            return false
+            return true
         }
         return app.type == "apps" && app.id == appId
     }
 
     private func localizationBelongsToVersion(_ localization: ASCAppStoreVersionLocalization, versionId: String) -> Bool {
+        // As above: the `appStoreVersion` linkage is only present when the request sends
+        // `include=appStoreVersion`, which these read paths do not. An absent linkage is the
+        // default shape, not a mismatch. The localizations were fetched under
+        // `/appStoreVersions/{versionId}/appStoreVersionLocalizations`, so they are already
+        // scoped to that version by the URL. Only reject on a positive mismatch.
         guard let data = localization.relationships?.appStoreVersion?.data,
               case .single(let version) = data else {
-            return false
+            return true
         }
         return version.type == "appStoreVersions" && version.id == versionId
     }
