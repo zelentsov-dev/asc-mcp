@@ -262,7 +262,7 @@ private func commercePaginationFixtures() -> [CommercePaginationFixture] {
             wrongParentPath: "/v1/subscriptions/sub-2/prices",
             requiredQuery: [
                 "include": "territory,subscriptionPricePoint",
-                "fields[subscriptionPrices]": "startDate,preserved,territory,subscriptionPricePoint",
+                "fields[subscriptionPrices]": "startDate,preserved,planType,territory,subscriptionPricePoint",
                 "fields[subscriptionPricePoints]": "customerPrice,proceeds,proceedsYear2,territory,equalizations",
                 "fields[territories]": "currency",
                 "filter[territory]": "USA",

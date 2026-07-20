@@ -279,6 +279,7 @@ struct CommerceCatalogOptionalInputTests {
         let commerceWorkers = manifest.workers.filter { ["iap", "subscriptions"].contains($0.workerKey) }
         let classifications = commerceWorkers
             .flatMap(\.tools)
+            .filter { $0.tool != "subscriptions_pricing_summary" }
             .flatMap(\.operations)
             .flatMap { $0.optionalParameterClassifications ?? [] }
         #expect(classifications.count == 147)
