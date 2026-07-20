@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.4.0] - 2026-07-20
+
+### Changed
+
+- `apps_search` now exhausts every Apple result page for both exact-name and Bundle ID filters instead of returning only the first page from each branch.
+- Search requests use a fixed 200-item page size, the required App projection, and Apple-side name/Bundle ID/SKU ordering; merged results are de-duplicated by App ID and returned in deterministic order.
+- Search results now report `pagesFetched` so clients can see how many Apple pages were combined.
+
+### Fixed
+
+- Reject blank search queries before network access.
+- Reject off-origin, cross-route, filter-changing, projection-changing, or otherwise scope-drifting continuation URLs instead of returning a partial or mixed search result.
+- Detect repeated Apple continuation URLs and fail explicitly instead of looping indefinitely.
+- Reviewed and classified 62 previously unclassified optional Apple inputs associated with the two search invocations.
+
+### Compatibility
+
+- No public MCP tool or input was added, removed, or renamed; existing `apps_search.query` calls remain valid.
+- Search results can now contain Apps that were previously hidden beyond Apple's first page, and their ordering is now stable rather than dependent on `Set` iteration.
+- The strict contract pin records 2,154 optional Apple inputs: 721 bound, 6 internally controlled, 1,012 intentionally omitted, and 415 still queued for domain review.
+
 ## [3.3.0] - 2026-07-20
 
 ### Changed
