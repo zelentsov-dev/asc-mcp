@@ -380,9 +380,9 @@ struct CommerceCatalogOptionalInputTests {
             .filter { $0.tool != "subscriptions_pricing_summary" }
             .flatMap(\.operations)
             .flatMap { $0.optionalParameterClassifications ?? [] }
-        #expect(classifications.count == 147)
+        #expect(classifications.count == 152)
         #expect(classifications.filter { $0.disposition == .internalControl }.count == 31)
-        #expect(classifications.filter { $0.disposition == .intentionallyOmitted }.count == 116)
+        #expect(classifications.filter { $0.disposition == .intentionallyOmitted }.count == 121)
         #expect(classifications.allSatisfy { $0.reviewAtSpec == "4.4.1" && !$0.reason.isEmpty })
     }
 }
