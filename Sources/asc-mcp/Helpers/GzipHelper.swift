@@ -192,8 +192,10 @@ extension Data {
         expectedSize: UInt32,
         expectedCRC: UInt32
     ) throws -> Data {
+        let initialDestination = UnsafeMutablePointer<UInt8>.allocate(capacity: 1)
+        defer { initialDestination.deallocate() }
         var stream = compression_stream(
-            dst_ptr: nil,
+            dst_ptr: initialDestination,
             dst_size: 0,
             src_ptr: sourceBaseAddress.assumingMemoryBound(to: UInt8.self).advanced(by: payloadOffset),
             src_size: payloadCount,
@@ -203,10 +205,12 @@ extension Data {
             throw GzipError.decompressionFailed
         }
         defer { _ = compression_stream_destroy(&stream) }
+        stream.src_ptr = sourceBaseAddress.assumingMemoryBound(to: UInt8.self).advanced(by: payloadOffset)
+        stream.src_size = payloadCount
 
         let expectedByteCount = Int(expectedSize)
         var output = Data()
-        output.reserveCapacity(min(expectedByteCount, 1_024 * 1_024))
+        output.reserveCapacity(Swift.min(expectedByteCount, 1_024 * 1_024))
         var outputBuffer = [UInt8](repeating: 0, count: 64 * 1_024)
         var crc = CRC32.initialValue
         let flags = Int32(COMPRESSION_STREAM_FINALIZE.rawValue)
@@ -214,7 +218,10 @@ extension Data {
         while true {
             let previousSourceCount = stream.src_size
             let remainingAdvertisedBytes = expectedByteCount - output.count
-            let destinationCount = min(outputBuffer.count, max(remainingAdvertisedBytes + 1, 1))
+            let destinationCount = Swift.min(
+                outputBuffer.count,
+                Swift.max(remainingAdvertisedBytes + 1, 1)
+            )
 
             let status = outputBuffer.withUnsafeMutableBytes { destination -> compression_status in
                 stream.dst_ptr = destination.bindMemory(to: UInt8.self).baseAddress
