@@ -1,11 +1,20 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "specPin": {
     "version": "4.4.1",
     "sha256": "ed0202ef37155b9334772482d2ea0be688c3046b284c895bcbea5455fbe54fd8",
     "pathCount": 966,
     "operationCount": 1263
   },
+  "optionalParameterFamilyRules": [
+    {
+      "family": "sparseFields",
+      "disposition": "intentionallyOmitted",
+      "reason": "Public tools expose documented resource projections instead of arbitrary JSON:API sparse fieldsets; concrete missing response data is tracked at the tool output contract rather than passed through as fields[resource] strings.",
+      "owner": "asc-mcp",
+      "reviewAtSpec": "4.4.1"
+    }
+  ],
   "scopeRules": [
     {
       "pathPrefix": "/v1/gameCenter",

@@ -8,6 +8,7 @@ enum ASCContractDiagnosticSeverity: String, Codable, Sendable {
 
 enum ASCContractDiagnosticCode: String, Codable, Sendable {
     case manifestUnsupportedVersion = "manifest.unsupported_version"
+    case manifestStrictSchemaVersion = "manifest.strict_schema_version"
     case specVersionMismatch = "spec.version_mismatch"
     case specChecksumMismatch = "spec.checksum_mismatch"
     case specPathCountMismatch = "spec.path_count_mismatch"
@@ -42,9 +43,18 @@ enum ASCContractDiagnosticCode: String, Codable, Sendable {
     case fieldInvocationInvalid = "field.invocation_invalid"
     case parameterUnexposed = "parameter.unexposed"
     case parameterRequiredUnbound = "parameter.required_unbound"
+    case parameterClassificationDuplicate = "parameter.classification_duplicate"
+    case parameterClassificationExpired = "parameter.classification_expired"
+    case parameterClassificationInvalid = "parameter.classification_invalid"
+    case parameterClassificationOverlap = "parameter.classification_overlap"
+    case parameterClassificationTargetMissing = "parameter.classification_target_missing"
+    case parameterFamilyRuleDuplicate = "parameter.family_rule_duplicate"
+    case parameterFamilyRuleExpired = "parameter.family_rule_expired"
+    case parameterFamilyRuleInvalid = "parameter.family_rule_invalid"
     case requestBodyUnmodeled = "request_body.unmodeled"
     case requestBodyRequiredUnbound = "request_body.required_unbound"
     case requestBodyRequiredPropertyUnbound = "request_body.required_property_unbound"
+    case requestBodyOptionalPropertyUnbound = "request_body.optional_property_unbound"
     case responseMissingSchema = "response.missing_schema"
     case responseSourceMissing = "response.source_missing"
     case responseSourceUnmodeled = "response.source_unmodeled"
@@ -82,6 +92,14 @@ struct ASCContractDiagnostic: Codable, Sendable, Equatable {
     }
 }
 
+struct ASCOptionalInputCoverage: Codable, Sendable, Equatable {
+    let total: Int
+    let bound: Int
+    let internalControl: Int
+    let intentionallyOmitted: Int
+    let unclassified: Int
+}
+
 struct ASCOperationToolAnalyzer: Sendable {
     /// Compare the Apple OpenAPI catalog with the semantic operation manifest.
     /// - Parameters:
@@ -97,6 +115,7 @@ struct ASCOperationToolAnalyzer: Sendable {
         diagnostics += validateOperationIDs(spec: spec)
         diagnostics += validateManifestMappings(spec: spec, manifest: manifest)
         diagnostics += validateFieldTargets(spec: spec, manifest: manifest)
+        diagnostics += validateOptionalParameterClassifications(spec: spec, manifest: manifest)
         diagnostics += validateOperationCoverage(spec: spec, manifest: manifest)
         diagnostics += validateWaivers(spec: spec, manifest: manifest)
         return sorted(diagnostics)
@@ -181,15 +200,113 @@ struct ASCOperationToolAnalyzer: Sendable {
         return sorted(diagnostics)
     }
 
+    func optionalInputCoverage(
+        spec: ASCOpenAPISpec,
+        manifest: ASCOperationManifestBundle
+    ) -> ASCOptionalInputCoverage {
+        let operationsByID = operationDictionary(spec.operations)
+        var total = 0
+        var bound = 0
+        var internalControl = 0
+        var intentionallyOmitted = 0
+        var unclassified = 0
+
+        for mapping in manifest.tools where mapping.status != .unresolved {
+            for use in mapping.operations {
+                guard let operation = operationsByID[use.operationID] else {
+                    continue
+                }
+                let boundParameters = boundParameterIdentities(mapping: mapping, use: use)
+                for parameter in operation.parameters where !parameter.required {
+                    total += 1
+                    let identity = parameterIdentity(parameter)
+                    if boundParameters.contains(identity) {
+                        bound += 1
+                        continue
+                    }
+                    if let classification = validExactClassification(
+                        for: parameter,
+                        use: use,
+                        specVersion: spec.version,
+                        schemaVersion: manifest.index.schemaVersion
+                    ) {
+                        switch classification.disposition {
+                        case .internalControl:
+                            internalControl += 1
+                        case .intentionallyOmitted:
+                            intentionallyOmitted += 1
+                        }
+                        continue
+                    }
+                    if let rule = validFamilyRule(
+                        for: parameter,
+                        index: manifest.index,
+                        specVersion: spec.version
+                    ) {
+                        switch rule.disposition {
+                        case .internalControl:
+                            internalControl += 1
+                        case .intentionallyOmitted:
+                            intentionallyOmitted += 1
+                        }
+                        continue
+                    }
+                    unclassified += 1
+                }
+
+                let bodyPointers = requestBodyBindingPointers(
+                    mapping: mapping,
+                    use: use
+                )
+                for bodyPointer in optionalRequestBodyInputPointers(
+                    operation,
+                    spec: spec
+                ) {
+                    total += 1
+                    if bodyPointers.contains(where: {
+                        pointer($0, covers: bodyPointer)
+                    }) {
+                        bound += 1
+                        continue
+                    }
+                    if let classification = validExactClassification(
+                        location: "body",
+                        appleName: bodyPointer,
+                        use: use,
+                        specVersion: spec.version,
+                        schemaVersion: manifest.index.schemaVersion
+                    ) {
+                        switch classification.disposition {
+                        case .internalControl:
+                            internalControl += 1
+                        case .intentionallyOmitted:
+                            intentionallyOmitted += 1
+                        }
+                        continue
+                    }
+                    unclassified += 1
+                }
+            }
+        }
+
+        return ASCOptionalInputCoverage(
+            total: total,
+            bound: bound,
+            internalControl: internalControl,
+            intentionallyOmitted: intentionallyOmitted,
+            unclassified: unclassified
+        )
+    }
+
     private func validateSpecPin(
         spec: ASCOpenAPISpec,
         manifest: ASCOperationManifestBundle
     ) -> [ASCContractDiagnostic] {
         var diagnostics: [ASCContractDiagnostic] = []
-        if manifest.index.schemaVersion != 1 {
+        if ![1, 2].contains(manifest.index.schemaVersion) {
             diagnostics.append(error(
                 .manifestUnsupportedVersion,
-                "Unsupported manifest schema version \(manifest.index.schemaVersion); expected 1."
+                "Unsupported manifest schema version \(manifest.index.schemaVersion); expected 1 or 2."
             ))
         }
         if manifest.index.specPin.version != spec.version {
@@ -325,7 +442,8 @@ struct ASCOperationToolAnalyzer: Sendable {
             diagnostics += validateAppleInputCoverage(
                 mapping,
                 operationsByID: operationsByID,
-                spec: spec
+                spec: spec,
+                manifestIndex: manifest.index
             )
             diagnostics += validateResponseMapping(
                 mapping,
@@ -545,7 +663,8 @@ struct ASCOperationToolAnalyzer: Sendable {
     private func validateAppleInputCoverage(
         _ mapping: ASCToolOperationMapping,
         operationsByID: [String: ASCOpenAPIOperation],
-        spec: ASCOpenAPISpec
+        spec: ASCOpenAPISpec,
+        manifestIndex: ASCOperationManifestIndex
     ) -> [ASCContractDiagnostic] {
         var diagnostics: [ASCContractDiagnostic] = []
 
@@ -554,24 +673,11 @@ struct ASCOperationToolAnalyzer: Sendable {
             guard let operation = operationsByID[operationID] else {
                 continue
             }
-            var boundParameters = Set(mapping.fields.compactMap { binding -> String? in
-                guard fieldBinding(binding, appliesTo: use),
-                      let location = binding.location,
-                      let appleName = binding.appleName else {
-                    return nil
-                }
-                return "\(location):\(appleName)"
-            })
-            boundParameters.formUnion((use.inputs ?? []).compactMap { input -> String? in
-                guard let location = input.location, let appleName = input.appleName else {
-                    return nil
-                }
-                return "\(location):\(appleName)"
-            })
+            let boundParameters = boundParameterIdentities(mapping: mapping, use: use)
             let invocation = use.invocationID ?? operationID
 
             for parameter in operation.parameters {
-                let identity = "\(parameter.location.rawValue):\(parameter.name)"
+                let identity = parameterIdentity(parameter)
                 if !boundParameters.contains(identity) {
                     if parameter.required {
                         diagnostics.append(error(
@@ -581,7 +687,16 @@ struct ASCOperationToolAnalyzer: Sendable {
                             operationID: operationID,
                             field: parameter.name
                         ))
-                    } else {
+                    } else if validExactClassification(
+                        for: parameter,
+                        use: use,
+                        specVersion: spec.version,
+                        schemaVersion: manifestIndex.schemaVersion
+                    ) == nil && validFamilyRule(
+                        for: parameter,
+                        index: manifestIndex,
+                        specVersion: spec.version
+                    ) == nil {
                         diagnostics.append(warning(
                             .parameterUnexposed,
                             "Apple parameter '\(identity)' is not exposed for invocation '\(invocation)'.",
@@ -613,12 +728,10 @@ struct ASCOperationToolAnalyzer: Sendable {
                     ))
                 }
             } else if operation.requestBody != nil {
-                let bodyPointers = mapping.fields.compactMap { binding -> String? in
-                    guard fieldBinding(binding, appliesTo: use) else {
-                        return nil
-                    }
-                    return binding.jsonPointer
-                } + (use.inputs ?? []).compactMap(\.jsonPointer)
+                let bodyPointers = requestBodyBindingPointers(
+                    mapping: mapping,
+                    use: use
+                )
                 for requiredPointer in requiredRequestBodyPointers(operation, spec: spec)
                     where !bodyPointers.contains(where: {
                         pointer($0, covers: requiredPointer)
@@ -630,6 +743,183 @@ struct ASCOperationToolAnalyzer: Sendable {
                         operationID: operationID,
                         field: requiredPointer
                     ))
+                }
+                for optionalPointer in optionalRequestBodyInputPointers(operation, spec: spec)
+                    where !bodyPointers.contains(where: {
+                        pointer($0, covers: optionalPointer)
+                    }) && validExactClassification(
+                        location: "body",
+                        appleName: optionalPointer,
+                        use: use,
+                        specVersion: spec.version,
+                        schemaVersion: manifestIndex.schemaVersion
+                    ) == nil {
+                    diagnostics.append(warning(
+                        .requestBodyOptionalPropertyUnbound,
+                        "Optional Apple request-body input '\(optionalPointer)' is not exposed for invocation '\(invocation)'.",
+                        tool: mapping.tool,
+                        operationID: operationID,
+                        field: optionalPointer
+                    ))
+                }
+            }
+        }
+        return diagnostics
+    }
+
+    private func validateOptionalParameterClassifications(
+        spec: ASCOpenAPISpec,
+        manifest: ASCOperationManifestBundle
+    ) -> [ASCContractDiagnostic] {
+        var diagnostics: [ASCContractDiagnostic] = []
+        let familyRules = manifest.index.optionalParameterFamilyRules ?? []
+
+        if manifest.index.schemaVersion != 2, !familyRules.isEmpty {
+            diagnostics.append(error(
+                .manifestUnsupportedVersion,
+                "Optional-parameter family rules require manifest schema version 2."
+            ))
+        }
+
+        for family in duplicateValues(familyRules.map { $0.family.rawValue }) {
+            diagnostics.append(error(
+                .parameterFamilyRuleDuplicate,
+                "Optional-parameter family '\(family)' is classified more than once."
+            ))
+        }
+        for rule in familyRules {
+            if rule.disposition != .intentionallyOmitted ||
+                !hasText(rule.reason) ||
+                !hasText(rule.owner) {
+                diagnostics.append(error(
+                    .parameterFamilyRuleInvalid,
+                    "Optional-parameter family '\(rule.family.rawValue)' requires an intentional-omission disposition, reason, and owner."
+                ))
+            }
+            let reviewComparison = compareVersions(rule.reviewAtSpec, spec.version)
+            if reviewComparison < 0 {
+                diagnostics.append(error(
+                    .parameterFamilyRuleExpired,
+                    "Optional-parameter family '\(rule.family.rawValue)' was reviewed for Apple \(rule.reviewAtSpec), older than \(spec.version)."
+                ))
+            } else if reviewComparison > 0 {
+                diagnostics.append(error(
+                    .parameterFamilyRuleInvalid,
+                    "Optional-parameter family '\(rule.family.rawValue)' was reviewed for future Apple spec \(rule.reviewAtSpec); expected \(spec.version)."
+                ))
+            }
+        }
+
+        let operationsByID = operationDictionary(spec.operations)
+        for mapping in manifest.tools where mapping.status != .unresolved {
+            for use in mapping.operations {
+                let classifications = use.optionalParameterClassifications ?? []
+                if manifest.index.schemaVersion != 2, !classifications.isEmpty {
+                    diagnostics.append(error(
+                        .manifestUnsupportedVersion,
+                        "Optional-input classifications require manifest schema version 2.",
+                        tool: mapping.tool,
+                        operationID: use.operationID
+                    ))
+                }
+
+                let identities = classifications.map { "\($0.location):\($0.appleName)" }
+                for identity in duplicateValues(identities) {
+                    diagnostics.append(error(
+                        .parameterClassificationDuplicate,
+                        "Optional Apple input '\(identity)' is classified more than once for the same invocation.",
+                        tool: mapping.tool,
+                        operationID: use.operationID,
+                        field: identity
+                    ))
+                }
+
+                guard let operation = operationsByID[use.operationID] else {
+                    continue
+                }
+                let boundParameters = boundParameterIdentities(mapping: mapping, use: use)
+                let bodyPointers = requestBodyBindingPointers(mapping: mapping, use: use)
+                let optionalBodyPointers = Set(optionalRequestBodyInputPointers(
+                    operation,
+                    spec: spec
+                ))
+                for classification in classifications {
+                    let identity = "\(classification.location):\(classification.appleName)"
+                    if !hasText(classification.location) ||
+                        !hasText(classification.appleName) ||
+                        !hasText(classification.reason) {
+                        diagnostics.append(error(
+                            .parameterClassificationInvalid,
+                            "Optional Apple input classification requires location, appleName, and reason.",
+                            tool: mapping.tool,
+                            operationID: use.operationID,
+                            field: classification.appleName
+                        ))
+                    }
+                    let reviewComparison = compareVersions(
+                        classification.reviewAtSpec,
+                        spec.version
+                    )
+                    if reviewComparison < 0 {
+                        diagnostics.append(error(
+                            .parameterClassificationExpired,
+                            "Optional Apple input '\(identity)' was reviewed for Apple \(classification.reviewAtSpec), older than \(spec.version).",
+                            tool: mapping.tool,
+                            operationID: use.operationID,
+                            field: classification.appleName
+                        ))
+                    } else if reviewComparison > 0 {
+                        diagnostics.append(error(
+                            .parameterClassificationInvalid,
+                            "Optional Apple input '\(identity)' was reviewed for future Apple spec \(classification.reviewAtSpec); expected \(spec.version).",
+                            tool: mapping.tool,
+                            operationID: use.operationID,
+                            field: classification.appleName
+                        ))
+                    }
+
+                    let parameter = operation.parameters.first(where: {
+                        $0.location.rawValue == classification.location &&
+                            $0.name == classification.appleName &&
+                            !$0.required
+                    })
+                    let isOptionalBodyInput = classification.location == "body" &&
+                        optionalBodyPointers.contains(classification.appleName)
+                    guard parameter != nil || isOptionalBodyInput else {
+                        diagnostics.append(error(
+                            .parameterClassificationTargetMissing,
+                            "Classified optional Apple input '\(identity)' does not exist or is required.",
+                            tool: mapping.tool,
+                            operationID: use.operationID,
+                            field: classification.appleName
+                        ))
+                        continue
+                    }
+
+                    let overlapsBinding: Bool
+                    let overlapsFamily: Bool
+                    if let parameter {
+                        overlapsBinding = boundParameters.contains(identity)
+                        overlapsFamily = validFamilyRule(
+                            for: parameter,
+                            index: manifest.index,
+                            specVersion: spec.version
+                        ) != nil
+                    } else {
+                        overlapsBinding = bodyPointers.contains(where: {
+                            pointer($0, covers: classification.appleName)
+                        })
+                        overlapsFamily = false
+                    }
+                    if overlapsBinding || overlapsFamily {
+                        diagnostics.append(error(
+                            .parameterClassificationOverlap,
+                            "Optional Apple input '\(identity)' is already bound or covered by a family rule.",
+                            tool: mapping.tool,
+                            operationID: use.operationID,
+                            field: classification.appleName
+                        ))
+                    }
                 }
             }
         }
@@ -1423,6 +1713,76 @@ struct ASCOperationToolAnalyzer: Sendable {
         }).sorted()
     }
 
+    private func optionalRequestBodyInputPointers(
+        _ operation: ASCOpenAPIOperation,
+        spec: ASCOpenAPISpec
+    ) -> [String] {
+        guard let requestBody = operation.requestBody else {
+            return []
+        }
+        let allPointers = Set(requestBody.content.flatMap { media in
+            expandedPropertyPointers(
+                media.schema,
+                spec: spec,
+                prefix: "",
+                visited: []
+            )
+        })
+        let requiredPointers = Set(requiredRequestBodyPointers(operation, spec: spec))
+        var candidates: Set<String> = []
+
+        for pointer in allPointers {
+            let components = pointer.split(separator: "/").map(String.init)
+            guard !components.isEmpty else {
+                continue
+            }
+            if components.count >= 3,
+               components[0] == "data",
+               (components[1] == "attributes" || components[1] == "relationships") {
+                candidates.insert("/data/\(components[1])/\(components[2])")
+            } else if components.count >= 2, components[0] == "data" {
+                let structuralFields: Set<String> = ["id", "type", "attributes", "relationships"]
+                if !structuralFields.contains(components[1]) {
+                    candidates.insert("/data/\(components[1])")
+                }
+            } else {
+                candidates.insert("/\(components[0])")
+            }
+        }
+
+        return candidates.filter { !requiredPointers.contains($0) }.sorted()
+    }
+
+    private func expandedPropertyPointers(
+        _ summary: ASCOpenAPISchemaSummary,
+        spec: ASCOpenAPISpec,
+        prefix: String,
+        visited: Set<String>
+    ) -> [String] {
+        var pointers = summary.propertyPointers.map { prefixed($0, by: prefix) }
+        for referencePointer in summary.referencePointers {
+            let reference = referencePointer.reference
+            guard reference.hasPrefix("#/components/schemas/") else {
+                continue
+            }
+            let encodedName = String(reference.dropFirst("#/components/schemas/".count))
+            let name = encodedName.replacingOccurrences(of: "~1", with: "/")
+                .replacingOccurrences(of: "~0", with: "~")
+            guard !visited.contains(name), let referenced = spec.schemas[name] else {
+                continue
+            }
+            var nextVisited = visited
+            nextVisited.insert(name)
+            pointers += expandedPropertyPointers(
+                referenced,
+                spec: spec,
+                prefix: prefixed(referencePointer.pointer, by: prefix),
+                visited: nextVisited
+            )
+        }
+        return pointers
+    }
+
     private func requiredPointers(
         _ summary: ASCOpenAPISchemaSummary,
         spec: ASCOpenAPISpec,
@@ -1590,6 +1950,110 @@ struct ASCOperationToolAnalyzer: Sendable {
             .filter { $0.value.count > 1 }
             .map(\.key)
             .sorted()
+    }
+
+    private func boundParameterIdentities(
+        mapping: ASCToolOperationMapping,
+        use: ASCOperationUse
+    ) -> Set<String> {
+        var identities = Set(mapping.fields.compactMap { binding -> String? in
+            guard fieldBinding(binding, appliesTo: use),
+                  let location = binding.location,
+                  let appleName = binding.appleName else {
+                return nil
+            }
+            return "\(location):\(appleName)"
+        })
+        identities.formUnion((use.inputs ?? []).compactMap { input -> String? in
+            guard let location = input.location, let appleName = input.appleName else {
+                return nil
+            }
+            return "\(location):\(appleName)"
+        })
+        return identities
+    }
+
+    private func requestBodyBindingPointers(
+        mapping: ASCToolOperationMapping,
+        use: ASCOperationUse
+    ) -> [String] {
+        mapping.fields.compactMap { binding -> String? in
+            guard fieldBinding(binding, appliesTo: use) else {
+                return nil
+            }
+            return binding.jsonPointer
+        } + (use.inputs ?? []).compactMap(\.jsonPointer)
+    }
+
+    private func parameterIdentity(_ parameter: ASCOpenAPIParameter) -> String {
+        "\(parameter.location.rawValue):\(parameter.name)"
+    }
+
+    private func validExactClassification(
+        for parameter: ASCOpenAPIParameter,
+        use: ASCOperationUse,
+        specVersion: String,
+        schemaVersion: Int
+    ) -> ASCOptionalParameterClassification? {
+        validExactClassification(
+            location: parameter.location.rawValue,
+            appleName: parameter.name,
+            use: use,
+            specVersion: specVersion,
+            schemaVersion: schemaVersion
+        )
+    }
+
+    private func validExactClassification(
+        location: String,
+        appleName: String,
+        use: ASCOperationUse,
+        specVersion: String,
+        schemaVersion: Int
+    ) -> ASCOptionalParameterClassification? {
+        guard schemaVersion == 2 else {
+            return nil
+        }
+        return (use.optionalParameterClassifications ?? []).first { classification in
+            classification.location == location &&
+                classification.appleName == appleName &&
+                hasText(classification.reason) &&
+                compareVersions(classification.reviewAtSpec, specVersion) == 0
+        }
+    }
+
+    private func validFamilyRule(
+        for parameter: ASCOpenAPIParameter,
+        index: ASCOperationManifestIndex,
+        specVersion: String
+    ) -> ASCOptionalParameterFamilyRule? {
+        guard index.schemaVersion == 2,
+              let family = optionalParameterFamily(for: parameter) else {
+            return nil
+        }
+        return (index.optionalParameterFamilyRules ?? []).first { rule in
+            rule.family == family &&
+                rule.disposition == .intentionallyOmitted &&
+                hasText(rule.reason) &&
+                hasText(rule.owner) &&
+                compareVersions(rule.reviewAtSpec, specVersion) == 0
+        }
+    }
+
+    private func optionalParameterFamily(
+        for parameter: ASCOpenAPIParameter
+    ) -> ASCOptionalParameterFamily? {
+        guard parameter.location == .query, !parameter.required else {
+            return nil
+        }
+        if parameter.name.hasPrefix("fields["), parameter.name.hasSuffix("]") {
+            return .sparseFields
+        }
+        return nil
+    }
+
+    private func hasText(_ value: String) -> Bool {
+        !value.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
     private func fieldBindingIdentity(_ binding: ASCToolFieldBinding) -> String {

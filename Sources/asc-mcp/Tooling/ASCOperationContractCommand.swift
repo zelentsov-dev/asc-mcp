@@ -37,10 +37,19 @@ enum ASCOperationContractCommand {
             )
         }
         let publicToolCount = workerSnapshots.flatMap(\.tools).count
-        let diagnostics = ASCOperationToolAnalyzer().analyze(
+        let analyzer = ASCOperationToolAnalyzer()
+        var diagnostics = analyzer.analyze(
             spec: spec,
             manifest: manifest,
             workerSnapshots: workerSnapshots
+        )
+        if args.contains("--strict"),
+           let diagnostic = strictSchemaDiagnostic(schemaVersion: manifest.index.schemaVersion) {
+            diagnostics.append(diagnostic)
+        }
+        let optionalInputCoverage = analyzer.optionalInputCoverage(
+            spec: spec,
+            manifest: manifest
         )
         let errorCount = diagnostics.filter { $0.severity == .error }.count
         let warningCount = diagnostics.filter { $0.severity == .warning }.count
@@ -106,6 +115,7 @@ enum ASCOperationContractCommand {
                 structuralErrorCount: structuralErrorCount,
                 implementationDriftCount: implementationDriftCount,
                 warningCount: warningCount,
+                optionalInputCoverage: optionalInputCoverage,
                 diagnostics: diagnostics
             )
             let encoder = JSONEncoder()
@@ -126,13 +136,14 @@ enum ASCOperationContractCommand {
                 unsupportedWaiverCount: unsupportedWaiverCount,
                 outOfScopeWaiverCount: outOfScopeWaiverCount,
                 scopedOperationCount: scopedOperationCount,
+                optionalInputCoverage: optionalInputCoverage,
                 diagnostics: diagnostics
             )
             try write(Data(markdown.utf8), to: fileURL(from: outputPath))
         }
 
         print(
-            "Operation contract \(spec.version): \(publicToolCount) public tools, \(mappedOperationCount) mapped, \(waivedOperationCount) waived (\(deferredWaiverCount) deferred, \(unsupportedWaiverCount) unsupported, \(outOfScopeWaiverCount) exact out of scope), \(scopedOperationCount) scope-rule out of scope, \(structuralErrorCount) structural errors, \(implementationDriftCount) implementation drift, \(warningCount) warnings",
+            "Operation contract \(spec.version): \(publicToolCount) public tools, \(mappedOperationCount) mapped, \(waivedOperationCount) waived (\(deferredWaiverCount) deferred, \(unsupportedWaiverCount) unsupported, \(outOfScopeWaiverCount) exact out of scope), \(scopedOperationCount) scope-rule out of scope, \(optionalInputCoverage.bound) optional inputs bound, \(optionalInputCoverage.internalControl) internal, \(optionalInputCoverage.intentionallyOmitted) intentionally omitted, \(optionalInputCoverage.unclassified) unclassified, \(structuralErrorCount) structural errors, \(implementationDriftCount) implementation drift, \(warningCount) warnings",
             to: &standardError
         )
 
@@ -143,6 +154,20 @@ enum ASCOperationContractCommand {
             throw ASCOperationContractCommandError.contractFailed(structuralErrorCount)
         }
         return true
+    }
+
+    static func strictSchemaDiagnostic(schemaVersion: Int) -> ASCContractDiagnostic? {
+        guard schemaVersion != 2 else {
+            return nil
+        }
+        return ASCContractDiagnostic(
+            severity: .error,
+            code: .manifestStrictSchemaVersion,
+            message: "Strict operation-contract checks require manifest schema version 2; found \(schemaVersion).",
+            tool: nil,
+            operationID: nil,
+            field: nil
+        )
     }
 
     private static func renderMarkdown(
@@ -156,6 +181,7 @@ enum ASCOperationContractCommand {
         unsupportedWaiverCount: Int,
         outOfScopeWaiverCount: Int,
         scopedOperationCount: Int,
+        optionalInputCoverage: ASCOptionalInputCoverage,
         diagnostics: [ASCContractDiagnostic]
     ) -> String {
         var lines = [
@@ -180,6 +206,8 @@ enum ASCOperationContractCommand {
             "Waiver dispositions: \(deferredWaiverCount) deferred, \(unsupportedWaiverCount) unsupported, \(outOfScopeWaiverCount) exact out of scope",
             "",
             "Scope-rule out-of-scope Apple operations: \(scopedOperationCount)",
+            "",
+            "Optional Apple inputs: \(optionalInputCoverage.total) total, \(optionalInputCoverage.bound) bound, \(optionalInputCoverage.internalControl) internally controlled, \(optionalInputCoverage.intentionallyOmitted) intentionally omitted, \(optionalInputCoverage.unclassified) unclassified",
             "",
             "Errors: \(diagnostics.filter { $0.severity == .error }.count)",
             "",
@@ -290,6 +318,7 @@ private struct ASCOperationContractJSONReport: Codable {
     let structuralErrorCount: Int
     let implementationDriftCount: Int
     let warningCount: Int
+    let optionalInputCoverage: ASCOptionalInputCoverage
     let diagnostics: [ASCContractDiagnostic]
 }
 

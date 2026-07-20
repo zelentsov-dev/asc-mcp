@@ -2,7 +2,7 @@ import Foundation
 
 enum ASCOperationManifestJSONValidator {
     private static let indexKeys: Set<String> = [
-        "schemaVersion", "specPin", "scopeRules", "waivers"
+        "schemaVersion", "specPin", "optionalParameterFamilyRules", "scopeRules", "waivers"
     ]
     private static let specPinKeys: Set<String> = [
         "version", "sha256", "pathCount", "operationCount"
@@ -14,6 +14,9 @@ enum ASCOperationManifestJSONValidator {
         "id", "operationId", "method", "path", "disposition", "reason", "owner",
         "reviewAtSpec"
     ]
+    private static let optionalParameterFamilyRuleKeys: Set<String> = [
+        "family", "disposition", "reason", "owner", "reviewAtSpec"
+    ]
     private static let workerKeys: Set<String> = [
         "workerKey", "tools", "implementationAliases"
     ]
@@ -22,11 +25,15 @@ enum ASCOperationManifestJSONValidator {
         "operations", "fields", "response", "note"
     ]
     private static let operationKeys: Set<String> = [
-        "invocationId", "operationId", "method", "path", "role", "condition", "inputs"
+        "invocationId", "operationId", "method", "path", "role", "condition", "inputs",
+        "optionalParameterClassifications"
     ]
     private static let operationInputKeys: Set<String> = [
         "sourceKind", "location", "appleName", "jsonPointer", "fixedValue", "derivedFrom",
         "localRole"
+    ]
+    private static let optionalParameterClassificationKeys: Set<String> = [
+        "location", "appleName", "disposition", "reason", "reviewAtSpec"
     ]
     private static let toolFieldKeys: Set<String> = [
         "toolField", "sourceKind", "operationId", "invocationId", "location", "appleName",
@@ -57,6 +64,12 @@ enum ASCOperationManifestJSONValidator {
             allowed: specPinKeys,
             source: source,
             path: "$.specPin"
+        )
+        try validateArray(
+            object["optionalParameterFamilyRules"],
+            allowed: optionalParameterFamilyRuleKeys,
+            source: source,
+            path: "$.optionalParameterFamilyRules"
         )
         try validateArray(
             object["scopeRules"],
@@ -136,6 +149,12 @@ enum ASCOperationManifestJSONValidator {
                 allowed: operationInputKeys,
                 source: source,
                 path: "\(operationPath).inputs"
+            )
+            try validateArray(
+                operation["optionalParameterClassifications"],
+                allowed: optionalParameterClassificationKeys,
+                source: source,
+                path: "\(operationPath).optionalParameterClassifications"
             )
         }
     }

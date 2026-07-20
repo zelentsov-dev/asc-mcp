@@ -63,6 +63,382 @@ struct OperationToolManifestTests {
             diagnostic.operationID == "apps_getCollection" &&
             diagnostic.field == "filter[name]"
         })
+        #expect(diagnostics.contains { diagnostic in
+            diagnostic.code == .requestBodyOptionalPropertyUnbound &&
+            diagnostic.operationID == "apps_updateInstance" &&
+            diagnostic.field == "/data/attributes/reviewNote"
+        })
+    }
+
+    @Test("exact optional parameter classification closes only its reviewed gap")
+    func exactOptionalParameterClassification() throws {
+        let spec = try ASCOpenAPISpec.parse(loadFixture("openapi_minimal.oas"))
+        let manifest = try loadValidManifest()
+        let list = try #require(manifest.mapping(for: "apps_list"))
+        let operation = try #require(list.operations.first)
+        let classification = ASCOptionalParameterClassification(
+            location: "query",
+            appleName: "filter[name]",
+            disposition: .intentionallyOmitted,
+            reason: "The fixture intentionally omits name filtering.",
+            reviewAtSpec: spec.version
+        )
+        let classified = replacing(
+            operation,
+            optionalParameterClassifications: [classification]
+        )
+        let index = ASCOperationManifestIndex(
+            schemaVersion: 2,
+            specPin: manifest.index.specPin,
+            scopeRules: manifest.index.scopeRules,
+            waivers: manifest.index.waivers
+        )
+        let classifiedManifest = replacingIndex(
+            in: replacingTool(
+                in: manifest,
+                with: replacing(list, operations: [classified])
+            ),
+            with: index
+        )
+
+        let diagnostics = ASCOperationToolAnalyzer().analyze(
+            spec: spec,
+            manifest: classifiedManifest,
+            tools: fixtureTools().map(ToolMetadataPolicy.apply)
+        )
+        let coverage = ASCOperationToolAnalyzer().optionalInputCoverage(
+            spec: spec,
+            manifest: classifiedManifest
+        )
+
+        #expect(!diagnostics.contains { $0.code == .parameterUnexposed })
+        #expect(coverage.bound == 1)
+        #expect(coverage.intentionallyOmitted == 1)
+        #expect(coverage.unclassified == 1)
+    }
+
+    @Test("exact request-body classification closes only its reviewed optional input")
+    func exactOptionalRequestBodyClassification() throws {
+        let spec = try ASCOpenAPISpec.parse(loadFixture("openapi_minimal.oas"))
+        let manifest = try loadValidManifest()
+        let update = try #require(manifest.mapping(for: "apps_update"))
+        let operation = try #require(update.operations.first)
+        let classification = ASCOptionalParameterClassification(
+            location: "body",
+            appleName: "/data/attributes/reviewNote",
+            disposition: .intentionallyOmitted,
+            reason: "The fixture intentionally omits the optional review note.",
+            reviewAtSpec: spec.version
+        )
+        let classified = replacing(
+            operation,
+            optionalParameterClassifications: [classification]
+        )
+        let index = ASCOperationManifestIndex(
+            schemaVersion: 2,
+            specPin: manifest.index.specPin,
+            scopeRules: manifest.index.scopeRules,
+            waivers: manifest.index.waivers
+        )
+        let classifiedManifest = replacingIndex(
+            in: replacingTool(
+                in: manifest,
+                with: replacing(update, operations: [classified])
+            ),
+            with: index
+        )
+
+        let diagnostics = ASCOperationToolAnalyzer().analyze(
+            spec: spec,
+            manifest: classifiedManifest,
+            tools: fixtureTools().map(ToolMetadataPolicy.apply)
+        )
+        let coverage = ASCOperationToolAnalyzer().optionalInputCoverage(
+            spec: spec,
+            manifest: classifiedManifest
+        )
+
+        #expect(!diagnostics.contains { $0.code == .requestBodyOptionalPropertyUnbound })
+        #expect(diagnostics.contains { diagnostic in
+            diagnostic.code == .parameterUnexposed && diagnostic.field == "filter[name]"
+        })
+        #expect(coverage.bound == 1)
+        #expect(coverage.intentionallyOmitted == 1)
+        #expect(coverage.unclassified == 1)
+    }
+
+    @Test("optional parameter classifications reject typos overlaps and stale reviews")
+    func invalidOptionalParameterClassifications() throws {
+        let spec = try ASCOpenAPISpec.parse(loadFixture("openapi_minimal.oas"))
+        let manifest = try loadValidManifest()
+        let list = try #require(manifest.mapping(for: "apps_list"))
+        let operation = try #require(list.operations.first)
+        let classifications = [
+            ASCOptionalParameterClassification(
+                location: "query",
+                appleName: "filter[typo]",
+                disposition: .intentionallyOmitted,
+                reason: "Misspelled fixture target.",
+                reviewAtSpec: spec.version
+            ),
+            ASCOptionalParameterClassification(
+                location: "query",
+                appleName: "limit",
+                disposition: .internalControl,
+                reason: "Overlaps the public limit field.",
+                reviewAtSpec: spec.version
+            ),
+            ASCOptionalParameterClassification(
+                location: "query",
+                appleName: "filter[name]",
+                disposition: .intentionallyOmitted,
+                reason: "Stale fixture classification.",
+                reviewAtSpec: "0.1"
+            )
+        ]
+        let classified = replacing(
+            operation,
+            optionalParameterClassifications: classifications
+        )
+        let index = ASCOperationManifestIndex(
+            schemaVersion: 2,
+            specPin: manifest.index.specPin,
+            scopeRules: manifest.index.scopeRules,
+            waivers: manifest.index.waivers
+        )
+        let classifiedManifest = replacingIndex(
+            in: replacingTool(
+                in: manifest,
+                with: replacing(list, operations: [classified])
+            ),
+            with: index
+        )
+
+        let diagnostics = ASCOperationToolAnalyzer().analyze(
+            spec: spec,
+            manifest: classifiedManifest
+        )
+
+        #expect(diagnostics.contains { $0.code == .parameterClassificationTargetMissing })
+        #expect(diagnostics.contains { $0.code == .parameterClassificationOverlap })
+        #expect(diagnostics.contains { $0.code == .parameterClassificationExpired })
+        #expect(diagnostics.contains { diagnostic in
+            diagnostic.code == .parameterUnexposed && diagnostic.field == "filter[name]"
+        })
+    }
+
+    @Test("future reviews and unsupported manifest versions cannot hide optional gaps")
+    func optionalParameterPolicyRequiresExactVersion() throws {
+        let spec = try ASCOpenAPISpec.parse(loadFixture("openapi_minimal.oas"))
+        let manifest = try loadValidManifest()
+        let list = try #require(manifest.mapping(for: "apps_list"))
+        let operation = try #require(list.operations.first)
+
+        func classifiedManifest(
+            reviewAtSpec: String,
+            schemaVersion: Int
+        ) -> ASCOperationManifestBundle {
+            let classification = ASCOptionalParameterClassification(
+                location: "query",
+                appleName: "filter[name]",
+                disposition: .intentionallyOmitted,
+                reason: "Fixture classification.",
+                reviewAtSpec: reviewAtSpec
+            )
+            let classified = replacing(
+                operation,
+                optionalParameterClassifications: [classification]
+            )
+            let index = ASCOperationManifestIndex(
+                schemaVersion: schemaVersion,
+                specPin: manifest.index.specPin,
+                scopeRules: manifest.index.scopeRules,
+                waivers: manifest.index.waivers
+            )
+            return replacingIndex(
+                in: replacingTool(
+                    in: manifest,
+                    with: replacing(list, operations: [classified])
+                ),
+                with: index
+            )
+        }
+
+        let futureManifest = classifiedManifest(
+            reviewAtSpec: "999.0",
+            schemaVersion: 2
+        )
+        let futureDiagnostics = ASCOperationToolAnalyzer().analyze(
+            spec: spec,
+            manifest: futureManifest,
+            tools: fixtureTools().map(ToolMetadataPolicy.apply)
+        )
+        let futureCoverage = ASCOperationToolAnalyzer().optionalInputCoverage(
+            spec: spec,
+            manifest: futureManifest
+        )
+
+        #expect(futureDiagnostics.contains { $0.code == .parameterClassificationInvalid })
+        #expect(futureDiagnostics.contains { diagnostic in
+            diagnostic.code == .parameterUnexposed && diagnostic.field == "filter[name]"
+        })
+        #expect(futureCoverage.intentionallyOmitted == 0)
+        #expect(futureCoverage.unclassified == 2)
+
+        let unsupportedManifest = classifiedManifest(
+            reviewAtSpec: spec.version,
+            schemaVersion: 3
+        )
+        let unsupportedDiagnostics = ASCOperationToolAnalyzer().analyze(
+            spec: spec,
+            manifest: unsupportedManifest,
+            tools: fixtureTools().map(ToolMetadataPolicy.apply)
+        )
+        let unsupportedCoverage = ASCOperationToolAnalyzer().optionalInputCoverage(
+            spec: spec,
+            manifest: unsupportedManifest
+        )
+
+        #expect(unsupportedDiagnostics.contains { $0.code == .manifestUnsupportedVersion })
+        #expect(unsupportedDiagnostics.contains { diagnostic in
+            diagnostic.code == .parameterUnexposed && diagnostic.field == "filter[name]"
+        })
+        #expect(unsupportedCoverage.intentionallyOmitted == 0)
+        #expect(unsupportedCoverage.unclassified == 2)
+    }
+
+    @Test("strict operation contract requires schema version two")
+    func strictOperationContractRequiresSchemaVersionTwo() {
+        let legacy = ASCOperationContractCommand.strictSchemaDiagnostic(schemaVersion: 1)
+        let current = ASCOperationContractCommand.strictSchemaDiagnostic(schemaVersion: 2)
+
+        #expect(legacy?.severity == .error)
+        #expect(legacy?.code == .manifestStrictSchemaVersion)
+        #expect(current == nil)
+    }
+
+    @Test("reviewed sparse fields do not hide includes or relationship limits")
+    func reviewedSparseFieldFamily() throws {
+        let originalSpec = try ASCOpenAPISpec.parse(loadFixture("openapi_minimal.oas"))
+        let originalOperation = try #require(originalSpec.operation(id: "apps_getCollection"))
+        let template = try #require(
+            originalOperation.parameters.first { $0.name == "filter[name]" }
+        )
+        let familyParameters = [
+            ASCOpenAPIParameter(
+                name: "fields[apps]",
+                location: .query,
+                description: nil,
+                required: false,
+                deprecated: false,
+                style: template.style,
+                explode: template.explode,
+                schema: template.schema
+            ),
+            ASCOpenAPIParameter(
+                name: "include",
+                location: .query,
+                description: nil,
+                required: false,
+                deprecated: false,
+                style: template.style,
+                explode: template.explode,
+                schema: template.schema
+            ),
+            ASCOpenAPIParameter(
+                name: "limit[builds]",
+                location: .query,
+                description: nil,
+                required: false,
+                deprecated: false,
+                style: template.style,
+                explode: template.explode,
+                schema: template.schema
+            )
+        ]
+        let expandedOperation = ASCOpenAPIOperation(
+            method: originalOperation.method,
+            path: originalOperation.path,
+            operationID: originalOperation.operationID,
+            summary: originalOperation.summary,
+            tags: originalOperation.tags,
+            deprecated: originalOperation.deprecated,
+            parameters: originalOperation.parameters + familyParameters,
+            requestBody: originalOperation.requestBody,
+            responses: originalOperation.responses
+        )
+        let spec = ASCOpenAPISpec(
+            title: originalSpec.title,
+            version: originalSpec.version,
+            openAPIVersion: originalSpec.openAPIVersion,
+            sha256: originalSpec.sha256,
+            paths: originalSpec.paths,
+            operations: originalSpec.operations.map {
+                $0.operationID == expandedOperation.operationID ? expandedOperation : $0
+            },
+            schemas: originalSpec.schemas
+        )
+        let manifest = try loadValidManifest()
+        let familyRules = [
+            ASCOptionalParameterFamilyRule(
+                family: .sparseFields,
+                disposition: .intentionallyOmitted,
+                reason: "Fixture sparse fields are intentionally omitted.",
+                owner: "tests",
+                reviewAtSpec: spec.version
+            )
+        ]
+        let index = ASCOperationManifestIndex(
+            schemaVersion: 2,
+            specPin: manifest.index.specPin,
+            optionalParameterFamilyRules: familyRules,
+            scopeRules: manifest.index.scopeRules,
+            waivers: manifest.index.waivers
+        )
+        let classifiedManifest = replacingIndex(in: manifest, with: index)
+
+        let diagnostics = ASCOperationToolAnalyzer().analyze(
+            spec: spec,
+            manifest: classifiedManifest
+        )
+        let coverage = ASCOperationToolAnalyzer().optionalInputCoverage(
+            spec: spec,
+            manifest: classifiedManifest
+        )
+
+        let unexposedFields = Set(diagnostics.filter {
+            $0.code == .parameterUnexposed
+        }.compactMap(\.field))
+        #expect(unexposedFields == Set(["filter[name]", "include", "limit[builds]"]))
+        #expect(coverage.bound == 1)
+        #expect(coverage.intentionallyOmitted == 1)
+        #expect(coverage.unclassified == 4)
+
+        let futureIndex = ASCOperationManifestIndex(
+            schemaVersion: 2,
+            specPin: manifest.index.specPin,
+            optionalParameterFamilyRules: [
+                ASCOptionalParameterFamilyRule(
+                    family: .sparseFields,
+                    disposition: .intentionallyOmitted,
+                    reason: "Fixture sparse fields are intentionally omitted.",
+                    owner: "tests",
+                    reviewAtSpec: "999.0"
+                )
+            ],
+            scopeRules: manifest.index.scopeRules,
+            waivers: manifest.index.waivers
+        )
+        let futureManifest = replacingIndex(in: manifest, with: futureIndex)
+        let futureDiagnostics = ASCOperationToolAnalyzer().analyze(
+            spec: spec,
+            manifest: futureManifest
+        )
+
+        #expect(futureDiagnostics.contains { $0.code == .parameterFamilyRuleInvalid })
+        #expect(futureDiagnostics.contains { diagnostic in
+            diagnostic.code == .parameterUnexposed && diagnostic.field == "fields[apps]"
+        })
     }
 
     @Test("public tool without manifest entry fails the gate")
@@ -564,6 +940,7 @@ struct OperationToolManifestTests {
             workerSnapshots: snapshots
         )
 
+        #expect(manifest.index.schemaVersion == 2)
         #expect(manifest.tools.count == 389)
         #expect(Set(manifest.tools.map(\.tool)) == Set(tools.map(\.name)))
         #expect(Set(manifest.workers.map(\.workerKey)) == Set(snapshots.map(\.key)))
@@ -705,7 +1082,8 @@ struct OperationToolManifestTests {
         _ operation: ASCOperationUse,
         invocationID: String? = nil,
         role: ASCOperationRole? = nil,
-        inputs: [ASCOperationInputBinding]? = nil
+        inputs: [ASCOperationInputBinding]? = nil,
+        optionalParameterClassifications: [ASCOptionalParameterClassification]? = nil
     ) -> ASCOperationUse {
         ASCOperationUse(
             invocationID: invocationID,
@@ -714,7 +1092,9 @@ struct OperationToolManifestTests {
             path: operation.path,
             role: role ?? operation.role,
             condition: operation.condition,
-            inputs: inputs ?? operation.inputs
+            inputs: inputs ?? operation.inputs,
+            optionalParameterClassifications: optionalParameterClassifications ??
+                operation.optionalParameterClassifications
         )
     }
 }

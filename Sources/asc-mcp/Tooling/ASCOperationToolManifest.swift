@@ -55,6 +55,15 @@ enum ASCImplementationState: String, Codable, Sendable {
     case broken
 }
 
+enum ASCOptionalParameterDisposition: String, Codable, Sendable {
+    case internalControl
+    case intentionallyOmitted
+}
+
+enum ASCOptionalParameterFamily: String, Codable, Sendable {
+    case sparseFields
+}
+
 indirect enum ASCJSONValue: Codable, Sendable, Equatable {
     case string(String)
     case integer(Int64)
@@ -204,11 +213,42 @@ struct ASCOperationWaiver: Codable, Sendable, Equatable {
     }
 }
 
+struct ASCOptionalParameterFamilyRule: Codable, Sendable, Equatable {
+    let family: ASCOptionalParameterFamily
+    let disposition: ASCOptionalParameterDisposition
+    let reason: String
+    let owner: String
+    let reviewAtSpec: String
+}
+
 struct ASCOperationManifestIndex: Codable, Sendable, Equatable {
     let schemaVersion: Int
     let specPin: ASCSpecPin
+    let optionalParameterFamilyRules: [ASCOptionalParameterFamilyRule]?
     let scopeRules: [ASCOperationScopeRule]
     let waivers: [ASCOperationWaiver]
+
+    init(
+        schemaVersion: Int,
+        specPin: ASCSpecPin,
+        optionalParameterFamilyRules: [ASCOptionalParameterFamilyRule]? = nil,
+        scopeRules: [ASCOperationScopeRule],
+        waivers: [ASCOperationWaiver]
+    ) {
+        self.schemaVersion = schemaVersion
+        self.specPin = specPin
+        self.optionalParameterFamilyRules = optionalParameterFamilyRules
+        self.scopeRules = scopeRules
+        self.waivers = waivers
+    }
+}
+
+struct ASCOptionalParameterClassification: Codable, Sendable, Equatable {
+    let location: String
+    let appleName: String
+    let disposition: ASCOptionalParameterDisposition
+    let reason: String
+    let reviewAtSpec: String
 }
 
 struct ASCOperationUse: Codable, Sendable, Equatable {
@@ -219,6 +259,27 @@ struct ASCOperationUse: Codable, Sendable, Equatable {
     let role: ASCOperationRole
     let condition: String?
     let inputs: [ASCOperationInputBinding]?
+    let optionalParameterClassifications: [ASCOptionalParameterClassification]?
+
+    init(
+        invocationID: String?,
+        operationID: String,
+        method: String,
+        path: String,
+        role: ASCOperationRole,
+        condition: String?,
+        inputs: [ASCOperationInputBinding]?,
+        optionalParameterClassifications: [ASCOptionalParameterClassification]? = nil
+    ) {
+        self.invocationID = invocationID
+        self.operationID = operationID
+        self.method = method
+        self.path = path
+        self.role = role
+        self.condition = condition
+        self.inputs = inputs
+        self.optionalParameterClassifications = optionalParameterClassifications
+    }
 
     enum CodingKeys: String, CodingKey {
         case invocationID = "invocationId"
@@ -228,6 +289,7 @@ struct ASCOperationUse: Codable, Sendable, Equatable {
         case role
         case condition
         case inputs
+        case optionalParameterClassifications
     }
 }
 

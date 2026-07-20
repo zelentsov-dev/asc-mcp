@@ -49,6 +49,31 @@ struct OperationManifestStrictJSONTests {
         }
     }
 
+    @Test("optional parameter policy objects reject unknown keys")
+    func optionalParameterPolicyRejectsUnknownKeys() {
+        let indexData = Data(
+            #"{"schemaVersion":2,"specPin":{"version":"4.4","sha256":"bad","pathCount":1,"operationCount":1},"optionalParameterFamilyRules":[{"family":"sparseFields","disposition":"intentionallyOmitted","reasons":"typo","owner":"tests","reviewAtSpec":"4.4"}],"scopeRules":[],"waivers":[]}"#.utf8
+        )
+        let workerData = Data(
+            #"{"workerKey":"apps","tools":[{"tool":"apps_list","kind":"direct","status":"partial","effect":"read","implementationState":"asBuilt","operations":[{"operationId":"apps_getCollection","method":"GET","path":"/v1/apps","role":"primary","optionalParameterClassifications":[{"location":"query","appleNames":"filter[name]","disposition":"intentionallyOmitted","reason":"fixture","reviewAtSpec":"4.4"}]}],"fields":[],"response":{"mode":"direct","sources":[],"fields":[]}}],"implementationAliases":[]}"#.utf8
+        )
+
+        #expect(throws: ASCOperationManifestError.unknownKey(
+            source: "manifest.json",
+            path: "$.optionalParameterFamilyRules[0]",
+            key: "reasons"
+        )) {
+            try ASCOperationManifestJSONValidator.validateIndex(indexData, source: "manifest.json")
+        }
+        #expect(throws: ASCOperationManifestError.unknownKey(
+            source: "tools/apps.json",
+            path: "$.tools[0].operations[0].optionalParameterClassifications[0]",
+            key: "appleNames"
+        )) {
+            try ASCOperationManifestJSONValidator.validateWorker(workerData, source: "tools/apps.json")
+        }
+    }
+
     @Test("response and alias objects reject unknown keys")
     func responseAndAliasObjectsRejectUnknownKeys() {
         let responseData = Data(
