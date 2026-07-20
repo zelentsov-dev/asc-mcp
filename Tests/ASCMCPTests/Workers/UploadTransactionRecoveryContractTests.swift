@@ -774,7 +774,7 @@ struct UploadTransactionRecoveryContractTests {
     }
 }
 
-private enum UploadFlow: String, Sendable {
+enum UploadFlow: String, Sendable {
     case screenshot
     case preview
     case iapImage

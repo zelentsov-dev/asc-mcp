@@ -88,7 +88,8 @@ struct ASCPathSegmentTests {
         _ = try await client.get("/v1/apps/\(segment)")
 
         let request = try #require(await transport.recordedRequests().first)
-        let components = try #require(URLComponents(url: try #require(request.url), resolvingAgainstBaseURL: false))
+        let requestURL = try #require(request.url)
+        let components = try #require(URLComponents(url: requestURL, resolvingAgainstBaseURL: false))
         #expect(components.percentEncodedPath == "/v1/apps/opaque%3Aid%20with%20%C3%BC")
     }
 }
