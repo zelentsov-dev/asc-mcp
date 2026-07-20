@@ -705,13 +705,15 @@ Includes tester list/search/get/create/delete, app relationships, invitations, b
 </details>
 
 <details>
-<summary><strong>App Version Lifecycle</strong> — 15 tools</summary>
+<summary><strong>App Version Lifecycle</strong> — 17 tools</summary>
 
 | Tool | Description |
 |------|-------------|
 | `app_versions_create` | Create a new app version |
 | `app_versions_list` | List versions with state filtering |
 | `app_versions_get` | Get detailed version information |
+| `app_versions_get_age_rating_declaration` | Read the App Info age rating questionnaire |
+| `app_versions_list_territory_age_ratings` | List calculated age ratings by territory |
 | `app_versions_update` | Update version attributes |
 | `app_versions_attach_build` | Attach build to version |
 | `app_versions_submit_for_review` | Submit for App Store review |
