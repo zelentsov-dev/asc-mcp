@@ -3,9 +3,12 @@ name: CI
 on:
   push:
     branches: [main, develop]
-    tags: ['*']
+    tags: ['v*']
   pull_request:
     branches: [main, develop]
+
+permissions:
+  contents: read
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -15,24 +18,84 @@ jobs:
   build-and-test:
     name: Build & Test
     runs-on: macos-15
+    timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+
+      - name: Validate release tag
+        if: startsWith(github.ref, 'refs/tags/')
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          tag="$GITHUB_REF_NAME"
+          if [[ ! "$tag" =~ ^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]]; then
+            echo "Release tag must be exact SemVer in the form vMAJOR.MINOR.PATCH: $tag" >&2
+            exit 1
+          fi
+
+          if [[ "$(git cat-file -t "refs/tags/$tag")" != "tag" ]]; then
+            echo "Release tag must be annotated: $tag" >&2
+            exit 1
+          fi
+
+          tag_commit="$(git rev-parse "refs/tags/$tag^{commit}")"
+          if ! git merge-base --is-ancestor "$tag_commit" refs/remotes/origin/main; then
+            echo "Release tag commit must be an ancestor of origin/main: $tag_commit" >&2
+            exit 1
+          fi
+
+          version="${tag#v}"
+          server_version="$(awk -F'"' '/static let current =/ { print $2 }' Sources/asc-mcp/Core/ServerVersion.swift)"
+          if [[ "$server_version" != "$version" ]]; then
+            echo "ServerVersion.current ($server_version) must match release tag $tag" >&2
+            exit 1
+          fi
+
+          readme_pin="mint install zelentsov-dev/asc-mcp@$tag"
+          if ! grep -Fq "$readme_pin" README.md; then
+            echo "README must contain the release Mint pin: $readme_pin" >&2
+            exit 1
+          fi
+          if grep -Eo 'mint install zelentsov-dev/asc-mcp@v[0-9]+\.[0-9]+\.[0-9]+' README.md \
+            | grep -Fvxq "$readme_pin"; then
+            echo "README contains a stale Mint release pin; every release pin must use $tag" >&2
+            exit 1
+          fi
+
+          if ! awk -v heading="## [$version]" '
+            $0 == heading { found = 1 }
+            index($0, heading " - ") == 1 {
+              date = substr($0, length(heading) + 4)
+              if (date ~ /^[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]$/) {
+                found = 1
+              }
+            }
+            END { exit(found ? 0 : 1) }
+          ' CHANGELOG.md; then
+            echo "CHANGELOG.md must contain a section for [$version]" >&2
+            exit 1
+          fi
 
       - name: Select Xcode
         run: sudo xcode-select -s /Applications/Xcode_26.2.app
 
       - name: Build
-        run: swift build
+        run: swift build --disable-automatic-resolution
 
       - name: Release build
-        run: swift build -c release 2>&1 | tee /tmp/asc_mcp_release.log
+        run: swift build --disable-automatic-resolution -c release 2>&1 | tee /tmp/asc_mcp_release.log
 
       - name: Fail on release warnings
         run: '! grep -q "warning:" /tmp/asc_mcp_release.log'
 
       - name: OpenAPI coverage tooling smoke
         run: |
-          swift run asc-mcp openapi-coverage \
+          swift run --disable-automatic-resolution asc-mcp openapi-coverage \
             --spec Tests/ASCMCPTests/Fixtures/openapi_minimal.oas.json \
             --output /tmp/asc_openapi_coverage.md \
             --generated-at 2026-05-07
@@ -42,38 +105,61 @@ jobs:
         run: |
           rm -rf /tmp/asc_openapi_contract
           mkdir -p /tmp/asc_openapi_contract
-          curl -L --fail --retry 3 --retry-all-errors \
-            -o /tmp/asc_openapi_contract/spec.zip \
+          curl --fail --show-error --silent --location \
+            --proto '=https' --proto-redir '=https' \
+            --connect-timeout 15 --max-time 120 \
+            --retry 3 --retry-delay 2 --retry-all-errors \
+            --output /tmp/asc_openapi_contract/spec.zip \
             https://developer.apple.com/sample-code/app-store-connect/app-store-connect-openapi-specification.zip
           spec_entry="$(unzip -Z1 /tmp/asc_openapi_contract/spec.zip | grep -E '(^|/)openapi\.oas[^/]*\.json$')"
           test -n "$spec_entry"
           test "$(echo "$spec_entry" | grep -c .)" -eq 1
           unzip -p /tmp/asc_openapi_contract/spec.zip "$spec_entry" \
             > /tmp/asc_openapi_contract/openapi.oas.json
-          swift run asc-mcp openapi-contract-check \
+          swift run --disable-automatic-resolution asc-mcp openapi-contract-check \
             --spec /tmp/asc_openapi_contract/openapi.oas.json \
             --json-output /tmp/asc_openapi_contract/report.json \
             --markdown-output /tmp/asc_openapi_contract/report.md \
-            --structural-strict
+            --strict
           mkdir -p /tmp/asc_openapi_contract/relocated
           cp .build/release/asc-mcp /tmp/asc_openapi_contract/relocated/
           cp -R .build/release/asc-mcp_asc-mcp.bundle /tmp/asc_openapi_contract/relocated/
           /tmp/asc_openapi_contract/relocated/asc-mcp openapi-contract-check \
             --spec /tmp/asc_openapi_contract/openapi.oas.json \
-            --structural-strict
+            --strict
+
+      - name: Verify generated OpenAPI coverage
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          generated_at="$(awk '$1 == "Generated:" { print $2; exit }' ASC-OPENAPI-COVERAGE-GENERATED.md)"
+          if [[ ! "$generated_at" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]]; then
+            echo "ASC-OPENAPI-COVERAGE-GENERATED.md must contain a valid Generated date" >&2
+            exit 1
+          fi
+
+          swift run --disable-automatic-resolution asc-mcp openapi-coverage \
+            --spec /tmp/asc_openapi_contract/openapi.oas.json \
+            --output /tmp/asc_openapi_contract/coverage.md \
+            --generated-at "$generated_at"
+          diff --unified ASC-OPENAPI-COVERAGE-GENERATED.md \
+            /tmp/asc_openapi_contract/coverage.md
 
       - name: Upload operation contract report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: app-store-connect-operation-contract
+          name: app-store-connect-operation-contract-${{ github.run_attempt }}
           path: |
             /tmp/asc_openapi_contract/report.json
             /tmp/asc_openapi_contract/report.md
-          if-no-files-found: ignore
+            /tmp/asc_mcp_release.log
+          if-no-files-found: warn
+          retention-days: 30
 
       - name: Test
-        run: swift test
+        run: swift test --disable-automatic-resolution
 
       - name: App Store Connect release contract
         if: startsWith(github.ref, 'refs/tags/')
@@ -81,3 +167,20 @@ jobs:
           /tmp/asc_openapi_contract/relocated/asc-mcp openapi-contract-check \
             --spec /tmp/asc_openapi_contract/openapi.oas.json \
             --strict
+
+      - name: Publish job summary
+        if: always()
+        shell: bash
+        env:
+          CI_JOB_STATUS: ${{ job.status }}
+          CI_REF_NAME: ${{ github.ref_name }}
+          CI_RUN_ATTEMPT: ${{ github.run_attempt }}
+        run: |
+          printf '%s\n' \
+            '## asc-mcp CI' \
+            "- Status: $CI_JOB_STATUS" \
+            "- Ref: $CI_REF_NAME" \
+            "- Run attempt: $CI_RUN_ATTEMPT" \
+            '- Contract mode: strict' \
+            '- Artifact includes contract reports and the release build log.' \
+            >> "$GITHUB_STEP_SUMMARY"
