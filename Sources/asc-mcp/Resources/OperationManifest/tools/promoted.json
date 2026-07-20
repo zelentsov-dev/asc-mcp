@@ -108,7 +108,7 @@
       "tool": "promoted_delete_image",
       "kind": "local",
       "status": "deprecated",
-      "effect": "write",
+      "effect": "read",
       "implementationState": "asBuilt",
       "operations": [],
       "fields": [
