@@ -281,6 +281,45 @@ struct SubscriptionPricingSummaryContractTests {
         #expect(root["truncated"] == .bool(false))
     }
 
+    @Test("continuation preserves the effective default page limit")
+    func continuationPreservesDefaultLimit() async throws {
+        let nextURL = try pricingSummaryNextURL(planType: "MONTHLY", limit: 200, cursor: "page-2")
+        let validTransport = TestHTTPTransport(responses: [
+            .init(statusCode: 200, body: try pricingSummaryPage(prices: []))
+        ])
+        let validWorker = try await pricingSummaryWorker(validTransport)
+
+        let validResult = try await validWorker.handleTool(.init(
+            name: "subscriptions_pricing_summary",
+            arguments: [
+                "subscription_id": .string("sub-1"),
+                "territory_id": .string("USA"),
+                "plan_type": .string("MONTHLY"),
+                "next_url": .string(nextURL)
+            ]
+        ))
+
+        #expect(validResult.isError != true)
+        let request = try #require(await validTransport.recordedRequests().first)
+        #expect(pricingSummaryQuery(request)["limit"] == "200")
+
+        let changedURL = try pricingSummaryNextURL(planType: "MONTHLY", limit: 199, cursor: "page-2")
+        let changedTransport = TestHTTPTransport(responses: [])
+        let changedWorker = try await pricingSummaryWorker(changedTransport)
+        let changedResult = try await changedWorker.handleTool(.init(
+            name: "subscriptions_pricing_summary",
+            arguments: [
+                "subscription_id": .string("sub-1"),
+                "territory_id": .string("USA"),
+                "plan_type": .string("MONTHLY"),
+                "next_url": .string(changedURL)
+            ]
+        ))
+
+        #expect(changedResult.isError == true)
+        #expect(await changedTransport.requestCount() == 0)
+    }
+
     @Test("changed continuation scope fails before network access")
     func changedContinuationScopeFailsBeforeNetwork() async throws {
         let wrongPlanURL = try pricingSummaryNextURL(planType: "UPFRONT", limit: 200, cursor: "bad")

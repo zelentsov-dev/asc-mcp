@@ -29,6 +29,47 @@ struct LegacyCommercePaginationScopeTests {
         }
     }
 
+    @Test("legacy commerce continuations preserve distinct effective default limits")
+    func preservesEffectiveDefaultLimits() async throws {
+        for fixture in legacyCommerceDefaultLimitFixtures() {
+            var validQuery = fixture.requiredQuery
+            validQuery["cursor"] = "next"
+
+            let validTransport = TestHTTPTransport(responses: [
+                .init(statusCode: 200, body: #"{"data":[]}"#)
+            ])
+            var validArguments = fixture.arguments
+            validArguments["next_url"] = .string(legacyCommercePaginationURL(
+                path: fixture.path,
+                query: validQuery
+            ))
+            let validResult = try await invokeLegacyCommerceFixture(
+                fixture,
+                arguments: validArguments,
+                transport: validTransport
+            )
+            #expect(validResult.isError != true, "Expected default limit for \(fixture.toolName)")
+            let request = try #require(await validTransport.recordedRequests().first)
+            #expect(legacyCommercePaginationQuery(request)["limit"] == fixture.requiredQuery["limit"])
+
+            let changedTransport = TestHTTPTransport(responses: [])
+            var changedArguments = fixture.arguments
+            var changedQuery = validQuery
+            changedQuery["limit"] = "1"
+            changedArguments["next_url"] = .string(legacyCommercePaginationURL(
+                path: fixture.path,
+                query: changedQuery
+            ))
+            let changedResult = try await invokeLegacyCommerceFixture(
+                fixture,
+                arguments: changedArguments,
+                transport: changedTransport
+            )
+            #expect(changedResult.isError == true, "Expected default limit drift rejection for \(fixture.toolName)")
+            #expect(await changedTransport.requestCount() == 0)
+        }
+    }
+
     @Test("every legacy commerce continuation requires a non-empty cursor")
     func rejectsMissingAndEmptyCursors() async throws {
         for fixture in legacyCommercePaginationFixtures() {
@@ -223,6 +264,27 @@ private func legacyCommercePaginationFixtures() -> [LegacyCommercePaginationFixt
             path: "/v1/winBackOffers/winback-1/prices",
             wrongParentPath: "/v1/winBackOffers/winback-2/prices",
             requiredQuery: ["limit": "200"]
+        )
+    ]
+}
+
+private func legacyCommerceDefaultLimitFixtures() -> [LegacyCommercePaginationFixture] {
+    [
+        LegacyCommercePaginationFixture(
+            worker: .iap,
+            toolName: "iap_list_price_points legacy default",
+            arguments: ["iap_id": .string("iap-1")],
+            path: "/v2/inAppPurchases/iap-1/pricePoints",
+            wrongParentPath: "/v2/inAppPurchases/iap-2/pricePoints",
+            requiredQuery: ["limit": "50"]
+        ),
+        LegacyCommercePaginationFixture(
+            worker: .promotionalOffers,
+            toolName: "promo_offers_list",
+            arguments: ["subscription_id": .string("sub-1")],
+            path: "/v1/subscriptions/sub-1/promotionalOffers",
+            wrongParentPath: "/v1/subscriptions/sub-2/promotionalOffers",
+            requiredQuery: ["limit": "25"]
         )
     ]
 }
