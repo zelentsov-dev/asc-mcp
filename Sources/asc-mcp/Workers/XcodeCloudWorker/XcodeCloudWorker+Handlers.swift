@@ -888,9 +888,12 @@ extension XcodeCloudWorker {
     }
 
     private func paginationScope(endpoint: String, query: [String: String]) -> PaginationScope {
-        var requiredParameters = query
-        requiredParameters.removeValue(forKey: "limit")
-        return PaginationScope(path: endpoint, requiredParameters: requiredParameters)
+        PaginationScope(
+            path: endpoint,
+            requiredParameters: query,
+            allowedParameters: Set(query.keys).union(["cursor"]),
+            requiredNonEmptyParameters: ["cursor"]
+        )
     }
 
     private func applyInclude(_ arguments: [String: Value], to query: inout [String: String]) {
@@ -958,6 +961,9 @@ extension XcodeCloudWorker {
             values = array.compactMap(\.boolValue)
         } else {
             throw XcodeCloudArgumentError("\(field) must be a boolean or non-empty array of booleans")
+        }
+        guard Set(values).count == values.count else {
+            throw XcodeCloudArgumentError("\(field) must contain unique values")
         }
         query[appleName] = values.map { $0 ? "true" : "false" }.joined(separator: ",")
     }

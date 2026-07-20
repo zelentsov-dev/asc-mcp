@@ -98,6 +98,24 @@ struct XcodeCloudOptionalInputContractTests {
         #expect(await transport.requestCount() == 0)
     }
 
+    @Test("boolean list filters reject duplicate values before transport")
+    func duplicateBooleanFiltersFailBeforeTransport() async throws {
+        for field in ["expired", "uses_non_exempt_encryption"] {
+            let transport = XcodeCloudOptionalInputTransport(body: "{}")
+            let worker = try await makeWorker(transport: transport)
+            let result = try await worker.handleTool(CallTool.Parameters(
+                name: "xcode_cloud_build_run_builds_list",
+                arguments: [
+                    "build_run_id": .string("run-1"),
+                    field: .array([.bool(true), .bool(true)])
+                ]
+            ))
+
+            #expect(result.isError == true)
+            #expect(await transport.requestCount() == 0)
+        }
+    }
+
     @Test("product build runs accept scalar-or-array build filters")
     func productBuildRunsAcceptBuildFilters() async throws {
         let transport = XcodeCloudOptionalInputTransport(body: """
