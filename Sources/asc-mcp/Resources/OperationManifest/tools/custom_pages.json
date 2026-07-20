@@ -15,7 +15,8 @@
           "role": "primary",
           "inputs": [
             { "sourceKind": "fixed", "jsonPointer": "/data/type", "fixedValue": "appCustomProductPages" },
-            { "sourceKind": "fixed", "jsonPointer": "/data/relationships/app/data/type", "fixedValue": "apps" }
+            { "sourceKind": "fixed", "jsonPointer": "/data/relationships/app/data/type", "fixedValue": "apps" },
+            { "sourceKind": "fixed", "jsonPointer": "/data/relationships/appStoreVersionTemplate/data/type", "fixedValue": "appStoreVersions" }
           ]
         }
       ],
@@ -31,9 +32,16 @@
         "sources": [
           { "operationId": "appCustomProductPages_createInstance", "statusCode": "201", "mediaType": "application/json" }
         ],
-        "fields": []
+        "fields": [
+          { "outputField": "success", "localRole": "successfulCreate" },
+          { "outputField": "custom_product_page.id", "operationId": "appCustomProductPages_createInstance", "jsonPointer": "/data/id" },
+          { "outputField": "custom_product_page.name", "operationId": "appCustomProductPages_createInstance", "jsonPointer": "/data/attributes/name" },
+          { "outputField": "custom_product_page.url", "operationId": "appCustomProductPages_createInstance", "jsonPointer": "/data/attributes/url" },
+          { "outputField": "custom_product_page.visible", "operationId": "appCustomProductPages_createInstance", "jsonPointer": "/data/attributes/visible" },
+          { "outputField": "custom_product_page.state", "operationId": "appCustomProductPages_createInstance", "jsonPointer": "/data/attributes/state" }
+        ]
       },
-      "note": "Apple supports inline creation of the first version and localization in this POST. The current handler correctly uses inline resources but ignores template_version_id even though Apple 4.4.1 supports appStoreVersionTemplate."
+      "note": "Apple supports inline creation of the first version and localization in this POST. When template_version_id is provided, the handler binds it through appStoreVersionTemplate with resource type appStoreVersions."
     },
     {
       "tool": "custom_pages_create_localization",

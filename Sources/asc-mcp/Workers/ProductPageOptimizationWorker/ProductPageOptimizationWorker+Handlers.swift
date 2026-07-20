@@ -321,7 +321,8 @@ extension ProductPageOptimizationWorker {
             let request = CreateTreatmentRequest(
                 data: CreateTreatmentRequest.CreateData(
                     attributes: CreateTreatmentRequest.Attributes(
-                        name: name
+                        name: name,
+                        appIconName: arguments["app_icon_name"]?.stringValue
                     ),
                     relationships: CreateTreatmentRequest.Relationships(
                         appStoreVersionExperimentV2: CreateTreatmentRequest.ExperimentRelationship(
@@ -469,6 +470,7 @@ extension ProductPageOptimizationWorker {
             "id": experiment.id,
             "type": experiment.type,
             "name": (experiment.attributes?.name).jsonSafe,
+            "platform": (experiment.attributes?.platform).jsonSafe,
             "trafficProportion": (experiment.attributes?.trafficProportion).jsonSafe,
             "state": (experiment.attributes?.state).jsonSafe,
             "reviewRequired": (experiment.attributes?.reviewRequired).jsonSafe,
@@ -478,12 +480,23 @@ extension ProductPageOptimizationWorker {
     }
 
     private func formatTreatment(_ treatment: ASCTreatment) -> [String: Any] {
-        return [
+        var result: [String: Any] = [
             "id": treatment.id,
             "type": treatment.type,
             "name": (treatment.attributes?.name).jsonSafe,
-            "appIconName": (treatment.attributes?.appIconName).jsonSafe
+            "appIconName": (treatment.attributes?.appIconName).jsonSafe,
+            "promotedDate": (treatment.attributes?.promotedDate).jsonSafe
         ]
+
+        if let appIcon = treatment.attributes?.appIcon {
+            result["appIcon"] = [
+                "templateUrl": appIcon.templateUrl.jsonSafe,
+                "width": appIcon.width.jsonSafe,
+                "height": appIcon.height.jsonSafe
+            ]
+        }
+
+        return result
     }
 
     private func formatTreatmentLocalization(_ localization: ASCTreatmentLocalization) -> [String: Any] {

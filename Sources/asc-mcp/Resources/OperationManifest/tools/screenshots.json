@@ -15,12 +15,17 @@
           "role": "primary",
           "inputs": [
             { "sourceKind": "fixed", "jsonPointer": "/data/type", "fixedValue": "appPreviewSets" },
-            { "sourceKind": "fixed", "jsonPointer": "/data/relationships/appStoreVersionLocalization/data/type", "fixedValue": "appStoreVersionLocalizations" }
+            { "sourceKind": "fixed", "jsonPointer": "/data/relationships/appStoreVersionLocalization/data/type", "fixedValue": "appStoreVersionLocalizations" },
+            { "sourceKind": "fixed", "jsonPointer": "/data/relationships/appCustomProductPageLocalization/data/type", "fixedValue": "appCustomProductPageLocalizations" },
+            { "sourceKind": "fixed", "jsonPointer": "/data/relationships/appStoreVersionExperimentTreatmentLocalization/data/type", "fixedValue": "appStoreVersionExperimentTreatmentLocalizations" }
           ]
         }
       ],
       "fields": [
         { "toolField": "localization_id", "sourceKind": "requestBody", "operationId": "appPreviewSets_createInstance", "jsonPointer": "/data/relationships/appStoreVersionLocalization/data/id" },
+        { "toolField": "app_store_version_localization_id", "sourceKind": "requestBody", "operationId": "appPreviewSets_createInstance", "jsonPointer": "/data/relationships/appStoreVersionLocalization/data/id" },
+        { "toolField": "custom_product_page_localization_id", "sourceKind": "requestBody", "operationId": "appPreviewSets_createInstance", "jsonPointer": "/data/relationships/appCustomProductPageLocalization/data/id" },
+        { "toolField": "treatment_localization_id", "sourceKind": "requestBody", "operationId": "appPreviewSets_createInstance", "jsonPointer": "/data/relationships/appStoreVersionExperimentTreatmentLocalization/data/id" },
         { "toolField": "preview_type", "sourceKind": "requestBody", "operationId": "appPreviewSets_createInstance", "jsonPointer": "/data/attributes/previewType" }
       ],
       "response": {
@@ -28,8 +33,12 @@
         "sources": [
           { "operationId": "appPreviewSets_createInstance", "statusCode": "201", "mediaType": "application/json" }
         ],
-        "fields": []
-      }
+        "fields": [
+          { "outputField": "success", "localRole": "successfulCreate" },
+          { "outputField": "preview_set", "operationId": "appPreviewSets_createInstance", "jsonPointer": "/data" }
+        ]
+      },
+      "note": "The handler requires exactly one localization relationship. localization_id remains a compatibility alias for app_store_version_localization_id."
     },
     {
       "tool": "screenshots_create_set",
@@ -45,12 +54,17 @@
           "role": "primary",
           "inputs": [
             { "sourceKind": "fixed", "jsonPointer": "/data/type", "fixedValue": "appScreenshotSets" },
-            { "sourceKind": "fixed", "jsonPointer": "/data/relationships/appStoreVersionLocalization/data/type", "fixedValue": "appStoreVersionLocalizations" }
+            { "sourceKind": "fixed", "jsonPointer": "/data/relationships/appStoreVersionLocalization/data/type", "fixedValue": "appStoreVersionLocalizations" },
+            { "sourceKind": "fixed", "jsonPointer": "/data/relationships/appCustomProductPageLocalization/data/type", "fixedValue": "appCustomProductPageLocalizations" },
+            { "sourceKind": "fixed", "jsonPointer": "/data/relationships/appStoreVersionExperimentTreatmentLocalization/data/type", "fixedValue": "appStoreVersionExperimentTreatmentLocalizations" }
           ]
         }
       ],
       "fields": [
         { "toolField": "localization_id", "sourceKind": "requestBody", "operationId": "appScreenshotSets_createInstance", "jsonPointer": "/data/relationships/appStoreVersionLocalization/data/id" },
+        { "toolField": "app_store_version_localization_id", "sourceKind": "requestBody", "operationId": "appScreenshotSets_createInstance", "jsonPointer": "/data/relationships/appStoreVersionLocalization/data/id" },
+        { "toolField": "custom_product_page_localization_id", "sourceKind": "requestBody", "operationId": "appScreenshotSets_createInstance", "jsonPointer": "/data/relationships/appCustomProductPageLocalization/data/id" },
+        { "toolField": "treatment_localization_id", "sourceKind": "requestBody", "operationId": "appScreenshotSets_createInstance", "jsonPointer": "/data/relationships/appStoreVersionExperimentTreatmentLocalization/data/id" },
         { "toolField": "display_type", "sourceKind": "requestBody", "operationId": "appScreenshotSets_createInstance", "jsonPointer": "/data/attributes/screenshotDisplayType" }
       ],
       "response": {
@@ -58,8 +72,12 @@
         "sources": [
           { "operationId": "appScreenshotSets_createInstance", "statusCode": "201", "mediaType": "application/json" }
         ],
-        "fields": []
-      }
+        "fields": [
+          { "outputField": "success", "localRole": "successfulCreate" },
+          { "outputField": "screenshot_set", "operationId": "appScreenshotSets_createInstance", "jsonPointer": "/data" }
+        ]
+      },
+      "note": "The handler requires exactly one localization relationship. localization_id remains a compatibility alias for app_store_version_localization_id."
     },
     {
       "tool": "screenshots_delete",
@@ -158,8 +176,15 @@
         "sources": [
           { "operationId": "appPreviews_getInstance", "statusCode": "200", "mediaType": "application/json" }
         ],
-        "fields": []
-      }
+        "fields": [
+          { "outputField": "success", "localRole": "successfulRead" },
+          { "outputField": "preview", "operationId": "appPreviews_getInstance", "jsonPointer": "/data" },
+          { "outputField": "preview.previewFrameTimeCode", "operationId": "appPreviews_getInstance", "jsonPointer": "/data/attributes/previewFrameTimeCode" },
+          { "outputField": "preview.previewFrameImage", "operationId": "appPreviews_getInstance", "jsonPointer": "/data/attributes/previewFrameImage" },
+          { "outputField": "preview.previewImage", "operationId": "appPreviews_getInstance", "jsonPointer": "/data/attributes/previewImage" }
+        ]
+      },
+      "note": "The projection exposes Apple previewFrameImage and retains deprecated previewImage for compatibility with existing MCP consumers."
     },
     {
       "tool": "screenshots_list",
@@ -224,7 +249,13 @@
         "sources": [
           { "operationId": "appPreviewSets_appPreviews_getToManyRelated", "statusCode": "200", "mediaType": "application/json" }
         ],
-        "fields": []
+        "fields": [
+          { "outputField": "success", "localRole": "successfulRead" },
+          { "outputField": "previews", "operationId": "appPreviewSets_appPreviews_getToManyRelated", "jsonPointer": "/data" },
+          { "outputField": "previews.previewFrameTimeCode", "operationId": "appPreviewSets_appPreviews_getToManyRelated", "jsonPointer": "/data/*/attributes/previewFrameTimeCode" },
+          { "outputField": "previews.previewFrameImage", "operationId": "appPreviewSets_appPreviews_getToManyRelated", "jsonPointer": "/data/*/attributes/previewFrameImage" },
+          { "outputField": "next_url", "operationId": "appPreviewSets_appPreviews_getToManyRelated", "jsonPointer": "/links/next" }
+        ]
       }
     },
     {
@@ -597,9 +628,15 @@
           { "operationId": "appPreviews_getInstance", "statusCode": "200", "mediaType": "application/json" },
           { "operationId": "appPreviews_deleteInstance", "statusCode": "204" }
         ],
-        "fields": []
+        "fields": [
+          { "outputField": "success", "localRole": "uploadTransactionOutcome" },
+          { "outputField": "preview", "operationId": "appPreviews_updateInstance", "jsonPointer": "/data" },
+          { "outputField": "preview.previewFrameTimeCode", "operationId": "appPreviews_updateInstance", "jsonPointer": "/data/attributes/previewFrameTimeCode" },
+          { "outputField": "preview.previewFrameImage", "operationId": "appPreviews_updateInstance", "jsonPointer": "/data/attributes/previewFrameImage" },
+          { "outputField": "preview.previewImage", "operationId": "appPreviews_updateInstance", "jsonPointer": "/data/attributes/previewImage" }
+        ]
       },
-      "note": "The handler snapshots the video before reserve, uploads those immutable bytes through Apple-provided signed URLs, and commits their checksum. COMPLETE is successful and FAILED is terminal failure; all other videoDeliveryState values (falling back to assetDeliveryState for compatibility) remain pending and are polled with conditional GET. After a confirmed 2xx commit, nonterminal video processing is an accepted success with uploadCommitted=true, processingComplete=false, deliveryPending=true, and retrySafe=false. If PATCH transport remains ambiguous and reconciliation only shows pending, the outcome stays an error; either way the preview is retained with inspection guidance. A mismatched 2xx commit resource triggers one GET of the expected preview ID; valid terminal or pending state is interpreted normally, while invalid reconciliation stays an error. A confirmed reservation that fails before PATCH is best-effort deleted independently of cancellation; an unresolved create response instead requires parent-collection inspection because Apple exposes no idempotency key for locating that exact reservation."
+      "note": "The handler snapshots the video before reserve, uploads those immutable bytes through Apple-provided signed URLs, and commits their checksum. COMPLETE is successful and FAILED is terminal failure; all other videoDeliveryState values (falling back to assetDeliveryState for compatibility) remain pending and are polled with conditional GET. After a confirmed 2xx commit, nonterminal video processing is an accepted success with uploadCommitted=true, processingComplete=false, deliveryPending=true, and retrySafe=false. If PATCH transport remains ambiguous and reconciliation only shows pending, the outcome stays an error; either way the preview is retained with inspection guidance. A mismatched 2xx commit resource triggers one GET of the expected preview ID; valid terminal or pending state is interpreted normally, while invalid reconciliation stays an error. A confirmed reservation that fails before PATCH is best-effort deleted independently of cancellation; an unresolved create response instead requires parent-collection inspection because Apple exposes no idempotency key for locating that exact reservation. The response exposes previewFrameImage and retains deprecated previewImage for compatibility."
     }
   ],
   "implementationAliases": []

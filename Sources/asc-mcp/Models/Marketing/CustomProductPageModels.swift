@@ -99,6 +99,7 @@ public struct CreateCustomProductPageRequest: Codable, Sendable {
 
     public struct Relationships: Codable, Sendable {
         public let app: AppRelationship
+        public let appStoreVersionTemplate: AppRelationship?
     }
 
     public struct AppRelationship: Codable, Sendable {

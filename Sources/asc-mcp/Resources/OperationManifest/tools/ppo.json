@@ -32,10 +32,11 @@
         ],
         "fields": [
           { "outputField": "success", "localRole": "successfulCreate" },
-          { "outputField": "experiment", "operationId": "appStoreVersionExperimentsV2_createInstance", "jsonPointer": "/data" }
+          { "outputField": "experiment", "operationId": "appStoreVersionExperimentsV2_createInstance", "jsonPointer": "/data" },
+          { "outputField": "experiment.platform", "operationId": "appStoreVersionExperimentsV2_createInstance", "jsonPointer": "/data/attributes/platform" }
         ]
       },
-      "note": "The handler uses the current V2 create operation and defaults platform to IOS locally. Mapping is partial because the MCP platform enum omits Apple's current VISION_OS value and no output schema is declared."
+      "note": "The handler uses the current V2 create operation, supports Apple's IOS, MAC_OS, TV_OS, and VISION_OS platforms, and defaults platform to IOS locally."
     },
     {
       "tool": "ppo_create_treatment",
@@ -50,13 +51,15 @@
           "path": "/v1/appStoreVersionExperimentTreatments",
           "role": "primary",
           "inputs": [
-            { "sourceKind": "fixed", "jsonPointer": "/data/type", "fixedValue": "appStoreVersionExperimentTreatments" }
+            { "sourceKind": "fixed", "jsonPointer": "/data/type", "fixedValue": "appStoreVersionExperimentTreatments" },
+            { "sourceKind": "fixed", "jsonPointer": "/data/relationships/appStoreVersionExperimentV2/data/type", "fixedValue": "appStoreVersionExperiments" }
           ]
         }
       ],
       "fields": [
         { "toolField": "experiment_id", "sourceKind": "requestBody", "operationId": "appStoreVersionExperimentTreatments_createInstance", "jsonPointer": "/data/relationships/appStoreVersionExperimentV2/data/id" },
-        { "toolField": "name", "sourceKind": "requestBody", "operationId": "appStoreVersionExperimentTreatments_createInstance", "jsonPointer": "/data/attributes/name" }
+        { "toolField": "name", "sourceKind": "requestBody", "operationId": "appStoreVersionExperimentTreatments_createInstance", "jsonPointer": "/data/attributes/name" },
+        { "toolField": "app_icon_name", "sourceKind": "requestBody", "operationId": "appStoreVersionExperimentTreatments_createInstance", "jsonPointer": "/data/attributes/appIconName" }
       ],
       "response": {
         "mode": "projection",
@@ -65,7 +68,10 @@
         ],
         "fields": [
           { "outputField": "success", "localRole": "successfulCreate" },
-          { "outputField": "treatment", "operationId": "appStoreVersionExperimentTreatments_createInstance", "jsonPointer": "/data" }
+          { "outputField": "treatment", "operationId": "appStoreVersionExperimentTreatments_createInstance", "jsonPointer": "/data" },
+          { "outputField": "treatment.appIconName", "operationId": "appStoreVersionExperimentTreatments_createInstance", "jsonPointer": "/data/attributes/appIconName" },
+          { "outputField": "treatment.appIcon", "operationId": "appStoreVersionExperimentTreatments_createInstance", "jsonPointer": "/data/attributes/appIcon" },
+          { "outputField": "treatment.promotedDate", "operationId": "appStoreVersionExperimentTreatments_createInstance", "jsonPointer": "/data/attributes/promotedDate" }
         ]
       },
       "note": "The handler binds treatments created for current V2 experiment IDs through the appStoreVersionExperimentV2 relationship."
@@ -157,7 +163,8 @@
         ],
         "fields": [
           { "outputField": "success", "localRole": "successfulRead" },
-          { "outputField": "experiment", "operationId": "appStoreVersionExperimentsV2_getInstance", "jsonPointer": "/data" }
+          { "outputField": "experiment", "operationId": "appStoreVersionExperimentsV2_getInstance", "jsonPointer": "/data" },
+          { "outputField": "experiment.platform", "operationId": "appStoreVersionExperimentsV2_getInstance", "jsonPointer": "/data/attributes/platform" }
         ]
       },
       "note": "Direct V2 experiment read with a narrow local attribute projection and no declared output schema."
@@ -189,6 +196,7 @@
         "fields": [
           { "outputField": "success", "localRole": "successfulRead" },
           { "outputField": "experiments", "operationId": "apps_appStoreVersionExperimentsV2_getToManyRelated", "jsonPointer": "/data" },
+          { "outputField": "experiments.platform", "operationId": "apps_appStoreVersionExperimentsV2_getToManyRelated", "jsonPointer": "/data/*/attributes/platform" },
           { "outputField": "next_url", "operationId": "apps_appStoreVersionExperimentsV2_getToManyRelated", "jsonPointer": "/links/next" }
         ]
       },
@@ -253,6 +261,9 @@
         "fields": [
           { "outputField": "success", "localRole": "successfulRead" },
           { "outputField": "treatments", "operationId": "appStoreVersionExperimentsV2_appStoreVersionExperimentTreatments_getToManyRelated", "jsonPointer": "/data" },
+          { "outputField": "treatments.appIconName", "operationId": "appStoreVersionExperimentsV2_appStoreVersionExperimentTreatments_getToManyRelated", "jsonPointer": "/data/*/attributes/appIconName" },
+          { "outputField": "treatments.appIcon", "operationId": "appStoreVersionExperimentsV2_appStoreVersionExperimentTreatments_getToManyRelated", "jsonPointer": "/data/*/attributes/appIcon" },
+          { "outputField": "treatments.promotedDate", "operationId": "appStoreVersionExperimentsV2_appStoreVersionExperimentTreatments_getToManyRelated", "jsonPointer": "/data/*/attributes/promotedDate" },
           { "outputField": "next_url", "operationId": "appStoreVersionExperimentsV2_appStoreVersionExperimentTreatments_getToManyRelated", "jsonPointer": "/links/next" }
         ]
       },
@@ -294,7 +305,8 @@
         ],
         "fields": [
           { "outputField": "success", "localRole": "successfulUpdate" },
-          { "outputField": "experiment", "operationId": "appStoreVersionExperimentsV2_updateInstance", "jsonPointer": "/data" }
+          { "outputField": "experiment", "operationId": "appStoreVersionExperimentsV2_updateInstance", "jsonPointer": "/data" },
+          { "outputField": "experiment.platform", "operationId": "appStoreVersionExperimentsV2_updateInstance", "jsonPointer": "/data/attributes/platform" }
         ]
       },
       "note": "The handler derives started=true from START and started=false from STOP for the V2 update request."

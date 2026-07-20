@@ -104,20 +104,25 @@ extension PromotedPurchasesWorker {
     func createPromotedPurchase(_ params: CallTool.Parameters) async throws -> CallTool.Result {
         guard let arguments = params.arguments,
               let appId = arguments["app_id"]?.stringValue,
-              let visible = arguments["visible"]?.boolValue,
-              let enabled = arguments["enabled"]?.boolValue else {
+              let visible = arguments["visible"]?.boolValue else {
             return CallTool.Result(
-                content: [MCPContent.text("Error: Required parameters: app_id, visible, enabled")],
+                content: [MCPContent.text("Error: Required parameters: app_id, visible")],
                 isError: true
             )
         }
 
+        let enabled: PromotedPurchaseNullableBool?
+        do {
+            enabled = try nullableBool("enabled", from: arguments)
+        } catch {
+            return MCPResult.error(error.localizedDescription)
+        }
         let iapId = arguments["iap_id"]?.stringValue
         let subscriptionId = arguments["subscription_id"]?.stringValue
 
-        guard iapId != nil || subscriptionId != nil else {
+        guard (iapId != nil) != (subscriptionId != nil) else {
             return CallTool.Result(
-                content: [MCPContent.text("Error: Either 'iap_id' or 'subscription_id' must be provided")],
+                content: [MCPContent.text("Error: Provide exactly one of 'iap_id' or 'subscription_id'")],
                 isError: true
             )
         }
@@ -163,7 +168,11 @@ extension PromotedPurchasesWorker {
                 as: ASCPromotedPurchaseResponse.self
             )
 
-            let purchase = formatPromotedPurchase(response.data)
+            let purchase = formatPromotedPurchase(
+                response.data,
+                fallbackIAPId: iapId,
+                fallbackSubscriptionId: subscriptionId
+            )
 
             let result = [
                 "success": true,
@@ -192,13 +201,25 @@ extension PromotedPurchasesWorker {
             )
         }
 
+        let visible: PromotedPurchaseNullableBool?
+        let enabled: PromotedPurchaseNullableBool?
+        do {
+            visible = try nullableBool("visible", from: arguments)
+            enabled = try nullableBool("enabled", from: arguments)
+        } catch {
+            return MCPResult.error(error.localizedDescription)
+        }
+        guard visible != nil || enabled != nil else {
+            return MCPResult.error("At least one update field is required: visible or enabled")
+        }
+
         do {
             let request = UpdatePromotedPurchaseRequest(
                 data: UpdatePromotedPurchaseRequest.UpdateData(
                     id: promotedPurchaseId,
                     attributes: UpdatePromotedPurchaseRequest.Attributes(
-                        visibleForAllUsers: arguments["visible"]?.boolValue,
-                        enabled: arguments["enabled"]?.boolValue
+                        visibleForAllUsers: visible,
+                        enabled: enabled
                     )
                 )
             )
@@ -338,7 +359,12 @@ extension PromotedPurchasesWorker {
         )
     }
 
-    private func formatPromotedPurchase(_ purchase: ASCPromotedPurchase, included: [PromotedPurchaseIncludedResource]? = nil) -> [String: Any] {
+    private func formatPromotedPurchase(
+        _ purchase: ASCPromotedPurchase,
+        included: [PromotedPurchaseIncludedResource]? = nil,
+        fallbackIAPId: String? = nil,
+        fallbackSubscriptionId: String? = nil
+    ) -> [String: Any] {
         var result: [String: Any] = [
             "id": purchase.id,
             "type": purchase.type,
@@ -346,6 +372,11 @@ extension PromotedPurchasesWorker {
             "enabled": (purchase.attributes?.enabled).jsonSafe,
             "state": (purchase.attributes?.state).jsonSafe
         ]
+
+        let includedIAPId = included?.first(where: { $0.type == "inAppPurchases" })?.id
+        let includedSubscriptionId = included?.first(where: { $0.type == "subscriptions" })?.id
+        result["inAppPurchaseId"] = (purchase.relationships?.inAppPurchaseV2?.data?.id ?? fallbackIAPId ?? includedIAPId).jsonSafe
+        result["subscriptionId"] = (purchase.relationships?.subscription?.data?.id ?? fallbackSubscriptionId ?? includedSubscriptionId).jsonSafe
 
         // Add linked product info from included resources
         if let included = included, let resource = included.first {
@@ -359,4 +390,30 @@ extension PromotedPurchasesWorker {
 
         return result
     }
+
+    private func nullableBool(
+        _ name: String,
+        from arguments: [String: Value]
+    ) throws -> PromotedPurchaseNullableBool? {
+        guard let value = arguments[name] else {
+            return nil
+        }
+        if value.isNull {
+            return .null
+        }
+        guard let bool = value.boolValue else {
+            throw PromotedPurchaseInputError("Parameter '\(name)' must be a boolean or null")
+        }
+        return .value(bool)
+    }
+}
+
+private struct PromotedPurchaseInputError: LocalizedError, Sendable {
+    let message: String
+
+    init(_ message: String) {
+        self.message = message
+    }
+
+    var errorDescription: String? { message }
 }

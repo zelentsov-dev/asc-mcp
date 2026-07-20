@@ -74,7 +74,9 @@ public struct CreateScreenshotSetRequest: Codable, Sendable {
     }
 
     public struct Relationships: Codable, Sendable {
-        public let appStoreVersionLocalization: LocalizationRelationship
+        public let appStoreVersionLocalization: LocalizationRelationship?
+        public let appCustomProductPageLocalization: LocalizationRelationship?
+        public let appStoreVersionExperimentTreatmentLocalization: LocalizationRelationship?
     }
 
     public struct LocalizationRelationship: Codable, Sendable {
@@ -159,9 +161,15 @@ public struct PreviewAttributes: Codable, Sendable {
     public let mimeType: String?
     public let videoUrl: String?
     public let previewImage: ASCImageAsset?
+    public let previewFrameImage: ASCPreviewFrameImage?
     public let uploadOperations: [ASCUploadOperation]?
     public let assetDeliveryState: ASCAssetDeliveryState?
     public let videoDeliveryState: ASCAssetDeliveryState?
+}
+
+public struct ASCPreviewFrameImage: Codable, Sendable {
+    public let image: ASCImageAsset?
+    public let state: ASCAssetDeliveryState?
 }
 
 // MARK: - Preview Request Models
@@ -181,7 +189,9 @@ public struct CreatePreviewSetRequest: Codable, Sendable {
     }
 
     public struct Relationships: Codable, Sendable {
-        public let appStoreVersionLocalization: LocalizationRelationship
+        public let appStoreVersionLocalization: LocalizationRelationship?
+        public let appCustomProductPageLocalization: LocalizationRelationship?
+        public let appStoreVersionExperimentTreatmentLocalization: LocalizationRelationship?
     }
 
     public struct LocalizationRelationship: Codable, Sendable {

@@ -16,7 +16,9 @@
           "condition": null,
           "inputs": [
             { "sourceKind": "fixed", "jsonPointer": "/data/type", "fixedValue": "promotedPurchases" },
-            { "sourceKind": "fixed", "jsonPointer": "/data/relationships/app/data/type", "fixedValue": "apps" }
+            { "sourceKind": "fixed", "jsonPointer": "/data/relationships/app/data/type", "fixedValue": "apps" },
+            { "sourceKind": "fixed", "jsonPointer": "/data/relationships/inAppPurchaseV2/data/type", "fixedValue": "inAppPurchases" },
+            { "sourceKind": "fixed", "jsonPointer": "/data/relationships/subscription/data/type", "fixedValue": "subscriptions" }
           ]
         }
       ],
@@ -53,13 +55,21 @@
         }
       ],
       "response": {
-        "mode": "opaque",
+        "mode": "projection",
         "sources": [
           { "operationId": "promotedPurchases_createInstance", "statusCode": "201", "mediaType": "application/json" }
         ],
-        "fields": []
+        "fields": [
+          { "outputField": "success", "localRole": "successfulCreate" },
+          { "outputField": "promoted_purchase.id", "operationId": "promotedPurchases_createInstance", "jsonPointer": "/data/id" },
+          { "outputField": "promoted_purchase.visibleForAllUsers", "operationId": "promotedPurchases_createInstance", "jsonPointer": "/data/attributes/visibleForAllUsers" },
+          { "outputField": "promoted_purchase.enabled", "operationId": "promotedPurchases_createInstance", "jsonPointer": "/data/attributes/enabled" },
+          { "outputField": "promoted_purchase.state", "operationId": "promotedPurchases_createInstance", "jsonPointer": "/data/attributes/state" },
+          { "outputField": "promoted_purchase.inAppPurchaseId", "operationId": "promotedPurchases_createInstance", "jsonPointer": "/data/relationships/inAppPurchaseV2/data/id", "localRole": "Use the response linkage when present, otherwise preserve the validated iap_id create input." },
+          { "outputField": "promoted_purchase.subscriptionId", "operationId": "promotedPurchases_createInstance", "jsonPointer": "/data/relationships/subscription/data/id", "localRole": "Use the response linkage when present, otherwise preserve the validated subscription_id create input." }
+        ]
       },
-      "note": "Create binds app and exactly one product relationship plus visibility state. The public schema does not enforce the exactly-one IAP/subscription invariant, so mapping remains partial."
+      "note": "Create binds app and exactly one product relationship plus required visibility. enabled is optional; omission stays omitted and explicit null is preserved. The public schema and handler both enforce exactly one IAP/subscription relationship."
     },
     {
       "tool": "promoted_delete",
@@ -141,13 +151,19 @@
         }
       ],
       "response": {
-        "mode": "opaque",
+        "mode": "projection",
         "sources": [
           { "operationId": "promotedPurchases_getInstance", "statusCode": "200", "mediaType": "application/json" }
         ],
-        "fields": []
+        "fields": [
+          { "outputField": "success", "localRole": "successfulRead" },
+          { "outputField": "promoted_purchase", "operationId": "promotedPurchases_getInstance", "jsonPointer": "/data" },
+          { "outputField": "promoted_purchase.inAppPurchaseId", "operationId": "promotedPurchases_getInstance", "jsonPointer": "/data/relationships/inAppPurchaseV2/data/id" },
+          { "outputField": "promoted_purchase.subscriptionId", "operationId": "promotedPurchases_getInstance", "jsonPointer": "/data/relationships/subscription/data/id" },
+          { "outputField": "promoted_purchase.linkedProduct", "operationId": "promotedPurchases_getInstance", "jsonPointer": "/included/*" }
+        ]
       },
-      "note": "Apple 4.4.1 operation identity and all public inputs are classified; response remains opaque, so the semantic mapping is partial."
+      "note": "The response projects Apple product relationship IDs and the included linked product when available."
     },
     {
       "tool": "promoted_get_image",
@@ -230,13 +246,19 @@
         }
       ],
       "response": {
-        "mode": "opaque",
+        "mode": "projection",
         "sources": [
           { "operationId": "apps_promotedPurchases_getToManyRelated", "statusCode": "200", "mediaType": "application/json" }
         ],
-        "fields": []
+        "fields": [
+          { "outputField": "success", "localRole": "successfulRead" },
+          { "outputField": "promoted_purchases", "operationId": "apps_promotedPurchases_getToManyRelated", "jsonPointer": "/data" },
+          { "outputField": "promoted_purchases.inAppPurchaseId", "operationId": "apps_promotedPurchases_getToManyRelated", "jsonPointer": "/data/*/relationships/inAppPurchaseV2/data/id" },
+          { "outputField": "promoted_purchases.subscriptionId", "operationId": "apps_promotedPurchases_getToManyRelated", "jsonPointer": "/data/*/relationships/subscription/data/id" },
+          { "outputField": "next_url", "operationId": "apps_promotedPurchases_getToManyRelated", "jsonPointer": "/links/next" }
+        ]
       },
-      "note": "Apple 4.4.1 operation identity and all public inputs are classified; response remains opaque, so the semantic mapping is partial."
+      "note": "The list projects Apple product relationship IDs for each promoted purchase."
     },
     {
       "tool": "promoted_update",
@@ -284,13 +306,18 @@
         }
       ],
       "response": {
-        "mode": "opaque",
+        "mode": "projection",
         "sources": [
           { "operationId": "promotedPurchases_updateInstance", "statusCode": "200", "mediaType": "application/json" }
         ],
-        "fields": []
+        "fields": [
+          { "outputField": "success", "localRole": "successfulUpdate" },
+          { "outputField": "promoted_purchase", "operationId": "promotedPurchases_updateInstance", "jsonPointer": "/data" },
+          { "outputField": "promoted_purchase.inAppPurchaseId", "operationId": "promotedPurchases_updateInstance", "jsonPointer": "/data/relationships/inAppPurchaseV2/data/id" },
+          { "outputField": "promoted_purchase.subscriptionId", "operationId": "promotedPurchases_updateInstance", "jsonPointer": "/data/relationships/subscription/data/id" }
+        ]
       },
-      "note": "Apple 4.4.1 operation identity and all public inputs are classified; response remains opaque, so the semantic mapping is partial."
+      "note": "Update fields preserve Apple value, explicit-null, and omission semantics; empty or malformed PATCH requests fail pre-network. The response preserves Apple product relationship IDs in the local projection."
     },
     {
       "tool": "promoted_upload_image",

@@ -67,27 +67,50 @@ extension ScreenshotsWorker {
     /// - Returns: JSON with created screenshot set details
     func createScreenshotSet(_ params: CallTool.Parameters) async throws -> CallTool.Result {
         guard let arguments = params.arguments,
-              let locIdValue = arguments["localization_id"],
-              let localizationId = locIdValue.stringValue,
               let displayTypeValue = arguments["display_type"],
               let displayType = displayTypeValue.stringValue else {
             return CallTool.Result(
-                content: [MCPContent.text("Error: Required parameters: localization_id, display_type")],
+                content: [MCPContent.text("Error: Required parameter 'display_type' is missing")],
+                isError: true
+            )
+        }
+
+        guard let parent = mediaSetParent(from: arguments) else {
+            return CallTool.Result(
+                content: [MCPContent.text("Error: Provide exactly one localization parent: localization_id, app_store_version_localization_id, custom_product_page_localization_id, or treatment_localization_id")],
                 isError: true
             )
         }
 
         do {
+            let relationships: CreateScreenshotSetRequest.Relationships
+            switch parent {
+            case .appStoreVersion(let id):
+                relationships = .init(
+                    appStoreVersionLocalization: .init(data: ASCResourceIdentifier(type: "appStoreVersionLocalizations", id: id)),
+                    appCustomProductPageLocalization: nil,
+                    appStoreVersionExperimentTreatmentLocalization: nil
+                )
+            case .customProductPage(let id):
+                relationships = .init(
+                    appStoreVersionLocalization: nil,
+                    appCustomProductPageLocalization: .init(data: ASCResourceIdentifier(type: "appCustomProductPageLocalizations", id: id)),
+                    appStoreVersionExperimentTreatmentLocalization: nil
+                )
+            case .treatment(let id):
+                relationships = .init(
+                    appStoreVersionLocalization: nil,
+                    appCustomProductPageLocalization: nil,
+                    appStoreVersionExperimentTreatmentLocalization: .init(data: ASCResourceIdentifier(type: "appStoreVersionExperimentTreatmentLocalizations", id: id))
+                )
+            }
+
             let request = CreateScreenshotSetRequest(
                 data: CreateScreenshotSetRequest.CreateData(
                     attributes: CreateScreenshotSetRequest.Attributes(
                         screenshotDisplayType: displayType
                     ),
-                    relationships: CreateScreenshotSetRequest.Relationships(
-                        appStoreVersionLocalization: CreateScreenshotSetRequest.LocalizationRelationship(
-                            data: ASCResourceIdentifier(type: "appStoreVersionLocalizations", id: localizationId)
-                        )
-                    )
+                    relationships: relationships
                 )
             )
 
@@ -568,27 +591,50 @@ extension ScreenshotsWorker {
     /// - Returns: JSON with created preview set details
     func createPreviewSet(_ params: CallTool.Parameters) async throws -> CallTool.Result {
         guard let arguments = params.arguments,
-              let locIdValue = arguments["localization_id"],
-              let localizationId = locIdValue.stringValue,
               let previewTypeValue = arguments["preview_type"],
               let previewType = previewTypeValue.stringValue else {
             return CallTool.Result(
-                content: [MCPContent.text("Error: Required parameters: localization_id, preview_type")],
+                content: [MCPContent.text("Error: Required parameter 'preview_type' is missing")],
+                isError: true
+            )
+        }
+
+        guard let parent = mediaSetParent(from: arguments) else {
+            return CallTool.Result(
+                content: [MCPContent.text("Error: Provide exactly one localization parent: localization_id, app_store_version_localization_id, custom_product_page_localization_id, or treatment_localization_id")],
                 isError: true
             )
         }
 
         do {
+            let relationships: CreatePreviewSetRequest.Relationships
+            switch parent {
+            case .appStoreVersion(let id):
+                relationships = .init(
+                    appStoreVersionLocalization: .init(data: ASCResourceIdentifier(type: "appStoreVersionLocalizations", id: id)),
+                    appCustomProductPageLocalization: nil,
+                    appStoreVersionExperimentTreatmentLocalization: nil
+                )
+            case .customProductPage(let id):
+                relationships = .init(
+                    appStoreVersionLocalization: nil,
+                    appCustomProductPageLocalization: .init(data: ASCResourceIdentifier(type: "appCustomProductPageLocalizations", id: id)),
+                    appStoreVersionExperimentTreatmentLocalization: nil
+                )
+            case .treatment(let id):
+                relationships = .init(
+                    appStoreVersionLocalization: nil,
+                    appCustomProductPageLocalization: nil,
+                    appStoreVersionExperimentTreatmentLocalization: .init(data: ASCResourceIdentifier(type: "appStoreVersionExperimentTreatmentLocalizations", id: id))
+                )
+            }
+
             let request = CreatePreviewSetRequest(
                 data: CreatePreviewSetRequest.CreateData(
                     attributes: CreatePreviewSetRequest.Attributes(
                         previewType: previewType
                     ),
-                    relationships: CreatePreviewSetRequest.Relationships(
-                        appStoreVersionLocalization: CreatePreviewSetRequest.LocalizationRelationship(
-                            data: ASCResourceIdentifier(type: "appStoreVersionLocalizations", id: localizationId)
-                        )
-                    )
+                    relationships: relationships
                 )
             )
 
@@ -908,6 +954,25 @@ extension ScreenshotsWorker {
             ]
         }
 
+        if let previewFrameImage = preview.attributes?.previewFrameImage {
+            var frame: [String: Any] = [:]
+            if let image = previewFrameImage.image {
+                frame["image"] = [
+                    "templateUrl": image.templateUrl.jsonSafe,
+                    "width": image.width.jsonSafe,
+                    "height": image.height.jsonSafe
+                ]
+            }
+            if let state = previewFrameImage.state {
+                frame["state"] = [
+                    "state": state.state.jsonSafe,
+                    "errors": state.errors?.map { ["code": $0.code.jsonSafe, "description": $0.description.jsonSafe] } ?? [],
+                    "warnings": state.warnings?.map { ["code": $0.code.jsonSafe, "description": $0.description.jsonSafe] } ?? []
+                ]
+            }
+            result["previewFrameImage"] = frame
+        }
+
         if let deliveryState = preview.attributes?.assetDeliveryState {
             result["assetDeliveryState"] = [
                 "state": deliveryState.state.jsonSafe,
@@ -939,5 +1004,28 @@ extension ScreenshotsWorker {
                 "offset": operation.offset.jsonSafe
             ]
         }
+    }
+
+    private enum MediaSetParent {
+        case appStoreVersion(String)
+        case customProductPage(String)
+        case treatment(String)
+    }
+
+    private func mediaSetParent(from arguments: [String: Value]) -> MediaSetParent? {
+        var parents: [MediaSetParent] = []
+        if let id = arguments["localization_id"]?.stringValue {
+            parents.append(.appStoreVersion(id))
+        }
+        if let id = arguments["app_store_version_localization_id"]?.stringValue {
+            parents.append(.appStoreVersion(id))
+        }
+        if let id = arguments["custom_product_page_localization_id"]?.stringValue {
+            parents.append(.customProductPage(id))
+        }
+        if let id = arguments["treatment_localization_id"]?.stringValue {
+            parents.append(.treatment(id))
+        }
+        return parents.count == 1 ? parents[0] : nil
     }
 }

@@ -49,7 +49,7 @@ extension PromotedPurchasesWorker {
     func createPromotedPurchaseTool() -> Tool {
         return Tool(
             name: "promoted_create",
-            description: "Create a promoted purchase for an IAP or subscription. Provide either iap_id or subscription_id",
+            description: "Create a promoted purchase for exactly one IAP or subscription",
             inputSchema: .object([
                 "type": .string("object"),
                 "properties": .object([
@@ -62,8 +62,8 @@ extension PromotedPurchasesWorker {
                         "description": .string("Whether the promoted purchase is visible to all users")
                     ]),
                     "enabled": .object([
-                        "type": .string("boolean"),
-                        "description": .string("Whether the promoted purchase is enabled")
+                        "type": .array([.string("boolean"), .string("null")]),
+                        "description": .string("Whether the promoted purchase is enabled; null uses Apple's nullable create value")
                     ]),
                     "iap_id": .object([
                         "type": .string("string"),
@@ -74,7 +74,11 @@ extension PromotedPurchasesWorker {
                         "description": .string("Subscription ID (provide this OR iap_id)")
                     ])
                 ]),
-                "required": .array([.string("app_id"), .string("visible"), .string("enabled")])
+                "required": .array([.string("app_id"), .string("visible")]),
+                "oneOf": .array([
+                    .object(["required": .array([.string("iap_id")])]),
+                    .object(["required": .array([.string("subscription_id")])])
+                ])
             ])
         )
     }
@@ -85,18 +89,19 @@ extension PromotedPurchasesWorker {
             description: "Update a promoted purchase visibility or enabled state",
             inputSchema: .object([
                 "type": .string("object"),
+                "minProperties": .int(2),
                 "properties": .object([
                     "promoted_purchase_id": .object([
                         "type": .string("string"),
                         "description": .string("Promoted purchase ID")
                     ]),
                     "visible": .object([
-                        "type": .string("boolean"),
-                        "description": .string("Whether the promoted purchase is visible to all users")
+                        "type": .array([.string("boolean"), .string("null")]),
+                        "description": .string("Whether the promoted purchase is visible to all users, or null to clear Apple's nullable value")
                     ]),
                     "enabled": .object([
-                        "type": .string("boolean"),
-                        "description": .string("Whether the promoted purchase is enabled")
+                        "type": .array([.string("boolean"), .string("null")]),
+                        "description": .string("Whether the promoted purchase is enabled, or null to clear Apple's nullable value")
                     ])
                 ]),
                 "required": .array([.string("promoted_purchase_id")])

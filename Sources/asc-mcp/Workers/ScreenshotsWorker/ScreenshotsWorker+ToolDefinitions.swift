@@ -32,20 +32,33 @@ extension ScreenshotsWorker {
     func createScreenshotSetTool() -> Tool {
         return Tool(
             name: "screenshots_create_set",
-            description: "Create a screenshot set for a version localization. Display types: APP_IPHONE_67, APP_IPHONE_65, APP_IPHONE_61, APP_IPHONE_58, APP_IPHONE_55, APP_IPHONE_47, APP_IPHONE_40, APP_IPAD_PRO_3GEN_129, APP_IPAD_PRO_3GEN_11, APP_IPAD_PRO_129, APP_IPAD_105, APP_IPAD_97, APP_DESKTOP, APP_WATCH_ULTRA, APP_WATCH_SERIES_10, APP_WATCH_SERIES_7, APP_WATCH_SERIES_4, APP_WATCH_SERIES_3, APP_APPLE_TV, etc.",
+            description: "Create a screenshot set for exactly one App Store, custom product page, or PPO treatment localization. Display types: APP_IPHONE_67, APP_IPAD_PRO_3GEN_129, APP_DESKTOP, etc.",
             inputSchema: .object([
                 "type": .string("object"),
                 "properties": .object([
                     "localization_id": .object([
                         "type": .string("string"),
+                        "description": .string("Legacy alias for app_store_version_localization_id")
+                    ]),
+                    "app_store_version_localization_id": .object([
+                        "type": .string("string"),
                         "description": .string("App Store version localization ID")
+                    ]),
+                    "custom_product_page_localization_id": .object([
+                        "type": .string("string"),
+                        "description": .string("Custom product page localization ID")
+                    ]),
+                    "treatment_localization_id": .object([
+                        "type": .string("string"),
+                        "description": .string("Product page optimization treatment localization ID")
                     ]),
                     "display_type": .object([
                         "type": .string("string"),
                         "description": .string("Screenshot display type (e.g. APP_IPHONE_67, APP_IPAD_PRO_3GEN_129, APP_DESKTOP)")
                     ])
                 ]),
-                "required": .array([.string("localization_id"), .string("display_type")])
+                "required": .array([.string("display_type")]),
+                "oneOf": localizationParentSchemas()
             ])
         )
     }
@@ -196,20 +209,33 @@ extension ScreenshotsWorker {
     func createPreviewSetTool() -> Tool {
         return Tool(
             name: "screenshots_create_preview_set",
-            description: "Create an app preview set for a version localization. Preview types: IPHONE_67, IPHONE_65, IPHONE_61, IPHONE_58, IPHONE_55, IPAD_PRO_3GEN_129, IPAD_PRO_3GEN_11, IPAD_PRO_129, IPAD_105, DESKTOP, etc.",
+            description: "Create an app preview set for exactly one App Store, custom product page, or PPO treatment localization. Preview types: IPHONE_67, IPAD_PRO_3GEN_129, DESKTOP, etc.",
             inputSchema: .object([
                 "type": .string("object"),
                 "properties": .object([
                     "localization_id": .object([
                         "type": .string("string"),
+                        "description": .string("Legacy alias for app_store_version_localization_id")
+                    ]),
+                    "app_store_version_localization_id": .object([
+                        "type": .string("string"),
                         "description": .string("App Store version localization ID")
+                    ]),
+                    "custom_product_page_localization_id": .object([
+                        "type": .string("string"),
+                        "description": .string("Custom product page localization ID")
+                    ]),
+                    "treatment_localization_id": .object([
+                        "type": .string("string"),
+                        "description": .string("Product page optimization treatment localization ID")
                     ]),
                     "preview_type": .object([
                         "type": .string("string"),
                         "description": .string("Preview type (e.g. IPHONE_67, IPAD_PRO_3GEN_129, DESKTOP)")
                     ])
                 ]),
-                "required": .array([.string("localization_id"), .string("preview_type")])
+                "required": .array([.string("preview_type")]),
+                "oneOf": localizationParentSchemas()
             ])
         )
     }
@@ -337,5 +363,14 @@ extension ScreenshotsWorker {
                 "required": .array([.string("preview_id")])
             ])
         )
+    }
+
+    private func localizationParentSchemas() -> Value {
+        .array([
+            .object(["required": .array([.string("localization_id")])]),
+            .object(["required": .array([.string("app_store_version_localization_id")])]),
+            .object(["required": .array([.string("custom_product_page_localization_id")])]),
+            .object(["required": .array([.string("treatment_localization_id")])])
+        ])
     }
 }

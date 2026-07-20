@@ -68,7 +68,7 @@ extension ProductPageOptimizationWorker {
                     "platform": .object([
                         "type": .string("string"),
                         "description": .string("Platform (default: IOS)"),
-                        "enum": .array([.string("IOS"), .string("MAC_OS"), .string("TV_OS")])
+                        "enum": .array([.string("IOS"), .string("MAC_OS"), .string("TV_OS"), .string("VISION_OS")])
                     ])
                 ]),
                 "required": .array([.string("app_id"), .string("name"), .string("traffic_proportion")])
@@ -162,6 +162,10 @@ extension ProductPageOptimizationWorker {
                     "name": .object([
                         "type": .string("string"),
                         "description": .string("Treatment name")
+                    ]),
+                    "app_icon_name": .object([
+                        "type": .string("string"),
+                        "description": .string("App icon name for the treatment")
                     ])
                 ]),
                 "required": .array([.string("experiment_id"), .string("name")])

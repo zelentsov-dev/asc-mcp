@@ -127,22 +127,29 @@ extension CustomProductPagesWorker {
                 localizationAttributes["promotionalText"] = promotionalText
             }
 
+            var pageRelationships: [String: Any] = [
+                "app": [
+                    "data": ["type": "apps", "id": appId]
+                ],
+                "appCustomProductPageVersions": [
+                    "data": [
+                        ["type": "appCustomProductPageVersions", "id": versionId]
+                    ]
+                ]
+            ]
+            if let templateVersionId = arguments["template_version_id"]?.stringValue {
+                pageRelationships["appStoreVersionTemplate"] = [
+                    "data": ["type": "appStoreVersions", "id": templateVersionId]
+                ]
+            }
+
             let requestDict: [String: Any] = [
                 "data": [
                     "type": "appCustomProductPages",
                     "attributes": [
                         "name": name
                     ],
-                    "relationships": [
-                        "app": [
-                            "data": ["type": "apps", "id": appId]
-                        ],
-                        "appCustomProductPageVersions": [
-                            "data": [
-                                ["type": "appCustomProductPageVersions", "id": versionId]
-                            ]
-                        ]
-                    ]
+                    "relationships": pageRelationships
                 ],
                 "included": [
                     [

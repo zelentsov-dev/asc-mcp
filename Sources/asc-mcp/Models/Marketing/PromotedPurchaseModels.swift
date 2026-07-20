@@ -34,6 +34,16 @@ public struct ASCPromotedPurchase: Codable, Sendable {
     public let type: String
     public let id: String
     public let attributes: PromotedPurchaseAttributes?
+    public let relationships: PromotedPurchaseRelationships?
+}
+
+public struct PromotedPurchaseRelationships: Codable, Sendable {
+    public let inAppPurchaseV2: PromotedPurchaseProductRelationship?
+    public let subscription: PromotedPurchaseProductRelationship?
+}
+
+public struct PromotedPurchaseProductRelationship: Codable, Sendable {
+    public let data: ASCResourceIdentifier?
 }
 
 /// Promoted purchase attributes
@@ -41,6 +51,29 @@ public struct PromotedPurchaseAttributes: Codable, Sendable {
     public let visibleForAllUsers: Bool?
     public let enabled: Bool?
     public let state: String?
+}
+
+/// Optional Boolean that preserves an explicit JSON null in write requests.
+public enum PromotedPurchaseNullableBool: Codable, Sendable {
+    case value(Bool)
+    case null
+
+    /// Decodes either a Boolean value or JSON null.
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        self = container.decodeNil() ? .null : .value(try container.decode(Bool.self))
+    }
+
+    /// Encodes the selected Boolean value or JSON null.
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        switch self {
+        case .value(let value):
+            try container.encode(value)
+        case .null:
+            try container.encodeNil()
+        }
+    }
 }
 
 // MARK: - Request Models
@@ -57,7 +90,7 @@ public struct CreatePromotedPurchaseRequest: Codable, Sendable {
 
     public struct Attributes: Codable, Sendable {
         public let visibleForAllUsers: Bool
-        public let enabled: Bool
+        public let enabled: PromotedPurchaseNullableBool?
     }
 
     public struct Relationships: Codable, Sendable {
@@ -90,7 +123,7 @@ public struct UpdatePromotedPurchaseRequest: Codable, Sendable {
     }
 
     public struct Attributes: Codable, Sendable {
-        public let visibleForAllUsers: Bool?
-        public let enabled: Bool?
+        public let visibleForAllUsers: PromotedPurchaseNullableBool?
+        public let enabled: PromotedPurchaseNullableBool?
     }
 }

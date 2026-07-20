@@ -23,6 +23,7 @@ public struct ASCExperiment: Codable, Sendable {
 /// Experiment attributes
 public struct ExperimentAttributes: Codable, Sendable {
     public let name: String?
+    public let platform: String?
     public let trafficProportion: Int?
     public let state: String?
     public let reviewRequired: Bool?
@@ -53,7 +54,9 @@ public struct ASCTreatment: Codable, Sendable {
 /// Treatment attributes
 public struct TreatmentAttributes: Codable, Sendable {
     public let name: String?
+    public let appIcon: ASCImageAsset?
     public let appIconName: String?
+    public let promotedDate: String?
 }
 
 // MARK: - Treatment Localization Models
@@ -137,6 +140,7 @@ public struct CreateTreatmentRequest: Codable, Sendable {
 
     public struct Attributes: Codable, Sendable {
         public let name: String
+        public let appIconName: String?
     }
 
     public struct Relationships: Codable, Sendable {
