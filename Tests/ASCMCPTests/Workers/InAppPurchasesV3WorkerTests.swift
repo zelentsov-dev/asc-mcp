@@ -467,6 +467,15 @@ struct InAppPurchasesV3WorkerTests {
 
     @Test("subscription group and inventory preserve Apple included resources")
     func includedResourcesArePreserved() async throws {
+        let inventoryNextURL =
+            "https://api.example.test/v1/apps/app-1/inAppPurchasesV2?cursor=next" +
+            "&include=inAppPurchaseLocalizations%2CiapPriceSchedule%2CinAppPurchaseAvailability%2CpromotedPurchase%2CofferCodes" +
+            "&fields%5BinAppPurchases%5D=name%2CproductId%2CinAppPurchaseType%2Cstate%2CreviewNote%2CfamilySharable%2CcontentHosting%2CinAppPurchaseLocalizations%2CpromotedPurchase%2CiapPriceSchedule%2CinAppPurchaseAvailability%2CofferCodes" +
+            "&fields%5BinAppPurchaseLocalizations%5D=name%2Clocale%2Cdescription%2Cstate" +
+            "&fields%5BinAppPurchasePriceSchedules%5D=baseTerritory%2CmanualPrices%2CautomaticPrices" +
+            "&fields%5BinAppPurchaseAvailabilities%5D=availableInNewTerritories%2CavailableTerritories" +
+            "&fields%5BpromotedPurchases%5D=visibleForAllUsers%2Cenabled%2Cstate" +
+            "&limit=25"
         let transport = TestHTTPTransport(responses: [
             .init(statusCode: 200, body: """
             {
@@ -478,7 +487,7 @@ struct InAppPurchasesV3WorkerTests {
             {
               "data":[{"type":"inAppPurchases","id":"iap-1","attributes":{"name":"Coins"}}],
               "included":[{"type":"inAppPurchaseLocalizations","id":"loc-1","attributes":{"locale":"en-US","name":"Coins"}}],
-              "links":{"next":"https://api.example.test/v1/apps/app-1/inAppPurchasesV2?cursor=next"}
+              "links":{"next":"\(inventoryNextURL)"}
             }
             """)
         ])
@@ -508,7 +517,7 @@ struct InAppPurchasesV3WorkerTests {
         let localization = try iapObject(try iapArray(inventoryRoot["included"]).first)
         #expect(localization["id"] == .string("loc-1"))
         #expect(inventoryRoot["included_count"] == .int(1))
-        #expect(inventoryRoot["next_url"] == .string("https://api.example.test/v1/apps/app-1/inAppPurchasesV2?cursor=next"))
+        #expect(inventoryRoot["next_url"] == .string(inventoryNextURL))
     }
 
     @Test("inventory continuation cannot drop the included projection")
