@@ -295,12 +295,12 @@ extension ScreenshotsWorker {
                         "description": .string("Absolute path to the preview file on disk (e.g. /path/to/preview.mp4)")
                     ]),
                     "mime_type": .object([
-                        "type": .string("string"),
-                        "description": .string("MIME type (default: video/mp4). Options: video/mp4, video/quicktime")
+                        "type": .array([.string("string"), .string("null")]),
+                        "description": .string("MIME type (default: video/mp4); pass null to let Apple infer it")
                     ]),
                     "preview_frame_time_code": .object([
-                        "type": .string("string"),
-                        "description": .string("Timestamp Apple uses for the app preview poster frame")
+                        "type": .array([.string("string"), .string("null")]),
+                        "description": .string("Timestamp Apple uses for the app preview poster frame; pass null to clear it")
                     ])
                 ]),
                 "required": .array([.string("set_id"), .string("file_path")])

@@ -747,10 +747,11 @@ extension ScreenshotsWorker {
             )
         }
 
-        let mimeType = arguments["mime_type"]?.stringValue ?? "video/mp4"
-        let previewFrameTimeCode: String?
+        let mimeType: NullableAttributeValue?
+        let previewFrameTimeCode: NullableAttributeValue?
         do {
-            previewFrameTimeCode = try optionalNonemptyString(
+            mimeType = try nullablePreviewMimeType(arguments["mime_type"])
+            previewFrameTimeCode = try nullableNonemptyString(
                 arguments["preview_frame_time_code"],
                 fieldName: "preview_frame_time_code"
             )
@@ -1107,6 +1108,9 @@ extension ScreenshotsWorker {
         guard values.allSatisfy({ !$0.isEmpty && $0 == $0.trimmingCharacters(in: .whitespacesAndNewlines) }) else {
             throw ASCError.parsing("'\(fieldName)' must contain only non-empty values without surrounding whitespace")
         }
+        guard values.allSatisfy({ !$0.contains(",") }) else {
+            throw ASCError.parsing("'\(fieldName)' values must not contain commas")
+        }
         guard Set(values).count == values.count else {
             throw ASCError.parsing("'\(fieldName)' must not contain duplicate values")
         }
@@ -1128,15 +1132,36 @@ extension ScreenshotsWorker {
         )
     }
 
-    private func optionalNonemptyString(_ value: Value?, fieldName: String) throws -> String? {
+    private func nullableNonemptyString(
+        _ value: Value?,
+        fieldName: String
+    ) throws -> NullableAttributeValue? {
         guard let value else {
             return nil
+        }
+        if value.isNull {
+            return .null
         }
         guard let string = value.stringValue,
               !string.isEmpty,
               string == string.trimmingCharacters(in: .whitespacesAndNewlines) else {
-            throw ASCError.parsing("'\(fieldName)' must be a non-empty string without surrounding whitespace")
+            throw ASCError.parsing("'\(fieldName)' must be a non-empty string without surrounding whitespace or null")
         }
-        return string
+        return .string(string)
+    }
+
+    private func nullablePreviewMimeType(_ value: Value?) throws -> NullableAttributeValue? {
+        guard let value else {
+            return .string("video/mp4")
+        }
+        if value.isNull {
+            return .null
+        }
+        guard let string = value.stringValue,
+              !string.isEmpty,
+              string == string.trimmingCharacters(in: .whitespacesAndNewlines) else {
+            throw ASCError.parsing("'mime_type' must be a non-empty string without surrounding whitespace or null")
+        }
+        return .string(string)
     }
 }

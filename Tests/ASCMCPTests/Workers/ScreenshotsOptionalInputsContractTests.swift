@@ -140,80 +140,170 @@ struct ScreenshotsOptionalInputsContractTests {
         #expect(await transport.requestCount() == 0)
     }
 
-    @Test("preview upload binds the poster-frame time code on reserve and commit")
-    func previewUploadFrameTimeCode() async throws {
+    @Test("media relationship filters reject comma-delimited values before transport")
+    func mediaRelationshipFiltersRejectCommas() async throws {
+        let transport = TestHTTPTransport(responses: [])
+        let worker = ScreenshotsWorker(
+            httpClient: try await screenshotsClient(transport),
+            uploadService: UploadService()
+        )
+        let fixtures = [
+            ("screenshots_list_sets", "custom_product_page_localization_ids"),
+            ("screenshots_list_sets", "treatment_localization_ids"),
+            ("screenshots_list_preview_sets", "custom_product_page_localization_ids"),
+            ("screenshots_list_preview_sets", "treatment_localization_ids")
+        ]
+
+        for (toolName, fieldName) in fixtures {
+            let result = try await worker.handleTool(CallTool.Parameters(
+                name: toolName,
+                arguments: [
+                    "localization_id": .string("version-loc-1"),
+                    fieldName: .array([.string("first,second")])
+                ]
+            ))
+
+            #expect(result.isError == true, "Expected comma rejection for \(toolName).\(fieldName)")
+        }
+
+        #expect(await transport.requestCount() == 0)
+    }
+
+    @Test("preview upload preserves nullable frame and MIME attributes")
+    func previewUploadPreservesNullableAttributes() async throws {
         let fileURL = FileManager.default.temporaryDirectory
             .appendingPathComponent("asc-mcp-preview-\(UUID().uuidString).mp4")
         try Data("hello".utf8).write(to: fileURL)
         defer { try? FileManager.default.removeItem(at: fileURL) }
 
-        let apiTransport = TestHTTPTransport(responses: [
-            .init(statusCode: 201, body: """
-            {
-              "data": {
-                "type": "appPreviews",
-                "id": "preview-1",
-                "attributes": {
-                  "fileSize": 5,
-                  "fileName": "preview.mp4",
-                  "videoDeliveryState": {"state": "AWAITING_UPLOAD"},
-                  "uploadOperations": [{
-                    "method": "PUT",
-                    "url": "https://upload.example.test/chunk",
-                    "length": 5,
-                    "offset": 0,
-                    "requestHeaders": []
-                  }]
-                }
-              }
-            }
-            """),
-            .init(statusCode: 200, body: """
-            {
-              "data": {
-                "type": "appPreviews",
-                "id": "preview-1",
-                "attributes": {
-                  "fileSize": 5,
-                  "fileName": "preview.mp4",
-                  "sourceFileChecksum": "5d41402abc4b2a76b9719d911017c592",
-                  "previewFrameTimeCode": "00:00:02.500",
-                  "videoDeliveryState": {"state": "COMPLETE"}
-                }
-              }
-            }
-            """)
-        ])
-        let uploadTransport = TestHTTPTransport(responses: [
-            .init(statusCode: 200, body: "")
-        ])
+        let fixtures = [
+            PreviewUploadOptionalFixture(
+                name: "concrete",
+                frameTimeCode: .string("00:00:02.500"),
+                mimeType: .string("video/x-m4v"),
+                expectedFrameTimeCode: .string("00:00:02.500"),
+                expectedMimeType: .string("video/x-m4v")
+            ),
+            PreviewUploadOptionalFixture(
+                name: "explicit null",
+                frameTimeCode: .null,
+                mimeType: .null,
+                expectedFrameTimeCode: .null,
+                expectedMimeType: .null
+            ),
+            PreviewUploadOptionalFixture(
+                name: "omitted",
+                frameTimeCode: nil,
+                mimeType: nil,
+                expectedFrameTimeCode: .omitted,
+                expectedMimeType: .string("video/mp4")
+            )
+        ]
+
+        for fixture in fixtures {
+            let apiTransport = TestHTTPTransport(responses: [
+                .init(statusCode: 201, body: screenshotsPreviewReservationResponse()),
+                .init(statusCode: 200, body: screenshotsPreviewCommitResponse())
+            ])
+            let uploadTransport = TestHTTPTransport(responses: [
+                .init(statusCode: 200, body: "")
+            ])
+            let worker = ScreenshotsWorker(
+                httpClient: try await screenshotsClient(apiTransport),
+                uploadService: UploadService(transport: uploadTransport, batchSize: 1),
+                deliveryPollAttempts: 1,
+                deliveryPollIntervalNanoseconds: 0
+            )
+            var arguments: [String: Value] = [
+                "set_id": .string("preview-set-1"),
+                "file_path": .string(fileURL.path)
+            ]
+            arguments["preview_frame_time_code"] = fixture.frameTimeCode
+            arguments["mime_type"] = fixture.mimeType
+
+            let result = try await worker.handleTool(CallTool.Parameters(
+                name: "screenshots_upload_preview",
+                arguments: arguments
+            ))
+
+            #expect(result.isError != true, "Expected successful \(fixture.name) upload")
+            let requests = await apiTransport.recordedRequests()
+            #expect(requests.map(\.httpMethod) == ["POST", "PATCH"])
+            #expect(await uploadTransport.requestCount() == 1)
+            let reserveAttributes = try screenshotsAttributes(try #require(requests.first))
+            let commitAttributes = try screenshotsAttributes(try #require(requests.last))
+            screenshotsExpectAttribute(
+                reserveAttributes,
+                name: "previewFrameTimeCode",
+                expected: fixture.expectedFrameTimeCode
+            )
+            screenshotsExpectAttribute(
+                commitAttributes,
+                name: "previewFrameTimeCode",
+                expected: fixture.expectedFrameTimeCode
+            )
+            screenshotsExpectAttribute(
+                reserveAttributes,
+                name: "mimeType",
+                expected: fixture.expectedMimeType
+            )
+            #expect(commitAttributes["mimeType"] == nil)
+        }
+
+        let schemaWorker = ScreenshotsWorker(
+            httpClient: try await screenshotsClient(TestHTTPTransport(responses: [])),
+            uploadService: UploadService()
+        )
+        let tool = try #require(await schemaWorker.getTools().first { $0.name == "screenshots_upload_preview" })
+        let properties = try screenshotsValueObject(try screenshotsValueObject(tool.inputSchema)["properties"])
+        let frameSchema = try screenshotsValueObject(properties["preview_frame_time_code"])
+        let mimeSchema = try screenshotsValueObject(properties["mime_type"])
+        #expect(
+            try screenshotsValueArray(frameSchema["type"]).compactMap(\.stringValue).sorted() ==
+                ["null", "string"]
+        )
+        #expect(frameSchema["enum"] == nil)
+        #expect(
+            try screenshotsValueArray(mimeSchema["type"]).compactMap(\.stringValue).sorted() ==
+                ["null", "string"]
+        )
+        #expect(mimeSchema["enum"] == nil)
+    }
+
+    @Test("preview upload rejects invalid optional attributes before transport")
+    func previewUploadRejectsInvalidOptionalAttributes() async throws {
+        let apiTransport = TestHTTPTransport(responses: [])
+        let uploadTransport = TestHTTPTransport(responses: [])
         let worker = ScreenshotsWorker(
             httpClient: try await screenshotsClient(apiTransport),
             uploadService: UploadService(transport: uploadTransport, batchSize: 1),
             deliveryPollAttempts: 1,
             deliveryPollIntervalNanoseconds: 0
         )
+        let fixtures: [(field: String, value: Value)] = [
+            ("preview_frame_time_code", .string("")),
+            ("preview_frame_time_code", .string(" 00:00:02.500")),
+            ("preview_frame_time_code", .int(1)),
+            ("mime_type", .string("")),
+            ("mime_type", .string(" video/mp4")),
+            ("mime_type", .int(1))
+        ]
 
-        let result = try await worker.handleTool(CallTool.Parameters(
-            name: "screenshots_upload_preview",
-            arguments: [
-                "set_id": .string("preview-set-1"),
-                "file_path": .string(fileURL.path),
-                "preview_frame_time_code": .string("00:00:02.500")
-            ]
-        ))
+        for fixture in fixtures {
+            let result = try await worker.handleTool(CallTool.Parameters(
+                name: "screenshots_upload_preview",
+                arguments: [
+                    "set_id": .string("preview-set-1"),
+                    "file_path": .string("/tmp/does-not-exist.mp4"),
+                    fixture.field: fixture.value
+                ]
+            ))
 
-        #expect(result.isError != true)
-        let requests = await apiTransport.recordedRequests()
-        #expect(requests.map(\.httpMethod) == ["POST", "PATCH"])
-        let reserveAttributes = try screenshotsAttributes(try #require(requests.first))
-        let commitAttributes = try screenshotsAttributes(try #require(requests.last))
-        #expect(reserveAttributes["previewFrameTimeCode"] as? String == "00:00:02.500")
-        #expect(commitAttributes["previewFrameTimeCode"] as? String == "00:00:02.500")
+            #expect(result.isError == true, "Expected validation failure for \(fixture.field)")
+        }
 
-        let tool = try #require(await worker.getTools().first { $0.name == "screenshots_upload_preview" })
-        let properties = try screenshotsValueObject(try screenshotsValueObject(tool.inputSchema)["properties"])
-        #expect(properties["preview_frame_time_code"] != nil)
+        #expect(await apiTransport.requestCount() == 0)
+        #expect(await uploadTransport.requestCount() == 0)
     }
 }
 
@@ -231,6 +321,75 @@ private func screenshotsAttributes(_ request: URLRequest) throws -> [String: Any
     let object = try #require(JSONSerialization.jsonObject(with: body) as? [String: Any])
     let data = try #require(object["data"] as? [String: Any])
     return try #require(data["attributes"] as? [String: Any])
+}
+
+private struct PreviewUploadOptionalFixture {
+    let name: String
+    let frameTimeCode: Value?
+    let mimeType: Value?
+    let expectedFrameTimeCode: ScreenshotsExpectedAttribute
+    let expectedMimeType: ScreenshotsExpectedAttribute
+}
+
+private enum ScreenshotsExpectedAttribute {
+    case string(String)
+    case null
+    case omitted
+}
+
+private func screenshotsExpectAttribute(
+    _ attributes: [String: Any],
+    name: String,
+    expected: ScreenshotsExpectedAttribute
+) {
+    switch expected {
+    case .string(let value):
+        #expect(attributes[name] as? String == value)
+    case .null:
+        #expect(attributes[name] is NSNull)
+    case .omitted:
+        #expect(attributes[name] == nil)
+    }
+}
+
+private func screenshotsPreviewReservationResponse() -> String {
+    """
+    {
+      "data": {
+        "type": "appPreviews",
+        "id": "preview-1",
+        "attributes": {
+          "fileSize": 5,
+          "fileName": "preview.mp4",
+          "videoDeliveryState": {"state": "AWAITING_UPLOAD"},
+          "uploadOperations": [{
+            "method": "PUT",
+            "url": "https://upload.example.test/chunk",
+            "length": 5,
+            "offset": 0,
+            "requestHeaders": []
+          }]
+        }
+      }
+    }
+    """
+}
+
+private func screenshotsPreviewCommitResponse() -> String {
+    """
+    {
+      "data": {
+        "type": "appPreviews",
+        "id": "preview-1",
+        "attributes": {
+          "fileSize": 5,
+          "fileName": "preview.mp4",
+          "sourceFileChecksum": "5d41402abc4b2a76b9719d911017c592",
+          "videoDeliveryState": {"state": "COMPLETE"}
+        }
+      }
+    }
+    """
 }
 
 private func screenshotsQuery(_ request: URLRequest) -> [String: String] {
