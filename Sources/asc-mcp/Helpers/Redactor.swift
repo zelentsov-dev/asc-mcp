@@ -9,7 +9,9 @@ enum Redactor {
         var identifiers: Set<String> = [
             "REPLACE_INTRO_OFFERS",
             "STACK_WITH_INTRO_OFFERS",
-            "USE_AUTO_GENERATED_ASSETS"
+            "USE_AUTO_GENERATED_ASSETS",
+            "REDACTED_PRIVATE_KEY",
+            "REDACTED_PRIVATE_KEY_PATH"
         ]
         if let manifest = try? ASCOperationManifestBundle.loadBundled() {
             identifiers.formUnion(manifest.tools.map(\.tool))

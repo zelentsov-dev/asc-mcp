@@ -45,12 +45,14 @@ struct MCPResultBuilderTests {
 
         #expect(result.isError == true)
         #expect(result.structuredContent != nil)
+        #expect(result.content.count == 2)
 
         guard case .text(let text, _, _) = result.content.first else {
             Issue.record("Expected text content")
             return
         }
         #expect(text == "Error: Bad input")
+        #expect(try exactJSONMirror(from: result) == structuredJSON(from: result))
     }
 
     @Test("error result preserves long semantic identifiers")
@@ -163,4 +165,170 @@ struct MCPResultBuilderTests {
         #expect(!text.contains("token-value"))
         #expect(!text.contains("private-key-value"))
     }
+
+    @Test("transport normalization preserves rich errors and appends one exact mirror")
+    func transportNormalizationPreservesRichErrors() throws {
+        let bearer = "abc_def-123~+/=="
+        let privateKeyPath = "/tmp/AuthKey_ABC123.p8"
+        let annotations = Resource.Annotations(audience: [.user], priority: 0.9)
+        let textMetadata = Metadata(additionalFields: ["source": .string("worker")])
+        let resultMetadata = Metadata(additionalFields: ["request": .string("req-123")])
+        let image = Tool.Content.image(
+            data: "encoded-image",
+            mimeType: "image/png",
+            annotations: nil,
+            _meta: nil
+        )
+        let raw = CallTool.Result(
+            content: [
+                .text(
+                    text: "Error: Upload failed for Bearer \(bearer) using \(privateKeyPath)",
+                    annotations: annotations,
+                    _meta: textMetadata
+                ),
+                image,
+                .text(text: "Retry is safe", annotations: nil, _meta: nil)
+            ],
+            structuredContent: .object([
+                "message": .string("Upload failed for Bearer \(bearer) using \(privateKeyPath)"),
+                "statusCode": .int(503),
+                "retrySafe": .bool(true),
+                "resource": .string("data:text/plain;base64,SGVsbG8="),
+                "progress": .double(1.0),
+                "api_token": .string("secret-token")
+            ]),
+            isError: true,
+            _meta: resultMetadata
+        )
+
+        let normalized = MCPResult.normalizeForTransport(raw)
+
+        #expect(normalized.isError == true)
+        #expect(normalized._meta == resultMetadata)
+        #expect(normalized.content.contains(image))
+        #expect(normalized.content.count == 4)
+
+        guard case .text(let humanText, let preservedAnnotations, let preservedMetadata) = normalized.content.first,
+              case .object(let payload)? = normalized.structuredContent else {
+            Issue.record("Expected normalized text and structured error")
+            return
+        }
+
+        #expect(preservedAnnotations == annotations)
+        #expect(preservedMetadata == textMetadata)
+        #expect(humanText.contains("Bearer [REDACTED]"))
+        #expect(humanText.contains("[REDACTED_PRIVATE_KEY_PATH]"))
+        #expect(!humanText.contains(bearer))
+        #expect(!humanText.contains(privateKeyPath))
+        #expect(payload["success"] == .bool(false))
+        #expect(payload["error"] == .string(
+            "Upload failed for Bearer [REDACTED] using [REDACTED_PRIVATE_KEY_PATH]"
+        ))
+        #expect(payload["details"] == .null)
+        #expect(payload["statusCode"] == .int(503))
+        #expect(payload["retrySafe"] == .bool(true))
+        #expect(payload["resource"] == .string("data:text/plain;base64,SGVsbG8="))
+        #expect(payload["progress"] == .double(1.0))
+        #expect(payload["api_token"] == .string("[REDACTED]"))
+        #expect(try exactJSONMirror(from: normalized) == structuredJSON(from: normalized))
+        #expect(MCPResult.normalizeForTransport(normalized) == normalized)
+    }
+
+    @Test("transport normalization wraps non-object details and preserves non-text content")
+    func transportNormalizationWrapsNonObjectDetails() throws {
+        let audio = Tool.Content.audio(
+            data: "encoded-audio",
+            mimeType: "audio/wav",
+            annotations: nil,
+            _meta: nil
+        )
+        let raw = CallTool.Result(
+            content: [audio],
+            structuredContent: .array([.string("upstream failure"), .double(.nan)]),
+            isError: true
+        )
+
+        let normalized = MCPResult.normalizeForTransport(raw)
+
+        guard case .text(let humanText, _, _) = normalized.content.first,
+              case .object(let payload)? = normalized.structuredContent else {
+            Issue.record("Expected synthesized text and structured error")
+            return
+        }
+
+        #expect(humanText == "Error: Tool execution failed")
+        #expect(normalized.content.contains(audio))
+        #expect(payload["success"] == .bool(false))
+        #expect(payload["error"] == .string("Tool execution failed"))
+        #expect(payload["details"] == .array([.string("upstream failure"), .null]))
+        #expect(try exactJSONMirror(from: normalized) == structuredJSON(from: normalized))
+        #expect(MCPResult.normalizeForTransport(normalized) == normalized)
+    }
+
+    @Test("transport normalization replaces unsafe pre-existing JSON mirrors")
+    func transportNormalizationReplacesUnsafeJSONMirrors() throws {
+        let rawPayload: Value = .object([
+            "error": .string("Bad input"),
+            "api_token": .string("short-secret")
+        ])
+        let rawMirror = try MCPValue.prettyJSONString(from: rawPayload)
+        let raw = CallTool.Result(
+            content: [
+                MCPContent.text(rawMirror),
+                MCPContent.text("Error: Bad input")
+            ],
+            structuredContent: rawPayload,
+            isError: true
+        )
+
+        let normalized = MCPResult.normalizeForTransport(raw)
+
+        #expect(normalized.content.count == 2)
+        guard case .text(let humanText, _, _) = normalized.content.first,
+              case .object(let payload)? = normalized.structuredContent else {
+            Issue.record("Expected safe normalized error")
+            return
+        }
+        #expect(humanText == "Error: Bad input")
+        #expect(payload["api_token"] == .string("[REDACTED]"))
+        #expect(try exactJSONMirror(from: normalized) == structuredJSON(from: normalized))
+        for content in normalized.content {
+            if case .text(let text, _, _) = content {
+                #expect(!text.contains("short-secret"))
+            }
+        }
+    }
+
+    @Test("transport normalization leaves successful results unchanged")
+    func transportNormalizationLeavesSuccessUnchanged() {
+        let result = CallTool.Result(
+            content: [MCPContent.text("Success")],
+            structuredContent: .object(["success": .bool(true)]),
+            isError: nil,
+            _meta: Metadata(additionalFields: ["source": .string("worker")])
+        )
+
+        #expect(MCPResult.normalizeForTransport(result) == result)
+    }
+}
+
+private func exactJSONMirror(from result: CallTool.Result) throws -> String {
+    guard case .text(let mirror, _, _) = result.content.last else {
+        Issue.record("Expected JSON mirror as the last text content block")
+        throw MCPResultBuilderTestFailure.missingMirror
+    }
+    return mirror
+}
+
+private func structuredJSON(from result: CallTool.Result) throws -> String {
+    guard let structuredContent = result.structuredContent else {
+        Issue.record("Expected structured content")
+        throw MCPResultBuilderTestFailure.missingStructuredContent
+    }
+    return try MCPValue.compactJSONString(from: structuredContent)
+}
+
+private enum MCPResultBuilderTestFailure: Error {
+    case missingMirror
+    case missingStructuredContent
 }

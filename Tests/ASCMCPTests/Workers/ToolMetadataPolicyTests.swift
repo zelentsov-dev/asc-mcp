@@ -130,6 +130,34 @@ struct ToolMetadataPolicyTests {
         #expect(reason["type"] == .array([.string("string"), .string("null")]))
     }
 
+    @Test("typed output schemas admit canonical errors without top-level combinators")
+    func typedOutputSchemasAdmitCanonicalErrors() throws {
+        let toolNames = [
+            "apps_list",
+            "apps_search",
+            "apps_get_details",
+            "webhooks_verify_signature"
+        ]
+
+        for toolName in toolNames {
+            let tool = ToolMetadataPolicy.apply(to: Self.sampleTool(named: toolName))
+            guard case .object(let schema)? = tool.outputSchema,
+                  case .object(let properties)? = schema["properties"],
+                  case .object(let error)? = properties["error"],
+                  case .object(let details)? = properties["details"] else {
+                Issue.record("Expected typed output schema for \(toolName)")
+                continue
+            }
+
+            #expect(schema["oneOf"] == nil)
+            #expect(schema["anyOf"] == nil)
+            #expect(schema["allOf"] == nil)
+            #expect(schema["required"] == .array([.string("success")]))
+            #expect(error["type"] == .string("string"))
+            #expect(details.isEmpty)
+        }
+    }
+
     @Test("normalizes no-parameter schemas")
     func normalizesNoParameterSchemas() {
         let tool = ToolMetadataPolicy.apply(to: Self.sampleTool(named: "auth_generate_token"))

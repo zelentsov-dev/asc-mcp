@@ -211,13 +211,15 @@ enum ToolMetadataPolicy {
         "additionalProperties": .bool(true),
         "properties": .object([
             "success": .object(["type": .string("boolean")]),
+            "error": .object(["type": .string("string")]),
+            "details": .object([:]),
             "apps": .object(["type": .string("array"), "items": appSummarySchema]),
             "count": .object(["type": .string("integer")]),
             "totalCount": .object(["type": .string("integer")]),
             "hasNextPage": .object(["type": .string("boolean")]),
             "next_url": .object(["type": .string("string")])
         ]),
-        "required": .array([.string("success"), .string("apps"), .string("count")])
+        "required": .array([.string("success")])
     ])
 
     private static let appsSearchSchema: Value = .object([
@@ -225,13 +227,15 @@ enum ToolMetadataPolicy {
         "additionalProperties": .bool(true),
         "properties": .object([
             "success": .object(["type": .string("boolean")]),
+            "error": .object(["type": .string("string")]),
+            "details": .object([:]),
             "query": .object(["type": .string("string")]),
             "count": .object(["type": .string("integer")]),
             "pagesFetched": .object(["type": .string("integer")]),
             "apps": .object(["type": .string("array"), "items": appSummarySchema]),
             "searchedIn": .object(["type": .string("array"), "items": .object(["type": .string("string")])])
         ]),
-        "required": .array([.string("success"), .string("query"), .string("apps"), .string("count")])
+        "required": .array([.string("success")])
     ])
 
     private static let appsDetailsSchema: Value = .object([
@@ -239,9 +243,11 @@ enum ToolMetadataPolicy {
         "additionalProperties": .bool(true),
         "properties": .object([
             "success": .object(["type": .string("boolean")]),
+            "error": .object(["type": .string("string")]),
+            "details": .object([:]),
             "app": appSummarySchema
         ]),
-        "required": .array([.string("success"), .string("app")])
+        "required": .array([.string("success")])
     ])
 
     private static let webhookSignatureSchema: Value = .object([
@@ -249,6 +255,8 @@ enum ToolMetadataPolicy {
         "additionalProperties": .bool(true),
         "properties": .object([
             "success": .object(["type": .string("boolean")]),
+            "error": .object(["type": .string("string")]),
+            "details": .object([:]),
             "valid": .object(["type": .string("boolean")]),
             "algorithm": .object(["type": .string("string")]),
             "providedSignature": .object(["type": .array([.string("string"), .string("null")])]),
@@ -256,12 +264,6 @@ enum ToolMetadataPolicy {
             "reason": .object(["type": .array([.string("string"), .string("null")])]),
             "rawPayloadRequired": .object(["type": .string("boolean")])
         ]),
-        "required": .array([
-            .string("success"),
-            .string("valid"),
-            .string("algorithm"),
-            .string("computedSignature"),
-            .string("rawPayloadRequired")
-        ])
+        "required": .array([.string("success")])
     ])
 }

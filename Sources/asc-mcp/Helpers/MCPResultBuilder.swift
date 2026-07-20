@@ -9,11 +9,11 @@ enum MCPContent {
 
 enum MCPResult {
     static func text(_ text: String, isError: Bool = false, _meta: Metadata? = nil) -> CallTool.Result {
-        CallTool.Result(
+        normalizeForTransport(CallTool.Result(
             content: [MCPContent.text(text)],
             isError: isError ? true : nil,
             _meta: _meta
-        )
+        ))
     }
 
     static func json(
@@ -24,12 +24,12 @@ enum MCPResult {
     ) -> CallTool.Result {
         let sanitizedValue = MCPValueSanitizer.sanitize(value)
         let textContent = text ?? (try? MCPValue.prettyJSONString(from: sanitizedValue)) ?? sanitizedValue.description
-        return CallTool.Result(
+        return normalizeForTransport(CallTool.Result(
             content: [MCPContent.text(textContent)],
             structuredContent: Optional.some(sanitizedValue),
             isError: isError ? true : nil,
             _meta: _meta
-        )
+        ))
     }
 
     static func jsonObject(
@@ -50,12 +50,160 @@ enum MCPResult {
     }
 
     static func error(_ message: String, details: Value? = nil, _meta: Metadata? = nil) -> CallTool.Result {
+        let redactedMessage = Redactor.redact(message)
         let structured: Value = .object([
             "success": .bool(false),
-            "error": .string(Redactor.redact(message)),
+            "error": .string(redactedMessage),
             "details": details ?? .null
         ])
-        return json(structured, text: "Error: \(Redactor.redact(message))", isError: true, _meta: _meta)
+        return json(structured, text: "Error: \(redactedMessage)", isError: true, _meta: _meta)
+    }
+
+    static func normalizeForTransport(_ result: CallTool.Result) -> CallTool.Result {
+        guard result.isError == true else { return result }
+
+        let rawMirrors = result.structuredContent.map { [$0] } ?? []
+        let redactedContent = result.content.filter { content in
+            guard case .text(let text, _, _) = content else { return true }
+            return !isJSONMirror(text, of: rawMirrors)
+        }.map(redactErrorText)
+        let originalStructured = result.structuredContent.map(MCPValueSanitizer.sanitizeError)
+        let originalMirrors = originalStructured.map { [$0] } ?? []
+        let humanText = redactedContent.compactMap { content -> String? in
+            guard case .text(let text, _, _) = content,
+                  !isJSONMirror(text, of: originalMirrors) else {
+                return nil
+            }
+            return text
+        }.first
+        let message = errorMessage(from: originalStructured, humanText: humanText)
+        let candidate = canonicalError(from: originalStructured, message: message)
+        let (structuredContent, mirror) = encodedError(candidate, message: message)
+        let mirrorCandidates = originalMirrors + [structuredContent]
+
+        var content = redactedContent.filter { content in
+            guard case .text(let text, _, _) = content else { return true }
+            return !isJSONMirror(text, of: mirrorCandidates)
+        }
+        if humanText == nil {
+            content.insert(MCPContent.text("Error: \(message)"), at: 0)
+        }
+        content.append(MCPContent.text(mirror))
+
+        return CallTool.Result(
+            content: content,
+            structuredContent: Optional.some(structuredContent),
+            isError: true,
+            _meta: result._meta
+        )
+    }
+
+    private static func redactErrorText(_ content: Tool.Content) -> Tool.Content {
+        guard case .text(let text, let annotations, let metadata) = content else {
+            return content
+        }
+        return .text(
+            text: Redactor.redact(text),
+            annotations: annotations,
+            _meta: metadata
+        )
+    }
+
+    private static func errorMessage(from structured: Value?, humanText: String?) -> String {
+        if case .object(let object)? = structured {
+            if case .string(let error)? = object["error"], !error.isEmpty {
+                return error
+            }
+            if case .string(let message)? = object["message"], !message.isEmpty {
+                return message
+            }
+        }
+
+        if let humanText {
+            let prefix = "Error:"
+            if humanText.hasPrefix(prefix) {
+                let message = humanText.dropFirst(prefix.count)
+                    .trimmingCharacters(in: .whitespacesAndNewlines)
+                if !message.isEmpty {
+                    return message
+                }
+            } else if !humanText.isEmpty {
+                return humanText
+            }
+        }
+
+        return "Tool execution failed"
+    }
+
+    private static func canonicalError(from structured: Value?, message: String) -> Value {
+        var object: [String: Value]
+        switch structured {
+        case .object(let existing)?:
+            object = existing
+        case let details?:
+            object = ["details": details]
+        case nil:
+            object = [:]
+        }
+
+        object["success"] = .bool(false)
+        object["error"] = .string(Redactor.redact(message))
+        if object["details"] == nil {
+            object["details"] = .null
+        }
+        return MCPValueSanitizer.sanitizeError(.object(object))
+    }
+
+    private static func encodedError(_ value: Value, message: String) -> (Value, String) {
+        if let mirror = try? MCPValue.compactJSONString(from: value) {
+            return (value, mirror)
+        }
+
+        let fallback: Value = .object([
+            "success": .bool(false),
+            "error": .string(Redactor.redact(message)),
+            "details": .object([
+                "encodingFailure": .bool(true)
+            ])
+        ])
+        if let mirror = try? MCPValue.compactJSONString(from: fallback) {
+            return (fallback, mirror)
+        }
+
+        let terminal: Value = .object([
+            "success": .bool(false),
+            "error": .string("Tool execution failed"),
+            "details": .null
+        ])
+        return (terminal, #"{"details":null,"error":"Tool execution failed","success":false}"#)
+    }
+
+    private static func isJSONMirror(_ text: String, of values: [Value]) -> Bool {
+        guard !values.isEmpty else { return false }
+        let mirrors = values.compactMap { try? MCPValue.compactJSONString(from: $0) }
+        if mirrors.contains(text) {
+            return true
+        }
+        if let normalized = normalizedJSONString(text), mirrors.contains(normalized) {
+            return true
+        }
+        guard let data = text.data(using: .utf8),
+              let decoded = try? JSONDecoder().decode(Value.self, from: data) else {
+            return false
+        }
+        return values.contains(decoded)
+    }
+
+    private static func normalizedJSONString(_ text: String) -> String? {
+        guard let data = text.data(using: .utf8),
+              let object = try? JSONSerialization.jsonObject(with: data, options: [.fragmentsAllowed]),
+              let normalized = try? JSONSerialization.data(
+                withJSONObject: object,
+                options: [.fragmentsAllowed, .sortedKeys, .withoutEscapingSlashes]
+              ) else {
+            return nil
+        }
+        return String(data: normalized, encoding: .utf8)
     }
 }
 
@@ -70,6 +218,25 @@ enum MCPValueSanitizer {
             return .object(sanitized)
         case .array(let array):
             return .array(array.map(sanitize))
+        default:
+            return value
+        }
+    }
+
+    static func sanitizeError(_ value: Value) -> Value {
+        switch value {
+        case .object(let object):
+            var sanitized: [String: Value] = [:]
+            for (key, child) in object {
+                sanitized[key] = isSensitiveKey(key) ? .string("[REDACTED]") : sanitizeError(child)
+            }
+            return .object(sanitized)
+        case .array(let array):
+            return .array(array.map(sanitizeError))
+        case .string(let string):
+            return .string(Redactor.redact(string))
+        case .double(let number) where !number.isFinite:
+            return .null
         default:
             return value
         }
@@ -185,5 +352,15 @@ enum MCPValue {
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
         let data = try encoder.encode(value)
         return String(data: data, encoding: .utf8) ?? "{}"
+    }
+
+    static func compactJSONString(from value: Value) throws -> String {
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.sortedKeys, .withoutEscapingSlashes]
+        let data = try encoder.encode(value)
+        guard let string = String(data: data, encoding: .utf8) else {
+            throw ASCError.parsing("Failed to encode structured value as UTF-8 JSON")
+        }
+        return string
     }
 }

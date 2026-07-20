@@ -555,12 +555,13 @@ public actor WorkerManager {
             } else {
                 finalResult = result
             }
+            let transportResult = MCPResult.normalizeForTransport(finalResult)
             if isWrite {
                 await operationGate.endWrite()
             } else {
                 await operationGate.endRead()
             }
-            return finalResult
+            return transportResult
         } catch {
             if isWrite {
                 await operationGate.endWrite()

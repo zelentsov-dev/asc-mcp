@@ -60,6 +60,81 @@ struct WorkerRoutingTests {
         #expect(result._meta?.fields["asc/readOnlyMode"] == nil)
     }
 
+    @Test("WorkerManager normalizes direct worker errors at the routing boundary")
+    func workerManagerNormalizesDirectWorkerErrors() async throws {
+        let manager = try await TestFactory.makeWorkerManager(enabledWorkers: ["builds"])
+
+        let result = try await manager.routeTool(CallTool.Parameters(name: "builds_get", arguments: nil))
+
+        #expect(result.isError == true)
+        #expect(result.content.count == 2)
+        guard case .text(let humanText, _, _) = result.content.first,
+              case .object(let payload)? = result.structuredContent else {
+            Issue.record("Expected normalized worker error")
+            return
+        }
+
+        #expect(humanText == "Error: Required parameter 'build_id' is missing")
+        #expect(payload["success"] == .bool(false))
+        #expect(payload["error"] == .string("Required parameter 'build_id' is missing"))
+        #expect(payload["details"] == .null)
+        #expect(try routingJSONMirror(from: result) == routingStructuredJSON(from: result))
+    }
+
+    @Test("registered WorkerManager error survives an in-memory SDK round trip")
+    func registeredWorkerManagerErrorRoundTrip() async throws {
+        let manager = try await TestFactory.makeWorkerManager(enabledWorkers: ["builds"])
+        let server = Server(
+            name: "asc-mcp-test",
+            version: "1.0.0",
+            capabilities: .init(tools: .init(listChanged: false))
+        )
+        await manager.registerWorkers(in: server)
+        let transports = await InMemoryTransport.createConnectedPair()
+        let client = Client(name: "asc-mcp-test-client", version: "1.0.0")
+
+        try await server.start(transport: transports.server)
+        let result: CallTool.Result
+        let thrownResult: CallTool.Result
+        do {
+            _ = try await client.connect(transport: transports.client)
+            let request = CallTool.request(.init(name: "builds_get", arguments: nil))
+            let context: RequestContext<CallTool.Result> = try await client.send(request)
+            result = try await context.value
+            let thrownRequest = CallTool.request(.init(name: "builds_nonexistent", arguments: nil))
+            let thrownContext: RequestContext<CallTool.Result> = try await client.send(thrownRequest)
+            thrownResult = try await thrownContext.value
+            await client.disconnect()
+            await server.stop()
+        } catch {
+            await client.disconnect()
+            await server.stop()
+            throw error
+        }
+
+        #expect(result.isError == true)
+        #expect(result.content.count == 2)
+        guard case .object(let payload)? = result.structuredContent else {
+            Issue.record("Expected wire-decoded structured error")
+            return
+        }
+        #expect(payload["success"] == .bool(false))
+        #expect(payload["error"] == .string("Required parameter 'build_id' is missing"))
+        #expect(payload["details"] == .null)
+        #expect(try routingJSONMirror(from: result) == routingStructuredJSON(from: result))
+
+        #expect(thrownResult.isError == true)
+        guard case .object(let thrownPayload)? = thrownResult.structuredContent,
+              case .string(let thrownError)? = thrownPayload["error"] else {
+            Issue.record("Expected converted thrown error")
+            return
+        }
+        #expect(thrownPayload["success"] == .bool(false))
+        #expect(thrownPayload["details"] == .null)
+        #expect(thrownError.contains("Unknown tool: builds_nonexistent"))
+        #expect(try routingJSONMirror(from: thrownResult) == routingStructuredJSON(from: thrownResult))
+    }
+
     // MARK: - AppsWorker
 
     @Test("AppsWorker throws MCPError.methodNotFound for unknown tool")
@@ -479,4 +554,25 @@ struct WorkerRoutingTests {
             _ = try await worker.handleTool(params)
         }
     }
+}
+
+private func routingJSONMirror(from result: CallTool.Result) throws -> String {
+    guard case .text(let mirror, _, _) = result.content.last else {
+        Issue.record("Expected JSON mirror as the last text content block")
+        throw WorkerRoutingTestFailure.missingMirror
+    }
+    return mirror
+}
+
+private func routingStructuredJSON(from result: CallTool.Result) throws -> String {
+    guard let structuredContent = result.structuredContent else {
+        Issue.record("Expected structured content")
+        throw WorkerRoutingTestFailure.missingStructuredContent
+    }
+    return try MCPValue.compactJSONString(from: structuredContent)
+}
+
+private enum WorkerRoutingTestFailure: Error {
+    case missingMirror
+    case missingStructuredContent
 }
