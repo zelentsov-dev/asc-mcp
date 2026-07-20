@@ -70,6 +70,50 @@ struct MCPResultBuilderTests {
         #expect(payload["error"] == .string(message))
     }
 
+    @Test("transport normalization preserves recovery semantics without exposing credentials")
+    func transportNormalizationPreservesRecoverySemantics() throws {
+        let opaqueDetail = "plain_abcdefghijklmnopqrstuvwxyz012345"
+        let unlabeledCredential = "ghp_abcdefghijklmnopqrstuvwxyz012345"
+        let raw = CallTool.Result(
+            content: [MCPContent.text(
+                "Error: failed at create_review_submission_item; retry with review_submission_id; api_token=short-secret; \(unlabeledCredential)"
+            )],
+            structuredContent: .object([
+                "error": .string("Failed at create_review_submission_item"),
+                "reason": .string("confirmation_required"),
+                "failed_step": .string("create_review_submission_item"),
+                "message": .string(
+                    "Retry with review_submission_id set to submission_id; api_token=short-secret; \(unlabeledCredential)"
+                ),
+                "details": .object([
+                    "opaque_value": .string(opaqueDetail)
+                ])
+            ]),
+            isError: true
+        )
+
+        let normalized = MCPResult.normalizeForTransport(raw)
+
+        guard case .text(let humanText, _, _) = normalized.content.first,
+              case .object(let payload)? = normalized.structuredContent,
+              case .object(let details)? = payload["details"] else {
+            Issue.record("Expected normalized recovery error")
+            return
+        }
+
+        #expect(humanText.contains("create_review_submission_item"))
+        #expect(humanText.contains("review_submission_id"))
+        #expect(!humanText.contains("short-secret"))
+        #expect(!humanText.contains(unlabeledCredential))
+        #expect(payload["reason"] == .string("confirmation_required"))
+        #expect(payload["failed_step"] == .string("create_review_submission_item"))
+        #expect(payload["message"] == .string(
+            "Retry with review_submission_id set to submission_id; api_token=[REDACTED]; [REDACTED]"
+        ))
+        #expect(details["opaque_value"] == .string("[REDACTED]"))
+        #expect(try exactJSONMirror(from: normalized) == structuredJSON(from: normalized))
+    }
+
     @Test("error result still redacts bearer, base64url, and private-key secrets")
     func errorResultRedactsCredentials() throws {
         let bearer = "abc_def-123~+/=="

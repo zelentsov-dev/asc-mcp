@@ -23,7 +23,13 @@ enum Redactor {
             "STACK_WITH_INTRO_OFFERS",
             "USE_AUTO_GENERATED_ASSETS",
             "REDACTED_PRIVATE_KEY",
-            "REDACTED_PRIVATE_KEY_PATH"
+            "REDACTED_PRIVATE_KEY_PATH",
+            "confirmation_required",
+            "invalid_app_version_state",
+            "confirmation_mismatch",
+            "create_review_submission_item",
+            "confirm_review_submission",
+            "review_submission_id"
         ]
         if let manifest = try? ASCOperationManifestBundle.loadBundled() {
             identifiers.formUnion(manifest.tools.map(\.tool))

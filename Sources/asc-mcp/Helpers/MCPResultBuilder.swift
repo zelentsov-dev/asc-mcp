@@ -239,7 +239,7 @@ enum MCPValueSanitizer {
             return .array(array.map { sanitizeError($0, key: key) })
         case .string(let string):
             return .string(
-                isIdentifierKey(key)
+                preservesOpaqueIdentifiers(key)
                     ? Redactor.redactPreservingOpaqueIdentifiers(string)
                     : Redactor.redact(string)
             )
@@ -277,6 +277,25 @@ enum MCPValueSanitizer {
             key.hasSuffix("ID") ||
             key.lowercased().hasSuffix("_id") ||
             key.lowercased().hasSuffix("-id")
+    }
+
+    private static func preservesOpaqueIdentifiers(_ key: String?) -> Bool {
+        guard let key else { return false }
+        if isIdentifierKey(key) {
+            return true
+        }
+        let normalized = key.lowercased().replacingOccurrences(
+            of: "[^a-z0-9]",
+            with: "",
+            options: .regularExpression
+        )
+        return [
+            "reason",
+            "code",
+            "failedstep",
+            "recoverytool",
+            "recoverytools"
+        ].contains(normalized)
     }
 }
 
