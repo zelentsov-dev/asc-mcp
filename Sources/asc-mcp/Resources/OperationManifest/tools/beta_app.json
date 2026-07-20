@@ -817,7 +817,7 @@
           },
           {
             "outputField": "submissionIdKnown",
-            "localRole": "False when a malformed successful response or network failure leaves the created submission identifier unavailable."
+            "localRole": "True only after a valid betaAppReviewSubmissions type and non-empty identifier are decoded; false for invalid identity, malformed successful response, or commit-unknown failure."
           },
           {
             "outputField": "requestedBuildId",

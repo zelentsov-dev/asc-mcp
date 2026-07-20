@@ -521,6 +521,7 @@ struct BetaAppWorkerContractTests {
         #expect(root["operationCommitted"] == .bool(true))
         #expect(root["retrySafe"] == .bool(false))
         #expect(root["submissionId"] == .string("submission-created"))
+        #expect(root["submissionIdKnown"] == .bool(true))
         #expect(root["requestedBuildId"] == .string("build-1"))
         let inspection = try betaAppContractObject(root["inspection"])
         #expect(inspection["tool"] == .string("beta_app_list_submissions"))
@@ -569,6 +570,38 @@ struct BetaAppWorkerContractTests {
         #expect(root["submissionIdKnown"] == .bool(false))
         #expect(root["requestedBuildId"] == .string("build-1"))
         #expect(await transport.requestCount() == 1)
+    }
+
+    @Test("submission create does not expose an invalid response identity as known")
+    func submissionCreateRejectsInvalidCommittedIdentity() async throws {
+        let invalidIdentities = [
+            (type: "builds", id: "build-1"),
+            (type: "betaAppReviewSubmissions", id: "")
+        ]
+
+        for identity in invalidIdentities {
+            let transport = TestHTTPTransport(responses: [
+                .init(statusCode: 201, body: betaAppSubmissionResponse(
+                    id: identity.id,
+                    type: identity.type
+                ))
+            ])
+            let worker = BetaAppWorker(httpClient: try await makeBetaAppContractClient(transport))
+
+            let result = try await worker.handleTool(CallTool.Parameters(
+                name: "beta_app_submit_for_review",
+                arguments: ["build_id": .string("build-1")]
+            ))
+
+            #expect(result.isError == true)
+            let root = try betaAppContractObject(result.structuredContent)
+            #expect(root["operationCommitted"] == .bool(true))
+            #expect(root["retrySafe"] == .bool(false))
+            #expect(root["submissionId"] == nil)
+            #expect(root["submissionIdKnown"] == .bool(false))
+            #expect(root["requestedBuildId"] == .string("build-1"))
+            #expect(await transport.requestCount() == 1)
+        }
     }
 
     @Test("submission create marks a network outcome unknown and unsafe to retry")
@@ -1510,6 +1543,7 @@ private func betaAppBuildLinkageResponse(id: String) -> String {
 
 private func betaAppSubmissionResponse(
     id: String,
+    type: String = "betaAppReviewSubmissions",
     buildID: String? = nil,
     includedBuilds: [String] = []
 ) -> String {
@@ -1517,7 +1551,7 @@ private func betaAppSubmissionResponse(
         #", "relationships":{"build":{"data":{"type":"builds","id":"\#($0)"}}}"#
     } ?? ""
     let included = includedBuilds.isEmpty ? "" : #", "included":[\#(includedBuilds.joined(separator: ","))]"#
-    return #"{"data":{"type":"betaAppReviewSubmissions","id":"\#(id)","attributes":{"betaReviewState":"WAITING_FOR_REVIEW"}\#(relationships)}\#(included)}"#
+    return #"{"data":{"type":"\#(type)","id":"\#(id)","attributes":{"betaReviewState":"WAITING_FOR_REVIEW"}\#(relationships)}\#(included)}"#
 }
 
 private func betaAppSubmissionPage(

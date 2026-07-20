@@ -350,10 +350,14 @@ extension BetaAppWorker {
             return committedSubmissionDecodeFailure(error.localizedDescription, requestedBuildID: buildId)
         }
 
+        guard response.data.type == "betaAppReviewSubmissions", !response.data.id.isEmpty else {
+            return committedSubmissionIdentityFailure(
+                "Apple returned an invalid beta app review submission identity after creation",
+                requestedBuildID: buildId
+            )
+        }
+
         do {
-            guard response.data.type == "betaAppReviewSubmissions", !response.data.id.isEmpty else {
-                throw ASCError.parsing("Apple returned an invalid beta app review submission identity after creation")
-            }
             let includedBuilds = try validatedIncludedBuilds(
                 response.included,
                 allowedBuildIDs: [buildId]
@@ -838,10 +842,31 @@ extension BetaAppWorker {
                 "operationCommitted": true,
                 "retrySafe": false,
                 "submissionId": submission.id,
+                "submissionIdKnown": true,
                 "requestedBuildId": requestedBuildID,
                 "inspection": submissionInspection(for: requestedBuildID)
             ],
             text: "Error: Apple created beta app review submission '\(submission.id)', but its returned Build lineage could not be verified. Inspect the existing submission before retrying.",
+            isError: true
+        )
+    }
+
+    private func committedSubmissionIdentityFailure(
+        _ message: String,
+        requestedBuildID: String
+    ) -> CallTool.Result {
+        let safeMessage = Redactor.redact(message)
+        return MCPResult.jsonObject(
+            [
+                "success": false,
+                "error": safeMessage,
+                "operationCommitted": true,
+                "retrySafe": false,
+                "submissionIdKnown": false,
+                "requestedBuildId": requestedBuildID,
+                "inspection": submissionInspection(for: requestedBuildID)
+            ],
+            text: "Error: Apple accepted the beta review submission, but its returned resource identity is invalid. Inspect the existing submission before retrying.",
             isError: true
         )
     }
