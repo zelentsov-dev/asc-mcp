@@ -224,7 +224,10 @@ extension Data {
             )
 
             let status = outputBuffer.withUnsafeMutableBytes { destination -> compression_status in
-                stream.dst_ptr = destination.bindMemory(to: UInt8.self).baseAddress
+                guard let destinationBaseAddress = destination.bindMemory(to: UInt8.self).baseAddress else {
+                    return COMPRESSION_STATUS_ERROR
+                }
+                stream.dst_ptr = destinationBaseAddress
                 stream.dst_size = destinationCount
                 return compression_stream_process(&stream, flags)
             }
