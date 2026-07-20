@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.12.0] - 2026-07-20
+
+### Changed
+
+- Beta App review-detail updates now preserve omission, concrete values, and explicit null independently for all eight nullable Apple contact, demo-account, and notes attributes.
+- Beta review-submission listings accept scalar or array build and review-state filters, return Apple's paging total, and expose the resolved build relationship with its resolution source.
+- Beta submission inspection uses Apple's build relationship endpoint as a bounded fallback when neither primary linkage nor an included Build resource is available.
+
+### Fixed
+
+- Reject malformed optional write values, empty PATCH requests, unsupported localization clearing, empty or duplicate filter arrays, comma-delimited filter items, and foreign Build relationships before returning a misleading success.
+- Validate Beta App localization and review-submission continuation URLs against the concrete collection path, complete originating query, effective page size, exact query-name allowlist, and Apple's non-empty cursor.
+- Emit fallback-specific output only when the relationship endpoint was actually required, keeping the public response lineage consistent with the operation manifest.
+
+### Compatibility
+
+- No public MCP tool or required input was added, removed, or renamed; existing concrete update values and scalar filters remain valid.
+- Passing null to a nullable review-detail attribute now clears that Apple field. Passing null to a Beta App localization remains rejected because Apple doesn't allow previously supplied localization values to be deleted.
+- Empty Beta App update calls and malformed optional values that were previously ignored now fail locally before network access.
+- The operation manifest now maps 366 Apple operations, explicitly defers 534, and scopes out 363; the optional-input pin remains fully classified at 2,154 total with 0 unclassified.
+
 ## [3.11.0] - 2026-07-20
 
 ### Changed
