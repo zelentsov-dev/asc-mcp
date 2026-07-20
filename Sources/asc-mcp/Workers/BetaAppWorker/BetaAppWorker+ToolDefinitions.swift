@@ -52,24 +52,24 @@ extension BetaAppWorker {
                         "description": .string("Locale code (e.g. en-US, de-DE)")
                     ]),
                     "feedback_email": .object([
-                        "type": .string("string"),
-                        "description": .string("Feedback email address for testers")
+                        "type": .array([.string("string"), .string("null")]),
+                        "description": .string("Feedback email address for testers, or null")
                     ]),
                     "marketing_url": .object([
-                        "type": .string("string"),
-                        "description": .string("Marketing URL")
+                        "type": .array([.string("string"), .string("null")]),
+                        "description": .string("Marketing URL, or null")
                     ]),
                     "privacy_policy_url": .object([
-                        "type": .string("string"),
-                        "description": .string("Privacy policy URL")
+                        "type": .array([.string("string"), .string("null")]),
+                        "description": .string("Privacy policy URL, or null")
                     ]),
                     "tv_os_privacy_policy": .object([
-                        "type": .string("string"),
-                        "description": .string("tvOS privacy policy text")
+                        "type": .array([.string("string"), .string("null")]),
+                        "description": .string("tvOS privacy policy text, or null")
                     ]),
                     "description": .object([
-                        "type": .string("string"),
-                        "description": .string("TestFlight app description shown to testers")
+                        "type": .array([.string("string"), .string("null")]),
+                        "description": .string("TestFlight app description shown to testers, or null")
                     ])
                 ]),
                 "required": .array([.string("app_id"), .string("locale")])
@@ -109,24 +109,24 @@ extension BetaAppWorker {
                         "description": .string("Beta app localization ID")
                     ]),
                     "feedback_email": .object([
-                        "type": .string("string"),
-                        "description": .string("Feedback email address for testers")
+                        "type": .array([.string("string"), .string("null")]),
+                        "description": .string("Feedback email address for testers, or null to clear")
                     ]),
                     "marketing_url": .object([
-                        "type": .string("string"),
-                        "description": .string("Marketing URL")
+                        "type": .array([.string("string"), .string("null")]),
+                        "description": .string("Marketing URL, or null to clear")
                     ]),
                     "privacy_policy_url": .object([
-                        "type": .string("string"),
-                        "description": .string("Privacy policy URL")
+                        "type": .array([.string("string"), .string("null")]),
+                        "description": .string("Privacy policy URL, or null to clear")
                     ]),
                     "tv_os_privacy_policy": .object([
-                        "type": .string("string"),
-                        "description": .string("tvOS privacy policy text")
+                        "type": .array([.string("string"), .string("null")]),
+                        "description": .string("tvOS privacy policy text, or null to clear")
                     ]),
                     "description": .object([
-                        "type": .string("string"),
-                        "description": .string("TestFlight app description shown to testers")
+                        "type": .array([.string("string"), .string("null")]),
+                        "description": .string("TestFlight app description shown to testers, or null to clear")
                     ])
                 ]),
                 "required": .array([.string("localization_id")])

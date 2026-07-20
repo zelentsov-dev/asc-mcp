@@ -40,17 +40,8 @@ public struct CreateBetaAppLocalizationRequest: Codable, Sendable {
 
     public struct CreateData: Codable, Sendable {
         public var type: String = "betaAppLocalizations"
-        public let attributes: Attributes
+        public let attributes: [String: JSONValue]
         public let relationships: Relationships
-    }
-
-    public struct Attributes: Codable, Sendable {
-        public let locale: String
-        public let feedbackEmail: String?
-        public let marketingUrl: String?
-        public let privacyPolicyUrl: String?
-        public let tvOsPrivacyPolicy: String?
-        public let description: String?
     }
 
     public struct Relationships: Codable, Sendable {
@@ -69,15 +60,7 @@ public struct UpdateBetaAppLocalizationRequest: Codable, Sendable {
     public struct UpdateData: Codable, Sendable {
         public var type: String = "betaAppLocalizations"
         public let id: String
-        public let attributes: Attributes
-    }
-
-    public struct Attributes: Codable, Sendable {
-        public let feedbackEmail: String?
-        public let marketingUrl: String?
-        public let privacyPolicyUrl: String?
-        public let tvOsPrivacyPolicy: String?
-        public let description: String?
+        public let attributes: [String: JSONValue]
     }
 }
 

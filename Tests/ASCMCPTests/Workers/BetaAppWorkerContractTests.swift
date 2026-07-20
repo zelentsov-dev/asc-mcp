@@ -236,20 +236,60 @@ struct BetaAppWorkerContractTests {
         }
     }
 
-    @Test("localization update rejects null malformed and empty writes")
+    @Test("all localization update fields preserve value null and omission")
+    func allLocalizationUpdateFieldsPreserveTriState() async throws {
+        let fields: [(tool: String, apple: String, value: String)] = [
+            ("feedback_email", "feedbackEmail", "feedback@example.com"),
+            ("marketing_url", "marketingUrl", "https://example.com"),
+            ("privacy_policy_url", "privacyPolicyUrl", "https://example.com/privacy"),
+            ("tv_os_privacy_policy", "tvOsPrivacyPolicy", "Privacy policy"),
+            ("description", "description", "Try the beta")
+        ]
+        let transport = TestHTTPTransport(responses: Array(
+            repeating: .init(statusCode: 200, body: betaAppLocalizationResponse(id: "loc-1")),
+            count: fields.count * 2
+        ))
+        let worker = BetaAppWorker(httpClient: try await makeBetaAppContractClient(transport))
+
+        for field in fields {
+            let concrete = try await worker.handleTool(CallTool.Parameters(
+                name: "beta_app_update_localization",
+                arguments: [
+                    "localization_id": .string("loc-1"),
+                    field.tool: .string(field.value)
+                ]
+            ))
+            let explicitNull = try await worker.handleTool(CallTool.Parameters(
+                name: "beta_app_update_localization",
+                arguments: [
+                    "localization_id": .string("loc-1"),
+                    field.tool: .null
+                ]
+            ))
+            #expect(concrete.isError != true)
+            #expect(explicitNull.isError != true)
+        }
+
+        let requests = await transport.recordedRequests()
+        #expect(requests.count == fields.count * 2)
+        for (index, field) in fields.enumerated() {
+            let concreteAttributes = try betaAppContractRequestAttributes(requests[index * 2])
+            #expect(Set(concreteAttributes.keys) == [field.apple])
+            #expect(concreteAttributes[field.apple] as? String == field.value)
+
+            let nullAttributes = try betaAppContractRequestAttributes(requests[index * 2 + 1])
+            #expect(Set(nullAttributes.keys) == [field.apple])
+            #expect(nullAttributes[field.apple] is NSNull)
+        }
+    }
+
+    @Test("localization update rejects malformed and empty writes")
     func localizationUpdateRejectsInvalidWrites() async throws {
         let transport = TestHTTPTransport(responses: [])
         let worker = BetaAppWorker(httpClient: try await makeBetaAppContractClient(transport))
 
         let fields = ["feedback_email", "marketing_url", "privacy_policy_url", "tv_os_privacy_policy", "description"]
         for field in fields {
-            let explicitNull = try await worker.handleTool(CallTool.Parameters(
-                name: "beta_app_update_localization",
-                arguments: [
-                    "localization_id": .string("loc-1"),
-                    field: .null
-                ]
-            ))
             let malformed = try await worker.handleTool(CallTool.Parameters(
                 name: "beta_app_update_localization",
                 arguments: [
@@ -257,7 +297,6 @@ struct BetaAppWorkerContractTests {
                     field: .int(1)
                 ]
             ))
-            #expect(explicitNull.isError == true)
             #expect(malformed.isError == true)
         }
         let empty = try await worker.handleTool(CallTool.Parameters(
@@ -269,13 +308,76 @@ struct BetaAppWorkerContractTests {
         #expect(await transport.requestCount() == 0)
     }
 
-    @Test("localization create rejects null and malformed optional values")
+    @Test("all localization create fields preserve value null and omission")
+    func allLocalizationCreateFieldsPreserveTriState() async throws {
+        let fields: [(tool: String, apple: String, value: String)] = [
+            ("feedback_email", "feedbackEmail", "feedback@example.com"),
+            ("marketing_url", "marketingUrl", "https://example.com"),
+            ("privacy_policy_url", "privacyPolicyUrl", "https://example.com/privacy"),
+            ("tv_os_privacy_policy", "tvOsPrivacyPolicy", "Privacy policy"),
+            ("description", "description", "Try the beta")
+        ]
+        let transport = TestHTTPTransport(responses: Array(
+            repeating: .init(statusCode: 201, body: betaAppLocalizationResponse(id: "loc-created")),
+            count: fields.count * 2 + 1
+        ))
+        let worker = BetaAppWorker(httpClient: try await makeBetaAppContractClient(transport))
+
+        for field in fields {
+            let concrete = try await worker.handleTool(CallTool.Parameters(
+                name: "beta_app_create_localization",
+                arguments: [
+                    "app_id": .string("app-1"),
+                    "locale": .string("en-US"),
+                    field.tool: .string(field.value)
+                ]
+            ))
+            let explicitNull = try await worker.handleTool(CallTool.Parameters(
+                name: "beta_app_create_localization",
+                arguments: [
+                    "app_id": .string("app-1"),
+                    "locale": .string("en-US"),
+                    field.tool: .null
+                ]
+            ))
+            #expect(concrete.isError != true)
+            #expect(explicitNull.isError != true)
+        }
+        let omitted = try await worker.handleTool(CallTool.Parameters(
+            name: "beta_app_create_localization",
+            arguments: [
+                "app_id": .string("app-1"),
+                "locale": .string("en-US")
+            ]
+        ))
+        #expect(omitted.isError != true)
+
+        let requests = await transport.recordedRequests()
+        #expect(requests.count == fields.count * 2 + 1)
+        for (index, field) in fields.enumerated() {
+            let concreteAttributes = try betaAppContractRequestAttributes(requests[index * 2])
+            #expect(Set(concreteAttributes.keys) == ["locale", field.apple])
+            #expect(concreteAttributes[field.apple] as? String == field.value)
+
+            let nullAttributes = try betaAppContractRequestAttributes(requests[index * 2 + 1])
+            #expect(Set(nullAttributes.keys) == ["locale", field.apple])
+            #expect(nullAttributes[field.apple] is NSNull)
+        }
+        if let omittedRequest = requests.last {
+            let omittedAttributes = try betaAppContractRequestAttributes(omittedRequest)
+            #expect(Set(omittedAttributes.keys) == ["locale"])
+        } else {
+            Issue.record("Expected an omission-only localization request")
+        }
+    }
+
+    @Test("localization create rejects malformed optional values")
     func localizationCreateRejectsInvalidOptionalValues() async throws {
         let transport = TestHTTPTransport(responses: [])
         let worker = BetaAppWorker(httpClient: try await makeBetaAppContractClient(transport))
 
         let fields = ["feedback_email", "marketing_url", "privacy_policy_url", "tv_os_privacy_policy", "description"]
-        let invalidValues: [Value] = [.null, .bool(true)]
+        let invalidValues: [Value] = [.bool(true), .int(1)]
         for field in fields {
             for value in invalidValues {
                 let result = try await worker.handleTool(CallTool.Parameters(
@@ -920,6 +1022,7 @@ struct BetaAppWorkerContractTests {
         let worker = BetaAppWorker(httpClient: try await TestFactory.makeHTTPClient())
         let tools = await worker.getTools()
         let updateReview = try #require(tools.first { $0.name == "beta_app_update_review_details" })
+        let createLocalization = try #require(tools.first { $0.name == "beta_app_create_localization" })
         let updateLocalization = try #require(tools.first { $0.name == "beta_app_update_localization" })
         let listLocalizations = try #require(tools.first { $0.name == "beta_app_list_localizations" })
         let listSubmissions = try #require(tools.first { $0.name == "beta_app_list_submissions" })
@@ -935,6 +1038,15 @@ struct BetaAppWorkerContractTests {
         #expect(try betaAppContractArray(try betaAppContractObject(reviewProperties["demo_account_required"])["type"]) == [.string("boolean"), .string("null")])
         #expect(try betaAppContractObject(updateReview.inputSchema)["minProperties"] == .int(2))
         #expect(try betaAppContractObject(updateLocalization.inputSchema)["minProperties"] == .int(2))
+        let localizationFields = [
+            "feedback_email", "marketing_url", "privacy_policy_url", "tv_os_privacy_policy", "description"
+        ]
+        for tool in [createLocalization, updateLocalization] {
+            let properties = try betaAppContractProperties(tool)
+            for field in localizationFields {
+                #expect(try betaAppContractArray(try betaAppContractObject(properties[field])["type"]) == [.string("string"), .string("null")])
+            }
+        }
         let submissionProperties = try betaAppContractProperties(listSubmissions)
         #expect(try betaAppContractObject(submissionProperties["build_id"])["oneOf"] != nil)
         let limit = try betaAppContractObject(submissionProperties["limit"])
@@ -991,11 +1103,11 @@ struct BetaAppWorkerContractTests {
         #expect(manifest.index.specPin.sha256 == "ed0202ef37155b9334772482d2ea0be688c3046b284c895bcbea5455fbe54fd8")
         #expect(manifest.index.optionalInputCoveragePin == ASCOptionalInputCoverage(
             total: 2_154,
-            bound: 772,
-            internalControl: 38,
-            intentionallyOmitted: 1_250,
-            unclassified: 94,
-            identitySHA256: "5bdc862f9f2b786143162ac66bf7c5ced8be70365fae22d303f305acbff0d64f"
+            bound: 809,
+            internalControl: 40,
+            intentionallyOmitted: 1_305,
+            unclassified: 0,
+            identitySHA256: "d8e572dd0af31e8bc40077a5db93b3d19be5283c35298b4f42e29a8b553d3d3b"
         ))
     }
 }

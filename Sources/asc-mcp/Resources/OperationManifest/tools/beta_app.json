@@ -97,7 +97,7 @@
           }
         ]
       },
-      "note": "All public fields map to the current BetaAppLocalizationCreateRequest. Provided optional metadata must be non-null strings; omission leaves the Apple attribute absent."
+      "note": "All public fields map to the current BetaAppLocalizationCreateRequest. Every nullable metadata field preserves concrete value, explicit null, and omission as distinct request states."
     },
     {
       "tool": "beta_app_delete_localization",
@@ -893,7 +893,7 @@
           }
         ]
       },
-      "note": "Although Apple 4.4.1 marks these transport attributes nullable, App Store Connect business rules do not permit clearing an existing beta localization value. Explicit null is rejected locally, all writable fields are type-checked, and empty PATCH requests fail pre-network."
+      "note": "All five Apple 4.4.1 nullable metadata attributes preserve concrete value, explicit null, and omission as distinct request states; malformed values and empty PATCH requests fail before network access."
     },
     {
       "tool": "beta_app_update_review_details",

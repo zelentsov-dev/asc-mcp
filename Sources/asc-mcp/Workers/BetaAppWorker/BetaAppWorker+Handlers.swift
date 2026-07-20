@@ -86,19 +86,23 @@ extension BetaAppWorker {
 
         let appId: String
         let locale: String
-        let feedbackEmail: String?
-        let marketingURL: String?
-        let privacyPolicyURL: String?
-        let tvOSPrivacyPolicy: String?
-        let description: String?
+        var attributes: [String: JSONValue] = [:]
         do {
             appId = try requiredString("app_id", from: arguments)
             locale = try requiredString("locale", from: arguments)
-            feedbackEmail = try strictOptionalString("feedback_email", from: arguments)
-            marketingURL = try strictOptionalString("marketing_url", from: arguments)
-            privacyPolicyURL = try strictOptionalString("privacy_policy_url", from: arguments)
-            tvOSPrivacyPolicy = try strictOptionalString("tv_os_privacy_policy", from: arguments)
-            description = try strictOptionalString("description", from: arguments)
+            attributes["locale"] = .string(locale)
+            let optionalFields = [
+                "feedback_email": "feedbackEmail",
+                "marketing_url": "marketingUrl",
+                "privacy_policy_url": "privacyPolicyUrl",
+                "tv_os_privacy_policy": "tvOsPrivacyPolicy",
+                "description": "description"
+            ]
+            for (toolField, appleField) in optionalFields {
+                if let value = try nullableString(toolField, from: arguments) {
+                    attributes[appleField] = value
+                }
+            }
         } catch {
             return MCPResult.error(error.localizedDescription)
         }
@@ -106,14 +110,7 @@ extension BetaAppWorker {
         do {
             let request = CreateBetaAppLocalizationRequest(
                 data: CreateBetaAppLocalizationRequest.CreateData(
-                    attributes: CreateBetaAppLocalizationRequest.Attributes(
-                        locale: locale,
-                        feedbackEmail: feedbackEmail,
-                        marketingUrl: marketingURL,
-                        privacyPolicyUrl: privacyPolicyURL,
-                        tvOsPrivacyPolicy: tvOSPrivacyPolicy,
-                        description: description
-                    ),
+                    attributes: attributes,
                     relationships: CreateBetaAppLocalizationRequest.Relationships(
                         app: CreateBetaAppLocalizationRequest.AppRelationship(
                             data: ASCResourceIdentifier(type: "apps", id: appId)
@@ -191,22 +188,25 @@ extension BetaAppWorker {
         }
 
         let localizationId: String
-        let feedbackEmail: String?
-        let marketingURL: String?
-        let privacyPolicyURL: String?
-        let tvOSPrivacyPolicy: String?
-        let description: String?
+        var attributes: [String: JSONValue] = [:]
         do {
             localizationId = try requiredString("localization_id", from: arguments)
-            feedbackEmail = try strictOptionalString("feedback_email", from: arguments)
-            marketingURL = try strictOptionalString("marketing_url", from: arguments)
-            privacyPolicyURL = try strictOptionalString("privacy_policy_url", from: arguments)
-            tvOSPrivacyPolicy = try strictOptionalString("tv_os_privacy_policy", from: arguments)
-            description = try strictOptionalString("description", from: arguments)
+            let optionalFields = [
+                "feedback_email": "feedbackEmail",
+                "marketing_url": "marketingUrl",
+                "privacy_policy_url": "privacyPolicyUrl",
+                "tv_os_privacy_policy": "tvOsPrivacyPolicy",
+                "description": "description"
+            ]
+            for (toolField, appleField) in optionalFields {
+                if let value = try nullableString(toolField, from: arguments) {
+                    attributes[appleField] = value
+                }
+            }
         } catch {
             return MCPResult.error(error.localizedDescription)
         }
-        guard [feedbackEmail, marketingURL, privacyPolicyURL, tvOSPrivacyPolicy, description].contains(where: { $0 != nil }) else {
+        guard !attributes.isEmpty else {
             return MCPResult.error("At least one localization update field is required")
         }
 
@@ -214,13 +214,7 @@ extension BetaAppWorker {
             let request = UpdateBetaAppLocalizationRequest(
                 data: UpdateBetaAppLocalizationRequest.UpdateData(
                     id: localizationId,
-                    attributes: UpdateBetaAppLocalizationRequest.Attributes(
-                        feedbackEmail: feedbackEmail,
-                        marketingUrl: marketingURL,
-                        privacyPolicyUrl: privacyPolicyURL,
-                        tvOsPrivacyPolicy: tvOSPrivacyPolicy,
-                        description: description
-                    )
+                    attributes: attributes
                 )
             )
 
@@ -730,16 +724,6 @@ extension BetaAppWorker {
             result["demoAccountPassword"] = "[REDACTED]"
         }
         return result
-    }
-
-    private func strictOptionalString(_ name: String, from arguments: [String: Value]) throws -> String? {
-        guard let value = arguments[name] else {
-            return nil
-        }
-        guard !value.isNull, let string = value.stringValue else {
-            throw BetaAppArgumentError("\(name) must be a string; omit the field instead of passing null")
-        }
-        return string
     }
 
     private func requiredString(_ name: String, from arguments: [String: Value]) throws -> String {
