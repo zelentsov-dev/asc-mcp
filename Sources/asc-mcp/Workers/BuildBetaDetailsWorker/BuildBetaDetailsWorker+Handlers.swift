@@ -311,60 +311,37 @@ extension BuildBetaDetailsWorker {
 
         do {
             let response: ASCBetaGroupsResponse
+            var queryParams: [String: String] = [
+                "filter[builds]": buildId,
+                "limit": String(min(max(arguments["limit"]?.intValue ?? 50, 1), 200))
+            ]
+            applyBetaGroupStringList(arguments["group_ids"], as: "filter[id]", to: &queryParams)
+            applyBetaGroupStringList(arguments["name"], as: "filter[name]", to: &queryParams)
+            applyBetaGroupStringList(arguments["public_link"], as: "filter[publicLink]", to: &queryParams)
+            if let value = arguments["is_internal"]?.boolValue {
+                queryParams["filter[isInternalGroup]"] = value ? "true" : "false"
+            }
+            if let value = arguments["public_link_enabled"]?.boolValue {
+                queryParams["filter[publicLinkEnabled]"] = value ? "true" : "false"
+            }
+            if let value = arguments["public_link_limit_enabled"]?.boolValue {
+                queryParams["filter[publicLinkLimitEnabled]"] = value ? "true" : "false"
+            }
+            if let sort = arguments["sort"]?.stringValue {
+                queryParams["sort"] = sort
+            }
 
             // Check for pagination URL
             if let nextUrl = try paginationURL(from: arguments["next_url"]) {
-                var requiredParameters: [String: String] = ["filter[builds]": buildId]
-                applyBetaGroupStringList(arguments["group_ids"], as: "filter[id]", to: &requiredParameters)
-                applyBetaGroupStringList(arguments["name"], as: "filter[name]", to: &requiredParameters)
-                applyBetaGroupStringList(arguments["public_link"], as: "filter[publicLink]", to: &requiredParameters)
-                if let value = arguments["is_internal"]?.boolValue {
-                    requiredParameters["filter[isInternalGroup]"] = value ? "true" : "false"
-                }
-                if let value = arguments["public_link_enabled"]?.boolValue {
-                    requiredParameters["filter[publicLinkEnabled]"] = value ? "true" : "false"
-                }
-                if let value = arguments["public_link_limit_enabled"]?.boolValue {
-                    requiredParameters["filter[publicLinkLimitEnabled]"] = value ? "true" : "false"
-                }
-                if let sort = arguments["sort"]?.stringValue {
-                    requiredParameters["sort"] = sort
-                }
                 response = try await httpClient.getPage(
                     nextUrl,
-                    scope: PaginationScope(
+                    scope: PaginationScope.strict(
                         path: "/v1/betaGroups",
-                        requiredParameters: requiredParameters
+                        query: queryParams
                     ),
                     as: ASCBetaGroupsResponse.self
                 )
             } else {
-                var queryParams: [String: String] = [
-                    "filter[builds]": buildId
-                ]
-
-                if let limitValue = arguments["limit"],
-                   let limit = limitValue.intValue {
-                    queryParams["limit"] = String(min(max(limit, 1), 200))
-                } else {
-                    queryParams["limit"] = "50"
-                }
-                applyBetaGroupStringList(arguments["group_ids"], as: "filter[id]", to: &queryParams)
-                applyBetaGroupStringList(arguments["name"], as: "filter[name]", to: &queryParams)
-                applyBetaGroupStringList(arguments["public_link"], as: "filter[publicLink]", to: &queryParams)
-                if let value = arguments["is_internal"]?.boolValue {
-                    queryParams["filter[isInternalGroup]"] = value ? "true" : "false"
-                }
-                if let value = arguments["public_link_enabled"]?.boolValue {
-                    queryParams["filter[publicLinkEnabled]"] = value ? "true" : "false"
-                }
-                if let value = arguments["public_link_limit_enabled"]?.boolValue {
-                    queryParams["filter[publicLinkLimitEnabled]"] = value ? "true" : "false"
-                }
-                if let sort = arguments["sort"]?.stringValue {
-                    queryParams["sort"] = sort
-                }
-
                 response = try await httpClient.get(
                     "/v1/betaGroups",
                     parameters: queryParams,

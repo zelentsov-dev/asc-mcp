@@ -63,16 +63,11 @@ extension BuildsWorker {
 
             // Check for pagination next_url
             if let nextUrl = try paginationURL(from: arguments["next_url"]) {
-                var requiredParameters = queryParams
-                requiredParameters.removeValue(forKey: "limit")
-                if arguments["sort"]?.stringValue == nil {
-                    requiredParameters.removeValue(forKey: "sort")
-                }
                 response = try await httpClient.getPage(
                     nextUrl,
-                    scope: PaginationScope(
+                    scope: PaginationScope.strict(
                         path: "/v1/builds",
-                        requiredParameters: requiredParameters
+                        query: queryParams
                     ),
                     as: ASCBuildsResponse.self
                 )

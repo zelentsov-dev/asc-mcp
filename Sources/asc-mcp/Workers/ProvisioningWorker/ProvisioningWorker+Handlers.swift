@@ -51,13 +51,11 @@ extension ProvisioningWorker {
             }
 
             if let nextUrl = try paginationURL(from: arguments?["next_url"]) {
-                var requiredParameters = queryParams
-                requiredParameters.removeValue(forKey: "limit")
                 response = try await httpClient.getPage(
                     nextUrl,
-                    scope: PaginationScope(
+                    scope: PaginationScope.strict(
                         path: "/v1/bundleIds",
-                        requiredParameters: requiredParameters
+                        query: queryParams
                     ),
                     as: ASCBundleIdsResponse.self
                 )
@@ -257,13 +255,11 @@ extension ProvisioningWorker {
             }
 
             if let nextUrl = try paginationURL(from: arguments?["next_url"]) {
-                var requiredParameters = queryParams
-                requiredParameters.removeValue(forKey: "limit")
                 response = try await httpClient.getPage(
                     nextUrl,
-                    scope: PaginationScope(
+                    scope: PaginationScope.strict(
                         path: "/v1/devices",
-                        requiredParameters: requiredParameters
+                        query: queryParams
                     ),
                     as: ASCDevicesResponse.self
                 )
@@ -447,13 +443,11 @@ extension ProvisioningWorker {
             }
 
             if let nextUrl = try paginationURL(from: arguments?["next_url"]) {
-                var requiredParameters = queryParams
-                requiredParameters.removeValue(forKey: "limit")
                 response = try await httpClient.getPage(
                     nextUrl,
-                    scope: PaginationScope(
+                    scope: PaginationScope.strict(
                         path: "/v1/certificates",
-                        requiredParameters: requiredParameters
+                        query: queryParams
                     ),
                     as: ASCCertificatesResponse.self
                 )
@@ -528,13 +522,11 @@ extension ProvisioningWorker {
             }
 
             if let nextUrl = try paginationURL(from: arguments?["next_url"]) {
-                var requiredParameters = queryParams
-                requiredParameters.removeValue(forKey: "limit")
                 response = try await httpClient.getPage(
                     nextUrl,
-                    scope: PaginationScope(
+                    scope: PaginationScope.strict(
                         path: "/v1/profiles",
-                        requiredParameters: requiredParameters
+                        query: queryParams
                     ),
                     as: ASCProfilesResponse.self
                 )
@@ -825,13 +817,11 @@ extension ProvisioningWorker {
             }
 
             if let nextUrl = try paginationURL(from: arguments["next_url"]) {
-                var requiredParameters = queryParams
-                requiredParameters.removeValue(forKey: "limit")
                 response = try await httpClient.getPage(
                     nextUrl,
-                    scope: PaginationScope(
+                    scope: PaginationScope.strict(
                         path: "/v1/bundleIds/\(try ASCPathSegment.encode(bundleIdResourceId))/bundleIdCapabilities",
-                        requiredParameters: requiredParameters
+                        query: queryParams
                     ),
                     as: ASCBundleIdCapabilitiesResponse.self
                 )

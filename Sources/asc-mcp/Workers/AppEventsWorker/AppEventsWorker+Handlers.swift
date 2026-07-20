@@ -47,11 +47,9 @@ extension AppEventsWorker {
 
             let response: ASCAppEventsResponse
             if let nextURL = try paginationURL(from: arguments["next_url"]) {
-                var requiredParameters = queryParams
-                requiredParameters.removeValue(forKey: "limit")
                 response = try await httpClient.getPage(
                     nextURL,
-                    scope: PaginationScope(path: path, requiredParameters: requiredParameters),
+                    scope: PaginationScope.strict(path: path, query: queryParams),
                     as: ASCAppEventsResponse.self
                 )
             } else {
@@ -386,11 +384,9 @@ extension AppEventsWorker {
 
             let response: ASCAppEventLocalizationsResponse
             if let nextURL = try paginationURL(from: arguments["next_url"]) {
-                var requiredParameters = query
-                requiredParameters.removeValue(forKey: "limit")
                 response = try await httpClient.getPage(
                     nextURL,
-                    scope: PaginationScope(path: path, requiredParameters: requiredParameters),
+                    scope: PaginationScope.strict(path: path, query: query),
                     as: ASCAppEventLocalizationsResponse.self
                 )
             } else {

@@ -37,13 +37,11 @@ extension BetaTestersWorker {
 
             // Check for pagination URL
             if let nextUrl = try paginationURL(from: arguments["next_url"]) {
-                var requiredParameters = queryParams
-                requiredParameters.removeValue(forKey: "limit")
                 response = try await httpClient.getPage(
                     nextUrl,
-                    scope: PaginationScope(
+                    scope: PaginationScope.strict(
                         path: "/v1/betaTesters",
-                        requiredParameters: requiredParameters
+                        query: queryParams
                     ),
                     as: ASCBetaTestersResponse.self
                 )
@@ -105,11 +103,9 @@ extension BetaTestersWorker {
 
             let response: ASCBetaTestersResponse
             if let nextUrl = try paginationURL(from: arguments["next_url"]) {
-                var requiredParameters = queryParams
-                requiredParameters.removeValue(forKey: "limit")
                 response = try await httpClient.getPage(
                     nextUrl,
-                    scope: PaginationScope(path: "/v1/betaTesters", requiredParameters: requiredParameters),
+                    scope: PaginationScope.strict(path: "/v1/betaTesters", query: queryParams),
                     as: ASCBetaTestersResponse.self
                 )
             } else {

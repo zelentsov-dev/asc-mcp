@@ -565,14 +565,12 @@ extension AnalyticsWorker {
             if let limitReports {
                 queryParams["limit[reports]"] = String(limitReports)
             }
-            var requiredParameters = queryParams
-            requiredParameters.removeValue(forKey: "limit")
             let response: ASCAnalyticsReportRequestsResponse
 
             if let nextUrl = try paginationURL(from: arguments["next_url"]) {
                 response = try await httpClient.getPage(
                     nextUrl,
-                    scope: PaginationScope(path: endpoint, requiredParameters: requiredParameters),
+                    scope: PaginationScope.strict(path: endpoint, query: queryParams),
                     as: ASCAnalyticsReportRequestsResponse.self
                 )
             } else {
@@ -692,14 +690,12 @@ extension AnalyticsWorker {
             if let categories {
                 queryParams["filter[category]"] = categories.joined(separator: ",")
             }
-            var requiredParameters = queryParams
-            requiredParameters.removeValue(forKey: "limit")
             let response: ASCAnalyticsReportsResponse
 
             if let nextUrl = try paginationURL(from: arguments["next_url"]) {
                 response = try await httpClient.getPage(
                     nextUrl,
-                    scope: PaginationScope(path: endpoint, requiredParameters: requiredParameters),
+                    scope: PaginationScope.strict(path: endpoint, query: queryParams),
                     as: ASCAnalyticsReportsResponse.self
                 )
             } else {
@@ -797,14 +793,12 @@ extension AnalyticsWorker {
             if let processingDates {
                 queryParams["filter[processingDate]"] = processingDates.joined(separator: ",")
             }
-            var requiredParameters = queryParams
-            requiredParameters.removeValue(forKey: "limit")
             let response: ASCAnalyticsReportInstancesResponse
 
             if let nextUrl = try paginationURL(from: arguments["next_url"]) {
                 response = try await httpClient.getPage(
                     nextUrl,
-                    scope: PaginationScope(path: endpoint, requiredParameters: requiredParameters),
+                    scope: PaginationScope.strict(path: endpoint, query: queryParams),
                     as: ASCAnalyticsReportInstancesResponse.self
                 )
             } else {

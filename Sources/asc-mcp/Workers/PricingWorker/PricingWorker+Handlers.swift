@@ -114,35 +114,21 @@ extension PricingWorker {
             let response: ASCAppPricePointsV3Response
 
             let endpoint = "/v1/apps/\(try ASCPathSegment.encode(appId))/appPricePoints"
-            var requiredParameters: [String: String] = [
-                "include": "territory"
+            var queryParams: [String: String] = [
+                "include": "territory",
+                "limit": String(min(max(arguments["limit"]?.intValue ?? 50, 1), 200))
             ]
             if let territoryId = arguments["territory_id"]?.stringValue {
-                requiredParameters["filter[territory]"] = territoryId
+                queryParams["filter[territory]"] = territoryId
             }
 
             if let nextUrl = try paginationURL(from: arguments["next_url"]) {
                 response = try await httpClient.getPage(
                     nextUrl,
-                    scope: PaginationScope(path: endpoint, requiredParameters: requiredParameters),
+                    scope: PaginationScope.strict(path: endpoint, query: queryParams),
                     as: ASCAppPricePointsV3Response.self
                 )
             } else {
-                var queryParams: [String: String] = [
-                    "include": "territory"
-                ]
-
-                if let limitValue = arguments["limit"],
-                   let limit = limitValue.intValue {
-                    queryParams["limit"] = String(min(max(limit, 1), 200))
-                } else {
-                    queryParams["limit"] = "50"
-                }
-
-                if let territoryId = arguments["territory_id"]?.stringValue {
-                    queryParams["filter[territory]"] = territoryId
-                }
-
                 response = try await httpClient.get(
                     endpoint,
                     parameters: queryParams,
@@ -411,25 +397,21 @@ extension PricingWorker {
                 as: ASCAppAvailabilityV2Response.self
             )
             let endpoint = "/v2/appAvailabilities/\(try ASCPathSegment.encode(availability.data.id))/territoryAvailabilities"
+            let queryParams = [
+                "include": "territory",
+                "limit": String(min(max(arguments["limit"]?.intValue ?? 50, 1), 200))
+            ]
 
             if let nextUrl = try paginationURL(from: arguments["next_url"]) {
                 response = try await httpClient.getPage(
                     nextUrl,
-                    scope: PaginationScope(
-                        path: endpoint,
-                        requiredParameters: ["include": "territory"]
-                    ),
+                    scope: PaginationScope.strict(path: endpoint, query: queryParams),
                     as: ASCTerritoryAvailabilitiesResponse.self
                 )
             } else {
-                let limit = min(max(arguments["limit"]?.intValue ?? 50, 1), 200)
-
                 response = try await httpClient.get(
                     endpoint,
-                    parameters: [
-                        "include": "territory",
-                        "limit": String(limit)
-                    ],
+                    parameters: queryParams,
                     as: ASCTerritoryAvailabilitiesResponse.self
                 )
             }
@@ -605,27 +587,18 @@ extension PricingWorker {
             let response: ASCTerritoryAvailabilitiesResponse
 
             let endpoint = "/v2/appAvailabilities/\(try ASCPathSegment.encode(availabilityId))/territoryAvailabilities"
+            let queryParams = [
+                "include": "territory",
+                "limit": String(min(max(arguments["limit"]?.intValue ?? 50, 1), 200))
+            ]
 
             if let nextUrl = try paginationURL(from: arguments["next_url"]) {
                 response = try await httpClient.getPage(
                     nextUrl,
-                    scope: PaginationScope(
-                        path: endpoint,
-                        requiredParameters: ["include": "territory"]
-                    ),
+                    scope: PaginationScope.strict(path: endpoint, query: queryParams),
                     as: ASCTerritoryAvailabilitiesResponse.self
                 )
             } else {
-                var queryParams: [String: String] = [
-                    "include": "territory"
-                ]
-
-                if let limit = arguments["limit"]?.intValue {
-                    queryParams["limit"] = String(min(max(limit, 1), 200))
-                } else {
-                    queryParams["limit"] = "50"
-                }
-
                 response = try await httpClient.get(
                     endpoint,
                     parameters: queryParams,

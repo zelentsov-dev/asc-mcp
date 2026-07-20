@@ -52,13 +52,11 @@ extension UsersWorker {
             }
 
             if let nextUrl = try paginationURL(from: arguments?["next_url"]) {
-                var requiredParameters = queryParams
-                requiredParameters.removeValue(forKey: "limit")
                 response = try await httpClient.getPage(
                     nextUrl,
-                    scope: PaginationScope(
+                    scope: PaginationScope.strict(
                         path: "/v1/users",
-                        requiredParameters: requiredParameters
+                        query: queryParams
                     ),
                     as: ASCUsersResponse.self
                 )
@@ -441,13 +439,11 @@ extension UsersWorker {
             }
 
             if let nextUrl = try paginationURL(from: arguments?["next_url"]) {
-                var requiredParameters = queryParams
-                requiredParameters.removeValue(forKey: "limit")
                 response = try await httpClient.getPage(
                     nextUrl,
-                    scope: PaginationScope(
+                    scope: PaginationScope.strict(
                         path: "/v1/userInvitations",
-                        requiredParameters: requiredParameters
+                        query: queryParams
                     ),
                     as: ASCUserInvitationsResponse.self
                 )

@@ -29,37 +29,25 @@ extension AccessibilityWorker {
 
         do {
             let response: ASCAccessibilityDeclarationsResponse
+            let path = "/v1/apps/\(try ASCPathSegment.encode(appID))/accessibilityDeclarations"
+            var query = defaultListQuery(arguments: arguments)
+            if let deviceFamilies = parseStringList(arguments["device_family"]) {
+                query["filter[deviceFamily]"] = deviceFamilies.joined(separator: ",")
+            }
+            if let states = parseStringList(arguments["state"]) {
+                query["filter[state]"] = states.joined(separator: ",")
+            }
+            if let fields = parseStringList(arguments["fields"]) {
+                query["fields[accessibilityDeclarations]"] = fields.joined(separator: ",")
+            }
             if let nextURL = try paginationURL(from: arguments["next_url"]) {
-                var requiredParameters: [String: String] = [:]
-                if let deviceFamilies = parseStringList(arguments["device_family"]) {
-                    requiredParameters["filter[deviceFamily]"] = deviceFamilies.joined(separator: ",")
-                }
-                if let states = parseStringList(arguments["state"]) {
-                    requiredParameters["filter[state]"] = states.joined(separator: ",")
-                }
-                if let fields = parseStringList(arguments["fields"]) {
-                    requiredParameters["fields[accessibilityDeclarations]"] = fields.joined(separator: ",")
-                }
                 response = try await httpClient.getPage(
                     nextURL,
-                    scope: PaginationScope(
-                        path: "/v1/apps/\(try ASCPathSegment.encode(appID))/accessibilityDeclarations",
-                        requiredParameters: requiredParameters
-                    ),
+                    scope: PaginationScope.strict(path: path, query: query),
                     as: ASCAccessibilityDeclarationsResponse.self
                 )
             } else {
-                var query = defaultListQuery(arguments: arguments)
-                if let deviceFamilies = parseStringList(arguments["device_family"]) {
-                    query["filter[deviceFamily]"] = deviceFamilies.joined(separator: ",")
-                }
-                if let states = parseStringList(arguments["state"]) {
-                    query["filter[state]"] = states.joined(separator: ",")
-                }
-                if let fields = parseStringList(arguments["fields"]) {
-                    query["fields[accessibilityDeclarations]"] = fields.joined(separator: ",")
-                }
-                response = try await httpClient.get("/v1/apps/\(try ASCPathSegment.encode(appID))/accessibilityDeclarations", parameters: query, as: ASCAccessibilityDeclarationsResponse.self)
+                response = try await httpClient.get(path, parameters: query, as: ASCAccessibilityDeclarationsResponse.self)
             }
 
             var result: [String: Any] = [

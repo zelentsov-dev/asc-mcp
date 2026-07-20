@@ -74,11 +74,9 @@ extension AppInfoWorker {
 
             let response: ASCAppInfosResponse
             if let nextURL = try paginationURL(from: arguments["next_url"]) {
-                var requiredParameters = query
-                requiredParameters.removeValue(forKey: "limit")
                 response = try await httpClient.getPage(
                     nextURL,
-                    scope: PaginationScope(path: path, requiredParameters: requiredParameters),
+                    scope: PaginationScope.strict(path: path, query: query),
                     as: ASCAppInfosResponse.self
                 )
             } else {
@@ -292,11 +290,9 @@ extension AppInfoWorker {
 
             let response: ASCAppInfoLocalizationsResponse
             if let nextURL = try paginationURL(from: arguments["next_url"]) {
-                var requiredParameters = query
-                requiredParameters.removeValue(forKey: "limit")
                 response = try await httpClient.getPage(
                     nextURL,
-                    scope: PaginationScope(path: path, requiredParameters: requiredParameters),
+                    scope: PaginationScope.strict(path: path, query: query),
                     as: ASCAppInfoLocalizationsResponse.self
                 )
             } else {

@@ -19,13 +19,11 @@ extension WebhooksWorker {
                 query["include"] = "app"
             }
             if let nextURL = try paginationURL(from: arguments["next_url"]) {
-                var requiredParameters = query
-                requiredParameters.removeValue(forKey: "limit")
                 response = try await httpClient.getPage(
                     nextURL,
-                    scope: PaginationScope(
+                    scope: PaginationScope.strict(
                         path: "/v1/apps/\(try ASCPathSegment.encode(appID))/webhooks",
-                        requiredParameters: requiredParameters
+                        query: query
                     ),
                     as: ASCWebhooksResponse.self
                 )
@@ -215,16 +213,11 @@ extension WebhooksWorker {
                 query["include"] = "event"
             }
             if let nextURL = try paginationURL(from: arguments["next_url"]) {
-                var requiredParameters = query
-                requiredParameters.removeValue(forKey: "limit")
-                if arguments["include_event"]?.boolValue == nil {
-                    requiredParameters.removeValue(forKey: "include")
-                }
                 response = try await httpClient.getPage(
                     nextURL,
-                    scope: PaginationScope(
+                    scope: PaginationScope.strict(
                         path: "/v1/webhooks/\(try ASCPathSegment.encode(webhookID))/deliveries",
-                        requiredParameters: requiredParameters
+                        query: query
                     ),
                     as: ASCWebhookDeliveriesResponse.self
                 )

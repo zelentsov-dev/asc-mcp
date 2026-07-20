@@ -12,7 +12,6 @@ extension ReviewsWorker {
 
     private struct ReviewCollectionOptions {
         let queryParameters: [String: String]
-        let requiredParameters: [String: String]
     }
 
     private struct ReviewLookupResponse: Codable, Sendable {
@@ -194,9 +193,7 @@ extension ReviewsWorker {
             query["exists[publishedResponse]"] = String(hasPublishedResponse)
         }
 
-        var required = query
-        required.removeValue(forKey: "limit")
-        return ReviewCollectionOptions(queryParameters: query, requiredParameters: required)
+        return ReviewCollectionOptions(queryParameters: query)
     }
 
     private func reviewSort(_ value: Value?) throws -> [String] {
@@ -339,10 +336,7 @@ extension ReviewsWorker {
             if let nextUrl = try paginationURL(from: arguments["next_url"]) {
                 response = try await httpClient.getPage(
                     nextUrl,
-                    scope: PaginationScope(
-                        path: endpoint,
-                        requiredParameters: options.requiredParameters
-                    )
+                    scope: PaginationScope.strict(path: endpoint, query: options.queryParameters)
                 )
             } else {
                 response = try await httpClient.get(endpoint, parameters: options.queryParameters)
@@ -427,10 +421,7 @@ extension ReviewsWorker {
             if let nextUrl = try paginationURL(from: arguments["next_url"]) {
                 response = try await httpClient.getPage(
                     nextUrl,
-                    scope: PaginationScope(
-                        path: endpoint,
-                        requiredParameters: options.requiredParameters
-                    )
+                    scope: PaginationScope.strict(path: endpoint, query: options.queryParameters)
                 )
             } else {
                 response = try await httpClient.get(endpoint, parameters: options.queryParameters)
@@ -774,13 +765,11 @@ extension ReviewsWorker {
                 queryParams["filter[territory]"] = territoryID
             }
 
-            var requiredParameters = queryParams
-            requiredParameters.removeValue(forKey: "limit")
             let responseData: Data
             if let nextURL = try paginationURL(from: arguments["next_url"]) {
                 responseData = try await httpClient.getPage(
                     nextURL,
-                    scope: PaginationScope(path: endpoint, requiredParameters: requiredParameters)
+                    scope: PaginationScope.strict(path: endpoint, query: queryParams)
                 )
             } else {
                 responseData = try await httpClient.get(endpoint, parameters: queryParams)

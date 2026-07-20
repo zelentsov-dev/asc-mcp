@@ -17,16 +17,11 @@ extension BetaFeedbackWorker {
             let response: ASCBetaFeedbackCrashSubmissionsResponse
             let query = try buildListQuery(arguments)
             if let nextURL = try paginationURL(from: arguments["next_url"]) {
-                var requiredParameters = query
-                requiredParameters.removeValue(forKey: "limit")
-                if !arguments.keys.contains("sort") {
-                    requiredParameters.removeValue(forKey: "sort")
-                }
                 response = try await httpClient.getPage(
                     nextURL,
-                    scope: PaginationScope(
+                    scope: PaginationScope.strict(
                         path: "/v1/apps/\(try ASCPathSegment.encode(appID))/betaFeedbackCrashSubmissions",
-                        requiredParameters: requiredParameters
+                        query: query
                     ),
                     as: ASCBetaFeedbackCrashSubmissionsResponse.self
                 )
@@ -147,16 +142,11 @@ extension BetaFeedbackWorker {
             let response: ASCBetaFeedbackScreenshotSubmissionsResponse
             let query = try buildListQuery(arguments)
             if let nextURL = try paginationURL(from: arguments["next_url"]) {
-                var requiredParameters = query
-                requiredParameters.removeValue(forKey: "limit")
-                if !arguments.keys.contains("sort") {
-                    requiredParameters.removeValue(forKey: "sort")
-                }
                 response = try await httpClient.getPage(
                     nextURL,
-                    scope: PaginationScope(
+                    scope: PaginationScope.strict(
                         path: "/v1/apps/\(try ASCPathSegment.encode(appID))/betaFeedbackScreenshotSubmissions",
-                        requiredParameters: requiredParameters
+                        query: query
                     ),
                     as: ASCBetaFeedbackScreenshotSubmissionsResponse.self
                 )

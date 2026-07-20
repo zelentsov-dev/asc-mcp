@@ -5,8 +5,8 @@ import Testing
 
 @Suite("Builds Pagination Security Tests")
 struct BuildsPaginationSecurityTests {
-    @Test("continuation accepts the prior explicit sort without repeating it")
-    func followsValidatedBuildsURLWithPriorSort() async throws {
+    @Test("continuation requires explicit sort and limit to be repeated as tool arguments")
+    func followsValidatedBuildsURLWithRepeatedControls() async throws {
         let transport = TestHTTPTransport(responses: [
             .init(
                 statusCode: 200,
@@ -19,8 +19,10 @@ struct BuildsPaginationSecurityTests {
             name: "builds_list",
             arguments: [
                 "app_id": .string("app-1"),
+                "sort": .string("version"),
+                "limit": .int(50),
                 "next_url": .string(
-                    "https://api.example.test/v1/builds?filter%5Bapp%5D=app-1&include=app%2CbuildBetaDetail%2CpreReleaseVersion&sort=version&cursor=next"
+                    "https://api.example.test/v1/builds?filter%5Bapp%5D=app-1&include=app%2CbuildBetaDetail%2CpreReleaseVersion&sort=version&limit=50&cursor=next"
                 )
             ]
         ))
@@ -31,7 +33,27 @@ struct BuildsPaginationSecurityTests {
         let query = buildsPaginationQueryItems(try #require(request.url))
         #expect(query["filter[app]"] == "app-1")
         #expect(query["sort"] == "version")
+        #expect(query["limit"] == "50")
         #expect(query["cursor"] == "next")
+    }
+
+    @Test("sort carried only by next URL is rejected without a request")
+    func rejectsSortCarriedOnlyByNextURL() async throws {
+        let transport = TestHTTPTransport(responses: [])
+        let worker = try await makeBuildsPaginationWorker(transport: transport)
+
+        let result = try await worker.handleTool(CallTool.Parameters(
+            name: "builds_list",
+            arguments: [
+                "app_id": .string("app-1"),
+                "next_url": .string(
+                    "https://api.example.test/v1/builds?filter%5Bapp%5D=app-1&include=app%2CbuildBetaDetail%2CpreReleaseVersion&sort=version&limit=25&cursor=next"
+                )
+            ]
+        ))
+
+        #expect(result.isError == true)
+        #expect(await transport.requestCount() == 0)
     }
 
     @Test("next URL with another app filter is rejected without a request")
@@ -44,7 +66,7 @@ struct BuildsPaginationSecurityTests {
             arguments: [
                 "app_id": .string("app-1"),
                 "next_url": .string(
-                    "https://api.example.test/v1/builds?filter%5Bapp%5D=app-2&include=app%2CbuildBetaDetail%2CpreReleaseVersion&sort=-uploadedDate&cursor=bad"
+                    "https://api.example.test/v1/builds?filter%5Bapp%5D=app-2&include=app%2CbuildBetaDetail%2CpreReleaseVersion&sort=-uploadedDate&limit=25&cursor=bad"
                 )
             ]
         ))
@@ -64,7 +86,7 @@ struct BuildsPaginationSecurityTests {
                 "app_id": .string("app-1"),
                 "processing_state": .string("VALID"),
                 "next_url": .string(
-                    "https://api.example.test/v1/builds?filter%5Bapp%5D=app-1&filter%5BprocessingState%5D=PROCESSING&include=app%2CbuildBetaDetail%2CpreReleaseVersion&sort=-uploadedDate&cursor=bad"
+                    "https://api.example.test/v1/builds?filter%5Bapp%5D=app-1&filter%5BprocessingState%5D=PROCESSING&include=app%2CbuildBetaDetail%2CpreReleaseVersion&sort=-uploadedDate&limit=25&cursor=bad"
                 )
             ]
         ))
@@ -83,7 +105,7 @@ struct BuildsPaginationSecurityTests {
             arguments: [
                 "app_id": .string("app-1"),
                 "next_url": .string(
-                    "https://api.example.test/v1/users?filter%5Bapp%5D=app-1&include=app%2CbuildBetaDetail%2CpreReleaseVersion&sort=-uploadedDate&cursor=bad"
+                    "https://api.example.test/v1/users?filter%5Bapp%5D=app-1&include=app%2CbuildBetaDetail%2CpreReleaseVersion&sort=-uploadedDate&limit=25&cursor=bad"
                 )
             ]
         ))
