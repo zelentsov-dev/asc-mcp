@@ -515,13 +515,7 @@ extension AppsWorker {
                 let versions = try await fetchAllVersions(appId: appId)
 
                 guard !versions.isEmpty else {
-                    return CallTool.Result(
-                        content: [MCPContent.text(JSONFormatter.formatJSON([
-                            "success": false,
-                            "error": "App \(appId) has no versions"
-                        ] as [String: Any]))],
-                        isError: true
-                    )
+                    return MCPResult.error("App \(appId) has no versions")
                 }
 
                 let platformVersions = platformFilter.map { platform in
@@ -536,12 +530,8 @@ extension AppsWorker {
                 if let stateFilter = versionStateFilter {
                     guard let match = platformVersions.first(where: { effectiveVersionState($0) == stateFilter }) else {
                         let available = Set(platformVersions.map(effectiveVersionState)).sorted().joined(separator: ", ")
-                        return CallTool.Result(
-                            content: [MCPContent.text(JSONFormatter.formatJSON([
-                                "success": false,
-                                "error": "Version with state '\(stateFilter)' not found. Available: \(available)"
-                            ] as [String: Any]))],
-                            isError: true
+                        return MCPResult.error(
+                            "Version with state '\(stateFilter)' not found. Available: \(available)"
                         )
                     }
                     selected = match
@@ -598,12 +588,8 @@ extension AppsWorker {
 
             // Check if locale filter returned empty results
             if let locale = locale, localizationsResponse.data.isEmpty {
-                return CallTool.Result(
-                    content: [MCPContent.text(JSONFormatter.formatJSON([
-                        "success": false,
-                        "error": "Localization '\(locale)' not found for version \(resolvedVersion.versionString)"
-                    ] as [String: Any]))],
-                    isError: true
+                return MCPResult.error(
+                    "Localization '\(locale)' not found for version \(resolvedVersion.versionString)"
                 )
             }
 

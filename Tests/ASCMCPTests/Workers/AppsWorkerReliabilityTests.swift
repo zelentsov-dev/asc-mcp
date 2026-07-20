@@ -299,6 +299,32 @@ struct AppsWorkerReliabilityTests {
         #expect(selected["appStoreState"] as? String == "READY_FOR_SALE")
     }
 
+    @Test("metadata selection returns a canonical structured error when the app has no versions")
+    func metadataSelectionWithoutVersionsReturnsCanonicalError() async throws {
+        let transport = TestHTTPTransport(responses: [
+            .init(statusCode: 200, body: versionsPage(versions: [], next: nil))
+        ])
+        let worker = try await makeAppsReliabilityWorker(transport)
+
+        let result = try await worker.handleTool(.init(
+            name: "apps_get_metadata",
+            arguments: ["app_id": .string("app-1")]
+        ))
+
+        #expect(result.isError == true)
+        guard case .object(let payload)? = result.structuredContent,
+              case .text(let humanText, _, _) = result.content.first,
+              case .text(let mirror, _, _) = result.content.last else {
+            Issue.record("Expected canonical structured metadata error")
+            return
+        }
+        #expect(humanText == "Error: App app-1 has no versions")
+        #expect(payload["success"] == .bool(false))
+        #expect(payload["error"] == .string("App app-1 has no versions"))
+        #expect(payload["details"] == .null)
+        #expect(mirror == (try MCPValue.compactJSONString(from: .object(payload))))
+    }
+
     @Test("metadata version pagination rejects missing or changed fixed limit")
     func metadataVersionPaginationRequiresFixedLimit() async throws {
         let projection = "platform%2CversionString%2CappVersionState%2CappStoreState%2CcreatedDate"
