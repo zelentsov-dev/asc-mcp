@@ -1276,9 +1276,13 @@ private func exportComplianceUploadResult(
        let documentID = payload["document_id"] as? String {
         let snapshotChecksum = payload["sourceFileChecksumReceipt"] as? String
         let storedChecksum = retainedDocument.attributes?.sourceFileChecksum
-        let checksumBindingConflict = storedChecksum.map {
+        let callerChecksumConflict = authoritativeChecksum.map {
+            $0 != snapshotChecksum
+        } ?? false
+        let storedChecksumConflict = storedChecksum.map {
             !exportComplianceIsLowercaseMD5($0) || $0 != snapshotChecksum
         } ?? false
+        let checksumBindingConflict = callerChecksumConflict || storedChecksumConflict
         if checksumBindingConflict {
             payload.removeValue(forKey: "sourceFileChecksumReceipt")
             payload["checksumBindingConflict"] = true

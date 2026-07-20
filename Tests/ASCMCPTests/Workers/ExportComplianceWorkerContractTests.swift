@@ -834,10 +834,10 @@ struct ExportComplianceWorkerContractTests {
         #expect(await apiTransport.recordedRequests().map(\.httpMethod) == ["GET"])
         #expect(await uploadTransport.requestCount() == 0)
         let payload = try exportComplianceObject(result.structuredContent)
-        #expect(payload["sourceFileChecksumReceipt"] == .string(exportComplianceHelloMD5))
-        let nextAction = try exportComplianceValueObject(payload["nextAction"])
-        let arguments = try exportComplianceValueObject(nextAction["arguments"])
-        #expect(arguments["source_file_checksum"] == .string(exportComplianceHelloMD5))
+        #expect(payload["checksumBindingConflict"] == .bool(true))
+        #expect(payload["sourceFileChecksumReceipt"] == nil)
+        #expect(payload["nextAction"] == nil)
+        #expect(payload["inspection"] != nil)
     }
 
     @Test("document upload requires the checksum already stored by Apple")
