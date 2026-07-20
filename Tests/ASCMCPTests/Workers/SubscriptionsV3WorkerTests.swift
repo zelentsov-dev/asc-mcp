@@ -878,6 +878,108 @@ struct SubscriptionsV3WorkerTests {
         #expect(!maximumBody.contains(#""minimum""#))
     }
 
+    @Test("one-time subscription code generation uses Apple top-level endpoint")
+    func oneTimeCodeGenerationUsesTopLevelEndpoint() async throws {
+        let transport = TestHTTPTransport(responses: [
+            .init(statusCode: 201, body: """
+            {
+              "data": {
+                "type": "subscriptionOfferCodeOneTimeUseCodes",
+                "id": "batch-1",
+                "attributes": {
+                  "numberOfCodes": 2,
+                  "createdDate": "2026-07-20T04:00:00Z",
+                  "expirationDate": "2026-12-31",
+                  "active": true,
+                  "environment": "SANDBOX"
+                }
+              }
+            }
+            """)
+        ])
+        let worker = try await makeWorker(transport: transport)
+
+        let result = try await worker.handleTool(CallTool.Parameters(
+            name: "subscriptions_generate_one_time_codes",
+            arguments: [
+                "offer_code_id": .string("offer-1"),
+                "number_of_codes": .int(2),
+                "expiration_date": .string("2026-12-31"),
+                "environment": .string("SANDBOX")
+            ]
+        ))
+
+        #expect(result.isError != true)
+        let request = try #require(await transport.recordedRequests().first)
+        #expect(request.httpMethod == "POST")
+        #expect(request.url?.path == "/v1/subscriptionOfferCodeOneTimeUseCodes")
+        #expect(request.url?.query == nil)
+        let body = try #require(await transport.recordedBodyStrings().first)
+        let json = try JSONSerialization.jsonObject(with: Data(body.utf8))
+        let payload = try #require(json as? [String: Any])
+        let data = try #require(payload["data"] as? [String: Any])
+        let attributes = try #require(data["attributes"] as? [String: Any])
+        let relationships = try #require(data["relationships"] as? [String: Any])
+        let offerCode = try #require(relationships["offerCode"] as? [String: Any])
+        let offerCodeData = try #require(offerCode["data"] as? [String: Any])
+        #expect(data["type"] as? String == "subscriptionOfferCodeOneTimeUseCodes")
+        #expect(attributes["numberOfCodes"] as? Int == 2)
+        #expect(attributes["expirationDate"] as? String == "2026-12-31")
+        #expect(attributes["environment"] as? String == "SANDBOX")
+        #expect(offerCodeData["type"] as? String == "subscriptionOfferCodes")
+        #expect(offerCodeData["id"] as? String == "offer-1")
+        let root = try object(result.structuredContent)
+        let code = try object(root["one_time_code"])
+        #expect(code["id"] == .string("batch-1"))
+        #expect(code["environment"] == .string("SANDBOX"))
+    }
+
+    @Test("invalid one-time code environment fails before network")
+    func invalidOneTimeCodeEnvironmentFailsBeforeNetwork() async throws {
+        let transport = TestHTTPTransport(responses: [])
+        let worker = try await makeWorker(transport: transport)
+
+        let result = try await worker.handleTool(CallTool.Parameters(
+            name: "subscriptions_generate_one_time_codes",
+            arguments: [
+                "offer_code_id": .string("offer-1"),
+                "number_of_codes": .int(2),
+                "expiration_date": .string("2026-12-31"),
+                "environment": .string("TEST")
+            ]
+        ))
+
+        #expect(result.isError == true)
+        #expect(await transport.requestCount() == 0)
+        #expect(text(result).contains("PRODUCTION or SANDBOX"))
+    }
+
+    @Test("one-time subscription code values preserve Apple CSV")
+    func oneTimeCodeValuesPreserveCSV() async throws {
+        let csv = "code\r\n\"ABC,123\"\r\nXYZ789\r\n"
+        let transport = TestHTTPTransport(responses: [
+            .init(statusCode: 200, headers: ["Content-Type": "text/csv"], body: csv)
+        ])
+        let worker = try await makeWorker(transport: transport)
+
+        let result = try await worker.handleTool(CallTool.Parameters(
+            name: "subscriptions_get_one_time_code_values",
+            arguments: ["one_time_code_id": .string("batch-1")]
+        ))
+
+        #expect(result.isError != true)
+        let request = try #require(await transport.recordedRequests().first)
+        #expect(request.httpMethod == "GET")
+        #expect(request.url?.path == "/v1/subscriptionOfferCodeOneTimeUseCodes/batch-1/values")
+        #expect(request.url?.query == nil)
+        #expect(request.value(forHTTPHeaderField: "Accept") == "text/csv")
+        let root = try object(result.structuredContent)
+        #expect(root["one_time_code_id"] == .string("batch-1"))
+        #expect(root["media_type"] == .string("text/csv"))
+        #expect(root["values_csv"] == .string(csv))
+        #expect(root["byte_count"] == .int(Data(csv.utf8).count))
+    }
+
     @Test("subscription images list uses Apple images relationship endpoint")
     func subscriptionImagesListUsesOfficialEndpoint() async throws {
         let transport = TestHTTPTransport(responses: [
@@ -903,6 +1005,7 @@ struct SubscriptionsV3WorkerTests {
         let createWinBack = try #require(tools.first { $0.name == "subscriptions_create_winback_offer" })
         let updateWinBack = try #require(tools.first { $0.name == "subscriptions_update_winback_offer" })
         let createOfferCode = try #require(tools.first { $0.name == "subscriptions_create_offer_code" })
+        let generateOneTimeCodes = try #require(tools.first { $0.name == "subscriptions_generate_one_time_codes" })
 
         let createProperties = try object(try object(createWinBack.inputSchema)["properties"])
         let createDuration = try object(createProperties["eligibility_duration_months"])
@@ -928,14 +1031,16 @@ struct SubscriptionsV3WorkerTests {
         #expect(try array(updateDuration["enum"]).contains(.null))
         let minimumRange = try object(updateProperties["eligibility_time_since_last_months_min"])
         let maximumRange = try object(updateProperties["eligibility_time_since_last_months_max"])
-        #expect(try array(minimumRange["type"]).contains(.null))
-        #expect(try array(maximumRange["type"]).contains(.null))
+        #expect(try array(minimumRange["type"]).contains(.string("null")))
+        #expect(try array(maximumRange["type"]).contains(.string("null")))
         #expect(try object(updateProperties["end_date"])["format"] == .string("date"))
 
         let offerProperties = try object(try object(createOfferCode.inputSchema)["properties"])
         let customerEligibilityItems = try object(try object(offerProperties["customer_eligibilities"])["items"])
         #expect(try array(customerEligibilityItems["enum"]) == [.string("NEW"), .string("EXISTING"), .string("EXPIRED")])
         #expect(try object(offerProperties["customer_eligibilities"])["uniqueItems"] == .bool(true))
+        let oneTimeProperties = try object(try object(generateOneTimeCodes.inputSchema)["properties"])
+        #expect(try array(try object(oneTimeProperties["environment"])["enum"]) == [.string("PRODUCTION"), .string("SANDBOX")])
     }
 
     @Test("introductory offer creation preserves territory_id for Apple relationship")

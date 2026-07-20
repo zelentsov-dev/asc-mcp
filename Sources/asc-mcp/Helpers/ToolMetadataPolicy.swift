@@ -19,6 +19,9 @@ enum ToolMetadataPolicy {
         if analyticsHeavyTools.contains(toolName) {
             return 500_000
         }
+        if largeResultTools.contains(toolName) {
+            return 500_000
+        }
         if toolName.contains("crash_log") {
             return 500_000
         }
@@ -54,6 +57,10 @@ enum ToolMetadataPolicy {
         "analytics_financial_report",
         "analytics_get_report",
         "analytics_app_summary"
+    ]
+
+    private static let largeResultTools: Set<String> = [
+        "subscriptions_get_one_time_code_values"
     ]
 
     private static let readOnlyMarkers = [

@@ -76,6 +76,7 @@ public struct OneTimeUseCodeAttributes: Codable, Sendable {
     public let createdDate: String?
     public let expirationDate: String?
     public let active: Bool?
+    public let environment: String?
 }
 
 // MARK: - Offer Code Custom Code Models
@@ -230,6 +231,7 @@ public struct GenerateOneTimeCodesRequest: Codable, Sendable {
     public struct Attributes: Codable, Sendable {
         public let numberOfCodes: Int
         public let expirationDate: String
+        public let environment: String?
     }
 
     public struct Relationships: Codable, Sendable {

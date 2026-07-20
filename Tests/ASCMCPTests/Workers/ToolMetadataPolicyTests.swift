@@ -94,6 +94,9 @@ struct ToolMetadataPolicyTests {
         let crashLog = ToolMetadataPolicy.apply(to: Self.sampleTool(named: "beta_feedback_get_crash_log"))
         #expect(crashLog._meta?.fields["anthropic/maxResultSizeChars"] == Value.int(500_000))
 
+        let offerCodes = ToolMetadataPolicy.apply(to: Self.sampleTool(named: "subscriptions_get_one_time_code_values"))
+        #expect(offerCodes._meta?.fields["anthropic/maxResultSizeChars"] == Value.int(500_000))
+
         let list = ToolMetadataPolicy.apply(to: Self.sampleTool(named: "apps_list"))
         #expect(list._meta?.fields["anthropic/maxResultSizeChars"] == Value.int(200_000))
 

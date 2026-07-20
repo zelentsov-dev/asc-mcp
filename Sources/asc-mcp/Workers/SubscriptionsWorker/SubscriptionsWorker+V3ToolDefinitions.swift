@@ -34,7 +34,7 @@ extension SubscriptionsWorker {
             simpleTool("subscriptions_update_offer_code", "Update an offer code", ["offer_code_id": "Offer code ID", "active": "Whether active"], ["offer_code_id"]),
             simpleTool("subscriptions_deactivate_offer_code", "Deactivate an offer code", ["offer_code_id": "Offer code ID"], ["offer_code_id"]),
             simpleTool("subscriptions_list_offer_code_prices", "List offer code prices", ["offer_code_id": "Offer code ID", "territory_id": "Optional territory filter", "limit": "Max results", "next_url": "Pagination URL"], ["offer_code_id"]),
-            simpleTool("subscriptions_generate_one_time_codes", "Generate one-time offer codes", ["offer_code_id": "Offer code ID", "number_of_codes": "Number of codes", "expiration_date": "Expiration date"], ["offer_code_id", "number_of_codes", "expiration_date"]),
+            simpleTool("subscriptions_generate_one_time_codes", "Generate one-time offer codes", ["offer_code_id": "Offer code ID", "number_of_codes": "Number of codes", "expiration_date": "Expiration date", "environment": "Optional environment"], ["offer_code_id", "number_of_codes", "expiration_date"]),
             simpleTool("subscriptions_list_one_time_codes", "List one-time offer codes", ["offer_code_id": "Offer code ID", "limit": "Max results", "next_url": "Pagination URL"], ["offer_code_id"]),
             simpleTool("subscriptions_get_one_time_code", "Get one-time offer code batch", ["one_time_code_id": "One-time code resource ID"], ["one_time_code_id"]),
             simpleTool("subscriptions_get_one_time_code_values", "Get generated one-time code values", ["one_time_code_id": "One-time code resource ID"], ["one_time_code_id"]),
@@ -82,11 +82,8 @@ extension SubscriptionsWorker {
             "promotion_intent"
         ]
         let isNullable = toolName == "subscriptions_update_winback_offer" && nullableWinBackFields.contains(key)
-        let nullableType: Value = key.hasSuffix("_months_min") || key.hasSuffix("_months_max")
-            ? .null
-            : .string("null")
         var schema: [String: Value] = [
-            "type": isNullable ? .array([.string(baseType), nullableType]) : .string(baseType),
+            "type": isNullable ? .array([.string(baseType), .string("null")]) : .string(baseType),
             "description": .string(description)
         ]
 
@@ -115,7 +112,8 @@ extension SubscriptionsWorker {
             "duration": ["THREE_DAYS", "ONE_WEEK", "TWO_WEEKS", "ONE_MONTH", "TWO_MONTHS", "THREE_MONTHS", "SIX_MONTHS", "ONE_YEAR"],
             "target_subscription_plan_type": ["MONTHLY", "UPFRONT"],
             "priority": ["HIGH", "NORMAL"],
-            "promotion_intent": ["NOT_PROMOTED", "USE_AUTO_GENERATED_ASSETS"]
+            "promotion_intent": ["NOT_PROMOTED", "USE_AUTO_GENERATED_ASSETS"],
+            "environment": ["PRODUCTION", "SANDBOX"]
         ]
         if let values = stringEnums[key] {
             var enumValues = values.map(Value.string)

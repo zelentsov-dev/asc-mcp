@@ -166,11 +166,18 @@ extension OfferCodesWorker {
                     ]),
                     "number_of_codes": .object([
                         "type": .string("integer"),
+                        "minimum": .int(1),
                         "description": .string("Number of one-time codes to generate")
                     ]),
                     "expiration_date": .object([
                         "type": .string("string"),
+                        "format": .string("date"),
                         "description": .string("Expiration date (ISO 8601 format, e.g. 2025-12-31)")
+                    ]),
+                    "environment": .object([
+                        "type": .string("string"),
+                        "enum": .array([.string("PRODUCTION"), .string("SANDBOX")]),
+                        "description": .string("Optional App Store offer-code environment")
                     ])
                 ]),
                 "required": .array([.string("offer_code_id"), .string("number_of_codes"), .string("expiration_date")])

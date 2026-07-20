@@ -1339,16 +1339,36 @@
           "sourceKind": "requestBody",
           "operationId": "subscriptionOfferCodeOneTimeUseCodes_createInstance",
           "jsonPointer": "/data/attributes/expirationDate"
+        },
+        {
+          "toolField": "environment",
+          "sourceKind": "requestBody",
+          "operationId": "subscriptionOfferCodeOneTimeUseCodes_createInstance",
+          "jsonPointer": "/data/attributes/environment"
         }
       ],
       "response": {
-        "mode": "opaque",
+        "mode": "projection",
         "sources": [
           { "operationId": "subscriptionOfferCodeOneTimeUseCodes_createInstance", "statusCode": "201", "mediaType": "application/json" }
         ],
-        "fields": []
+        "fields": [
+          {
+            "outputField": "success",
+            "localRole": "Set true after Apple creates the one-time code batch."
+          },
+          {
+            "outputField": "one_time_code",
+            "operationId": "subscriptionOfferCodeOneTimeUseCodes_createInstance",
+            "jsonPointer": "/data"
+          },
+          {
+            "outputField": "message",
+            "localRole": "Human-readable confirmation derived from number_of_codes."
+          }
+        ]
       },
-      "note": "Apple create is POST /v1/subscriptionOfferCodeOneTimeUseCodes. The current nested POST implementation must migrate to this operation and relationship body."
+      "note": "Uses Apple's top-level create endpoint and required offerCode relationship body."
     },
     {
       "tool": "subscriptions_get",
@@ -1672,7 +1692,7 @@
         }
       ],
       "response": {
-        "mode": "opaque",
+        "mode": "projection",
         "sources": [
           {
             "operationId": "subscriptionOfferCodeOneTimeUseCodes_values_getToOneRelated",
@@ -1680,9 +1700,30 @@
             "mediaType": "text/csv"
           }
         ],
-        "fields": []
+        "fields": [
+          {
+            "outputField": "success",
+            "localRole": "Set true after a successful Apple response."
+          },
+          {
+            "outputField": "one_time_code_id",
+            "localRole": "Echoes the validated resource ID used in the request path."
+          },
+          {
+            "outputField": "media_type",
+            "localRole": "Reports the requested and documented Apple response media type text/csv."
+          },
+          {
+            "outputField": "values_csv",
+            "localRole": "UTF-8 decoding of the Apple text/csv response body without parsing or normalization."
+          },
+          {
+            "outputField": "byte_count",
+            "localRole": "Byte count of the raw Apple response body before UTF-8 decoding."
+          }
+        ]
       },
-      "note": "Apple returns text/csv, not JSON. The transport must preserve the CSV payload and content type."
+      "note": "Apple returns text/csv with no query parameters; the handler preserves the UTF-8 CSV payload without JSON decoding."
     },
     {
       "tool": "subscriptions_get_price_point",

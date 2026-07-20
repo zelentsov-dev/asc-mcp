@@ -614,12 +614,24 @@ extension SubscriptionsWorker {
         guard let oneTimeCodeId = params.arguments?["one_time_code_id"]?.stringValue else {
             return MCPResult.error("Required parameter 'one_time_code_id' is missing")
         }
-        return try await listResources(
-            params,
-            endpoint: "/v1/subscriptionOfferCodeOneTimeUseCodes/\(try ASCPathSegment.encode(oneTimeCodeId))/values",
-            key: "values",
-            defaultQuery: [:]
-        )
+        do {
+            let data = try await httpClient.getRaw(
+                "/v1/subscriptionOfferCodeOneTimeUseCodes/\(try ASCPathSegment.encode(oneTimeCodeId))/values",
+                accept: "text/csv"
+            )
+            guard let csv = String(data: data, encoding: .utf8) else {
+                return MCPResult.error("Apple returned one-time code values that are not valid UTF-8 CSV")
+            }
+            return MCPResult.jsonObject([
+                "success": true,
+                "one_time_code_id": oneTimeCodeId,
+                "media_type": "text/csv",
+                "values_csv": csv,
+                "byte_count": data.count
+            ])
+        } catch {
+            return MCPResult.error("Failed to get one-time code values: \(error.localizedDescription)")
+        }
     }
 
     private func updateSubscriptionCustomCode(_ params: CallTool.Parameters) async throws -> CallTool.Result {

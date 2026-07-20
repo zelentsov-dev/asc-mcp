@@ -401,12 +401,27 @@ extension OfferCodesWorker {
             )
         }
 
+        guard numberOfCodes > 0 else {
+            return MCPResult.error("Parameter 'number_of_codes' must be at least 1")
+        }
+        let environment: String?
+        if let environmentValue = arguments["environment"] {
+            guard let parsedEnvironment = environmentValue.stringValue,
+                  ["PRODUCTION", "SANDBOX"].contains(parsedEnvironment) else {
+                return MCPResult.error("Parameter 'environment' must be PRODUCTION or SANDBOX")
+            }
+            environment = parsedEnvironment
+        } else {
+            environment = nil
+        }
+
         do {
             let request = GenerateOneTimeCodesRequest(
                 data: GenerateOneTimeCodesRequest.CreateData(
                     attributes: GenerateOneTimeCodesRequest.Attributes(
                         numberOfCodes: numberOfCodes,
-                        expirationDate: expirationDate
+                        expirationDate: expirationDate,
+                        environment: environment
                     ),
                     relationships: GenerateOneTimeCodesRequest.Relationships(
                         offerCode: GenerateOneTimeCodesRequest.OfferCodeRelationship(
@@ -417,7 +432,7 @@ extension OfferCodesWorker {
             )
 
             let response: ASCOneTimeUseCodeResponse = try await httpClient.post(
-                "/v1/subscriptionOfferCodes/\(try ASCPathSegment.encode(offerCodeId))/oneTimeUseCodes",
+                "/v1/subscriptionOfferCodeOneTimeUseCodes",
                 body: request,
                 as: ASCOneTimeUseCodeResponse.self
             )
@@ -678,7 +693,8 @@ extension OfferCodesWorker {
             "numberOfCodes": (code.attributes?.numberOfCodes).jsonSafe,
             "createdDate": (code.attributes?.createdDate).jsonSafe,
             "expirationDate": (code.attributes?.expirationDate).jsonSafe,
-            "active": (code.attributes?.active).jsonSafe
+            "active": (code.attributes?.active).jsonSafe,
+            "environment": (code.attributes?.environment).jsonSafe
         ]
     }
 }
