@@ -431,7 +431,7 @@ extension AppLifecycleWorker {
                         "description": .string("Exact phased_release_id required to confirm cancellation of an eligible planned rollout")
                     ])
                 ]),
-                "required": .array([.string("phased_release_id")])
+                "required": .array([.string("phased_release_id"), .string("confirm_phased_release_id")])
             ])
         )
     }

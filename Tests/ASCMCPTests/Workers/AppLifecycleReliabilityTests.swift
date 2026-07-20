@@ -50,6 +50,7 @@ struct AppLifecycleReliabilityTests {
         let create = try lifecycleReliabilityProperties(try #require(tools.first { $0.name == "app_versions_create" }))
         let update = try lifecycleReliabilityProperties(try #require(tools.first { $0.name == "app_versions_update" }))
         let age = try lifecycleReliabilityProperties(try #require(tools.first { $0.name == "app_versions_update_age_rating" }))
+        let deletePhased = try #require(tools.first { $0.name == "app_versions_delete_phased_release" })
 
         #expect(list["states"] != nil)
         #expect(list["states"]?.objectValue?["deprecated"]?.boolValue == true)
@@ -69,6 +70,9 @@ struct AppLifecycleReliabilityTests {
         #expect(update["downloadable"]?.objectValue?["type"]?.arrayValue?.compactMap(\.stringValue) == ["boolean", "null"])
         #expect(age["kids_age_band"]?.objectValue?["type"]?.arrayValue?.compactMap(\.stringValue) == ["string", "null"])
         #expect(tools.contains { $0.name == "app_versions_delete_phased_release" })
+        #expect(Set(deletePhased.inputSchema.objectValue?["required"]?.arrayValue?.compactMap(\.stringValue) ?? []) == [
+            "phased_release_id", "confirm_phased_release_id"
+        ])
     }
 
     @Test("version filters preserve deprecated and current state semantics")
