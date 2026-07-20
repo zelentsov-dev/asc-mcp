@@ -683,7 +683,11 @@ enum UploadTransactionRecovery {
                 descriptor.successKey: format(resource),
                 "cleanup": retainedGuidance(
                     resourceID: resource.id,
-                    reason: "Automatic deletion was not attempted because Apple is still processing the committed upload.",
+                    reason: postCommitRetentionReason(
+                        deletable: descriptor.deleteTool != nil,
+                        deletableReason: "Automatic deletion was not attempted because Apple is still processing the committed upload.",
+                        retainedReason: "The API exposes no cleanup operation for this resource. Inspect the processing state in App Store Connect or contact Apple Support."
+                    ),
                     descriptor: descriptor
                 )
             ]
@@ -751,6 +755,14 @@ enum UploadTransactionRecovery {
 
         case .commitFailed(let message, let resource):
             let safeMessage = Redactor.redact(message)
+            let retentionReason = postCommitRetentionReason(
+                deletable: descriptor.deleteTool != nil,
+                deletableReason: "Automatic deletion was not attempted after commit; inspect the terminal failure before deleting.",
+                retainedReason: "The API exposes no cleanup operation for this resource. Inspect the terminal failure in App Store Connect or contact Apple Support."
+            )
+            let retentionText = descriptor.deleteTool == nil
+                ? "The failed resource was retained for inspection in App Store Connect or with Apple Support."
+                : "The failed resource was retained for inspection and explicit deletion."
             return (
                 [
                     "success": false,
@@ -761,18 +773,26 @@ enum UploadTransactionRecovery {
                     "deliveryPending": false,
                     "cleanup": retainedGuidance(
                         resourceID: resource.id,
-                        reason: "Automatic deletion was not attempted after commit; inspect the terminal failure before deleting.",
+                        reason: retentionReason,
                         descriptor: descriptor
                     ),
                     "reservationDeleted": false,
                     "retrySafe": false
                 ],
-                "Error: \(safeMessage) The failed resource was retained for inspection and explicit deletion.",
+                "Error: \(safeMessage) \(retentionText)",
                 true
             )
 
         case .commitUnresolved(let message, let resource):
             let safeMessage = Redactor.redact(message)
+            let retentionReason = postCommitRetentionReason(
+                deletable: descriptor.deleteTool != nil,
+                deletableReason: "Automatic deletion was not attempted because the commit or processing outcome is unresolved.",
+                retainedReason: "The API exposes no cleanup operation for this resource. Inspect the unresolved outcome in App Store Connect or contact Apple Support."
+            )
+            let retentionText = descriptor.deleteTool == nil
+                ? "The reservation was retained. Inspect it in App Store Connect or contact Apple Support before starting another upload."
+                : "The reservation was retained. Inspect it before deleting or starting another upload."
             return (
                 [
                     "success": false,
@@ -783,13 +803,13 @@ enum UploadTransactionRecovery {
                     "deliveryPending": true,
                     "cleanup": retainedGuidance(
                         resourceID: resource.id,
-                        reason: "Automatic deletion was not attempted because the commit or processing outcome is unresolved.",
+                        reason: retentionReason,
                         descriptor: descriptor
                     ),
                     "reservationDeleted": false,
                     "retrySafe": false
                 ],
-                "Error: \(safeMessage) The reservation was retained. Inspect it before deleting or starting another upload.",
+                "Error: \(safeMessage) \(retentionText)",
                 true
             )
         }
@@ -844,6 +864,14 @@ enum UploadTransactionRecovery {
             value["inspectTool"] = descriptor.inspectionTool
         }
         return value
+    }
+
+    private static func postCommitRetentionReason(
+        deletable: Bool,
+        deletableReason: String,
+        retainedReason: String
+    ) -> String {
+        deletable ? deletableReason : retainedReason
     }
 
     private static func inspectionGuidance(_ descriptor: UploadRecoveryDescriptor) -> [String: Any] {

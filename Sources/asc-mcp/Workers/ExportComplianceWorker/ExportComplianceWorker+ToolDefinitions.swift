@@ -19,7 +19,7 @@ extension ExportComplianceWorker {
                     "next_url": .object([
                         "type": .string("string"),
                         "minLength": .int(1),
-                        "description": .string("Unmodified next_url returned by this tool")
+                        "description": .string("Unmodified next_url returned by this tool; its validated original limit is preserved when limit is omitted")
                     ])
                 ],
                 required: ["app_id"]
@@ -106,11 +106,11 @@ extension ExportComplianceWorker {
                     "source_file_checksum": .object([
                         "type": .array([.string("string"), .string("null")]),
                         "minLength": .int(1),
-                        "description": .string("MD5 checksum, or null to clear it")
+                        "description": .string("MD5 checksum, or JSON null to send an explicit nullable value")
                     ]),
                     "uploaded": .object([
                         "type": .array([.string("boolean"), .string("null")]),
-                        "description": .string("Upload completion flag, or null to clear it")
+                        "description": .string("Upload completion flag, or JSON null to send an explicit nullable value")
                     ])
                 ],
                 required: ["document_id"]

@@ -16,13 +16,13 @@ struct ExportComplianceWorkerContractTests {
         let worker = try await exportComplianceWorker(apiTransport: transport)
         let result = try await worker.handleTool(.init(
             name: "export_compliance_list_declarations",
-            arguments: ["app_id": .string("app/one"), "limit": .int(37)]
+            arguments: ["app_id": .string("app-one"), "limit": .int(37)]
         ))
 
         #expect(result.isError != true)
         let request = try #require(await transport.recordedRequests().first)
         #expect(request.httpMethod == "GET")
-        #expect(try exportComplianceEncodedPath(request) == "/v1/apps/app%2Fone/appEncryptionDeclarations")
+        #expect(try exportComplianceEncodedPath(request) == "/v1/apps/app-one/appEncryptionDeclarations")
         let query = try exportComplianceQuery(request)
         #expect(query["limit"] == "37")
         #expect(query["fields[appEncryptionDeclarations]"] == exportComplianceTestDeclarationFields)
@@ -52,6 +52,43 @@ struct ExportComplianceWorkerContractTests {
         #expect(result.isError == true)
         #expect(await transport.requestCount() == 0)
         #expect(exportComplianceText(result).contains("outside the allowed set"))
+    }
+
+    @Test("continuation preserves a validated nondefault limit when limit is omitted")
+    func nondefaultLimitContinuation() async throws {
+        let transport = TestHTTPTransport(responses: [
+            .init(statusCode: 200, body: #"{"data":[],"meta":{"paging":{"total":4,"limit":37}}}"#)
+        ])
+        let worker = try await exportComplianceWorker(apiTransport: transport)
+        let nextURL = exportComplianceNextURL(
+            appID: "app-1",
+            limit: 37,
+            additions: ["cursor": "next-page"]
+        )
+        let result = try await worker.handleTool(.init(
+            name: "export_compliance_list_declarations",
+            arguments: [
+                "app_id": .string("app-1"),
+                "next_url": .string(nextURL)
+            ]
+        ))
+
+        #expect(result.isError != true)
+        let request = try #require(await transport.recordedRequests().first)
+        #expect(try exportComplianceQuery(request)["limit"] == "37")
+
+        let mismatchTransport = TestHTTPTransport(responses: [])
+        let mismatchWorker = try await exportComplianceWorker(apiTransport: mismatchTransport)
+        let mismatch = try await mismatchWorker.handleTool(.init(
+            name: "export_compliance_list_declarations",
+            arguments: [
+                "app_id": .string("app-1"),
+                "limit": .int(25),
+                "next_url": .string(nextURL)
+            ]
+        ))
+        #expect(mismatch.isError == true)
+        #expect(await mismatchTransport.requestCount() == 0)
     }
 
     @Test("declaration create sends exact required questionnaire body")
@@ -90,6 +127,10 @@ struct ExportComplianceWorkerContractTests {
         let app = try exportComplianceDictionary(relationships["app"])
         let linkage = try exportComplianceDictionary(app["data"])
         #expect(linkage as NSDictionary == ["type": "apps", "id": "app-1"] as NSDictionary)
+        let payload = try exportComplianceObject(result.structuredContent)
+        #expect(payload["creationState"] == .string("confirmed"))
+        #expect(payload["commitConfirmed"] == .bool(true))
+        #expect(payload["retrySafe"] == .bool(false))
     }
 
     @Test("declaration create rejects nullable or nonboolean questionnaire answers")
@@ -112,12 +153,90 @@ struct ExportComplianceWorkerContractTests {
         #expect(await transport.requestCount() == 0)
     }
 
+    @Test("declaration create distinguishes committed, unknown, and rejected outcomes")
+    func createDeclarationMutationOutcomes() async throws {
+        let malformedTransport = TestHTTPTransport(responses: [
+            .init(statusCode: 201, body: #"{}"#)
+        ])
+        let malformedWorker = try await exportComplianceWorker(apiTransport: malformedTransport)
+        let malformed = try await malformedWorker.handleTool(.init(
+            name: "export_compliance_create_declaration",
+            arguments: exportComplianceDeclarationCreateArguments()
+        ))
+        let malformedDetails = try exportComplianceErrorDetails(malformed)
+        #expect(malformed.isError == true)
+        #expect(malformedDetails["creationState"] == .string("committed_unverified"))
+        #expect(malformedDetails["commitConfirmed"] == .bool(true))
+        #expect(malformedDetails["retrySafe"] == .bool(false))
+        let malformedInspection = try exportComplianceValueObject(malformedDetails["inspection"])
+        #expect(malformedInspection["tool"] == .string("export_compliance_list_declarations"))
+
+        for invalidID in ["", "   ", " declaration-1 "] {
+            let identityTransport = TestHTTPTransport(responses: [
+                .init(
+                    statusCode: 201,
+                    body: exportComplianceDeclarationResponse(id: invalidID, state: "CREATED")
+                )
+            ])
+            let identityWorker = try await exportComplianceWorker(apiTransport: identityTransport)
+            let identity = try await identityWorker.handleTool(.init(
+                name: "export_compliance_create_declaration",
+                arguments: exportComplianceDeclarationCreateArguments()
+            ))
+            let identityDetails = try exportComplianceErrorDetails(identity)
+            #expect(identityDetails["creationState"] == .string("committed_unverified"))
+            #expect(identityDetails["commitConfirmed"] == .bool(true))
+            #expect(identityDetails["retrySafe"] == .bool(false))
+        }
+
+        let unknownTransport = ExportComplianceScriptTransport(steps: [.networkFailure])
+        let unknownWorker = try await exportComplianceWorker(apiTransport: unknownTransport)
+        let unknown = try await unknownWorker.handleTool(.init(
+            name: "export_compliance_create_declaration",
+            arguments: exportComplianceDeclarationCreateArguments()
+        ))
+        let unknownDetails = try exportComplianceErrorDetails(unknown)
+        #expect(unknownDetails["creationState"] == .string("commit_unknown"))
+        #expect(unknownDetails["commitConfirmed"] == .bool(false))
+        #expect(unknownDetails["retrySafe"] == .bool(false))
+        #expect(unknownDetails["inspection"] != nil)
+
+        for statusCode in [408, 500] {
+            let statusTransport = TestHTTPTransport(responses: [
+                .init(statusCode: statusCode, body: exportComplianceAPIError(statusCode))
+            ])
+            let statusWorker = try await exportComplianceWorker(apiTransport: statusTransport)
+            let statusResult = try await statusWorker.handleTool(.init(
+                name: "export_compliance_create_declaration",
+                arguments: exportComplianceDeclarationCreateArguments()
+            ))
+            let statusDetails = try exportComplianceErrorDetails(statusResult)
+            #expect(statusDetails["creationState"] == .string("commit_unknown"))
+            #expect(statusDetails["commitConfirmed"] == .bool(false))
+            #expect(statusDetails["retrySafe"] == .bool(false))
+        }
+
+        let rejectedTransport = TestHTTPTransport(responses: [
+            .init(statusCode: 422, body: exportComplianceAPIError(422))
+        ])
+        let rejectedWorker = try await exportComplianceWorker(apiTransport: rejectedTransport)
+        let rejected = try await rejectedWorker.handleTool(.init(
+            name: "export_compliance_create_declaration",
+            arguments: exportComplianceDeclarationCreateArguments()
+        ))
+        let rejectedDetails = try exportComplianceErrorDetails(rejected)
+        #expect(rejectedDetails["creationState"] == .string("rejected"))
+        #expect(rejectedDetails["commitConfirmed"] == .bool(false))
+        #expect(rejectedDetails["retrySafe"] == .bool(true))
+        #expect(rejectedDetails["inspection"] == nil)
+    }
+
     @Test("document create preflights state and absence, then reserves exact snapshot metadata")
     func createDocumentContract() async throws {
         let fileURL = try exportComplianceFile(Data("hello".utf8))
         defer { try? FileManager.default.removeItem(at: fileURL) }
         let transport = TestHTTPTransport(responses: [
-            .init(statusCode: 200, body: exportComplianceDeclarationResponse(id: "decl/1", state: "CREATED")),
+            .init(statusCode: 200, body: exportComplianceDeclarationResponse(id: "decl-1", state: "CREATED")),
             .init(statusCode: 404, body: exportComplianceAPIError(404)),
             .init(
                 statusCode: 201,
@@ -134,7 +253,7 @@ struct ExportComplianceWorkerContractTests {
         let result = try await worker.handleTool(.init(
             name: "export_compliance_create_document",
             arguments: [
-                "declaration_id": .string("decl/1"),
+                "declaration_id": .string("decl-1"),
                 "file_path": .string(fileURL.path)
             ]
         ))
@@ -142,8 +261,8 @@ struct ExportComplianceWorkerContractTests {
         #expect(result.isError != true)
         let requests = await transport.recordedRequests()
         #expect(requests.map(\.httpMethod) == ["GET", "GET", "POST"])
-        #expect(try exportComplianceEncodedPath(requests[0]) == "/v1/appEncryptionDeclarations/decl%2F1")
-        #expect(try exportComplianceEncodedPath(requests[1]) == "/v1/appEncryptionDeclarations/decl%2F1/appEncryptionDeclarationDocument")
+        #expect(try exportComplianceEncodedPath(requests[0]) == "/v1/appEncryptionDeclarations/decl-1")
+        #expect(try exportComplianceEncodedPath(requests[1]) == "/v1/appEncryptionDeclarations/decl-1/appEncryptionDeclarationDocument")
         #expect(requests[2].url?.path == "/v1/appEncryptionDeclarationDocuments")
         let data = try exportComplianceBodyData(requests[2])
         let attributes = try exportComplianceDictionary(data["attributes"])
@@ -151,6 +270,8 @@ struct ExportComplianceWorkerContractTests {
         #expect(attributes["fileName"] as? String == fileURL.lastPathComponent)
         let payload = try exportComplianceObject(result.structuredContent)
         #expect(payload["reservationCreated"] == .bool(true))
+        #expect(payload["reservationState"] == .string("confirmed"))
+        #expect(payload["commitConfirmed"] == .bool(true))
         #expect(payload["uploadCommitted"] == .bool(false))
         #expect(payload["retrySafe"] == .bool(false))
         exportComplianceExpectNoSecrets(result)
@@ -173,6 +294,89 @@ struct ExportComplianceWorkerContractTests {
         #expect(result.isError == true)
         #expect(await transport.recordedRequests().map(\.httpMethod) == ["GET", "GET"])
         #expect(exportComplianceText(result).contains("already has a document reservation"))
+    }
+
+    @Test("document reservation distinguishes committed, unknown, and rejected outcomes")
+    func createDocumentMutationOutcomes() async throws {
+        let fileURL = try exportComplianceFile(Data("hello".utf8))
+        defer { try? FileManager.default.removeItem(at: fileURL) }
+        let arguments: [String: Value] = [
+            "declaration_id": .string("declaration-1"),
+            "file_path": .string(fileURL.path)
+        ]
+
+        let malformedTransport = TestHTTPTransport(responses: [
+            .init(statusCode: 200, body: exportComplianceDeclarationResponse(id: "declaration-1", state: "CREATED")),
+            .init(statusCode: 404, body: exportComplianceAPIError(404)),
+            .init(statusCode: 201, body: #"{}"#)
+        ])
+        let malformedWorker = try await exportComplianceWorker(apiTransport: malformedTransport)
+        let malformed = try await malformedWorker.handleTool(.init(
+            name: "export_compliance_create_document",
+            arguments: arguments
+        ))
+        let malformedDetails = try exportComplianceErrorDetails(malformed)
+        #expect(malformedDetails["reservationState"] == .string("committed_unverified"))
+        #expect(malformedDetails["commitConfirmed"] == .bool(true))
+        #expect(malformedDetails["retrySafe"] == .bool(false))
+        #expect(malformedDetails["inspection"] != nil)
+
+        for invalidID in ["", "   ", " document-1 "] {
+            let identityTransport = TestHTTPTransport(responses: [
+                .init(statusCode: 200, body: exportComplianceDeclarationResponse(id: "declaration-1", state: "CREATED")),
+                .init(statusCode: 404, body: exportComplianceAPIError(404)),
+                .init(
+                    statusCode: 201,
+                    body: exportComplianceDocumentResponse(
+                        id: invalidID,
+                        fileName: fileURL.lastPathComponent,
+                        state: "AWAITING_UPLOAD"
+                    )
+                )
+            ])
+            let identityWorker = try await exportComplianceWorker(apiTransport: identityTransport)
+            let identity = try await identityWorker.handleTool(.init(
+                name: "export_compliance_create_document",
+                arguments: arguments
+            ))
+            let identityDetails = try exportComplianceErrorDetails(identity)
+            #expect(identityDetails["reservationState"] == .string("committed_unverified"))
+            #expect(identityDetails["commitConfirmed"] == .bool(true))
+            #expect(identityDetails["retrySafe"] == .bool(false))
+        }
+
+        let unknownTransport = ExportComplianceScriptTransport(steps: [
+            .response(statusCode: 200, body: exportComplianceDeclarationResponse(id: "declaration-1", state: "CREATED")),
+            .response(statusCode: 404, body: exportComplianceAPIError(404)),
+            .networkFailure
+        ])
+        let unknownWorker = try await exportComplianceWorker(apiTransport: unknownTransport)
+        let unknown = try await unknownWorker.handleTool(.init(
+            name: "export_compliance_create_document",
+            arguments: arguments
+        ))
+        let unknownDetails = try exportComplianceErrorDetails(unknown)
+        #expect(unknownDetails["reservationState"] == .string("commit_unknown"))
+        #expect(unknownDetails["commitConfirmed"] == .bool(false))
+        #expect(unknownDetails["retrySafe"] == .bool(false))
+        let unknownInspection = try exportComplianceValueObject(unknownDetails["inspection"])
+        #expect(unknownInspection["tool"] == .string("export_compliance_inspect_document"))
+
+        let rejectedTransport = TestHTTPTransport(responses: [
+            .init(statusCode: 200, body: exportComplianceDeclarationResponse(id: "declaration-1", state: "CREATED")),
+            .init(statusCode: 404, body: exportComplianceAPIError(404)),
+            .init(statusCode: 422, body: exportComplianceAPIError(422))
+        ])
+        let rejectedWorker = try await exportComplianceWorker(apiTransport: rejectedTransport)
+        let rejected = try await rejectedWorker.handleTool(.init(
+            name: "export_compliance_create_document",
+            arguments: arguments
+        ))
+        let rejectedDetails = try exportComplianceErrorDetails(rejected)
+        #expect(rejectedDetails["reservationState"] == .string("rejected"))
+        #expect(rejectedDetails["commitConfirmed"] == .bool(false))
+        #expect(rejectedDetails["retrySafe"] == .bool(true))
+        #expect(rejectedDetails["inspection"] == nil)
     }
 
     @Test("document read redacts download and upload secrets")
@@ -210,13 +414,13 @@ struct ExportComplianceWorkerContractTests {
     @Test("document update preserves explicit null and rejects empty patches")
     func updateDocumentTriState() async throws {
         let transport = TestHTTPTransport(responses: [
-            .init(statusCode: 200, body: exportComplianceDocumentResponse(id: "doc/1", fileName: "export.pdf", state: "AWAITING_UPLOAD"))
+            .init(statusCode: 200, body: exportComplianceDocumentResponse(id: "doc-1", fileName: "export.pdf", state: "AWAITING_UPLOAD"))
         ])
         let worker = try await exportComplianceWorker(apiTransport: transport)
         let result = try await worker.handleTool(.init(
             name: "export_compliance_update_document",
             arguments: [
-                "document_id": .string("doc/1"),
+                "document_id": .string("doc-1"),
                 "source_file_checksum": .null,
                 "uploaded": .null
             ]
@@ -224,12 +428,16 @@ struct ExportComplianceWorkerContractTests {
 
         #expect(result.isError != true)
         let request = try #require(await transport.recordedRequests().first)
-        #expect(try exportComplianceEncodedPath(request) == "/v1/appEncryptionDeclarationDocuments/doc%2F1")
+        #expect(try exportComplianceEncodedPath(request) == "/v1/appEncryptionDeclarationDocuments/doc-1")
         let data = try exportComplianceBodyData(request)
         let attributes = try exportComplianceDictionary(data["attributes"])
         #expect(attributes.keys.sorted() == ["sourceFileChecksum", "uploaded"])
         #expect(attributes["sourceFileChecksum"] is NSNull)
         #expect(attributes["uploaded"] is NSNull)
+        let payload = try exportComplianceObject(result.structuredContent)
+        #expect(payload["updateState"] == .string("confirmed"))
+        #expect(payload["commitConfirmed"] == .bool(true))
+        #expect(payload["retrySafe"] == .bool(false))
 
         let emptyTransport = TestHTTPTransport(responses: [])
         let emptyWorker = try await exportComplianceWorker(apiTransport: emptyTransport)
@@ -239,6 +447,85 @@ struct ExportComplianceWorkerContractTests {
         ))
         #expect(empty.isError == true)
         #expect(await emptyTransport.requestCount() == 0)
+
+        let whitespaceTransport = TestHTTPTransport(responses: [])
+        let whitespaceWorker = try await exportComplianceWorker(apiTransport: whitespaceTransport)
+        let whitespaceID = try await whitespaceWorker.handleTool(.init(
+            name: "export_compliance_update_document",
+            arguments: [
+                "document_id": .string(" document-1 "),
+                "uploaded": .bool(true)
+            ]
+        ))
+        #expect(whitespaceID.isError == true)
+        #expect(await whitespaceTransport.requestCount() == 0)
+    }
+
+    @Test("nullable document update schema states wire behavior without reversal promises")
+    func updateDocumentNullableSchemaWording() async throws {
+        let worker = try await exportComplianceWorker(apiTransport: TestHTTPTransport(responses: []))
+        let tools = await worker.getTools()
+        let tool = try #require(tools.first {
+            $0.name == "export_compliance_update_document"
+        })
+        let schema = try exportComplianceValueObject(tool.inputSchema)
+        let properties = try exportComplianceValueObject(schema["properties"])
+        for field in ["source_file_checksum", "uploaded"] {
+            let fieldSchema = try exportComplianceValueObject(properties[field])
+            let description = try #require(fieldSchema["description"]?.stringValue)
+            #expect(description.contains("JSON null"))
+            #expect(!description.lowercased().contains("clear"))
+            #expect(!description.lowercased().contains("revers"))
+        }
+    }
+
+    @Test("document update distinguishes committed, unknown, and rejected outcomes")
+    func updateDocumentMutationOutcomes() async throws {
+        let arguments: [String: Value] = [
+            "document_id": .string("document-1"),
+            "uploaded": .bool(true)
+        ]
+
+        let malformedTransport = TestHTTPTransport(responses: [
+            .init(statusCode: 200, body: #"{}"#)
+        ])
+        let malformedWorker = try await exportComplianceWorker(apiTransport: malformedTransport)
+        let malformed = try await malformedWorker.handleTool(.init(
+            name: "export_compliance_update_document",
+            arguments: arguments
+        ))
+        let malformedDetails = try exportComplianceErrorDetails(malformed)
+        #expect(malformedDetails["updateState"] == .string("committed_unverified"))
+        #expect(malformedDetails["commitConfirmed"] == .bool(true))
+        #expect(malformedDetails["retrySafe"] == .bool(false))
+        let malformedInspection = try exportComplianceValueObject(malformedDetails["inspection"])
+        #expect(malformedInspection["tool"] == .string("export_compliance_get_document"))
+
+        let unknownTransport = ExportComplianceScriptTransport(steps: [.networkFailure])
+        let unknownWorker = try await exportComplianceWorker(apiTransport: unknownTransport)
+        let unknown = try await unknownWorker.handleTool(.init(
+            name: "export_compliance_update_document",
+            arguments: arguments
+        ))
+        let unknownDetails = try exportComplianceErrorDetails(unknown)
+        #expect(unknownDetails["updateState"] == .string("commit_unknown"))
+        #expect(unknownDetails["commitConfirmed"] == .bool(false))
+        #expect(unknownDetails["retrySafe"] == .bool(false))
+        #expect(unknownDetails["inspection"] != nil)
+
+        let rejectedTransport = TestHTTPTransport(responses: [
+            .init(statusCode: 422, body: exportComplianceAPIError(422))
+        ])
+        let rejectedWorker = try await exportComplianceWorker(apiTransport: rejectedTransport)
+        let rejected = try await rejectedWorker.handleTool(.init(
+            name: "export_compliance_update_document",
+            arguments: arguments
+        ))
+        let rejectedDetails = try exportComplianceErrorDetails(rejected)
+        #expect(rejectedDetails["updateState"] == .string("rejected"))
+        #expect(rejectedDetails["commitConfirmed"] == .bool(false))
+        #expect(rejectedDetails["retrySafe"] == .bool(true))
+        #expect(rejectedDetails["inspection"] == nil)
     }
 
     @Test("document upload transfers exact snapshot, commits checksum, and reaches COMPLETE")
@@ -409,6 +696,78 @@ struct ExportComplianceWorkerContractTests {
         exportComplianceExpectNoSecrets(result)
     }
 
+    @Test("post-commit FAILED guidance uses App Store Connect or Apple Support without deletion advice")
+    func uploadDocumentPostCommitFailedGuidance() async throws {
+        let fileURL = try exportComplianceFile(Data("hello".utf8))
+        defer { try? FileManager.default.removeItem(at: fileURL) }
+        let apiTransport = TestHTTPTransport(responses: [
+            .init(
+                statusCode: 200,
+                body: exportComplianceDocumentResponse(
+                    id: "document-1",
+                    fileName: fileURL.lastPathComponent,
+                    state: "AWAITING_UPLOAD",
+                    uploadOperations: true,
+                    includeSecrets: true
+                )
+            ),
+            .init(
+                statusCode: 200,
+                body: exportComplianceDocumentResponse(
+                    id: "document-1",
+                    fileName: fileURL.lastPathComponent,
+                    state: "FAILED"
+                )
+            )
+        ])
+        let uploadTransport = TestHTTPTransport(responses: [.init(statusCode: 200, body: "")])
+        let worker = try await exportComplianceWorker(
+            apiTransport: apiTransport,
+            uploadTransport: uploadTransport
+        )
+        let result = try await worker.handleTool(.init(
+            name: "export_compliance_upload_document",
+            arguments: ["document_id": .string("document-1"), "file_path": .string(fileURL.path)]
+        ))
+
+        #expect(result.isError == true)
+        #expect(await apiTransport.recordedRequests().map(\.httpMethod) == ["GET", "PATCH"])
+        try exportComplianceExpectSupportOnlyRetentionGuidance(result)
+    }
+
+    @Test("unresolved document commit guidance uses App Store Connect or Apple Support without deletion advice")
+    func uploadDocumentCommitUnresolvedGuidance() async throws {
+        let fileURL = try exportComplianceFile(Data("hello".utf8))
+        defer { try? FileManager.default.removeItem(at: fileURL) }
+        let apiTransport = ExportComplianceScriptTransport(steps: [
+            .response(
+                statusCode: 200,
+                body: exportComplianceDocumentResponse(
+                    id: "document-1",
+                    fileName: fileURL.lastPathComponent,
+                    state: "AWAITING_UPLOAD",
+                    uploadOperations: true,
+                    includeSecrets: true
+                )
+            ),
+            .networkFailure,
+            .networkFailure
+        ])
+        let uploadTransport = TestHTTPTransport(responses: [.init(statusCode: 200, body: "")])
+        let worker = try await exportComplianceWorker(
+            apiTransport: apiTransport,
+            uploadTransport: uploadTransport
+        )
+        let result = try await worker.handleTool(.init(
+            name: "export_compliance_upload_document",
+            arguments: ["document_id": .string("document-1"), "file_path": .string(fileURL.path)]
+        ))
+
+        #expect(result.isError == true)
+        #expect(await apiTransport.recordedRequests().map(\.httpMethod) == ["GET", "PATCH", "GET"])
+        try exportComplianceExpectSupportOnlyRetentionGuidance(result)
+    }
+
     @Test("terminal FAILED document never retries transfer")
     func uploadDocumentFailedState() async throws {
         let fileURL = try exportComplianceFile(Data("hello".utf8))
@@ -452,29 +811,29 @@ struct ExportComplianceWorkerContractTests {
     @Test("attachment preflights approval and document, patches exact linkage, then verifies")
     func attachBuildDeclarationContract() async throws {
         let transport = TestHTTPTransport(responses: [
-            .init(statusCode: 200, body: exportComplianceDeclarationResponse(id: "decl/1", state: "APPROVED")),
+            .init(statusCode: 200, body: exportComplianceDeclarationResponse(id: "decl-1", state: "APPROVED")),
             .init(statusCode: 200, body: exportComplianceDocumentResponse(id: "document-1", fileName: "export.pdf", state: "COMPLETE")),
-            .init(statusCode: 200, body: exportComplianceBuildResponse(usesNonExemptEncryption: true, id: "build/1")),
-            .init(statusCode: 200, body: exportComplianceDeclarationResponse(id: "decl/1", state: "APPROVED"))
+            .init(statusCode: 200, body: exportComplianceBuildResponse(usesNonExemptEncryption: true, id: "build-1")),
+            .init(statusCode: 200, body: exportComplianceDeclarationResponse(id: "decl-1", state: "APPROVED"))
         ])
         let worker = try await exportComplianceWorker(apiTransport: transport)
         let result = try await worker.handleTool(.init(
             name: "export_compliance_attach_build_declaration",
-            arguments: ["build_id": .string("build/1"), "declaration_id": .string("decl/1")]
+            arguments: ["build_id": .string("build-1"), "declaration_id": .string("decl-1")]
         ))
 
         #expect(result.isError != true)
         let requests = await transport.recordedRequests()
         #expect(requests.map(\.httpMethod) == ["GET", "GET", "PATCH", "GET"])
-        #expect(try exportComplianceEncodedPath(requests[2]) == "/v1/builds/build%2F1")
+        #expect(try exportComplianceEncodedPath(requests[2]) == "/v1/builds/build-1")
         let body = try exportComplianceJSONObject(requests[2])
         #expect(body as NSDictionary == [
             "data": [
                 "type": "builds",
-                "id": "build/1",
+                "id": "build-1",
                 "relationships": [
                     "appEncryptionDeclaration": [
-                        "data": ["type": "appEncryptionDeclarations", "id": "decl/1"]
+                        "data": ["type": "appEncryptionDeclarations", "id": "decl-1"]
                     ]
                 ]
             ]
@@ -492,9 +851,19 @@ struct ExportComplianceWorkerContractTests {
         #expect(operationIDs.contains("builds_updateInstance"))
         #expect(!operationIDs.contains("builds_appEncryptionDeclaration_updateToOneRelationship"))
         #expect(mapping.note?.contains("https://developer.apple.com/documentation/appstoreconnectapi/patch-v1-builds-_id_") == true)
-        #expect(manifest.index.waivers.contains {
+        #expect(mapping.note?.contains("https://developer.apple.com/documentation/appstoreconnectapi/patch-v1-builds-_id_-relationships-appencryptiondeclaration") == true)
+        let directPatchWaiver = try #require(manifest.index.waivers.first {
             $0.operationID == "builds_appEncryptionDeclaration_updateToOneRelationship"
         })
+        #expect(directPatchWaiver.reason.contains("Pinned Apple OpenAPI 4.4.1 omits a deprecated flag"))
+        #expect(directPatchWaiver.reason.contains("current Apple DocC marks"))
+        #expect(directPatchWaiver.reason.contains("builds_updateInstance"))
+        let declarationBuildsWaiver = try #require(manifest.index.waivers.first {
+            $0.operationID == "appEncryptionDeclarations_builds_createToManyRelationship"
+        })
+        #expect(declarationBuildsWaiver.reason.contains("OpenAPI 4.4.1 marks"))
+        #expect(declarationBuildsWaiver.reason.contains("deprecated"))
+        #expect(declarationBuildsWaiver.reason.contains("builds_updateInstance"))
     }
 
     @Test("ambiguous build update reconciles the intended declaration")
@@ -822,6 +1191,33 @@ private func exportComplianceValueObject(_ value: Value?) throws -> [String: Val
         throw ExportComplianceTestError.expectedObject
     }
     return object
+}
+
+private func exportComplianceErrorDetails(_ result: CallTool.Result) throws -> [String: Value] {
+    let payload = try exportComplianceObject(result.structuredContent)
+    return try exportComplianceValueObject(payload["details"])
+}
+
+private func exportComplianceDeclarationCreateArguments() -> [String: Value] {
+    [
+        "app_id": .string("app-1"),
+        "app_description": .string("Encrypted collaboration"),
+        "contains_proprietary_cryptography": .bool(true),
+        "contains_third_party_cryptography": .bool(false),
+        "available_on_french_store": .bool(true)
+    ]
+}
+
+private func exportComplianceExpectSupportOnlyRetentionGuidance(
+    _ result: CallTool.Result
+) throws {
+    let payload = try exportComplianceObject(result.structuredContent)
+    let cleanup = try exportComplianceValueObject(payload["cleanup"])
+    let reason = cleanup["reason"]?.stringValue ?? ""
+    let guidance = "\(exportComplianceText(result))\n\(reason)"
+    #expect(guidance.contains("App Store Connect") || guidance.contains("Apple Support"))
+    #expect(!guidance.lowercased().contains("delet"))
+    #expect(cleanup["tool"] == nil)
 }
 
 private func exportComplianceText(_ result: CallTool.Result) -> String {

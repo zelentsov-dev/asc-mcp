@@ -626,7 +626,7 @@
       "id": "deferred.appEncryptionDeclarations_builds_createToManyRelationship",
       "operationId": "appEncryptionDeclarations_builds_createToManyRelationship",
       "disposition": "deferred",
-      "reason": "The `appEncryptionDeclarations` resource-group capability is not yet exposed by asc-mcp.",
+      "reason": "Pinned Apple OpenAPI 4.4.1 marks this declaration-to-build relationship POST deprecated; equivalent relationship assignment is exposed through builds_updateInstance.",
       "owner": "asc-mcp",
       "reviewAtSpec": "4.4.1"
     },
@@ -2554,7 +2554,7 @@
       "id": "deferred.builds_appEncryptionDeclaration_updateToOneRelationship",
       "operationId": "builds_appEncryptionDeclaration_updateToOneRelationship",
       "disposition": "deferred",
-      "reason": "Apple's current DocC deprecates the direct relationship PATCH and directs clients to builds_updateInstance instead.",
+      "reason": "Pinned Apple OpenAPI 4.4.1 omits a deprecated flag, while current Apple DocC marks the direct relationship PATCH deprecated and directs clients to Modify a build; asc-mcp exposes that replacement through builds_updateInstance.",
       "owner": "asc-mcp",
       "reviewAtSpec": "4.4.1"
     },

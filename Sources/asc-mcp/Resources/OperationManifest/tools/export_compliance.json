@@ -193,7 +193,7 @@
           }
         ]
       },
-      "note": "Uses the nondeprecated builds_updateInstance replacement documented by Apple at https://developer.apple.com/documentation/appstoreconnectapi/patch-v1-builds-_id_. The current direct relationship PATCH and deprecated declaration-to-build POST remain deferred. Any ambiguous update or failed post-verification is an unverified mutation with retrySafe=false."
+      "note": "Uses builds_updateInstance as the replacement documented by Apple at https://developer.apple.com/documentation/appstoreconnectapi/patch-v1-builds-_id_. Pinned OpenAPI 4.4.1 omits a deprecated flag for the direct relationship PATCH, while current Apple DocC marks it deprecated at https://developer.apple.com/documentation/appstoreconnectapi/patch-v1-builds-_id_-relationships-appencryptiondeclaration and directs clients to Modify a build. The pinned-spec-deprecated declaration-to-build POST also remains deferred. Any ambiguous update or failed post-verification is an unverified mutation with retrySafe=false."
     },
     {
       "tool": "export_compliance_check_release_readiness",
@@ -320,9 +320,15 @@
       "response": {
         "mode": "projection",
         "sources": [{ "operationId": "appEncryptionDeclarations_createInstance", "statusCode": "201", "mediaType": "application/json" }],
-        "fields": [{ "outputField": "declaration", "operationId": "appEncryptionDeclarations_createInstance", "jsonPointer": "/data" }]
+        "fields": [
+          { "outputField": "declaration", "operationId": "appEncryptionDeclarations_createInstance", "jsonPointer": "/data" },
+          { "outputField": "creationState", "localRole": "confirmed for a validated 201 resource, committed_unverified for a malformed or identity-invalid successful response, commit_unknown for network, 408, or 5xx uncertainty, and rejected for a deterministic rejection." },
+          { "outputField": "commitConfirmed", "localRole": "True for a validated resource or a successful response whose resource could not be verified; false when transport or status does not prove acceptance." },
+          { "outputField": "retrySafe", "localRole": "False after confirmed, committed-unverified, or commit-unknown outcomes; true only after a deterministic rejection." },
+          { "outputField": "inspection", "localRole": "For committed-unverified or commit-unknown outcomes, call export_compliance_list_declarations with the original app_id before any retry." }
+        ]
       },
-      "note": "Sends exactly the four required questionnaire attributes and required app linkage from OpenAPI 4.4.1; obsolete platform, usesEncryption, and compliance-code inputs are not exposed."
+      "note": "Sends exactly the four required questionnaire attributes and required app linkage from OpenAPI 4.4.1; obsolete platform, usesEncryption, and compliance-code inputs are not exposed. The non-idempotent POST distinguishes committed-but-unverified success, unknown commit state, and deterministic rejection so an ambiguous response never invites a blind duplicate create."
     },
     {
       "tool": "export_compliance_create_document",
@@ -404,10 +410,13 @@
         ],
         "fields": [
           { "outputField": "document", "localRole": "Redacted reservation projection with only availability booleans for upload and download metadata." },
-          { "outputField": "retrySafe", "localRole": "False after a reservation or ambiguous create because the API exposes no document DELETE or idempotency key." }
+          { "outputField": "reservationState", "localRole": "confirmed for a validated reservation, committed_unverified for a malformed or identity-invalid successful response, commit_unknown for network, 408, or 5xx uncertainty, and rejected for a deterministic rejection." },
+          { "outputField": "commitConfirmed", "localRole": "True for a validated reservation or a successful response whose reservation identity could not be verified." },
+          { "outputField": "retrySafe", "localRole": "False after confirmed, committed-unverified, or commit-unknown outcomes because the API exposes no document DELETE or idempotency key; true only after a deterministic rejection." },
+          { "outputField": "inspection", "localRole": "For committed-unverified or commit-unknown outcomes, call export_compliance_inspect_document with the original declaration_id before any retry." }
         ]
       },
-      "note": "Preflights declaration state and absence of an existing document before reserving. The tool never exposes assetToken, downloadUrl, upload URL, or request headers."
+      "note": "Preflights declaration state and absence of an existing document before reserving. The non-idempotent reservation POST distinguishes committed-but-unverified success, unknown commit state, and deterministic rejection. The tool never exposes assetToken, downloadUrl, upload URL, or request headers."
     },
     {
       "tool": "export_compliance_get_build_declaration",
@@ -600,7 +609,7 @@
       "fields": [
         { "toolField": "app_id", "sourceKind": "parameter", "operationId": "apps_appEncryptionDeclarations_getToManyRelated", "location": "path", "appleName": "id" },
         { "toolField": "limit", "sourceKind": "parameter", "operationId": "apps_appEncryptionDeclarations_getToManyRelated", "location": "query", "appleName": "limit" },
-        { "toolField": "next_url", "sourceKind": "local", "localRole": "Require the exact encoded app path, fixed projection, effective limit, strict query allowlist, and nonempty cursor." }
+        { "toolField": "next_url", "sourceKind": "local", "localRole": "Require the exact encoded app path, fixed projection, strict query allowlist, one valid limit, and nonempty cursor; preserve the validated continuation limit when the caller omits limit." }
       ],
       "response": {
         "mode": "projection",
@@ -611,7 +620,7 @@
           { "outputField": "next_url", "operationId": "apps_appEncryptionDeclarations_getToManyRelated", "jsonPointer": "/links/next" }
         ]
       },
-      "note": "Strict pagination rejects cross-app paths, changed projection or limit, missing cursor, duplicate parameters, and unknown query names."
+      "note": "Strict pagination rejects cross-app paths, changed projection, a caller-supplied limit that differs from the continuation, invalid or duplicate limit or cursor parameters, and unknown query names. A continuation call can use only app_id plus the unmodified next_url even when the first page used a nondefault limit."
     },
     {
       "tool": "export_compliance_update_document",
@@ -639,9 +648,15 @@
       "response": {
         "mode": "projection",
         "sources": [{ "operationId": "appEncryptionDeclarationDocuments_updateInstance", "statusCode": "200", "mediaType": "application/json" }],
-        "fields": [{ "outputField": "document", "localRole": "Safe document projection after the nullable patch." }]
+        "fields": [
+          { "outputField": "document", "localRole": "Safe document projection after the nullable patch." },
+          { "outputField": "updateState", "localRole": "confirmed for a validated update response, committed_unverified for a malformed or identity-invalid successful response, commit_unknown for network, 408, or 5xx uncertainty, and rejected for a deterministic rejection." },
+          { "outputField": "commitConfirmed", "localRole": "True for a validated update or a successful response whose resource could not be verified." },
+          { "outputField": "retrySafe", "localRole": "False after confirmed, committed-unverified, or commit-unknown outcomes; true only after a deterministic rejection." },
+          { "outputField": "inspection", "localRole": "For committed-unverified or commit-unknown outcomes, call export_compliance_get_document with the same document_id before any retry." }
+        ]
       },
-      "note": "Requires at least one update field and preserves missing versus explicit null for both optional Apple attributes."
+      "note": "Requires at least one update field and preserves missing versus explicit JSON null for both optional Apple attributes without promising server-side reversal semantics. The PATCH distinguishes committed-but-unverified success, unknown commit state, and deterministic rejection."
     },
     {
       "tool": "export_compliance_upload_document",
