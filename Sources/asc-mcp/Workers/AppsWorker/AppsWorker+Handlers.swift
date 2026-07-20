@@ -367,8 +367,8 @@ extension AppsWorker {
                     "id": version.id,
                     "versionString": version.attributes?.versionString ?? "N/A",
                     "platform": version.attributes?.platform ?? "UNKNOWN",
-                    "appVersionState": version.attributes?.appVersionState.jsonSafe,
-                    "appStoreState": version.attributes?.appStoreState.jsonSafe,
+                    "appVersionState": (version.attributes?.appVersionState).jsonSafe,
+                    "appStoreState": (version.attributes?.appStoreState).jsonSafe,
                     "state": version.state,
                     "createdDate": version.attributes?.createdDate ?? "",
                     "type": version.type
@@ -498,7 +498,7 @@ extension AppsWorker {
                     selected = statePriority
                         .lazy
                         .compactMap { state in
-                            preferredByPlatform(platformVersions.filter { effectiveVersionState($0) == state })
+                            preferredByPlatform(platformVersions.filter { self.effectiveVersionState($0) == state })
                         }
                         .first ?? platformVersions[0]
                 }

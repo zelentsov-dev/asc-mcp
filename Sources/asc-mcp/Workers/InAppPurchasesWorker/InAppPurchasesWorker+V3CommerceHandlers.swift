@@ -791,8 +791,8 @@ extension InAppPurchasesWorker {
         } : []
         let relationship = resource.iapRelationships["availableTerritories"]
         let paging = relationship?.objectValue?["meta"]?.objectValue?["paging"]?.objectValue
-        let total = paging?["total"]?.intValue
-        let limit = paging?["limit"]?.intValue
+        let total = paging?["total"]?.iapIntValue
+        let limit = paging?["limit"]?.iapIntValue
         let nextCursor = paging?["nextCursor"]?.stringValue
         let projectionComplete = includeTerritories
             && paging != nil
@@ -893,6 +893,11 @@ private struct IAPIncludedIndex {
 }
 
 private extension JSONValue {
+    var iapIntValue: Int? {
+        guard case .int(let value) = self else { return nil }
+        return value
+    }
+
     var iapScalarAny: Any {
         switch self {
         case .string(let value): return value
