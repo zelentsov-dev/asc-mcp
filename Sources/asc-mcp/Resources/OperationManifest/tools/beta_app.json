@@ -275,7 +275,7 @@
     },
     {
       "tool": "beta_app_get_submission",
-      "kind": "direct",
+      "kind": "compound",
       "status": "partial",
       "effect": "read",
       "implementationState": "asBuilt",
@@ -305,6 +305,22 @@
               "fixedValue": ["version", "uploadedDate", "processingState"]
             }
           ]
+        },
+        {
+          "operationId": "betaAppReviewSubmissions_build_getToOneRelationship",
+          "method": "get",
+          "path": "/v1/betaAppReviewSubmissions/{id}/relationships/build",
+          "role": "conditional",
+          "condition": "The primary response omits Build relationship data and does not contain exactly one included Build.",
+          "inputs": [
+            {
+              "sourceKind": "derived",
+              "location": "path",
+              "appleName": "id",
+              "derivedFrom": ["betaAppReviewSubmissions_getInstance:/data/id"],
+              "localRole": "Use the decoded submission identifier."
+            }
+          ]
         }
       ],
       "fields": [
@@ -321,6 +337,11 @@
         "sources": [
           {
             "operationId": "betaAppReviewSubmissions_getInstance",
+            "statusCode": "200",
+            "mediaType": "application/json"
+          },
+          {
+            "operationId": "betaAppReviewSubmissions_build_getToOneRelationship",
             "statusCode": "200",
             "mediaType": "application/json"
           }
@@ -350,11 +371,17 @@
             "outputField": "submission.buildId",
             "operationId": "betaAppReviewSubmissions_getInstance",
             "jsonPointer": "/data/relationships/build/data/id",
-            "localRole": "Use the relationship linkage first; when it is absent, use the only included Build ID if exactly one Build was returned."
+            "localRole": "Use the primary relationship first, then one unambiguous included Build, then the conditional relationship endpoint."
           },
           {
             "outputField": "submission.buildIdSource",
-            "localRole": "Reports whether buildId came from the response relationship or an unambiguous included Build."
+            "localRole": "Reports relationship, included, or relationshipEndpoint lineage for the guaranteed buildId."
+          },
+          {
+            "outputField": "submission.relationshipFallbackBuildId",
+            "operationId": "betaAppReviewSubmissions_build_getToOneRelationship",
+            "jsonPointer": "/data/id",
+            "localRole": "Present only when the conditional relationship endpoint resolves missing primary linkage."
           },
           {
             "outputField": "submission.buildRelatedURL",
@@ -402,7 +429,7 @@
           }
         ]
       },
-      "note": "Binds include=build and sparse submission/build fields. The response keeps relationship linkage separate from the included Build projection and never chooses among multiple included builds."
+      "note": "Binds include=build and sparse submission/build fields. A successful response guarantees buildId: primary relationship and a single included Build are preferred, while ambiguous or missing include linkage is resolved through the official relationship endpoint."
     },
     {
       "tool": "beta_app_list_localizations",
@@ -491,7 +518,7 @@
     },
     {
       "tool": "beta_app_list_submissions",
-      "kind": "direct",
+      "kind": "compound",
       "status": "partial",
       "effect": "read",
       "implementationState": "asBuilt",
@@ -519,6 +546,22 @@
               "location": "query",
               "appleName": "fields[builds]",
               "fixedValue": ["version", "uploadedDate", "processingState"]
+            }
+          ]
+        },
+        {
+          "operationId": "betaAppReviewSubmissions_build_getToOneRelationship",
+          "method": "get",
+          "path": "/v1/betaAppReviewSubmissions/{id}/relationships/build",
+          "role": "conditional",
+          "condition": "A submission lacks Build relationship data and neither the include projection nor the required Build filter resolves it unambiguously.",
+          "inputs": [
+            {
+              "sourceKind": "derived",
+              "location": "path",
+              "appleName": "id",
+              "derivedFrom": ["betaAppReviewSubmissions_getCollection:/data/*/id"],
+              "localRole": "Use each unresolved decoded submission identifier."
             }
           ]
         }
@@ -558,6 +601,11 @@
             "operationId": "betaAppReviewSubmissions_getCollection",
             "statusCode": "200",
             "mediaType": "application/json"
+          },
+          {
+            "operationId": "betaAppReviewSubmissions_build_getToOneRelationship",
+            "statusCode": "200",
+            "mediaType": "application/json"
           }
         ],
         "fields": [
@@ -585,11 +633,17 @@
             "outputField": "submissions[].buildId",
             "operationId": "betaAppReviewSubmissions_getCollection",
             "jsonPointer": "/data/*/relationships/build/data/id",
-            "localRole": "Use each response relationship first, then only an unambiguous included Build or single validated build filter fallback."
+            "localRole": "Use each primary relationship first, then an unambiguous included Build or single validated Build filter, then the conditional relationship endpoint."
           },
           {
             "outputField": "submissions[].buildIdSource",
-            "localRole": "Reports relationship, included, or filter lineage for each resolved buildId."
+            "localRole": "Reports relationship, included, filter, or relationshipEndpoint lineage for each guaranteed buildId."
+          },
+          {
+            "outputField": "submissions[].relationshipFallbackBuildId",
+            "operationId": "betaAppReviewSubmissions_build_getToOneRelationship",
+            "jsonPointer": "/data/id",
+            "localRole": "Present only for submissions resolved by the conditional relationship endpoint."
           },
           {
             "outputField": "submissions[].buildRelatedURL",
@@ -651,7 +705,7 @@
           }
         ]
       },
-      "note": "Supports Apple explode=false scalar-or-array build and review-state filters, binds include=build with sparse fields, and preserves all filters plus the effective limit across pagination."
+      "note": "Supports Apple explode=false scalar-or-array build and review-state filters, binds include=build with sparse fields, preserves all continuation scope, and guarantees every successful submission projection has a filter-consistent buildId."
     },
     {
       "tool": "beta_app_submit_for_review",

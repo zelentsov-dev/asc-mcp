@@ -2151,14 +2151,6 @@
       "reviewAtSpec": "4.4.1"
     },
     {
-      "id": "deferred.betaAppReviewSubmissions_build_getToOneRelationship",
-      "operationId": "betaAppReviewSubmissions_build_getToOneRelationship",
-      "disposition": "deferred",
-      "reason": "Submission tools preserve Build relationship linkage; the raw Build relationship-linkage endpoint is not exposed.",
-      "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
-    },
-    {
       "id": "deferred.betaBuildLocalizations_deleteInstance",
       "operationId": "betaBuildLocalizations_deleteInstance",
       "disposition": "deferred",
