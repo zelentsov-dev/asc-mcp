@@ -15,6 +15,7 @@ extension BetaAppWorker {
                 "properties": .object([
                     "app_id": .object([
                         "type": .string("string"),
+                        "minLength": .int(1),
                         "description": .string("App ID")
                     ]),
                     "limit": .object([
@@ -98,7 +99,7 @@ extension BetaAppWorker {
     func updateLocalizationTool() -> Tool {
         return Tool(
             name: "beta_app_update_localization",
-            description: "Update a beta app localization (TestFlight metadata for a locale)",
+            description: "Update a beta app localization. Explicit null is forwarded, but Apple documents that populated localization fields cannot be removed",
             inputSchema: .object([
                 "type": .string("object"),
                 "minProperties": .int(2),
@@ -110,23 +111,23 @@ extension BetaAppWorker {
                     ]),
                     "feedback_email": .object([
                         "type": .array([.string("string"), .string("null")]),
-                        "description": .string("Feedback email address for testers, or null to clear")
+                        "description": .string("Feedback email address for testers, or null")
                     ]),
                     "marketing_url": .object([
                         "type": .array([.string("string"), .string("null")]),
-                        "description": .string("Marketing URL, or null to clear")
+                        "description": .string("Marketing URL, or null")
                     ]),
                     "privacy_policy_url": .object([
                         "type": .array([.string("string"), .string("null")]),
-                        "description": .string("Privacy policy URL, or null to clear")
+                        "description": .string("Privacy policy URL, or null")
                     ]),
                     "tv_os_privacy_policy": .object([
                         "type": .array([.string("string"), .string("null")]),
-                        "description": .string("tvOS privacy policy text, or null to clear")
+                        "description": .string("tvOS privacy policy text, or null")
                     ]),
                     "description": .object([
                         "type": .array([.string("string"), .string("null")]),
-                        "description": .string("TestFlight app description shown to testers, or null to clear")
+                        "description": .string("TestFlight app description shown to testers, or null")
                     ])
                 ]),
                 "required": .array([.string("localization_id")])
@@ -235,6 +236,7 @@ extension BetaAppWorker {
                 "properties": .object([
                     "submission_id": .object([
                         "type": .string("string"),
+                        "minLength": .int(1),
                         "description": .string("Beta app review submission ID")
                     ])
                 ]),
@@ -254,6 +256,7 @@ extension BetaAppWorker {
                 "properties": .object([
                     "app_id": .object([
                         "type": .string("string"),
+                        "minLength": .int(1),
                         "description": .string("App ID")
                     ])
                 ]),

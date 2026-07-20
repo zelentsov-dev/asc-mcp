@@ -9,16 +9,17 @@ extension BetaAppWorker {
     /// Lists beta app localizations for an app
     /// - Returns: JSON array of localizations with TestFlight metadata per locale
     func listLocalizations(_ params: CallTool.Parameters) async throws -> CallTool.Result {
-        guard let arguments = params.arguments,
-              let appId = arguments["app_id"]?.stringValue else {
+        guard let arguments = params.arguments else {
             return CallTool.Result(
                 content: [MCPContent.text("Error: Required parameter 'app_id' is missing")],
                 isError: true
             )
         }
 
+        let appId: String
         let effectiveLimit: Int
         do {
+            appId = try requiredString("app_id", from: arguments)
             effectiveLimit = try boundedListLimit(arguments["limit"])
         } catch {
             return MCPResult.error(error.localizedDescription)
@@ -145,12 +146,18 @@ extension BetaAppWorker {
     /// Gets a specific beta app localization by ID
     /// - Returns: JSON with localization details
     func getLocalization(_ params: CallTool.Parameters) async throws -> CallTool.Result {
-        guard let arguments = params.arguments,
-              let localizationId = arguments["localization_id"]?.stringValue else {
+        guard let arguments = params.arguments else {
             return CallTool.Result(
                 content: [MCPContent.text("Error: Required parameter 'localization_id' is missing")],
                 isError: true
             )
+        }
+
+        let localizationId: String
+        do {
+            localizationId = try requiredString("localization_id", from: arguments)
+        } catch {
+            return MCPResult.error(error.localizedDescription)
         }
 
         do {
@@ -295,27 +302,40 @@ extension BetaAppWorker {
             return MCPResult.error(error.localizedDescription)
         }
 
-        do {
-            let request = CreateBetaAppReviewSubmissionRequest(
-                data: CreateBetaAppReviewSubmissionRequest.CreateData(
-                    relationships: CreateBetaAppReviewSubmissionRequest.Relationships(
-                        build: CreateBetaAppReviewSubmissionRequest.BuildRelationship(
-                            data: ASCResourceIdentifier(type: "builds", id: buildId)
-                        )
+        let request = CreateBetaAppReviewSubmissionRequest(
+            data: CreateBetaAppReviewSubmissionRequest.CreateData(
+                relationships: CreateBetaAppReviewSubmissionRequest.Relationships(
+                    build: CreateBetaAppReviewSubmissionRequest.BuildRelationship(
+                        data: ASCResourceIdentifier(type: "builds", id: buildId)
                     )
                 )
             )
+        )
 
-            let response: ASCBetaAppReviewSubmissionResponse = try await httpClient.post(
+        let response: ASCBetaAppReviewSubmissionResponse
+        do {
+            response = try await httpClient.post(
                 "/v1/betaAppReviewSubmissions",
                 body: request,
                 as: ASCBetaAppReviewSubmissionResponse.self
             )
+        } catch {
+            return MCPResult.error("Failed to submit build for beta review: \(error.localizedDescription)")
+        }
 
+        do {
+            guard response.data.type == "betaAppReviewSubmissions", !response.data.id.isEmpty else {
+                throw ASCError.parsing("Apple returned an invalid beta app review submission identity after creation")
+            }
+            let includedBuilds = try validatedIncludedBuilds(
+                response.included,
+                allowedBuildIDs: [buildId]
+            )
             let resolution = try await resolveBuild(
                 for: response.data,
                 requestFallbackBuildID: buildId,
-                allowedBuildIDs: [buildId]
+                allowedBuildIDs: [buildId],
+                observedIncludedBuildIDs: Set(includedBuilds.map(\.id))
             )
             let submission = formatBetaReviewSubmission(response.data, resolution: resolution)
 
@@ -327,9 +347,10 @@ extension BetaAppWorker {
             return MCPResult.jsonObject(result)
 
         } catch {
-            return CallTool.Result(
-                content: [MCPContent.text("Error: Failed to submit build for beta review: \(error.localizedDescription)")],
-                isError: true
+            return committedSubmissionValidationFailure(
+                error.localizedDescription,
+                submission: response.data,
+                requestedBuildID: buildId
             )
         }
     }
@@ -397,21 +418,37 @@ extension BetaAppWorker {
                 )
             }
 
-            let soleIncludedBuildID = response.data.count == 1 && response.included?.count == 1 && response.included?.first?.type == "builds"
-                ? response.included?.first?.id
+            let includedBuilds = try validatedIncludedBuilds(
+                response.included,
+                allowedBuildIDs: Set(buildIDs)
+            )
+            if response.data.count == 1, includedBuilds.count > 1 {
+                throw ASCError.parsing("Beta app review submission returned ambiguous included Build linkage")
+            }
+            let soleIncludedBuildID = response.data.count == 1 && includedBuilds.count == 1
+                ? includedBuilds.first?.id
                 : nil
-            let includedFallbackBuildID = soleIncludedBuildID.flatMap { buildIDs.contains($0) ? $0 : nil }
             let filterFallbackBuildID = buildIDs.count == 1 ? buildIDs[0] : nil
             let allowedBuildIDs = Set(buildIDs)
             var submissions: [[String: Any]] = []
+            var resolvedBuildIDs: Set<String> = []
             for submission in response.data {
+                guard submission.type == "betaAppReviewSubmissions", !submission.id.isEmpty else {
+                    throw ASCError.parsing("Apple returned an invalid beta app review submission identity")
+                }
                 let resolution = try await resolveBuild(
                     for: submission,
-                    includedFallbackBuildID: includedFallbackBuildID,
+                    includedFallbackBuildID: soleIncludedBuildID,
                     filterFallbackBuildID: filterFallbackBuildID,
-                    allowedBuildIDs: allowedBuildIDs
+                    allowedBuildIDs: allowedBuildIDs,
+                    observedIncludedBuildIDs: Set(includedBuilds.map(\.id))
                 )
+                resolvedBuildIDs.insert(resolution.id)
                 submissions.append(formatBetaReviewSubmission(submission, resolution: resolution))
+            }
+            let includedBuildIDs = Set(includedBuilds.map(\.id))
+            if !includedBuildIDs.isEmpty, includedBuildIDs != resolvedBuildIDs {
+                throw ASCError.parsing("Beta app review submissions returned contradictory included Build coverage")
             }
 
             var result: [String: Any] = [
@@ -425,7 +462,7 @@ extension BetaAppWorker {
             if let next = response.links?.next {
                 result["next_url"] = next
             }
-            appendIncludedBuilds(response.included, to: &result)
+            appendIncludedBuilds(includedBuilds, to: &result)
 
             return MCPResult.jsonObject(result)
 
@@ -440,12 +477,18 @@ extension BetaAppWorker {
     /// Gets a specific beta app review submission by ID
     /// - Returns: JSON with submission details
     func getSubmission(_ params: CallTool.Parameters) async throws -> CallTool.Result {
-        guard let arguments = params.arguments,
-              let submissionId = arguments["submission_id"]?.stringValue else {
+        guard let arguments = params.arguments else {
             return CallTool.Result(
                 content: [MCPContent.text("Error: Required parameter 'submission_id' is missing")],
                 isError: true
             )
+        }
+
+        let submissionId: String
+        do {
+            submissionId = try requiredString("submission_id", from: arguments)
+        } catch {
+            return MCPResult.error(error.localizedDescription)
         }
 
         do {
@@ -458,13 +501,21 @@ extension BetaAppWorker {
                 ],
                 as: ASCBetaAppReviewSubmissionResponse.self
             )
+            guard response.data.type == "betaAppReviewSubmissions", response.data.id == submissionId else {
+                throw ASCError.parsing("Beta app review submission response identity did not match the requested resource")
+            }
 
-            let includedFallbackBuildID = response.included?.count == 1 && response.included?.first?.type == "builds"
-                ? response.included?.first?.id
+            let includedBuilds = try validatedIncludedBuilds(response.included)
+            guard includedBuilds.count <= 1 else {
+                throw ASCError.parsing("Beta app review submission returned ambiguous included Build linkage")
+            }
+            let includedFallbackBuildID = includedBuilds.count == 1
+                ? includedBuilds.first?.id
                 : nil
             let resolution = try await resolveBuild(
                 for: response.data,
-                includedFallbackBuildID: includedFallbackBuildID
+                includedFallbackBuildID: includedFallbackBuildID,
+                observedIncludedBuildIDs: Set(includedBuilds.map(\.id))
             )
             let submission = formatBetaReviewSubmission(response.data, resolution: resolution)
 
@@ -472,7 +523,7 @@ extension BetaAppWorker {
                 "success": true,
                 "submission": submission
             ] as [String: Any]
-            appendIncludedBuilds(response.included, to: &result)
+            appendIncludedBuilds(includedBuilds, to: &result)
 
             return MCPResult.jsonObject(result)
 
@@ -489,12 +540,18 @@ extension BetaAppWorker {
     /// Gets beta app review details for an app
     /// - Returns: JSON with review detail (demo account, contact info)
     func getReviewDetails(_ params: CallTool.Parameters) async throws -> CallTool.Result {
-        guard let arguments = params.arguments,
-              let appId = arguments["app_id"]?.stringValue else {
+        guard let arguments = params.arguments else {
             return CallTool.Result(
                 content: [MCPContent.text("Error: Required parameter 'app_id' is missing")],
                 isError: true
             )
+        }
+
+        let appId: String
+        do {
+            appId = try requiredString("app_id", from: arguments)
+        } catch {
+            return MCPResult.error(error.localizedDescription)
         }
 
         do {
@@ -634,7 +691,8 @@ extension BetaAppWorker {
         includedFallbackBuildID: String? = nil,
         requestFallbackBuildID: String? = nil,
         filterFallbackBuildID: String? = nil,
-        allowedBuildIDs: Set<String>? = nil
+        allowedBuildIDs: Set<String>? = nil,
+        observedIncludedBuildIDs: Set<String> = []
     ) async throws -> BetaAppBuildResolution {
         if let relationship = submission.relationships?.build?.data {
             guard relationship.type == "builds", !relationship.id.isEmpty else {
@@ -642,6 +700,9 @@ extension BetaAppWorker {
             }
             if let allowedBuildIDs, !allowedBuildIDs.contains(relationship.id) {
                 throw ASCError.parsing("Beta app review submission '\(submission.id)' returned a Build outside the requested filter")
+            }
+            if !observedIncludedBuildIDs.isEmpty, !observedIncludedBuildIDs.contains(relationship.id) {
+                throw ASCError.parsing("Beta app review submission '\(submission.id)' returned contradictory included Build linkage")
             }
             return BetaAppBuildResolution(
                 id: relationship.id,
@@ -657,6 +718,9 @@ extension BetaAppWorker {
             )
         }
         if let requestFallbackBuildID {
+            if !observedIncludedBuildIDs.isEmpty, !observedIncludedBuildIDs.contains(requestFallbackBuildID) {
+                throw ASCError.parsing("Beta app review submission '\(submission.id)' returned contradictory included Build linkage")
+            }
             return BetaAppBuildResolution(
                 id: requestFallbackBuildID,
                 source: "request",
@@ -664,6 +728,9 @@ extension BetaAppWorker {
             )
         }
         if let filterFallbackBuildID {
+            guard observedIncludedBuildIDs.isEmpty else {
+                throw ASCError.parsing("Beta app review submission '\(submission.id)' returned ambiguous included Build linkage")
+            }
             return BetaAppBuildResolution(
                 id: filterFallbackBuildID,
                 source: "filter",
@@ -680,6 +747,9 @@ extension BetaAppWorker {
         }
         if let allowedBuildIDs, !allowedBuildIDs.contains(response.data.id) {
             throw ASCError.parsing("Beta app review submission '\(submission.id)' returned a Build outside the requested filter")
+        }
+        if !observedIncludedBuildIDs.isEmpty, !observedIncludedBuildIDs.contains(response.data.id) {
+            throw ASCError.parsing("Beta app review submission '\(submission.id)' returned contradictory included Build linkage")
         }
         return BetaAppBuildResolution(
             id: response.data.id,
@@ -705,6 +775,50 @@ extension BetaAppWorker {
                 "selfURL": (build.links?.`self`).jsonSafe
             ] as [String: Any]
         }
+    }
+
+    private func validatedIncludedBuilds(
+        _ builds: [ASCBetaAppReviewIncludedBuild]?,
+        allowedBuildIDs: Set<String>? = nil
+    ) throws -> [ASCBetaAppReviewIncludedBuild] {
+        let builds = builds ?? []
+        var seenBuildIDs: Set<String> = []
+        for build in builds {
+            guard build.type == "builds", !build.id.isEmpty else {
+                throw ASCError.parsing("Beta app review submission returned invalid included Build linkage")
+            }
+            guard seenBuildIDs.insert(build.id).inserted else {
+                throw ASCError.parsing("Beta app review submission returned duplicate included Build linkage")
+            }
+            if let allowedBuildIDs, !allowedBuildIDs.contains(build.id) {
+                throw ASCError.parsing("Beta app review submission returned an included Build outside the requested filter")
+            }
+        }
+        return builds
+    }
+
+    private func committedSubmissionValidationFailure(
+        _ message: String,
+        submission: ASCBetaAppReviewSubmission,
+        requestedBuildID: String
+    ) -> CallTool.Result {
+        let safeMessage = Redactor.redact(message)
+        return MCPResult.jsonObject(
+            [
+                "success": false,
+                "error": safeMessage,
+                "operationCommitted": true,
+                "retrySafe": false,
+                "submissionId": submission.id,
+                "requestedBuildId": requestedBuildID,
+                "inspection": [
+                    "tool": "beta_app_list_submissions",
+                    "arguments": ["build_id": requestedBuildID]
+                ]
+            ],
+            text: "Error: Apple created beta app review submission '\(submission.id)', but its returned Build lineage could not be verified. Inspect the existing submission before retrying.",
+            isError: true
+        )
     }
 
     private func formatBetaReviewDetail(_ detail: ASCBetaAppReviewDetail) -> [String: Any] {

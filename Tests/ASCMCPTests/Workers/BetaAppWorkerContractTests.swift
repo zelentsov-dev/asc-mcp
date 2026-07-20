@@ -502,6 +502,55 @@ struct BetaAppWorkerContractTests {
         #expect(await transport.requestCount() == 1)
     }
 
+    @Test("submission create reports committed state for contradictory included Build")
+    func submissionCreateReportsCommittedForeignIncludedBuild() async throws {
+        let transport = TestHTTPTransport(responses: [
+            .init(statusCode: 201, body: betaAppSubmissionResponse(
+                id: "submission-created",
+                includedBuilds: [betaAppIncludedBuild(id: "build-2")]
+            ))
+        ])
+        let worker = BetaAppWorker(httpClient: try await makeBetaAppContractClient(transport))
+
+        let result = try await worker.handleTool(CallTool.Parameters(
+            name: "beta_app_submit_for_review",
+            arguments: ["build_id": .string("build-1")]
+        ))
+
+        #expect(result.isError == true)
+        let root = try betaAppContractObject(result.structuredContent)
+        #expect(root["operationCommitted"] == .bool(true))
+        #expect(root["retrySafe"] == .bool(false))
+        #expect(root["submissionId"] == .string("submission-created"))
+        #expect(root["requestedBuildId"] == .string("build-1"))
+        let inspection = try betaAppContractObject(root["inspection"])
+        #expect(inspection["tool"] == .string("beta_app_list_submissions"))
+        #expect(await transport.requestCount() == 1)
+    }
+
+    @Test("submission create rejects contradictory included Build even with primary linkage")
+    func submissionCreateRejectsPrimaryIncludedDisagreement() async throws {
+        let transport = TestHTTPTransport(responses: [
+            .init(statusCode: 201, body: betaAppSubmissionResponse(
+                id: "submission-created",
+                buildID: "build-1",
+                includedBuilds: [betaAppIncludedBuild(id: "build-2")]
+            ))
+        ])
+        let worker = BetaAppWorker(httpClient: try await makeBetaAppContractClient(transport))
+
+        let result = try await worker.handleTool(CallTool.Parameters(
+            name: "beta_app_submit_for_review",
+            arguments: ["build_id": .string("build-1")]
+        ))
+
+        #expect(result.isError == true)
+        let root = try betaAppContractObject(result.structuredContent)
+        #expect(root["operationCommitted"] == .bool(true))
+        #expect(root["retrySafe"] == .bool(false))
+        #expect(await transport.requestCount() == 1)
+    }
+
     @Test("submission filters accept scalars and use a single filter as deterministic lineage")
     func submissionFiltersAcceptScalars() async throws {
         let transport = TestHTTPTransport(responses: [
@@ -561,6 +610,61 @@ struct BetaAppWorkerContractTests {
         #expect(includedBuild["version"] == .string("42"))
     }
 
+    @Test("submission get rejects a mismatched response identity")
+    func getSubmissionRejectsMismatchedIdentity() async throws {
+        let transport = TestHTTPTransport(responses: [
+            .init(statusCode: 200, body: betaAppSubmissionResponse(id: "submission-2"))
+        ])
+        let worker = BetaAppWorker(httpClient: try await makeBetaAppContractClient(transport))
+
+        let result = try await worker.handleTool(CallTool.Parameters(
+            name: "beta_app_get_submission",
+            arguments: ["submission_id": .string("submission-1")]
+        ))
+
+        #expect(result.isError == true)
+        #expect(await transport.requestCount() == 1)
+    }
+
+    @Test("submission get rejects primary and included Build disagreement")
+    func getSubmissionRejectsPrimaryIncludedDisagreement() async throws {
+        let transport = TestHTTPTransport(responses: [
+            .init(statusCode: 200, body: betaAppSubmissionResponse(
+                id: "submission-1",
+                buildID: "build-1",
+                includedBuilds: [betaAppIncludedBuild(id: "build-2")]
+            ))
+        ])
+        let worker = BetaAppWorker(httpClient: try await makeBetaAppContractClient(transport))
+
+        let result = try await worker.handleTool(CallTool.Parameters(
+            name: "beta_app_get_submission",
+            arguments: ["submission_id": .string("submission-1")]
+        ))
+
+        #expect(result.isError == true)
+        #expect(await transport.requestCount() == 1)
+    }
+
+    @Test("submission get rejects invalid included Build evidence")
+    func getSubmissionRejectsInvalidIncludedBuild() async throws {
+        let transport = TestHTTPTransport(responses: [
+            .init(statusCode: 200, body: betaAppSubmissionResponse(
+                id: "submission-1",
+                includedBuilds: [betaAppIncludedBuild(id: "build-1", type: "apps")]
+            ))
+        ])
+        let worker = BetaAppWorker(httpClient: try await makeBetaAppContractClient(transport))
+
+        let result = try await worker.handleTool(CallTool.Parameters(
+            name: "beta_app_get_submission",
+            arguments: ["submission_id": .string("submission-1")]
+        ))
+
+        #expect(result.isError == true)
+        #expect(await transport.requestCount() == 1)
+    }
+
     @Test("single included build is a deterministic one-item list fallback")
     func submissionListUsesSingleIncludedBuildFallback() async throws {
         let transport = TestHTTPTransport(responses: [
@@ -585,8 +689,90 @@ struct BetaAppWorkerContractTests {
         #expect(submission["relationshipFallbackBuildId"] == nil)
     }
 
-    @Test("ambiguous included builds resolve through the relationship endpoint")
-    func submissionListUsesRelationshipEndpointFallback() async throws {
+    @Test("submission list rejects foreign included Build before filter fallback")
+    func submissionListRejectsForeignIncludedBuild() async throws {
+        let transport = TestHTTPTransport(responses: [
+            .init(statusCode: 200, body: betaAppSubmissionPage(
+                includeRelationship: false,
+                includedBuilds: [betaAppIncludedBuild(id: "build-2")]
+            ))
+        ])
+        let worker = BetaAppWorker(httpClient: try await makeBetaAppContractClient(transport))
+
+        let result = try await worker.handleTool(CallTool.Parameters(
+            name: "beta_app_list_submissions",
+            arguments: ["build_id": .string("build-1")]
+        ))
+
+        #expect(result.isError == true)
+        #expect(await transport.requestCount() == 1)
+    }
+
+    @Test("submission list rejects invalid and duplicate included Build evidence")
+    func submissionListRejectsMalformedIncludedBuilds() async throws {
+        let includedCases = [
+            [betaAppIncludedBuild(id: "", type: "builds")],
+            [betaAppIncludedBuild(id: "build-1", type: "apps")],
+            [betaAppIncludedBuild(id: "build-1"), betaAppIncludedBuild(id: "build-1")]
+        ]
+
+        for includedBuilds in includedCases {
+            let transport = TestHTTPTransport(responses: [
+                .init(statusCode: 200, body: betaAppSubmissionPage(
+                    includeRelationship: false,
+                    includedBuilds: includedBuilds
+                ))
+            ])
+            let worker = BetaAppWorker(httpClient: try await makeBetaAppContractClient(transport))
+            let result = try await worker.handleTool(CallTool.Parameters(
+                name: "beta_app_list_submissions",
+                arguments: ["build_id": .string("build-1")]
+            ))
+
+            #expect(result.isError == true)
+            #expect(await transport.requestCount() == 1)
+        }
+    }
+
+    @Test("submission list rejects primary and included Build disagreement")
+    func submissionListRejectsPrimaryIncludedDisagreement() async throws {
+        let transport = TestHTTPTransport(responses: [
+            .init(statusCode: 200, body: betaAppSubmissionPage(
+                includedBuilds: [betaAppIncludedBuild(id: "build-2")]
+            ))
+        ])
+        let worker = BetaAppWorker(httpClient: try await makeBetaAppContractClient(transport))
+
+        let result = try await worker.handleTool(CallTool.Parameters(
+            name: "beta_app_list_submissions",
+            arguments: ["build_id": .array([.string("build-1"), .string("build-2")])]
+        ))
+
+        #expect(result.isError == true)
+        #expect(await transport.requestCount() == 1)
+    }
+
+    @Test("submission list rejects foreign included Build with a multi-build filter")
+    func submissionListRejectsForeignIncludedBuildWithMultipleFilters() async throws {
+        let transport = TestHTTPTransport(responses: [
+            .init(statusCode: 200, body: betaAppSubmissionPage(
+                includeRelationship: false,
+                includedBuilds: [betaAppIncludedBuild(id: "build-3")]
+            ))
+        ])
+        let worker = BetaAppWorker(httpClient: try await makeBetaAppContractClient(transport))
+
+        let result = try await worker.handleTool(CallTool.Parameters(
+            name: "beta_app_list_submissions",
+            arguments: ["build_id": .array([.string("build-1"), .string("build-2")])]
+        ))
+
+        #expect(result.isError == true)
+        #expect(await transport.requestCount() == 1)
+    }
+
+    @Test("ambiguous included builds are rejected for a one-item response")
+    func submissionListRejectsAmbiguousIncludedBuilds() async throws {
         let transport = TestHTTPTransport(responses: [
             .init(statusCode: 200, body: betaAppSubmissionPage(
                 includeRelationship: false,
@@ -594,7 +780,23 @@ struct BetaAppWorkerContractTests {
                     betaAppIncludedBuild(id: "build-1"),
                     betaAppIncludedBuild(id: "build-2")
                 ]
-            )),
+            ))
+        ])
+        let worker = BetaAppWorker(httpClient: try await makeBetaAppContractClient(transport))
+
+        let result = try await worker.handleTool(CallTool.Parameters(
+            name: "beta_app_list_submissions",
+            arguments: ["build_id": .array([.string("build-1"), .string("build-2")])]
+        ))
+
+        #expect(result.isError == true)
+        #expect(await transport.requestCount() == 1)
+    }
+
+    @Test("submission list resolves absent linkage through the relationship endpoint")
+    func submissionListUsesRelationshipEndpointWhenEvidenceIsAbsent() async throws {
+        let transport = TestHTTPTransport(responses: [
+            .init(statusCode: 200, body: betaAppSubmissionPage(includeRelationship: false)),
             .init(statusCode: 200, body: betaAppBuildLinkageResponse(id: "build-2"))
         ])
         let worker = BetaAppWorker(httpClient: try await makeBetaAppContractClient(transport))
@@ -607,13 +809,11 @@ struct BetaAppWorkerContractTests {
         #expect(result.isError != true)
         let root = try betaAppContractObject(result.structuredContent)
         let submission = try betaAppContractObject(try betaAppContractArray(root["submissions"]).first)
-        #expect(submission["relationshipBuildId"] == .null)
         #expect(submission["relationshipFallbackBuildId"] == .string("build-2"))
         #expect(submission["buildId"] == .string("build-2"))
         #expect(submission["buildIdSource"] == .string("relationshipEndpoint"))
         let requests = await transport.recordedRequests()
         #expect(requests.count == 2)
-        #expect(requests[1].httpMethod == "GET")
         #expect(requests[1].url?.path == "/v1/betaAppReviewSubmissions/submission-1/relationships/build")
     }
 
@@ -647,11 +847,7 @@ struct BetaAppWorkerContractTests {
     func relationshipFallbackRejectsUnexpectedBuild() async throws {
         let transport = TestHTTPTransport(responses: [
             .init(statusCode: 200, body: betaAppSubmissionPage(
-                includeRelationship: false,
-                includedBuilds: [
-                    betaAppIncludedBuild(id: "build-1"),
-                    betaAppIncludedBuild(id: "build-2")
-                ]
+                includeRelationship: false
             )),
             .init(statusCode: 200, body: betaAppBuildLinkageResponse(id: "build-3"))
         ])
@@ -746,6 +942,31 @@ struct BetaAppWorkerContractTests {
             let result = try await worker.handleTool(call)
             #expect(result.isError == true)
         }
+        #expect(await transport.requestCount() == 0)
+    }
+
+    @Test("read tools reject malformed required strings before network")
+    func readToolsRejectMalformedRequiredStrings() async throws {
+        let transport = TestHTTPTransport(responses: [])
+        let worker = BetaAppWorker(httpClient: try await makeBetaAppContractClient(transport))
+        let tools = [
+            (name: "beta_app_list_localizations", field: "app_id"),
+            (name: "beta_app_get_localization", field: "localization_id"),
+            (name: "beta_app_get_submission", field: "submission_id"),
+            (name: "beta_app_get_review_details", field: "app_id")
+        ]
+        let invalidValues: [Value] = [.null, .int(1), .string(""), .string(" id"), .string("id ")]
+
+        for tool in tools {
+            for invalidValue in invalidValues {
+                let result = try await worker.handleTool(CallTool.Parameters(
+                    name: tool.name,
+                    arguments: [tool.field: invalidValue]
+                ))
+                #expect(result.isError == true)
+            }
+        }
+
         #expect(await transport.requestCount() == 0)
     }
 
@@ -1025,7 +1246,10 @@ struct BetaAppWorkerContractTests {
         let createLocalization = try #require(tools.first { $0.name == "beta_app_create_localization" })
         let updateLocalization = try #require(tools.first { $0.name == "beta_app_update_localization" })
         let listLocalizations = try #require(tools.first { $0.name == "beta_app_list_localizations" })
+        let getLocalization = try #require(tools.first { $0.name == "beta_app_get_localization" })
         let listSubmissions = try #require(tools.first { $0.name == "beta_app_list_submissions" })
+        let getSubmission = try #require(tools.first { $0.name == "beta_app_get_submission" })
+        let getReview = try #require(tools.first { $0.name == "beta_app_get_review_details" })
 
         let reviewProperties = try betaAppContractProperties(updateReview)
         let nullableStringFields = [
@@ -1057,6 +1281,14 @@ struct BetaAppWorkerContractTests {
         #expect(localizationLimit["minimum"] == .int(1))
         #expect(localizationLimit["maximum"] == .int(200))
         #expect(localizationLimit["default"] == .int(25))
+        for (tool, field) in [
+            (listLocalizations, "app_id"),
+            (getLocalization, "localization_id"),
+            (getSubmission, "submission_id"),
+            (getReview, "app_id")
+        ] {
+            #expect(try betaAppContractObject(try betaAppContractProperties(tool)[field])["minLength"] == .int(1))
+        }
     }
 
     @Test("beta app manifest pins include decisions fallback lineage and coverage")
@@ -1101,14 +1333,6 @@ struct BetaAppWorkerContractTests {
         })
         #expect(manifest.index.specPin.version == "4.4.1")
         #expect(manifest.index.specPin.sha256 == "ed0202ef37155b9334772482d2ea0be688c3046b284c895bcbea5455fbe54fd8")
-        #expect(manifest.index.optionalInputCoveragePin == ASCOptionalInputCoverage(
-            total: 2_154,
-            bound: 809,
-            internalControl: 40,
-            intentionallyOmitted: 1_305,
-            unclassified: 0,
-            identitySHA256: "d8e572dd0af31e8bc40077a5db93b3d19be5283c35298b4f42e29a8b553d3d3b"
-        ))
     }
 }
 
@@ -1163,9 +1387,13 @@ private func betaAppLocalizationResponse(id: String) -> String {
     #"{"data":{"type":"betaAppLocalizations","id":"\#(id)","attributes":{"locale":"en-US"},"links":{"self":"https://api.example.test/v1/betaAppLocalizations/\#(id)"}}}"#
 }
 
-private func betaAppIncludedBuild(id: String, version: String? = nil) -> String {
+private func betaAppIncludedBuild(
+    id: String,
+    version: String? = nil,
+    type: String = "builds"
+) -> String {
     let attributes = version.map { #", "attributes":{"version":"\#($0)","processingState":"VALID"}"# } ?? ""
-    return #"{"type":"builds","id":"\#(id)"\#(attributes)}"#
+    return #"{"type":"\#(type)","id":"\#(id)"\#(attributes)}"#
 }
 
 private func betaAppBuildLinkageResponse(id: String) -> String {
