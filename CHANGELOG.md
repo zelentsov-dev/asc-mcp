@@ -7,6 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.2.0] - 2026-07-20
+
+### Added
+
+- Added schema-v2 accounting for optional Apple query and request-body inputs, including exact reviewed classifications and a strict count-and-identity coverage pin that blocks silent regressions during phased remediation.
+- Added contract and MCP regression coverage for nullable accessibility updates, App Event validation, analytics pagination, review-response lookup behavior, metrics filters, pricing schedules and availability, provisioning settings, and core TestFlight workflows.
+
+### Changed
+
+- Aligned App Info, accessibility declarations, App Events, analytics, reviews, users, webhooks, provisioning, metrics, pricing, builds, beta details, beta groups, beta testers, and pre-release versions with Apple App Store Connect API 4.4.1.
+- Expanded supported Apple filters, includes, relationship pagination, response lineage, and scalar-or-array inputs where the official API accepts multiple values.
+- Extended price-schedule and availability workflows to preserve multiple manual prices, effective dates, inline territory availability, relationship links, and included App resources.
+
+### Fixed
+
+- Preserved omission, explicit value, and explicit `null` as distinct accessibility update operations.
+- Corrected customer-review response lookup so a relationship `404` is reported as no response only after the parent review is confirmed to exist.
+- Rejected invalid App Event deep links, purchase requirements, provisioning settings, and pricing dates before issuing an App Store Connect request.
+- Corrected metrics filter cardinality, pricing included-resource decoding, and TestFlight query propagation found by the live Apple 4.4.1 contract audit.
+
+### Compatibility
+
+- No public MCP tool was removed. Several list and metrics filters now accept either one value or an array; existing scalar calls remain valid.
+- `app_events_create` and `app_events_update` now require an absolute `deep_link` and accept only Apple's documented purchase-requirement values.
+- The strict contract pin currently records 2,138 optional Apple inputs: 672 bound, 6 internally controlled, 958 intentionally omitted, and 502 still queued for domain review. Future phases must update this pin explicitly and cannot increase the unreviewed surface silently.
+
 ## [3.1.0] - 2026-07-20
 
 ### Added
