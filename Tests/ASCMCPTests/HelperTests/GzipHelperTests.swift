@@ -190,8 +190,8 @@ struct GzipHelperTests {
     }
 
     @Test func gunzipped_rejectsConcatenatedMembers() throws {
-        var compressed = try gzipCompress(Data("first".utf8))
-        compressed.append(try gzipCompress(Data("second".utf8)))
+        var compressed = try gzipCompress(Data("first member is longer".utf8))
+        compressed.append(try gzipCompress(Data("x".utf8)))
 
         #expect(throws: GzipError.trailingData) {
             try compressed.gunzipped()

@@ -2,11 +2,11 @@
 //  GzipHelper.swift
 //  asc-mcp
 //
-//  Gzip decompression using Apple's Compression framework
+//  Gzip container validation and decompression
 //
 
-import Compression
 import Foundation
+import zlib
 
 enum ReportDataLimits {
     static let maximumDecompressedBytes = 64 * 1_024 * 1_024
@@ -192,46 +192,52 @@ extension Data {
         expectedSize: UInt32,
         expectedCRC: UInt32
     ) throws -> Data {
-        let initialDestination = UnsafeMutablePointer<UInt8>.allocate(capacity: 1)
-        defer { initialDestination.deallocate() }
-        var stream = compression_stream(
-            dst_ptr: initialDestination,
-            dst_size: 0,
-            src_ptr: sourceBaseAddress.assumingMemoryBound(to: UInt8.self).advanced(by: payloadOffset),
-            src_size: payloadCount,
-            state: nil
-        )
-        guard compression_stream_init(&stream, COMPRESSION_STREAM_DECODE, COMPRESSION_ZLIB) == COMPRESSION_STATUS_OK else {
+        guard payloadCount <= Int(UInt32.max) else {
             throw GzipError.decompressionFailed
         }
-        defer { _ = compression_stream_destroy(&stream) }
-        stream.src_ptr = sourceBaseAddress.assumingMemoryBound(to: UInt8.self).advanced(by: payloadOffset)
-        stream.src_size = payloadCount
+
+        var stream = z_stream()
+        guard inflateInit2_(
+            &stream,
+            -15,
+            zlibVersion(),
+            Int32(MemoryLayout<z_stream>.size)
+        ) == Z_OK else {
+            throw GzipError.decompressionFailed
+        }
+        defer { _ = inflateEnd(&stream) }
+        stream.next_in = UnsafeMutablePointer<Bytef>(
+            mutating: sourceBaseAddress.assumingMemoryBound(to: Bytef.self).advanced(by: payloadOffset)
+        )
+        stream.avail_in = uInt(payloadCount)
 
         let expectedByteCount = Int(expectedSize)
         var output = Data()
         output.reserveCapacity(Swift.min(expectedByteCount, 1_024 * 1_024))
         var outputBuffer = [UInt8](repeating: 0, count: 64 * 1_024)
         var crc = CRC32.initialValue
-        let flags = Int32(COMPRESSION_STREAM_FINALIZE.rawValue)
 
         while true {
-            let previousSourceCount = stream.src_size
+            let previousSourceCount = stream.avail_in
             let remainingAdvertisedBytes = expectedByteCount - output.count
             let destinationCount = Swift.min(
                 outputBuffer.count,
                 Swift.max(remainingAdvertisedBytes + 1, 1)
             )
 
-            let status = outputBuffer.withUnsafeMutableBytes { destination -> compression_status in
+            let status = outputBuffer.withUnsafeMutableBytes { destination -> Int32 in
                 guard let destinationBaseAddress = destination.bindMemory(to: UInt8.self).baseAddress else {
-                    return COMPRESSION_STATUS_ERROR
+                    return Z_STREAM_ERROR
                 }
-                stream.dst_ptr = destinationBaseAddress
-                stream.dst_size = destinationCount
-                return compression_stream_process(&stream, flags)
+                stream.next_out = destinationBaseAddress
+                stream.avail_out = uInt(destinationCount)
+                return inflate(&stream, Z_NO_FLUSH)
             }
-            let producedCount = destinationCount - stream.dst_size
+            let producedCount = destinationCount - Int(stream.avail_out)
+
+            if status == Z_STREAM_END, stream.avail_in != 0 {
+                throw GzipError.trailingData
+            }
 
             if producedCount > 0 {
                 guard producedCount <= remainingAdvertisedBytes else {
@@ -249,16 +255,13 @@ extension Data {
                 }
             }
 
-            if status == COMPRESSION_STATUS_END {
-                guard stream.src_size == 0 else {
-                    throw GzipError.trailingData
-                }
+            if status == Z_STREAM_END {
                 break
             }
-            guard status == COMPRESSION_STATUS_OK else {
+            guard status == Z_OK else {
                 throw GzipError.decompressionFailed
             }
-            guard producedCount > 0 || stream.src_size < previousSourceCount else {
+            guard producedCount > 0 || stream.avail_in < previousSourceCount else {
                 throw GzipError.decompressionFailed
             }
         }

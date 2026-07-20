@@ -58,7 +58,7 @@ extension WebhooksWorker {
                 properties: [
                     "webhook_id": stringSchema("Webhook ID to update"),
                     "name": stringSchema("New webhook name"),
-                    "url": stringSchema("New absolute HTTPS callback URL. URL user info (user/password) and fragments are not allowed; custom ports, paths, and query parameters are supported."),
+                    "url": stringSchema("Absolute HTTPS callback URL to replace the current URL. URL user info (user/password) and fragments are not allowed; custom ports, paths, and query parameters are supported."),
                     "secret": webhookSecretSchema("New cryptographically random webhook secret of at least 32 characters, such as a 32-byte random value encoded as hex or Base64. The secret is never returned by this tool."),
                     "event_types": eventTypesSchema("Replacement webhook event type list"),
                     "enabled": boolSchema("Whether the webhook should be enabled")
