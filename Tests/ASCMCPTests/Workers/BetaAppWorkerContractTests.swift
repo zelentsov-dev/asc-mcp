@@ -438,8 +438,7 @@ struct BetaAppWorkerContractTests {
                   "id": "build-1",
                   "attributes": {"version": "42", "uploadedDate": "2026-07-20T01:02:03Z", "processingState": "VALID"},
                   "links": {"self": "https://api.example.test/v1/builds/build-1"}
-                },
-                {"type": "builds", "id": "build-2"}
+                }
               ],
               "meta": {"paging": {"total": 3, "limit": 25}}
             }
