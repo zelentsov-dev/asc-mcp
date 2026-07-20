@@ -16,11 +16,7 @@ extension AppsWorker {
             "limit": "200",
             "sort": "name,bundleId,sku"
         ]
-        let scope = PaginationScope(
-            path: path,
-            requiredParameters: parameters,
-            allowedParameters: Set(parameters.keys).union(Set(["cursor"]))
-        )
+        let scope = PaginationScope.strict(path: path, query: parameters)
         var response: ASCAppsResponse? = try await httpClient.get(
             path,
             parameters: parameters,
@@ -94,27 +90,27 @@ extension AppsWorker {
     private func fetchAllVersions(appId: String) async throws -> [ASCAppStoreVersion] {
         let path = "/v1/apps/\(try ASCPathSegment.encode(appId))/appStoreVersions"
         let versionFields = "platform,versionString,appVersionState,appStoreState,createdDate"
+        let parameters = [
+            "fields[appStoreVersions]": versionFields,
+            "limit": "200"
+        ]
+        let scope = PaginationScope.strict(path: path, query: parameters)
         var response: ASCAppStoreVersionsResponse? = try await httpClient.get(
             path,
-            parameters: [
-                "fields[appStoreVersions]": versionFields,
-                "limit": "200"
-            ],
+            parameters: parameters,
             as: ASCAppStoreVersionsResponse.self
         )
         var versions: [ASCAppStoreVersion] = []
+        var seenNextURLs: Set<String> = []
         while let page = response {
             versions.append(contentsOf: page.data)
             if let next = page.links?.next {
+                guard seenNextURLs.insert(next).inserted else {
+                    throw ASCError.parsing("App versions pagination returned a repeated next URL")
+                }
                 response = try await httpClient.getPage(
                     next,
-                    scope: PaginationScope(
-                        path: path,
-                        requiredParameters: [
-                            "fields[appStoreVersions]": versionFields,
-                            "limit": "200"
-                        ]
-                    ),
+                    scope: scope,
                     as: ASCAppStoreVersionsResponse.self
                 )
             } else {
@@ -719,13 +715,18 @@ extension AppsWorker {
         let screenshotPath = "/v1/appStoreVersionLocalizations/\(try ASCPathSegment.encode(localizationId))/appScreenshotSets"
         let previewInclude = "appPreviews"
         let screenshotInclude = "appScreenshots"
+        let previewQuery = ["include": previewInclude, "limit": "200", "limit[appPreviews]": "50"]
+        let screenshotQuery = ["include": screenshotInclude, "limit": "200", "limit[appScreenshots]": "50"]
+        let previewScope = PaginationScope.strict(path: previewPath, query: previewQuery)
+        let screenshotScope = PaginationScope.strict(path: screenshotPath, query: screenshotQuery)
         var previews: [[String: Any]] = []
         var screenshots: [[String: Any]] = []
         var previewResponse: ASCAppPreviewSetsResponse? = try await httpClient.get(
             previewPath,
-            parameters: ["include": previewInclude, "limit": "200", "limit[appPreviews]": "50"],
+            parameters: previewQuery,
             as: ASCAppPreviewSetsResponse.self
         )
+        var seenPreviewNextURLs: Set<String> = []
 
         while let response = previewResponse {
             for previewSet in response.data {
@@ -761,16 +762,12 @@ extension AppsWorker {
                     previews.append(setInfo)
             }
             if let next = response.links?.next {
+                guard seenPreviewNextURLs.insert(next).inserted else {
+                    throw ASCError.parsing("App previews pagination returned a repeated next URL")
+                }
                 previewResponse = try await httpClient.getPage(
                     next,
-                    scope: PaginationScope(
-                        path: previewPath,
-                        requiredParameters: [
-                            "include": previewInclude,
-                            "limit": "200",
-                            "limit[appPreviews]": "50"
-                        ]
-                    ),
+                    scope: previewScope,
                     as: ASCAppPreviewSetsResponse.self
                 )
             } else {
@@ -780,9 +777,10 @@ extension AppsWorker {
 
         var screenshotResponse: ASCAppScreenshotSetsResponse? = try await httpClient.get(
             screenshotPath,
-            parameters: ["include": screenshotInclude, "limit": "200", "limit[appScreenshots]": "50"],
+            parameters: screenshotQuery,
             as: ASCAppScreenshotSetsResponse.self
         )
+        var seenScreenshotNextURLs: Set<String> = []
 
         while let response = screenshotResponse {
             for set in response.data {
@@ -816,16 +814,12 @@ extension AppsWorker {
                     screenshots.append(setData)
             }
             if let next = response.links?.next {
+                guard seenScreenshotNextURLs.insert(next).inserted else {
+                    throw ASCError.parsing("App screenshots pagination returned a repeated next URL")
+                }
                 screenshotResponse = try await httpClient.getPage(
                     next,
-                    scope: PaginationScope(
-                        path: screenshotPath,
-                        requiredParameters: [
-                            "include": screenshotInclude,
-                            "limit": "200",
-                            "limit[appScreenshots]": "50"
-                        ]
-                    ),
+                    scope: screenshotScope,
                     as: ASCAppScreenshotSetsResponse.self
                 )
             } else {

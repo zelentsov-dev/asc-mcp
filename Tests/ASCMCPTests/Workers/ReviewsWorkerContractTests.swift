@@ -118,7 +118,7 @@ struct ReviewsWorkerContractTests {
 
     @Test("review continuation preserves filters, sort, include, and response-existence scope")
     func listContinuationProtectsQueryScope() async throws {
-        let acceptedURL = "https://api.example.test/v1/apps/app-1/customerReviews?cursor=next&sort=-rating%2C-createdDate&filter%5Brating%5D=1%2C2&filter%5Bterritory%5D=USA%2CDEU&include=response&exists%5BpublishedResponse%5D=false"
+        let acceptedURL = "https://api.example.test/v1/apps/app-1/customerReviews?cursor=next&sort=-rating%2C-createdDate&filter%5Brating%5D=1%2C2&filter%5Bterritory%5D=USA%2CDEU&include=response&exists%5BpublishedResponse%5D=false&limit=100"
         let acceptedTransport = TestHTTPTransport(responses: [
             .init(statusCode: 200, body: reviewsContractEmptyPage(path: "/v1/apps/app-1/customerReviews"))
         ])
@@ -132,7 +132,7 @@ struct ReviewsWorkerContractTests {
         #expect(acceptedResult.isError != true)
         #expect(await acceptedTransport.requestCount() == 1)
 
-        let rejectedURL = "https://api.example.test/v1/apps/app-1/customerReviews?cursor=next&sort=-rating%2C-createdDate&filter%5Brating%5D=1%2C2&filter%5Bterritory%5D=USA%2CDEU&exists%5BpublishedResponse%5D=false"
+        let rejectedURL = "https://api.example.test/v1/apps/app-1/customerReviews?cursor=next&sort=-rating%2C-createdDate&filter%5Brating%5D=1%2C2&filter%5Bterritory%5D=USA%2CDEU&exists%5BpublishedResponse%5D=false&limit=100"
         let rejectedTransport = TestHTTPTransport(responses: [])
         let rejectedWorker = try await reviewsContractWorker(transport: rejectedTransport)
         let rejectedResult = try await rejectedWorker.handleTool(CallTool.Parameters(
@@ -143,7 +143,7 @@ struct ReviewsWorkerContractTests {
         #expect(rejectedResult.isError == true)
         #expect(await rejectedTransport.requestCount() == 0)
 
-        let changedSortURL = "https://api.example.test/v1/apps/app-1/customerReviews?cursor=next&sort=-createdDate&filter%5Brating%5D=1%2C2&filter%5Bterritory%5D=USA%2CDEU&include=response&exists%5BpublishedResponse%5D=false"
+        let changedSortURL = "https://api.example.test/v1/apps/app-1/customerReviews?cursor=next&sort=-createdDate&filter%5Brating%5D=1%2C2&filter%5Bterritory%5D=USA%2CDEU&include=response&exists%5BpublishedResponse%5D=false&limit=100"
         let changedSortTransport = TestHTTPTransport(responses: [])
         let changedSortWorker = try await reviewsContractWorker(transport: changedSortTransport)
         let changedSortResult = try await changedSortWorker.handleTool(CallTool.Parameters(
@@ -269,7 +269,7 @@ struct ReviewsWorkerContractTests {
 
     @Test("review stats forwards published-response existence with fixed descending sort")
     func statsForwardsResponseExistence() async throws {
-        let nextURL = "https://api.example.test/v1/apps/app-1/customerReviews?cursor=next&sort=-createdDate&exists%5BpublishedResponse%5D=false"
+        let nextURL = "https://api.example.test/v1/apps/app-1/customerReviews?cursor=next&sort=-createdDate&exists%5BpublishedResponse%5D=false&limit=200"
         let transport = TestHTTPTransport(responses: [
             .init(
                 statusCode: 200,
@@ -302,7 +302,7 @@ struct ReviewsWorkerContractTests {
 
     @Test("summarizations forward territory and protect platform and territory on continuation")
     func summarizationsSupportTerritoryAndContinuation() async throws {
-        let nextURL = "https://api.example.test/v1/apps/app-1/customerReviewSummarizations?cursor=next&filter%5Bplatform%5D=IOS&filter%5Bterritory%5D=territory-1"
+        let nextURL = "https://api.example.test/v1/apps/app-1/customerReviewSummarizations?cursor=next&filter%5Bplatform%5D=IOS&filter%5Bterritory%5D=territory-1&limit=40"
         let transport = TestHTTPTransport(responses: [
             .init(statusCode: 200, body: reviewsContractSummarizations(nextURL: nextURL)),
             .init(statusCode: 200, body: reviewsContractSummarizations(nextURL: nil))

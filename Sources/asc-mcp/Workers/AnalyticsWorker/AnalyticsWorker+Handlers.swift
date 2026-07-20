@@ -980,12 +980,7 @@ extension AnalyticsWorker {
             if let nameFilter {
                 reportsQuery["filter[name]"] = nameFilter
             }
-            var reportsRequiredParameters = reportsQuery
-            reportsRequiredParameters.removeValue(forKey: "limit")
-            let reportsScope = PaginationScope(
-                path: reportsPath,
-                requiredParameters: reportsRequiredParameters
-            )
+            let reportsScope = PaginationScope.strict(path: reportsPath, query: reportsQuery)
             var nextURL: String?
             var seenNextURLs: Set<String> = []
 

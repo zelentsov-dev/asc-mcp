@@ -30,6 +30,7 @@ public struct PaginationScope: Sendable, Equatable {
     ///   - path: Absolute API collection path, including concrete parent identifiers.
     ///   - query: Complete effective query used for the originating collection request.
     /// - Returns: A scope that permits only the originating query keys and a non-empty cursor.
+    /// - Throws: Never.
     public static func strict(path: String, query: [String: String]) -> PaginationScope {
         PaginationScope(
             path: path,

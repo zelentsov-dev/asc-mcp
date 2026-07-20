@@ -70,9 +70,7 @@ extension ReviewsWorker {
         var ratingDistribution = Dictionary(uniqueKeysWithValues: (1...5).map { ($0, 0) })
         var territories: [String: TerritoryAccumulator] = [:]
         var nextURL: String?
-        var requiredParameters = parameters
-        requiredParameters.removeValue(forKey: "limit")
-        let scope = PaginationScope(path: endpoint, requiredParameters: requiredParameters)
+        let scope = PaginationScope.strict(path: endpoint, query: parameters)
 
         while true {
             let response: Data

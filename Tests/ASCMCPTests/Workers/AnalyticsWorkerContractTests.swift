@@ -121,7 +121,7 @@ struct AnalyticsWorkerContractTests {
                 "include_reports": .bool(true),
                 "limit_reports": .int(2),
                 "next_url": .string(
-                    "https://api.example.test/v1/apps/app-1/analyticsReportRequests?cursor=next&filter%5BaccessType%5D=ONGOING&include=reports&limit%5Breports%5D=2"
+                    "https://api.example.test/v1/apps/app-1/analyticsReportRequests?cursor=next&filter%5BaccessType%5D=ONGOING&include=reports&limit=25&limit%5Breports%5D=2"
                 )
             ]
         ))
@@ -270,7 +270,7 @@ struct AnalyticsWorkerContractTests {
               }],
               "links": {
                 "self": "https://api.example.test/v1/analyticsReportRequests/request-1/reports",
-                "next": "https://api.example.test/v1/analyticsReportRequests/request-1/reports?cursor=next&filter%5Bcategory%5D=COMMERCE&filter%5Bname%5D=Sales"
+                "next": "https://api.example.test/v1/analyticsReportRequests/request-1/reports?cursor=next&filter%5Bcategory%5D=COMMERCE&filter%5Bname%5D=Sales&limit=200"
               }
             }
             """),
@@ -315,6 +315,7 @@ struct AnalyticsWorkerContractTests {
         let continuationQuery = try analyticsContractQuery(requests[1])
         #expect(continuationQuery["filter[category]"] == "COMMERCE")
         #expect(continuationQuery["filter[name]"] == "Sales")
+        #expect(continuationQuery["limit"] == "200")
         #expect(try analyticsContractQuery(requests[2])["limit"] == "1")
         #expect(try analyticsContractQuery(requests[3])["limit"] == "1")
 
@@ -324,6 +325,37 @@ struct AnalyticsWorkerContractTests {
         #expect(payload["pending"]?.intValue == 1)
         #expect(payload["category_filter"]?.stringValue == "COMMERCE")
         #expect(payload["name_filter"]?.stringValue == "Sales")
+    }
+
+    @Test("snapshot status rejects a repeated strict reports continuation")
+    func snapshotStatusRejectsPaginationCycle() async throws {
+        let next = "https://api.example.test/v1/analyticsReportRequests/request-1/reports?cursor=repeat&filter%5Bcategory%5D=COMMERCE&filter%5Bname%5D=Sales&limit=200"
+        let page = """
+        {
+          "data": [],
+          "links": {
+            "self": "https://api.example.test/v1/analyticsReportRequests/request-1/reports",
+            "next": "\(next)"
+          }
+        }
+        """
+        let transport = TestHTTPTransport(responses: [
+            .init(statusCode: 200, body: page),
+            .init(statusCode: 200, body: page)
+        ])
+        let worker = try await analyticsContractWorker(transport: transport)
+
+        let result = try await worker.handleTool(CallTool.Parameters(
+            name: "analytics_check_snapshot_status",
+            arguments: [
+                "request_id": .string("request-1"),
+                "category": .string("COMMERCE"),
+                "name": .string("Sales")
+            ]
+        ))
+
+        #expect(result.isError == true)
+        #expect(await transport.requestCount() == 2)
     }
 }
 

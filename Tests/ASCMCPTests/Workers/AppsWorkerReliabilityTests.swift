@@ -625,6 +625,89 @@ struct AppsWorkerReliabilityTests {
             #expect(await transport.requestCount() == 4)
         }
     }
+
+    @Test("metadata version pagination rejects a repeated continuation URL")
+    func metadataVersionPaginationRejectsCycle() async throws {
+        let next = "https://api.example.test/v1/apps/app-1/appStoreVersions?cursor=repeat&fields%5BappStoreVersions%5D=platform%2CversionString%2CappVersionState%2CappStoreState%2CcreatedDate&limit=200"
+        let transport = TestHTTPTransport(responses: [
+            .init(statusCode: 200, body: versionsPage(
+                versions: [version(id: "ver-1", appVersionState: "PREPARE_FOR_SUBMISSION", appStoreState: nil, platform: "IOS")],
+                next: next
+            )),
+            .init(statusCode: 200, body: versionsPage(
+                versions: [version(id: "ver-2", appVersionState: "PREPARE_FOR_SUBMISSION", appStoreState: nil, platform: "IOS")],
+                next: next
+            ))
+        ])
+        let worker = try await makeAppsReliabilityWorker(transport)
+
+        let result = try await worker.handleTool(.init(
+            name: "apps_get_metadata",
+            arguments: ["app_id": .string("app-1"), "locale": .string("en-US")]
+        ))
+
+        #expect(result.isError == true)
+        #expect(appsReliabilityText(result).contains("repeated next URL"))
+        #expect(await transport.requestCount() == 2)
+    }
+
+    @Test("metadata preview pagination rejects a repeated continuation URL")
+    func metadataPreviewPaginationRejectsCycle() async throws {
+        let next = "https://api.example.test/v1/appStoreVersionLocalizations/loc-1/appPreviewSets?cursor=repeat&include=appPreviews&limit=200&limit%5BappPreviews%5D=50"
+        let transport = TestHTTPTransport(responses: [
+            .init(statusCode: 200, body: versionResponse(id: "ver-1", appId: "app-1")),
+            .init(statusCode: 200, body: localizationPage(id: "loc-1", versionId: "ver-1")),
+            .init(statusCode: 200, body: emptyCollectionPage(
+                selfURL: "https://api.example.test/v1/appStoreVersionLocalizations/loc-1/appPreviewSets",
+                next: next
+            )),
+            .init(statusCode: 200, body: emptyCollectionPage(
+                selfURL: "https://api.example.test/v1/appStoreVersionLocalizations/loc-1/appPreviewSets",
+                next: next
+            ))
+        ])
+        let worker = try await makeAppsReliabilityWorker(transport)
+
+        let result = try await worker.handleTool(.init(
+            name: "apps_get_metadata",
+            arguments: metadataMediaArguments()
+        ))
+
+        #expect(result.isError == true)
+        #expect(appsReliabilityText(result).contains("repeated next URL"))
+        #expect(await transport.requestCount() == 4)
+    }
+
+    @Test("metadata screenshot pagination rejects a repeated continuation URL")
+    func metadataScreenshotPaginationRejectsCycle() async throws {
+        let next = "https://api.example.test/v1/appStoreVersionLocalizations/loc-1/appScreenshotSets?cursor=repeat&include=appScreenshots&limit=200&limit%5BappScreenshots%5D=50"
+        let transport = TestHTTPTransport(responses: [
+            .init(statusCode: 200, body: versionResponse(id: "ver-1", appId: "app-1")),
+            .init(statusCode: 200, body: localizationPage(id: "loc-1", versionId: "ver-1")),
+            .init(statusCode: 200, body: emptyCollectionPage(
+                selfURL: "https://api.example.test/v1/appStoreVersionLocalizations/loc-1/appPreviewSets",
+                next: nil
+            )),
+            .init(statusCode: 200, body: emptyCollectionPage(
+                selfURL: "https://api.example.test/v1/appStoreVersionLocalizations/loc-1/appScreenshotSets",
+                next: next
+            )),
+            .init(statusCode: 200, body: emptyCollectionPage(
+                selfURL: "https://api.example.test/v1/appStoreVersionLocalizations/loc-1/appScreenshotSets",
+                next: next
+            ))
+        ])
+        let worker = try await makeAppsReliabilityWorker(transport)
+
+        let result = try await worker.handleTool(.init(
+            name: "apps_get_metadata",
+            arguments: metadataMediaArguments()
+        ))
+
+        #expect(result.isError == true)
+        #expect(appsReliabilityText(result).contains("repeated next URL"))
+        #expect(await transport.requestCount() == 5)
+    }
 }
 
 private func makeAppsReliabilityWorker(_ transport: TestHTTPTransport) async throws -> AppsWorker {

@@ -7,7 +7,7 @@ import Testing
 struct PricingTerritoryAvailabilityContractTests {
     @Test("app availability is resolved before its paginated territory collection is listed")
     func resolvesThenListsWithRequestedLimit() async throws {
-        let nextURL = "https://api.example.test/v2/appAvailabilities/availability-1/territoryAvailabilities?cursor=next-page&include=territory"
+        let nextURL = "https://api.example.test/v2/appAvailabilities/availability-1/territoryAvailabilities?cursor=next-page&include=territory&limit=125"
         let transport = TestHTTPTransport(responses: [
             .init(statusCode: 200, body: #"{"data":{"type":"appAvailabilities","id":"availability-1","attributes":{"availableInNewTerritories":true}},"links":{"self":"https://api.example.test/v1/apps/app-1/appAvailabilityV2"}}"#),
             .init(statusCode: 200, body: territoryAvailabilitiesBody(nextURL: nextURL))
@@ -47,7 +47,7 @@ struct PricingTerritoryAvailabilityContractTests {
 
     @Test("next URL is bound to the freshly resolved app availability")
     func nextURLUsesFreshlyResolvedAvailability() async throws {
-        let nextURL = "https://api.example.test/v2/appAvailabilities/availability-1/territoryAvailabilities?cursor=next-page&limit=25&include=territory"
+        let nextURL = "https://api.example.test/v2/appAvailabilities/availability-1/territoryAvailabilities?cursor=next-page&limit=200&include=territory"
         let transport = TestHTTPTransport(responses: [
             .init(statusCode: 200, body: appAvailabilityBody(id: "availability-1")),
             .init(statusCode: 200, body: #"{"data":[],"links":{"self":"https://api.example.test/v2/appAvailabilities/availability-1/territoryAvailabilities?cursor=next-page&limit=25&include=territory"}}"#)
@@ -70,7 +70,7 @@ struct PricingTerritoryAvailabilityContractTests {
         let request = try #require(requests.last)
         #expect(request.url?.path == "/v2/appAvailabilities/availability-1/territoryAvailabilities")
         #expect(try queryItems(request)["cursor"] == "next-page")
-        #expect(try queryItems(request)["limit"] == "25")
+        #expect(try queryItems(request)["limit"] == "200")
         #expect(try queryItems(request)["include"] == "territory")
     }
 

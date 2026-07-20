@@ -237,7 +237,7 @@ struct BetaFeedbackReliabilityTests {
             """)
         ])
         let worker = try await betaFeedbackWorker(transport)
-        let nextURL = "https://api.example.test/v1/apps/app-1/betaFeedbackCrashSubmissions?filter%5Bbuild%5D=build-1&include=tester&cursor=page-2&limit=25"
+        let nextURL = "https://api.example.test/v1/apps/app-1/betaFeedbackCrashSubmissions?filter%5Bbuild%5D=build-1&include=tester&cursor=page-2&limit=25&sort=-createdDate"
 
         let result = try await worker.handleTool(CallTool.Parameters(
             name: "beta_feedback_list_crashes",

@@ -154,7 +154,7 @@ struct ReviewsStatsHardeningTests {
     @Test("bounded stats aggregate pages numerically and deduplicate review IDs")
     func boundedStatsAggregatePagesAndDeduplicate() async throws {
         let recentDate = ISO8601DateFormatter().string(from: Date().addingTimeInterval(-60))
-        let secondPage = "https://api.example.test/v1/apps/app-1/customerReviews?cursor=second&sort=-createdDate"
+        let secondPage = "https://api.example.test/v1/apps/app-1/customerReviews?cursor=second&limit=200&sort=-createdDate"
         let transport = TestHTTPTransport(responses: [
             .init(statusCode: 200, body: reviewsPage(
                 reviews: [
@@ -248,6 +248,27 @@ struct ReviewsStatsHardeningTests {
 
         #expect(result.isError == true)
         #expect(await transport.requestCount() == 0)
+    }
+
+    @Test("stats reject a repeated strict continuation URL")
+    func statsRejectPaginationCycle() async throws {
+        let next = "https://api.example.test/v1/apps/app-1/customerReviews?cursor=repeat&limit=200&sort=-createdDate"
+        let transport = TestHTTPTransport(responses: [
+            .init(statusCode: 200, body: reviewsPage(reviews: [], nextURL: next)),
+            .init(statusCode: 200, body: reviewsPage(reviews: [], nextURL: next))
+        ])
+        let worker = try await makeReviewsWorker(transport: transport)
+
+        let result = try await worker.handleTool(CallTool.Parameters(
+            name: "reviews_stats",
+            arguments: [
+                "app_id": .string("app-1"),
+                "period": .string("all_time")
+            ]
+        ))
+
+        #expect(result.isError == true)
+        #expect(await transport.requestCount() == 2)
     }
 }
 
