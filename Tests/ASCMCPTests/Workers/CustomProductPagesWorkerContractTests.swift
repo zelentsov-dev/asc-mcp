@@ -200,7 +200,8 @@ private func cppQuery(_ request: URLRequest) -> [String: String] {
 }
 
 private func cppRequestBody(_ request: URLRequest) throws -> [String: Any] {
-    try #require(JSONSerialization.jsonObject(with: try #require(request.httpBody)) as? [String: Any])
+    let body = try #require(request.httpBody)
+    return try #require(JSONSerialization.jsonObject(with: body) as? [String: Any])
 }
 
 private func cppObject(_ value: Any?) throws -> [String: Any] {
