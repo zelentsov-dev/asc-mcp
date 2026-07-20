@@ -908,7 +908,7 @@ extension SubscriptionsWorker {
                 key: "introductory_offers",
                 defaultQuery: [
                     "include": "territory,subscriptionPricePoint",
-                    "fields[subscriptionIntroductoryOffers]": "startDate,endDate,duration,offerMode,numberOfPeriods,territory,subscriptionPricePoint",
+                    "fields[subscriptionIntroductoryOffers]": "startDate,endDate,targetSubscriptionPlanType,duration,offerMode,numberOfPeriods,territory,subscriptionPricePoint",
                     "fields[territories]": "currency",
                     "fields[subscriptionPricePoints]": "customerPrice,proceeds,proceedsYear2,territory,equalizations"
                 ]

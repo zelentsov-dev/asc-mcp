@@ -169,6 +169,40 @@ struct SubscriptionWriteOptionalInputContractTests {
         #expect(omittedAttributes.isEmpty)
     }
 
+    @Test("introductory offer list requests and projects the target plan type")
+    func introductoryOfferListProjectsTargetPlanType() async throws {
+        let transport = TestHTTPTransport(responses: [
+            .init(
+                statusCode: 200,
+                body: #"{"data":[{"type":"subscriptionIntroductoryOffers","id":"intro-1","attributes":{"startDate":"2026-08-01","endDate":null,"targetSubscriptionPlanType":"UPFRONT","duration":"ONE_MONTH","offerMode":"PAY_UP_FRONT","numberOfPeriods":1}}]}"#
+            )
+        ])
+        let worker = try await subscriptionOptionalWorker(transport)
+
+        let result = try await worker.handleTool(.init(
+            name: "subscriptions_list_intro_offers",
+            arguments: ["subscription_id": .string("sub-1")]
+        ))
+
+        #expect(result.isError != true)
+        let root = try subscriptionOptionalObject(result.structuredContent)
+        let offers = try subscriptionOptionalArray(root["introductory_offers"])
+        let offer = try subscriptionOptionalObject(try #require(offers.first))
+        #expect(offer["target_subscription_plan_type"] == .string("UPFRONT"))
+        #expect(offer["start_date"] == .string("2026-08-01"))
+        #expect(offer["end_date"] == .null)
+
+        let request = try #require(await transport.recordedRequests().first)
+        let queryItems = URLComponents(url: try #require(request.url), resolvingAgainstBaseURL: false)?.queryItems ?? []
+        let query = Dictionary(uniqueKeysWithValues: queryItems.compactMap { item in
+            item.value.map { (item.name, $0) }
+        })
+        #expect(
+            query["fields[subscriptionIntroductoryOffers]"] ==
+                "startDate,endDate,targetSubscriptionPlanType,duration,offerMode,numberOfPeriods,territory,subscriptionPricePoint"
+        )
+    }
+
     @Test("introductory offer and price reject malformed optional inputs before transport")
     func malformedOptionalInputsDoNotReachTransport() async throws {
         let transport = TestHTTPTransport(responses: [])
