@@ -2908,7 +2908,42 @@
           "method": "get",
           "path": "/v1/subscriptions/{id}/prices",
           "role": "primary",
-          "condition": null
+          "condition": "Filters by one territory and optional planType, then follows validated Apple pagination until exhausted or the caller's local max_pages cap is reached.",
+          "inputs": [
+            {
+              "sourceKind": "fixed",
+              "location": "query",
+              "appleName": "include",
+              "fixedValue": ["territory", "subscriptionPricePoint"]
+            },
+            {
+              "sourceKind": "fixed",
+              "location": "query",
+              "appleName": "fields[subscriptionPrices]",
+              "fixedValue": ["startDate", "preserved", "planType", "territory", "subscriptionPricePoint"]
+            },
+            {
+              "sourceKind": "fixed",
+              "location": "query",
+              "appleName": "fields[subscriptionPricePoints]",
+              "fixedValue": ["customerPrice", "proceeds", "proceedsYear2", "territory", "equalizations"]
+            },
+            {
+              "sourceKind": "fixed",
+              "location": "query",
+              "appleName": "fields[territories]",
+              "fixedValue": ["currency"]
+            }
+          ],
+          "optionalParameterClassifications": [
+            {
+              "location": "query",
+              "appleName": "filter[subscriptionPricePoint]",
+              "disposition": "intentionallyOmitted",
+              "reason": "The aggregate summarizes the complete territory and optional plan schedule; narrowing to one price point would make current and scheduled classifications incomplete.",
+              "reviewAtSpec": "4.4.1"
+            }
+          ]
         }
       ],
       "fields": [
@@ -2925,16 +2960,63 @@
           "operationId": "subscriptions_prices_getToManyRelated",
           "location": "query",
           "appleName": "filter[territory]"
+        },
+        {
+          "toolField": "plan_type",
+          "sourceKind": "parameter",
+          "operationId": "subscriptions_prices_getToManyRelated",
+          "location": "query",
+          "appleName": "filter[planType]"
+        },
+        {
+          "toolField": "limit",
+          "sourceKind": "parameter",
+          "operationId": "subscriptions_prices_getToManyRelated",
+          "location": "query",
+          "appleName": "limit"
+        },
+        {
+          "toolField": "max_pages",
+          "sourceKind": "local",
+          "localRole": "Caps the number of Apple pages fetched in one call and causes an explicit truncated result with next_url."
+        },
+        {
+          "toolField": "next_url",
+          "sourceKind": "local",
+          "localRole": "Validated Apple pagination continuation that preserves the parent, territory, optional plan, and fixed response projection."
         }
       ],
       "response": {
-        "mode": "opaque",
+        "mode": "aggregate",
         "sources": [
           { "operationId": "subscriptions_prices_getToManyRelated", "statusCode": "200", "mediaType": "application/json" }
         ],
-        "fields": []
+        "fields": [
+          { "outputField": "success", "localRole": "successEnvelope" },
+          { "outputField": "subscription_id", "localRole": "normalizedRequestEcho" },
+          { "outputField": "territory_id", "localRole": "normalizedRequestEcho" },
+          { "outputField": "plan_type", "localRole": "normalizedOptionalRequestEcho" },
+          { "outputField": "available_plan_types", "operationId": "subscriptions_prices_getToManyRelated", "jsonPointer": "/data/*/attributes/planType", "localRole": "sortedDistinctPlanTypes" },
+          { "outputField": "plan_summaries", "operationId": "subscriptions_prices_getToManyRelated", "jsonPointer": "/data", "localRole": "perPlanEffectiveScheduledAndUndatedProjectionWithCurrentPriceOnlyForCompleteTraversal" },
+          { "outputField": "legacy_summary_unambiguous", "localRole": "singlePlanCompatibilitySafety" },
+          { "outputField": "current_price", "localRole": "singlePlanLatestDatedEffectivePriceOrStableUndatedFallback" },
+          { "outputField": "effective_prices", "localRole": "allStartedPricesNewestFirstIncludingPreservedCohortsForSinglePlan" },
+          { "outputField": "scheduled_prices", "localRole": "singlePlanCompatibilityProjection" },
+          { "outputField": "undated_prices", "localRole": "singlePlanCompatibilityProjection" },
+          { "outputField": "as_of_date", "localRole": "utcCalendarDateUsedForScheduleClassification" },
+          { "outputField": "price_count", "operationId": "subscriptions_prices_getToManyRelated", "jsonPointer": "/data", "localRole": "deduplicatedPriceCountAcrossFetchedPages" },
+          { "outputField": "duplicates_skipped", "localRole": "identicalDuplicateResourceIdsExcludedAcrossPages; conflicting duplicates fail" },
+          { "outputField": "pages_fetched", "localRole": "paginationRequestCount" },
+          { "outputField": "limit", "localRole": "applePageSizeEcho" },
+          { "outputField": "max_pages", "localRole": "localTraversalCapEcho" },
+          { "outputField": "started_from_continuation", "localRole": "continuationScopeMarker" },
+          { "outputField": "continuation_exhausted", "localRole": "noRemainingNextLink" },
+          { "outputField": "complete", "localRole": "fullCollectionTraversalFromFirstPage" },
+          { "outputField": "truncated", "localRole": "remainingNextPageAfterLocalCap" },
+          { "outputField": "next_url", "localRole": "validatedOnUseAppleContinuationOrNull" }
+        ]
       },
-      "note": "Reads territory prices and summarizes locally. The public tool lacks planType and can conflate MONTHLY and UPFRONT schedules."
+      "note": "Validates the request before network access, keeps MONTHLY and UPFRONT schedules separate, skips only identical duplicate resource IDs and rejects conflicting duplicates, classifies dated prices against one UTC day, preserves every effective, scheduled, and undated price, and reports continuation and truncation without claiming partial data is complete. A complete plan uses its latest dated effective price as current, falling back deterministically to an undated starting price. Legacy current_price and scheduled_prices are populated only when the fetched records form one unambiguous plan summary."
     },
     {
       "tool": "subscriptions_set_availability",

@@ -16,7 +16,7 @@ extension SubscriptionsWorker {
             simpleTool("subscriptions_list_available_territories", "Deprecated compatibility listing for Apple's legacy subscriptionAvailability resource. Apple 4.4.1 replaces it with plan-type-aware subscriptionPlanAvailabilities.", ["availability_id": "Subscription availability ID", "limit": "Max results", "next_url": "Pagination URL"], ["availability_id"]),
             simpleTool("subscriptions_get_promoted_purchase", "Get promoted purchase for a subscription", ["subscription_id": "Subscription ID"], ["subscription_id"]),
             simpleTool("subscriptions_inventory", "Deprecated compatibility inventory built from Apple's legacy subscriptionAvailability resource. It can omit subscriptions beyond the first included relationship page, so do not treat it as an authoritative complete inventory.", ["app_id": "App Store Connect app ID", "territory_id": "Optional territory for price sampling", "limit": "Max groups/subscriptions per page"], ["app_id"]),
-            simpleTool("subscriptions_pricing_summary", "Summarize current and scheduled subscription pricing for a territory", ["subscription_id": "Subscription ID", "territory_id": "Territory ID"], ["subscription_id", "territory_id"]),
+            subscriptionPricingSummaryTool(),
             simpleTool("subscriptions_prepare_offer_prices", "Find subscription price point candidates for offer creation", ["subscription_id": "Subscription ID", "territory_id": "Territory ID", "mode": "Offer mode", "customer_price": "Optional customer price to match"], ["subscription_id", "territory_id", "mode"]),
             simpleTool("subscriptions_list_intro_offers", "List introductory offers", ["subscription_id": "Subscription ID", "territory_id": "Optional territory filter", "limit": "Max results", "next_url": "Pagination URL"], ["subscription_id"]),
             simpleTool("subscriptions_create_intro_offer", "Create an introductory offer", ["subscription_id": "Subscription ID", "duration": "Offer duration", "offer_mode": "Offer mode", "number_of_periods": "Number of periods", "territory_id": "Territory ID", "price_point_id": "Price point ID for paid modes"], ["subscription_id", "duration", "offer_mode", "number_of_periods"]),
@@ -49,6 +49,54 @@ extension SubscriptionsWorker {
             simpleTool("subscriptions_delete_winback_offer", "Delete a win-back offer", ["winback_offer_id": "Win-back offer ID"], ["winback_offer_id"]),
             simpleTool("subscriptions_list_winback_offer_prices", "List win-back offer prices", ["winback_offer_id": "Win-back offer ID", "territory_id": "Optional territory filter", "limit": "Max results", "next_url": "Pagination URL"], ["winback_offer_id"])
         ]
+    }
+
+    private func subscriptionPricingSummaryTool() -> Tool {
+        Tool(
+            name: "subscriptions_pricing_summary",
+            description: "Summarize subscription pricing for one territory without conflating Apple's MONTHLY and UPFRONT plans. Follows pagination automatically and reports partial results explicitly when max_pages stops traversal.",
+            inputSchema: .object([
+                "type": .string("object"),
+                "additionalProperties": .bool(false),
+                "properties": .object([
+                    "subscription_id": .object([
+                        "type": .string("string"),
+                        "minLength": .int(1),
+                        "description": .string("App Store Connect subscription ID")
+                    ]),
+                    "territory_id": .object([
+                        "type": .string("string"),
+                        "pattern": .string("^[A-Za-z]{3}$"),
+                        "description": .string("ISO 3166-1 alpha-3 App Store territory ID, such as USA or GBR")
+                    ]),
+                    "plan_type": .object([
+                        "type": .string("string"),
+                        "enum": .array([.string("MONTHLY"), .string("UPFRONT")]),
+                        "description": .string("Optional Apple subscription plan type. Omit to receive separate summaries for every returned plan.")
+                    ]),
+                    "limit": .object([
+                        "type": .string("integer"),
+                        "minimum": .int(1),
+                        "maximum": .int(200),
+                        "default": .int(200),
+                        "description": .string("Apple resources requested per page")
+                    ]),
+                    "max_pages": .object([
+                        "type": .string("integer"),
+                        "minimum": .int(1),
+                        "maximum": .int(100),
+                        "description": .string("Optional local cap on pages fetched in this call. Omit to traverse to the end.")
+                    ]),
+                    "next_url": .object([
+                        "type": .string("string"),
+                        "format": .string("uri"),
+                        "minLength": .int(1),
+                        "description": .string("Validated next_url from a previous partial pricing summary")
+                    ])
+                ]),
+                "required": .array([.string("subscription_id"), .string("territory_id")])
+            ])
+        )
     }
 
     private func simpleTool(_ name: String, _ description: String, _ properties: [String: String], _ required: [String]) -> Tool {

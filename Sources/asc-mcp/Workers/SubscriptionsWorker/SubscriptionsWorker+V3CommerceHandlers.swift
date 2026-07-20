@@ -350,35 +350,383 @@ extension SubscriptionsWorker {
     }
 
     func getSubscriptionPricingSummary(_ params: CallTool.Parameters) async throws -> CallTool.Result {
-        guard let arguments = params.arguments,
-              let subscriptionId = arguments["subscription_id"]?.stringValue,
-              let territoryId = arguments["territory_id"]?.stringValue else {
-            return MCPResult.error("Required parameters: subscription_id, territory_id")
-        }
         do {
-            let prices: PassthroughAPIResponse = try await httpClient.get(
-                "/v1/subscriptions/\(try ASCPathSegment.encode(subscriptionId))/prices",
-                parameters: subscriptionPriceQuery(arguments: ["territory_id": .string(territoryId)], maxLimit: 200).merging(["filter[territory]": territoryId]) { _, new in new },
-                as: PassthroughAPIResponse.self
+            let options = try subscriptionPricingSummaryOptions(params.arguments)
+            let endpoint = "/v1/subscriptions/\(try ASCPathSegment.encode(options.subscriptionId))/prices"
+            let query = subscriptionPricingSummaryQuery(options)
+            let scope = PaginationScope(
+                path: endpoint,
+                requiredParameters: query,
+                allowedParameters: Set(query.keys).union(["cursor"])
             )
-            let included = IncludedIndex(prices.included)
-            let formatted = (prices.data.arrayValue ?? []).map { formatSubscriptionPrice($0, included: included) }
-            let split = splitCurrentAndScheduledSubscriptionPrices(formatted)
+
+            var records: [SubscriptionPricingRecord] = []
+            var recordsByPriceId: [String: SubscriptionPricingRecord] = [:]
+            var duplicatesSkipped = 0
+            var pagesFetched = 0
+            var pageURL = options.nextURL
+            var seenPageURLs: Set<String> = []
+            if let pageURL {
+                seenPageURLs.insert(pageURL)
+            }
+            var remainingNextURL: String?
+
+            while true {
+                let response: PassthroughAPIResponse
+                if let pageURL {
+                    response = try await httpClient.getPage(pageURL, scope: scope, as: PassthroughAPIResponse.self)
+                } else {
+                    response = try await httpClient.get(endpoint, parameters: query, as: PassthroughAPIResponse.self)
+                }
+
+                guard let resources = response.data.arrayValue else {
+                    throw ASCError.parsing("Subscription pricing response data must be an array")
+                }
+                pagesFetched += 1
+                let included = IncludedIndex(response.included)
+                for resource in resources {
+                    let record = try subscriptionPricingRecord(
+                        resource,
+                        included: included,
+                        territoryId: options.territoryId,
+                        requestedPlanType: options.planType
+                    )
+                    if let existingRecord = recordsByPriceId[record.id] {
+                        guard existingRecord == record else {
+                            throw ASCError.parsing("Subscription pricing pagination returned conflicting resources for ID '\(record.id)'")
+                        }
+                        duplicatesSkipped += 1
+                        continue
+                    }
+                    recordsByPriceId[record.id] = record
+                    records.append(record)
+                }
+
+                guard let nextURL = try subscriptionPricingNextURL(response.links) else {
+                    remainingNextURL = nil
+                    break
+                }
+                guard seenPageURLs.insert(nextURL).inserted else {
+                    throw ASCError.parsing("Subscription pricing pagination returned a repeated next URL")
+                }
+                if let maxPages = options.maxPages, pagesFetched >= maxPages {
+                    remainingNextURL = nextURL
+                    break
+                }
+                pageURL = nextURL
+            }
+
+            let today = Self.currentUTCSubscriptionPricingDay()
+            let startedFromContinuation = options.nextURL != nil
+            let collectionComplete = !startedFromContinuation && remainingNextURL == nil
+            let planKeys = subscriptionPricingPlanKeys(records, requestedPlanType: options.planType)
+            let planSummaries = planKeys.map { key in
+                subscriptionPricingPlanSummary(
+                    records.filter { ($0.planType ?? "") == key },
+                    planType: key.isEmpty ? nil : key,
+                    asOfDate: today,
+                    complete: collectionComplete
+                )
+            }
+            let legacyUnambiguous = collectionComplete && planKeys.count <= 1
+            let legacyRecords = legacyUnambiguous ? records : []
+            let legacySplit = splitSubscriptionPricingRecords(legacyRecords, asOfDate: today)
+
             return MCPResult.jsonObject([
                 "success": true,
-                "subscription_id": subscriptionId,
-                "territory_id": territoryId,
-                "current_price": split.current ?? NSNull(),
-                "scheduled_prices": split.scheduled,
-                "price_count": formatted.count
+                "subscription_id": options.subscriptionId,
+                "territory_id": options.territoryId,
+                "plan_type": subscriptionPricingJSONSafe(options.planType),
+                "available_plan_types": Array(Set(records.compactMap(\.planType))).sorted(),
+                "plan_summaries": planSummaries,
+                "legacy_summary_unambiguous": legacyUnambiguous,
+                "current_price": subscriptionPricingJSONSafe(legacySplit.current?.jsonObject),
+                "effective_prices": legacySplit.effective.map(\.jsonObject),
+                "scheduled_prices": legacySplit.scheduled.map(\.jsonObject),
+                "undated_prices": legacySplit.undated.map(\.jsonObject),
+                "as_of_date": today,
+                "price_count": records.count,
+                "duplicates_skipped": duplicatesSkipped,
+                "pages_fetched": pagesFetched,
+                "limit": options.pageLimit,
+                "max_pages": subscriptionPricingJSONSafe(options.maxPages),
+                "started_from_continuation": startedFromContinuation,
+                "continuation_exhausted": remainingNextURL == nil,
+                "complete": collectionComplete,
+                "truncated": remainingNextURL != nil,
+                "next_url": subscriptionPricingJSONSafe(remainingNextURL)
             ])
         } catch {
             return MCPResult.error("Failed to summarize subscription pricing: \(error.localizedDescription)")
         }
     }
 
+    private func subscriptionPricingSummaryOptions(_ arguments: [String: Value]?) throws -> SubscriptionPricingSummaryOptions {
+        guard let arguments else {
+            throw ASCError.parsing("Required parameters: subscription_id, territory_id")
+        }
+        let allowedArguments: Set<String> = ["subscription_id", "territory_id", "plan_type", "limit", "max_pages", "next_url"]
+        let unexpectedArguments = Set(arguments.keys).subtracting(allowedArguments).sorted()
+        guard unexpectedArguments.isEmpty else {
+            throw ASCError.parsing("Unsupported parameter(s): \(unexpectedArguments.joined(separator: ", "))")
+        }
+
+        guard let rawSubscriptionId = arguments["subscription_id"]?.stringValue else {
+            throw ASCError.parsing("subscription_id must be a non-empty string")
+        }
+        let subscriptionId = rawSubscriptionId.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !subscriptionId.isEmpty else {
+            throw ASCError.parsing("subscription_id must be a non-empty string")
+        }
+
+        guard let rawTerritoryId = arguments["territory_id"]?.stringValue else {
+            throw ASCError.parsing("territory_id must be a three-letter ISO 3166-1 alpha-3 code")
+        }
+        let territoryId = rawTerritoryId.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
+        guard territoryId.utf8.count == 3,
+              territoryId.utf8.allSatisfy({ (65...90).contains($0) }) else {
+            throw ASCError.parsing("territory_id must be a three-letter ISO 3166-1 alpha-3 code")
+        }
+
+        let planType: String?
+        if let value = arguments["plan_type"] {
+            guard let rawPlanType = value.stringValue else {
+                throw ASCError.parsing("plan_type must be MONTHLY or UPFRONT")
+            }
+            let normalizedPlanType = rawPlanType.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
+            guard ["MONTHLY", "UPFRONT"].contains(normalizedPlanType) else {
+                throw ASCError.parsing("plan_type must be MONTHLY or UPFRONT")
+            }
+            planType = normalizedPlanType
+        } else {
+            planType = nil
+        }
+
+        let pageLimit: Int
+        if let value = arguments["limit"] {
+            guard let limit = value.intValue, (1...200).contains(limit) else {
+                throw ASCError.parsing("limit must be an integer from 1 through 200")
+            }
+            pageLimit = limit
+        } else {
+            pageLimit = 200
+        }
+
+        let maxPages: Int?
+        if let value = arguments["max_pages"] {
+            guard let limit = value.intValue, (1...100).contains(limit) else {
+                throw ASCError.parsing("max_pages must be an integer from 1 through 100")
+            }
+            maxPages = limit
+        } else {
+            maxPages = nil
+        }
+
+        return SubscriptionPricingSummaryOptions(
+            subscriptionId: subscriptionId,
+            territoryId: territoryId,
+            planType: planType,
+            pageLimit: pageLimit,
+            maxPages: maxPages,
+            nextURL: try paginationURL(from: arguments["next_url"])
+        )
+    }
+
+    private func subscriptionPricingSummaryQuery(_ options: SubscriptionPricingSummaryOptions) -> [String: String] {
+        var query: [String: String] = [
+            "filter[territory]": options.territoryId,
+            "include": "territory,subscriptionPricePoint",
+            "fields[subscriptionPrices]": "startDate,preserved,planType,territory,subscriptionPricePoint",
+            "fields[subscriptionPricePoints]": "customerPrice,proceeds,proceedsYear2,territory,equalizations",
+            "fields[territories]": "currency",
+            "limit": String(options.pageLimit)
+        ]
+        if let planType = options.planType {
+            query["filter[planType]"] = planType
+        }
+        return query
+    }
+
+    private func subscriptionPricingNextURL(_ links: JSONValue?) throws -> String? {
+        guard let links, let object = links.objectValue else {
+            throw ASCError.parsing("Subscription pricing response is missing the required links object")
+        }
+        guard let value = object["next"] else {
+            return nil
+        }
+        if value.isNull {
+            return nil
+        }
+        guard let nextURL = value.stringValue,
+              !nextURL.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            throw ASCError.parsing("Subscription pricing links.next must be a non-empty string or null")
+        }
+        return nextURL
+    }
+
+    private func subscriptionPricingRecord(
+        _ resource: JSONValue,
+        included: IncludedIndex,
+        territoryId: String,
+        requestedPlanType: String?
+    ) throws -> SubscriptionPricingRecord {
+        guard resource.type == "subscriptionPrices",
+              let id = resource.id,
+              !id.isEmpty else {
+            throw ASCError.parsing("Subscription pricing response contains an invalid subscriptionPrices resource")
+        }
+        let resourceTerritoryId = try requiredSubscriptionPricingRelationshipId(
+            resource,
+            name: "territory",
+            expectedType: "territories",
+            resourceId: id
+        )
+        guard resourceTerritoryId == territoryId else {
+            throw ASCError.parsing("Subscription price '\(id)' does not belong to requested territory '\(territoryId)'")
+        }
+        let pricePointId = try requiredSubscriptionPricingRelationshipId(
+            resource,
+            name: "subscriptionPricePoint",
+            expectedType: "subscriptionPricePoints",
+            resourceId: id
+        )
+        guard let pricePoint = included.resource(type: "subscriptionPricePoints", id: pricePointId) else {
+            throw ASCError.parsing("Subscription price '\(id)' is missing its included subscription price point")
+        }
+        guard let territory = included.resource(type: "territories", id: territoryId) else {
+            throw ASCError.parsing("Subscription price '\(id)' is missing its included territory")
+        }
+
+        let planType: String?
+        if let value = resource.attributes["planType"], !value.isNull {
+            guard let rawPlanType = value.stringValue,
+                  ["MONTHLY", "UPFRONT"].contains(rawPlanType) else {
+                throw ASCError.parsing("Subscription price '\(id)' has an unsupported planType")
+            }
+            planType = rawPlanType
+        } else {
+            planType = nil
+        }
+        if let requestedPlanType, planType != requestedPlanType {
+            throw ASCError.parsing("Subscription price '\(id)' does not match requested plan_type '\(requestedPlanType)'")
+        }
+
+        let startDate: String?
+        if let value = resource.attributes["startDate"], !value.isNull {
+            guard let rawStartDate = value.stringValue, Self.isValidSubscriptionPricingDate(rawStartDate) else {
+                throw ASCError.parsing("Subscription price '\(id)' has an invalid startDate")
+            }
+            startDate = rawStartDate
+        } else {
+            startDate = nil
+        }
+
+        let preserved: Bool?
+        if let value = resource.attributes["preserved"], !value.isNull {
+            guard let rawPreserved = value.boolValue else {
+                throw ASCError.parsing("Subscription price '\(id)' has an invalid preserved value")
+            }
+            preserved = rawPreserved
+        } else {
+            preserved = nil
+        }
+
+        return SubscriptionPricingRecord(
+            id: id,
+            territoryId: territoryId,
+            currency: try optionalSubscriptionPricingString(territory.attributes["currency"], field: "currency", resourceId: id),
+            pricePointId: pricePointId,
+            customerPrice: try optionalSubscriptionPricingString(pricePoint.attributes["customerPrice"], field: "customerPrice", resourceId: id),
+            proceeds: try optionalSubscriptionPricingString(pricePoint.attributes["proceeds"], field: "proceeds", resourceId: id),
+            proceedsYear2: try optionalSubscriptionPricingString(pricePoint.attributes["proceedsYear2"], field: "proceedsYear2", resourceId: id),
+            startDate: startDate,
+            preserved: preserved,
+            planType: planType
+        )
+    }
+
+    private func requiredSubscriptionPricingRelationshipId(
+        _ resource: JSONValue,
+        name: String,
+        expectedType: String,
+        resourceId: String
+    ) throws -> String {
+        guard let linkage = resource.relationships[name]?.objectValue?["data"]?.objectValue,
+              linkage["type"]?.stringValue == expectedType,
+              let id = linkage["id"]?.stringValue,
+              !id.isEmpty else {
+            throw ASCError.parsing("Subscription price '\(resourceId)' has an invalid \(name) relationship")
+        }
+        return id
+    }
+
+    private func optionalSubscriptionPricingString(_ value: JSONValue?, field: String, resourceId: String) throws -> String? {
+        guard let value, !value.isNull else {
+            return nil
+        }
+        guard let string = value.stringValue else {
+            throw ASCError.parsing("Subscription price '\(resourceId)' has an invalid \(field) value")
+        }
+        return string
+    }
+
+    private func subscriptionPricingPlanKeys(_ records: [SubscriptionPricingRecord], requestedPlanType: String?) -> [String] {
+        var keys = Set(records.map { $0.planType ?? "" })
+        if let requestedPlanType {
+            keys.insert(requestedPlanType)
+        }
+        return keys.sorted { lhs, rhs in
+            if lhs.isEmpty { return false }
+            if rhs.isEmpty { return true }
+            return lhs < rhs
+        }
+    }
+
+    private func subscriptionPricingPlanSummary(
+        _ records: [SubscriptionPricingRecord],
+        planType: String?,
+        asOfDate: String,
+        complete: Bool
+    ) -> [String: Any] {
+        let split = splitSubscriptionPricingRecords(records, asOfDate: asOfDate)
+        return [
+            "plan_type": subscriptionPricingJSONSafe(planType),
+            "current_price": subscriptionPricingJSONSafe(complete ? split.current?.jsonObject : nil),
+            "effective_prices": split.effective.map(\.jsonObject),
+            "scheduled_prices": split.scheduled.map(\.jsonObject),
+            "undated_prices": split.undated.map(\.jsonObject),
+            "price_count": records.count,
+            "complete": complete
+        ]
+    }
+
+    private func splitSubscriptionPricingRecords(
+        _ records: [SubscriptionPricingRecord],
+        asOfDate: String
+    ) -> SubscriptionPricingSplit {
+        let past = records
+            .filter { ($0.startDate ?? "") <= asOfDate && $0.startDate != nil }
+            .sorted {
+                if $0.startDate == $1.startDate { return $0.id < $1.id }
+                return ($0.startDate ?? "") > ($1.startDate ?? "")
+            }
+        let scheduled = records
+            .filter { ($0.startDate ?? "") > asOfDate }
+            .sorted {
+                if $0.startDate == $1.startDate { return $0.id < $1.id }
+                return ($0.startDate ?? "") < ($1.startDate ?? "")
+            }
+        let undated = records.filter { $0.startDate == nil }.sorted { $0.id < $1.id }
+        return SubscriptionPricingSplit(
+            current: past.first ?? undated.first,
+            effective: past,
+            scheduled: scheduled,
+            undated: undated
+        )
+    }
+
     private func splitCurrentAndScheduledSubscriptionPrices(_ prices: [[String: Any]]) -> (current: [String: Any]?, scheduled: [[String: Any]]) {
-        let today = Self.utcDayFormatter.string(from: Date())
+        let today = Self.currentUTCSubscriptionPricingDay()
         let current = prices
             .filter { ($0["start_date"] as? String ?? "") <= today }
             .sorted { ($0["start_date"] as? String ?? "") > ($1["start_date"] as? String ?? "") }
@@ -718,7 +1066,7 @@ extension SubscriptionsWorker {
     private func subscriptionPriceQuery(arguments: [String: Value], maxLimit: Int) -> [String: String] {
         [
             "include": "territory,subscriptionPricePoint",
-            "fields[subscriptionPrices]": "startDate,preserved,territory,subscriptionPricePoint",
+            "fields[subscriptionPrices]": "startDate,preserved,planType,territory,subscriptionPricePoint",
             "fields[subscriptionPricePoints]": "customerPrice,proceeds,proceedsYear2,territory,equalizations",
             "fields[territories]": "currency",
             "limit": String(clampedLimit(arguments["limit"]?.intValue, defaultValue: 25, max: maxLimit))
@@ -789,7 +1137,8 @@ extension SubscriptionsWorker {
             "proceeds": point?.attributes["proceeds"]?.scalarAny ?? NSNull(),
             "proceeds_year2": point?.attributes["proceedsYear2"]?.scalarAny ?? NSNull(),
             "start_date": resource.attributes["startDate"]?.stringValue.jsonSafe ?? NSNull(),
-            "preserved": resource.attributes["preserved"]?.boolValue.jsonSafe ?? NSNull()
+            "preserved": resource.attributes["preserved"]?.boolValue.jsonSafe ?? NSNull(),
+            "plan_type": resource.attributes["planType"]?.stringValue.jsonSafe ?? NSNull()
         ]
     }
 
@@ -918,14 +1267,45 @@ extension SubscriptionsWorker {
         return remapped
     }
 
-    private static let utcDayFormatter: DateFormatter = {
-        let formatter = DateFormatter()
-        formatter.calendar = Calendar(identifier: .gregorian)
-        formatter.locale = Locale(identifier: "en_US_POSIX")
-        formatter.timeZone = TimeZone(secondsFromGMT: 0)
-        formatter.dateFormat = "yyyy-MM-dd"
-        return formatter
-    }()
+    private static func currentUTCSubscriptionPricingDay(_ date: Date = Date()) -> String {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 0)!
+        let components = calendar.dateComponents([.year, .month, .day], from: date)
+        return String(
+            format: "%04d-%02d-%02d",
+            components.year ?? 0,
+            components.month ?? 0,
+            components.day ?? 0
+        )
+    }
+
+    private static func isValidSubscriptionPricingDate(_ value: String) -> Bool {
+        let bytes = Array(value.utf8)
+        let digitIndexes = [0, 1, 2, 3, 5, 6, 8, 9]
+        guard bytes.count == 10,
+              bytes[4] == 45,
+              bytes[7] == 45,
+              digitIndexes.allSatisfy({ (48...57).contains(bytes[$0]) }) else {
+            return false
+        }
+        let year = Int(String(value.prefix(4)))
+        let month = Int(String(value.dropFirst(5).prefix(2)))
+        let day = Int(String(value.suffix(2)))
+        guard let year, let month, let day else {
+            return false
+        }
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 0)!
+        var requestedComponents = DateComponents()
+        requestedComponents.year = year
+        requestedComponents.month = month
+        requestedComponents.day = day
+        guard let date = calendar.date(from: requestedComponents) else {
+            return false
+        }
+        let components = calendar.dateComponents([.year, .month, .day], from: date)
+        return components.year == year && components.month == month && components.day == day
+    }
 
     private static func snakeCase(_ string: String) -> String {
         var result = ""
@@ -942,6 +1322,58 @@ extension SubscriptionsWorker {
     }
 }
 
+private func subscriptionPricingJSONSafe<T>(_ value: T?) -> Any {
+    switch value {
+    case .some(let value): return value
+    case .none: return NSNull()
+    }
+}
+
+private struct SubscriptionPricingSummaryOptions: Sendable {
+    let subscriptionId: String
+    let territoryId: String
+    let planType: String?
+    let pageLimit: Int
+    let maxPages: Int?
+    let nextURL: String?
+}
+
+private struct SubscriptionPricingRecord: Sendable, Equatable {
+    let id: String
+    let territoryId: String
+    let currency: String?
+    let pricePointId: String
+    let customerPrice: String?
+    let proceeds: String?
+    let proceedsYear2: String?
+    let startDate: String?
+    let preserved: Bool?
+    let planType: String?
+
+    var jsonObject: [String: Any] {
+        [
+            "id": id,
+            "type": "subscriptionPrices",
+            "territory_id": territoryId,
+            "currency": subscriptionPricingJSONSafe(currency),
+            "price_point_id": pricePointId,
+            "customer_price": subscriptionPricingJSONSafe(customerPrice),
+            "proceeds": subscriptionPricingJSONSafe(proceeds),
+            "proceeds_year2": subscriptionPricingJSONSafe(proceedsYear2),
+            "start_date": subscriptionPricingJSONSafe(startDate),
+            "preserved": subscriptionPricingJSONSafe(preserved),
+            "plan_type": subscriptionPricingJSONSafe(planType)
+        ]
+    }
+}
+
+private struct SubscriptionPricingSplit: Sendable {
+    let current: SubscriptionPricingRecord?
+    let effective: [SubscriptionPricingRecord]
+    let scheduled: [SubscriptionPricingRecord]
+    let undated: [SubscriptionPricingRecord]
+}
+
 private protocol LegacySubscriptionCommerceWorker {
     func handleTool(_ params: CallTool.Parameters) async throws -> CallTool.Result
 }
@@ -955,10 +1387,12 @@ private struct IncludedIndex {
     private let resources: [String: JSONValue]
 
     init(_ included: [JSONValue]?) {
-        self.resources = Dictionary(uniqueKeysWithValues: (included ?? []).compactMap { resource in
-            guard let type = resource.type, let id = resource.id else { return nil }
-            return ("\(type):\(id)", resource)
-        })
+        var resources: [String: JSONValue] = [:]
+        for resource in included ?? [] {
+            guard let type = resource.type, let id = resource.id else { continue }
+            resources["\(type):\(id)"] = resource
+        }
+        self.resources = resources
     }
 
     func resource(type: String, id: String) -> JSONValue? {
@@ -971,6 +1405,13 @@ private struct IncludedIndex {
 }
 
 private extension JSONValue {
+    var isNull: Bool {
+        if case .null = self {
+            return true
+        }
+        return false
+    }
+
     var scalarAny: Any {
         switch self {
         case .string(let value): return value
