@@ -25,7 +25,6 @@ public struct CustomProductPageAttributes: Codable, Sendable {
     public let name: String?
     public let url: String?
     public let visible: Bool?
-    public let state: String?
 }
 
 // MARK: - Custom Product Page Version Models

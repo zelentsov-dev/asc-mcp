@@ -38,7 +38,7 @@
           { "outputField": "custom_product_page.name", "operationId": "appCustomProductPages_createInstance", "jsonPointer": "/data/attributes/name" },
           { "outputField": "custom_product_page.url", "operationId": "appCustomProductPages_createInstance", "jsonPointer": "/data/attributes/url" },
           { "outputField": "custom_product_page.visible", "operationId": "appCustomProductPages_createInstance", "jsonPointer": "/data/attributes/visible" },
-          { "outputField": "custom_product_page.state", "operationId": "appCustomProductPages_createInstance", "jsonPointer": "/data/attributes/state" }
+          { "outputField": "custom_product_page.state", "localRole": "Legacy compatibility placeholder set to null because Apple exposes state on page versions, not pages." }
         ]
       },
       "note": "Apple supports inline creation of the first version and localization in this POST. When template_version_id is provided, the handler binds it through appStoreVersionTemplate with resource type appStoreVersions."

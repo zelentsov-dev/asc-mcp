@@ -210,6 +210,7 @@ struct BetaAdministrativeWorkerContractTests {
         let sandboxTesters = try #require(relationships["sandboxTesters"] as? [String: Any])
         let linkage = try #require(sandboxTesters["data"] as? [[String: Any]])
         #expect(linkage.compactMap { $0["id"] as? String } == ["tester-1", "tester-2"])
+        #expect(linkage.allSatisfy { $0["type"] as? String == "sandboxTesters" })
         let root = try betaAdministrativeObject(result.structuredContent)
         #expect(root["request_id"] == .string("clear-1"))
     }

@@ -15,7 +15,8 @@
           "role": "primary",
           "condition": null,
           "inputs": [
-            { "sourceKind": "fixed", "jsonPointer": "/data/type", "fixedValue": "sandboxTestersClearPurchaseHistoryRequest" }
+            { "sourceKind": "fixed", "jsonPointer": "/data/type", "fixedValue": "sandboxTestersClearPurchaseHistoryRequest" },
+            { "sourceKind": "fixed", "jsonPointer": "/data/relationships/sandboxTesters/data/*/type", "fixedValue": "sandboxTesters" }
           ]
         }
       ],

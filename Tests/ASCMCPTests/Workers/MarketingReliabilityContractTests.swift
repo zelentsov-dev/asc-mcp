@@ -32,6 +32,10 @@ struct MarketingReliabilityContractTests {
         #expect(identifier["type"] as? String == "appStoreVersions")
         #expect(identifier["id"] as? String == "version-1")
 
+        let payload = try marketingValueObject(try #require(result.structuredContent))
+        let page = try marketingValueObject(payload["custom_product_page"])
+        #expect(page["state"] == .null)
+
         let tool = try #require(await worker.getTools().first { $0.name == "custom_pages_create" })
         let schema = try marketingValueObject(tool.inputSchema)
         let properties = try marketingValueObject(schema["properties"])

@@ -538,7 +538,7 @@ extension CustomProductPagesWorker {
             "name": (page.attributes?.name).jsonSafe,
             "url": (page.attributes?.url).jsonSafe,
             "visible": (page.attributes?.visible).jsonSafe,
-            "state": (page.attributes?.state).jsonSafe
+            "state": NSNull()
         ]
     }
 
