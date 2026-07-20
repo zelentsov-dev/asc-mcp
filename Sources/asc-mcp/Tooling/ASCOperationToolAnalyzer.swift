@@ -1,3 +1,4 @@
+import CryptoKit
 import Foundation
 import MCP
 
@@ -10,6 +11,7 @@ enum ASCContractDiagnosticCode: String, Codable, Sendable {
     case manifestUnsupportedVersion = "manifest.unsupported_version"
     case manifestStrictSchemaVersion = "manifest.strict_schema_version"
     case manifestOptionalInputCoveragePinMissing = "manifest.optional_input_coverage_pin_missing"
+    case manifestOptionalInputCoveragePinInvalid = "manifest.optional_input_coverage_pin_invalid"
     case manifestOptionalInputCoverageDrift = "manifest.optional_input_coverage_drift"
     case specVersionMismatch = "spec.version_mismatch"
     case specChecksumMismatch = "spec.checksum_mismatch"
@@ -100,6 +102,23 @@ struct ASCOptionalInputCoverage: Codable, Sendable, Equatable {
     let internalControl: Int
     let intentionallyOmitted: Int
     let unclassified: Int
+    let identitySHA256: String?
+
+    init(
+        total: Int,
+        bound: Int,
+        internalControl: Int,
+        intentionallyOmitted: Int,
+        unclassified: Int,
+        identitySHA256: String? = nil
+    ) {
+        self.total = total
+        self.bound = bound
+        self.internalControl = internalControl
+        self.intentionallyOmitted = intentionallyOmitted
+        self.unclassified = unclassified
+        self.identitySHA256 = identitySHA256
+    }
 }
 
 struct ASCOperationToolAnalyzer: Sendable {
@@ -212,6 +231,7 @@ struct ASCOperationToolAnalyzer: Sendable {
         var internalControl = 0
         var intentionallyOmitted = 0
         var unclassified = 0
+        var identities: [String] = []
 
         for mapping in manifest.tools where mapping.status != .unresolved {
             for use in mapping.operations {
@@ -224,6 +244,13 @@ struct ASCOperationToolAnalyzer: Sendable {
                     let identity = parameterIdentity(parameter)
                     if boundParameters.contains(identity) {
                         bound += 1
+                        identities.append(optionalInputIdentity(
+                            mapping: mapping,
+                            use: use,
+                            location: parameter.location.rawValue,
+                            appleName: parameter.name,
+                            disposition: "bound"
+                        ))
                         continue
                     }
                     if let classification = validExactClassification(
@@ -235,8 +262,22 @@ struct ASCOperationToolAnalyzer: Sendable {
                         switch classification.disposition {
                         case .internalControl:
                             internalControl += 1
+                            identities.append(optionalInputIdentity(
+                                mapping: mapping,
+                                use: use,
+                                location: parameter.location.rawValue,
+                                appleName: parameter.name,
+                                disposition: "internalControl"
+                            ))
                         case .intentionallyOmitted:
                             intentionallyOmitted += 1
+                            identities.append(optionalInputIdentity(
+                                mapping: mapping,
+                                use: use,
+                                location: parameter.location.rawValue,
+                                appleName: parameter.name,
+                                disposition: "intentionallyOmitted"
+                            ))
                         }
                         continue
                     }
@@ -248,12 +289,33 @@ struct ASCOperationToolAnalyzer: Sendable {
                         switch rule.disposition {
                         case .internalControl:
                             internalControl += 1
+                            identities.append(optionalInputIdentity(
+                                mapping: mapping,
+                                use: use,
+                                location: parameter.location.rawValue,
+                                appleName: parameter.name,
+                                disposition: "internalControl"
+                            ))
                         case .intentionallyOmitted:
                             intentionallyOmitted += 1
+                            identities.append(optionalInputIdentity(
+                                mapping: mapping,
+                                use: use,
+                                location: parameter.location.rawValue,
+                                appleName: parameter.name,
+                                disposition: "intentionallyOmitted"
+                            ))
                         }
                         continue
                     }
                     unclassified += 1
+                    identities.append(optionalInputIdentity(
+                        mapping: mapping,
+                        use: use,
+                        location: parameter.location.rawValue,
+                        appleName: parameter.name,
+                        disposition: "unclassified"
+                    ))
                 }
 
                 let bodyPointers = requestBodyBindingPointers(
@@ -269,6 +331,13 @@ struct ASCOperationToolAnalyzer: Sendable {
                         pointer($0, covers: bodyPointer)
                     }) {
                         bound += 1
+                        identities.append(optionalInputIdentity(
+                            mapping: mapping,
+                            use: use,
+                            location: "body",
+                            appleName: bodyPointer,
+                            disposition: "bound"
+                        ))
                         continue
                     }
                     if let classification = validExactClassification(
@@ -281,23 +350,67 @@ struct ASCOperationToolAnalyzer: Sendable {
                         switch classification.disposition {
                         case .internalControl:
                             internalControl += 1
+                            identities.append(optionalInputIdentity(
+                                mapping: mapping,
+                                use: use,
+                                location: "body",
+                                appleName: bodyPointer,
+                                disposition: "internalControl"
+                            ))
                         case .intentionallyOmitted:
                             intentionallyOmitted += 1
+                            identities.append(optionalInputIdentity(
+                                mapping: mapping,
+                                use: use,
+                                location: "body",
+                                appleName: bodyPointer,
+                                disposition: "intentionallyOmitted"
+                            ))
                         }
                         continue
                     }
                     unclassified += 1
+                    identities.append(optionalInputIdentity(
+                        mapping: mapping,
+                        use: use,
+                        location: "body",
+                        appleName: bodyPointer,
+                        disposition: "unclassified"
+                    ))
                 }
             }
         }
+
+        let identityData = Data(identities.sorted().joined(separator: "\n").utf8)
+        let identitySHA256 = SHA256.hash(data: identityData)
+            .map { String(format: "%02x", $0) }
+            .joined()
 
         return ASCOptionalInputCoverage(
             total: total,
             bound: bound,
             internalControl: internalControl,
             intentionallyOmitted: intentionallyOmitted,
-            unclassified: unclassified
+            unclassified: unclassified,
+            identitySHA256: identitySHA256
         )
+    }
+
+    private func optionalInputIdentity(
+        mapping: ASCToolOperationMapping,
+        use: ASCOperationUse,
+        location: String,
+        appleName: String,
+        disposition: String
+    ) -> String {
+        [
+            mapping.tool,
+            use.operationID,
+            use.invocationID ?? "",
+            location,
+            appleName,
+            disposition
+        ].joined(separator: "\u{1F}")
     }
 
     private func validateSpecPin(

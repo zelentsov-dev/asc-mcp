@@ -192,6 +192,17 @@ enum ASCOperationContractCommand {
                 field: nil
             )
         }
+        guard let identitySHA256 = pin.identitySHA256,
+              isCanonicalSHA256(identitySHA256) else {
+            return ASCContractDiagnostic(
+                severity: .error,
+                code: .manifestOptionalInputCoveragePinInvalid,
+                message: "optionalInputCoveragePin.identitySHA256 must be 64 lowercase hexadecimal characters.",
+                tool: nil,
+                operationID: nil,
+                field: nil
+            )
+        }
         guard pin != actual else {
             return nil
         }
@@ -206,7 +217,13 @@ enum ASCOperationContractCommand {
     }
 
     private static func coverageDescription(_ coverage: ASCOptionalInputCoverage) -> String {
-        "total=\(coverage.total), bound=\(coverage.bound), internal=\(coverage.internalControl), intentionallyOmitted=\(coverage.intentionallyOmitted), unclassified=\(coverage.unclassified)"
+        "total=\(coverage.total), bound=\(coverage.bound), internal=\(coverage.internalControl), intentionallyOmitted=\(coverage.intentionallyOmitted), unclassified=\(coverage.unclassified), identitySHA256=\(coverage.identitySHA256 ?? \"missing\")"
+    }
+
+    private static func isCanonicalSHA256(_ value: String) -> Bool {
+        value.utf8.count == 64 && value.utf8.allSatisfy {
+            (48...57).contains($0) || (97...102).contains($0)
+        }
     }
 
     private static func renderMarkdown(
@@ -247,6 +264,8 @@ enum ASCOperationContractCommand {
             "Scope-rule out-of-scope Apple operations: \(scopedOperationCount)",
             "",
             "Optional Apple inputs: \(optionalInputCoverage.total) total, \(optionalInputCoverage.bound) bound, \(optionalInputCoverage.internalControl) internally controlled, \(optionalInputCoverage.intentionallyOmitted) intentionally omitted, \(optionalInputCoverage.unclassified) unclassified",
+            "",
+            "Optional input identity SHA-256: `\(optionalInputCoverage.identitySHA256 ?? "unavailable")`",
             "",
             "Errors: \(diagnostics.filter { $0.severity == .error }.count)",
             "",

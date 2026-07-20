@@ -324,7 +324,8 @@ struct OperationToolManifestTests {
             bound: 2,
             internalControl: 1,
             intentionallyOmitted: 1,
-            unclassified: 1
+            unclassified: 1,
+            identitySHA256: String(repeating: "a", count: 64)
         )
         let missing = ASCOperationContractCommand.strictOptionalInputCoverageDiagnostic(
             pin: nil,
@@ -340,7 +341,29 @@ struct OperationToolManifestTests {
                 bound: 1,
                 internalControl: 1,
                 intentionallyOmitted: 1,
-                unclassified: 2
+                unclassified: 2,
+                identitySHA256: String(repeating: "a", count: 64)
+            ),
+            actual: coverage
+        )
+        let identityDrifted = ASCOperationContractCommand.strictOptionalInputCoverageDiagnostic(
+            pin: ASCOptionalInputCoverage(
+                total: 5,
+                bound: 2,
+                internalControl: 1,
+                intentionallyOmitted: 1,
+                unclassified: 1,
+                identitySHA256: String(repeating: "b", count: 64)
+            ),
+            actual: coverage
+        )
+        let invalid = ASCOperationContractCommand.strictOptionalInputCoverageDiagnostic(
+            pin: ASCOptionalInputCoverage(
+                total: 5,
+                bound: 2,
+                internalControl: 1,
+                intentionallyOmitted: 1,
+                unclassified: 1
             ),
             actual: coverage
         )
@@ -350,6 +373,10 @@ struct OperationToolManifestTests {
         #expect(exact == nil)
         #expect(drifted?.severity == .error)
         #expect(drifted?.code == .manifestOptionalInputCoverageDrift)
+        #expect(identityDrifted?.severity == .error)
+        #expect(identityDrifted?.code == .manifestOptionalInputCoverageDrift)
+        #expect(invalid?.severity == .error)
+        #expect(invalid?.code == .manifestOptionalInputCoveragePinInvalid)
     }
 
     @Test("reviewed sparse fields do not hide includes or relationship limits")

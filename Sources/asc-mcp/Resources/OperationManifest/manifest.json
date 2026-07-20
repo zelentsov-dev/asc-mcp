@@ -11,7 +11,8 @@
     "bound": 672,
     "internalControl": 6,
     "intentionallyOmitted": 958,
-    "unclassified": 502
+    "unclassified": 502,
+    "identitySHA256": "0000000000000000000000000000000000000000000000000000000000000000"
   },
   "optionalParameterFamilyRules": [
     {

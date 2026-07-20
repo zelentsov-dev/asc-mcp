@@ -9,7 +9,8 @@ enum ASCOperationManifestJSONValidator {
         "version", "sha256", "pathCount", "operationCount"
     ]
     private static let optionalInputCoveragePinKeys: Set<String> = [
-        "total", "bound", "internalControl", "intentionallyOmitted", "unclassified"
+        "total", "bound", "internalControl", "intentionallyOmitted", "unclassified",
+        "identitySHA256"
     ]
     private static let scopeRuleKeys: Set<String> = [
         "pathPrefix", "disposition", "reason", "owner", "reviewAtSpec"
