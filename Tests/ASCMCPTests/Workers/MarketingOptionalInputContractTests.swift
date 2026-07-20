@@ -78,8 +78,16 @@ struct MarketingOptionalInputContractTests {
                 "locale": .string("en-US,fr-FR")
             ]
         ))
+        let whitespaceLocale = try await worker.handleTool(CallTool.Parameters(
+            name: "ppo_list_treatment_localizations",
+            arguments: [
+                "treatment_id": .string("treatment-1"),
+                "locale": .string(" en-US ")
+            ]
+        ))
         #expect(duplicateLocale.isError == true)
         #expect(commaLocale.isError == true)
+        #expect(whitespaceLocale.isError == true)
         #expect(await transport.requestCount() == 0)
     }
 

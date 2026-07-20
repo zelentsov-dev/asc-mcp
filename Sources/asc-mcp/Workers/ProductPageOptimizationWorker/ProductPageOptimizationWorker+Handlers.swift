@@ -494,8 +494,11 @@ extension ProductPageOptimizationWorker {
             throw PPOArgumentError("\(field) must be a non-empty string or array of strings")
         }
 
-        guard values.allSatisfy({ !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }) else {
-            throw PPOArgumentError("\(field) must contain only non-empty strings")
+        guard values.allSatisfy({ value in
+            let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+            return !trimmed.isEmpty && trimmed == value
+        }) else {
+            throw PPOArgumentError("\(field) must contain non-empty strings without surrounding whitespace")
         }
         guard Set(values).count == values.count,
               values.allSatisfy({ !$0.contains(",") }) else {
