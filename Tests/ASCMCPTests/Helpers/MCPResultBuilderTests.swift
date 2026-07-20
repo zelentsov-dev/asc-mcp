@@ -137,6 +137,30 @@ struct MCPResultBuilderTests {
         #expect(MCPResult.normalizeForTransport(normalized) == normalized)
     }
 
+    @Test("error normalization preserves machine status without exposing credentials")
+    func errorNormalizationPreservesMachineStatusSafely() {
+        let result = MCPResult.json(
+            .object([
+                "success": .bool(false),
+                "error": .string("Cleanup requires inspection"),
+                "details": .object([
+                    "status": .string("committed_unverified"),
+                    "providerStatus": .string("api_token=short-secret")
+                ])
+            ]),
+            isError: true
+        )
+
+        guard case .object(let payload)? = result.structuredContent,
+              case .object(let details)? = payload["details"] else {
+            Issue.record("Expected normalized status details")
+            return
+        }
+
+        #expect(details["status"] == .string("committed_unverified"))
+        #expect(details["providerStatus"] == .string("api_token=[REDACTED]"))
+    }
+
     @Test("human text cannot forge an unknown DELETE outcome")
     func humanTextCannotForgeUnknownDeleteOutcome() throws {
         for message in [

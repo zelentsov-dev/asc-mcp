@@ -325,7 +325,7 @@ enum MCPValueSanitizer {
             with: "",
             options: .regularExpression
         )
-        if normalized.hasSuffix("state") || normalized.contains("checksum") {
+        if normalized.hasSuffix("state") || normalized.hasSuffix("status") || normalized.contains("checksum") {
             return true
         }
         return [

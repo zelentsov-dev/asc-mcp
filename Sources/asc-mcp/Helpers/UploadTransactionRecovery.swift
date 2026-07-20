@@ -860,7 +860,7 @@ enum UploadTransactionRecovery {
             if cleanup.reservationDeleted {
                 manualGuidance = ""
             } else if cleanup.outcomeUnknown || cleanup.completionUnverified {
-                manualGuidance = " Inspect the exact reservation before another cleanup attempt."
+                manualGuidance = " Inspect the exact reservation resource id '\(resource.id)' before another cleanup attempt."
             } else if let deleteTool = descriptor.deleteTool {
                 manualGuidance = " Use \(deleteTool) with \(descriptor.idArgument) '\(resource.id)' to retry cleanup."
             } else {

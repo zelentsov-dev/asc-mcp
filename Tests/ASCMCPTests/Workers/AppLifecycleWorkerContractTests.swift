@@ -54,7 +54,10 @@ struct AppLifecycleWorkerContractTests {
               "data": {
                 "type": "appStoreVersions",
                 "id": "ver-1",
-                "attributes": { "versionString": "4.0" }
+                "attributes": { "versionString": "4.0" },
+                "relationships": {
+                  "build": { "data": { "type": "builds", "id": "build-1" } }
+                }
               },
               "included": [
                 {
