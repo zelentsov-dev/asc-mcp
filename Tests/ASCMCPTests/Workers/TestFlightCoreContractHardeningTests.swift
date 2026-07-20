@@ -409,8 +409,9 @@ struct TestFlightCoreContractHardeningTests {
             let inspection = try testFlightObject(payload["inspection"])
             #expect(inspection["tool"] == .string("beta_testers_list_apps"))
             let arguments = try testFlightObject(inspection["arguments"])
-            #expect(arguments == ["tester_id": .string("tester-1")])
-            #expect(inspection["instruction"] == .string("Inspect this exact tester and verify that app_id 'app-1' is absent before another delete attempt."))
+            #expect(arguments == ["tester_id": .string("tester-1"), "limit": .int(200)])
+            #expect(inspection["paginationRequired"] == .bool(true))
+            #expect(inspection["instruction"] == .string("Inspect this exact tester with limit 200, then follow every returned next_url with the same tester_id and limit until no next_url remains. Only absence of app_id 'app-1' across the complete collection confirms removal before another delete attempt."))
         default:
             #expect(result.isError == true)
             #expect(payload["success"] == .bool(false))
@@ -423,8 +424,9 @@ struct TestFlightCoreContractHardeningTests {
             let inspection = try testFlightObject(payload["inspection"])
             #expect(inspection["tool"] == .string("beta_testers_list_apps"))
             let arguments = try testFlightObject(inspection["arguments"])
-            #expect(arguments == ["tester_id": .string("tester-1")])
-            #expect(inspection["instruction"] == .string("Inspect this exact tester and verify that app_id 'app-1' is absent before another delete attempt."))
+            #expect(arguments == ["tester_id": .string("tester-1"), "limit": .int(200)])
+            #expect(inspection["paginationRequired"] == .bool(true))
+            #expect(inspection["instruction"] == .string("Inspect this exact tester with limit 200, then follow every returned next_url with the same tester_id and limit until no next_url remains. Only absence of app_id 'app-1' across the complete collection confirms removal before another delete attempt."))
         }
     }
 

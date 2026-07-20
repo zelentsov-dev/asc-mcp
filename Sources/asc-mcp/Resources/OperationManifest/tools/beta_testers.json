@@ -604,7 +604,7 @@
           },
           {
             "outputField": "inspection",
-            "localRole": "Exact beta_testers_list_apps recovery call when Apple accepts asynchronous processing or returns an unexpected successful status."
+            "localRole": "Initial beta_testers_list_apps recovery call uses limit 200 and requires following every returned next_url with the same tester and limit until the complete collection proves the target app absent."
           }
         ]
       },

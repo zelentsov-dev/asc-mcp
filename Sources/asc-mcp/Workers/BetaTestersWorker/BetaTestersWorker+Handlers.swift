@@ -676,8 +676,9 @@ extension BetaTestersWorker {
                 operationName: "beta tester app-access removal",
                 inspection: [
                     "tool": "beta_testers_list_apps",
-                    "arguments": ["tester_id": betaTesterId],
-                    "instruction": "Inspect this exact tester and verify that app_id '\(appId)' is absent before another delete attempt."
+                    "arguments": ["tester_id": betaTesterId, "limit": 200],
+                    "paginationRequired": true,
+                    "instruction": "Inspect this exact tester with limit 200, then follow every returned next_url with the same tester_id and limit until no next_url remains. Only absence of app_id '\(appId)' across the complete collection confirms removal before another delete attempt."
                 ]
             )
 

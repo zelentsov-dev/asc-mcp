@@ -30,6 +30,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Return typed, structured unknown outcomes with `retrySafe=false` when any DELETE may already have succeeded; lifecycle deletions and upload cleanup add target-specific inspection guidance.
 - Require the documented completion status before confirming generic DELETE calls, and return `committed_unverified` with inspection guidance for any unexpected successful status.
 - Preserve Apple's HTTP 202 accepted state for beta tester and tester-app removals instead of reporting premature completion; HTTP 204 remains the confirmed terminal state.
+- Require tester-app removal recovery to inspect every paginated app-access page before absence is treated as confirmation.
 
 ### Compatibility
 
