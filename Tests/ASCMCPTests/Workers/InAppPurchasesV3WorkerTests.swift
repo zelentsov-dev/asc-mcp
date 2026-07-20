@@ -419,8 +419,11 @@ struct InAppPurchasesV3WorkerTests {
             let root = try iapObject(tool.inputSchema)
             let properties = try iapObject(root["properties"])
             let fieldSchema = try iapObject(properties[field])
-            let values = Set(try iapArray(fieldSchema["enum"]).compactMap(\.stringValue))
-            #expect(values == expected)
+            let enumSets = try iapPublishedEnumSets(fieldSchema)
+            #expect(!enumSets.isEmpty)
+            for values in enumSets {
+                #expect(values == expected)
+            }
         }
     }
 
@@ -654,6 +657,21 @@ private func iapArray(_ value: Value?) throws -> [Value] {
         throw InAppPurchasesV3TestFailure.expectedArray
     }
     return array
+}
+
+private func iapPublishedEnumSets(_ schema: [String: Value]) throws -> [Set<String>] {
+    if let directEnum = schema["enum"] {
+        return [Set(try iapArray(directEnum).compactMap(\.stringValue))]
+    }
+
+    return try iapArray(schema["oneOf"]).map { variantValue in
+        let variant = try iapObject(variantValue)
+        if let variantEnum = variant["enum"] {
+            return Set(try iapArray(variantEnum).compactMap(\.stringValue))
+        }
+        let items = try iapObject(variant["items"])
+        return Set(try iapArray(items["enum"]).compactMap(\.stringValue))
+    }
 }
 
 private func iapText(_ result: CallTool.Result) -> String {
