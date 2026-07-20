@@ -243,9 +243,9 @@ enum ToolMetadataPolicy {
             "success": .object(["type": .string("boolean")]),
             "valid": .object(["type": .string("boolean")]),
             "algorithm": .object(["type": .string("string")]),
-            "providedSignature": .object(["type": .string("string")]),
+            "providedSignature": .object(["type": .array([.string("string"), .string("null")])]),
             "computedSignature": .object(["type": .string("string")]),
-            "reason": .object(["type": .string("string")]),
+            "reason": .object(["type": .array([.string("string"), .string("null")])]),
             "rawPayloadRequired": .object(["type": .string("boolean")])
         ]),
         "required": .array([

@@ -543,6 +543,8 @@ struct WebhooksWorkerTests {
         #expect(validObject["success"] == .bool(true))
         #expect(validObject["valid"] == .bool(true))
         #expect(validObject["algorithm"] == .string("hmacsha256"))
+        #expect(validObject["providedSignature"] == .string(signature))
+        #expect(validObject["reason"] == .null)
 
         let invalid = try await worker.handleTool(
             CallTool.Parameters(
@@ -557,6 +559,23 @@ struct WebhooksWorkerTests {
         let invalidObject = try structuredObject(invalid)
         #expect(invalidObject["success"] == .bool(true))
         #expect(invalidObject["valid"] == .bool(false))
+        #expect(invalidObject["reason"]?.stringValue != nil)
+
+        let malformed = try await worker.handleTool(
+            CallTool.Parameters(
+                name: "webhooks_verify_signature",
+                arguments: [
+                    "secret": .string("top-secret"),
+                    "signature": .string("not-a-signature"),
+                    "payload": .string(payload)
+                ]
+            )
+        )
+        let malformedObject = try structuredObject(malformed)
+        #expect(malformedObject["success"] == .bool(true))
+        #expect(malformedObject["valid"] == .bool(false))
+        #expect(malformedObject["providedSignature"] == .null)
+        #expect(malformedObject["reason"]?.stringValue != nil)
     }
 
     @Test("parse payload normalizes webhook envelope and nested event payload")

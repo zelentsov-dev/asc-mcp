@@ -112,6 +112,21 @@ struct ToolMetadataPolicyTests {
         #expect(ToolMetadataPolicy.apply(to: Self.sampleTool(named: "builds_list")).outputSchema == nil)
     }
 
+    @Test("webhook signature output schema preserves nullable result fields")
+    func webhookSignatureOutputSchemaPreservesNullability() throws {
+        let tool = ToolMetadataPolicy.apply(to: Self.sampleTool(named: "webhooks_verify_signature"))
+        guard case .object(let schema)? = tool.outputSchema,
+              case .object(let properties)? = schema["properties"],
+              case .object(let providedSignature)? = properties["providedSignature"],
+              case .object(let reason)? = properties["reason"] else {
+            Issue.record("Expected webhook signature output schema")
+            return
+        }
+
+        #expect(providedSignature["type"] == .array([.string("string"), .string("null")]))
+        #expect(reason["type"] == .array([.string("string"), .string("null")]))
+    }
+
     @Test("normalizes no-parameter schemas")
     func normalizesNoParameterSchemas() {
         let tool = ToolMetadataPolicy.apply(to: Self.sampleTool(named: "auth_generate_token"))
