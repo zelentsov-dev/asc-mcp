@@ -13,12 +13,13 @@ extension BetaFeedbackWorker {
         }
 
         do {
+            let includePII = try booleanArgument(arguments["include_pii"], name: "include_pii", defaultValue: false)
             let response: ASCBetaFeedbackCrashSubmissionsResponse
-            let query = buildListQuery(arguments)
+            let query = try buildListQuery(arguments)
             if let nextURL = try paginationURL(from: arguments["next_url"]) {
                 var requiredParameters = query
                 requiredParameters.removeValue(forKey: "limit")
-                if arguments["sort"]?.stringValue == nil {
+                if !arguments.keys.contains("sort") {
                     requiredParameters.removeValue(forKey: "sort")
                 }
                 response = try await httpClient.getPage(
@@ -39,9 +40,10 @@ extension BetaFeedbackWorker {
 
             var result: [String: Any] = [
                 "success": true,
-                "crashes": response.data.map { formatCrash($0, includePII: arguments["include_pii"]?.boolValue ?? false) },
+                "crashes": response.data.map { formatCrash($0, includePII: includePII) },
                 "count": response.data.count
             ]
+            appendIncluded(response.included, includePII: includePII, to: &result)
             appendPaging(response.links, response.meta, to: &result)
             return MCPResult.jsonObject(result)
         } catch {
@@ -60,15 +62,18 @@ extension BetaFeedbackWorker {
         }
 
         do {
+            let includePII = try booleanArgument(arguments["include_pii"], name: "include_pii", defaultValue: true)
             let response = try await httpClient.get(
                 "/v1/betaFeedbackCrashSubmissions/\(try ASCPathSegment.encode(submissionID))",
-                parameters: relatedQuery(arguments),
+                parameters: try relatedQuery(arguments),
                 as: ASCBetaFeedbackCrashSubmissionResponse.self
             )
-            return MCPResult.jsonObject([
+            var result: [String: Any] = [
                 "success": true,
-                "crash": formatCrash(response.data, includePII: arguments["include_pii"]?.boolValue ?? true)
-            ])
+                "crash": formatCrash(response.data, includePII: includePII)
+            ]
+            appendIncluded(response.included, includePII: includePII, to: &result)
+            return MCPResult.jsonObject(result)
         } catch {
             return MCPResult.error("Failed to get beta feedback crash submission: \(error.localizedDescription)")
         }
@@ -138,12 +143,13 @@ extension BetaFeedbackWorker {
         }
 
         do {
+            let includePII = try booleanArgument(arguments["include_pii"], name: "include_pii", defaultValue: false)
             let response: ASCBetaFeedbackScreenshotSubmissionsResponse
-            let query = buildListQuery(arguments)
+            let query = try buildListQuery(arguments)
             if let nextURL = try paginationURL(from: arguments["next_url"]) {
                 var requiredParameters = query
                 requiredParameters.removeValue(forKey: "limit")
-                if arguments["sort"]?.stringValue == nil {
+                if !arguments.keys.contains("sort") {
                     requiredParameters.removeValue(forKey: "sort")
                 }
                 response = try await httpClient.getPage(
@@ -164,9 +170,10 @@ extension BetaFeedbackWorker {
 
             var result: [String: Any] = [
                 "success": true,
-                "screenshots": response.data.map { formatScreenshot($0, includePII: arguments["include_pii"]?.boolValue ?? false) },
+                "screenshots": response.data.map { formatScreenshot($0, includePII: includePII) },
                 "count": response.data.count
             ]
+            appendIncluded(response.included, includePII: includePII, to: &result)
             appendPaging(response.links, response.meta, to: &result)
             return MCPResult.jsonObject(result)
         } catch {
@@ -185,15 +192,18 @@ extension BetaFeedbackWorker {
         }
 
         do {
+            let includePII = try booleanArgument(arguments["include_pii"], name: "include_pii", defaultValue: true)
             let response = try await httpClient.get(
                 "/v1/betaFeedbackScreenshotSubmissions/\(try ASCPathSegment.encode(submissionID))",
-                parameters: relatedQuery(arguments),
+                parameters: try relatedQuery(arguments),
                 as: ASCBetaFeedbackScreenshotSubmissionResponse.self
             )
-            return MCPResult.jsonObject([
+            var result: [String: Any] = [
                 "success": true,
-                "screenshot": formatScreenshot(response.data, includePII: arguments["include_pii"]?.boolValue ?? true)
-            ])
+                "screenshot": formatScreenshot(response.data, includePII: includePII)
+            ]
+            appendIncluded(response.included, includePII: includePII, to: &result)
+            return MCPResult.jsonObject(result)
         } catch {
             return MCPResult.error("Failed to get beta feedback screenshot submission: \(error.localizedDescription)")
         }
@@ -222,9 +232,14 @@ extension BetaFeedbackWorker {
 
     private func fetchCrashLog(endpoint: String, arguments: [String: Value]) async throws -> CallTool.Result {
         do {
+            let maxChars = try integerArgument(
+                arguments["max_log_chars"],
+                name: "max_log_chars",
+                defaultValue: 100_000,
+                range: 1...500_000
+            )
             let response = try await httpClient.get(endpoint, as: ASCBetaCrashLogResponse.self)
             let rawText = response.data.attributes?.logText ?? ""
-            let maxChars = min(max(arguments["max_log_chars"]?.intValue ?? 100_000, 1), 500_000)
             let truncatedText = String(rawText.prefix(maxChars))
             return MCPResult.jsonObject([
                 "success": true,
@@ -242,35 +257,142 @@ extension BetaFeedbackWorker {
         }
     }
 
-    private func buildListQuery(_ arguments: [String: Value]) -> [String: String] {
+    private func buildListQuery(_ arguments: [String: Value]) throws -> [String: String] {
+        let limit = try integerArgument(arguments["limit"], name: "limit", defaultValue: 25, range: 1...200)
         var query: [String: String] = [
-            "limit": String(min(max(arguments["limit"]?.intValue ?? 25, 1), 200)),
-            "sort": arguments["sort"]?.stringValue ?? "-createdDate"
+            "limit": String(limit),
+            "sort": try commaSeparated(
+                arguments["sort"],
+                name: "sort",
+                allowedValues: Set(["createdDate", "-createdDate"])
+            ) ?? "-createdDate"
         ]
 
-        setQuery("filter[build]", from: "build_id", arguments: arguments, into: &query)
-        setQuery("filter[build.preReleaseVersion]", from: "pre_release_version_id", arguments: arguments, into: &query)
-        setQuery("filter[tester]", from: "tester_id", arguments: arguments, into: &query)
-        setQuery("filter[deviceModel]", from: "device_model", arguments: arguments, into: &query)
-        setQuery("filter[osVersion]", from: "os_version", arguments: arguments, into: &query)
-        setQuery("filter[appPlatform]", from: "app_platform", arguments: arguments, into: &query)
-        setQuery("filter[devicePlatform]", from: "device_platform", arguments: arguments, into: &query)
+        try setQuery("filter[build]", from: "build_id", arguments: arguments, into: &query)
+        try setQuery("filter[build.preReleaseVersion]", from: "pre_release_version_id", arguments: arguments, into: &query)
+        try setQuery("filter[tester]", from: "tester_id", arguments: arguments, into: &query)
+        try setQuery("filter[deviceModel]", from: "device_model", arguments: arguments, into: &query)
+        try setQuery("filter[osVersion]", from: "os_version", arguments: arguments, into: &query)
+        try setQuery(
+            "filter[appPlatform]",
+            from: "app_platform",
+            arguments: arguments,
+            allowedValues: Set(BetaFeedbackPlatformValues.all),
+            into: &query
+        )
+        try setQuery(
+            "filter[devicePlatform]",
+            from: "device_platform",
+            arguments: arguments,
+            allowedValues: Set(BetaFeedbackPlatformValues.all),
+            into: &query
+        )
 
-        if arguments["include_related"]?.boolValue == true {
-            query["include"] = "build,tester"
+        if let include = try includeValue(arguments) {
+            query["include"] = include
         }
 
         return query
     }
 
-    private func relatedQuery(_ arguments: [String: Value]) -> [String: String] {
-        arguments["include_related"]?.boolValue == true ? ["include": "build,tester"] : [:]
+    private func relatedQuery(_ arguments: [String: Value]) throws -> [String: String] {
+        guard let include = try includeValue(arguments) else {
+            return [:]
+        }
+        return ["include": include]
     }
 
-    private func setQuery(_ apiName: String, from argumentName: String, arguments: [String: Value], into query: inout [String: String]) {
-        if let value = arguments[argumentName]?.stringValue {
+    private func setQuery(
+        _ apiName: String,
+        from argumentName: String,
+        arguments: [String: Value],
+        allowedValues: Set<String>? = nil,
+        into query: inout [String: String]
+    ) throws {
+        if let value = try commaSeparated(arguments[argumentName], name: argumentName, allowedValues: allowedValues) {
             query[apiName] = value
         }
+    }
+
+    private func includeValue(_ arguments: [String: Value]) throws -> String? {
+        if let include = try commaSeparated(
+            arguments["include"],
+            name: "include",
+            allowedValues: Set(BetaFeedbackIncludeValues.all)
+        ) {
+            return include
+        }
+        return try booleanArgument(arguments["include_related"], name: "include_related", defaultValue: false)
+            ? BetaFeedbackIncludeValues.all.joined(separator: ",")
+            : nil
+    }
+
+    private func commaSeparated(
+        _ value: Value?,
+        name: String,
+        allowedValues: Set<String>? = nil
+    ) throws -> String? {
+        guard let value else {
+            return nil
+        }
+
+        let values: [String]
+        if let string = value.stringValue {
+            values = string.split(separator: ",", omittingEmptySubsequences: false).map {
+                $0.trimmingCharacters(in: .whitespacesAndNewlines)
+            }
+        } else if let array = value.arrayValue {
+            let strings = array.compactMap(\.stringValue)
+            guard strings.count == array.count else {
+                throw BetaFeedbackInputError("'\(name)' must be a string or an array of strings")
+            }
+            values = strings.map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+        } else {
+            throw BetaFeedbackInputError("'\(name)' must be a string or an array of strings")
+        }
+
+        guard !values.isEmpty, values.allSatisfy({ !$0.isEmpty }) else {
+            throw BetaFeedbackInputError("'\(name)' must contain at least one non-empty value")
+        }
+        guard Set(values).count == values.count else {
+            throw BetaFeedbackInputError("'\(name)' must not contain duplicate values")
+        }
+        if let allowedValues {
+            let unsupported = values.filter { !allowedValues.contains($0) }
+            guard unsupported.isEmpty else {
+                throw BetaFeedbackInputError("Unsupported value(s) for '\(name)': \(unsupported.joined(separator: ", "))")
+            }
+        }
+
+        return values.joined(separator: ",")
+    }
+
+    private func booleanArgument(_ value: Value?, name: String, defaultValue: Bool) throws -> Bool {
+        guard let value else {
+            return defaultValue
+        }
+        guard let boolean = value.boolValue else {
+            throw BetaFeedbackInputError("'\(name)' must be a boolean")
+        }
+        return boolean
+    }
+
+    private func integerArgument(
+        _ value: Value?,
+        name: String,
+        defaultValue: Int,
+        range: ClosedRange<Int>
+    ) throws -> Int {
+        guard let value else {
+            return defaultValue
+        }
+        guard let integer = value.intValue else {
+            throw BetaFeedbackInputError("'\(name)' must be an integer")
+        }
+        guard range.contains(integer) else {
+            throw BetaFeedbackInputError("'\(name)' must be between \(range.lowerBound) and \(range.upperBound)")
+        }
+        return integer
     }
 
     private func appendPaging(_ links: ASCPagedDocumentLinks?, _ meta: ASCPagingInformation?, to result: inout [String: Any]) {
@@ -280,6 +402,32 @@ extension BetaFeedbackWorker {
         if let total = meta?.paging?.total {
             result["total"] = total
         }
+    }
+
+    private func appendIncluded(
+        _ included: [ASCBetaFeedbackIncludedResource]?,
+        includePII: Bool,
+        to result: inout [String: Any]
+    ) {
+        guard let included else {
+            return
+        }
+        result["included"] = included.map { formatIncluded($0, includePII: includePII).asAny }
+    }
+
+    private func formatIncluded(_ resource: ASCBetaFeedbackIncludedResource, includePII: Bool) -> JSONValue {
+        guard !includePII,
+              case .betaTester(let value) = resource,
+              case .object(var object) = value,
+              case .object(var attributes)? = object["attributes"] else {
+            return resource.value
+        }
+
+        attributes["firstName"] = nil
+        attributes["lastName"] = nil
+        attributes["email"] = nil
+        object["attributes"] = .object(attributes)
+        return .object(object)
     }
 
     private func formatCrash(_ submission: ASCBetaFeedbackCrashSubmission, includePII: Bool) -> [String: Any] {
@@ -384,3 +532,13 @@ private protocol FeedbackAttributes {
 
 extension ASCBetaFeedbackCrashSubmission.Attributes: FeedbackAttributes {}
 extension ASCBetaFeedbackScreenshotSubmission.Attributes: FeedbackAttributes {}
+
+private struct BetaFeedbackInputError: LocalizedError, Sendable {
+    let message: String
+
+    init(_ message: String) {
+        self.message = message
+    }
+
+    var errorDescription: String? { message }
+}

@@ -17,8 +17,15 @@ extension BetaFeedbackWorker {
             inputSchema: baseSchema(
                 properties: [
                     "submission_id": stringSchema("Beta feedback crash submission ID"),
-                    "include_related": boolSchema("Include related build and tester resources when Apple returns them"),
-                    "include_pii": boolSchema("Include tester email and free-form comment (default: true for single-resource reads)")
+                    "include": includeSchema(),
+                    "include_related": boolSchema(
+                        "Compatibility alias: include both build and tester when include is omitted",
+                        defaultValue: false
+                    ),
+                    "include_pii": boolSchema(
+                        "Include tester identity fields and free-form feedback PII",
+                        defaultValue: true
+                    )
                 ],
                 required: ["submission_id"]
             )
@@ -69,8 +76,15 @@ extension BetaFeedbackWorker {
             inputSchema: baseSchema(
                 properties: [
                     "submission_id": stringSchema("Beta feedback screenshot submission ID"),
-                    "include_related": boolSchema("Include related build and tester resources when Apple returns them"),
-                    "include_pii": boolSchema("Include tester email and free-form comment (default: true for single-resource reads)")
+                    "include": includeSchema(),
+                    "include_related": boolSchema(
+                        "Compatibility alias: include both build and tester when include is omitted",
+                        defaultValue: false
+                    ),
+                    "include_pii": boolSchema(
+                        "Include tester identity fields and free-form feedback PII",
+                        defaultValue: true
+                    )
                 ],
                 required: ["submission_id"]
             )
@@ -94,17 +108,28 @@ extension BetaFeedbackWorker {
         baseSchema(
             properties: [
                 "app_id": stringSchema("App ID whose beta feedback \(kindDescription) submissions should be listed"),
-                "build_id": stringSchema("Filter by related build ID"),
-                "pre_release_version_id": stringSchema("Filter by related build pre-release version ID"),
-                "tester_id": stringSchema("Filter by related beta tester ID"),
-                "device_model": stringSchema("Filter by device model"),
-                "os_version": stringSchema("Filter by OS version"),
-                "app_platform": platformSchema("Filter by app platform"),
-                "device_platform": platformSchema("Filter by device platform"),
-                "sort": enumSchema("Sort order (default: -createdDate)", values: ["createdDate", "-createdDate"]),
-                "include_related": boolSchema("Include related build and tester resources when Apple returns them"),
-                "include_pii": boolSchema("Include tester email and free-form comment (default: false for list reads)"),
-                "limit": integerSchema("Max results (default: 25, max: 200)"),
+                "build_id": stringListSchema("Filter by one or more related build IDs"),
+                "pre_release_version_id": stringListSchema("Filter by one or more related build pre-release version IDs"),
+                "tester_id": stringListSchema("Filter by one or more related beta tester IDs"),
+                "device_model": stringListSchema("Filter by one or more device models"),
+                "os_version": stringListSchema("Filter by one or more OS versions"),
+                "app_platform": platformSchema("Filter by one or more app platforms"),
+                "device_platform": platformSchema("Filter by one or more device platforms"),
+                "sort": enumListSchema(
+                    "Sort by creation date; accepts one value or an ordered array",
+                    values: ["createdDate", "-createdDate"],
+                    defaultValue: "-createdDate"
+                ),
+                "include": includeSchema(),
+                "include_related": boolSchema(
+                    "Compatibility alias: include both build and tester when include is omitted",
+                    defaultValue: false
+                ),
+                "include_pii": boolSchema(
+                    "Include tester identity fields and free-form feedback PII",
+                    defaultValue: false
+                ),
+                "limit": integerSchema("Max results per page", minimum: 1, maximum: 200, defaultValue: 25),
                 "next_url": stringSchema("Pagination URL from a previous response")
             ],
             required: ["app_id"]
@@ -115,7 +140,12 @@ extension BetaFeedbackWorker {
         baseSchema(
             properties: [
                 idName: stringSchema(description),
-                "max_log_chars": integerSchema("Maximum crash log characters to return (default: 100000, max: 500000)")
+                "max_log_chars": integerSchema(
+                    "Maximum crash log characters to return",
+                    minimum: 1,
+                    maximum: 500_000,
+                    defaultValue: 100_000
+                )
             ],
             required: [idName]
         )
@@ -132,33 +162,83 @@ extension BetaFeedbackWorker {
     private func stringSchema(_ description: String) -> Value {
         .object([
             "type": .string("string"),
-            "description": .string(description)
+            "description": .string(description),
+            "minLength": .int(1)
         ])
     }
 
-    private func integerSchema(_ description: String) -> Value {
+    private func integerSchema(_ description: String, minimum: Int, maximum: Int, defaultValue: Int) -> Value {
         .object([
             "type": .string("integer"),
-            "description": .string(description)
+            "description": .string(description),
+            "minimum": .int(minimum),
+            "maximum": .int(maximum),
+            "default": .int(defaultValue)
         ])
     }
 
-    private func boolSchema(_ description: String) -> Value {
+    private func boolSchema(_ description: String, defaultValue: Bool) -> Value {
         .object([
             "type": .string("boolean"),
-            "description": .string(description)
+            "description": .string(description),
+            "default": .bool(defaultValue)
         ])
     }
 
-    private func enumSchema(_ description: String, values: [String]) -> Value {
+    private func stringListSchema(_ description: String) -> Value {
         .object([
-            "type": .string("string"),
             "description": .string(description),
-            "enum": .array(values.map(Value.string))
+            "oneOf": .array([
+                .object([
+                    "type": .string("string"),
+                    "minLength": .int(1)
+                ]),
+                .object([
+                    "type": .string("array"),
+                    "items": .object([
+                        "type": .string("string"),
+                        "minLength": .int(1)
+                    ]),
+                    "minItems": .int(1),
+                    "uniqueItems": .bool(true)
+                ])
+            ])
         ])
+    }
+
+    private func enumListSchema(_ description: String, values: [String], defaultValue: String? = nil) -> Value {
+        var schema: [String: Value] = [
+            "description": .string(description),
+            "oneOf": .array([
+                .object([
+                    "type": .string("string"),
+                    "enum": .array(values.map(Value.string))
+                ]),
+                .object([
+                    "type": .string("array"),
+                    "items": .object([
+                        "type": .string("string"),
+                        "enum": .array(values.map(Value.string))
+                    ]),
+                    "minItems": .int(1),
+                    "uniqueItems": .bool(true)
+                ])
+            ])
+        ]
+        if let defaultValue {
+            schema["default"] = .string(defaultValue)
+        }
+        return .object(schema)
     }
 
     private func platformSchema(_ description: String) -> Value {
-        enumSchema(description, values: BetaFeedbackPlatformValues.all)
+        enumListSchema(description, values: BetaFeedbackPlatformValues.all)
+    }
+
+    private func includeSchema() -> Value {
+        enumListSchema(
+            "Related resources to include; accepts one relationship or an ordered array",
+            values: BetaFeedbackIncludeValues.all
+        )
     }
 }

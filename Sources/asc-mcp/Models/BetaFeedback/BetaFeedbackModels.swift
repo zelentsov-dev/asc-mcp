@@ -4,14 +4,20 @@ public enum BetaFeedbackPlatformValues {
     public static let all: [String] = ["IOS", "MAC_OS", "TV_OS", "VISION_OS"]
 }
 
+public enum BetaFeedbackIncludeValues {
+    public static let all: [String] = ["build", "tester"]
+}
+
 public struct ASCBetaFeedbackCrashSubmissionsResponse: Codable, Sendable {
     public let data: [ASCBetaFeedbackCrashSubmission]
+    public let included: [ASCBetaFeedbackIncludedResource]?
     public let links: ASCPagedDocumentLinks?
     public let meta: ASCPagingInformation?
 }
 
 public struct ASCBetaFeedbackCrashSubmissionResponse: Codable, Sendable {
     public let data: ASCBetaFeedbackCrashSubmission
+    public let included: [ASCBetaFeedbackIncludedResource]?
 }
 
 public struct ASCBetaFeedbackCrashSubmission: Codable, Sendable {
@@ -68,12 +74,14 @@ public struct ASCBetaCrashLog: Codable, Sendable {
 
 public struct ASCBetaFeedbackScreenshotSubmissionsResponse: Codable, Sendable {
     public let data: [ASCBetaFeedbackScreenshotSubmission]
+    public let included: [ASCBetaFeedbackIncludedResource]?
     public let links: ASCPagedDocumentLinks?
     public let meta: ASCPagingInformation?
 }
 
 public struct ASCBetaFeedbackScreenshotSubmissionResponse: Codable, Sendable {
     public let data: ASCBetaFeedbackScreenshotSubmission
+    public let included: [ASCBetaFeedbackIncludedResource]?
 }
 
 public struct ASCBetaFeedbackScreenshotSubmission: Codable, Sendable {
@@ -118,4 +126,41 @@ public struct ASCBetaFeedbackScreenshotImage: Codable, Sendable {
     public let width: Int?
     public let height: Int?
     public let expirationDate: String?
+}
+
+public enum ASCBetaFeedbackIncludedResource: Codable, Sendable {
+    case build(JSONValue)
+    case betaTester(JSONValue)
+
+    public init(from decoder: Decoder) throws {
+        let value = try JSONValue(from: decoder)
+        guard case .object(let object) = value,
+              case .string(let type)? = object["type"] else {
+            throw DecodingError.dataCorrupted(
+                .init(codingPath: decoder.codingPath, debugDescription: "Included beta feedback resource is missing its type")
+            )
+        }
+
+        switch type {
+        case "builds":
+            self = .build(value)
+        case "betaTesters":
+            self = .betaTester(value)
+        default:
+            throw DecodingError.dataCorrupted(
+                .init(codingPath: decoder.codingPath, debugDescription: "Unsupported beta feedback included resource type: \(type)")
+            )
+        }
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        try value.encode(to: encoder)
+    }
+
+    public var value: JSONValue {
+        switch self {
+        case .build(let value), .betaTester(let value):
+            return value
+        }
+    }
 }

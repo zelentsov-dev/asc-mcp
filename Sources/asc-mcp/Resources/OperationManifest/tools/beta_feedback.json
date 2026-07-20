@@ -106,16 +106,21 @@
           "appleName": "id"
         },
         {
-          "toolField": "include_related",
+          "toolField": "include",
           "sourceKind": "parameter",
           "operationId": "betaFeedbackCrashSubmissions_getInstance",
           "location": "query",
           "appleName": "include"
         },
         {
+          "toolField": "include_related",
+          "sourceKind": "local",
+          "localRole": "Compatibility alias that derives include=build,tester only when include is omitted."
+        },
+        {
           "toolField": "include_pii",
           "sourceKind": "local",
-          "localRole": "Controls whether email and comment are retained in the MCP projection."
+          "localRole": "Controls whether feedback email/comment and included beta tester identity fields are retained in the projection."
         }
       ],
       "response": {
@@ -132,10 +137,15 @@
             "outputField": "crash",
             "operationId": "betaFeedbackCrashSubmissions_getInstance",
             "jsonPointer": "/data"
+          },
+          {
+            "outputField": "included",
+            "operationId": "betaFeedbackCrashSubmissions_getInstance",
+            "jsonPointer": "/included"
           }
         ]
       },
-      "note": "include_related derives include=build,tester, but current Codable response drops Apple's included resources; relationship IDs remain in the projected crash."
+      "note": "Apple's selective include parameter accepts backward-compatible scalar or native array input and uses explode=false CSV semantics. include_related remains a compatibility alias. Included Build and BetaTester resources are preserved; include_pii=false removes feedback email/comment and identity fields from included betaTesters."
     },
     {
       "tool": "beta_feedback_get_crash_log",
@@ -162,7 +172,7 @@
         {
           "toolField": "max_log_chars",
           "sourceKind": "local",
-          "localRole": "Clamps and truncates the returned log text to 1...500000 characters."
+          "localRole": "Validates the 1...500000 bound and truncates the returned log text."
         }
       ],
       "response": {
@@ -209,7 +219,7 @@
         {
           "toolField": "max_log_chars",
           "sourceKind": "local",
-          "localRole": "Clamps and truncates the returned log text to 1...500000 characters."
+          "localRole": "Validates the 1...500000 bound and truncates the returned log text."
         }
       ],
       "response": {
@@ -254,16 +264,21 @@
           "appleName": "id"
         },
         {
-          "toolField": "include_related",
+          "toolField": "include",
           "sourceKind": "parameter",
           "operationId": "betaFeedbackScreenshotSubmissions_getInstance",
           "location": "query",
           "appleName": "include"
         },
         {
+          "toolField": "include_related",
+          "sourceKind": "local",
+          "localRole": "Compatibility alias that derives include=build,tester only when include is omitted."
+        },
+        {
           "toolField": "include_pii",
           "sourceKind": "local",
-          "localRole": "Controls whether email and comment are retained in the MCP projection."
+          "localRole": "Controls whether feedback email/comment and included beta tester identity fields are retained in the projection."
         }
       ],
       "response": {
@@ -280,10 +295,15 @@
             "outputField": "screenshot",
             "operationId": "betaFeedbackScreenshotSubmissions_getInstance",
             "jsonPointer": "/data"
+          },
+          {
+            "outputField": "included",
+            "operationId": "betaFeedbackScreenshotSubmissions_getInstance",
+            "jsonPointer": "/included"
           }
         ]
       },
-      "note": "include_related derives include=build,tester, but current Codable response drops Apple's included resources; relationship IDs remain in the projection."
+      "note": "Apple's selective include parameter accepts backward-compatible scalar or native array input and uses explode=false CSV semantics. include_related remains a compatibility alias. Included Build and BetaTester resources are preserved; include_pii=false removes feedback email/comment and identity fields from included betaTesters."
     },
     {
       "tool": "beta_feedback_list_crashes",
@@ -364,16 +384,21 @@
           "appleName": "sort"
         },
         {
-          "toolField": "include_related",
+          "toolField": "include",
           "sourceKind": "parameter",
           "operationId": "apps_betaFeedbackCrashSubmissions_getToManyRelated",
           "location": "query",
           "appleName": "include"
         },
         {
+          "toolField": "include_related",
+          "sourceKind": "local",
+          "localRole": "Compatibility alias that derives include=build,tester only when include is omitted."
+        },
+        {
           "toolField": "include_pii",
           "sourceKind": "local",
-          "localRole": "Controls whether tester email and comment are retained in each projected item."
+          "localRole": "Controls whether feedback email/comment and included beta tester identity fields are retained in the projection."
         },
         {
           "toolField": "limit",
@@ -404,6 +429,11 @@
             "jsonPointer": "/data"
           },
           {
+            "outputField": "included",
+            "operationId": "apps_betaFeedbackCrashSubmissions_getToManyRelated",
+            "jsonPointer": "/included"
+          },
+          {
             "outputField": "next_url",
             "operationId": "apps_betaFeedbackCrashSubmissions_getToManyRelated",
             "jsonPointer": "/links/next"
@@ -415,7 +445,7 @@
           }
         ]
       },
-      "note": "All public filters map to documented 4.4.1 parameters. include_related is only partially honored because included build/tester resources are decoded away."
+      "note": "All seven Apple collection filters, ordered sort, and selective include accept backward-compatible scalar or native array input and use explode=false CSV semantics with exact enum validation. include_related remains a compatibility alias. Included Build and BetaTester resources, next URL, and total are preserved; include_pii=false redacts feedback and included tester PII."
     },
     {
       "tool": "beta_feedback_list_screenshots",
@@ -496,16 +526,21 @@
           "appleName": "sort"
         },
         {
-          "toolField": "include_related",
+          "toolField": "include",
           "sourceKind": "parameter",
           "operationId": "apps_betaFeedbackScreenshotSubmissions_getToManyRelated",
           "location": "query",
           "appleName": "include"
         },
         {
+          "toolField": "include_related",
+          "sourceKind": "local",
+          "localRole": "Compatibility alias that derives include=build,tester only when include is omitted."
+        },
+        {
           "toolField": "include_pii",
           "sourceKind": "local",
-          "localRole": "Controls whether tester email and comment are retained in each projected item."
+          "localRole": "Controls whether feedback email/comment and included beta tester identity fields are retained in the projection."
         },
         {
           "toolField": "limit",
@@ -536,6 +571,11 @@
             "jsonPointer": "/data"
           },
           {
+            "outputField": "included",
+            "operationId": "apps_betaFeedbackScreenshotSubmissions_getToManyRelated",
+            "jsonPointer": "/included"
+          },
+          {
             "outputField": "next_url",
             "operationId": "apps_betaFeedbackScreenshotSubmissions_getToManyRelated",
             "jsonPointer": "/links/next"
@@ -547,7 +587,7 @@
           }
         ]
       },
-      "note": "All public filters map to documented 4.4.1 parameters. include_related is only partially honored because included build/tester resources are decoded away."
+      "note": "All seven Apple collection filters, ordered sort, and selective include accept backward-compatible scalar or native array input and use explode=false CSV semantics with exact enum validation. include_related remains a compatibility alias. Included Build and BetaTester resources, next URL, and total are preserved; include_pii=false redacts feedback and included tester PII."
     }
   ],
   "implementationAliases": []
