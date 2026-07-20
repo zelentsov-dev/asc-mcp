@@ -17,7 +17,7 @@ extension ReviewAttachmentsWorker {
                     ]),
                     "file_path": .object([
                         "type": .string("string"),
-                        "description": .string("Absolute path to the image file on disk")
+                        "description": .string("Absolute path to the attachment file on disk")
                     ])
                 ]),
                 "required": .array([.string("review_detail_id"), .string("file_path")])
@@ -72,7 +72,10 @@ extension ReviewAttachmentsWorker {
                     ]),
                     "limit": .object([
                         "type": .string("integer"),
-                        "description": .string("Max results (default: 25, max: 200)")
+                        "description": .string("Max results (default: 25, max: 200)"),
+                        "minimum": .int(1),
+                        "maximum": .int(200),
+                        "default": .int(25)
                     ]),
                     "next_url": .object([
                         "type": .string("string"),

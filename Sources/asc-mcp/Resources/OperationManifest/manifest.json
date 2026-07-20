@@ -1034,7 +1034,7 @@
       "id": "deferred.appStoreReviewDetails_appStoreReviewAttachments_getToManyRelationship",
       "operationId": "appStoreReviewDetails_appStoreReviewAttachments_getToManyRelationship",
       "disposition": "deferred",
-      "reason": "The `appStoreReviewDetails` resource-group capability is not yet exposed by asc-mcp.",
+      "reason": "review_attachments_list exposes the related attachment resources; the linkage-only relationship endpoint is deferred because it would duplicate IDs without attachment attributes.",
       "owner": "asc-mcp",
       "reviewAtSpec": "4.4.1"
     },

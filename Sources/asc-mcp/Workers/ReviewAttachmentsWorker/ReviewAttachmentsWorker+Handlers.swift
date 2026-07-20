@@ -1,6 +1,8 @@
 import Foundation
 import MCP
 
+private let reviewAttachmentReadFields = "fileSize,fileName,sourceFileChecksum,assetDeliveryState,appStoreReviewDetail"
+
 // MARK: - Tool Handlers
 extension ReviewAttachmentsWorker {
 
@@ -201,7 +203,10 @@ extension ReviewAttachmentsWorker {
         }
 
         do {
-            let data = try await httpClient.get("/v1/appStoreReviewAttachments/\(try ASCPathSegment.encode(attachmentId))")
+            let data = try await httpClient.get(
+                "/v1/appStoreReviewAttachments/\(try ASCPathSegment.encode(attachmentId))",
+                parameters: ["fields[appStoreReviewAttachments]": reviewAttachmentReadFields]
+            )
             let response = try JSONDecoder().decode(ASCReviewAttachmentResponse.self, from: data)
 
             let result = [
@@ -261,24 +266,25 @@ extension ReviewAttachmentsWorker {
 
         do {
             let response: ASCReviewAttachmentsResponse
+            let effectiveLimit = min(max(arguments["limit"]?.intValue ?? 25, 1), 200)
+            let queryParams = [
+                "fields[appStoreReviewAttachments]": reviewAttachmentReadFields,
+                "limit": String(effectiveLimit)
+            ]
+            let path = "/v1/appStoreReviewDetails/\(try ASCPathSegment.encode(reviewDetailId))/appStoreReviewAttachments"
 
             if let nextUrl = try paginationURL(from: arguments["next_url"]) {
                 response = try await httpClient.getPage(
                     nextUrl,
-                    scope: PaginationScope(path: "/v1/appStoreReviewDetails/\(try ASCPathSegment.encode(reviewDetailId))/appStoreReviewAttachments"),
+                    scope: PaginationScope(
+                        path: path,
+                        requiredParameters: queryParams
+                    ),
                     as: ASCReviewAttachmentsResponse.self
                 )
             } else {
-                var queryParams: [String: String] = [:]
-
-                if let limit = arguments["limit"]?.intValue {
-                    queryParams["limit"] = String(min(max(limit, 1), 200))
-                } else {
-                    queryParams["limit"] = "25"
-                }
-
                 response = try await httpClient.get(
-                    "/v1/appStoreReviewDetails/\(try ASCPathSegment.encode(reviewDetailId))/appStoreReviewAttachments",
+                    path,
                     parameters: queryParams,
                     as: ASCReviewAttachmentsResponse.self
                 )
@@ -293,6 +299,9 @@ extension ReviewAttachmentsWorker {
             ]
             if let next = response.links?.next {
                 result["next_url"] = next
+            }
+            if let total = response.meta?.paging?.total {
+                result["total"] = total
             }
 
             return MCPResult.jsonObject(result)
@@ -313,7 +322,8 @@ extension ReviewAttachmentsWorker {
             "type": attachment.type,
             "fileName": (attachment.attributes?.fileName).jsonSafe,
             "fileSize": (attachment.attributes?.fileSize).jsonSafe,
-            "sourceFileChecksum": (attachment.attributes?.sourceFileChecksum).jsonSafe
+            "sourceFileChecksum": (attachment.attributes?.sourceFileChecksum).jsonSafe,
+            "appStoreReviewDetailId": (attachment.relationships?.appStoreReviewDetail?.data?.id).jsonSafe
         ]
 
         if let deliveryState = attachment.attributes?.assetDeliveryState {
@@ -380,7 +390,10 @@ extension ReviewAttachmentsWorker {
 
         let data: Data
         do {
-            data = try await httpClient.get("/v1/appStoreReviewAttachments/\(try ASCPathSegment.encode(attachmentId))")
+            data = try await httpClient.get(
+                "/v1/appStoreReviewAttachments/\(try ASCPathSegment.encode(attachmentId))",
+                parameters: ["fields[appStoreReviewAttachments]": reviewAttachmentReadFields]
+            )
         } catch {
             return deliveryPendingResult(
                 "\(context) Reconciliation also failed: \(error.localizedDescription)",
@@ -444,7 +457,10 @@ extension ReviewAttachmentsWorker {
 
             let data: Data
             do {
-                data = try await httpClient.get("/v1/appStoreReviewAttachments/\(try ASCPathSegment.encode(attachmentId))")
+                data = try await httpClient.get(
+                    "/v1/appStoreReviewAttachments/\(try ASCPathSegment.encode(attachmentId))",
+                    parameters: ["fields[appStoreReviewAttachments]": reviewAttachmentReadFields]
+                )
             } catch {
                 let message = context.map { "\($0) Reconciliation also failed: \(error.localizedDescription)" }
                     ?? "The review attachment delivery state could not be confirmed: \(error.localizedDescription)"

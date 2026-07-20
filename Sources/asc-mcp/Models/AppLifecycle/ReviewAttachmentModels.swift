@@ -6,6 +6,7 @@ import Foundation
 public struct ASCReviewAttachmentsResponse: Codable, Sendable {
     public let data: [ASCReviewAttachment]
     public let links: ASCPagedDocumentLinks?
+    public let meta: ASCPagingInformation?
 }
 
 /// Single review attachment response
@@ -18,6 +19,12 @@ public struct ASCReviewAttachment: Codable, Sendable {
     public let type: String
     public let id: String
     public let attributes: ReviewAttachmentAttributes?
+    public let relationships: ReviewAttachmentRelationships?
+}
+
+/// Review attachment relationships
+public struct ReviewAttachmentRelationships: Codable, Sendable {
+    public let appStoreReviewDetail: ASCRelationship?
 }
 
 /// Review attachment attributes

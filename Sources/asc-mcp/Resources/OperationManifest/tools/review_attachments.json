@@ -53,7 +53,30 @@
           "operationId": "appStoreReviewAttachments_getInstance",
           "method": "get",
           "path": "/v1/appStoreReviewAttachments/{id}",
-          "role": "primary"
+          "role": "primary",
+          "optionalParameterClassifications": [
+            {
+              "location": "query",
+              "appleName": "include",
+              "disposition": "intentionallyOmitted",
+              "reason": "The attachment projection exposes its review-detail relationship ID without expanding reviewer contact or demo-account data.",
+              "reviewAtSpec": "4.4.1"
+            }
+          ],
+          "inputs": [
+            {
+              "sourceKind": "fixed",
+              "location": "query",
+              "appleName": "fields[appStoreReviewAttachments]",
+              "fixedValue": [
+                "fileSize",
+                "fileName",
+                "sourceFileChecksum",
+                "assetDeliveryState",
+                "appStoreReviewDetail"
+              ]
+            }
+          ]
         }
       ],
       "fields": [
@@ -83,10 +106,15 @@
             "outputField": "attachment",
             "operationId": "appStoreReviewAttachments_getInstance",
             "jsonPointer": "/data"
+          },
+          {
+            "outputField": "attachment.appStoreReviewDetailId",
+            "operationId": "appStoreReviewAttachments_getInstance",
+            "jsonPointer": "/data/relationships/appStoreReviewDetail/data/id"
           }
         ]
       },
-      "note": "Current direct get operation; partial because the MCP formatter is a projection and the tool has no outputSchema."
+      "note": "The direct read fixes a documented attachment projection that omits presigned uploadOperations and returns the review-detail relationship ID; the mapping remains partial because the tool has no outputSchema."
     },
     {
       "tool": "review_attachments_list",
@@ -99,7 +127,30 @@
           "operationId": "appStoreReviewDetails_appStoreReviewAttachments_getToManyRelated",
           "method": "get",
           "path": "/v1/appStoreReviewDetails/{id}/appStoreReviewAttachments",
-          "role": "primary"
+          "role": "primary",
+          "optionalParameterClassifications": [
+            {
+              "location": "query",
+              "appleName": "include",
+              "disposition": "intentionallyOmitted",
+              "reason": "The list projects each attachment's review-detail relationship ID without repeating reviewer contact or demo-account data in included resources.",
+              "reviewAtSpec": "4.4.1"
+            }
+          ],
+          "inputs": [
+            {
+              "sourceKind": "fixed",
+              "location": "query",
+              "appleName": "fields[appStoreReviewAttachments]",
+              "fixedValue": [
+                "fileSize",
+                "fileName",
+                "sourceFileChecksum",
+                "assetDeliveryState",
+                "appStoreReviewDetail"
+              ]
+            }
+          ]
         }
       ],
       "fields": [
@@ -120,7 +171,7 @@
         {
           "toolField": "next_url",
           "sourceKind": "local",
-          "localRole": "Parse an Apple pagination URL and replay its path and query for this related collection operation."
+          "localRole": "Validate the related collection path and preserve the fixed attachment projection plus the effective clamped page limit."
         }
       ],
       "response": {
@@ -143,6 +194,11 @@
             "jsonPointer": "/data"
           },
           {
+            "outputField": "attachments.appStoreReviewDetailId",
+            "operationId": "appStoreReviewDetails_appStoreReviewAttachments_getToManyRelated",
+            "jsonPointer": "/data/*/relationships/appStoreReviewDetail/data/id"
+          },
+          {
             "outputField": "count",
             "localRole": "Count the projected attachment resources."
           },
@@ -150,10 +206,15 @@
             "outputField": "next_url",
             "operationId": "appStoreReviewDetails_appStoreReviewAttachments_getToManyRelated",
             "jsonPointer": "/links/next"
+          },
+          {
+            "outputField": "total",
+            "operationId": "appStoreReviewDetails_appStoreReviewAttachments_getToManyRelated",
+            "jsonPointer": "/meta/paging/total"
           }
         ]
       },
-      "note": "Current related collection operation with working pagination; partial because the MCP output has no outputSchema."
+      "note": "The related collection uses the same upload-operation-free projection, preserves that projection and the effective limit across pagination, and returns paging total plus review-detail linkage; the mapping remains partial because the tool has no outputSchema."
     },
     {
       "tool": "review_attachments_upload",
@@ -223,6 +284,15 @@
           "path": "/v1/appStoreReviewAttachments/{id}",
           "role": "conditional",
           "condition": "When the commit response is nonterminal or the commit outcome is ambiguous, reconcile the created attachment until assetDeliveryState reaches a terminal state unless the task is cancelled.",
+          "optionalParameterClassifications": [
+            {
+              "location": "query",
+              "appleName": "include",
+              "disposition": "intentionallyOmitted",
+              "reason": "Upload reconciliation needs attachment delivery state and relationship identity only; expanding reviewer contact or demo-account data is unrelated to delivery verification.",
+              "reviewAtSpec": "4.4.1"
+            }
+          ],
           "inputs": [
             {
               "sourceKind": "derived",
@@ -232,6 +302,18 @@
                 "appStoreReviewAttachments_createInstance:/data/id"
               ],
               "localRole": "Poll the attachment created by the reservation operation."
+            },
+            {
+              "sourceKind": "fixed",
+              "location": "query",
+              "appleName": "fields[appStoreReviewAttachments]",
+              "fixedValue": [
+                "fileSize",
+                "fileName",
+                "sourceFileChecksum",
+                "assetDeliveryState",
+                "appStoreReviewDetail"
+              ]
             }
           ]
         },

@@ -101,6 +101,9 @@ struct ReviewAttachmentUploadContractTests {
         #expect(result.isError != true)
         let requests = await apiTransport.recordedRequests()
         #expect(requests.map(\.httpMethod) == ["POST", "PATCH", "GET"])
+        let pollQuery = reviewAttachmentUploadQuery(requests[2])
+        #expect(pollQuery["fields[appStoreReviewAttachments]"] == "fileSize,fileName,sourceFileChecksum,assetDeliveryState,appStoreReviewDetail")
+        #expect(pollQuery["include"] == nil)
     }
 
     @Test("ambiguous commit error reconciles without deletion")
@@ -612,6 +615,13 @@ private func reviewAttachmentText(_ result: CallTool.Result) -> String {
         }
         return nil
     }.joined(separator: "\n")
+}
+
+private func reviewAttachmentUploadQuery(_ request: URLRequest) -> [String: String] {
+    Dictionary(uniqueKeysWithValues: (URLComponents(
+        url: request.url!,
+        resolvingAgainstBaseURL: false
+    )?.queryItems ?? []).map { ($0.name, $0.value ?? "") })
 }
 
 private func assertRetained(_ result: CallTool.Result, state: String, pending: Bool) throws {
