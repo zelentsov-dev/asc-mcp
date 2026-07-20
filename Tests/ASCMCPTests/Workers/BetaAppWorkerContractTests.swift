@@ -576,7 +576,10 @@ struct BetaAppWorkerContractTests {
     func submissionCreateRejectsInvalidCommittedIdentity() async throws {
         let invalidIdentities = [
             (type: "builds", id: "build-1"),
-            (type: "betaAppReviewSubmissions", id: "")
+            (type: "betaAppReviewSubmissions", id: ""),
+            (type: "betaAppReviewSubmissions", id: "   "),
+            (type: "betaAppReviewSubmissions", id: " submission-created"),
+            (type: "betaAppReviewSubmissions", id: "submission-created ")
         ]
 
         for identity in invalidIdentities {
@@ -840,6 +843,8 @@ struct BetaAppWorkerContractTests {
     func submissionListRejectsMalformedIncludedBuilds() async throws {
         let includedCases = [
             [betaAppIncludedBuild(id: "", type: "builds")],
+            [betaAppIncludedBuild(id: "   ", type: "builds")],
+            [betaAppIncludedBuild(id: " build-1", type: "builds")],
             [betaAppIncludedBuild(id: "build-1", type: "apps")],
             [betaAppIncludedBuild(id: "build-1"), betaAppIncludedBuild(id: "build-1")]
         ]
@@ -850,6 +855,31 @@ struct BetaAppWorkerContractTests {
                     includeRelationship: false,
                     includedBuilds: includedBuilds
                 ))
+            ])
+            let worker = BetaAppWorker(httpClient: try await makeBetaAppContractClient(transport))
+            let result = try await worker.handleTool(CallTool.Parameters(
+                name: "beta_app_list_submissions",
+                arguments: ["build_id": .string("build-1")]
+            ))
+
+            #expect(result.isError == true)
+            #expect(await transport.requestCount() == 1)
+        }
+    }
+
+    @Test("submission list rejects noncanonical response and relationship identifiers")
+    func submissionListRejectsNoncanonicalResourceIdentifiers() async throws {
+        let responseBodies = [
+            betaAppSubmissionPage(
+                includeRelationship: false,
+                submissionID: " submission-1"
+            ),
+            betaAppSubmissionPage(relationshipBuildID: " build-1")
+        ]
+
+        for responseBody in responseBodies {
+            let transport = TestHTTPTransport(responses: [
+                .init(statusCode: 200, body: responseBody)
             ])
             let worker = BetaAppWorker(httpClient: try await makeBetaAppContractClient(transport))
             let result = try await worker.handleTool(CallTool.Parameters(
@@ -978,6 +1008,23 @@ struct BetaAppWorkerContractTests {
                 includeRelationship: false
             )),
             .init(statusCode: 200, body: betaAppBuildLinkageResponse(id: "build-3"))
+        ])
+        let worker = BetaAppWorker(httpClient: try await makeBetaAppContractClient(transport))
+
+        let result = try await worker.handleTool(CallTool.Parameters(
+            name: "beta_app_list_submissions",
+            arguments: ["build_id": .array([.string("build-1"), .string("build-2")])]
+        ))
+
+        #expect(result.isError == true)
+        #expect(await transport.requestCount() == 2)
+    }
+
+    @Test("relationship fallback rejects a noncanonical Build identifier")
+    func relationshipFallbackRejectsNoncanonicalBuild() async throws {
+        let transport = TestHTTPTransport(responses: [
+            .init(statusCode: 200, body: betaAppSubmissionPage(includeRelationship: false)),
+            .init(statusCode: 200, body: betaAppBuildLinkageResponse(id: " build-1"))
         ])
         let worker = BetaAppWorker(httpClient: try await makeBetaAppContractClient(transport))
 
@@ -1556,13 +1603,16 @@ private func betaAppSubmissionResponse(
 
 private func betaAppSubmissionPage(
     includeRelationship: Bool = true,
-    includedBuilds: [String] = []
+    includedBuilds: [String] = [],
+    submissionID: String = "submission-1",
+    submissionType: String = "betaAppReviewSubmissions",
+    relationshipBuildID: String = "build-1"
 ) -> String {
     let relationships = includeRelationship
-        ? #", "relationships":{"build":{"data":{"type":"builds","id":"build-1"}}}"#
+        ? #", "relationships":{"build":{"data":{"type":"builds","id":"\#(relationshipBuildID)"}}}"#
         : ""
     let included = includedBuilds.isEmpty ? "" : #", "included":[\#(includedBuilds.joined(separator: ","))]"#
-    return #"{"data":[{"type":"betaAppReviewSubmissions","id":"submission-1","attributes":{"betaReviewState":"APPROVED"}\#(relationships)}]\#(included),"meta":{"paging":{"total":1,"limit":25}}}"#
+    return #"{"data":[{"type":"\#(submissionType)","id":"\#(submissionID)","attributes":{"betaReviewState":"APPROVED"}\#(relationships)}]\#(included),"meta":{"paging":{"total":1,"limit":25}}}"#
 }
 
 private func betaAppReviewDetailResponse(password: String? = nil) -> String {

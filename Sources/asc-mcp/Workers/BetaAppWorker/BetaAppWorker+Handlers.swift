@@ -350,7 +350,8 @@ extension BetaAppWorker {
             return committedSubmissionDecodeFailure(error.localizedDescription, requestedBuildID: buildId)
         }
 
-        guard response.data.type == "betaAppReviewSubmissions", !response.data.id.isEmpty else {
+        guard response.data.type == "betaAppReviewSubmissions",
+              isCanonicalResourceID(response.data.id) else {
             return committedSubmissionIdentityFailure(
                 "Apple returned an invalid beta app review submission identity after creation",
                 requestedBuildID: buildId
@@ -464,7 +465,8 @@ extension BetaAppWorker {
             var submissions: [[String: Any]] = []
             var resolvedBuildIDs: Set<String> = []
             for submission in response.data {
-                guard submission.type == "betaAppReviewSubmissions", !submission.id.isEmpty else {
+                guard submission.type == "betaAppReviewSubmissions",
+                      isCanonicalResourceID(submission.id) else {
                     throw ASCError.parsing("Apple returned an invalid beta app review submission identity")
                 }
                 let resolution = try await resolveBuild(
@@ -726,7 +728,7 @@ extension BetaAppWorker {
         observedIncludedBuildIDs: Set<String> = []
     ) async throws -> BetaAppBuildResolution {
         if let relationship = submission.relationships?.build?.data {
-            guard relationship.type == "builds", !relationship.id.isEmpty else {
+            guard relationship.type == "builds", isCanonicalResourceID(relationship.id) else {
                 throw ASCError.parsing("Beta app review submission '\(submission.id)' returned invalid Build relationship linkage")
             }
             if let allowedBuildIDs, !allowedBuildIDs.contains(relationship.id) {
@@ -741,7 +743,7 @@ extension BetaAppWorker {
                 relationshipFallbackID: nil
             )
         }
-        if let includedFallbackBuildID, !includedFallbackBuildID.isEmpty {
+        if let includedFallbackBuildID, isCanonicalResourceID(includedFallbackBuildID) {
             return BetaAppBuildResolution(
                 id: includedFallbackBuildID,
                 source: "included",
@@ -774,7 +776,7 @@ extension BetaAppWorker {
             "/v1/betaAppReviewSubmissions/\(try ASCPathSegment.encode(submission.id))/relationships/build",
             as: ASCBetaAppReviewSubmissionBuildLinkageResponse.self
         )
-        guard response.data.type == "builds", !response.data.id.isEmpty else {
+        guard response.data.type == "builds", isCanonicalResourceID(response.data.id) else {
             throw ASCError.parsing("Beta app review submission '\(submission.id)' returned invalid Build relationship linkage")
         }
         if let allowedBuildIDs, !allowedBuildIDs.contains(response.data.id) {
@@ -816,7 +818,7 @@ extension BetaAppWorker {
         let builds = builds ?? []
         var seenBuildIDs: Set<String> = []
         for build in builds {
-            guard build.type == "builds", !build.id.isEmpty else {
+            guard build.type == "builds", isCanonicalResourceID(build.id) else {
                 throw ASCError.parsing("Beta app review submission returned invalid included Build linkage")
             }
             guard seenBuildIDs.insert(build.id).inserted else {
@@ -827,6 +829,11 @@ extension BetaAppWorker {
             }
         }
         return builds
+    }
+
+    private func isCanonicalResourceID(_ id: String) -> Bool {
+        let trimmed = id.trimmingCharacters(in: .whitespacesAndNewlines)
+        return !trimmed.isEmpty && trimmed == id
     }
 
     private func committedSubmissionValidationFailure(
