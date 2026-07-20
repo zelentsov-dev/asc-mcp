@@ -90,7 +90,7 @@ extension AppsWorker {
     func searchAppsTool() -> Tool {
         return Tool(
             name: "apps_search",
-            description: "Search apps by name or Bundle ID",
+            description: "Search apps by exact name or Bundle ID. Follows every Apple result page for both filters, de-duplicates by app ID, and returns deterministic name, bundle ID, SKU, and ID order.",
             inputSchema: .object([
                 "type": .string("object"),
                 "properties": .object([

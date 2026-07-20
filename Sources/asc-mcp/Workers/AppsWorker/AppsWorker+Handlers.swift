@@ -3,6 +3,74 @@ import MCP
 
 // MARK: - Tool Handlers
 extension AppsWorker {
+    private struct AppSearchCollection: Sendable {
+        let apps: [ASCApp]
+        let pagesFetched: Int
+    }
+
+    private func fetchAllSearchApps(query: String, filter: String) async throws -> AppSearchCollection {
+        let path = "/v1/apps"
+        let parameters = [
+            filter: query,
+            "fields[apps]": "name,bundleId,sku,primaryLocale",
+            "limit": "200",
+            "sort": "name,bundleId,sku"
+        ]
+        let scope = PaginationScope(
+            path: path,
+            requiredParameters: parameters,
+            allowedParameters: Set(parameters.keys).union(Set(["cursor"]))
+        )
+        var response: ASCAppsResponse? = try await httpClient.get(
+            path,
+            parameters: parameters,
+            as: ASCAppsResponse.self
+        )
+        var apps: [ASCApp] = []
+        var pagesFetched = 0
+        var seenNextURLs: Set<String> = []
+
+        while let page = response {
+            pagesFetched += 1
+            apps.append(contentsOf: page.data)
+
+            guard let next = page.links.next else {
+                response = nil
+                continue
+            }
+            guard seenNextURLs.insert(next).inserted else {
+                throw ASCError.parsing("Apps search pagination returned a repeated next URL")
+            }
+            response = try await httpClient.getPage(next, scope: scope, as: ASCAppsResponse.self)
+        }
+
+        return AppSearchCollection(apps: apps, pagesFetched: pagesFetched)
+    }
+
+    private func orderedUniqueSearchApps(_ apps: [ASCApp]) -> [ASCApp] {
+        var seenIDs: Set<String> = []
+        return apps
+            .filter { seenIDs.insert($0.id).inserted }
+            .sorted { lhs, rhs in
+                let left = [
+                    lhs.attributes?.name ?? "",
+                    lhs.attributes?.bundleId ?? "",
+                    lhs.attributes?.sku ?? "",
+                    lhs.id
+                ]
+                let right = [
+                    rhs.attributes?.name ?? "",
+                    rhs.attributes?.bundleId ?? "",
+                    rhs.attributes?.sku ?? "",
+                    rhs.id
+                ]
+                for (leftPart, rightPart) in zip(left, right) where leftPart != rightPart {
+                    return leftPart < rightPart
+                }
+                return false
+            }
+    }
+
     private func effectiveVersionState(_ version: ASCAppStoreVersion) -> String {
         version.attributes?.appVersionState ?? version.attributes?.appStoreState ?? "UNKNOWN"
     }
@@ -280,17 +348,17 @@ extension AppsWorker {
                 isError: true
             )
         }
+        guard !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            return CallTool.Result(
+                content: [MCPContent.text("Error: Parameter 'query' must be a non-empty string")],
+                isError: true
+            )
+        }
         
         do {
-            // Search by name and Bundle ID
-            let nameResults: ASCAppsResponse = try await httpClient.get("/v1/apps", 
-                parameters: ["filter[name]": query], as: ASCAppsResponse.self)
-            
-            let bundleIdResults: ASCAppsResponse = try await httpClient.get("/v1/apps", 
-                parameters: ["filter[bundleId]": query], as: ASCAppsResponse.self)
-            
-            // Merge results and remove duplicates
-            let allApps = Array(Set(nameResults.data + bundleIdResults.data))
+            let nameResults = try await fetchAllSearchApps(query: query, filter: "filter[name]")
+            let bundleIdResults = try await fetchAllSearchApps(query: query, filter: "filter[bundleId]")
+            let allApps = orderedUniqueSearchApps(nameResults.apps + bundleIdResults.apps)
             
             let apps = allApps.map { app in
                 [
@@ -308,7 +376,8 @@ extension AppsWorker {
                 "query": query,
                 "count": allApps.count,
                 "apps": apps,
-                "searchedIn": ["name", "bundleId"]
+                "searchedIn": ["name", "bundleId"],
+                "pagesFetched": nameResults.pagesFetched + bundleIdResults.pagesFetched
             ]
             
             return MCPResult.jsonObject(result)

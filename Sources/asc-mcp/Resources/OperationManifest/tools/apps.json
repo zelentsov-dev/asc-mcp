@@ -418,7 +418,43 @@
           "method": "get",
           "path": "/v1/apps",
           "role": "primary",
-          "condition": "first request uses filter[name]"
+          "condition": "Exact-name branch; follows every page with fixed projection, maximum page size, and deterministic sort.",
+          "inputs": [
+            { "sourceKind": "fixed", "location": "query", "appleName": "fields[apps]", "fixedValue": ["name", "bundleId", "sku", "primaryLocale"] },
+            { "sourceKind": "fixed", "location": "query", "appleName": "limit", "fixedValue": 200 },
+            { "sourceKind": "fixed", "location": "query", "appleName": "sort", "fixedValue": ["name", "bundleId", "sku"] }
+          ],
+          "optionalParameterClassifications": [
+            { "location": "query", "appleName": "filter[bundleId]", "disposition": "intentionallyOmitted", "reason": "The bundle ID filter is applied by the separate bundle-search invocation so this branch remains an independent union branch instead of an Apple AND filter.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "filter[sku]", "disposition": "intentionallyOmitted", "reason": "The public search contract is limited to an exact name-or-bundle-ID union; this additional filter would change its result semantics.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "filter[appStoreVersions.appStoreState]", "disposition": "intentionallyOmitted", "reason": "The public search contract is limited to an exact name-or-bundle-ID union; this additional filter would change its result semantics.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "filter[appStoreVersions.platform]", "disposition": "intentionallyOmitted", "reason": "The public search contract is limited to an exact name-or-bundle-ID union; this additional filter would change its result semantics.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "filter[appStoreVersions.appVersionState]", "disposition": "intentionallyOmitted", "reason": "The public search contract is limited to an exact name-or-bundle-ID union; this additional filter would change its result semantics.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "filter[reviewSubmissions.state]", "disposition": "intentionallyOmitted", "reason": "The public search contract is limited to an exact name-or-bundle-ID union; this additional filter would change its result semantics.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "filter[reviewSubmissions.platform]", "disposition": "intentionallyOmitted", "reason": "The public search contract is limited to an exact name-or-bundle-ID union; this additional filter would change its result semantics.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "filter[appStoreVersions]", "disposition": "intentionallyOmitted", "reason": "The public search contract is limited to an exact name-or-bundle-ID union; this additional filter would change its result semantics.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "filter[id]", "disposition": "intentionallyOmitted", "reason": "The public search contract is limited to an exact name-or-bundle-ID union; this additional filter would change its result semantics.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "exists[gameCenterEnabledVersions]", "disposition": "intentionallyOmitted", "reason": "The public search contract is limited to an exact name-or-bundle-ID union; this additional filter would change its result semantics.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "include", "disposition": "intentionallyOmitted", "reason": "Search returns only the base App identity projection and does not expand relationships.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[androidToIosAppMappingDetails]", "disposition": "intentionallyOmitted", "reason": "No relationships are included, so this related-resource page limit is inapplicable to the search projection.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[appClips]", "disposition": "intentionallyOmitted", "reason": "No relationships are included, so this related-resource page limit is inapplicable to the search projection.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[appCustomProductPages]", "disposition": "intentionallyOmitted", "reason": "No relationships are included, so this related-resource page limit is inapplicable to the search projection.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[appEncryptionDeclarations]", "disposition": "intentionallyOmitted", "reason": "No relationships are included, so this related-resource page limit is inapplicable to the search projection.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[appEvents]", "disposition": "intentionallyOmitted", "reason": "No relationships are included, so this related-resource page limit is inapplicable to the search projection.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[appInfos]", "disposition": "intentionallyOmitted", "reason": "No relationships are included, so this related-resource page limit is inapplicable to the search projection.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[appStoreVersionExperimentsV2]", "disposition": "intentionallyOmitted", "reason": "No relationships are included, so this related-resource page limit is inapplicable to the search projection.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[appStoreVersions]", "disposition": "intentionallyOmitted", "reason": "No relationships are included, so this related-resource page limit is inapplicable to the search projection.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[betaAppLocalizations]", "disposition": "intentionallyOmitted", "reason": "No relationships are included, so this related-resource page limit is inapplicable to the search projection.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[betaGroups]", "disposition": "intentionallyOmitted", "reason": "No relationships are included, so this related-resource page limit is inapplicable to the search projection.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[builds]", "disposition": "intentionallyOmitted", "reason": "No relationships are included, so this related-resource page limit is inapplicable to the search projection.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[gameCenterEnabledVersions]", "disposition": "intentionallyOmitted", "reason": "No relationships are included, so this related-resource page limit is inapplicable to the search projection.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[inAppPurchases]", "disposition": "intentionallyOmitted", "reason": "No relationships are included, so this related-resource page limit is inapplicable to the search projection.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[inAppPurchasesV2]", "disposition": "intentionallyOmitted", "reason": "No relationships are included, so this related-resource page limit is inapplicable to the search projection.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[preReleaseVersions]", "disposition": "intentionallyOmitted", "reason": "No relationships are included, so this related-resource page limit is inapplicable to the search projection.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[promotedPurchases]", "disposition": "intentionallyOmitted", "reason": "No relationships are included, so this related-resource page limit is inapplicable to the search projection.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[reviewSubmissions]", "disposition": "intentionallyOmitted", "reason": "No relationships are included, so this related-resource page limit is inapplicable to the search projection.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[subscriptionGroups]", "disposition": "intentionallyOmitted", "reason": "No relationships are included, so this related-resource page limit is inapplicable to the search projection.", "reviewAtSpec": "4.4.1" }
+          ]
         },
         {
           "invocationId": "bundle-search",
@@ -426,7 +462,43 @@
           "method": "get",
           "path": "/v1/apps",
           "role": "supporting",
-          "condition": "second request uses filter[bundleId]"
+          "condition": "Exact-bundle-ID branch; follows every page with fixed projection, maximum page size, and deterministic sort.",
+          "inputs": [
+            { "sourceKind": "fixed", "location": "query", "appleName": "fields[apps]", "fixedValue": ["name", "bundleId", "sku", "primaryLocale"] },
+            { "sourceKind": "fixed", "location": "query", "appleName": "limit", "fixedValue": 200 },
+            { "sourceKind": "fixed", "location": "query", "appleName": "sort", "fixedValue": ["name", "bundleId", "sku"] }
+          ],
+          "optionalParameterClassifications": [
+            { "location": "query", "appleName": "filter[name]", "disposition": "intentionallyOmitted", "reason": "The name filter is applied by the separate name-search invocation so this branch remains an independent union branch instead of an Apple AND filter.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "filter[sku]", "disposition": "intentionallyOmitted", "reason": "The public search contract is limited to an exact name-or-bundle-ID union; this additional filter would change its result semantics.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "filter[appStoreVersions.appStoreState]", "disposition": "intentionallyOmitted", "reason": "The public search contract is limited to an exact name-or-bundle-ID union; this additional filter would change its result semantics.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "filter[appStoreVersions.platform]", "disposition": "intentionallyOmitted", "reason": "The public search contract is limited to an exact name-or-bundle-ID union; this additional filter would change its result semantics.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "filter[appStoreVersions.appVersionState]", "disposition": "intentionallyOmitted", "reason": "The public search contract is limited to an exact name-or-bundle-ID union; this additional filter would change its result semantics.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "filter[reviewSubmissions.state]", "disposition": "intentionallyOmitted", "reason": "The public search contract is limited to an exact name-or-bundle-ID union; this additional filter would change its result semantics.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "filter[reviewSubmissions.platform]", "disposition": "intentionallyOmitted", "reason": "The public search contract is limited to an exact name-or-bundle-ID union; this additional filter would change its result semantics.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "filter[appStoreVersions]", "disposition": "intentionallyOmitted", "reason": "The public search contract is limited to an exact name-or-bundle-ID union; this additional filter would change its result semantics.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "filter[id]", "disposition": "intentionallyOmitted", "reason": "The public search contract is limited to an exact name-or-bundle-ID union; this additional filter would change its result semantics.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "exists[gameCenterEnabledVersions]", "disposition": "intentionallyOmitted", "reason": "The public search contract is limited to an exact name-or-bundle-ID union; this additional filter would change its result semantics.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "include", "disposition": "intentionallyOmitted", "reason": "Search returns only the base App identity projection and does not expand relationships.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[androidToIosAppMappingDetails]", "disposition": "intentionallyOmitted", "reason": "No relationships are included, so this related-resource page limit is inapplicable to the search projection.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[appClips]", "disposition": "intentionallyOmitted", "reason": "No relationships are included, so this related-resource page limit is inapplicable to the search projection.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[appCustomProductPages]", "disposition": "intentionallyOmitted", "reason": "No relationships are included, so this related-resource page limit is inapplicable to the search projection.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[appEncryptionDeclarations]", "disposition": "intentionallyOmitted", "reason": "No relationships are included, so this related-resource page limit is inapplicable to the search projection.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[appEvents]", "disposition": "intentionallyOmitted", "reason": "No relationships are included, so this related-resource page limit is inapplicable to the search projection.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[appInfos]", "disposition": "intentionallyOmitted", "reason": "No relationships are included, so this related-resource page limit is inapplicable to the search projection.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[appStoreVersionExperimentsV2]", "disposition": "intentionallyOmitted", "reason": "No relationships are included, so this related-resource page limit is inapplicable to the search projection.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[appStoreVersions]", "disposition": "intentionallyOmitted", "reason": "No relationships are included, so this related-resource page limit is inapplicable to the search projection.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[betaAppLocalizations]", "disposition": "intentionallyOmitted", "reason": "No relationships are included, so this related-resource page limit is inapplicable to the search projection.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[betaGroups]", "disposition": "intentionallyOmitted", "reason": "No relationships are included, so this related-resource page limit is inapplicable to the search projection.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[builds]", "disposition": "intentionallyOmitted", "reason": "No relationships are included, so this related-resource page limit is inapplicable to the search projection.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[gameCenterEnabledVersions]", "disposition": "intentionallyOmitted", "reason": "No relationships are included, so this related-resource page limit is inapplicable to the search projection.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[inAppPurchases]", "disposition": "intentionallyOmitted", "reason": "No relationships are included, so this related-resource page limit is inapplicable to the search projection.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[inAppPurchasesV2]", "disposition": "intentionallyOmitted", "reason": "No relationships are included, so this related-resource page limit is inapplicable to the search projection.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[preReleaseVersions]", "disposition": "intentionallyOmitted", "reason": "No relationships are included, so this related-resource page limit is inapplicable to the search projection.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[promotedPurchases]", "disposition": "intentionallyOmitted", "reason": "No relationships are included, so this related-resource page limit is inapplicable to the search projection.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[reviewSubmissions]", "disposition": "intentionallyOmitted", "reason": "No relationships are included, so this related-resource page limit is inapplicable to the search projection.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[subscriptionGroups]", "disposition": "intentionallyOmitted", "reason": "No relationships are included, so this related-resource page limit is inapplicable to the search projection.", "reviewAtSpec": "4.4.1" }
+          ]
         }
       ],
       "fields": [
@@ -442,10 +514,12 @@
           { "outputField": "success", "localRole": "successfulAggregate" },
           { "outputField": "query", "localRole": "echoInput" },
           { "outputField": "apps", "operationId": "apps_getCollection", "jsonPointer": "/data", "invocationIds": ["name-search", "bundle-search"] },
+          { "outputField": "count", "localRole": "deduplicatedResultCount" },
+          { "outputField": "pagesFetched", "localRole": "completedPaginationRequestCount" },
           { "outputField": "searchedIn", "localRole": "fixedSearchDimensions" }
         ]
       },
-      "note": "Two equality-filter collection requests are merged and de-duplicated locally; neither result set is paginated."
+      "note": "The exact-name and exact-bundle-ID union branches each follow all Apple pages with fixed limit=200, sparse App projection, and deterministic sort. Every continuation must preserve its branch filter and fixed controls, allow only Apple's cursor, and remain on the configured origin and collection path. Repeated or invalid next URLs fail without returning partial results. Resources are de-duplicated by App ID and sorted locally by name, bundle ID, SKU, then ID."
     },
     {
       "tool": "apps_update_metadata",

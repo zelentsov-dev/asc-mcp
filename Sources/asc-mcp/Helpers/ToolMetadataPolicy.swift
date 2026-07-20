@@ -227,6 +227,7 @@ enum ToolMetadataPolicy {
             "success": .object(["type": .string("boolean")]),
             "query": .object(["type": .string("string")]),
             "count": .object(["type": .string("integer")]),
+            "pagesFetched": .object(["type": .string("integer")]),
             "apps": .object(["type": .string("array"), "items": appSummarySchema]),
             "searchedIn": .object(["type": .string("array"), "items": .object(["type": .string("string")])])
         ]),
