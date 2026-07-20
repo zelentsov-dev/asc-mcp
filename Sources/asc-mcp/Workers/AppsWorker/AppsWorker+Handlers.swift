@@ -164,7 +164,7 @@ extension AppsWorker {
             }
             
             // Execute request
-            let response: ASCAppResponse = try await httpClient.get("/v1/apps/\(appId)", parameters: queryParams, as: ASCAppResponse.self)
+            let response: ASCAppResponse = try await httpClient.get("/v1/apps/\(try ASCPathSegment.encode(appId))", parameters: queryParams, as: ASCAppResponse.self)
             let app = response.data
             
             // Format detailed response
@@ -297,12 +297,12 @@ extension AppsWorker {
             if let nextUrl = try paginationURL(from: arguments["next_url"]) {
                 response = try await httpClient.getPage(
                     nextUrl,
-                    scope: PaginationScope(path: "/v1/apps/\(appId)/appStoreVersions"),
+                    scope: PaginationScope(path: "/v1/apps/\(try ASCPathSegment.encode(appId))/appStoreVersions"),
                     as: ASCAppStoreVersionsResponse.self
                 )
             } else {
                 response = try await httpClient.get(
-                    "/v1/apps/\(appId)/appStoreVersions",
+                    "/v1/apps/\(try ASCPathSegment.encode(appId))/appStoreVersions",
                     parameters: [
                         "limit": "200",
                         "fields[appStoreVersions]": "versionString,appStoreState,createdDate"
@@ -369,7 +369,7 @@ extension AppsWorker {
             if let versionId = versionIdParam {
                 // Use provided version_id — fetch its details
                 let versionResponse: ASCAppStoreVersionResponse = try await httpClient.get(
-                    "/v1/appStoreVersions/\(versionId)",
+                    "/v1/appStoreVersions/\(try ASCPathSegment.encode(versionId))",
                     parameters: ["fields[appStoreVersions]": "versionString,appStoreState"],
                     as: ASCAppStoreVersionResponse.self
                 )
@@ -378,7 +378,7 @@ extension AppsWorker {
             } else {
                 // Auto-resolve version
                 let versionsResponse: ASCAppStoreVersionsResponse = try await httpClient.get(
-                    "/v1/apps/\(appId)/appStoreVersions",
+                    "/v1/apps/\(try ASCPathSegment.encode(appId))/appStoreVersions",
                     parameters: [
                         "fields[appStoreVersions]": "versionString,appStoreState,createdDate",
                         "limit": "10"
@@ -452,7 +452,7 @@ extension AppsWorker {
             }
 
             let localizationsResponse: ASCAppStoreVersionLocalizationsResponse = try await httpClient.get(
-                "/v1/appStoreVersions/\(resolvedVersion.id)/appStoreVersionLocalizations",
+                "/v1/appStoreVersions/\(try ASCPathSegment.encode(resolvedVersion.id))/appStoreVersionLocalizations",
                 parameters: localizationParams,
                 as: ASCAppStoreVersionLocalizationsResponse.self
             )
@@ -529,7 +529,7 @@ extension AppsWorker {
 
         // Fetch preview videos
         if let previewSetsData = try? await httpClient.get(
-            "/v1/appStoreVersionLocalizations/\(localizationId)/appPreviewSets",
+            "/v1/appStoreVersionLocalizations/\(try ASCPathSegment.encode(localizationId))/appPreviewSets",
             parameters: ["include": "appPreviews", "limit": "10"]
         ) {
             if let response = try? JSONDecoder().decode(ASCAppPreviewSetsResponse.self, from: previewSetsData),
@@ -569,7 +569,7 @@ extension AppsWorker {
 
         // Fetch screenshots
         if let screenshotSetsData = try? await httpClient.get(
-            "/v1/appStoreVersionLocalizations/\(localizationId)/appScreenshotSets",
+            "/v1/appStoreVersionLocalizations/\(try ASCPathSegment.encode(localizationId))/appScreenshotSets",
             parameters: ["include": "appScreenshots", "limit": "10"]
         ) {
             if let response = try? JSONDecoder().decode(ASCAppScreenshotSetsResponse.self, from: screenshotSetsData),
@@ -637,7 +637,7 @@ extension AppsWorker {
             // 1. Fetch version details for result context. App Store Connect
             // enforces the exact editable-state rules on the PATCH request.
             let versionResponse: ASCAppStoreVersionResponse = try await httpClient.get(
-                "/v1/appStoreVersions/\(versionId)",
+                "/v1/appStoreVersions/\(try ASCPathSegment.encode(versionId))",
                 as: ASCAppStoreVersionResponse.self
             )
             
@@ -645,7 +645,7 @@ extension AppsWorker {
             
             // 2. Get localization ID for the specified locale
             let localizationsResponse: ASCAppStoreVersionLocalizationsResponse = try await httpClient.get(
-                "/v1/appStoreVersions/\(versionId)/appStoreVersionLocalizations",
+                "/v1/appStoreVersions/\(try ASCPathSegment.encode(versionId))/appStoreVersionLocalizations",
                 parameters: ["filter[locale]": locale],
                 as: ASCAppStoreVersionLocalizationsResponse.self
             )
@@ -683,7 +683,7 @@ extension AppsWorker {
             )
             
             let _: ASCAppStoreVersionLocalizationUpdateResponse = try await httpClient.patch(
-                "/v1/appStoreVersionLocalizations/\(localization.id)",
+                "/v1/appStoreVersionLocalizations/\(try ASCPathSegment.encode(localization.id))",
                 body: updateRequest,
                 as: ASCAppStoreVersionLocalizationUpdateResponse.self
             )
@@ -810,7 +810,7 @@ extension AppsWorker {
         }
 
         do {
-            _ = try await httpClient.delete("/v1/appStoreVersionLocalizations/\(localizationId)")
+            _ = try await httpClient.delete("/v1/appStoreVersionLocalizations/\(try ASCPathSegment.encode(localizationId))")
 
             let result: [String: Any] = [
                 "success": true,
@@ -890,12 +890,12 @@ extension AppsWorker {
             if let nextUrl = try paginationURL(from: arguments["next_url"]) {
                 localizationsResponse = try await httpClient.getPage(
                     nextUrl,
-                    scope: PaginationScope(path: "/v1/appStoreVersions/\(versionId)/appStoreVersionLocalizations"),
+                    scope: PaginationScope(path: "/v1/appStoreVersions/\(try ASCPathSegment.encode(versionId))/appStoreVersionLocalizations"),
                     as: ASCAppStoreVersionLocalizationsResponse.self
                 )
             } else {
                 localizationsResponse = try await httpClient.get(
-                    "/v1/appStoreVersions/\(versionId)/appStoreVersionLocalizations",
+                    "/v1/appStoreVersions/\(try ASCPathSegment.encode(versionId))/appStoreVersionLocalizations",
                     parameters: [:],
                     as: ASCAppStoreVersionLocalizationsResponse.self
                 )

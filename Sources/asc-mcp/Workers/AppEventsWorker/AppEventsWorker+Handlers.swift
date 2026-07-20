@@ -23,7 +23,7 @@ extension AppEventsWorker {
             if let nextUrl = try paginationURL(from: arguments["next_url"]) {
                 response = try await httpClient.getPage(
                     nextUrl,
-                    scope: PaginationScope(path: "/v1/apps/\(appId)/appEvents"),
+                    scope: PaginationScope(path: "/v1/apps/\(try ASCPathSegment.encode(appId))/appEvents"),
                     as: ASCAppEventsResponse.self
                 )
             } else {
@@ -37,7 +37,7 @@ extension AppEventsWorker {
                 }
 
                 response = try await httpClient.get(
-                    "/v1/apps/\(appId)/appEvents",
+                    "/v1/apps/\(try ASCPathSegment.encode(appId))/appEvents",
                     parameters: queryParams,
                     as: ASCAppEventsResponse.self
                 )
@@ -85,7 +85,7 @@ extension AppEventsWorker {
             }
 
             let response: ASCAppEventResponse = try await httpClient.get(
-                "/v1/appEvents/\(eventId)",
+                "/v1/appEvents/\(try ASCPathSegment.encode(eventId))",
                 parameters: queryParams,
                 as: ASCAppEventResponse.self
             )
@@ -216,7 +216,7 @@ extension AppEventsWorker {
             )
 
             let response: ASCAppEventResponse = try await httpClient.patch(
-                "/v1/appEvents/\(eventId)",
+                "/v1/appEvents/\(try ASCPathSegment.encode(eventId))",
                 body: request,
                 as: ASCAppEventResponse.self
             )
@@ -250,7 +250,7 @@ extension AppEventsWorker {
         }
 
         do {
-            _ = try await httpClient.delete("/v1/appEvents/\(eventId)")
+            _ = try await httpClient.delete("/v1/appEvents/\(try ASCPathSegment.encode(eventId))")
 
             let result = [
                 "success": true,
@@ -282,7 +282,7 @@ extension AppEventsWorker {
 
         do {
             let response: ASCAppEventLocalizationsResponse = try await httpClient.get(
-                "/v1/appEvents/\(eventId)/localizations",
+                "/v1/appEvents/\(try ASCPathSegment.encode(eventId))/localizations",
                 parameters: [:],
                 as: ASCAppEventLocalizationsResponse.self
             )
@@ -386,7 +386,7 @@ extension AppEventsWorker {
             )
 
             let response: ASCAppEventLocalizationSingleResponse = try await httpClient.patch(
-                "/v1/appEventLocalizations/\(localizationId)",
+                "/v1/appEventLocalizations/\(try ASCPathSegment.encode(localizationId))",
                 body: request,
                 as: ASCAppEventLocalizationSingleResponse.self
             )
@@ -419,7 +419,7 @@ extension AppEventsWorker {
         }
 
         do {
-            _ = try await httpClient.delete("/v1/appEventLocalizations/\(localizationId)")
+            _ = try await httpClient.delete("/v1/appEventLocalizations/\(try ASCPathSegment.encode(localizationId))")
 
             let result: [String: Any] = [
                 "success": true,

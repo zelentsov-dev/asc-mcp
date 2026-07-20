@@ -18,7 +18,7 @@ extension InAppPurchasesWorker {
                 response = try await httpClient.getPage(
                     nextUrl,
                     scope: PaginationScope(
-                        path: "/v2/inAppPurchases/\(iapId)/pricePoints",
+                        path: "/v2/inAppPurchases/\(try ASCPathSegment.encode(iapId))/pricePoints",
                         requiredParameters: requiredParameters
                     ),
                     as: PassthroughAPIResponse.self
@@ -29,7 +29,7 @@ extension InAppPurchasesWorker {
                     query["filter[territory]"] = territoryId
                 }
                 response = try await httpClient.get(
-                    "/v2/inAppPurchases/\(iapId)/pricePoints",
+                    "/v2/inAppPurchases/\(try ASCPathSegment.encode(iapId))/pricePoints",
                     parameters: query,
                     as: PassthroughAPIResponse.self
                 )
@@ -68,7 +68,7 @@ extension InAppPurchasesWorker {
                 response = try await httpClient.getPage(
                     nextUrl,
                     scope: PaginationScope(
-                        path: "/v1/inAppPurchasePricePoints/\(pricePointId)/equalizations",
+                        path: "/v1/inAppPurchasePricePoints/\(try ASCPathSegment.encode(pricePointId))/equalizations",
                         requiredParameters: requiredParameters
                     ),
                     as: PassthroughAPIResponse.self
@@ -82,7 +82,7 @@ extension InAppPurchasesWorker {
                     query["filter[territory]"] = territoryId
                 }
                 response = try await httpClient.get(
-                    "/v1/inAppPurchasePricePoints/\(pricePointId)/equalizations",
+                    "/v1/inAppPurchasePricePoints/\(try ASCPathSegment.encode(pricePointId))/equalizations",
                     parameters: query,
                     as: PassthroughAPIResponse.self
                 )
@@ -109,9 +109,9 @@ extension InAppPurchasesWorker {
 
         let endpoint: String
         if let iapId = arguments["iap_id"]?.stringValue {
-            endpoint = "/v2/inAppPurchases/\(iapId)/inAppPurchaseAvailability"
+            endpoint = "/v2/inAppPurchases/\(try ASCPathSegment.encode(iapId))/inAppPurchaseAvailability"
         } else if let availabilityId = arguments["availability_id"]?.stringValue {
-            endpoint = "/v1/inAppPurchaseAvailabilities/\(availabilityId)"
+            endpoint = "/v1/inAppPurchaseAvailabilities/\(try ASCPathSegment.encode(availabilityId))"
         } else {
             return MCPResult.error("Required parameter 'iap_id' or 'availability_id' is missing")
         }
@@ -137,7 +137,7 @@ extension InAppPurchasesWorker {
         }
         return try await listIAPPassthroughResources(
             params,
-            endpoint: "/v1/inAppPurchaseAvailabilities/\(availabilityId)/availableTerritories",
+            endpoint: "/v1/inAppPurchaseAvailabilities/\(try ASCPathSegment.encode(availabilityId))/availableTerritories",
             key: "territories",
             defaultQuery: ["fields[territories]": "currency"]
         )
@@ -152,7 +152,7 @@ extension InAppPurchasesWorker {
 
         do {
             let schedule: PassthroughAPIResponse = try await httpClient.get(
-                "/v2/inAppPurchases/\(iapId)/iapPriceSchedule",
+                "/v2/inAppPurchases/\(try ASCPathSegment.encode(iapId))/iapPriceSchedule",
                 parameters: ["fields[inAppPurchasePriceSchedules]": "baseTerritory,manualPrices,automaticPrices"],
                 as: PassthroughAPIResponse.self
             )
@@ -161,12 +161,12 @@ extension InAppPurchasesWorker {
             }
 
             let manual: PassthroughAPIResponse = try await httpClient.get(
-                "/v1/inAppPurchasePriceSchedules/\(scheduleId)/manualPrices",
+                "/v1/inAppPurchasePriceSchedules/\(try ASCPathSegment.encode(scheduleId))/manualPrices",
                 parameters: iapPriceQuery(territoryId: territoryId),
                 as: PassthroughAPIResponse.self
             )
             let automatic: PassthroughAPIResponse = try await httpClient.get(
-                "/v1/inAppPurchasePriceSchedules/\(scheduleId)/automaticPrices",
+                "/v1/inAppPurchasePriceSchedules/\(try ASCPathSegment.encode(scheduleId))/automaticPrices",
                 parameters: iapPriceQuery(territoryId: territoryId),
                 as: PassthroughAPIResponse.self
             )
@@ -217,7 +217,7 @@ extension InAppPurchasesWorker {
 
         do {
             let response: PassthroughAPIResponse = try await httpClient.get(
-                "/v2/inAppPurchases/\(iapId)/pricePoints",
+                "/v2/inAppPurchases/\(try ASCPathSegment.encode(iapId))/pricePoints",
                 parameters: iapPricePointQuery(limit: 8000).merging(["filter[territory]": territoryId]) { _, new in new },
                 as: PassthroughAPIResponse.self
             )
@@ -245,7 +245,7 @@ extension InAppPurchasesWorker {
         }
         return try await listIAPPassthroughResources(
             params,
-            endpoint: "/v1/apps/\(appId)/inAppPurchasesV2",
+            endpoint: "/v1/apps/\(try ASCPathSegment.encode(appId))/inAppPurchasesV2",
             key: "in_app_purchases",
             defaultQuery: [
                 "include": "inAppPurchaseLocalizations,iapPriceSchedule,inAppPurchaseAvailability,promotedPurchase,offerCodes",
@@ -263,7 +263,7 @@ extension InAppPurchasesWorker {
         guard let iapId = params.arguments?["iap_id"]?.stringValue else {
             return MCPResult.error("Required parameter 'iap_id' is missing")
         }
-        return try await getIAPPassthroughResource(endpoint: "/v2/inAppPurchases/\(iapId)/promotedPurchase", key: "promoted_purchase")
+        return try await getIAPPassthroughResource(endpoint: "/v2/inAppPurchases/\(try ASCPathSegment.encode(iapId))/promotedPurchase", key: "promoted_purchase")
     }
 
     func listIAPOfferCodes(_ params: CallTool.Parameters) async throws -> CallTool.Result {
@@ -272,7 +272,7 @@ extension InAppPurchasesWorker {
         }
         return try await listIAPPassthroughResources(
             params,
-            endpoint: "/v2/inAppPurchases/\(iapId)/offerCodes",
+            endpoint: "/v2/inAppPurchases/\(try ASCPathSegment.encode(iapId))/offerCodes",
             key: "offer_codes",
             defaultQuery: [
                 "include": "oneTimeUseCodes,customCodes,prices",
@@ -288,7 +288,7 @@ extension InAppPurchasesWorker {
         guard let offerCodeId = params.arguments?["offer_code_id"]?.stringValue else {
             return MCPResult.error("Required parameter 'offer_code_id' is missing")
         }
-        return try await getIAPPassthroughResource(endpoint: "/v1/inAppPurchaseOfferCodes/\(offerCodeId)", key: "offer_code")
+        return try await getIAPPassthroughResource(endpoint: "/v1/inAppPurchaseOfferCodes/\(try ASCPathSegment.encode(offerCodeId))", key: "offer_code")
     }
 
     func createIAPOfferCode(_ params: CallTool.Parameters) async throws -> CallTool.Result {
@@ -342,7 +342,7 @@ extension InAppPurchasesWorker {
             return MCPResult.error("Required parameter 'offer_code_id' is missing")
         }
         return try await patchIAPActiveResource(
-            endpoint: "/v1/inAppPurchaseOfferCodes/\(offerCodeId)",
+            endpoint: "/v1/inAppPurchaseOfferCodes/\(try ASCPathSegment.encode(offerCodeId))",
             type: "inAppPurchaseOfferCodes",
             id: offerCodeId,
             active: params.arguments?["active"]?.boolValue,
@@ -355,7 +355,7 @@ extension InAppPurchasesWorker {
             return MCPResult.error("Required parameter 'offer_code_id' is missing")
         }
         return try await patchIAPActiveResource(
-            endpoint: "/v1/inAppPurchaseOfferCodes/\(offerCodeId)",
+            endpoint: "/v1/inAppPurchaseOfferCodes/\(try ASCPathSegment.encode(offerCodeId))",
             type: "inAppPurchaseOfferCodes",
             id: offerCodeId,
             active: false,
@@ -379,7 +379,7 @@ extension InAppPurchasesWorker {
                 response = try await httpClient.getPage(
                     nextUrl,
                     scope: PaginationScope(
-                        path: "/v1/inAppPurchaseOfferCodes/\(offerCodeId)/prices",
+                        path: "/v1/inAppPurchaseOfferCodes/\(try ASCPathSegment.encode(offerCodeId))/prices",
                         requiredParameters: requiredParameters
                     ),
                     as: PassthroughAPIResponse.self
@@ -390,7 +390,7 @@ extension InAppPurchasesWorker {
                     query["filter[territory]"] = territoryId
                 }
                 response = try await httpClient.get(
-                    "/v1/inAppPurchaseOfferCodes/\(offerCodeId)/prices",
+                    "/v1/inAppPurchaseOfferCodes/\(try ASCPathSegment.encode(offerCodeId))/prices",
                     parameters: query,
                     as: PassthroughAPIResponse.self
                 )
@@ -440,7 +440,7 @@ extension InAppPurchasesWorker {
         }
         return try await listIAPPassthroughResources(
             params,
-            endpoint: "/v1/inAppPurchaseOfferCodes/\(offerCodeId)/oneTimeUseCodes",
+            endpoint: "/v1/inAppPurchaseOfferCodes/\(try ASCPathSegment.encode(offerCodeId))/oneTimeUseCodes",
             key: "one_time_codes",
             defaultQuery: [:]
         )
@@ -450,7 +450,7 @@ extension InAppPurchasesWorker {
         guard let oneTimeCodeId = params.arguments?["one_time_code_id"]?.stringValue else {
             return MCPResult.error("Required parameter 'one_time_code_id' is missing")
         }
-        return try await getIAPPassthroughResource(endpoint: "/v1/inAppPurchaseOfferCodeOneTimeUseCodes/\(oneTimeCodeId)", key: "one_time_code")
+        return try await getIAPPassthroughResource(endpoint: "/v1/inAppPurchaseOfferCodeOneTimeUseCodes/\(try ASCPathSegment.encode(oneTimeCodeId))", key: "one_time_code")
     }
 
     func updateIAPOneTimeCode(_ params: CallTool.Parameters) async throws -> CallTool.Result {
@@ -458,7 +458,7 @@ extension InAppPurchasesWorker {
             return MCPResult.error("Required parameter 'one_time_code_id' is missing")
         }
         return try await patchIAPActiveResource(
-            endpoint: "/v1/inAppPurchaseOfferCodeOneTimeUseCodes/\(oneTimeCodeId)",
+            endpoint: "/v1/inAppPurchaseOfferCodeOneTimeUseCodes/\(try ASCPathSegment.encode(oneTimeCodeId))",
             type: "inAppPurchaseOfferCodeOneTimeUseCodes",
             id: oneTimeCodeId,
             active: params.arguments?["active"]?.boolValue,
@@ -471,7 +471,7 @@ extension InAppPurchasesWorker {
             return MCPResult.error("Required parameter 'one_time_code_id' is missing")
         }
         return try await patchIAPActiveResource(
-            endpoint: "/v1/inAppPurchaseOfferCodeOneTimeUseCodes/\(oneTimeCodeId)",
+            endpoint: "/v1/inAppPurchaseOfferCodeOneTimeUseCodes/\(try ASCPathSegment.encode(oneTimeCodeId))",
             type: "inAppPurchaseOfferCodeOneTimeUseCodes",
             id: oneTimeCodeId,
             active: false,
@@ -485,7 +485,7 @@ extension InAppPurchasesWorker {
         }
         return try await listIAPPassthroughResources(
             params,
-            endpoint: "/v1/inAppPurchaseOfferCodeOneTimeUseCodes/\(oneTimeCodeId)/values",
+            endpoint: "/v1/inAppPurchaseOfferCodeOneTimeUseCodes/\(try ASCPathSegment.encode(oneTimeCodeId))/values",
             key: "values",
             defaultQuery: [:]
         )
@@ -519,7 +519,7 @@ extension InAppPurchasesWorker {
         guard let customCodeId = params.arguments?["custom_code_id"]?.stringValue else {
             return MCPResult.error("Required parameter 'custom_code_id' is missing")
         }
-        return try await getIAPPassthroughResource(endpoint: "/v1/inAppPurchaseOfferCodeCustomCodes/\(customCodeId)", key: "custom_code")
+        return try await getIAPPassthroughResource(endpoint: "/v1/inAppPurchaseOfferCodeCustomCodes/\(try ASCPathSegment.encode(customCodeId))", key: "custom_code")
     }
 
     func updateIAPCustomCode(_ params: CallTool.Parameters) async throws -> CallTool.Result {
@@ -527,7 +527,7 @@ extension InAppPurchasesWorker {
             return MCPResult.error("Required parameter 'custom_code_id' is missing")
         }
         return try await patchIAPActiveResource(
-            endpoint: "/v1/inAppPurchaseOfferCodeCustomCodes/\(customCodeId)",
+            endpoint: "/v1/inAppPurchaseOfferCodeCustomCodes/\(try ASCPathSegment.encode(customCodeId))",
             type: "inAppPurchaseOfferCodeCustomCodes",
             id: customCodeId,
             active: params.arguments?["active"]?.boolValue,
@@ -540,7 +540,7 @@ extension InAppPurchasesWorker {
             return MCPResult.error("Required parameter 'custom_code_id' is missing")
         }
         return try await patchIAPActiveResource(
-            endpoint: "/v1/inAppPurchaseOfferCodeCustomCodes/\(customCodeId)",
+            endpoint: "/v1/inAppPurchaseOfferCodeCustomCodes/\(try ASCPathSegment.encode(customCodeId))",
             type: "inAppPurchaseOfferCodeCustomCodes",
             id: customCodeId,
             active: false,

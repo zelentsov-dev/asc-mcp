@@ -86,7 +86,7 @@ extension UsersWorker {
             }
 
             let response: ASCUserResponse = try await httpClient.get(
-                "/v1/users/\(userId)",
+                "/v1/users/\(try ASCPathSegment.encode(userId))",
                 parameters: queryParams,
                 as: ASCUserResponse.self
             )
@@ -204,7 +204,7 @@ extension UsersWorker {
             )
 
             let response: ASCUserResponse = try await httpClient.patch(
-                "/v1/users/\(userId)",
+                "/v1/users/\(try ASCPathSegment.encode(userId))",
                 body: request,
                 as: ASCUserResponse.self
             )
@@ -245,7 +245,7 @@ extension UsersWorker {
         }
 
         do {
-            _ = try await httpClient.delete("/v1/users/\(userId)")
+            _ = try await httpClient.delete("/v1/users/\(try ASCPathSegment.encode(userId))")
 
             let result = [
                 "success": true,
@@ -407,7 +407,7 @@ extension UsersWorker {
         }
 
         do {
-            _ = try await httpClient.delete("/v1/userInvitations/\(invitationId)")
+            _ = try await httpClient.delete("/v1/userInvitations/\(try ASCPathSegment.encode(invitationId))")
 
             let result = [
                 "success": true,
@@ -442,7 +442,7 @@ extension UsersWorker {
             if let nextUrl = try paginationURL(from: arguments["next_url"]) {
                 response = try await httpClient.getPage(
                     nextUrl,
-                    scope: PaginationScope(path: "/v1/users/\(userId)/visibleApps"),
+                    scope: PaginationScope(path: "/v1/users/\(try ASCPathSegment.encode(userId))/visibleApps"),
                     as: ASCAppsResponse.self
                 )
             } else {
@@ -456,7 +456,7 @@ extension UsersWorker {
                 }
 
                 response = try await httpClient.get(
-                    "/v1/users/\(userId)/visibleApps",
+                    "/v1/users/\(try ASCPathSegment.encode(userId))/visibleApps",
                     parameters: queryParams,
                     as: ASCAppsResponse.self
                 )
@@ -512,7 +512,7 @@ extension UsersWorker {
 
             let bodyData = try JSONEncoder().encode(request)
             _ = try await httpClient.post(
-                "/v1/users/\(userId)/relationships/visibleApps",
+                "/v1/users/\(try ASCPathSegment.encode(userId))/relationships/visibleApps",
                 body: bodyData
             )
 
@@ -560,7 +560,7 @@ extension UsersWorker {
 
             let bodyData = try JSONEncoder().encode(request)
             _ = try await httpClient.delete(
-                "/v1/users/\(userId)/relationships/visibleApps",
+                "/v1/users/\(try ASCPathSegment.encode(userId))/relationships/visibleApps",
                 body: bodyData
             )
 

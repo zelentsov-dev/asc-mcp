@@ -184,7 +184,7 @@
           }
         ]
       },
-      "note": "Compound local workflow over four salesReports downloads with independent section errors. All four requests use Apple-supported report combinations and versions after trimmed non-empty identifier and strict YYYY-MM-DD calendar-date validation. app_id filtering and summaries are local TSV aggregations. Monetary aggregation uses Decimal and per-unit proceeds; compatibility numeric proceeds are accompanied by exact decimal strings. The subscription section covers all version 1_3 active offer columns and exposes reported/lower-bound/suppressed-row Subscribers semantics."
+      "note": "Compound local workflow over four sequential salesReports downloads with independent section errors. All four requests use Apple-supported report combinations and versions after trimmed non-empty identifier and strict YYYY-MM-DD calendar-date validation. Each decoded report is integrity-checked and limited to 64 MiB, 256 columns, 1000000 scanned rows, 10000000 scanned data cells, 100000 matched rows, and 1000000 retained cells. app_id filtering and summaries are local TSV aggregations. Monetary aggregation uses Decimal and per-unit proceeds; compatibility numeric proceeds are accompanied by exact decimal strings. The subscription section covers all version 1_3 active offer columns and exposes reported/lower-bound/suppressed-row Subscribers semantics."
     },
     {
       "tool": "analytics_check_snapshot_status",
@@ -389,7 +389,7 @@
         {
           "toolField": "limit",
           "sourceKind": "local",
-          "localRole": "rawTSVRowProjectionLimit"
+          "localRole": "clampedRawTSVRowProjectionLimit1To200"
         }
       ],
       "response": {
@@ -434,7 +434,7 @@
           }
         ]
       },
-      "note": "All Apple 4.4.1 request parameters are bound. Partial because summary_only, limit, decompression, TSV parsing, and monetary aggregation are local behavior; the tool does not expose a typed output contract. Financial aggregation uses Decimal, prefers Apple's signed Extended Partner Share, falls back to Quantity multiplied by per-unit Partner Share, and returns both compatibility numeric values and exact decimal strings."
+      "note": "All Apple 4.4.1 request parameters are bound. Partial because summary_only, the locally clamped 1-to-200 row limit, decompression, TSV parsing, and monetary aggregation are local behavior; the tool does not expose a typed output contract. Decoded reports are integrity-checked and limited to 64 MiB, 256 columns, 1000000 scanned rows, 10000000 scanned data cells, 100000 matched rows, and 1000000 retained cells. Financial aggregation uses Decimal, prefers Apple's signed Extended Partner Share, falls back to Quantity multiplied by per-unit Partner Share, and returns both compatibility numeric values and exact decimal strings."
     },
     {
       "tool": "analytics_get_instance",
@@ -973,7 +973,7 @@
           }
         ]
       },
-      "note": "The public enums match OpenAPI 4.4.1. Handler validation enforces Apple's supported combinations, strict YYYY-MM-DD calendar dates when supplied, and trimmed non-empty vendor/app identifiers before network access. app_id filtering, report-type or row-count summaries, and row limiting are local. Raw rows and summary reuse one parsed gzip download. Monetary aggregation uses Decimal, multiplies per-unit proceeds by signed units, returns compatibility numeric values plus exact decimal strings, and the version 1_3 subscription summary exposes all active offer columns plus reported/lower-bound/suppressed-row Subscribers semantics."
+      "note": "The public enums match OpenAPI 4.4.1. Handler validation enforces Apple's supported combinations, strict YYYY-MM-DD calendar dates when supplied, and trimmed non-empty vendor/app identifiers before network access. app_id filtering, report-type or row-count summaries, and row limiting are local. Raw rows and summary reuse one parsed gzip download. Decoded reports are integrity-checked and limited to 64 MiB, 256 columns, 1000000 scanned rows, 10000000 scanned data cells, 100000 matched rows, and 1000000 retained cells without returning partial summaries. Monetary aggregation uses Decimal, multiplies per-unit proceeds by signed units, returns compatibility numeric values plus exact decimal strings, and the version 1_3 subscription summary exposes all active offer columns plus reported/lower-bound/suppressed-row Subscribers semantics."
     }
   ],
   "implementationAliases": []

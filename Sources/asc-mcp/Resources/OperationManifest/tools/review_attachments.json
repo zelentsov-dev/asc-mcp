@@ -167,6 +167,7 @@
           "method": "post",
           "path": "/v1/appStoreReviewAttachments",
           "role": "primary",
+          "condition": "After creating an immutable local snapshot, reserve an attachment with metadata derived from that snapshot and receive Apple's signed upload operations.",
           "inputs": [
             {
               "sourceKind": "fixed",
@@ -239,7 +240,7 @@
           "method": "delete",
           "path": "/v1/appStoreReviewAttachments/{id}",
           "role": "conditional",
-          "condition": "Before any commit PATCH is attempted, delete the reservation only when Apple returns no upload operations or the presigned byte transfer fails. Treat a 404 cleanup response as already absent.",
+          "condition": "Before any commit PATCH is attempted, best-effort delete a confirmed reservation when cancellation, a missing upload plan, byte-transfer failure, or commit-body preparation prevents commit; treat 404 as already absent.",
           "inputs": [
             {
               "sourceKind": "derived",
@@ -248,7 +249,7 @@
               "derivedFrom": [
                 "appStoreReviewAttachments_createInstance:/data/id"
               ],
-              "localRole": "Rollback the reservation only for a missing upload plan or presigned transfer failure before commit."
+              "localRole": "Rollback only the known reservation for this upload attempt, independently of caller cancellation."
             }
           ]
         }
@@ -273,7 +274,7 @@
           "derivedFrom": [
             "file_path"
           ],
-          "localRole": "Derive the reservation fileSize from the local file."
+          "localRole": "Derive the reservation fileSize from the immutable snapshot."
         },
         {
           "toolField": "file_path",
@@ -283,7 +284,7 @@
           "derivedFrom": [
             "file_path"
           ],
-          "localRole": "Derive the reservation fileName from the local path."
+          "localRole": "Derive the reservation fileName associated with the immutable snapshot."
         },
         {
           "toolField": "file_path",
@@ -307,15 +308,35 @@
         "fields": [
           {
             "outputField": "success",
-            "localRole": "Set true only when the commit response or a reconciliation response reports COMPLETE."
+            "localRole": "Set true when processing reaches COMPLETE or when a confirmed 2xx commit remains accepted processing-pending; ambiguous commit, unexpected-resource, and FAILED outcomes remain false."
           },
           {
             "outputField": "attachment",
             "localRole": "Project the latest attachment returned by commit or reconciliation, including nonterminal and FAILED states."
+          },
+          {
+            "outputField": "uploadCommitted",
+            "localRole": "Set true for an accepted processing-pending result after the commit PATCH returned 2xx."
+          },
+          {
+            "outputField": "processingComplete",
+            "localRole": "Set false for an accepted processing-pending result."
+          },
+          {
+            "outputField": "deliveryPending",
+            "localRole": "Set true while a confirmed commit is still processing and for unresolved ambiguous post-PATCH outcomes."
+          },
+          {
+            "outputField": "retrySafe",
+            "localRole": "Set false for accepted processing-pending and every unresolved post-reservation outcome to prevent duplicate reservations."
+          },
+          {
+            "outputField": "cleanup",
+            "localRole": "Describe rollback status or provide review_attachments_get and review_attachments_delete guidance for retained post-PATCH resources."
           }
         ]
       },
-      "note": "The handler snapshots the local file, reserves, uploads, commits, and reconciles assetDeliveryState. Automatic DELETE is restricted to missing upload operations or transfer failure before PATCH. Once commit may have started, every error, cancellation, timeout, malformed response, and FAILED state retains the attachment with explicit get/delete guidance. The mapping remains partial because the MCP output has no outputSchema."
+      "note": "The handler snapshots the local file before reserve, derives reservation metadata, transfer bytes, and checksum from that immutable snapshot, then commits and reconciles assetDeliveryState. COMPLETE is successful; FAILED is terminal failure; missing, unknown, and every other state remain pending and are polled with conditional GET. After a confirmed 2xx commit, nonterminal processing or unavailable verification is an accepted success with uploadCommitted=true, processingComplete=false, deliveryPending=true, and retrySafe=false. If PATCH transport remains ambiguous and reconciliation only shows pending, the outcome stays an error. A mismatched 2xx commit attachment triggers one GET of the expected attachment ID; valid COMPLETE, FAILED, or pending state is interpreted normally, while failed, unreadable, or mismatched reconciliation remains a retained error. All post-PATCH outcomes retain the attachment with explicit get/delete guidance. A confirmed reservation that fails before PATCH is best-effort deleted independently of cancellation. If create may have succeeded but its response or ID is unavailable, Apple exposes no idempotency key for identifying that exact reservation, so the handler reports retrySafe=false and review-detail collection inspection guidance instead of silently reserving again. The mapping remains partial because the MCP output has no outputSchema."
     }
   ],
   "implementationAliases": []

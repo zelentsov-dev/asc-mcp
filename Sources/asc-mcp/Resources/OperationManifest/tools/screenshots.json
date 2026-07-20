@@ -332,21 +332,55 @@
             },
             { "sourceKind": "fixed", "jsonPointer": "/data/attributes/uploaded", "fixedValue": true }
           ]
+        },
+        {
+          "operationId": "appScreenshots_getInstance",
+          "method": "get",
+          "path": "/v1/appScreenshots/{id}",
+          "role": "conditional",
+          "condition": "After PATCH returns a nonterminal delivery state, or when the PATCH response is ambiguous, reconcile and poll the reserved screenshot by ID until processing reaches a terminal state or local verification stops.",
+          "inputs": [
+            {
+              "sourceKind": "derived",
+              "location": "path",
+              "appleName": "id",
+              "derivedFrom": ["appScreenshots_createInstance:/data/id"],
+              "localRole": "Inspect the exact screenshot created by the reservation operation."
+            }
+          ]
+        },
+        {
+          "operationId": "appScreenshots_deleteInstance",
+          "method": "delete",
+          "path": "/v1/appScreenshots/{id}",
+          "role": "conditional",
+          "condition": "Before any commit PATCH is attempted, best-effort delete a confirmed reservation when cancellation, a missing upload plan, byte-transfer failure, or commit-body preparation prevents commit; treat 404 as already absent.",
+          "inputs": [
+            {
+              "sourceKind": "derived",
+              "location": "path",
+              "appleName": "id",
+              "derivedFrom": ["appScreenshots_createInstance:/data/id"],
+              "localRole": "Rollback only the known reservation for this upload attempt."
+            }
+          ]
         }
       ],
       "fields": [
         { "toolField": "set_id", "sourceKind": "requestBody", "operationId": "appScreenshots_createInstance", "jsonPointer": "/data/relationships/appScreenshotSet/data/id" },
-        { "toolField": "file_path", "sourceKind": "local", "localRole": "assetFileSource", "derivedFrom": ["fileName", "fileSize", "sourceFileChecksum"] }
+        { "toolField": "file_path", "sourceKind": "local", "localRole": "Create an immutable temporary snapshot before reservation, then derive fileName, fileSize, transfer bytes, and sourceFileChecksum from that same snapshot.", "derivedFrom": ["fileName", "fileSize", "sourceFileChecksum"] }
       ],
       "response": {
         "mode": "aggregate",
         "sources": [
           { "operationId": "appScreenshots_createInstance", "statusCode": "201", "mediaType": "application/json" },
-          { "operationId": "appScreenshots_updateInstance", "statusCode": "200", "mediaType": "application/json" }
+          { "operationId": "appScreenshots_updateInstance", "statusCode": "200", "mediaType": "application/json" },
+          { "operationId": "appScreenshots_getInstance", "statusCode": "200", "mediaType": "application/json" },
+          { "operationId": "appScreenshots_deleteInstance", "statusCode": "204" }
         ],
         "fields": []
       },
-      "note": "The bytes are uploaded between reserve and commit to Apple-provided signed URLs; those external upload operations are runtime response data, not OpenAPI operations."
+      "note": "The handler snapshots the file before reserve, uploads those immutable bytes through Apple-provided signed URLs, and commits their checksum. COMPLETE is successful; FAILED is terminal failure; any other assetDeliveryState remains pending and is polled with conditional GET. After a confirmed 2xx commit, nonterminal processing is an accepted success with uploadCommitted=true, processingComplete=false, deliveryPending=true, retrySafe=false, and get/delete guidance. If PATCH transport remains ambiguous and reconciliation only shows a pending state, the outcome stays an error and the resource is retained without blind retry. A mismatched 2xx commit resource triggers one GET of the expected ID; its valid terminal or pending state is interpreted normally, while a failed, unreadable, or mismatched GET remains a retained error. A confirmed reservation that fails before PATCH is best-effort deleted independently of cancellation. If create may have succeeded but its response or ID is unavailable, Apple exposes no idempotency key for identifying that exact reservation, so the handler reports retrySafe=false and parent-collection inspection guidance instead of silently reserving again."
     },
     {
       "tool": "screenshots_upload_batch",
@@ -407,21 +441,55 @@
             },
             { "sourceKind": "fixed", "jsonPointer": "/data/attributes/uploaded", "fixedValue": true }
           ]
+        },
+        {
+          "operationId": "appScreenshots_getInstance",
+          "method": "get",
+          "path": "/v1/appScreenshots/{id}",
+          "role": "conditional",
+          "condition": "For each item, after PATCH returns a nonterminal delivery state, or when its PATCH response is ambiguous, reconcile and poll that reservation by ID until processing reaches a terminal state or local verification stops.",
+          "inputs": [
+            {
+              "sourceKind": "derived",
+              "location": "path",
+              "appleName": "id",
+              "derivedFrom": ["appScreenshots_createInstance:/data/id"],
+              "localRole": "Inspect only the current batch item's reservation."
+            }
+          ]
+        },
+        {
+          "operationId": "appScreenshots_deleteInstance",
+          "method": "delete",
+          "path": "/v1/appScreenshots/{id}",
+          "role": "conditional",
+          "condition": "For each item before any commit PATCH is attempted, best-effort delete that confirmed reservation when cancellation, a missing upload plan, byte-transfer failure, or commit-body preparation prevents commit; treat 404 as already absent.",
+          "inputs": [
+            {
+              "sourceKind": "derived",
+              "location": "path",
+              "appleName": "id",
+              "derivedFrom": ["appScreenshots_createInstance:/data/id"],
+              "localRole": "Rollback only the current batch item's known reservation."
+            }
+          ]
         }
       ],
       "fields": [
         { "toolField": "set_id", "sourceKind": "requestBody", "operationId": "appScreenshots_createInstance", "jsonPointer": "/data/relationships/appScreenshotSet/data/id" },
-        { "toolField": "file_paths", "sourceKind": "local", "localRole": "batchAssetFileSources", "derivedFrom": ["per-file fileName", "per-file fileSize", "per-file sourceFileChecksum"] }
+        { "toolField": "file_paths", "sourceKind": "local", "localRole": "Create a separate immutable temporary snapshot before each reservation, then derive that item's fileName, fileSize, transfer bytes, and sourceFileChecksum from the same snapshot.", "derivedFrom": ["per-file fileName", "per-file fileSize", "per-file sourceFileChecksum"] }
       ],
       "response": {
         "mode": "aggregate",
         "sources": [
           { "operationId": "appScreenshots_createInstance", "statusCode": "201", "mediaType": "application/json" },
-          { "operationId": "appScreenshots_updateInstance", "statusCode": "200", "mediaType": "application/json" }
+          { "operationId": "appScreenshots_updateInstance", "statusCode": "200", "mediaType": "application/json" },
+          { "operationId": "appScreenshots_getInstance", "statusCode": "200", "mediaType": "application/json" },
+          { "operationId": "appScreenshots_deleteInstance", "statusCode": "204" }
         ],
         "fields": []
       },
-      "note": "The two Apple operations and signed-URL byte upload are repeated per file; the MCP aggregates per-file success and failure results."
+      "note": "Reserve, signed-URL transfer, commit, processing verification, and any pre-PATCH rollback run independently for each immutable per-file snapshot; the MCP aggregates per-item results. COMPLETE is successful; FAILED is terminal failure; any other assetDeliveryState remains pending and is polled with conditional GET. Confirmed commits still processing count as uploaded successes with delivery_pending=true and retry_safe=false; ambiguous PATCH results with only pending reconciliation remain per-item errors. A mismatched 2xx commit resource triggers one GET of that item's expected ID before its terminal, pending, or invalid reconciliation result is classified. Retained outcomes include inspection guidance, while confirmed pre-PATCH failures are best-effort deleted per reservation. An unresolved create response has no safe Apple idempotency key, so the affected item requires parent-collection inspection before retry."
     },
     {
       "tool": "screenshots_upload_preview",
@@ -482,22 +550,56 @@
             },
             { "sourceKind": "fixed", "jsonPointer": "/data/attributes/uploaded", "fixedValue": true }
           ]
+        },
+        {
+          "operationId": "appPreviews_getInstance",
+          "method": "get",
+          "path": "/v1/appPreviews/{id}",
+          "role": "conditional",
+          "condition": "After PATCH returns a nonterminal delivery state, or when the PATCH response is ambiguous, reconcile and poll the reserved preview by ID until processing reaches a terminal state or local verification stops.",
+          "inputs": [
+            {
+              "sourceKind": "derived",
+              "location": "path",
+              "appleName": "id",
+              "derivedFrom": ["appPreviews_createInstance:/data/id"],
+              "localRole": "Inspect the exact preview created by the reservation operation."
+            }
+          ]
+        },
+        {
+          "operationId": "appPreviews_deleteInstance",
+          "method": "delete",
+          "path": "/v1/appPreviews/{id}",
+          "role": "conditional",
+          "condition": "Before any commit PATCH is attempted, best-effort delete a confirmed reservation when cancellation, a missing upload plan, byte-transfer failure, or commit-body preparation prevents commit; treat 404 as already absent.",
+          "inputs": [
+            {
+              "sourceKind": "derived",
+              "location": "path",
+              "appleName": "id",
+              "derivedFrom": ["appPreviews_createInstance:/data/id"],
+              "localRole": "Rollback only the known reservation for this upload attempt."
+            }
+          ]
         }
       ],
       "fields": [
         { "toolField": "set_id", "sourceKind": "requestBody", "operationId": "appPreviews_createInstance", "jsonPointer": "/data/relationships/appPreviewSet/data/id" },
-        { "toolField": "file_path", "sourceKind": "local", "localRole": "assetFileSource", "derivedFrom": ["fileName", "fileSize", "sourceFileChecksum"] },
+        { "toolField": "file_path", "sourceKind": "local", "localRole": "Create an immutable temporary snapshot before reservation, then derive fileName, fileSize, transfer bytes, and sourceFileChecksum from that same snapshot.", "derivedFrom": ["fileName", "fileSize", "sourceFileChecksum"] },
         { "toolField": "mime_type", "sourceKind": "requestBody", "operationId": "appPreviews_createInstance", "jsonPointer": "/data/attributes/mimeType" }
       ],
       "response": {
         "mode": "aggregate",
         "sources": [
           { "operationId": "appPreviews_createInstance", "statusCode": "201", "mediaType": "application/json" },
-          { "operationId": "appPreviews_updateInstance", "statusCode": "200", "mediaType": "application/json" }
+          { "operationId": "appPreviews_updateInstance", "statusCode": "200", "mediaType": "application/json" },
+          { "operationId": "appPreviews_getInstance", "statusCode": "200", "mediaType": "application/json" },
+          { "operationId": "appPreviews_deleteInstance", "statusCode": "204" }
         ],
         "fields": []
       },
-      "note": "The video bytes are uploaded between reserve and commit to Apple-provided signed URLs; those external upload operations are runtime response data, not OpenAPI operations."
+      "note": "The handler snapshots the video before reserve, uploads those immutable bytes through Apple-provided signed URLs, and commits their checksum. COMPLETE is successful and FAILED is terminal failure; all other videoDeliveryState values (falling back to assetDeliveryState for compatibility) remain pending and are polled with conditional GET. After a confirmed 2xx commit, nonterminal video processing is an accepted success with uploadCommitted=true, processingComplete=false, deliveryPending=true, and retrySafe=false. If PATCH transport remains ambiguous and reconciliation only shows pending, the outcome stays an error; either way the preview is retained with inspection guidance. A mismatched 2xx commit resource triggers one GET of the expected preview ID; valid terminal or pending state is interpreted normally, while invalid reconciliation stays an error. A confirmed reservation that fails before PATCH is best-effort deleted independently of cancellation; an unresolved create response instead requires parent-collection inspection because Apple exposes no idempotency key for locating that exact reservation."
     }
   ],
   "implementationAliases": []

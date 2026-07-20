@@ -126,7 +126,7 @@ extension BuildsWorker {
             ]
             
             let response: ASCBuildResponse = try await httpClient.get(
-                "/v1/builds/\(buildId)",
+                "/v1/builds/\(try ASCPathSegment.encode(buildId))",
                 parameters: queryParams,
                 as: ASCBuildResponse.self
             )
@@ -248,7 +248,7 @@ extension BuildsWorker {
             ]
 
             let data = try await httpClient.get(
-                "/v1/appStoreVersions/\(versionId)/build",
+                "/v1/appStoreVersions/\(try ASCPathSegment.encode(versionId))/build",
                 parameters: queryParams
             )
 

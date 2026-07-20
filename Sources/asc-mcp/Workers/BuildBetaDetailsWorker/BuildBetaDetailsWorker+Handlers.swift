@@ -36,7 +36,7 @@ extension BuildBetaDetailsWorker {
         do {
             // First get build to find beta detail relationship
             let buildResponse: ASCBuildResponse = try await httpClient.get(
-                "/v1/builds/\(buildId)",
+                "/v1/builds/\(try ASCPathSegment.encode(buildId))",
                 parameters: ["include": "buildBetaDetail"],
                 as: ASCBuildResponse.self
             )
@@ -50,7 +50,7 @@ extension BuildBetaDetailsWorker {
             
             // Get full beta detail (only "build" is a valid include value)
             let response: ASCBuildBetaDetailResponse = try await httpClient.get(
-                "/v1/buildBetaDetails/\(betaDetailId)",
+                "/v1/buildBetaDetails/\(try ASCPathSegment.encode(betaDetailId))",
                 parameters: ["include": "build"],
                 as: ASCBuildBetaDetailResponse.self
             )
@@ -113,7 +113,7 @@ extension BuildBetaDetailsWorker {
             )
             
             let response: ASCBuildBetaDetailResponse = try await httpClient.patch(
-                "/v1/buildBetaDetails/\(betaDetailId)",
+                "/v1/buildBetaDetails/\(try ASCPathSegment.encode(betaDetailId))",
                 body: updateRequest,
                 as: ASCBuildBetaDetailResponse.self
             )
@@ -232,7 +232,7 @@ extension BuildBetaDetailsWorker {
                 )
                 
                 let response: ASCBetaBuildLocalizationResponse = try await httpClient.patch(
-                    "/v1/betaBuildLocalizations/\(localizationId)",
+                    "/v1/betaBuildLocalizations/\(try ASCPathSegment.encode(localizationId))",
                     body: updateRequest,
                     as: ASCBetaBuildLocalizationResponse.self
                 )
@@ -273,7 +273,7 @@ extension BuildBetaDetailsWorker {
             if let nextUrl = try paginationURL(from: arguments["next_url"]) {
                 response = try await httpClient.getPage(
                     nextUrl,
-                    scope: PaginationScope(path: "/v1/builds/\(buildId)/betaBuildLocalizations"),
+                    scope: PaginationScope(path: "/v1/builds/\(try ASCPathSegment.encode(buildId))/betaBuildLocalizations"),
                     as: ASCBetaBuildLocalizationsResponse.self
                 )
             } else {
@@ -287,7 +287,7 @@ extension BuildBetaDetailsWorker {
                 }
 
                 response = try await httpClient.get(
-                    "/v1/builds/\(buildId)/betaBuildLocalizations",
+                    "/v1/builds/\(try ASCPathSegment.encode(buildId))/betaBuildLocalizations",
                     parameters: queryParams,
                     as: ASCBetaBuildLocalizationsResponse.self
                 )
@@ -403,7 +403,7 @@ extension BuildBetaDetailsWorker {
             if let nextUrl = try paginationURL(from: arguments["next_url"]) {
                 response = try await httpClient.getPage(
                     nextUrl,
-                    scope: PaginationScope(path: "/v1/builds/\(buildId)/individualTesters"),
+                    scope: PaginationScope(path: "/v1/builds/\(try ASCPathSegment.encode(buildId))/individualTesters"),
                     as: ASCBetaTestersResponse.self
                 )
             } else {
@@ -417,7 +417,7 @@ extension BuildBetaDetailsWorker {
                 }
 
                 response = try await httpClient.get(
-                    "/v1/builds/\(buildId)/individualTesters",
+                    "/v1/builds/\(try ASCPathSegment.encode(buildId))/individualTesters",
                     parameters: queryParams,
                     as: ASCBetaTestersResponse.self
                 )
@@ -475,7 +475,7 @@ extension BuildBetaDetailsWorker {
 
             let bodyData = try JSONEncoder().encode(request)
             _ = try await httpClient.post(
-                "/v1/builds/\(buildId)/relationships/betaGroups",
+                "/v1/builds/\(try ASCPathSegment.encode(buildId))/relationships/betaGroups",
                 body: bodyData
             )
 
@@ -524,7 +524,7 @@ extension BuildBetaDetailsWorker {
 
             let bodyData = try JSONEncoder().encode(request)
             _ = try await httpClient.post(
-                "/v1/builds/\(buildId)/relationships/individualTesters",
+                "/v1/builds/\(try ASCPathSegment.encode(buildId))/relationships/individualTesters",
                 body: bodyData
             )
 
@@ -573,7 +573,7 @@ extension BuildBetaDetailsWorker {
 
             let bodyData = try JSONEncoder().encode(request)
             _ = try await httpClient.delete(
-                "/v1/builds/\(buildId)/relationships/individualTesters",
+                "/v1/builds/\(try ASCPathSegment.encode(buildId))/relationships/individualTesters",
                 body: bodyData
             )
 
@@ -612,7 +612,7 @@ extension BuildBetaDetailsWorker {
             if let nextUrl = try paginationURL(from: arguments["next_url"]) {
                 response = try await httpClient.getPage(
                     nextUrl,
-                    scope: PaginationScope(path: "/v1/builds/\(buildId)/individualTesters"),
+                    scope: PaginationScope(path: "/v1/builds/\(try ASCPathSegment.encode(buildId))/individualTesters"),
                     as: ASCBetaTestersResponse.self
                 )
             } else {
@@ -626,7 +626,7 @@ extension BuildBetaDetailsWorker {
                 }
 
                 response = try await httpClient.get(
-                    "/v1/builds/\(buildId)/individualTesters",
+                    "/v1/builds/\(try ASCPathSegment.encode(buildId))/individualTesters",
                     parameters: queryParams,
                     as: ASCBetaTestersResponse.self
                 )

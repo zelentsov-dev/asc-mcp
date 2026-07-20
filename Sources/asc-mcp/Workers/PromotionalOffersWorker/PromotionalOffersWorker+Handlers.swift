@@ -21,7 +21,7 @@ extension PromotionalOffersWorker {
             if let nextUrl = try paginationURL(from: arguments["next_url"]) {
                 response = try await httpClient.getPage(
                     nextUrl,
-                    scope: PaginationScope(path: "/v1/subscriptions/\(subscriptionId)/promotionalOffers"),
+                    scope: PaginationScope(path: "/v1/subscriptions/\(try ASCPathSegment.encode(subscriptionId))/promotionalOffers"),
                     as: ASCPromotionalOffersResponse.self
                 )
             } else {
@@ -34,7 +34,7 @@ extension PromotionalOffersWorker {
                 }
 
                 response = try await httpClient.get(
-                    "/v1/subscriptions/\(subscriptionId)/promotionalOffers",
+                    "/v1/subscriptions/\(try ASCPathSegment.encode(subscriptionId))/promotionalOffers",
                     parameters: queryParams,
                     as: ASCPromotionalOffersResponse.self
                 )
@@ -74,7 +74,7 @@ extension PromotionalOffersWorker {
 
         do {
             let response: ASCPromotionalOfferResponse = try await httpClient.get(
-                "/v1/subscriptionPromotionalOffers/\(promotionalOfferId)",
+                "/v1/subscriptionPromotionalOffers/\(try ASCPathSegment.encode(promotionalOfferId))",
                 parameters: [:],
                 as: ASCPromotionalOfferResponse.self
             )
@@ -351,7 +351,7 @@ extension PromotionalOffersWorker {
             )
 
             let response: ASCPromotionalOfferResponse = try await httpClient.patch(
-                "/v1/subscriptionPromotionalOffers/\(promotionalOfferId)",
+                "/v1/subscriptionPromotionalOffers/\(try ASCPathSegment.encode(promotionalOfferId))",
                 body: request,
                 as: ASCPromotionalOfferResponse.self
             )
@@ -385,7 +385,7 @@ extension PromotionalOffersWorker {
         }
 
         do {
-            _ = try await httpClient.delete("/v1/subscriptionPromotionalOffers/\(promotionalOfferId)")
+            _ = try await httpClient.delete("/v1/subscriptionPromotionalOffers/\(try ASCPathSegment.encode(promotionalOfferId))")
 
             let result = [
                 "success": true,
@@ -419,7 +419,7 @@ extension PromotionalOffersWorker {
             if let nextUrl = try paginationURL(from: arguments["next_url"]) {
                 response = try await httpClient.getPage(
                     nextUrl,
-                    scope: PaginationScope(path: "/v1/subscriptionPromotionalOffers/\(promotionalOfferId)/prices"),
+                    scope: PaginationScope(path: "/v1/subscriptionPromotionalOffers/\(try ASCPathSegment.encode(promotionalOfferId))/prices"),
                     as: ASCPromotionalOfferPricesResponse.self
                 )
             } else {
@@ -432,7 +432,7 @@ extension PromotionalOffersWorker {
                 }
 
                 response = try await httpClient.get(
-                    "/v1/subscriptionPromotionalOffers/\(promotionalOfferId)/prices",
+                    "/v1/subscriptionPromotionalOffers/\(try ASCPathSegment.encode(promotionalOfferId))/prices",
                     parameters: queryParams,
                     as: ASCPromotionalOfferPricesResponse.self
                 )

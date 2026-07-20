@@ -29,7 +29,7 @@ extension ReviewsWorker {
         startDate: Date?,
         now: Date
     ) async throws -> StreamedReviewStats {
-        let endpoint = "/v1/apps/\(appId)/customerReviews"
+        let endpoint = "/v1/apps/\(try ASCPathSegment.encode(appId))/customerReviews"
         var parameters: [String: String] = [
             "limit": "200",
             "sort": "-createdDate"
@@ -166,7 +166,7 @@ extension ReviewsWorker {
                 response = try await httpClient.getPage(
                     nextUrl,
                     scope: PaginationScope(
-                        path: "/v1/apps/\(appId)/customerReviews",
+                        path: "/v1/apps/\(try ASCPathSegment.encode(appId))/customerReviews",
                         requiredParameters: requiredParameters
                     )
                 )
@@ -184,7 +184,7 @@ extension ReviewsWorker {
                 if includeResponse {
                     queryParams["include"] = "response"
                 }
-                response = try await httpClient.get("/v1/apps/\(appId)/customerReviews", parameters: queryParams)
+                response = try await httpClient.get("/v1/apps/\(try ASCPathSegment.encode(appId))/customerReviews", parameters: queryParams)
             }
 
             let reviewsResponse = try parseReviewsResponse(data: response)
@@ -230,7 +230,7 @@ extension ReviewsWorker {
             }
 
             let reviewResponse: SingleReviewResponse = try await httpClient.get(
-                "/v1/customerReviews/\(reviewId)",
+                "/v1/customerReviews/\(try ASCPathSegment.encode(reviewId))",
                 as: SingleReviewResponse.self
             )
 
@@ -282,7 +282,7 @@ extension ReviewsWorker {
                 response = try await httpClient.getPage(
                     nextUrl,
                     scope: PaginationScope(
-                        path: "/v1/appStoreVersions/\(versionId)/customerReviews",
+                        path: "/v1/appStoreVersions/\(try ASCPathSegment.encode(versionId))/customerReviews",
                         requiredParameters: requiredParameters
                     )
                 )
@@ -300,7 +300,7 @@ extension ReviewsWorker {
                 if includeResponse {
                     queryParams["include"] = "response"
                 }
-                response = try await httpClient.get("/v1/appStoreVersions/\(versionId)/customerReviews", parameters: queryParams)
+                response = try await httpClient.get("/v1/appStoreVersions/\(try ASCPathSegment.encode(versionId))/customerReviews", parameters: queryParams)
             }
 
             let reviewsResponse = try parseReviewsResponse(data: response)
@@ -488,7 +488,7 @@ extension ReviewsWorker {
         }
 
         do {
-            _ = try await httpClient.delete("/v1/customerReviewResponses/\(responseId)")
+            _ = try await httpClient.delete("/v1/customerReviewResponses/\(try ASCPathSegment.encode(responseId))")
 
             let result: [String: Any] = [
                 "success": true,
@@ -524,7 +524,7 @@ extension ReviewsWorker {
             }
 
             let reviewWithResponse: ReviewWithResponseData = try await httpClient.get(
-                "/v1/customerReviews/\(reviewId)",
+                "/v1/customerReviews/\(try ASCPathSegment.encode(reviewId))",
                 parameters: ["include": "response"],
                 as: ReviewWithResponseData.self
             )
@@ -578,7 +578,7 @@ extension ReviewsWorker {
             }
 
             let responseData = try await httpClient.get(
-                "/v1/apps/\(appId)/customerReviewSummarizations",
+                "/v1/apps/\(try ASCPathSegment.encode(appId))/customerReviewSummarizations",
                 parameters: queryParams
             )
 

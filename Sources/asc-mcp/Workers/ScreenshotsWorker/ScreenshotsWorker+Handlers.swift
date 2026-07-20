@@ -22,7 +22,7 @@ extension ScreenshotsWorker {
             if let nextUrl = try paginationURL(from: arguments["next_url"]) {
                 response = try await httpClient.getPage(
                     nextUrl,
-                    scope: PaginationScope(path: "/v1/appStoreVersionLocalizations/\(localizationId)/appScreenshotSets"),
+                    scope: PaginationScope(path: "/v1/appStoreVersionLocalizations/\(try ASCPathSegment.encode(localizationId))/appScreenshotSets"),
                     as: ASCScreenshotSetsResponse.self
                 )
             } else {
@@ -36,7 +36,7 @@ extension ScreenshotsWorker {
                 }
 
                 response = try await httpClient.get(
-                    "/v1/appStoreVersionLocalizations/\(localizationId)/appScreenshotSets",
+                    "/v1/appStoreVersionLocalizations/\(try ASCPathSegment.encode(localizationId))/appScreenshotSets",
                     parameters: queryParams,
                     as: ASCScreenshotSetsResponse.self
                 )
@@ -125,7 +125,7 @@ extension ScreenshotsWorker {
         }
 
         do {
-            _ = try await httpClient.delete("/v1/appScreenshotSets/\(setId)")
+            _ = try await httpClient.delete("/v1/appScreenshotSets/\(try ASCPathSegment.encode(setId))")
 
             let result = [
                 "success": true,
@@ -160,7 +160,7 @@ extension ScreenshotsWorker {
             if let nextUrl = try paginationURL(from: arguments["next_url"]) {
                 response = try await httpClient.getPage(
                     nextUrl,
-                    scope: PaginationScope(path: "/v1/appScreenshotSets/\(setId)/appScreenshots"),
+                    scope: PaginationScope(path: "/v1/appScreenshotSets/\(try ASCPathSegment.encode(setId))/appScreenshots"),
                     as: ASCScreenshotsResponse.self
                 )
             } else {
@@ -174,7 +174,7 @@ extension ScreenshotsWorker {
                 }
 
                 response = try await httpClient.get(
-                    "/v1/appScreenshotSets/\(setId)/appScreenshots",
+                    "/v1/appScreenshotSets/\(try ASCPathSegment.encode(setId))/appScreenshots",
                     parameters: queryParams,
                     as: ASCScreenshotsResponse.self
                 )
@@ -201,8 +201,8 @@ extension ScreenshotsWorker {
         }
     }
 
-    /// Uploads a screenshot (full cycle: reserve, upload file, commit)
-    /// - Returns: JSON with final screenshot info
+    /// Uploads a screenshot and reconciles its asynchronous processing state
+    /// - Returns: JSON with terminal or accepted processing-pending screenshot info
     func uploadScreenshot(_ params: CallTool.Parameters) async throws -> CallTool.Result {
         guard let arguments = params.arguments,
               let setId = arguments["set_id"]?.stringValue,
@@ -213,70 +213,65 @@ extension ScreenshotsWorker {
             )
         }
 
-        do {
-            // Step 1: Get file info
-            let fileSize = try await uploadService.fileSize(at: filePath)
-            let fileName = await uploadService.fileName(at: filePath)
-
-            // Step 2: Reserve — POST to create screenshot reservation
-            let createRequest = CreateScreenshotRequest(
-                data: CreateScreenshotRequest.CreateData(
-                    attributes: CreateScreenshotRequest.Attributes(
-                        fileName: fileName,
-                        fileSize: fileSize
-                    ),
-                    relationships: CreateScreenshotRequest.Relationships(
-                        appScreenshotSet: CreateScreenshotRequest.ScreenshotSetRelationship(
-                            data: ASCResourceIdentifier(type: "appScreenshotSets", id: setId)
+        let outcome: UploadTransactionOutcome<ASCScreenshot> = await UploadTransactionRecovery.perform(
+            filePath: filePath,
+            resourceName: "screenshot",
+            expectedType: "appScreenshots",
+            reservationEndpoint: "/v1/appScreenshots",
+            httpClient: httpClient,
+            uploadService: uploadService,
+            deliveryPollAttempts: deliveryPollAttempts,
+            deliveryPollIntervalNanoseconds: deliveryPollIntervalNanoseconds,
+            makeReservationBody: { fileSize, fileName in
+                try JSONEncoder().encode(
+                    CreateScreenshotRequest(
+                        data: CreateScreenshotRequest.CreateData(
+                            attributes: CreateScreenshotRequest.Attributes(
+                                fileName: fileName,
+                                fileSize: fileSize
+                            ),
+                            relationships: CreateScreenshotRequest.Relationships(
+                                appScreenshotSet: CreateScreenshotRequest.ScreenshotSetRelationship(
+                                    data: ASCResourceIdentifier(type: "appScreenshotSets", id: setId)
+                                )
+                            )
                         )
                     )
                 )
-            )
-
-            let encoder = JSONEncoder()
-            let bodyData = try encoder.encode(createRequest)
-            let reserveData = try await httpClient.post("/v1/appScreenshots", body: bodyData)
-            let reserveResponse = try JSONDecoder().decode(ASCScreenshotResponse.self, from: reserveData)
-
-            let screenshotId = reserveResponse.data.id
-            guard let uploadOperations = reserveResponse.data.attributes?.uploadOperations, !uploadOperations.isEmpty else {
-                return CallTool.Result(
-                    content: [MCPContent.text("Error: No upload operations returned from reservation")],
-                    isError: true
-                )
-            }
-
-            // Step 3: Upload file chunks
-            let md5 = try await uploadService.uploadFile(filePath: filePath, uploadOperations: uploadOperations)
-
-            // Step 4: Commit — PATCH to finalize upload
-            let commitRequest = CommitScreenshotRequest(
-                data: CommitScreenshotRequest.CommitData(
-                    id: screenshotId,
-                    attributes: CommitScreenshotRequest.Attributes(
-                        sourceFileChecksum: md5,
-                        uploaded: true
+            },
+            decodeResource: {
+                try JSONDecoder().decode(ASCScreenshotResponse.self, from: $0).data
+            },
+            makeCommitBody: { screenshotId, checksum in
+                try JSONEncoder().encode(
+                    CommitScreenshotRequest(
+                        data: CommitScreenshotRequest.CommitData(
+                            id: screenshotId,
+                            attributes: CommitScreenshotRequest.Attributes(
+                                sourceFileChecksum: checksum,
+                                uploaded: true
+                            )
+                        )
                     )
                 )
-            )
+            },
+            resourceEndpoint: { "/v1/appScreenshots/\(try ASCPathSegment.encode($0))" }
+        )
 
-            let commitBody = try encoder.encode(commitRequest)
-            let commitData = try await httpClient.patch("/v1/appScreenshots/\(screenshotId)", body: commitBody)
-            let commitResponse = try JSONDecoder().decode(ASCScreenshotResponse.self, from: commitData)
-
-            let result = [
-                "success": true,
-                "screenshot": formatScreenshot(commitResponse.data)
-            ] as [String: Any]
-
-            return MCPResult.jsonObject(result)
-
-        } catch {
-            return CallTool.Result(
-                content: [MCPContent.text("Error: Failed to upload screenshot: \(error.localizedDescription)")],
-                isError: true
-            )
-        }
+        return UploadTransactionRecovery.result(
+            for: outcome,
+            descriptor: UploadRecoveryDescriptor(
+                resourceName: "screenshot",
+                successKey: "screenshot",
+                idArgument: "screenshot_id",
+                getTool: "screenshots_get",
+                getIDArgument: "screenshot_id",
+                deleteTool: "screenshots_delete",
+                inspectionTool: "screenshots_list",
+                inspectionArguments: ["set_id": setId]
+            ),
+            format: formatScreenshot
+        )
     }
 
     /// Uploads multiple screenshots to a set sequentially
@@ -296,68 +291,103 @@ extension ScreenshotsWorker {
         var successCount = 0
         var failCount = 0
 
-        for filePath in filePaths {
-            do {
-                // Step 1: Get file info
-                let fileSize = try await uploadService.fileSize(at: filePath)
-                let fileName = await uploadService.fileName(at: filePath)
+        let descriptor = UploadRecoveryDescriptor(
+            resourceName: "screenshot",
+            successKey: "screenshot",
+            idArgument: "screenshot_id",
+            getTool: "screenshots_get",
+            getIDArgument: "screenshot_id",
+            deleteTool: "screenshots_delete",
+            inspectionTool: "screenshots_list",
+            inspectionArguments: ["set_id": setId]
+        )
 
-                // Step 2: Reserve
-                let createRequest = CreateScreenshotRequest(
-                    data: CreateScreenshotRequest.CreateData(
-                        attributes: CreateScreenshotRequest.Attributes(
-                            fileName: fileName,
-                            fileSize: fileSize
-                        ),
-                        relationships: CreateScreenshotRequest.Relationships(
-                            appScreenshotSet: CreateScreenshotRequest.ScreenshotSetRelationship(
-                                data: ASCResourceIdentifier(type: "appScreenshotSets", id: setId)
+        for filePath in filePaths {
+            let fileName = URL(fileURLWithPath: filePath).lastPathComponent
+            let outcome: UploadTransactionOutcome<ASCScreenshot> = await UploadTransactionRecovery.perform(
+                filePath: filePath,
+                resourceName: "screenshot",
+                expectedType: "appScreenshots",
+                reservationEndpoint: "/v1/appScreenshots",
+                httpClient: httpClient,
+                uploadService: uploadService,
+                deliveryPollAttempts: deliveryPollAttempts,
+                deliveryPollIntervalNanoseconds: deliveryPollIntervalNanoseconds,
+                makeReservationBody: { fileSize, fileName in
+                    try JSONEncoder().encode(
+                        CreateScreenshotRequest(
+                            data: CreateScreenshotRequest.CreateData(
+                                attributes: CreateScreenshotRequest.Attributes(
+                                    fileName: fileName,
+                                    fileSize: fileSize
+                                ),
+                                relationships: CreateScreenshotRequest.Relationships(
+                                    appScreenshotSet: CreateScreenshotRequest.ScreenshotSetRelationship(
+                                        data: ASCResourceIdentifier(type: "appScreenshotSets", id: setId)
+                                    )
+                                )
                             )
                         )
                     )
-                )
-
-                let encoder = JSONEncoder()
-                let bodyData = try encoder.encode(createRequest)
-                let reserveData = try await httpClient.post("/v1/appScreenshots", body: bodyData)
-                let reserveResponse = try JSONDecoder().decode(ASCScreenshotResponse.self, from: reserveData)
-
-                let screenshotId = reserveResponse.data.id
-                guard let uploadOperations = reserveResponse.data.attributes?.uploadOperations, !uploadOperations.isEmpty else {
-                    results.append(["file": fileName, "success": false, "error": "No upload operations returned"])
-                    failCount += 1
-                    continue
-                }
-
-                // Step 3: Upload chunks
-                let md5 = try await uploadService.uploadFile(filePath: filePath, uploadOperations: uploadOperations)
-
-                // Step 4: Commit
-                let commitRequest = CommitScreenshotRequest(
-                    data: CommitScreenshotRequest.CommitData(
-                        id: screenshotId,
-                        attributes: CommitScreenshotRequest.Attributes(
-                            sourceFileChecksum: md5,
-                            uploaded: true
+                },
+                decodeResource: {
+                    try JSONDecoder().decode(ASCScreenshotResponse.self, from: $0).data
+                },
+                makeCommitBody: { screenshotId, checksum in
+                    try JSONEncoder().encode(
+                        CommitScreenshotRequest(
+                            data: CommitScreenshotRequest.CommitData(
+                                id: screenshotId,
+                                attributes: CommitScreenshotRequest.Attributes(
+                                    sourceFileChecksum: checksum,
+                                    uploaded: true
+                                )
+                            )
                         )
                     )
-                )
+                },
+                resourceEndpoint: { "/v1/appScreenshots/\(try ASCPathSegment.encode($0))" }
+            )
 
-                let commitBody = try encoder.encode(commitRequest)
-                let commitData = try await httpClient.patch("/v1/appScreenshots/\(screenshotId)", body: commitBody)
-                let commitResponse = try JSONDecoder().decode(ASCScreenshotResponse.self, from: commitData)
-
-                results.append([
+            switch outcome {
+            case .success(let screenshot, let reconciled):
+                var result: [String: Any] = [
                     "file": fileName,
                     "success": true,
-                    "screenshot_id": commitResponse.data.id,
-                    "state": commitResponse.data.attributes?.assetDeliveryState?.state ?? "unknown"
-                ] as [String: Any])
+                    "screenshot_id": screenshot.id,
+                    "state": screenshot.attributes?.assetDeliveryState?.state ?? "unknown"
+                ]
+                if reconciled {
+                    result["reconciled_after_commit"] = true
+                }
+                results.append(result)
                 successCount += 1
-
-            } catch {
-                let fileName = URL(fileURLWithPath: filePath).lastPathComponent
-                results.append(["file": fileName, "success": false, "error": error.localizedDescription] as [String: Any])
+            case .processingPending(_, let screenshot, let reconciled):
+                var result: [String: Any] = [
+                    "file": fileName,
+                    "success": true,
+                    "screenshot_id": screenshot.id,
+                    "state": screenshot.attributes?.assetDeliveryState?.state ?? "unknown",
+                    "upload_committed": true,
+                    "processing_complete": false,
+                    "delivery_pending": true,
+                    "retry_safe": false,
+                    "inspect_tool": "screenshots_get",
+                    "inspect_arguments": ["screenshot_id": screenshot.id]
+                ]
+                if reconciled {
+                    result["reconciled_after_commit"] = true
+                }
+                results.append(result)
+                successCount += 1
+            default:
+                var result = UploadTransactionRecovery.failurePayload(
+                    for: outcome,
+                    descriptor: descriptor,
+                    format: formatScreenshot
+                ) ?? ["success": false, "error": "Unknown upload failure"]
+                result["file"] = fileName
+                results.append(result)
                 failCount += 1
             }
         }
@@ -385,7 +415,7 @@ extension ScreenshotsWorker {
         }
 
         do {
-            let data = try await httpClient.get("/v1/appScreenshots/\(screenshotId)")
+            let data = try await httpClient.get("/v1/appScreenshots/\(try ASCPathSegment.encode(screenshotId))")
             let response = try JSONDecoder().decode(ASCScreenshotResponse.self, from: data)
 
             let result = [
@@ -416,7 +446,7 @@ extension ScreenshotsWorker {
         }
 
         do {
-            _ = try await httpClient.delete("/v1/appScreenshots/\(screenshotId)")
+            _ = try await httpClient.delete("/v1/appScreenshots/\(try ASCPathSegment.encode(screenshotId))")
 
             let result = [
                 "success": true,
@@ -455,7 +485,7 @@ extension ScreenshotsWorker {
             let encoder = JSONEncoder()
             let bodyData = try encoder.encode(request)
             _ = try await httpClient.patch(
-                "/v1/appScreenshotSets/\(setId)/relationships/appScreenshots",
+                "/v1/appScreenshotSets/\(try ASCPathSegment.encode(setId))/relationships/appScreenshots",
                 body: bodyData
             )
 
@@ -493,7 +523,7 @@ extension ScreenshotsWorker {
             if let nextUrl = try paginationURL(from: arguments["next_url"]) {
                 response = try await httpClient.getPage(
                     nextUrl,
-                    scope: PaginationScope(path: "/v1/appStoreVersionLocalizations/\(localizationId)/appPreviewSets"),
+                    scope: PaginationScope(path: "/v1/appStoreVersionLocalizations/\(try ASCPathSegment.encode(localizationId))/appPreviewSets"),
                     as: ASCPreviewSetsResponse.self
                 )
             } else {
@@ -507,7 +537,7 @@ extension ScreenshotsWorker {
                 }
 
                 response = try await httpClient.get(
-                    "/v1/appStoreVersionLocalizations/\(localizationId)/appPreviewSets",
+                    "/v1/appStoreVersionLocalizations/\(try ASCPathSegment.encode(localizationId))/appPreviewSets",
                     parameters: queryParams,
                     as: ASCPreviewSetsResponse.self
                 )
@@ -596,7 +626,7 @@ extension ScreenshotsWorker {
         }
 
         do {
-            _ = try await httpClient.delete("/v1/appPreviewSets/\(setId)")
+            _ = try await httpClient.delete("/v1/appPreviewSets/\(try ASCPathSegment.encode(setId))")
 
             let result = [
                 "success": true,
@@ -613,8 +643,8 @@ extension ScreenshotsWorker {
         }
     }
 
-    /// Uploads an app preview (full cycle: reserve, upload file, commit)
-    /// - Returns: JSON with final preview info
+    /// Uploads an app preview and reconciles its asynchronous processing state
+    /// - Returns: JSON with terminal or accepted processing-pending preview info
     func uploadPreview(_ params: CallTool.Parameters) async throws -> CallTool.Result {
         guard let arguments = params.arguments,
               let setId = arguments["set_id"]?.stringValue,
@@ -627,71 +657,66 @@ extension ScreenshotsWorker {
 
         let mimeType = arguments["mime_type"]?.stringValue ?? "video/mp4"
 
-        do {
-            // Step 1: Get file info
-            let fileSize = try await uploadService.fileSize(at: filePath)
-            let fileName = await uploadService.fileName(at: filePath)
-
-            // Step 2: Reserve — POST to create preview reservation
-            let createRequest = CreatePreviewRequest(
-                data: CreatePreviewRequest.CreateData(
-                    attributes: CreatePreviewRequest.Attributes(
-                        fileName: fileName,
-                        fileSize: fileSize,
-                        mimeType: mimeType
-                    ),
-                    relationships: CreatePreviewRequest.Relationships(
-                        appPreviewSet: CreatePreviewRequest.PreviewSetRelationship(
-                            data: ASCResourceIdentifier(type: "appPreviewSets", id: setId)
+        let outcome: UploadTransactionOutcome<ASCPreview> = await UploadTransactionRecovery.perform(
+            filePath: filePath,
+            resourceName: "app preview",
+            expectedType: "appPreviews",
+            reservationEndpoint: "/v1/appPreviews",
+            httpClient: httpClient,
+            uploadService: uploadService,
+            deliveryPollAttempts: deliveryPollAttempts,
+            deliveryPollIntervalNanoseconds: deliveryPollIntervalNanoseconds,
+            makeReservationBody: { fileSize, fileName in
+                try JSONEncoder().encode(
+                    CreatePreviewRequest(
+                        data: CreatePreviewRequest.CreateData(
+                            attributes: CreatePreviewRequest.Attributes(
+                                fileName: fileName,
+                                fileSize: fileSize,
+                                mimeType: mimeType
+                            ),
+                            relationships: CreatePreviewRequest.Relationships(
+                                appPreviewSet: CreatePreviewRequest.PreviewSetRelationship(
+                                    data: ASCResourceIdentifier(type: "appPreviewSets", id: setId)
+                                )
+                            )
                         )
                     )
                 )
-            )
-
-            let encoder = JSONEncoder()
-            let bodyData = try encoder.encode(createRequest)
-            let reserveData = try await httpClient.post("/v1/appPreviews", body: bodyData)
-            let reserveResponse = try JSONDecoder().decode(ASCPreviewResponse.self, from: reserveData)
-
-            let previewId = reserveResponse.data.id
-            guard let uploadOperations = reserveResponse.data.attributes?.uploadOperations, !uploadOperations.isEmpty else {
-                return CallTool.Result(
-                    content: [MCPContent.text("Error: No upload operations returned from reservation")],
-                    isError: true
-                )
-            }
-
-            // Step 3: Upload file chunks
-            let md5 = try await uploadService.uploadFile(filePath: filePath, uploadOperations: uploadOperations)
-
-            // Step 4: Commit — PATCH to finalize upload
-            let commitRequest = CommitPreviewRequest(
-                data: CommitPreviewRequest.CommitData(
-                    id: previewId,
-                    attributes: CommitPreviewRequest.Attributes(
-                        sourceFileChecksum: md5,
-                        uploaded: true
+            },
+            decodeResource: {
+                try JSONDecoder().decode(ASCPreviewResponse.self, from: $0).data
+            },
+            makeCommitBody: { previewId, checksum in
+                try JSONEncoder().encode(
+                    CommitPreviewRequest(
+                        data: CommitPreviewRequest.CommitData(
+                            id: previewId,
+                            attributes: CommitPreviewRequest.Attributes(
+                                sourceFileChecksum: checksum,
+                                uploaded: true
+                            )
+                        )
                     )
                 )
-            )
+            },
+            resourceEndpoint: { "/v1/appPreviews/\(try ASCPathSegment.encode($0))" }
+        )
 
-            let commitBody = try encoder.encode(commitRequest)
-            let commitData = try await httpClient.patch("/v1/appPreviews/\(previewId)", body: commitBody)
-            let commitResponse = try JSONDecoder().decode(ASCPreviewResponse.self, from: commitData)
-
-            let result = [
-                "success": true,
-                "preview": formatPreview(commitResponse.data)
-            ] as [String: Any]
-
-            return MCPResult.jsonObject(result)
-
-        } catch {
-            return CallTool.Result(
-                content: [MCPContent.text("Error: Failed to upload preview: \(error.localizedDescription)")],
-                isError: true
-            )
-        }
+        return UploadTransactionRecovery.result(
+            for: outcome,
+            descriptor: UploadRecoveryDescriptor(
+                resourceName: "app preview",
+                successKey: "preview",
+                idArgument: "preview_id",
+                getTool: "screenshots_get_preview",
+                getIDArgument: "preview_id",
+                deleteTool: "screenshots_delete_preview",
+                inspectionTool: "screenshots_list_previews",
+                inspectionArguments: ["set_id": setId]
+            ),
+            format: formatPreview
+        )
     }
 
     /// Gets details of a specific app preview
@@ -706,7 +731,7 @@ extension ScreenshotsWorker {
         }
 
         do {
-            let data = try await httpClient.get("/v1/appPreviews/\(previewId)")
+            let data = try await httpClient.get("/v1/appPreviews/\(try ASCPathSegment.encode(previewId))")
             let response = try JSONDecoder().decode(ASCPreviewResponse.self, from: data)
 
             let result = [
@@ -741,7 +766,7 @@ extension ScreenshotsWorker {
             if let nextUrl = try paginationURL(from: arguments["next_url"]) {
                 response = try await httpClient.getPage(
                     nextUrl,
-                    scope: PaginationScope(path: "/v1/appPreviewSets/\(setId)/appPreviews"),
+                    scope: PaginationScope(path: "/v1/appPreviewSets/\(try ASCPathSegment.encode(setId))/appPreviews"),
                     as: ASCPreviewsResponse.self
                 )
             } else {
@@ -754,7 +779,7 @@ extension ScreenshotsWorker {
                 }
 
                 response = try await httpClient.get(
-                    "/v1/appPreviewSets/\(setId)/appPreviews",
+                    "/v1/appPreviewSets/\(try ASCPathSegment.encode(setId))/appPreviews",
                     parameters: queryParams,
                     as: ASCPreviewsResponse.self
                 )
@@ -794,7 +819,7 @@ extension ScreenshotsWorker {
         }
 
         do {
-            _ = try await httpClient.delete("/v1/appPreviews/\(previewId)")
+            _ = try await httpClient.delete("/v1/appPreviews/\(try ASCPathSegment.encode(previewId))")
 
             let result = [
                 "success": true,
@@ -848,14 +873,8 @@ extension ScreenshotsWorker {
         }
 
         if let uploadOps = screenshot.attributes?.uploadOperations, !uploadOps.isEmpty {
-            result["uploadOperations"] = uploadOps.map { op in
-                [
-                    "method": op.method.jsonSafe,
-                    "url": op.url.jsonSafe,
-                    "length": op.length.jsonSafe,
-                    "offset": op.offset.jsonSafe
-                ] as [String: Any]
-            }
+            result["uploadOperationCount"] = uploadOps.count
+            result["uploadOperations"] = formatUploadOperations(uploadOps)
         }
 
         return result
@@ -896,17 +915,29 @@ extension ScreenshotsWorker {
             ]
         }
 
+        if let deliveryState = preview.attributes?.videoDeliveryState {
+            result["videoDeliveryState"] = [
+                "state": deliveryState.state.jsonSafe,
+                "errors": deliveryState.errors?.map { ["code": $0.code.jsonSafe, "description": $0.description.jsonSafe] } ?? [],
+                "warnings": deliveryState.warnings?.map { ["code": $0.code.jsonSafe, "description": $0.description.jsonSafe] } ?? []
+            ]
+        }
+
         if let uploadOps = preview.attributes?.uploadOperations, !uploadOps.isEmpty {
-            result["uploadOperations"] = uploadOps.map { op in
-                [
-                    "method": op.method.jsonSafe,
-                    "url": op.url.jsonSafe,
-                    "length": op.length.jsonSafe,
-                    "offset": op.offset.jsonSafe
-                ] as [String: Any]
-            }
+            result["uploadOperationCount"] = uploadOps.count
+            result["uploadOperations"] = formatUploadOperations(uploadOps)
         }
 
         return result
+    }
+
+    private func formatUploadOperations(_ operations: [ASCUploadOperation]) -> [[String: Any]] {
+        operations.map { operation in
+            [
+                "method": operation.method.jsonSafe,
+                "length": operation.length.jsonSafe,
+                "offset": operation.offset.jsonSafe
+            ]
+        }
     }
 }

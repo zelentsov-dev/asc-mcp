@@ -22,8 +22,8 @@
       "fields": [
         { "toolField": "app_id", "sourceKind": "requestBody", "operationId": "webhooks_createInstance", "jsonPointer": "/data/relationships/app/data/id" },
         { "toolField": "name", "sourceKind": "requestBody", "operationId": "webhooks_createInstance", "jsonPointer": "/data/attributes/name" },
-        { "toolField": "url", "sourceKind": "requestBody", "operationId": "webhooks_createInstance", "jsonPointer": "/data/attributes/url", "localRole": "absolute HTTP or HTTPS URL validation" },
-        { "toolField": "secret", "sourceKind": "requestBody", "operationId": "webhooks_createInstance", "jsonPointer": "/data/attributes/secret" },
+        { "toolField": "url", "sourceKind": "requestBody", "operationId": "webhooks_createInstance", "jsonPointer": "/data/attributes/url", "localRole": "requires an absolute HTTPS URL with a non-empty host and rejects URL user/password or fragments; ports, paths, and queries are preserved" },
+        { "toolField": "secret", "sourceKind": "requestBody", "operationId": "webhooks_createInstance", "jsonPointer": "/data/attributes/secret", "localRole": "local hardening requires at least 32 characters and rejects low-diversity or repeated-pattern values" },
         { "toolField": "event_types", "sourceKind": "requestBody", "operationId": "webhooks_createInstance", "jsonPointer": "/data/attributes/eventTypes", "localRole": "validated against the Apple 4.4.1 webhook event enum" },
         { "toolField": "enabled", "sourceKind": "requestBody", "operationId": "webhooks_createInstance", "jsonPointer": "/data/attributes/enabled", "localRole": "defaults to true when omitted" }
       ],
@@ -286,8 +286,8 @@
         { "toolField": "webhook_id", "sourceKind": "parameter", "operationId": "webhooks_updateInstance", "location": "path", "appleName": "id" },
         { "toolField": "webhook_id", "sourceKind": "requestBody", "operationId": "webhooks_updateInstance", "jsonPointer": "/data/id" },
         { "toolField": "name", "sourceKind": "requestBody", "operationId": "webhooks_updateInstance", "jsonPointer": "/data/attributes/name" },
-        { "toolField": "url", "sourceKind": "requestBody", "operationId": "webhooks_updateInstance", "jsonPointer": "/data/attributes/url", "localRole": "absolute HTTP or HTTPS URL validation" },
-        { "toolField": "secret", "sourceKind": "requestBody", "operationId": "webhooks_updateInstance", "jsonPointer": "/data/attributes/secret" },
+        { "toolField": "url", "sourceKind": "requestBody", "operationId": "webhooks_updateInstance", "jsonPointer": "/data/attributes/url", "localRole": "when supplied, requires an absolute HTTPS URL with a non-empty host and rejects URL user/password or fragments; ports, paths, and queries are preserved" },
+        { "toolField": "secret", "sourceKind": "requestBody", "operationId": "webhooks_updateInstance", "jsonPointer": "/data/attributes/secret", "localRole": "when supplied, local hardening requires at least 32 characters and rejects low-diversity or repeated-pattern values" },
         { "toolField": "event_types", "sourceKind": "requestBody", "operationId": "webhooks_updateInstance", "jsonPointer": "/data/attributes/eventTypes", "localRole": "validated against the Apple 4.4.1 webhook event enum" },
         { "toolField": "enabled", "sourceKind": "requestBody", "operationId": "webhooks_updateInstance", "jsonPointer": "/data/attributes/enabled" }
       ],

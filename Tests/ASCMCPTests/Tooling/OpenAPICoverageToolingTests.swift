@@ -175,6 +175,45 @@ struct OpenAPICoverageToolingTests {
         #expect(markdown.contains("`/v1/actors`"))
     }
 
+    @Test("default rules classify current v2 commerce resource families")
+    func defaultRulesClassifyCurrentV2CommerceResourceFamilies() throws {
+        let commerce = try #require(
+            ASCOpenAPICoverageRules.defaultRules.first {
+                $0.domain == "In-app purchases, subscriptions, and offers"
+            }
+        )
+        let resourceFamilies = [
+            "/v2/inAppPurchaseImages",
+            "/v2/inAppPurchaseLocalizations",
+            "/v2/subscriptionGroupLocalizations",
+            "/v2/subscriptionImages",
+            "/v2/subscriptionLocalizations"
+        ]
+
+        for path in resourceFamilies {
+            #expect(commerce.matches(path: path), "Unclassified commerce collection: \(path)")
+            #expect(commerce.matches(path: "\(path)/resource-id"), "Unclassified commerce resource: \(path)")
+        }
+    }
+
+    @Test("markdown renderer uses stable Apple sources")
+    func markdownRendererUsesStableAppleSources() throws {
+        let spec = try ASCOpenAPISpec.parse(loadFixture("openapi_minimal.oas"))
+        let report = ASCOpenAPICoverageAnalyzer(rules: []).analyze(
+            spec: spec,
+            generatedAt: "2026-07-20"
+        )
+
+        let markdown = ASCOpenAPICoverageMarkdownRenderer.render(report)
+
+        #expect(markdown.contains("https://developer.apple.com/app-store-connect/api/"))
+        #expect(markdown.contains("https://developer.apple.com/documentation/appstoreconnectapi"))
+        #expect(markdown.contains("https://developer.apple.com/sample-code/app-store-connect/app-store-connect-openapi-specification.zip"))
+        #expect(!markdown.contains("\n- Apple App Store Connect API 4."))
+        #expect(!markdown.contains("developer.apple.com/news/releases/?id="))
+        #expect(!markdown.contains("Apple App Store Connect API 4.3 release"))
+    }
+
     @Test("default OpenAPI coverage rules track every inventory area")
     func defaultRulesTrackEveryInventoryArea() {
         let ruleDomains = Set(ASCOpenAPICoverageRules.defaultRules.map(\.domain))

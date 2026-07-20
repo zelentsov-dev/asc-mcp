@@ -440,7 +440,7 @@ extension InAppPurchasesWorker {
     func uploadIAPImageTool() -> Tool {
         return Tool(
             name: "iap_upload_image",
-            description: "Upload an image for an in-app purchase (full cycle: reserve, upload, commit). Used for promotional images displayed on the App Store.",
+            description: "Upload an IAP promotional image from an immutable snapshot, then reserve, transfer, commit, and verify Apple processing. Pre-commit failures roll back; uncertain commits are retained and reconciled. A confirmed commit can return success with deliveryPending=true while Apple continues asynchronous processing; inspect that image instead of retrying.",
             inputSchema: .object([
                 "type": .string("object"),
                 "properties": .object([
@@ -495,7 +495,7 @@ extension InAppPurchasesWorker {
     func uploadIAPReviewScreenshotTool() -> Tool {
         return Tool(
             name: "iap_upload_review_screenshot",
-            description: "Upload a screenshot for App Store Review of an in-app purchase (full cycle: reserve, upload, commit)",
+            description: "Upload an IAP review screenshot from an immutable snapshot, then reserve, transfer, commit, and verify Apple processing. Pre-commit failures roll back; uncertain commits are retained and reconciled. A confirmed commit can return success with deliveryPending=true while Apple continues asynchronous processing; inspect that screenshot instead of retrying.",
             inputSchema: .object([
                 "type": .string("object"),
                 "properties": .object([

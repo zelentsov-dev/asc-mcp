@@ -43,7 +43,7 @@ public func testAppMetadata() async throws {
     // 1. Get version list
     print("\n📋 Getting version list...", to: &standardError)
     let versionsResponse: ASCAppStoreVersionsResponse = try await appsWorker.httpClient.get(
-        "/v1/apps/\(appId)/appStoreVersions",
+        "/v1/apps/\(try ASCPathSegment.encode(appId))/appStoreVersions",
         parameters: [
             "limit": "10",
             "fields[appStoreVersions]": "versionString,appStoreState"

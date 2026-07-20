@@ -35,13 +35,13 @@ extension WebhooksWorker {
     func createWebhookTool() -> Tool {
         Tool(
             name: "webhooks_create",
-            description: "Create a webhook notification configuration for an app. Requires name, payload URL, secret, enabled flag, and event types.",
+            description: "Create a webhook notification configuration for an app. Requires name, HTTPS callback URL, secret, and event types. The enabled flag is optional and defaults to true.",
             inputSchema: baseSchema(
                 properties: [
                     "app_id": stringSchema("App ID that owns the webhook"),
                     "name": stringSchema("Human-readable webhook name"),
-                    "url": stringSchema("Absolute http/https payload URL"),
-                    "secret": stringSchema("Secret used by your receiver to verify App Store Connect webhook deliveries"),
+                    "url": stringSchema("Absolute HTTPS callback URL. URL user info (user/password) and fragments are not allowed; custom ports, paths, and query parameters are supported."),
+                    "secret": webhookSecretSchema("Secret used by your receiver to verify App Store Connect webhook deliveries. Use a cryptographically random value of at least 32 characters, such as a 32-byte random value encoded as hex or Base64. The secret is never returned by this tool."),
                     "event_types": eventTypesSchema("Webhook event types to subscribe to"),
                     "enabled": boolSchema("Whether the webhook should be enabled immediately (default: true)")
                 ],
@@ -58,8 +58,8 @@ extension WebhooksWorker {
                 properties: [
                     "webhook_id": stringSchema("Webhook ID to update"),
                     "name": stringSchema("New webhook name"),
-                    "url": stringSchema("New absolute http/https payload URL"),
-                    "secret": stringSchema("New webhook secret"),
+                    "url": stringSchema("New absolute HTTPS callback URL. URL user info (user/password) and fragments are not allowed; custom ports, paths, and query parameters are supported."),
+                    "secret": webhookSecretSchema("New cryptographically random webhook secret of at least 32 characters, such as a 32-byte random value encoded as hex or Base64. The secret is never returned by this tool."),
                     "event_types": eventTypesSchema("Replacement webhook event type list"),
                     "enabled": boolSchema("Whether the webhook should be enabled")
                 ],
@@ -193,6 +193,14 @@ extension WebhooksWorker {
         .object([
             "type": .string("string"),
             "description": .string(description)
+        ])
+    }
+
+    private func webhookSecretSchema(_ description: String) -> Value {
+        .object([
+            "type": .string("string"),
+            "description": .string(description),
+            "minLength": .int(Self.minimumWebhookSecretLength)
         ])
     }
 

@@ -68,6 +68,274 @@ struct WebhooksWorkerTests {
         #expect(badEvent.isError == true)
     }
 
+    @Test("create and update reject unsafe callback URLs before network calls")
+    func createAndUpdateRejectUnsafeCallbackURLs() async throws {
+        let transport = TestHTTPTransport(responses: [])
+        let client = await HTTPClient(
+            jwtService: try TestFactory.makeJWTService(),
+            baseURL: "https://api.example.test",
+            transport: transport,
+            maxRetries: 1
+        )
+        let worker = WebhooksWorker(httpClient: client)
+        let secret = "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08"
+        let invalidURLs = [
+            "http://example.com/webhook",
+            "https://user@example.com/webhook",
+            "https://user:password@example.com/webhook",
+            "https:///webhook",
+            "https://example.com/webhook#fragment",
+            "https://example.com:notaport/webhook",
+            "not-a-url"
+        ]
+
+        for url in invalidURLs {
+            let create = try await worker.handleTool(
+                CallTool.Parameters(
+                    name: "webhooks_create",
+                    arguments: [
+                        "app_id": .string("app-1"),
+                        "name": .string("Release events"),
+                        "url": .string(url),
+                        "secret": .string(secret),
+                        "event_types": .array([.string("APP_STORE_VERSION_APP_VERSION_STATE_UPDATED")])
+                    ]
+                )
+            )
+            #expect(create.isError == true)
+            #expect(textContent(create).contains("absolute HTTPS URL"))
+
+            let update = try await worker.handleTool(
+                CallTool.Parameters(
+                    name: "webhooks_update",
+                    arguments: [
+                        "webhook_id": .string("webhook-1"),
+                        "url": .string(url)
+                    ]
+                )
+            )
+            #expect(update.isError == true)
+            #expect(textContent(update).contains("absolute HTTPS URL"))
+        }
+
+        #expect(await transport.requestCount() == 0)
+    }
+
+    @Test("create and update preserve a valid HTTPS callback port path and query")
+    func createAndUpdateAcceptValidHTTPSCallbackURL() async throws {
+        let callbackURL = "https://hooks.example.com:8443/app-store/events?tenant=abc&mode=full"
+        let transport = TestHTTPTransport(responses: [
+            .init(statusCode: 201, body: """
+            {
+              "data": {
+                "type": "webhooks",
+                "id": "webhook-1",
+                "attributes": {
+                  "enabled": true,
+                  "eventTypes": ["APP_STORE_VERSION_APP_VERSION_STATE_UPDATED"],
+                  "name": "Release events",
+                  "url": "\(callbackURL)"
+                }
+              }
+            }
+            """),
+            .init(statusCode: 200, body: """
+            {
+              "data": {
+                "type": "webhooks",
+                "id": "webhook-1",
+                "attributes": {
+                  "enabled": true,
+                  "eventTypes": ["APP_STORE_VERSION_APP_VERSION_STATE_UPDATED"],
+                  "name": "Release events",
+                  "url": "\(callbackURL)"
+                }
+              }
+            }
+            """)
+        ])
+        let client = await HTTPClient(
+            jwtService: try TestFactory.makeJWTService(),
+            baseURL: "https://api.example.test",
+            transport: transport,
+            maxRetries: 1
+        )
+        let worker = WebhooksWorker(httpClient: client)
+        let secret = "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08"
+
+        let create = try await worker.handleTool(
+            CallTool.Parameters(
+                name: "webhooks_create",
+                arguments: [
+                    "app_id": .string("app-1"),
+                    "name": .string("Release events"),
+                    "url": .string(callbackURL),
+                    "secret": .string(secret),
+                    "event_types": .array([.string("APP_STORE_VERSION_APP_VERSION_STATE_UPDATED")])
+                ]
+            )
+        )
+        let update = try await worker.handleTool(
+            CallTool.Parameters(
+                name: "webhooks_update",
+                arguments: [
+                    "webhook_id": .string("webhook-1"),
+                    "url": .string(callbackURL)
+                ]
+            )
+        )
+
+        #expect(create.isError == nil)
+        #expect(update.isError == nil)
+        #expect(await transport.requestCount() == 2)
+        let requests = await transport.recordedRequests()
+        #expect(requests.count == 2)
+        for request in requests {
+            let body = try #require(request.httpBody)
+            let root = try #require(JSONSerialization.jsonObject(with: body) as? [String: Any])
+            let data = try #require(root["data"] as? [String: Any])
+            let attributes = try #require(data["attributes"] as? [String: Any])
+            #expect(attributes["url"] as? String == callbackURL)
+        }
+    }
+
+    @Test("create and update reject weak webhook secrets before network calls")
+    func createAndUpdateRejectWeakSecrets() async throws {
+        let transport = TestHTTPTransport(responses: [])
+        let client = await HTTPClient(
+            jwtService: try TestFactory.makeJWTService(),
+            baseURL: "https://api.example.test",
+            transport: transport,
+            maxRetries: 1
+        )
+        let worker = WebhooksWorker(httpClient: client)
+
+        let weakSecrets = [
+            "",
+            "short-secret",
+            String(repeating: "😀", count: 16),
+            String(repeating: " ", count: 32),
+            String(repeating: "a", count: 32),
+            String(repeating: "abcd", count: 8),
+            String(repeating: "0123456789abcdef", count: 2)
+        ]
+        for secret in weakSecrets {
+            let create = try await worker.handleTool(
+                CallTool.Parameters(
+                    name: "webhooks_create",
+                    arguments: [
+                        "app_id": .string("app-1"),
+                        "name": .string("Release events"),
+                        "url": .string("https://example.com/webhook"),
+                        "secret": .string(secret),
+                        "event_types": .array([.string("APP_STORE_VERSION_APP_VERSION_STATE_UPDATED")])
+                    ]
+                )
+            )
+            #expect(create.isError == true)
+            #expect(textContent(create).contains("at least 32 characters"))
+            if !secret.isEmpty {
+                #expect(!textContent(create).contains(secret))
+            }
+
+            let update = try await worker.handleTool(
+                CallTool.Parameters(
+                    name: "webhooks_update",
+                    arguments: [
+                        "webhook_id": .string("webhook-1"),
+                        "secret": .string(secret)
+                    ]
+                )
+            )
+            #expect(update.isError == true)
+            #expect(textContent(update).contains("at least 32 characters"))
+            if !secret.isEmpty {
+                #expect(!textContent(update).contains(secret))
+            }
+        }
+
+        #expect(await transport.requestCount() == 0)
+    }
+
+    @Test("create and update schemas advertise the webhook secret minimum")
+    func secretSchemasAdvertiseMinimum() async throws {
+        let worker = WebhooksWorker(httpClient: try await TestFactory.makeHTTPClient())
+        let tools = await worker.getTools()
+
+        for toolName in ["webhooks_create", "webhooks_update"] {
+            let tool = try #require(tools.first { $0.name == toolName })
+            let root = try #require(tool.inputSchema.objectValue)
+            let properties = try #require(root["properties"]?.objectValue)
+            let secret = try #require(properties["secret"]?.objectValue)
+            #expect(secret["minLength"] == .int(WebhooksWorker.minimumWebhookSecretLength))
+        }
+    }
+
+    @Test("create and update schemas advertise HTTPS callback requirements")
+    func callbackURLSchemasAdvertiseHTTPSRequirements() async throws {
+        let worker = WebhooksWorker(httpClient: try await TestFactory.makeHTTPClient())
+        let tools = await worker.getTools()
+
+        for toolName in ["webhooks_create", "webhooks_update"] {
+            let tool = try #require(tools.first { $0.name == toolName })
+            let root = try #require(tool.inputSchema.objectValue)
+            let properties = try #require(root["properties"]?.objectValue)
+            let url = try #require(properties["url"]?.objectValue)
+            let description = try #require(url["description"]?.stringValue)
+            #expect(description.contains("Absolute HTTPS callback URL"))
+            #expect(description.contains("URL user info (user/password) and fragments are not allowed"))
+        }
+    }
+
+    @Test("create accepts a strong hex-like webhook secret without returning it")
+    func createAcceptsStrongSecretWithoutReturningIt() async throws {
+        let transport = TestHTTPTransport(responses: [
+            .init(statusCode: 201, body: """
+            {
+              "data": {
+                "type": "webhooks",
+                "id": "webhook-1",
+                "attributes": {
+                  "enabled": true,
+                  "eventTypes": ["APP_STORE_VERSION_APP_VERSION_STATE_UPDATED"],
+                  "name": "Release events",
+                  "url": "https://example.com/webhook"
+                }
+              }
+            }
+            """)
+        ])
+        let client = await HTTPClient(
+            jwtService: try TestFactory.makeJWTService(),
+            baseURL: "https://api.example.test",
+            transport: transport,
+            maxRetries: 1
+        )
+        let worker = WebhooksWorker(httpClient: client)
+        let secret = "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08"
+
+        let result = try await worker.handleTool(
+            CallTool.Parameters(
+                name: "webhooks_create",
+                arguments: [
+                    "app_id": .string("app-1"),
+                    "name": .string("Release events"),
+                    "url": .string("https://example.com/webhook"),
+                    "secret": .string(secret),
+                    "event_types": .array([.string("APP_STORE_VERSION_APP_VERSION_STATE_UPDATED")])
+                ]
+            )
+        )
+
+        #expect(result.isError == nil)
+        #expect(await transport.requestCount() == 1)
+        #expect(!textContent(result).contains(secret))
+        let structured = try #require(result.structuredContent)
+        let structuredData = try JSONEncoder().encode(structured)
+        let structuredText = try #require(String(data: structuredData, encoding: .utf8))
+        #expect(!structuredText.contains(secret))
+    }
+
     @Test("request models encode Apple OpenAPI JSON API shape")
     func requestModelsEncodeAppleShape() throws {
         let create = ASCWebhookCreateRequest(
@@ -252,6 +520,15 @@ struct WebhooksWorkerTests {
             return [:]
         }
         return object
+    }
+
+    private func textContent(_ result: CallTool.Result) -> String {
+        result.content.compactMap { content in
+            if case .text(let text, _, _) = content {
+                return text
+            }
+            return nil
+        }.joined(separator: "\n")
     }
 
     private static func signature(secret: String, payload: String) -> String {

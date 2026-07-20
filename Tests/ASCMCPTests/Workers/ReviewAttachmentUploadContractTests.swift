@@ -109,7 +109,7 @@ struct ReviewAttachmentUploadContractTests {
         defer { try? FileManager.default.removeItem(at: fileURL) }
         let apiTransport = ReviewAttachmentScriptTransport(steps: [
             .response(statusCode: 201, body: reviewAttachmentResponse(state: "AWAITING_UPLOAD", includeUploadOperation: true)),
-            .failure("Connection closed after sending PATCH"),
+            .rawNetworkFailure,
             .response(statusCode: 200, body: reviewAttachmentResponse(state: "COMPLETE"))
         ])
         let uploadTransport = TestHTTPTransport(responses: [
@@ -125,8 +125,8 @@ struct ReviewAttachmentUploadContractTests {
         #expect(requests.contains { $0.httpMethod == "DELETE" } == false)
     }
 
-    @Test("malformed successful commit response retains pending attachment after reconciliation")
-    func malformedCommitResponseRetainsPendingAttachment() async throws {
+    @Test("malformed successful commit response with pending GET is accepted")
+    func malformedCommitResponseIsAcceptedPending() async throws {
         let fileURL = try reviewAttachmentFile(Data("hello".utf8))
         defer { try? FileManager.default.removeItem(at: fileURL) }
         let apiTransport = TestHTTPTransport(responses: [
@@ -145,10 +145,10 @@ struct ReviewAttachmentUploadContractTests {
 
         let result = try await worker.handleTool(reviewAttachmentUploadParameters(fileURL: fileURL))
 
-        #expect(result.isError == true)
+        #expect(result.isError != true)
         let requests = await apiTransport.recordedRequests()
         #expect(requests.map(\.httpMethod) == ["POST", "PATCH", "GET"])
-        try assertRetained(result, state: "UPLOAD_COMPLETE", pending: true)
+        try assertProcessingPending(result, state: "UPLOAD_COMPLETE")
     }
 
     @Test("cancellation after commit response prevents polling")
@@ -166,10 +166,112 @@ struct ReviewAttachmentUploadContractTests {
         }
         let result = try await task.value
 
-        #expect(result.isError == true)
+        #expect(result.isError != true)
         let requests = await apiTransport.recordedRequests()
         #expect(requests.map(\.httpMethod) == ["POST", "PATCH"])
+        try assertProcessingPending(result, state: "UPLOAD_COMPLETE")
+    }
+
+    @Test("ambiguous commit with only a pending GET remains unresolved")
+    func ambiguousCommitWithPendingGetRemainsError() async throws {
+        let fileURL = try reviewAttachmentFile(Data("hello".utf8))
+        defer { try? FileManager.default.removeItem(at: fileURL) }
+        let apiTransport = ReviewAttachmentScriptTransport(steps: [
+            .response(statusCode: 201, body: reviewAttachmentResponse(state: "AWAITING_UPLOAD", includeUploadOperation: true)),
+            .rawNetworkFailure,
+            .response(statusCode: 200, body: reviewAttachmentResponse(state: "UPLOAD_COMPLETE"))
+        ])
+        let worker = try await makeReviewAttachmentWorker(
+            apiTransport: apiTransport,
+            uploadTransport: TestHTTPTransport(responses: [.init(statusCode: 200, body: "")]),
+            pollAttempts: 1
+        )
+
+        let result = try await worker.handleTool(reviewAttachmentUploadParameters(fileURL: fileURL))
+
+        #expect(result.isError == true)
+        #expect(await apiTransport.recordedRequests().map(\.httpMethod) == ["POST", "PATCH", "GET"])
         try assertRetained(result, state: "UPLOAD_COMPLETE", pending: true)
+        let payload = try reviewAttachmentObject(result.structuredContent)
+        #expect(payload["uploadCommitted"] == nil)
+    }
+
+    @Test("confirmed malformed commit with failed GET is accepted pending")
+    func confirmedMalformedCommitWithFailedGetIsAcceptedPending() async throws {
+        let fileURL = try reviewAttachmentFile(Data("hello".utf8))
+        defer { try? FileManager.default.removeItem(at: fileURL) }
+        let apiTransport = ReviewAttachmentScriptTransport(steps: [
+            .response(statusCode: 201, body: reviewAttachmentResponse(state: "AWAITING_UPLOAD", includeUploadOperation: true)),
+            .response(statusCode: 200, body: "{"),
+            .failure("GET unavailable")
+        ])
+        let worker = try await makeReviewAttachmentWorker(
+            apiTransport: apiTransport,
+            uploadTransport: TestHTTPTransport(responses: [.init(statusCode: 200, body: "")])
+        )
+
+        let result = try await worker.handleTool(reviewAttachmentUploadParameters(fileURL: fileURL))
+
+        #expect(result.isError != true)
+        #expect(await apiTransport.recordedRequests().map(\.httpMethod) == ["POST", "PATCH", "GET"])
+        try assertProcessingPending(result, state: "AWAITING_UPLOAD")
+    }
+
+    @Test("wrong commit attachment reconciles the expected attachment once")
+    func wrongCommitAttachmentReconcilesExpectedAttachment() async throws {
+        let fileURL = try reviewAttachmentFile(Data("hello".utf8))
+        defer { try? FileManager.default.removeItem(at: fileURL) }
+        let apiTransport = TestHTTPTransport(responses: [
+            .init(statusCode: 201, body: reviewAttachmentResponse(state: "AWAITING_UPLOAD", includeUploadOperation: true)),
+            .init(statusCode: 200, body: reviewAttachmentResponse(
+                state: "COMPLETE",
+                type: "appScreenshots"
+            )),
+            .init(statusCode: 200, body: reviewAttachmentResponse(state: "COMPLETE"))
+        ])
+        let worker = try await makeReviewAttachmentWorker(
+            apiTransport: apiTransport,
+            uploadTransport: TestHTTPTransport(responses: [.init(statusCode: 200, body: "")])
+        )
+
+        let result = try await worker.handleTool(reviewAttachmentUploadParameters(fileURL: fileURL))
+
+        #expect(result.isError != true)
+        let requests = await apiTransport.recordedRequests()
+        #expect(requests.map(\.httpMethod) == ["POST", "PATCH", "GET"])
+        #expect(requests.contains { $0.httpMethod == "DELETE" } == false)
+        let payload = try reviewAttachmentObject(result.structuredContent)
+        #expect(payload["success"] == .bool(true))
+        #expect(payload["reconciledAfterCommit"] == .bool(true))
+    }
+
+    @Test("wrong reconciliation attachment is retained as an error")
+    func wrongReconciliationAttachmentRemainsError() async throws {
+        let fileURL = try reviewAttachmentFile(Data("hello".utf8))
+        defer { try? FileManager.default.removeItem(at: fileURL) }
+        let apiTransport = TestHTTPTransport(responses: [
+            .init(statusCode: 201, body: reviewAttachmentResponse(state: "AWAITING_UPLOAD", includeUploadOperation: true)),
+            .init(statusCode: 200, body: reviewAttachmentResponse(
+                state: "COMPLETE",
+                type: "appScreenshots"
+            )),
+            .init(statusCode: 200, body: reviewAttachmentResponse(
+                state: "COMPLETE",
+                type: "appScreenshots"
+            ))
+        ])
+        let worker = try await makeReviewAttachmentWorker(
+            apiTransport: apiTransport,
+            uploadTransport: TestHTTPTransport(responses: [.init(statusCode: 200, body: "")])
+        )
+
+        let result = try await worker.handleTool(reviewAttachmentUploadParameters(fileURL: fileURL))
+
+        #expect(result.isError == true)
+        #expect(await apiTransport.recordedRequests().map(\.httpMethod) == ["POST", "PATCH", "GET"])
+        let payload = try reviewAttachmentObject(result.structuredContent)
+        #expect(payload["retrySafe"] == .bool(false))
+        #expect(payload["reservationDeleted"] == .bool(false))
     }
 
     @Test("failed state from polling is retained without deletion")
@@ -192,6 +294,81 @@ struct ReviewAttachmentUploadContractTests {
         let requests = await apiTransport.recordedRequests()
         #expect(requests.map(\.httpMethod) == ["POST", "PATCH", "GET"])
         try assertRetained(result, state: "FAILED", pending: false)
+    }
+
+    @Test("ambiguous reservation response is not retry safe")
+    func ambiguousReservationIsNotRetrySafe() async throws {
+        let fileURL = try reviewAttachmentFile(Data("hello".utf8))
+        defer { try? FileManager.default.removeItem(at: fileURL) }
+        let apiTransport = ReviewAttachmentScriptTransport(steps: [
+            .rawNetworkFailure
+        ])
+        let worker = try await makeReviewAttachmentWorker(
+            apiTransport: apiTransport,
+            uploadTransport: TestHTTPTransport(responses: [])
+        )
+
+        let result = try await worker.handleTool(reviewAttachmentUploadParameters(fileURL: fileURL))
+
+        #expect(result.isError == true)
+        #expect(await apiTransport.recordedRequests().map(\.httpMethod) == ["POST"])
+        let payload = try reviewAttachmentObject(result.structuredContent)
+        #expect(payload["reservationIdKnown"] == .bool(false))
+        #expect(payload["retrySafe"] == .bool(false))
+    }
+
+    @Test("cancellation after reservation rolls back without attempting PATCH")
+    func cancellationAfterReservationRollsBack() async throws {
+        let fileURL = try reviewAttachmentFile(Data("hello".utf8))
+        defer { try? FileManager.default.removeItem(at: fileURL) }
+        let apiTransport = ReviewAttachmentScriptTransport(steps: [
+            .cancelAndResponse(
+                statusCode: 201,
+                body: reviewAttachmentResponse(state: "AWAITING_UPLOAD", includeUploadOperation: true)
+            ),
+            .response(statusCode: 204, body: "")
+        ])
+        let uploadTransport = TestHTTPTransport(responses: [])
+        let worker = try await makeReviewAttachmentWorker(
+            apiTransport: apiTransport,
+            uploadTransport: uploadTransport
+        )
+
+        let task = Task {
+            try await worker.handleTool(reviewAttachmentUploadParameters(fileURL: fileURL))
+        }
+        let result = try await task.value
+
+        #expect(result.isError == true)
+        #expect(await apiTransport.recordedRequests().map(\.httpMethod) == ["POST", "DELETE"])
+        #expect(await uploadTransport.recordedRequests().isEmpty)
+        try assertCleanup(result, status: "deleted", reservationDeleted: true)
+        let payload = try reviewAttachmentObject(result.structuredContent)
+        #expect(payload["retrySafe"] == .bool(true))
+    }
+
+    @Test("unexpected reservation type is retained without deletion")
+    func wrongReservationTypeIsNotDeleted() async throws {
+        let fileURL = try reviewAttachmentFile(Data("hello".utf8))
+        defer { try? FileManager.default.removeItem(at: fileURL) }
+        let apiTransport = TestHTTPTransport(responses: [
+            .init(statusCode: 201, body: reviewAttachmentResponse(
+                state: "AWAITING_UPLOAD",
+                type: "appScreenshots"
+            ))
+        ])
+        let worker = try await makeReviewAttachmentWorker(
+            apiTransport: apiTransport,
+            uploadTransport: TestHTTPTransport(responses: [])
+        )
+
+        let result = try await worker.handleTool(reviewAttachmentUploadParameters(fileURL: fileURL))
+
+        #expect(result.isError == true)
+        #expect(await apiTransport.recordedRequests().map(\.httpMethod) == ["POST"])
+        let payload = try reviewAttachmentObject(result.structuredContent)
+        #expect(payload["reservationIdKnown"] == .bool(false))
+        #expect(payload["retrySafe"] == .bool(false))
     }
 
     @Test("missing upload operations rolls back the reservation")
@@ -255,6 +432,35 @@ struct ReviewAttachmentUploadContractTests {
         try assertCleanup(result, status: "deleted", reservationDeleted: true)
     }
 
+    @Test("transfer errors never expose review attachment upload credentials")
+    func transferErrorsDoNotExposeUploadCredentials() async throws {
+        let fileURL = try reviewAttachmentFile(Data("hello".utf8))
+        defer { try? FileManager.default.removeItem(at: fileURL) }
+        let apiTransport = TestHTTPTransport(responses: [
+            .init(statusCode: 201, body: reviewAttachmentResponse(
+                state: "AWAITING_UPLOAD",
+                includeUploadOperation: true,
+                includeSecretHeader: true
+            )),
+            .init(statusCode: 204, body: "")
+        ])
+        let worker = try await makeReviewAttachmentWorker(
+            apiTransport: apiTransport,
+            uploadTransport: LeakingReviewAttachmentUploadTransport()
+        )
+
+        let result = try await worker.handleTool(reviewAttachmentUploadParameters(fileURL: fileURL))
+
+        #expect(result.isError == true)
+        let text = reviewAttachmentText(result)
+        #expect(reviewAttachmentContains(result.structuredContent, substring: "upload.example.test") == false)
+        #expect(reviewAttachmentContains(result.structuredContent, substring: "signed-secret") == false)
+        #expect(reviewAttachmentContains(result.structuredContent, substring: "header-secret") == false)
+        #expect(text.contains("upload.example.test") == false)
+        #expect(text.contains("signed-secret") == false)
+        #expect(text.contains("header-secret") == false)
+    }
+
     @Test("rollback failure includes manual cleanup guidance")
     func rollbackFailureIncludesGuidance() async throws {
         let fileURL = try reviewAttachmentFile(Data("hello".utf8))
@@ -294,7 +500,7 @@ private func makeReviewAttachmentWorker(
         jwtService: try TestFactory.makeJWTService(),
         baseURL: "https://api.example.test",
         transport: apiTransport,
-        maxRetries: 1
+        maxRetries: 3
     )
     return ReviewAttachmentsWorker(
         httpClient: client,
@@ -323,16 +529,21 @@ private func reviewAttachmentFile(_ data: Data) throws -> URL {
 
 private func reviewAttachmentResponse(
     state: String,
+    type: String = "appStoreReviewAttachments",
     includeUploadOperation: Bool = false,
+    includeSecretHeader: Bool = false,
     includeMessages: Bool = false
 ) -> String {
+    let requestHeaders = includeSecretHeader
+        ? #"[{"name":"X-Amz-Security-Token","value":"header-secret"}]"#
+        : "[]"
     let uploadOperations = includeUploadOperation
-        ? #", "uploadOperations":[{"method":"PUT","url":"https://upload.example.test/chunk","length":5,"offset":0,"requestHeaders":[]}]"#
+        ? #", "uploadOperations":[{"method":"PUT","url":"https://upload.example.test/chunk?signed=signed-secret","length":5,"offset":0,"requestHeaders":\#(requestHeaders)}]"#
         : ""
     let messages = includeMessages
         ? #", "errors":[{"code":"ASSET_ERROR","description":"The asset failed validation."}], "warnings":[{"code":"ASSET_WARNING","description":"The image was recompressed."}]"#
         : ""
-    return #"{"data":{"type":"appStoreReviewAttachments","id":"attachment-1","attributes":{"fileSize":5,"fileName":"attachment.png","sourceFileChecksum":"5d41402abc4b2a76b9719d911017c592","assetDeliveryState":{"state":"\#(state)"\#(messages)}\#(uploadOperations)}}}"#
+    return #"{"data":{"type":"\#(type)","id":"attachment-1","attributes":{"fileSize":5,"fileName":"attachment.png","sourceFileChecksum":"5d41402abc4b2a76b9719d911017c592","assetDeliveryState":{"state":"\#(state)"\#(messages)}\#(uploadOperations)}}}"#
 }
 
 private func reviewAttachmentAPIError(status: Int, code: String) -> String {
@@ -378,6 +589,31 @@ private func reviewAttachmentArray(_ value: Value?) throws -> [Value] {
     return array
 }
 
+private func reviewAttachmentContains(_ value: Value?, substring: String) -> Bool {
+    guard let value else { return false }
+    switch value {
+    case .string(let string):
+        return string.contains(substring)
+    case .array(let values):
+        return values.contains { reviewAttachmentContains($0, substring: substring) }
+    case .object(let object):
+        return object.contains { key, value in
+            key.contains(substring) || reviewAttachmentContains(value, substring: substring)
+        }
+    default:
+        return false
+    }
+}
+
+private func reviewAttachmentText(_ result: CallTool.Result) -> String {
+    result.content.compactMap { content in
+        if case .text(let text, _, _) = content {
+            return text
+        }
+        return nil
+    }.joined(separator: "\n")
+}
+
 private func assertRetained(_ result: CallTool.Result, state: String, pending: Bool) throws {
     let payload = try reviewAttachmentObject(result.structuredContent)
     #expect(payload["attachmentId"] == .string("attachment-1"))
@@ -386,11 +622,32 @@ private func assertRetained(_ result: CallTool.Result, state: String, pending: B
     let cleanup = try reviewAttachmentValueObject(payload["cleanup"])
     #expect(cleanup["status"] == .string("not_attempted"))
     #expect(cleanup["tool"] == .string("review_attachments_delete"))
+    #expect(cleanup["inspectTool"] == .string("review_attachments_get"))
     let arguments = try reviewAttachmentValueObject(cleanup["arguments"])
     #expect(arguments["attachment_id"] == .string("attachment-1"))
     let attachment = try reviewAttachmentValueObject(payload["attachment"])
     let deliveryState = try reviewAttachmentValueObject(attachment["assetDeliveryState"])
     #expect(deliveryState["state"] == .string(state))
+    let inspectArguments = try reviewAttachmentValueObject(cleanup["inspectArguments"])
+    #expect(inspectArguments["attachment_id"] == .string("attachment-1"))
+}
+
+private func assertProcessingPending(_ result: CallTool.Result, state: String) throws {
+    let payload = try reviewAttachmentObject(result.structuredContent)
+    #expect(payload["success"] == .bool(true))
+    #expect(payload["uploadCommitted"] == .bool(true))
+    #expect(payload["processingComplete"] == .bool(false))
+    #expect(payload["deliveryPending"] == .bool(true))
+    #expect(payload["retrySafe"] == .bool(false))
+    #expect(payload["reservationDeleted"] == .bool(false))
+    #expect(payload["attachmentId"] == .string("attachment-1"))
+    let attachment = try reviewAttachmentValueObject(payload["attachment"])
+    let deliveryState = try reviewAttachmentValueObject(attachment["assetDeliveryState"])
+    #expect(deliveryState["state"] == .string(state))
+    let cleanup = try reviewAttachmentValueObject(payload["cleanup"])
+    #expect(cleanup["inspectTool"] == .string("review_attachments_get"))
+    let inspectArguments = try reviewAttachmentValueObject(cleanup["inspectArguments"])
+    #expect(inspectArguments["attachment_id"] == .string("attachment-1"))
 }
 
 private func assertCleanup(
@@ -407,6 +664,8 @@ private func assertCleanup(
 private actor ReviewAttachmentScriptTransport: HTTPTransport {
     enum Step: Sendable {
         case response(statusCode: Int, body: String)
+        case cancelAndResponse(statusCode: Int, body: String)
+        case rawNetworkFailure
         case failure(String)
     }
 
@@ -429,6 +688,14 @@ private actor ReviewAttachmentScriptTransport: HTTPTransport {
                 Data(body.utf8),
                 reviewAttachmentHTTPResponse(request: request, statusCode: statusCode)
             )
+        case .cancelAndResponse(let statusCode, let body):
+            withUnsafeCurrentTask { $0?.cancel() }
+            return (
+                Data(body.utf8),
+                reviewAttachmentHTTPResponse(request: request, statusCode: statusCode)
+            )
+        case .rawNetworkFailure:
+            throw URLError(.networkConnectionLost)
         case .failure(let message):
             throw ASCError.network(message)
         }
@@ -463,6 +730,18 @@ private actor CancellingPatchTransport: HTTPTransport {
 
     func recordedRequests() -> [URLRequest] {
         requests
+    }
+}
+
+private actor LeakingReviewAttachmentUploadTransport: HTTPTransport {
+    func data(for request: URLRequest) async throws -> (Data, HTTPURLResponse) {
+        throw ASCError.network("LeakingReviewAttachmentUploadTransport only supports file uploads")
+    }
+
+    func upload(for request: URLRequest, fromFile fileURL: URL) async throws -> (Data, HTTPURLResponse) {
+        let url = request.url?.absoluteString ?? "missing-url"
+        let headers = request.allHTTPHeaderFields ?? [:]
+        throw ASCError.network("Transfer failed for \(url) with headers \(headers)")
     }
 }
 

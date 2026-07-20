@@ -49,7 +49,7 @@ extension XcodeCloudWorker {
         do {
             var query: [String: String] = [:]
             applyInclude(arguments, to: &query)
-            let response = try await httpClient.get("/v1/ciProducts/\(productID)", parameters: query, as: ASCCIProductResponse.self)
+            let response = try await httpClient.get("/v1/ciProducts/\(try ASCPathSegment.encode(productID))", parameters: query, as: ASCCIProductResponse.self)
             var result: [String: Any] = ["success": true, "product": formatProduct(response.data)]
             appendIncluded(response.included, to: &result)
             return MCPResult.jsonObject(result)
@@ -67,7 +67,7 @@ extension XcodeCloudWorker {
               let productID = arguments["product_id"]?.stringValue else {
             return MCPResult.error("Required parameter 'product_id' is missing")
         }
-        return try await listWorkflows(endpoint: "/v1/ciProducts/\(productID)/workflows", arguments: arguments, failureContext: "product workflows")
+        return try await listWorkflows(endpoint: "/v1/ciProducts/\(try ASCPathSegment.encode(productID))/workflows", arguments: arguments, failureContext: "product workflows")
     }
 
     /// Lists build runs for one Xcode Cloud product.
@@ -79,7 +79,7 @@ extension XcodeCloudWorker {
               let productID = arguments["product_id"]?.stringValue else {
             return MCPResult.error("Required parameter 'product_id' is missing")
         }
-        return try await listBuildRuns(endpoint: "/v1/ciProducts/\(productID)/buildRuns", arguments: arguments, failureContext: "product build runs")
+        return try await listBuildRuns(endpoint: "/v1/ciProducts/\(try ASCPathSegment.encode(productID))/buildRuns", arguments: arguments, failureContext: "product build runs")
     }
 
     /// Gets one Xcode Cloud workflow.
@@ -95,7 +95,7 @@ extension XcodeCloudWorker {
         do {
             var query: [String: String] = [:]
             applyInclude(arguments, to: &query)
-            let response = try await httpClient.get("/v1/ciWorkflows/\(workflowID)", parameters: query, as: ASCCIWorkflowResponse.self)
+            let response = try await httpClient.get("/v1/ciWorkflows/\(try ASCPathSegment.encode(workflowID))", parameters: query, as: ASCCIWorkflowResponse.self)
             var result: [String: Any] = ["success": true, "workflow": formatWorkflow(response.data)]
             appendIncluded(response.included, to: &result)
             return MCPResult.jsonObject(result)
@@ -113,7 +113,7 @@ extension XcodeCloudWorker {
               let workflowID = arguments["workflow_id"]?.stringValue else {
             return MCPResult.error("Required parameter 'workflow_id' is missing")
         }
-        return try await listBuildRuns(endpoint: "/v1/ciWorkflows/\(workflowID)/buildRuns", arguments: arguments, failureContext: "workflow build runs")
+        return try await listBuildRuns(endpoint: "/v1/ciWorkflows/\(try ASCPathSegment.encode(workflowID))/buildRuns", arguments: arguments, failureContext: "workflow build runs")
     }
 
     /// Gets one Xcode Cloud build run.
@@ -129,7 +129,7 @@ extension XcodeCloudWorker {
         do {
             var query: [String: String] = [:]
             applyInclude(arguments, to: &query)
-            let response = try await httpClient.get("/v1/ciBuildRuns/\(buildRunID)", parameters: query, as: ASCCIBuildRunResponse.self)
+            let response = try await httpClient.get("/v1/ciBuildRuns/\(try ASCPathSegment.encode(buildRunID))", parameters: query, as: ASCCIBuildRunResponse.self)
             var result: [String: Any] = ["success": true, "buildRun": formatBuildRun(response.data)]
             appendIncluded(response.included, to: &result)
             return MCPResult.jsonObject(result)
@@ -191,7 +191,7 @@ extension XcodeCloudWorker {
             let response: ASCCIBuildActionsResponse
             var query = listQuery(arguments)
             applyInclude(arguments, to: &query)
-            let endpoint = "/v1/ciBuildRuns/\(buildRunID)/actions"
+            let endpoint = "/v1/ciBuildRuns/\(try ASCPathSegment.encode(buildRunID))/actions"
             if let nextURL = try paginationURL(from: arguments["next_url"]) {
                 response = try await httpClient.getPage(
                     nextURL,
@@ -223,7 +223,7 @@ extension XcodeCloudWorker {
         do {
             let response: ASCBuildsResponse
             let query = listQuery(arguments)
-            let endpoint = "/v1/ciBuildRuns/\(buildRunID)/builds"
+            let endpoint = "/v1/ciBuildRuns/\(try ASCPathSegment.encode(buildRunID))/builds"
             if let nextURL = try paginationURL(from: arguments["next_url"]) {
                 response = try await httpClient.getPage(
                     nextURL,
@@ -259,7 +259,7 @@ extension XcodeCloudWorker {
         do {
             var query: [String: String] = [:]
             applyInclude(arguments, to: &query)
-            let response = try await httpClient.get("/v1/ciBuildActions/\(actionID)", parameters: query, as: ASCCIBuildActionResponse.self)
+            let response = try await httpClient.get("/v1/ciBuildActions/\(try ASCPathSegment.encode(actionID))", parameters: query, as: ASCCIBuildActionResponse.self)
             var result: [String: Any] = ["success": true, "action": formatAction(response.data)]
             appendIncluded(response.included, to: &result)
             return MCPResult.jsonObject(result)
@@ -277,7 +277,7 @@ extension XcodeCloudWorker {
               let actionID = arguments["action_id"]?.stringValue else {
             return MCPResult.error("Required parameter 'action_id' is missing")
         }
-        return try await listArtifacts(endpoint: "/v1/ciBuildActions/\(actionID)/artifacts", arguments: arguments)
+        return try await listArtifacts(endpoint: "/v1/ciBuildActions/\(try ASCPathSegment.encode(actionID))/artifacts", arguments: arguments)
     }
 
     /// Lists issues for one Xcode Cloud action.
@@ -289,7 +289,7 @@ extension XcodeCloudWorker {
               let actionID = arguments["action_id"]?.stringValue else {
             return MCPResult.error("Required parameter 'action_id' is missing")
         }
-        return try await listIssues(endpoint: "/v1/ciBuildActions/\(actionID)/issues", arguments: arguments)
+        return try await listIssues(endpoint: "/v1/ciBuildActions/\(try ASCPathSegment.encode(actionID))/issues", arguments: arguments)
     }
 
     /// Lists test results for one Xcode Cloud action.
@@ -301,7 +301,7 @@ extension XcodeCloudWorker {
               let actionID = arguments["action_id"]?.stringValue else {
             return MCPResult.error("Required parameter 'action_id' is missing")
         }
-        return try await listTestResults(endpoint: "/v1/ciBuildActions/\(actionID)/testResults", arguments: arguments)
+        return try await listTestResults(endpoint: "/v1/ciBuildActions/\(try ASCPathSegment.encode(actionID))/testResults", arguments: arguments)
     }
 
     /// Gets one Xcode Cloud artifact.
@@ -315,7 +315,7 @@ extension XcodeCloudWorker {
         }
 
         do {
-            let response = try await httpClient.get("/v1/ciArtifacts/\(artifactID)", as: ASCCIArtifactResponse.self)
+            let response = try await httpClient.get("/v1/ciArtifacts/\(try ASCPathSegment.encode(artifactID))", as: ASCCIArtifactResponse.self)
             return MCPResult.jsonObject(["success": true, "artifact": formatArtifact(response.data)])
         } catch {
             return MCPResult.error("Failed to get Xcode Cloud artifact: \(error.localizedDescription)")
@@ -333,7 +333,7 @@ extension XcodeCloudWorker {
         }
 
         do {
-            let response = try await httpClient.get("/v1/ciIssues/\(issueID)", as: ASCCIIssueResponse.self)
+            let response = try await httpClient.get("/v1/ciIssues/\(try ASCPathSegment.encode(issueID))", as: ASCCIIssueResponse.self)
             return MCPResult.jsonObject(["success": true, "issue": formatIssue(response.data)])
         } catch {
             return MCPResult.error("Failed to get Xcode Cloud issue: \(error.localizedDescription)")
@@ -351,7 +351,7 @@ extension XcodeCloudWorker {
         }
 
         do {
-            let response = try await httpClient.get("/v1/ciTestResults/\(testResultID)", as: ASCCITestResultResponse.self)
+            let response = try await httpClient.get("/v1/ciTestResults/\(try ASCPathSegment.encode(testResultID))", as: ASCCITestResultResponse.self)
             return MCPResult.jsonObject(["success": true, "testResult": formatTestResult(response.data)])
         } catch {
             return MCPResult.error("Failed to get Xcode Cloud test result: \(error.localizedDescription)")
@@ -399,7 +399,7 @@ extension XcodeCloudWorker {
         do {
             var query: [String: String] = [:]
             applyInclude(arguments, to: &query)
-            let response = try await httpClient.get("/v1/ciXcodeVersions/\(xcodeVersionID)", parameters: query, as: ASCCIXcodeVersionResponse.self)
+            let response = try await httpClient.get("/v1/ciXcodeVersions/\(try ASCPathSegment.encode(xcodeVersionID))", parameters: query, as: ASCCIXcodeVersionResponse.self)
             var result: [String: Any] = ["success": true, "xcodeVersion": formatXcodeVersion(response.data)]
             appendIncluded(response.included, to: &result)
             return MCPResult.jsonObject(result)
@@ -449,7 +449,7 @@ extension XcodeCloudWorker {
         do {
             var query: [String: String] = [:]
             applyInclude(arguments, to: &query)
-            let response = try await httpClient.get("/v1/ciMacOsVersions/\(macOSVersionID)", parameters: query, as: ASCCIMacOSVersionResponse.self)
+            let response = try await httpClient.get("/v1/ciMacOsVersions/\(try ASCPathSegment.encode(macOSVersionID))", parameters: query, as: ASCCIMacOSVersionResponse.self)
             var result: [String: Any] = ["success": true, "macOSVersion": formatMacOSVersion(response.data)]
             appendIncluded(response.included, to: &result)
             return MCPResult.jsonObject(result)
@@ -496,7 +496,7 @@ extension XcodeCloudWorker {
         }
 
         do {
-            let response = try await httpClient.get("/v1/scmProviders/\(providerID)", as: ASCScmProviderResponse.self)
+            let response = try await httpClient.get("/v1/scmProviders/\(try ASCPathSegment.encode(providerID))", as: ASCScmProviderResponse.self)
             return MCPResult.jsonObject(["success": true, "provider": formatScmProvider(response.data)])
         } catch {
             return MCPResult.error("Failed to get Xcode Cloud SCM provider: \(error.localizedDescription)")
@@ -512,7 +512,7 @@ extension XcodeCloudWorker {
               let providerID = arguments["provider_id"]?.stringValue else {
             return MCPResult.error("Required parameter 'provider_id' is missing")
         }
-        return try await listScmRepositories(endpoint: "/v1/scmProviders/\(providerID)/repositories", arguments: arguments)
+        return try await listScmRepositories(endpoint: "/v1/scmProviders/\(try ASCPathSegment.encode(providerID))/repositories", arguments: arguments)
     }
 
     /// Lists SCM repositories available to Xcode Cloud.
@@ -536,7 +536,7 @@ extension XcodeCloudWorker {
         do {
             var query: [String: String] = [:]
             applyInclude(arguments, to: &query)
-            let response = try await httpClient.get("/v1/scmRepositories/\(repositoryID)", parameters: query, as: ASCScmRepositoryResponse.self)
+            let response = try await httpClient.get("/v1/scmRepositories/\(try ASCPathSegment.encode(repositoryID))", parameters: query, as: ASCScmRepositoryResponse.self)
             var result: [String: Any] = ["success": true, "repository": formatScmRepository(response.data)]
             appendIncluded(response.included, to: &result)
             return MCPResult.jsonObject(result)
@@ -554,7 +554,7 @@ extension XcodeCloudWorker {
               let repositoryID = arguments["repository_id"]?.stringValue else {
             return MCPResult.error("Required parameter 'repository_id' is missing")
         }
-        return try await listScmGitReferences(endpoint: "/v1/scmRepositories/\(repositoryID)/gitReferences", arguments: arguments)
+        return try await listScmGitReferences(endpoint: "/v1/scmRepositories/\(try ASCPathSegment.encode(repositoryID))/gitReferences", arguments: arguments)
     }
 
     /// Lists SCM pull requests for one repository.
@@ -566,7 +566,7 @@ extension XcodeCloudWorker {
               let repositoryID = arguments["repository_id"]?.stringValue else {
             return MCPResult.error("Required parameter 'repository_id' is missing")
         }
-        return try await listScmPullRequests(endpoint: "/v1/scmRepositories/\(repositoryID)/pullRequests", arguments: arguments)
+        return try await listScmPullRequests(endpoint: "/v1/scmRepositories/\(try ASCPathSegment.encode(repositoryID))/pullRequests", arguments: arguments)
     }
 
     /// Gets one SCM git reference.
@@ -582,7 +582,7 @@ extension XcodeCloudWorker {
         do {
             var query: [String: String] = [:]
             applyInclude(arguments, to: &query)
-            let response = try await httpClient.get("/v1/scmGitReferences/\(gitReferenceID)", parameters: query, as: ASCScmGitReferenceResponse.self)
+            let response = try await httpClient.get("/v1/scmGitReferences/\(try ASCPathSegment.encode(gitReferenceID))", parameters: query, as: ASCScmGitReferenceResponse.self)
             var result: [String: Any] = ["success": true, "gitReference": formatScmGitReference(response.data)]
             appendIncluded(response.included, to: &result)
             return MCPResult.jsonObject(result)
@@ -604,7 +604,7 @@ extension XcodeCloudWorker {
         do {
             var query: [String: String] = [:]
             applyInclude(arguments, to: &query)
-            let response = try await httpClient.get("/v1/scmPullRequests/\(pullRequestID)", parameters: query, as: ASCScmPullRequestResponse.self)
+            let response = try await httpClient.get("/v1/scmPullRequests/\(try ASCPathSegment.encode(pullRequestID))", parameters: query, as: ASCScmPullRequestResponse.self)
             var result: [String: Any] = ["success": true, "pullRequest": formatScmPullRequest(response.data)]
             appendIncluded(response.included, to: &result)
             return MCPResult.jsonObject(result)

@@ -7,7 +7,7 @@ extension ReviewAttachmentsWorker {
     func uploadAttachmentTool() -> Tool {
         return Tool(
             name: "review_attachments_upload",
-            description: "Upload a review attachment through reservation, immutable-file transfer, commit, and delivery reconciliation. Success is returned only when Apple reports COMPLETE. Automatic rollback is limited to failures before commit; later failures retain the attachment and provide review_attachments_get/delete guidance.",
+            description: "Upload a review attachment through reservation, immutable-file transfer, commit, and delivery reconciliation. Automatic rollback is limited to failures before commit. A confirmed commit can return success with deliveryPending=true while Apple continues asynchronous processing; uncertain or terminal failures retain the attachment and provide review_attachments_get/delete guidance.",
             inputSchema: .object([
                 "type": .string("object"),
                 "properties": .object([

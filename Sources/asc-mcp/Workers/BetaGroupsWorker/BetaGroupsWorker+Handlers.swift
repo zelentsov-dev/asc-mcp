@@ -162,7 +162,7 @@ extension BetaGroupsWorker {
             )
 
             let response: ASCBetaGroupResponse = try await httpClient.patch(
-                "/v1/betaGroups/\(groupId)",
+                "/v1/betaGroups/\(try ASCPathSegment.encode(groupId))",
                 body: request,
                 as: ASCBetaGroupResponse.self
             )
@@ -197,7 +197,7 @@ extension BetaGroupsWorker {
         }
 
         do {
-            _ = try await httpClient.delete("/v1/betaGroups/\(groupId)")
+            _ = try await httpClient.delete("/v1/betaGroups/\(try ASCPathSegment.encode(groupId))")
 
             let result = [
                 "success": true,
@@ -243,7 +243,7 @@ extension BetaGroupsWorker {
 
             let bodyData = try JSONEncoder().encode(request)
             _ = try await httpClient.post(
-                "/v1/betaGroups/\(groupId)/relationships/betaTesters",
+                "/v1/betaGroups/\(try ASCPathSegment.encode(groupId))/relationships/betaTesters",
                 body: bodyData
             )
 
@@ -291,7 +291,7 @@ extension BetaGroupsWorker {
 
             let bodyData = try JSONEncoder().encode(request)
             _ = try await httpClient.delete(
-                "/v1/betaGroups/\(groupId)/relationships/betaTesters",
+                "/v1/betaGroups/\(try ASCPathSegment.encode(groupId))/relationships/betaTesters",
                 body: bodyData
             )
 
@@ -329,7 +329,7 @@ extension BetaGroupsWorker {
             if let nextUrl = try paginationURL(from: arguments["next_url"]) {
                 response = try await httpClient.getPage(
                     nextUrl,
-                    scope: PaginationScope(path: "/v1/betaGroups/\(groupId)/betaTesters"),
+                    scope: PaginationScope(path: "/v1/betaGroups/\(try ASCPathSegment.encode(groupId))/betaTesters"),
                     as: ASCBetaTestersResponse.self
                 )
             } else {
@@ -343,7 +343,7 @@ extension BetaGroupsWorker {
                 }
 
                 response = try await httpClient.get(
-                    "/v1/betaGroups/\(groupId)/betaTesters",
+                    "/v1/betaGroups/\(try ASCPathSegment.encode(groupId))/betaTesters",
                     parameters: queryParams,
                     as: ASCBetaTestersResponse.self
                 )
@@ -400,7 +400,7 @@ extension BetaGroupsWorker {
 
             let bodyData = try JSONEncoder().encode(request)
             _ = try await httpClient.post(
-                "/v1/betaGroups/\(groupId)/relationships/builds",
+                "/v1/betaGroups/\(try ASCPathSegment.encode(groupId))/relationships/builds",
                 body: bodyData
             )
 
@@ -448,7 +448,7 @@ extension BetaGroupsWorker {
 
             let bodyData = try JSONEncoder().encode(request)
             _ = try await httpClient.delete(
-                "/v1/betaGroups/\(groupId)/relationships/builds",
+                "/v1/betaGroups/\(try ASCPathSegment.encode(groupId))/relationships/builds",
                 body: bodyData
             )
 

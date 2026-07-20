@@ -5,10 +5,26 @@ import MCP
 public final class InAppPurchasesWorker: Sendable {
     let httpClient: HTTPClient
     let uploadService: UploadService
+    let deliveryPollAttempts: Int
+    let deliveryPollIntervalNanoseconds: UInt64
 
     public init(httpClient: HTTPClient, uploadService: UploadService) {
         self.httpClient = httpClient
         self.uploadService = uploadService
+        self.deliveryPollAttempts = 10
+        self.deliveryPollIntervalNanoseconds = 1_000_000_000
+    }
+
+    init(
+        httpClient: HTTPClient,
+        uploadService: UploadService,
+        deliveryPollAttempts: Int,
+        deliveryPollIntervalNanoseconds: UInt64
+    ) {
+        self.httpClient = httpClient
+        self.uploadService = uploadService
+        self.deliveryPollAttempts = max(1, deliveryPollAttempts)
+        self.deliveryPollIntervalNanoseconds = deliveryPollIntervalNanoseconds
     }
 
     /// Get list of available tools

@@ -22,7 +22,7 @@ extension PromotedPurchasesWorker {
             if let nextUrl = try paginationURL(from: arguments["next_url"]) {
                 response = try await httpClient.getPage(
                     nextUrl,
-                    scope: PaginationScope(path: "/v1/apps/\(appId)/promotedPurchases"),
+                    scope: PaginationScope(path: "/v1/apps/\(try ASCPathSegment.encode(appId))/promotedPurchases"),
                     as: ASCPromotedPurchasesResponse.self
                 )
             } else {
@@ -35,7 +35,7 @@ extension PromotedPurchasesWorker {
                 }
 
                 response = try await httpClient.get(
-                    "/v1/apps/\(appId)/promotedPurchases",
+                    "/v1/apps/\(try ASCPathSegment.encode(appId))/promotedPurchases",
                     parameters: queryParams,
                     as: ASCPromotedPurchasesResponse.self
                 )
@@ -76,7 +76,7 @@ extension PromotedPurchasesWorker {
 
         do {
             let response: ASCPromotedPurchaseResponse = try await httpClient.get(
-                "/v1/promotedPurchases/\(promotedPurchaseId)",
+                "/v1/promotedPurchases/\(try ASCPathSegment.encode(promotedPurchaseId))",
                 parameters: ["include": "inAppPurchaseV2,subscription"],
                 as: ASCPromotedPurchaseResponse.self
             )
@@ -204,7 +204,7 @@ extension PromotedPurchasesWorker {
             )
 
             let response: ASCPromotedPurchaseResponse = try await httpClient.patch(
-                "/v1/promotedPurchases/\(promotedPurchaseId)",
+                "/v1/promotedPurchases/\(try ASCPathSegment.encode(promotedPurchaseId))",
                 body: request,
                 as: ASCPromotedPurchaseResponse.self
             )
@@ -239,7 +239,7 @@ extension PromotedPurchasesWorker {
         }
 
         do {
-            _ = try await httpClient.delete("/v1/promotedPurchases/\(promotedPurchaseId)")
+            _ = try await httpClient.delete("/v1/promotedPurchases/\(try ASCPathSegment.encode(promotedPurchaseId))")
 
             let result = [
                 "success": true,

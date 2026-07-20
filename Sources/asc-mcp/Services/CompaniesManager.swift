@@ -192,20 +192,45 @@ public actor CompaniesManager {
         return config.companies
     }
 
-    /// Resolves a company by exact ID or partial case-insensitive name without changing the active company.
-    /// - Parameter idOrName: Company ID or name fragment.
+    /// Resolves a company by exact ID, exact name, or an unambiguous name fragment.
+    /// - Parameter idOrName: Company ID, name, or unique name fragment.
     /// - Returns: Matching company configuration.
-    /// - Throws: `CompanyError.companyNotFound` when no configured company matches.
+    /// - Throws: `CompanyError` when the query is empty, missing, or ambiguous.
     public func resolveCompany(_ idOrName: String) throws -> Company {
-        if let company = config.companies.first(where: { $0.id.lowercased() == idOrName.lowercased() }) {
-            return company
+        let query = idOrName.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !query.isEmpty else {
+            throw CompanyError.emptyCompanyIdentifier
         }
 
-        if let company = config.companies.first(where: { $0.name.lowercased().contains(idOrName.lowercased()) }) {
-            return company
+        let normalizedQuery = query.lowercased()
+        let exactIDMatches = config.companies.filter { $0.id.lowercased() == normalizedQuery }
+        if exactIDMatches.count == 1 {
+            return exactIDMatches[0]
+        }
+        if exactIDMatches.count > 1 {
+            let matches = exactIDMatches
+                .map { "\($0.name) (ID: \($0.id))" }
+                .sorted()
+            throw CompanyError.ambiguousCompany(query, matches)
         }
 
-        throw CompanyError.companyNotFound(idOrName)
+        let exactNameMatches = config.companies.filter { $0.name.lowercased() == normalizedQuery }
+        if exactNameMatches.count == 1 {
+            return exactNameMatches[0]
+        }
+        if exactNameMatches.count > 1 {
+            throw CompanyError.ambiguousCompany(query, exactNameMatches.map(\.name).sorted())
+        }
+
+        let partialNameMatches = config.companies.filter { $0.name.lowercased().contains(normalizedQuery) }
+        if partialNameMatches.count == 1 {
+            return partialNameMatches[0]
+        }
+        if partialNameMatches.count > 1 {
+            throw CompanyError.ambiguousCompany(query, partialNameMatches.map(\.name).sorted())
+        }
+
+        throw CompanyError.companyNotFound(query)
     }
 
     /// Commits the active company after dependent services have been prepared.
@@ -215,9 +240,9 @@ public actor CompaniesManager {
     }
 
     /// Switches to a specific company by ID or name.
-    /// - Parameter idOrName: Company ID or name fragment.
+    /// - Parameter idOrName: Company ID, name, or unique name fragment.
     /// - Returns: Newly active company configuration.
-    /// - Throws: `CompanyError.companyNotFound` when no configured company matches.
+    /// - Throws: `CompanyError` when the query is empty, missing, or ambiguous.
     public func switchToCompany(_ idOrName: String) throws -> Company {
         let company = try resolveCompany(idOrName)
         currentCompany = company
@@ -244,6 +269,8 @@ public actor CompaniesManager {
 /// Errors for company management
 public enum CompanyError: LocalizedError, Sendable {
     case companyNotFound(String)
+    case emptyCompanyIdentifier
+    case ambiguousCompany(String, [String])
     case noCompanySelected
     case configFileNotFound
     case configFileMissing(String)
@@ -255,6 +282,10 @@ public enum CompanyError: LocalizedError, Sendable {
         switch self {
         case .companyNotFound(let name):
             return "Company not found: \(name)"
+        case .emptyCompanyIdentifier:
+            return "Company ID or name must not be empty."
+        case .ambiguousCompany(let query, let matches):
+            return "Company query '\(query)' is ambiguous. Matches: \(matches.joined(separator: ", ")). Use an exact company ID or name."
         case .noCompanySelected:
             return "No company selected. Use company_switch to select a company."
         case .configFileNotFound:

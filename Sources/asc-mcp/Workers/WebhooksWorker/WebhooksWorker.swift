@@ -3,6 +3,8 @@ import MCP
 
 /// Manages App Store Connect webhook notifications and delivery diagnostics.
 public final class WebhooksWorker: Sendable {
+    static let minimumWebhookSecretLength = 32
+
     let httpClient: HTTPClient
 
     public init(httpClient: HTTPClient) {

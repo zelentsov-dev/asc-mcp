@@ -23,7 +23,7 @@ extension BetaAppWorker {
             if let nextUrl = try paginationURL(from: arguments["next_url"]) {
                 response = try await httpClient.getPage(
                     nextUrl,
-                    scope: PaginationScope(path: "/v1/apps/\(appId)/betaAppLocalizations"),
+                    scope: PaginationScope(path: "/v1/apps/\(try ASCPathSegment.encode(appId))/betaAppLocalizations"),
                     as: ASCBetaAppLocalizationsResponse.self
                 )
             } else {
@@ -36,7 +36,7 @@ extension BetaAppWorker {
                 }
 
                 response = try await httpClient.get(
-                    "/v1/apps/\(appId)/betaAppLocalizations",
+                    "/v1/apps/\(try ASCPathSegment.encode(appId))/betaAppLocalizations",
                     parameters: queryParams,
                     as: ASCBetaAppLocalizationsResponse.self
                 )
@@ -130,7 +130,7 @@ extension BetaAppWorker {
 
         do {
             let response: ASCBetaAppLocalizationResponse = try await httpClient.get(
-                "/v1/betaAppLocalizations/\(localizationId)",
+                "/v1/betaAppLocalizations/\(try ASCPathSegment.encode(localizationId))",
                 parameters: [:],
                 as: ASCBetaAppLocalizationResponse.self
             )
@@ -178,7 +178,7 @@ extension BetaAppWorker {
             )
 
             let response: ASCBetaAppLocalizationResponse = try await httpClient.patch(
-                "/v1/betaAppLocalizations/\(localizationId)",
+                "/v1/betaAppLocalizations/\(try ASCPathSegment.encode(localizationId))",
                 body: request,
                 as: ASCBetaAppLocalizationResponse.self
             )
@@ -212,7 +212,7 @@ extension BetaAppWorker {
         }
 
         do {
-            _ = try await httpClient.delete("/v1/betaAppLocalizations/\(localizationId)")
+            _ = try await httpClient.delete("/v1/betaAppLocalizations/\(try ASCPathSegment.encode(localizationId))")
 
             let result = [
                 "success": true,
@@ -355,7 +355,7 @@ extension BetaAppWorker {
 
         do {
             let response: ASCBetaAppReviewSubmissionResponse = try await httpClient.get(
-                "/v1/betaAppReviewSubmissions/\(submissionId)",
+                "/v1/betaAppReviewSubmissions/\(try ASCPathSegment.encode(submissionId))",
                 parameters: [:],
                 as: ASCBetaAppReviewSubmissionResponse.self
             )
@@ -392,7 +392,7 @@ extension BetaAppWorker {
 
         do {
             let response: ASCBetaAppReviewDetailResponse = try await httpClient.get(
-                "/v1/apps/\(appId)/betaAppReviewDetail",
+                "/v1/apps/\(try ASCPathSegment.encode(appId))/betaAppReviewDetail",
                 parameters: [:],
                 as: ASCBetaAppReviewDetailResponse.self
             )
@@ -443,7 +443,7 @@ extension BetaAppWorker {
             )
 
             let response: ASCBetaAppReviewDetailResponse = try await httpClient.patch(
-                "/v1/betaAppReviewDetails/\(reviewDetailId)",
+                "/v1/betaAppReviewDetails/\(try ASCPathSegment.encode(reviewDetailId))",
                 body: request,
                 as: ASCBetaAppReviewDetailResponse.self
             )

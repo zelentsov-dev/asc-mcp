@@ -161,6 +161,7 @@ public struct PreviewAttributes: Codable, Sendable {
     public let previewImage: ASCImageAsset?
     public let uploadOperations: [ASCUploadOperation]?
     public let assetDeliveryState: ASCAssetDeliveryState?
+    public let videoDeliveryState: ASCAssetDeliveryState?
 }
 
 // MARK: - Preview Request Models

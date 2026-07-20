@@ -75,7 +75,7 @@ extension BetaLicenseAgreementsWorker {
 
         do {
             let response: ASCBetaLicenseAgreementResponse = try await httpClient.get(
-                "/v1/betaLicenseAgreements/\(agreementId)",
+                "/v1/betaLicenseAgreements/\(try ASCPathSegment.encode(agreementId))",
                 parameters: [:],
                 as: ASCBetaLicenseAgreementResponse.self
             )
@@ -119,7 +119,7 @@ extension BetaLicenseAgreementsWorker {
             )
 
             let response: ASCBetaLicenseAgreementResponse = try await httpClient.patch(
-                "/v1/betaLicenseAgreements/\(agreementId)",
+                "/v1/betaLicenseAgreements/\(try ASCPathSegment.encode(agreementId))",
                 body: request,
                 as: ASCBetaLicenseAgreementResponse.self
             )

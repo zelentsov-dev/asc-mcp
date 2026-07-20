@@ -44,7 +44,7 @@
       "implementationState": "asBuilt",
       "operations": [],
       "fields": [
-        { "toolField": "company", "sourceKind": "local", "localRole": "exact configured company ID or first case-insensitive partial name match" }
+        { "toolField": "company", "sourceKind": "local", "localRole": "exact configured company ID, exact case-insensitive name, or unique case-insensitive partial name match; empty and ambiguous queries are rejected" }
       ],
       "response": {
         "mode": "local",
@@ -53,7 +53,7 @@
           { "outputField": "company", "localRole": "new active company with masked credential identifiers" }
         ]
       },
-      "note": "Local credential-context switch followed by dependent worker reinitialization; no Apple REST operation is called. Partial-name selection returns the first configured match and does not reject ambiguous matches."
+      "note": "Local credential-context switch followed by atomic dependent worker replacement; no Apple REST operation is called. Partial-name selection succeeds only for a unique configured match, preventing accidental account selection."
     }
   ],
   "implementationAliases": []

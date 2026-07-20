@@ -21,7 +21,7 @@ extension OfferCodesWorker {
             if let nextUrl = try paginationURL(from: arguments["next_url"]) {
                 response = try await httpClient.getPage(
                     nextUrl,
-                    scope: PaginationScope(path: "/v1/subscriptions/\(subscriptionId)/offerCodes"),
+                    scope: PaginationScope(path: "/v1/subscriptions/\(try ASCPathSegment.encode(subscriptionId))/offerCodes"),
                     as: ASCOfferCodesResponse.self
                 )
             } else {
@@ -34,7 +34,7 @@ extension OfferCodesWorker {
                 }
 
                 response = try await httpClient.get(
-                    "/v1/subscriptions/\(subscriptionId)/offerCodes",
+                    "/v1/subscriptions/\(try ASCPathSegment.encode(subscriptionId))/offerCodes",
                     parameters: queryParams,
                     as: ASCOfferCodesResponse.self
                 )
@@ -264,7 +264,7 @@ extension OfferCodesWorker {
             )
 
             let response: ASCOfferCodeResponse = try await httpClient.patch(
-                "/v1/subscriptionOfferCodes/\(offerCodeId)",
+                "/v1/subscriptionOfferCodes/\(try ASCPathSegment.encode(offerCodeId))",
                 body: request,
                 as: ASCOfferCodeResponse.self
             )
@@ -308,7 +308,7 @@ extension OfferCodesWorker {
             )
 
             let response: ASCOfferCodeResponse = try await httpClient.patch(
-                "/v1/subscriptionOfferCodes/\(offerCodeId)",
+                "/v1/subscriptionOfferCodes/\(try ASCPathSegment.encode(offerCodeId))",
                 body: request,
                 as: ASCOfferCodeResponse.self
             )
@@ -348,7 +348,7 @@ extension OfferCodesWorker {
             if let nextUrl = try paginationURL(from: arguments["next_url"]) {
                 response = try await httpClient.getPage(
                     nextUrl,
-                    scope: PaginationScope(path: "/v1/subscriptionOfferCodes/\(offerCodeId)/prices"),
+                    scope: PaginationScope(path: "/v1/subscriptionOfferCodes/\(try ASCPathSegment.encode(offerCodeId))/prices"),
                     as: ASCOfferCodePricesResponse.self
                 )
             } else {
@@ -361,7 +361,7 @@ extension OfferCodesWorker {
                 }
 
                 response = try await httpClient.get(
-                    "/v1/subscriptionOfferCodes/\(offerCodeId)/prices",
+                    "/v1/subscriptionOfferCodes/\(try ASCPathSegment.encode(offerCodeId))/prices",
                     parameters: queryParams,
                     as: ASCOfferCodePricesResponse.self
                 )
@@ -417,7 +417,7 @@ extension OfferCodesWorker {
             )
 
             let response: ASCOneTimeUseCodeResponse = try await httpClient.post(
-                "/v1/subscriptionOfferCodes/\(offerCodeId)/oneTimeUseCodes",
+                "/v1/subscriptionOfferCodes/\(try ASCPathSegment.encode(offerCodeId))/oneTimeUseCodes",
                 body: request,
                 as: ASCOneTimeUseCodeResponse.self
             )
@@ -457,7 +457,7 @@ extension OfferCodesWorker {
             if let nextUrl = try paginationURL(from: arguments["next_url"]) {
                 response = try await httpClient.getPage(
                     nextUrl,
-                    scope: PaginationScope(path: "/v1/subscriptionOfferCodes/\(offerCodeId)/oneTimeUseCodes"),
+                    scope: PaginationScope(path: "/v1/subscriptionOfferCodes/\(try ASCPathSegment.encode(offerCodeId))/oneTimeUseCodes"),
                     as: ASCOneTimeUseCodesResponse.self
                 )
             } else {
@@ -470,7 +470,7 @@ extension OfferCodesWorker {
                 }
 
                 response = try await httpClient.get(
-                    "/v1/subscriptionOfferCodes/\(offerCodeId)/oneTimeUseCodes",
+                    "/v1/subscriptionOfferCodes/\(try ASCPathSegment.encode(offerCodeId))/oneTimeUseCodes",
                     parameters: queryParams,
                     as: ASCOneTimeUseCodesResponse.self
                 )
@@ -564,7 +564,7 @@ extension OfferCodesWorker {
 
         do {
             let response: ASCOfferCodeCustomCodeResponse = try await httpClient.get(
-                "/v1/subscriptionOfferCodeCustomCodes/\(customCodeId)",
+                "/v1/subscriptionOfferCodeCustomCodes/\(try ASCPathSegment.encode(customCodeId))",
                 as: ASCOfferCodeCustomCodeResponse.self
             )
 
@@ -607,7 +607,7 @@ extension OfferCodesWorker {
             )
 
             let response: ASCOfferCodeCustomCodeResponse = try await httpClient.patch(
-                "/v1/subscriptionOfferCodeCustomCodes/\(customCodeId)",
+                "/v1/subscriptionOfferCodeCustomCodes/\(try ASCPathSegment.encode(customCodeId))",
                 body: request,
                 as: ASCOfferCodeCustomCodeResponse.self
             )

@@ -81,7 +81,7 @@ extension PricingWorker {
 
         do {
             let response: ASCAppAvailabilityV2Response = try await httpClient.get(
-                "/v1/apps/\(appId)/appAvailabilityV2",
+                "/v1/apps/\(try ASCPathSegment.encode(appId))/appAvailabilityV2",
                 as: ASCAppAvailabilityV2Response.self
             )
 
@@ -121,7 +121,7 @@ extension PricingWorker {
         do {
             let response: ASCAppPricePointsV3Response
 
-            let endpoint = "/v1/apps/\(appId)/appPricePoints"
+            let endpoint = "/v1/apps/\(try ASCPathSegment.encode(appId))/appPricePoints"
             var requiredParameters: [String: String] = [:]
             if let territoryId = arguments["territory_id"]?.stringValue {
                 requiredParameters["filter[territory]"] = territoryId
@@ -203,7 +203,7 @@ extension PricingWorker {
 
         do {
             let response: ASCAppPriceScheduleResponse = try await httpClient.get(
-                "/v1/apps/\(appId)/appPriceSchedule",
+                "/v1/apps/\(try ASCPathSegment.encode(appId))/appPriceSchedule",
                 parameters: [
                     "include": "manualPrices,automaticPrices,baseTerritory"
                 ],
@@ -361,10 +361,10 @@ extension PricingWorker {
         do {
             let response: ASCTerritoryAvailabilitiesResponse
             let availability: ASCAppAvailabilityV2Response = try await httpClient.get(
-                "/v1/apps/\(appId)/appAvailabilityV2",
+                "/v1/apps/\(try ASCPathSegment.encode(appId))/appAvailabilityV2",
                 as: ASCAppAvailabilityV2Response.self
             )
-            let endpoint = "/v2/appAvailabilities/\(availability.data.id)/territoryAvailabilities"
+            let endpoint = "/v2/appAvailabilities/\(try ASCPathSegment.encode(availability.data.id))/territoryAvailabilities"
 
             if let nextUrl = try paginationURL(from: arguments["next_url"]) {
                 response = try await httpClient.getPage(
@@ -494,7 +494,7 @@ extension PricingWorker {
 
         do {
             let response: ASCAppAvailabilityV2Response = try await httpClient.get(
-                "/v2/appAvailabilities/\(availabilityId)",
+                "/v2/appAvailabilities/\(try ASCPathSegment.encode(availabilityId))",
                 as: ASCAppAvailabilityV2Response.self
             )
 
@@ -532,7 +532,7 @@ extension PricingWorker {
         do {
             let response: ASCTerritoryAvailabilitiesResponse
 
-            let endpoint = "/v2/appAvailabilities/\(availabilityId)/territoryAvailabilities"
+            let endpoint = "/v2/appAvailabilities/\(try ASCPathSegment.encode(availabilityId))/territoryAvailabilities"
 
             if let nextUrl = try paginationURL(from: arguments["next_url"]) {
                 response = try await httpClient.getPage(

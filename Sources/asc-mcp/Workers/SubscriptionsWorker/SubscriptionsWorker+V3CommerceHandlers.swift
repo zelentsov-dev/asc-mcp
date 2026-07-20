@@ -10,7 +10,7 @@ extension SubscriptionsWorker {
 
         do {
             let response: PassthroughAPIResponse
-            let endpoint = "/v1/subscriptions/\(subscriptionId)/prices"
+            let endpoint = "/v1/subscriptions/\(try ASCPathSegment.encode(subscriptionId))/prices"
             var query = subscriptionPriceQuery(arguments: arguments, maxLimit: 200)
             if let territoryId = arguments["territory_id"]?.stringValue {
                 query["filter[territory]"] = territoryId
@@ -55,7 +55,7 @@ extension SubscriptionsWorker {
 
         do {
             let response: PassthroughAPIResponse
-            let endpoint = "/v1/subscriptions/\(subscriptionId)/pricePoints"
+            let endpoint = "/v1/subscriptions/\(try ASCPathSegment.encode(subscriptionId))/pricePoints"
             var query: [String: String] = [
                 "include": "territory",
                 "fields[subscriptionPricePoints]": "customerPrice,proceeds,proceedsYear2,territory,equalizations",
@@ -101,7 +101,7 @@ extension SubscriptionsWorker {
         }
         return try await listResources(
             params,
-            endpoint: "/v1/apps/\(appId)/subscriptionGroups",
+            endpoint: "/v1/apps/\(try ASCPathSegment.encode(appId))/subscriptionGroups",
             key: "groups",
             defaultQuery: ["include": "subscriptions,subscriptionGroupLocalizations"]
         )
@@ -111,7 +111,7 @@ extension SubscriptionsWorker {
         guard let groupId = params.arguments?["group_id"]?.stringValue else {
             return MCPResult.error("Required parameter 'group_id' is missing")
         }
-        return try await getResource(endpoint: "/v1/subscriptionGroups/\(groupId)", key: "group", query: ["include": "subscriptions,subscriptionGroupLocalizations"])
+        return try await getResource(endpoint: "/v1/subscriptionGroups/\(try ASCPathSegment.encode(groupId))", key: "group", query: ["include": "subscriptions,subscriptionGroupLocalizations"])
     }
 
     func submitSubscriptionGroup(_ params: CallTool.Parameters) async throws -> CallTool.Result {
@@ -131,7 +131,7 @@ extension SubscriptionsWorker {
         guard let localizationId = params.arguments?["localization_id"]?.stringValue else {
             return MCPResult.error("Required parameter 'localization_id' is missing")
         }
-        return try await getResource(endpoint: "/v1/subscriptionLocalizations/\(localizationId)", key: "localization", query: ["include": "subscription"])
+        return try await getResource(endpoint: "/v1/subscriptionLocalizations/\(try ASCPathSegment.encode(localizationId))", key: "localization", query: ["include": "subscription"])
     }
 
     func createSubscriptionPrice(_ params: CallTool.Parameters) async throws -> CallTool.Result {
@@ -166,7 +166,7 @@ extension SubscriptionsWorker {
         }
         do {
             let response = try await httpClient.get(
-                "/v1/subscriptionPricePoints/\(pricePointId)",
+                "/v1/subscriptionPricePoints/\(try ASCPathSegment.encode(pricePointId))",
                 parameters: pricePointQuery(limit: nil),
                 as: PassthroughAPIResponse.self
             )
@@ -185,7 +185,7 @@ extension SubscriptionsWorker {
 
         do {
             let response: PassthroughAPIResponse
-            let endpoint = "/v1/subscriptionPricePoints/\(pricePointId)/equalizations"
+            let endpoint = "/v1/subscriptionPricePoints/\(try ASCPathSegment.encode(pricePointId))/equalizations"
             var query = pricePointQuery(limit: clampedLimit(arguments["limit"]?.intValue, defaultValue: 25, max: 8000))
             if let subscriptionId = arguments["subscription_id"]?.stringValue {
                 query["filter[subscription]"] = subscriptionId
@@ -228,7 +228,7 @@ extension SubscriptionsWorker {
         }
         do {
             let response = try await httpClient.get(
-                "/v1/subscriptions/\(subscriptionId)/subscriptionAvailability",
+                "/v1/subscriptions/\(try ASCPathSegment.encode(subscriptionId))/subscriptionAvailability",
                 parameters: availabilityQuery(),
                 as: PassthroughAPIResponse.self
             )
@@ -266,7 +266,7 @@ extension SubscriptionsWorker {
         }
         return try await listResources(
             params,
-            endpoint: "/v1/subscriptionAvailabilities/\(availabilityId)/availableTerritories",
+            endpoint: "/v1/subscriptionAvailabilities/\(try ASCPathSegment.encode(availabilityId))/availableTerritories",
             key: "territories",
             defaultQuery: ["fields[territories]": "currency"]
         )
@@ -276,7 +276,7 @@ extension SubscriptionsWorker {
         guard let subscriptionId = params.arguments?["subscription_id"]?.stringValue else {
             return MCPResult.error("Required parameter 'subscription_id' is missing")
         }
-        return try await getResource(endpoint: "/v1/subscriptions/\(subscriptionId)/promotedPurchase", key: "promoted_purchase", query: ["include": "subscription"])
+        return try await getResource(endpoint: "/v1/subscriptions/\(try ASCPathSegment.encode(subscriptionId))/promotedPurchase", key: "promoted_purchase", query: ["include": "subscription"])
     }
 
     func getSubscriptionsInventory(_ params: CallTool.Parameters) async throws -> CallTool.Result {
@@ -286,7 +286,7 @@ extension SubscriptionsWorker {
         }
         do {
             let groups: PassthroughAPIResponse = try await httpClient.get(
-                "/v1/apps/\(appId)/subscriptionGroups",
+                "/v1/apps/\(try ASCPathSegment.encode(appId))/subscriptionGroups",
                 parameters: [
                     "include": "subscriptions",
                     "limit": String(clampedLimit(arguments["limit"]?.intValue, defaultValue: 200, max: 200))
@@ -319,7 +319,7 @@ extension SubscriptionsWorker {
 
         do {
             let availability: PassthroughAPIResponse = try await httpClient.get(
-                "/v1/subscriptions/\(subscriptionId)/subscriptionAvailability",
+                "/v1/subscriptions/\(try ASCPathSegment.encode(subscriptionId))/subscriptionAvailability",
                 parameters: availabilityQuery(),
                 as: PassthroughAPIResponse.self
             )
@@ -331,7 +331,7 @@ extension SubscriptionsWorker {
         if let territoryId {
             do {
                 let prices: PassthroughAPIResponse = try await httpClient.get(
-                    "/v1/subscriptions/\(subscriptionId)/prices",
+                    "/v1/subscriptions/\(try ASCPathSegment.encode(subscriptionId))/prices",
                     parameters: subscriptionPriceQuery(arguments: ["territory_id": .string(territoryId)], maxLimit: 200).merging(["filter[territory]": territoryId]) { _, new in new },
                     as: PassthroughAPIResponse.self
                 )
@@ -357,7 +357,7 @@ extension SubscriptionsWorker {
         }
         do {
             let prices: PassthroughAPIResponse = try await httpClient.get(
-                "/v1/subscriptions/\(subscriptionId)/prices",
+                "/v1/subscriptions/\(try ASCPathSegment.encode(subscriptionId))/prices",
                 parameters: subscriptionPriceQuery(arguments: ["territory_id": .string(territoryId)], maxLimit: 200).merging(["filter[territory]": territoryId]) { _, new in new },
                 as: PassthroughAPIResponse.self
             )
@@ -398,7 +398,7 @@ extension SubscriptionsWorker {
         }
         do {
             let points: PassthroughAPIResponse = try await httpClient.get(
-                "/v1/subscriptions/\(subscriptionId)/pricePoints",
+                "/v1/subscriptions/\(try ASCPathSegment.encode(subscriptionId))/pricePoints",
                 parameters: [
                     "filter[territory]": territoryId,
                     "include": "territory",
@@ -505,7 +505,7 @@ extension SubscriptionsWorker {
 
         do {
             let response: PassthroughAPIResponse
-            let endpoint = "/v1/subscriptions/\(subscriptionId)/\(endpointSuffix)"
+            let endpoint = "/v1/subscriptions/\(try ASCPathSegment.encode(subscriptionId))/\(try ASCPathSegment.encode(endpointSuffix))"
             var query = defaultQuery
             query["limit"] = String(clampedLimit(arguments["limit"]?.intValue, defaultValue: 25, max: 200))
             if let territoryId = arguments["territory_id"]?.stringValue {
@@ -543,7 +543,7 @@ extension SubscriptionsWorker {
         guard let offerCodeId = params.arguments?["offer_code_id"]?.stringValue else {
             return MCPResult.error("Required parameter 'offer_code_id' is missing")
         }
-        return try await getResource(endpoint: "/v1/subscriptionOfferCodes/\(offerCodeId)", key: "offer_code")
+        return try await getResource(endpoint: "/v1/subscriptionOfferCodes/\(try ASCPathSegment.encode(offerCodeId))", key: "offer_code")
     }
 
     private func listSubscriptionOfferPrices(
@@ -559,7 +559,17 @@ extension SubscriptionsWorker {
 
         do {
             let response: PassthroughAPIResponse
-            let endpoint = "\(endpointPrefix)/\(ownerId)/prices"
+            let endpoint: String
+            switch endpointPrefix {
+            case "/v1/subscriptionOfferCodes":
+                endpoint = "/v1/subscriptionOfferCodes/\(try ASCPathSegment.encode(ownerId))/prices"
+            case "/v1/subscriptionPromotionalOffers":
+                endpoint = "/v1/subscriptionPromotionalOffers/\(try ASCPathSegment.encode(ownerId))/prices"
+            case "/v1/winBackOffers":
+                endpoint = "/v1/winBackOffers/\(try ASCPathSegment.encode(ownerId))/prices"
+            default:
+                return MCPResult.error("Unsupported subscription offer price endpoint")
+            }
             var query = subscriptionOfferPriceQuery(arguments: arguments, fieldsKey: fieldsKey)
             if let territoryId = arguments["territory_id"]?.stringValue {
                 query["filter[territory]"] = territoryId
@@ -597,7 +607,7 @@ extension SubscriptionsWorker {
         guard let oneTimeCodeId = params.arguments?["one_time_code_id"]?.stringValue else {
             return MCPResult.error("Required parameter 'one_time_code_id' is missing")
         }
-        return try await getResource(endpoint: "/v1/subscriptionOfferCodeOneTimeUseCodes/\(oneTimeCodeId)", key: "one_time_code")
+        return try await getResource(endpoint: "/v1/subscriptionOfferCodeOneTimeUseCodes/\(try ASCPathSegment.encode(oneTimeCodeId))", key: "one_time_code")
     }
 
     private func getSubscriptionOneTimeCodeValues(_ params: CallTool.Parameters) async throws -> CallTool.Result {
@@ -606,7 +616,7 @@ extension SubscriptionsWorker {
         }
         return try await listResources(
             params,
-            endpoint: "/v1/subscriptionOfferCodeOneTimeUseCodes/\(oneTimeCodeId)/values",
+            endpoint: "/v1/subscriptionOfferCodeOneTimeUseCodes/\(try ASCPathSegment.encode(oneTimeCodeId))/values",
             key: "values",
             defaultQuery: [:]
         )
@@ -624,14 +634,14 @@ extension SubscriptionsWorker {
             data["attributes"] = ["active": active]
         }
         let body: [String: Any] = ["data": data]
-        return try await patchResource(endpoint: "/v1/subscriptionOfferCodeCustomCodes/\(customCodeId)", body: body, key: "custom_code")
+        return try await patchResource(endpoint: "/v1/subscriptionOfferCodeCustomCodes/\(try ASCPathSegment.encode(customCodeId))", body: body, key: "custom_code")
     }
 
     private func getSubscriptionWinBackOffer(_ params: CallTool.Parameters) async throws -> CallTool.Result {
         guard let winbackOfferId = params.arguments?["winback_offer_id"]?.stringValue else {
             return MCPResult.error("Required parameter 'winback_offer_id' is missing")
         }
-        return try await getResource(endpoint: "/v1/winBackOffers/\(winbackOfferId)", key: "win_back_offer")
+        return try await getResource(endpoint: "/v1/winBackOffers/\(try ASCPathSegment.encode(winbackOfferId))", key: "win_back_offer")
     }
 
     private func listResources(_ params: CallTool.Parameters, endpoint: String, key: String, defaultQuery: [String: String]) async throws -> CallTool.Result {

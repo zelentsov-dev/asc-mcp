@@ -84,7 +84,7 @@ extension PreReleaseVersionsWorker {
 
         do {
             let response: ASCPreReleaseVersionResponse = try await httpClient.get(
-                "/v1/preReleaseVersions/\(preReleaseVersionId)",
+                "/v1/preReleaseVersions/\(try ASCPathSegment.encode(preReleaseVersionId))",
                 parameters: [:],
                 as: ASCPreReleaseVersionResponse.self
             )
@@ -123,7 +123,7 @@ extension PreReleaseVersionsWorker {
             if let nextUrl = try paginationURL(from: arguments["next_url"]) {
                 response = try await httpClient.getPage(
                     nextUrl,
-                    scope: PaginationScope(path: "/v1/preReleaseVersions/\(preReleaseVersionId)/builds"),
+                    scope: PaginationScope(path: "/v1/preReleaseVersions/\(try ASCPathSegment.encode(preReleaseVersionId))/builds"),
                     as: ASCBuildsResponse.self
                 )
             } else {
@@ -136,7 +136,7 @@ extension PreReleaseVersionsWorker {
                 }
 
                 response = try await httpClient.get(
-                    "/v1/preReleaseVersions/\(preReleaseVersionId)/builds",
+                    "/v1/preReleaseVersions/\(try ASCPathSegment.encode(preReleaseVersionId))/builds",
                     parameters: queryParams,
                     as: ASCBuildsResponse.self
                 )

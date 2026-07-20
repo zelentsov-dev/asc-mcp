@@ -38,8 +38,8 @@ struct ASCCoverageArea: Sendable {
 }
 
 enum ASCCoverageInventory {
-    static let snapshotDate = "2026-05-05"
-    static let appleAPIVersionBaseline = "4.0+ release-note baseline"
+    static let snapshotDate = "2026-07-20"
+    static let appleAPIVersionBaseline = "4.4.1"
 
     static let areas: [ASCCoverageArea] = [
         ASCCoverageArea(
@@ -115,7 +115,7 @@ enum ASCCoverageInventory {
                 "beta recruitment criteria",
                 "beta app clip invocation/localization APIs"
             ],
-            notes: "Current TestFlight management is useful, but feedback retrieval is now core user value and should become a dedicated worker."
+            notes: "Core TestFlight administration and dedicated beta feedback retrieval are covered; recruitment criteria and beta App Clip APIs remain the main gaps."
         ),
         ASCCoverageArea(
             name: "Webhook notifications",
@@ -156,22 +156,25 @@ enum ASCCoverageInventory {
         ASCCoverageArea(
             name: "In-app purchases, subscriptions, and offers",
             appleDocumentationURL: "https://developer.apple.com/documentation/appstoreconnectapi/app-store",
-            status: .covered,
+            status: .partial,
             priority: .p2,
             workerKeys: ["iap", "subscriptions"],
             coveredCapabilities: [
                 "IAP and subscription CRUD",
                 "subscription groups and localizations",
-                "territory-aware prices, price points, equalizations, and availability",
+                "territory-aware prices, price points, equalizations, and legacy availability compatibility",
                 "IAP and subscription offer codes",
                 "win-back offers",
                 "introductory offers",
                 "promotional offers",
-                "AI-friendly product inventory and pricing summaries",
+                "pricing summaries and compatibility inventory helper",
                 "review screenshot and image uploads"
             ],
-            missingCapabilities: [],
-            notes: "v3 consolidates subscription offers under subscriptions_* and keeps one-time IAP product management under iap_*."
+            missingCapabilities: [
+                "plan-type-aware subscriptionPlanAvailabilities",
+                "authoritative fully paginated subscription inventory"
+            ],
+            notes: "v3 consolidates subscription offers under subscriptions_* and keeps one-time IAP product management under iap_*. Legacy subscriptionAvailability tools remain for compatibility; plan-type-aware availability and a complete inventory are pending."
         ),
         ASCCoverageArea(
             name: "Provisioning and identifiers",

@@ -21,7 +21,7 @@ extension WinBackOffersWorker {
             if let nextUrl = try paginationURL(from: arguments["next_url"]) {
                 response = try await httpClient.getPage(
                     nextUrl,
-                    scope: PaginationScope(path: "/v1/subscriptions/\(subscriptionId)/winBackOffers"),
+                    scope: PaginationScope(path: "/v1/subscriptions/\(try ASCPathSegment.encode(subscriptionId))/winBackOffers"),
                     as: ASCWinBackOffersResponse.self
                 )
             } else {
@@ -34,7 +34,7 @@ extension WinBackOffersWorker {
                 }
 
                 response = try await httpClient.get(
-                    "/v1/subscriptions/\(subscriptionId)/winBackOffers",
+                    "/v1/subscriptions/\(try ASCPathSegment.encode(subscriptionId))/winBackOffers",
                     parameters: queryParams,
                     as: ASCWinBackOffersResponse.self
                 )
@@ -335,7 +335,7 @@ extension WinBackOffersWorker {
             )
 
             let response: ASCWinBackOfferResponse = try await httpClient.patch(
-                "/v1/winBackOffers/\(winbackOfferId)",
+                "/v1/winBackOffers/\(try ASCPathSegment.encode(winbackOfferId))",
                 body: request,
                 as: ASCWinBackOfferResponse.self
             )
@@ -369,7 +369,7 @@ extension WinBackOffersWorker {
         }
 
         do {
-            _ = try await httpClient.delete("/v1/winBackOffers/\(winbackOfferId)")
+            _ = try await httpClient.delete("/v1/winBackOffers/\(try ASCPathSegment.encode(winbackOfferId))")
 
             let result = [
                 "success": true,
@@ -403,7 +403,7 @@ extension WinBackOffersWorker {
             if let nextUrl = try paginationURL(from: arguments["next_url"]) {
                 response = try await httpClient.getPage(
                     nextUrl,
-                    scope: PaginationScope(path: "/v1/winBackOffers/\(winbackOfferId)/prices"),
+                    scope: PaginationScope(path: "/v1/winBackOffers/\(try ASCPathSegment.encode(winbackOfferId))/prices"),
                     as: ASCWinBackOfferPricesResponse.self
                 )
             } else {
@@ -416,7 +416,7 @@ extension WinBackOffersWorker {
                 }
 
                 response = try await httpClient.get(
-                    "/v1/winBackOffers/\(winbackOfferId)/prices",
+                    "/v1/winBackOffers/\(try ASCPathSegment.encode(winbackOfferId))/prices",
                     parameters: queryParams,
                     as: ASCWinBackOfferPricesResponse.self
                 )

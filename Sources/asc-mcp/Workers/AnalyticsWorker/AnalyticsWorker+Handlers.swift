@@ -124,29 +124,20 @@ extension AnalyticsWorker {
 
         let data = try await httpClient.getRaw("/v1/salesReports", parameters: queryParams, accept: "application/a-gzip")
 
-        guard let tsvString = decompressReportData(data) else {
-            throw ASCError.parsing("Failed to decode report data: not valid UTF-8 or gzip")
+        let tsvString = try decompressReportData(data)
+        let parsed = try TSVParser.parse(data: tsvString) { row in
+            guard let appId = appIdFilter else { return true }
+            return row["Apple Identifier"] == appId ||
+                row["App Apple ID"] == appId ||
+                row["App Identifier"] == appId ||
+                row["App ID"] == appId
         }
 
-        let allParsed = TSVParser.parse(data: tsvString)
-
-        let filteredRows: [[String: String]]
-        if let appId = appIdFilter {
-            filteredRows = allParsed.rows.filter { row in
-                row["Apple Identifier"] == appId ||
-                    row["App Apple ID"] == appId ||
-                    row["App Identifier"] == appId ||
-                    row["App ID"] == appId
-            }
-        } else {
-            filteredRows = allParsed.rows
-        }
-
-        let summary = ReportSummary.summary(for: reportType, from: filteredRows)
+        let summary = ReportSummary.summary(for: reportType, from: parsed.rows)
         return ParsedSalesReport(
-            headers: allParsed.headers,
-            rows: filteredRows,
-            totalRows: allParsed.totalRowCount,
+            headers: parsed.headers,
+            rows: parsed.rows,
+            totalRows: parsed.totalRowCount,
             summary: summary
         )
     }
@@ -309,31 +300,26 @@ extension AnalyticsWorker {
             appIdFilter = nil
         }
 
-        async let downloadsTask = fetchSectionSummary(
+        let downloads = await fetchSectionSummary(
             vendorNumber: vendorNumber, reportType: "SALES",
             reportSubType: "SUMMARY", frequency: "DAILY",
             reportDate: reportDate, version: "1_0", appIdFilter: appIdFilter
         )
-        async let subscriptionsTask = fetchSectionSummary(
+        let subscriptions = await fetchSectionSummary(
             vendorNumber: vendorNumber, reportType: "SUBSCRIPTION",
             reportSubType: "SUMMARY", frequency: "DAILY",
             reportDate: reportDate, version: "1_3", appIdFilter: appIdFilter
         )
-        async let eventsTask = fetchSectionSummary(
+        let events = await fetchSectionSummary(
             vendorNumber: vendorNumber, reportType: "SUBSCRIPTION_EVENT",
             reportSubType: "SUMMARY", frequency: "DAILY",
             reportDate: reportDate, version: "1_3", appIdFilter: appIdFilter
         )
-        async let revenueTask = fetchSectionSummary(
+        let revenue = await fetchSectionSummary(
             vendorNumber: vendorNumber, reportType: "SUBSCRIBER",
             reportSubType: "DETAILED", frequency: "DAILY",
             reportDate: reportDate, version: "1_3", appIdFilter: appIdFilter
         )
-
-        let downloads = await downloadsTask
-        let subscriptions = await subscriptionsTask
-        let events = await eventsTask
-        let revenue = await revenueTask
 
         let sections: [String: [String: Any]] = [
             "downloads": downloads,
@@ -419,7 +405,7 @@ extension AnalyticsWorker {
         }
 
         let summaryOnly = arguments["summary_only"]?.boolValue ?? true
-        let limit = arguments["limit"]?.intValue ?? 25
+        let limit = min(max(arguments["limit"]?.intValue ?? 25, 1), 200)
 
         do {
             let queryParams: [String: String] = [
@@ -430,16 +416,9 @@ extension AnalyticsWorker {
             ]
 
             let data = try await httpClient.getRaw("/v1/financeReports", parameters: queryParams, accept: "application/a-gzip")
-            let tsvString = decompressReportData(data)
+            let tsvString = try decompressReportData(data)
 
-            guard let tsvString else {
-                return CallTool.Result(
-                    content: [MCPContent.text("Failed to decode report data: not valid UTF-8 or gzip")],
-                    isError: true
-                )
-            }
-
-            let allParsed = TSVParser.parse(data: tsvString)
+            let allParsed = try TSVParser.parse(data: tsvString)
             let summary = ReportSummary.financialSummary(from: allParsed.rows)
 
             var result: [String: Any] = [
@@ -452,10 +431,10 @@ extension AnalyticsWorker {
             ]
 
             if !summaryOnly {
-                let limitedParsed = TSVParser.parse(data: tsvString, limit: limit)
-                result["showing_rows"] = limitedParsed.rows.count
-                result["columns"] = limitedParsed.headers
-                result["rows"] = limitedParsed.rows
+                let rows = Array(allParsed.rows.prefix(max(limit, 0)))
+                result["showing_rows"] = rows.count
+                result["columns"] = allParsed.headers
+                result["rows"] = rows
             }
 
             return MCPResult.jsonObject(result)
@@ -486,7 +465,7 @@ extension AnalyticsWorker {
             if let nextUrl = try paginationURL(from: arguments["next_url"]) {
                 response = try await httpClient.getPage(
                     nextUrl,
-                    scope: PaginationScope(path: "/v1/apps/\(appId)/analyticsReportRequests"),
+                    scope: PaginationScope(path: "/v1/apps/\(try ASCPathSegment.encode(appId))/analyticsReportRequests"),
                     as: ASCAnalyticsReportRequestsResponse.self
                 )
             } else {
@@ -500,7 +479,7 @@ extension AnalyticsWorker {
                 }
 
                 response = try await httpClient.get(
-                    "/v1/apps/\(appId)/analyticsReportRequests",
+                    "/v1/apps/\(try ASCPathSegment.encode(appId))/analyticsReportRequests",
                     parameters: queryParams,
                     as: ASCAnalyticsReportRequestsResponse.self
                 )
@@ -599,7 +578,7 @@ extension AnalyticsWorker {
             if let nextUrl = try paginationURL(from: arguments["next_url"]) {
                 response = try await httpClient.getPage(
                     nextUrl,
-                    scope: PaginationScope(path: "/v1/analyticsReportRequests/\(requestId)/reports"),
+                    scope: PaginationScope(path: "/v1/analyticsReportRequests/\(try ASCPathSegment.encode(requestId))/reports"),
                     as: ASCAnalyticsReportsResponse.self
                 )
             } else {
@@ -612,7 +591,7 @@ extension AnalyticsWorker {
                 }
 
                 response = try await httpClient.get(
-                    "/v1/analyticsReportRequests/\(requestId)/reports",
+                    "/v1/analyticsReportRequests/\(try ASCPathSegment.encode(requestId))/reports",
                     parameters: queryParams,
                     as: ASCAnalyticsReportsResponse.self
                 )
@@ -654,7 +633,7 @@ extension AnalyticsWorker {
 
         do {
             let response: ASCAnalyticsReportResponse = try await httpClient.get(
-                "/v1/analyticsReports/\(reportId)",
+                "/v1/analyticsReports/\(try ASCPathSegment.encode(reportId))",
                 parameters: [:],
                 as: ASCAnalyticsReportResponse.self
             )
@@ -692,7 +671,7 @@ extension AnalyticsWorker {
             if let nextUrl = try paginationURL(from: arguments["next_url"]) {
                 response = try await httpClient.getPage(
                     nextUrl,
-                    scope: PaginationScope(path: "/v1/analyticsReports/\(reportId)/instances"),
+                    scope: PaginationScope(path: "/v1/analyticsReports/\(try ASCPathSegment.encode(reportId))/instances"),
                     as: ASCAnalyticsReportInstancesResponse.self
                 )
             } else {
@@ -705,7 +684,7 @@ extension AnalyticsWorker {
                 }
 
                 response = try await httpClient.get(
-                    "/v1/analyticsReports/\(reportId)/instances",
+                    "/v1/analyticsReports/\(try ASCPathSegment.encode(reportId))/instances",
                     parameters: queryParams,
                     as: ASCAnalyticsReportInstancesResponse.self
                 )
@@ -747,7 +726,7 @@ extension AnalyticsWorker {
 
         do {
             let response: ASCAnalyticsReportInstanceResponse = try await httpClient.get(
-                "/v1/analyticsReportInstances/\(instanceId)",
+                "/v1/analyticsReportInstances/\(try ASCPathSegment.encode(instanceId))",
                 parameters: [:],
                 as: ASCAnalyticsReportInstanceResponse.self
             )
@@ -785,7 +764,7 @@ extension AnalyticsWorker {
             if let nextUrl = try paginationURL(from: arguments["next_url"]) {
                 response = try await httpClient.getPage(
                     nextUrl,
-                    scope: PaginationScope(path: "/v1/analyticsReportInstances/\(instanceId)/segments"),
+                    scope: PaginationScope(path: "/v1/analyticsReportInstances/\(try ASCPathSegment.encode(instanceId))/segments"),
                     as: ASCAnalyticsReportSegmentsResponse.self
                 )
             } else {
@@ -798,7 +777,7 @@ extension AnalyticsWorker {
                 }
 
                 response = try await httpClient.get(
-                    "/v1/analyticsReportInstances/\(instanceId)/segments",
+                    "/v1/analyticsReportInstances/\(try ASCPathSegment.encode(instanceId))/segments",
                     parameters: queryParams,
                     as: ASCAnalyticsReportSegmentsResponse.self
                 )
@@ -845,7 +824,7 @@ extension AnalyticsWorker {
         do {
             // Fetch all reports for this request (paginated)
             var allReports: [ASCAnalyticsReport] = []
-            let reportsPath = "/v1/analyticsReportRequests/\(requestId)/reports"
+            let reportsPath = "/v1/analyticsReportRequests/\(try ASCPathSegment.encode(requestId))/reports"
             let reportsScope = PaginationScope(path: reportsPath)
             var nextURL: String?
             var seenNextURLs: Set<String> = []
@@ -889,7 +868,7 @@ extension AnalyticsWorker {
 
             for report in filteredReports {
                 let instancesResponse: ASCAnalyticsReportInstancesResponse = try await httpClient.get(
-                    "/v1/analyticsReports/\(report.id)/instances",
+                    "/v1/analyticsReports/\(try ASCPathSegment.encode(report.id))/instances",
                     parameters: ["limit": "1"],
                     as: ASCAnalyticsReportInstancesResponse.self
                 )
@@ -945,20 +924,28 @@ extension AnalyticsWorker {
 
     // MARK: - Report Data Decompression
 
-    /// Attempts to get UTF-8 string from report data, decompressing gzip if needed
-    /// - Returns: UTF-8 TSV string or nil if data cannot be decoded
-    private func decompressReportData(_ data: Data) -> String? {
-        // Try direct UTF-8 first (URLSession may have auto-decompressed)
-        if let string = String(data: data, encoding: .utf8),
-           !string.isEmpty {
-            return string
+    /// Returns a bounded UTF-8 TSV string after validating gzip reports when present.
+    /// - Throws: A parsing or gzip integrity error for oversized, malformed, or non-UTF-8 data.
+    private func decompressReportData(_ data: Data) throws -> String {
+        let decodedData: Data
+        if data.isGzipped {
+            decodedData = try data.gunzipped()
+        } else {
+            guard data.count <= ReportDataLimits.maximumDecompressedBytes else {
+                throw ASCError.parsing(
+                    "Report data exceeds the \(ReportDataLimits.maximumDecompressedBytes / (1_024 * 1_024)) MiB safety limit. Request a smaller report."
+                )
+            }
+            decodedData = data
         }
-        // Try gzip decompression
-        if let decompressed = data.gunzipped(),
-           let string = String(data: decompressed, encoding: .utf8) {
-            return string
+
+        guard !decodedData.isEmpty else {
+            throw ASCError.parsing("Report data is empty")
         }
-        return nil
+        guard let string = String(data: decodedData, encoding: .utf8) else {
+            throw ASCError.parsing("Report data is not valid UTF-8")
+        }
+        return string
     }
 
     // MARK: - Formatting

@@ -142,6 +142,16 @@ actor TestHTTPTransport: HTTPTransport {
     }
 
     func data(for request: URLRequest) async throws -> (Data, HTTPURLResponse) {
+        try nextResponse(for: request)
+    }
+
+    func upload(for request: URLRequest, fromFile fileURL: URL) async throws -> (Data, HTTPURLResponse) {
+        var recordedRequest = request
+        recordedRequest.httpBody = try Data(contentsOf: fileURL)
+        return try nextResponse(for: recordedRequest)
+    }
+
+    private func nextResponse(for request: URLRequest) throws -> (Data, HTTPURLResponse) {
         requests.append(request)
         guard !responses.isEmpty else {
             throw ASCError.network("No mock response queued")

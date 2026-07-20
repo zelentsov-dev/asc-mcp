@@ -9,7 +9,8 @@ struct ASCCoverageInventoryTests {
         let areas = ASCCoverageInventory.areas
         let names = Set(areas.map(\.name))
 
-        #expect(ASCCoverageInventory.snapshotDate == "2026-05-05")
+        #expect(ASCCoverageInventory.snapshotDate == "2026-07-20")
+        #expect(ASCCoverageInventory.appleAPIVersionBaseline == "4.4.1")
         #expect(areas.count == names.count)
         #expect(areas.count >= 10)
 
@@ -18,6 +19,19 @@ struct ASCCoverageInventoryTests {
             #expect(area.coveredCapabilities.isEmpty == (area.status == .missing))
             #expect(area.missingCapabilities.isEmpty == (area.status == .covered))
         }
+    }
+
+    @Test("commerce coverage discloses App Store Connect 4.4.1 gaps")
+    func commerceCoverageDisclosesCurrentGaps() throws {
+        let commerce = try #require(
+            ASCCoverageInventory.areas.first {
+                $0.name == "In-app purchases, subscriptions, and offers"
+            }
+        )
+
+        #expect(commerce.status == .partial)
+        #expect(commerce.missingCapabilities.contains("plan-type-aware subscriptionPlanAvailabilities"))
+        #expect(commerce.missingCapabilities.contains("authoritative fully paginated subscription inventory"))
     }
 
     @Test("coverage inventory references only current worker keys")

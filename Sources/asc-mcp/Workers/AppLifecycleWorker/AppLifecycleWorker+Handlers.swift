@@ -82,7 +82,7 @@ extension AppLifecycleWorker {
                 responseData = try await httpClient.getPage(
                     nextUrl,
                     scope: PaginationScope(
-                        path: "/v1/apps/\(appId)/appStoreVersions",
+                        path: "/v1/apps/\(try ASCPathSegment.encode(appId))/appStoreVersions",
                         requiredParameters: requiredParameters
                     )
                 )
@@ -112,7 +112,7 @@ extension AppLifecycleWorker {
                 }
 
                 responseData = try await httpClient.get(
-                    "/v1/apps/\(appId)/appStoreVersions",
+                    "/v1/apps/\(try ASCPathSegment.encode(appId))/appStoreVersions",
                     parameters: queryParams
                 )
             }
@@ -163,7 +163,7 @@ extension AppLifecycleWorker {
             ]
 
             let response = try await httpClient.get(
-                "/v1/appStoreVersions/\(versionId)",
+                "/v1/appStoreVersions/\(try ASCPathSegment.encode(versionId))",
                 parameters: queryParams,
                 as: PassthroughAPIResponse.self
             )
@@ -221,7 +221,7 @@ extension AppLifecycleWorker {
             )
 
             let response = try await httpClient.patch(
-                "/v1/appStoreVersions/\(versionId)",
+                "/v1/appStoreVersions/\(try ASCPathSegment.encode(versionId))",
                 body: request,
                 as: ASCAppStoreVersionResponse.self
             )
@@ -267,7 +267,7 @@ extension AppLifecycleWorker {
 
             let bodyData = try JSONEncoder().encode(request)
             _ = try await httpClient.patch(
-                "/v1/appStoreVersions/\(versionId)/relationships/build",
+                "/v1/appStoreVersions/\(try ASCPathSegment.encode(versionId))/relationships/build",
                 body: bodyData
             )
 
@@ -309,7 +309,7 @@ extension AppLifecycleWorker {
             } else {
                 // Fetch version to get the app relationship
                 let versionResponse = try await httpClient.get(
-                    "/v1/appStoreVersions/\(versionId)",
+                    "/v1/appStoreVersions/\(try ASCPathSegment.encode(versionId))",
                     parameters: [:],
                     as: ASCAppStoreVersionResponse.self
                 )
@@ -347,7 +347,7 @@ extension AppLifecycleWorker {
             failedStep = "confirm_review_submission"
             let confirmRequest = ConfirmReviewSubmissionRequest(submissionId: createdSubmissionId)
             let confirmResponse = try await httpClient.patch(
-                "/v1/reviewSubmissions/\(createdSubmissionId)",
+                "/v1/reviewSubmissions/\(try ASCPathSegment.encode(createdSubmissionId))",
                 body: confirmRequest,
                 as: PassthroughAPIResponse.self
             )
@@ -410,7 +410,7 @@ extension AppLifecycleWorker {
         do {
             let request = CancelReviewSubmissionRequest(submissionId: submissionId)
             let response = try await httpClient.patch(
-                "/v1/reviewSubmissions/\(submissionId)",
+                "/v1/reviewSubmissions/\(try ASCPathSegment.encode(submissionId))",
                 body: request,
                 as: PassthroughAPIResponse.self
             )
@@ -483,7 +483,7 @@ extension AppLifecycleWorker {
 
         do {
             let response = try await httpClient.get(
-                "/v1/appStoreVersions/\(versionId)/appStoreVersionPhasedRelease",
+                "/v1/appStoreVersions/\(try ASCPathSegment.encode(versionId))/appStoreVersionPhasedRelease",
                 parameters: [:],
                 as: PassthroughAPIResponse.self
             )
@@ -519,7 +519,7 @@ extension AppLifecycleWorker {
         do {
             let request = UpdatePhasedReleaseRequest(phasedReleaseId: phasedReleaseId, state: state)
             let response = try await httpClient.patch(
-                "/v1/appStoreVersionPhasedReleases/\(phasedReleaseId)",
+                "/v1/appStoreVersionPhasedReleases/\(try ASCPathSegment.encode(phasedReleaseId))",
                 body: request,
                 as: PassthroughAPIResponse.self
             )
@@ -554,7 +554,7 @@ extension AppLifecycleWorker {
 
         do {
             let versionResponse = try await httpClient.get(
-                "/v1/appStoreVersions/\(versionId)",
+                "/v1/appStoreVersions/\(try ASCPathSegment.encode(versionId))",
                 parameters: ["fields[appStoreVersions]": "platform,versionString,appVersionState"],
                 as: ASCAppStoreVersionResponse.self
             )
@@ -717,7 +717,7 @@ extension AppLifecycleWorker {
                 )
                 let bodyData = try JSONEncoder().encode(request)
                 responseData = try await httpClient.patch(
-                    "/v1/appStoreReviewDetails/\(reviewDetailId)",
+                    "/v1/appStoreReviewDetails/\(try ASCPathSegment.encode(reviewDetailId))",
                     body: bodyData
                 )
                 message = "Review details updated successfully"
@@ -866,7 +866,7 @@ extension AppLifecycleWorker {
                 appInfoId = directAppInfoId
             } else if let versionId {
                 let versionResponse = try await httpClient.get(
-                    "/v1/appStoreVersions/\(versionId)",
+                    "/v1/appStoreVersions/\(try ASCPathSegment.encode(versionId))",
                     parameters: ["fields[appStoreVersions]": "app,appVersionState"],
                     as: ASCAppStoreVersionResponse.self
                 )
@@ -882,7 +882,7 @@ extension AppLifecycleWorker {
                 }
 
                 let appInfos = try await httpClient.get(
-                    "/v1/apps/\(app.id)/appInfos",
+                    "/v1/apps/\(try ASCPathSegment.encode(app.id))/appInfos",
                     parameters: [
                         "fields[appInfos]": "state",
                         "limit": "200"
@@ -905,7 +905,7 @@ extension AppLifecycleWorker {
             }
 
             let ageRatingResponse = try await httpClient.get(
-                "/v1/appInfos/\(appInfoId)/ageRatingDeclaration",
+                "/v1/appInfos/\(try ASCPathSegment.encode(appInfoId))/ageRatingDeclaration",
                 parameters: [:],
                 as: SingleResourceResponse.self
             )
@@ -916,7 +916,7 @@ extension AppLifecycleWorker {
                 attributes: attributes
             )
             let response = try await httpClient.patch(
-                "/v1/ageRatingDeclarations/\(ageRatingId)",
+                "/v1/ageRatingDeclarations/\(try ASCPathSegment.encode(ageRatingId))",
                 body: request,
                 as: PassthroughAPIResponse.self
             )
@@ -952,7 +952,7 @@ extension AppLifecycleWorker {
         }
 
         do {
-            _ = try await httpClient.delete("/v1/appStoreVersions/\(versionId)")
+            _ = try await httpClient.delete("/v1/appStoreVersions/\(try ASCPathSegment.encode(versionId))")
 
             let result: [String: Any] = [
                 "success": true,
@@ -976,7 +976,7 @@ private extension AppLifecycleWorker {
     func resolveReviewDetailId(versionId: String) async throws -> String? {
         do {
             let response = try await httpClient.get(
-                "/v1/appStoreVersions/\(versionId)/appStoreReviewDetail",
+                "/v1/appStoreVersions/\(try ASCPathSegment.encode(versionId))/appStoreReviewDetail",
                 parameters: [:],
                 as: SingleResourceResponse.self
             )

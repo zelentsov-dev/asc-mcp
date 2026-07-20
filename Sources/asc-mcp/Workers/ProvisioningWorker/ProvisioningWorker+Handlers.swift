@@ -94,7 +94,7 @@ extension ProvisioningWorker {
 
         do {
             let response: ASCBundleIdResponse = try await httpClient.get(
-                "/v1/bundleIds/\(resourceId)",
+                "/v1/bundleIds/\(try ASCPathSegment.encode(resourceId))",
                 as: ASCBundleIdResponse.self
             )
 
@@ -178,7 +178,7 @@ extension ProvisioningWorker {
         }
 
         do {
-            _ = try await httpClient.delete("/v1/bundleIds/\(resourceId)")
+            _ = try await httpClient.delete("/v1/bundleIds/\(try ASCPathSegment.encode(resourceId))")
 
             let result = [
                 "success": true,
@@ -340,7 +340,7 @@ extension ProvisioningWorker {
             )
 
             let response: ASCDeviceResponse = try await httpClient.patch(
-                "/v1/devices/\(deviceId)",
+                "/v1/devices/\(try ASCPathSegment.encode(deviceId))",
                 body: request,
                 as: ASCDeviceResponse.self
             )
@@ -515,7 +515,7 @@ extension ProvisioningWorker {
 
         do {
             let response: ASCCertificateResponse = try await httpClient.get(
-                "/v1/certificates/\(certificateId)",
+                "/v1/certificates/\(try ASCPathSegment.encode(certificateId))",
                 as: ASCCertificateResponse.self
             )
 
@@ -549,7 +549,7 @@ extension ProvisioningWorker {
         }
 
         do {
-            _ = try await httpClient.delete("/v1/certificates/\(certificateId)")
+            _ = try await httpClient.delete("/v1/certificates/\(try ASCPathSegment.encode(certificateId))")
 
             let result = [
                 "success": true,
@@ -582,7 +582,7 @@ extension ProvisioningWorker {
 
         do {
             let response: ASCProfileResponse = try await httpClient.get(
-                "/v1/profiles/\(profileId)",
+                "/v1/profiles/\(try ASCPathSegment.encode(profileId))",
                 as: ASCProfileResponse.self
             )
 
@@ -616,7 +616,7 @@ extension ProvisioningWorker {
         }
 
         do {
-            _ = try await httpClient.delete("/v1/profiles/\(profileId)")
+            _ = try await httpClient.delete("/v1/profiles/\(try ASCPathSegment.encode(profileId))")
 
             let result = [
                 "success": true,
@@ -729,7 +729,7 @@ extension ProvisioningWorker {
                 response = try await httpClient.getPage(
                     nextUrl,
                     scope: PaginationScope(
-                        path: "/v1/bundleIds/\(bundleIdResourceId)/bundleIdCapabilities"
+                        path: "/v1/bundleIds/\(try ASCPathSegment.encode(bundleIdResourceId))/bundleIdCapabilities"
                     ),
                     as: ASCBundleIdCapabilitiesResponse.self
                 )
@@ -738,7 +738,7 @@ extension ProvisioningWorker {
                 let queryParams: [String: String] = [:]
 
                 response = try await httpClient.get(
-                    "/v1/bundleIds/\(bundleIdResourceId)/bundleIdCapabilities",
+                    "/v1/bundleIds/\(try ASCPathSegment.encode(bundleIdResourceId))/bundleIdCapabilities",
                     parameters: queryParams,
                     as: ASCBundleIdCapabilitiesResponse.self
                 )
@@ -839,7 +839,7 @@ extension ProvisioningWorker {
         }
 
         do {
-            _ = try await httpClient.delete("/v1/bundleIdCapabilities/\(capabilityId)")
+            _ = try await httpClient.delete("/v1/bundleIdCapabilities/\(try ASCPathSegment.encode(capabilityId))")
 
             let result = [
                 "success": true,

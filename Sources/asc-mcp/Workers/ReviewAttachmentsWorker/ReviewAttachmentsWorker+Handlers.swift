@@ -4,8 +4,8 @@ import MCP
 // MARK: - Tool Handlers
 extension ReviewAttachmentsWorker {
 
-    /// Uploads a review attachment and confirms Apple's terminal delivery state
-    /// - Returns: JSON with final attachment info
+    /// Uploads a review attachment and reconciles Apple's asynchronous delivery state
+    /// - Returns: JSON with terminal or accepted processing-pending attachment info
     func uploadAttachment(_ params: CallTool.Parameters) async throws -> CallTool.Result {
         guard let arguments = params.arguments,
               let reviewDetailId = arguments["review_detail_id"]?.stringValue,
@@ -16,40 +16,88 @@ extension ReviewAttachmentsWorker {
             )
         }
 
-        let fileSize: Int
-        let fileName: String
+        if Task.isCancelled {
+            return beforeReservationResult("Review attachment upload was cancelled before reservation.")
+        }
+
+        let snapshot: UploadFileSnapshot
         do {
-            fileSize = try await uploadService.fileSize(at: filePath)
-            fileName = await uploadService.fileName(at: filePath)
+            snapshot = try await uploadService.prepareSnapshot(filePath: filePath)
         } catch {
             return MCPResult.error("Failed to read review attachment: \(error.localizedDescription)")
+        }
+        defer { snapshot.discard() }
+
+        if Task.isCancelled {
+            return beforeReservationResult("Review attachment upload was cancelled before reservation.")
+        }
+
+        let createRequest = CreateReviewAttachmentRequest(
+            data: CreateReviewAttachmentRequest.CreateData(
+                attributes: CreateReviewAttachmentRequest.Attributes(
+                    fileSize: snapshot.fileSize,
+                    fileName: snapshot.fileName
+                ),
+                relationships: CreateReviewAttachmentRequest.Relationships(
+                    appStoreReviewDetail: CreateReviewAttachmentRequest.ReviewDetailRelationship(
+                        data: ASCResourceIdentifier(type: "appStoreReviewDetails", id: reviewDetailId)
+                    )
+                )
+            )
+        )
+
+        let reserveBody: Data
+        do {
+            reserveBody = try JSONEncoder().encode(createRequest)
+        } catch {
+            return beforeReservationResult(
+                "Failed to prepare the review attachment reservation: \(error.localizedDescription)"
+            )
+        }
+
+        if Task.isCancelled {
+            return beforeReservationResult("Review attachment upload was cancelled before reservation.")
+        }
+
+        let reserveData: Data
+        do {
+            reserveData = try await httpClient.post("/v1/appStoreReviewAttachments", body: reserveBody)
+        } catch {
+            return unresolvedReservationResult(
+                "The review attachment reservation request did not return a confirmed response: \(error.localizedDescription)",
+                reviewDetailId: reviewDetailId
+            )
         }
 
         let reserveResponse: ASCReviewAttachmentResponse
         do {
-            let createRequest = CreateReviewAttachmentRequest(
-                data: CreateReviewAttachmentRequest.CreateData(
-                    attributes: CreateReviewAttachmentRequest.Attributes(
-                        fileSize: fileSize,
-                        fileName: fileName
-                    ),
-                    relationships: CreateReviewAttachmentRequest.Relationships(
-                        appStoreReviewDetail: CreateReviewAttachmentRequest.ReviewDetailRelationship(
-                            data: ASCResourceIdentifier(type: "appStoreReviewDetails", id: reviewDetailId)
-                        )
-                    )
-                )
-            )
-
-            let encoder = JSONEncoder()
-            let bodyData = try encoder.encode(createRequest)
-            let reserveData = try await httpClient.post("/v1/appStoreReviewAttachments", body: bodyData)
             reserveResponse = try JSONDecoder().decode(ASCReviewAttachmentResponse.self, from: reserveData)
         } catch {
-            return MCPResult.error("Failed to reserve review attachment: \(error.localizedDescription)")
+            return unresolvedReservationResult(
+                "Apple returned an unreadable review attachment reservation response: \(error.localizedDescription)",
+                reviewDetailId: reviewDetailId
+            )
+        }
+
+        guard !reserveResponse.data.id.isEmpty,
+              reserveResponse.data.type == "appStoreReviewAttachments" else {
+            return unresolvedReservationResult(
+                "Apple returned a review attachment reservation whose identity could not be confirmed.",
+                reviewDetailId: reviewDetailId
+            )
         }
 
         let attachmentId = reserveResponse.data.id
+
+        if Task.isCancelled {
+            let cleanup = await rollbackReservation(attachmentId)
+            return preCommitFailureResult(
+                "Review attachment upload was cancelled after reservation and before commit.",
+                attachment: reserveResponse.data,
+                cleanup: cleanup
+            )
+        }
+
         guard let uploadOperations = reserveResponse.data.attributes?.uploadOperations, !uploadOperations.isEmpty else {
             let cleanup = await rollbackReservation(attachmentId)
             return preCommitFailureResult(
@@ -61,11 +109,11 @@ extension ReviewAttachmentsWorker {
 
         let md5: String
         do {
-            md5 = try await uploadService.uploadFile(filePath: filePath, uploadOperations: uploadOperations)
+            md5 = try await uploadService.uploadFile(snapshot: snapshot, uploadOperations: uploadOperations)
         } catch {
             let cleanup = await rollbackReservation(attachmentId)
             return preCommitFailureResult(
-                "Failed to transfer review attachment bytes: \(error.localizedDescription)",
+                "Failed to transfer review attachment bytes through Apple's upload endpoint.",
                 attachment: reserveResponse.data,
                 cleanup: cleanup
             )
@@ -85,30 +133,35 @@ extension ReviewAttachmentsWorker {
 
             commitBody = try JSONEncoder().encode(commitRequest)
         } catch {
-            return retainedFailureResult(
+            let cleanup = await rollbackReservation(attachmentId)
+            return preCommitFailureResult(
                 "Failed to prepare the review attachment commit: \(error.localizedDescription)",
-                attachment: reserveResponse.data
+                attachment: reserveResponse.data,
+                cleanup: cleanup
             )
         }
 
         if Task.isCancelled {
-            return retainedFailureResult(
+            let cleanup = await rollbackReservation(attachmentId)
+            return preCommitFailureResult(
                 "Review attachment commit was not attempted because the operation was cancelled.",
-                attachment: reserveResponse.data
+                attachment: reserveResponse.data,
+                cleanup: cleanup
             )
         }
 
         let commitData: Data
         do {
             commitData = try await httpClient.patch(
-                "/v1/appStoreReviewAttachments/\(attachmentId)",
+                "/v1/appStoreReviewAttachments/\(try ASCPathSegment.encode(attachmentId))",
                 body: commitBody
             )
         } catch {
             return await reconcileAfterCommit(
                 attachmentId: attachmentId,
                 lastKnownAttachment: reserveResponse.data,
-                context: "The commit request did not return a confirmed response: \(error.localizedDescription)"
+                context: "The commit request did not return a confirmed response: \(error.localizedDescription)",
+                commitConfirmed: false
             )
         }
 
@@ -119,16 +172,17 @@ extension ReviewAttachmentsWorker {
             return await reconcileAfterCommit(
                 attachmentId: attachmentId,
                 lastKnownAttachment: reserveResponse.data,
-                context: "Apple returned an unreadable commit response: \(error.localizedDescription)"
+                context: "Apple accepted the review attachment commit but returned an unreadable response: \(error.localizedDescription)",
+                commitConfirmed: true
             )
         }
 
         guard commitResponse.data.id == attachmentId,
               commitResponse.data.type == "appStoreReviewAttachments" else {
-            return await reconcileAfterCommit(
+            return await reconcileUnexpectedCommitResource(
                 attachmentId: attachmentId,
                 lastKnownAttachment: reserveResponse.data,
-                context: "Apple returned a commit response for an unexpected attachment resource."
+                context: "Apple accepted the review attachment commit but returned an unexpected resource."
             )
         }
 
@@ -147,7 +201,7 @@ extension ReviewAttachmentsWorker {
         }
 
         do {
-            let data = try await httpClient.get("/v1/appStoreReviewAttachments/\(attachmentId)")
+            let data = try await httpClient.get("/v1/appStoreReviewAttachments/\(try ASCPathSegment.encode(attachmentId))")
             let response = try JSONDecoder().decode(ASCReviewAttachmentResponse.self, from: data)
 
             let result = [
@@ -177,7 +231,7 @@ extension ReviewAttachmentsWorker {
         }
 
         do {
-            _ = try await httpClient.delete("/v1/appStoreReviewAttachments/\(attachmentId)")
+            _ = try await httpClient.delete("/v1/appStoreReviewAttachments/\(try ASCPathSegment.encode(attachmentId))")
 
             let result = [
                 "success": true,
@@ -211,7 +265,7 @@ extension ReviewAttachmentsWorker {
             if let nextUrl = try paginationURL(from: arguments["next_url"]) {
                 response = try await httpClient.getPage(
                     nextUrl,
-                    scope: PaginationScope(path: "/v1/appStoreReviewDetails/\(reviewDetailId)/appStoreReviewAttachments"),
+                    scope: PaginationScope(path: "/v1/appStoreReviewDetails/\(try ASCPathSegment.encode(reviewDetailId))/appStoreReviewAttachments"),
                     as: ASCReviewAttachmentsResponse.self
                 )
             } else {
@@ -224,7 +278,7 @@ extension ReviewAttachmentsWorker {
                 }
 
                 response = try await httpClient.get(
-                    "/v1/appStoreReviewDetails/\(reviewDetailId)/appStoreReviewAttachments",
+                    "/v1/appStoreReviewDetails/\(try ASCPathSegment.encode(reviewDetailId))/appStoreReviewAttachments",
                     parameters: queryParams,
                     as: ASCReviewAttachmentsResponse.self
                 )
@@ -289,12 +343,33 @@ extension ReviewAttachmentsWorker {
             return await pollAttachmentDelivery(
                 attachmentId: attachment.id,
                 lastKnownAttachment: attachment,
-                context: nil
+                context: nil,
+                commitConfirmed: true
             )
         }
     }
 
     private func reconcileAfterCommit(
+        attachmentId: String,
+        lastKnownAttachment: ASCReviewAttachment,
+        context: String,
+        commitConfirmed: Bool
+    ) async -> CallTool.Result {
+        if Task.isCancelled {
+            return commitConfirmed
+                ? processingPendingResult(context, attachment: lastKnownAttachment)
+                : deliveryPendingResult(context, attachment: lastKnownAttachment)
+        }
+
+        return await pollAttachmentDelivery(
+            attachmentId: attachmentId,
+            lastKnownAttachment: lastKnownAttachment,
+            context: context,
+            commitConfirmed: commitConfirmed
+        )
+    }
+
+    private func reconcileUnexpectedCommitResource(
         attachmentId: String,
         lastKnownAttachment: ASCReviewAttachment,
         context: String
@@ -303,41 +378,100 @@ extension ReviewAttachmentsWorker {
             return deliveryPendingResult(context, attachment: lastKnownAttachment)
         }
 
-        return await pollAttachmentDelivery(
-            attachmentId: attachmentId,
-            lastKnownAttachment: lastKnownAttachment,
-            context: context
-        )
+        let data: Data
+        do {
+            data = try await httpClient.get("/v1/appStoreReviewAttachments/\(try ASCPathSegment.encode(attachmentId))")
+        } catch {
+            return deliveryPendingResult(
+                "\(context) Reconciliation also failed: \(error.localizedDescription)",
+                attachment: lastKnownAttachment
+            )
+        }
+
+        let response: ASCReviewAttachmentResponse
+        do {
+            response = try JSONDecoder().decode(ASCReviewAttachmentResponse.self, from: data)
+        } catch {
+            return deliveryPendingResult(
+                "\(context) Apple returned an unreadable reconciliation response: \(error.localizedDescription)",
+                attachment: lastKnownAttachment
+            )
+        }
+
+        guard response.data.id == attachmentId,
+              response.data.type == "appStoreReviewAttachments" else {
+            return deliveryPendingResult(
+                "\(context) Apple also returned an unexpected resource during reconciliation.",
+                attachment: lastKnownAttachment
+            )
+        }
+
+        switch response.data.attributes?.assetDeliveryState?.state {
+        case "COMPLETE":
+            return MCPResult.jsonObject([
+                "success": true,
+                "attachment": formatAttachment(response.data),
+                "reconciledAfterCommit": true
+            ])
+        case "FAILED":
+            return retainedFailureResult(
+                "\(context) Apple reports FAILED for the expected attachment.",
+                attachment: response.data
+            )
+        default:
+            return processingPendingResult(
+                "\(context) The expected attachment was reconciled and retained for processing.",
+                attachment: response.data
+            )
+        }
     }
 
     private func pollAttachmentDelivery(
         attachmentId: String,
         lastKnownAttachment: ASCReviewAttachment,
-        context: String?
+        context: String?,
+        commitConfirmed: Bool
     ) async -> CallTool.Result {
         var latest = lastKnownAttachment
 
         for attempt in 0..<deliveryPollAttempts {
             if Task.isCancelled {
-                return deliveryPendingResult(
-                    context ?? "Review attachment delivery polling was cancelled.",
-                    attachment: latest
-                )
+                let message = context ?? "Review attachment delivery polling was cancelled."
+                return commitConfirmed
+                    ? processingPendingResult(message, attachment: latest)
+                    : deliveryPendingResult(message, attachment: latest)
             }
 
+            let data: Data
             do {
-                let data = try await httpClient.get("/v1/appStoreReviewAttachments/\(attachmentId)")
-                let response = try JSONDecoder().decode(ASCReviewAttachmentResponse.self, from: data)
-                guard response.data.id == attachmentId,
-                      response.data.type == "appStoreReviewAttachments" else {
-                    throw ASCError.parsing("Unexpected review attachment resource in reconciliation response")
-                }
-                latest = response.data
+                data = try await httpClient.get("/v1/appStoreReviewAttachments/\(try ASCPathSegment.encode(attachmentId))")
             } catch {
                 let message = context.map { "\($0) Reconciliation also failed: \(error.localizedDescription)" }
                     ?? "The review attachment delivery state could not be confirmed: \(error.localizedDescription)"
-                return deliveryPendingResult(message, attachment: latest)
+                return commitConfirmed
+                    ? processingPendingResult(message, attachment: latest)
+                    : deliveryPendingResult(message, attachment: latest)
             }
+
+            let response: ASCReviewAttachmentResponse
+            do {
+                response = try JSONDecoder().decode(ASCReviewAttachmentResponse.self, from: data)
+            } catch {
+                let message = context.map { "\($0) Apple returned an unreadable reconciliation response: \(error.localizedDescription)" }
+                    ?? "Apple returned an unreadable review attachment delivery response: \(error.localizedDescription)"
+                return commitConfirmed
+                    ? processingPendingResult(message, attachment: latest)
+                    : deliveryPendingResult(message, attachment: latest)
+            }
+
+            guard response.data.id == attachmentId,
+                  response.data.type == "appStoreReviewAttachments" else {
+                return deliveryPendingResult(
+                    context ?? "Apple returned an unexpected review attachment during delivery verification.",
+                    attachment: latest
+                )
+            }
+            latest = response.data
 
             switch latest.attributes?.assetDeliveryState?.state {
             case "COMPLETE":
@@ -356,18 +490,18 @@ extension ReviewAttachmentsWorker {
 
             if attempt + 1 < deliveryPollAttempts {
                 if Task.isCancelled {
-                    return deliveryPendingResult(
-                        context ?? "Review attachment delivery polling was cancelled.",
-                        attachment: latest
-                    )
+                    let message = context ?? "Review attachment delivery polling was cancelled."
+                    return commitConfirmed
+                        ? processingPendingResult(message, attachment: latest)
+                        : deliveryPendingResult(message, attachment: latest)
                 }
                 do {
                     try await Task.sleep(nanoseconds: deliveryPollIntervalNanoseconds)
                 } catch {
-                    return deliveryPendingResult(
-                        context ?? "Review attachment delivery polling was cancelled.",
-                        attachment: latest
-                    )
+                    let message = context ?? "Review attachment delivery polling was cancelled."
+                    return commitConfirmed
+                        ? processingPendingResult(message, attachment: latest)
+                        : deliveryPendingResult(message, attachment: latest)
                 }
             }
         }
@@ -375,18 +509,60 @@ extension ReviewAttachmentsWorker {
         let state = latest.attributes?.assetDeliveryState?.state ?? "unknown"
         let message = context.map { "\($0) Apple currently reports delivery state '\(state)'." }
             ?? "The review attachment was committed, but Apple still reports delivery state '\(state)'."
-        return deliveryPendingResult(message, attachment: latest)
+        return commitConfirmed
+            ? processingPendingResult(message, attachment: latest)
+            : deliveryPendingResult(message, attachment: latest)
     }
 
     private func rollbackReservation(_ attachmentId: String) async -> ReviewAttachmentCleanupOutcome {
-        do {
-            _ = try await httpClient.delete("/v1/appStoreReviewAttachments/\(attachmentId)")
-            return .deleted
-        } catch let error as ASCError where error.httpStatusCode == 404 {
-            return .alreadyAbsent
-        } catch {
-            return .failed(Redactor.redact(error.localizedDescription))
+        let client = httpClient
+        let task = Task.detached { () -> ReviewAttachmentCleanupOutcome in
+            do {
+                _ = try await client.delete("/v1/appStoreReviewAttachments/\(try ASCPathSegment.encode(attachmentId))")
+                return .deleted
+            } catch let error as ASCError where error.httpStatusCode == 404 {
+                return .alreadyAbsent
+            } catch {
+                return .failed(Redactor.redact(error.localizedDescription))
+            }
         }
+        return await task.value
+    }
+
+    private func beforeReservationResult(_ message: String) -> CallTool.Result {
+        let safeMessage = Redactor.redact(message)
+        return MCPResult.jsonObject(
+            [
+                "success": false,
+                "error": safeMessage,
+                "reservationCreated": false,
+                "retrySafe": true
+            ],
+            text: "Error: \(safeMessage)",
+            isError: true
+        )
+    }
+
+    private func unresolvedReservationResult(
+        _ message: String,
+        reviewDetailId: String
+    ) -> CallTool.Result {
+        let safeMessage = Redactor.redact(message)
+        return MCPResult.jsonObject(
+            [
+                "success": false,
+                "error": safeMessage,
+                "reservationState": "unknown",
+                "reservationIdKnown": false,
+                "retrySafe": false,
+                "inspection": [
+                    "tool": "review_attachments_list",
+                    "arguments": ["review_detail_id": reviewDetailId]
+                ]
+            ],
+            text: "Error: \(safeMessage) The reservation id is unavailable. Inspect the review detail before retrying to avoid a duplicate.",
+            isError: true
+        )
     }
 
     private func preCommitFailureResult(
@@ -406,7 +582,8 @@ extension ReviewAttachmentsWorker {
                 "attachmentId": attachment.id,
                 "attachment": formatAttachment(attachment),
                 "cleanup": cleanupValue,
-                "reservationDeleted": cleanup.reservationDeleted
+                "reservationDeleted": cleanup.reservationDeleted,
+                "retrySafe": cleanup.reservationDeleted
             ],
             text: "Error: \(safeMessage) Cleanup status: \(cleanup.status).\(manualGuidance)",
             isError: true
@@ -426,10 +603,33 @@ extension ReviewAttachmentsWorker {
                 "attachment": formatAttachment(attachment),
                 "deliveryPending": false,
                 "cleanup": retainedCleanupGuidance(attachmentId: attachment.id),
-                "reservationDeleted": false
+                "reservationDeleted": false,
+                "retrySafe": false
             ],
             text: "Error: \(safeMessage) The attachment was retained. Inspect it with review_attachments_get and delete it explicitly with review_attachments_delete if appropriate.",
             isError: true
+        )
+    }
+
+    private func processingPendingResult(
+        _ message: String,
+        attachment: ASCReviewAttachment
+    ) -> CallTool.Result {
+        let safeMessage = Redactor.redact(message)
+        return MCPResult.jsonObject(
+            [
+                "success": true,
+                "uploadCommitted": true,
+                "processingComplete": false,
+                "deliveryPending": true,
+                "retrySafe": false,
+                "attachmentId": attachment.id,
+                "attachment": formatAttachment(attachment),
+                "cleanup": retainedCleanupGuidance(attachmentId: attachment.id),
+                "reservationDeleted": false
+            ],
+            text: "Review attachment committed successfully. \(safeMessage) Inspect the existing attachment instead of starting another upload.",
+            isError: false
         )
     }
 
@@ -446,7 +646,8 @@ extension ReviewAttachmentsWorker {
                 "attachment": formatAttachment(attachment),
                 "deliveryPending": true,
                 "cleanup": retainedCleanupGuidance(attachmentId: attachment.id),
-                "reservationDeleted": false
+                "reservationDeleted": false,
+                "retrySafe": false
             ],
             text: "Error: \(safeMessage) The attachment was retained. Check it with review_attachments_get before using review_attachments_delete.",
             isError: true
@@ -459,7 +660,9 @@ extension ReviewAttachmentsWorker {
             "attachmentId": attachmentId,
             "reason": "Automatic deletion was not attempted; inspect the attachment state before deleting it.",
             "tool": "review_attachments_delete",
-            "arguments": ["attachment_id": attachmentId]
+            "arguments": ["attachment_id": attachmentId],
+            "inspectTool": "review_attachments_get",
+            "inspectArguments": ["attachment_id": attachmentId]
         ]
     }
 

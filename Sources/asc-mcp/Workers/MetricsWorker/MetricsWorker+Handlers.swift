@@ -28,7 +28,7 @@ extension MetricsWorker {
                 "filter[metricType]": metricType
             ]
 
-            let data = try await httpClient.getRaw("/v1/apps/\(appId)/perfPowerMetrics", parameters: queryParams, accept: "application/vnd.apple.xcode-metrics+json")
+            let data = try await httpClient.getRaw("/v1/apps/\(try ASCPathSegment.encode(appId))/perfPowerMetrics", parameters: queryParams, accept: "application/vnd.apple.xcode-metrics+json")
 
             // Try Codable first, fall back to raw JSON for metric types with different structures
             let productData: [[String: Any]]
@@ -75,7 +75,7 @@ extension MetricsWorker {
                 "filter[metricType]": metricType
             ]
 
-            let data = try await httpClient.getRaw("/v1/builds/\(buildId)/perfPowerMetrics", parameters: queryParams, accept: "application/vnd.apple.xcode-metrics+json")
+            let data = try await httpClient.getRaw("/v1/builds/\(try ASCPathSegment.encode(buildId))/perfPowerMetrics", parameters: queryParams, accept: "application/vnd.apple.xcode-metrics+json")
 
             // Try Codable first, fall back to raw JSON for metric types with different structures
             let productData: [[String: Any]]
@@ -136,14 +136,14 @@ extension MetricsWorker {
                 response = try await httpClient.getPage(
                     nextUrl,
                     scope: PaginationScope(
-                        path: "/v1/builds/\(buildId)/diagnosticSignatures",
+                        path: "/v1/builds/\(try ASCPathSegment.encode(buildId))/diagnosticSignatures",
                         requiredParameters: requiredParameters
                     ),
                     as: ASCDiagnosticSignaturesResponse.self
                 )
             } else {
                 response = try await httpClient.get(
-                    "/v1/builds/\(buildId)/diagnosticSignatures",
+                    "/v1/builds/\(try ASCPathSegment.encode(buildId))/diagnosticSignatures",
                     parameters: queryParams,
                     as: ASCDiagnosticSignaturesResponse.self
                 )
@@ -184,7 +184,7 @@ extension MetricsWorker {
         }
 
         do {
-            let data = try await httpClient.getRaw("/v1/diagnosticSignatures/\(signatureId)/logs", accept: "application/vnd.apple.diagnostic-logs+json")
+            let data = try await httpClient.getRaw("/v1/diagnosticSignatures/\(try ASCPathSegment.encode(signatureId))/logs", accept: "application/vnd.apple.diagnostic-logs+json")
 
             // Parse raw JSON because response format (application/vnd.apple.diagnostic-logs+json)
             // is non-standard and Codable model may not match the actual response structure

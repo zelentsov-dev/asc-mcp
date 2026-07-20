@@ -79,7 +79,7 @@ extension SandboxTestersWorker {
             )
 
             let response: ASCSandboxTesterResponse = try await httpClient.patch(
-                "/v2/sandboxTesters/\(sandboxTesterId)",
+                "/v2/sandboxTesters/\(try ASCPathSegment.encode(sandboxTesterId))",
                 body: request,
                 as: ASCSandboxTesterResponse.self
             )

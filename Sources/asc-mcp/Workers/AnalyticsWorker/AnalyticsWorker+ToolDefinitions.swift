@@ -14,7 +14,7 @@ extension AnalyticsWorker {
         return Tool(
             name: "analytics_sales_report",
             description: """
-            Get sales, subscription, and download reports from App Store Connect. Returns structured JSON with parsed TSV data, a report-type summary, and optional individual rows. Monetary summaries use Decimal accumulation, retain numeric proceeds_by_currency for compatibility, and include proceeds_by_currency_exact strings without binary floating-point loss. FIRST_ANNUAL, INSTALLS, SUBSCRIPTION_OFFER_CODE_REDEMPTION, and WIN_BACK_ELIGIBILITY use an honest row-count summary; set summary_only=false to inspect their report-specific columns.
+            Get sales, subscription, and download reports from App Store Connect. Returns structured JSON with parsed TSV data, a report-type summary, and optional individual rows. Gzip integrity and decoded size are validated, with limits of 64 MiB decompressed, 256 columns, 1,000,000 scanned rows, 10,000,000 scanned data cells, 100,000 matched rows, and 1,000,000 retained cells; larger reports fail without returning partial summaries. Monetary summaries use Decimal accumulation, retain numeric proceeds_by_currency for compatibility, and include proceeds_by_currency_exact strings without binary floating-point loss. FIRST_ANNUAL, INSTALLS, SUBSCRIPTION_OFFER_CODE_REDEMPTION, and WIN_BACK_ELIGIBILITY use an honest row-count summary; set summary_only=false to inspect their report-specific columns.
 
             Report types and their use cases:
             - SALES (version 1_0): Downloads, updates, re-downloads, proceeds. Frequency: DAILY/WEEKLY/MONTHLY/YEARLY. Sub-type: SUMMARY.
@@ -118,7 +118,7 @@ extension AnalyticsWorker {
         return Tool(
             name: "analytics_app_summary",
             description: """
-            Get a combined analytics summary for an app in a single call. Fetches 4 report types in parallel and returns all results together.
+            Get a combined analytics summary for an app in a single call. Fetches 4 report types with bounded sequential processing and returns all results together. Each report is integrity-checked and limited to 64 MiB after decompression, 256 columns, 1,000,000 scanned rows, 10,000,000 scanned data cells, 100,000 matched rows, and 1,000,000 retained cells; oversized sections fail without partial summaries.
 
             Sections returned:
             - downloads: Units, proceeds, by country/product type (from SALES/SUMMARY/DAILY)
@@ -162,7 +162,7 @@ extension AnalyticsWorker {
     func getFinancialReportTool() -> Tool {
         return Tool(
             name: "analytics_financial_report",
-            description: "Get financial reports from App Store Connect. Returns summary with total quantity, partner share by currency, exact decimal partner-share strings, and top countries. Aggregation prefers Apple's signed Extended Partner Share and falls back to Quantity multiplied by per-unit Partner Share. Set summary_only=false to include raw rows.",
+            description: "Get financial reports from App Store Connect. Returns summary with total quantity, partner share by currency, exact decimal partner-share strings, and top countries. Gzip integrity and decoded size are validated, with limits of 64 MiB decompressed, 256 columns, 1,000,000 scanned rows, 10,000,000 scanned data cells, 100,000 matched rows, and 1,000,000 retained cells; larger reports fail without returning partial summaries. Aggregation prefers Apple's signed Extended Partner Share and falls back to Quantity multiplied by per-unit Partner Share. Set summary_only=false to include raw rows.",
             inputSchema: .object([
                 "type": .string("object"),
                 "properties": .object([
@@ -192,7 +192,9 @@ extension AnalyticsWorker {
                     ]),
                     "limit": .object([
                         "type": .string("integer"),
-                        "description": .string("Max raw rows to return when summary_only=false (default: 25). Summary is always computed from all rows.")
+                        "description": .string("Max raw rows to return when summary_only=false (1-200, default: 25). Summary is always computed from all rows."),
+                        "minimum": .int(1),
+                        "maximum": .int(200)
                     ])
                 ]),
                 "required": .array([

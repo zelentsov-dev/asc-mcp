@@ -20,7 +20,6 @@ enum ASCOpenAPICoverageMarkdownRenderer {
         lines.append("- Apple App Store Connect API overview: https://developer.apple.com/app-store-connect/api/")
         lines.append("- Apple App Store Connect API documentation: https://developer.apple.com/documentation/appstoreconnectapi")
         lines.append("- Apple OpenAPI specification download: https://developer.apple.com/sample-code/app-store-connect/app-store-connect-openapi-specification.zip")
-        lines.append("- Apple App Store Connect API 4.3 release: https://developer.apple.com/news/releases/?id=03102026b")
         lines.append("")
         lines.append("Spec: \(report.spec.title) \(report.spec.version) (OpenAPI \(report.spec.openAPIVersion))")
         lines.append("Apple paths: \(report.spec.paths.count)")

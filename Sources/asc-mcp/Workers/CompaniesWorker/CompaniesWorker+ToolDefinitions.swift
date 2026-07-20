@@ -25,7 +25,7 @@ extension CompaniesWorker {
                 "properties": .object([
                     "company": .object([
                         "type": .string("string"),
-                        "description": .string("Company ID or name (partial match supported)")
+                        "description": .string("Exact company ID or an exact/unique partial company name; ambiguous matches are rejected")
                     ])
                 ]),
                 "required": .array([.string("company")])

@@ -3,7 +3,7 @@ import CryptoKit
 import os
 
 /// Service for uploading assets to App Store Connect
-/// Handles the 3-step upload flow: reserve (caller) → upload chunks → commit (caller)
+/// Transfers immutable file snapshots with bounded memory after validating HTTPS targets and exact byte coverage.
 public actor UploadService {
     private let transport: any HTTPTransport
     private let batchSize: Int
@@ -22,19 +22,43 @@ public actor UploadService {
     ///   - filePath: Absolute path to the file on disk
     ///   - uploadOperations: Upload operations from the ASC reserve response
     /// - Returns: MD5 hex checksum of the exact snapshot bytes uploaded
-    /// - Throws: ASCError on file read or upload failure
+    /// - Throws: ASCError on file read, unsafe or incomplete upload operations, or transfer failure
     public func uploadFile(
         filePath: String,
         uploadOperations: [ASCUploadOperation]
     ) async throws -> String {
-        let fileURL = URL(fileURLWithPath: filePath)
-        let snapshotURL = try createSnapshot(of: fileURL)
-        defer { try? FileManager.default.removeItem(at: snapshotURL) }
+        let snapshot = try prepareSnapshot(filePath: filePath)
+        defer { discardSnapshot(snapshot) }
+        return try await uploadFile(snapshot: snapshot, uploadOperations: uploadOperations)
+    }
 
-        let size = try fileSize(at: snapshotURL.path)
+    func prepareSnapshot(filePath: String) throws -> UploadFileSnapshot {
+        let sourceURL = URL(fileURLWithPath: filePath)
+        let snapshotURL = try createSnapshot(of: sourceURL)
+        do {
+            return UploadFileSnapshot(
+                url: snapshotURL,
+                fileName: sourceURL.lastPathComponent,
+                fileSize: try fileSize(at: snapshotURL.path)
+            )
+        } catch {
+            try? FileManager.default.removeItem(at: snapshotURL)
+            throw error
+        }
+    }
+
+    func discardSnapshot(_ snapshot: UploadFileSnapshot) {
+        snapshot.discard()
+    }
+
+    func uploadFile(
+        snapshot: UploadFileSnapshot,
+        uploadOperations: [ASCUploadOperation]
+    ) async throws -> String {
+        let size = snapshot.fileSize
         try validateUploadOperations(uploadOperations, fileSize: size)
 
-        logger.info("Uploading file: \(fileURL.lastPathComponent) (\(size) bytes, \(uploadOperations.count) chunks)")
+        logger.info("Uploading file: \(snapshot.fileName) (\(size) bytes, \(uploadOperations.count) chunks)")
 
         var nextIndex = 0
         while nextIndex < uploadOperations.count {
@@ -46,7 +70,7 @@ public actor UploadService {
                     let chunkIndex = nextIndex + batchOffset
                     group.addTask {
                         try await self.uploadChunk(
-                            fileURL: snapshotURL,
+                            fileURL: snapshot.url,
                             fileSize: size,
                             operation: operation,
                             chunkIndex: chunkIndex
@@ -59,7 +83,7 @@ public actor UploadService {
             nextIndex = batchEnd
         }
 
-        let md5 = try computeMD5(fileURL: snapshotURL)
+        let md5 = try computeMD5(fileURL: snapshot.url)
         logger.info("Upload complete. MD5: \(md5)")
         return md5
     }
@@ -98,6 +122,9 @@ public actor UploadService {
 
         do {
             while true {
+                if Task.isCancelled {
+                    throw CancellationError()
+                }
                 let data = try sourceHandle.read(upToCount: 1024 * 1024) ?? Data()
                 if data.isEmpty { break }
                 try snapshotHandle.write(contentsOf: data)
@@ -110,14 +137,30 @@ public actor UploadService {
             try? sourceHandle.close()
             try? snapshotHandle.close()
             try? FileManager.default.removeItem(at: snapshotURL)
+            if error is CancellationError {
+                throw CancellationError()
+            }
             throw ASCError.network("Failed to snapshot upload file '\(fileURL.path)': \(error.localizedDescription)")
         }
     }
 
     func validateUploadOperations(_ operations: [ASCUploadOperation], fileSize: Int) throws {
+        guard !operations.isEmpty else {
+            throw ASCError.network("Apple returned no upload operations")
+        }
+
+        var ranges: [(offset: Int, length: Int, index: Int)] = []
+        ranges.reserveCapacity(operations.count)
+
         for (index, operation) in operations.enumerated() {
             guard let urlString = operation.url,
-                  URL(string: urlString) != nil else {
+                  let components = URLComponents(string: urlString),
+                  components.scheme?.lowercased() == "https",
+                  components.host?.isEmpty == false,
+                  components.user == nil,
+                  components.password == nil,
+                  components.fragment == nil,
+                  components.url != nil else {
                 throw ASCError.network("Upload operation \(index) has an invalid URL")
             }
 
@@ -133,6 +176,28 @@ public actor UploadService {
             guard offset <= fileSize, length <= fileSize - offset else {
                 throw ASCError.network("Upload operation \(index) range exceeds file size")
             }
+
+            ranges.append((offset: offset, length: length, index: index))
+        }
+
+        var expectedOffset = 0
+        for range in ranges.sorted(by: {
+            if $0.offset == $1.offset {
+                return $0.index < $1.index
+            }
+            return $0.offset < $1.offset
+        }) {
+            guard range.offset == expectedOffset else {
+                let issue = range.offset < expectedOffset ? "overlaps" : "leaves a gap in"
+                throw ASCError.network(
+                    "Upload operation \(range.index) \(issue) the file byte coverage"
+                )
+            }
+            expectedOffset = range.offset + range.length
+        }
+
+        guard expectedOffset == fileSize else {
+            throw ASCError.network("Upload operations do not cover the complete file")
         }
     }
 
@@ -150,12 +215,33 @@ public actor UploadService {
 
         let offset = operation.offset ?? 0
         let length = operation.length ?? fileSize
-        let chunkData = try readChunk(fileURL: fileURL, offset: offset, length: length)
+        try Task.checkCancellation()
+
+        let uploadFileURL: URL
+        let discardUploadFile: Bool
+        if offset == 0, length == fileSize {
+            uploadFileURL = fileURL
+            discardUploadFile = false
+        } else {
+            uploadFileURL = try createChunkFile(
+                from: fileURL,
+                offset: offset,
+                length: length,
+                chunkIndex: chunkIndex
+            )
+            discardUploadFile = true
+        }
+        defer {
+            if discardUploadFile {
+                try? FileManager.default.removeItem(at: uploadFileURL)
+            }
+        }
+
+        try Task.checkCancellation()
 
         // Build request — presigned URL, no JWT
         var request = URLRequest(url: url)
         request.httpMethod = operation.method ?? "PUT"
-        request.httpBody = chunkData
 
         // Set headers from upload operation (Content-Type, Content-MD5, etc.)
         if let headers = operation.requestHeaders {
@@ -168,7 +254,17 @@ public actor UploadService {
 
         logger.debug("Uploading chunk \(chunkIndex): offset=\(offset), length=\(length)")
 
-        let (_, response) = try await transport.data(for: request)
+        let response: HTTPURLResponse
+        do {
+            (_, response) = try await transport.upload(for: request, fromFile: uploadFileURL)
+        } catch {
+            if error is CancellationError || Task.isCancelled {
+                throw CancellationError()
+            }
+            throw ASCError.network("Upload chunk \(chunkIndex) transfer failed")
+        }
+
+        try Task.checkCancellation()
 
         guard 200...299 ~= response.statusCode else {
             throw ASCError.network("Upload chunk \(chunkIndex) failed with status \(response.statusCode)")
@@ -177,27 +273,72 @@ public actor UploadService {
         logger.debug("Chunk \(chunkIndex) uploaded successfully")
     }
 
-    private func readChunk(fileURL: URL, offset: Int, length: Int) throws -> Data {
-        let handle: FileHandle
+    private func createChunkFile(
+        from fileURL: URL,
+        offset: Int,
+        length: Int,
+        chunkIndex: Int
+    ) throws -> URL {
+        let sourceHandle: FileHandle
         do {
-            handle = try FileHandle(forReadingFrom: fileURL)
+            sourceHandle = try FileHandle(forReadingFrom: fileURL)
         } catch {
             throw ASCError.network("Failed to open file '\(fileURL.path)': \(error.localizedDescription)")
         }
 
+        let chunkURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("asc-mcp-upload-chunk-\(UUID().uuidString)")
+        guard FileManager.default.createFile(
+            atPath: chunkURL.path,
+            contents: nil,
+            attributes: [.posixPermissions: 0o600]
+        ) else {
+            try? sourceHandle.close()
+            throw ASCError.network("Failed to create temporary upload chunk \(chunkIndex)")
+        }
+
+        let chunkHandle: FileHandle
         do {
-            try handle.seek(toOffset: UInt64(offset))
-            guard let data = try handle.read(upToCount: length), data.count == length else {
-                throw ASCError.network("Failed to read exact upload range offset=\(offset), length=\(length)")
-            }
-            try handle.close()
-            return data
+            chunkHandle = try FileHandle(forWritingTo: chunkURL)
         } catch {
-            try? handle.close()
+            try? sourceHandle.close()
+            try? FileManager.default.removeItem(at: chunkURL)
+            throw ASCError.network("Failed to open temporary upload chunk \(chunkIndex)")
+        }
+
+        do {
+            try sourceHandle.seek(toOffset: UInt64(offset))
+            var remaining = length
+            while remaining > 0 {
+                if Task.isCancelled {
+                    throw CancellationError()
+                }
+
+                let readLength = min(remaining, 1024 * 1024)
+                guard let data = try sourceHandle.read(upToCount: readLength), !data.isEmpty else {
+                    throw ASCError.network(
+                        "Failed to read exact upload range offset=\(offset), length=\(length)"
+                    )
+                }
+                try chunkHandle.write(contentsOf: data)
+                remaining -= data.count
+            }
+
+            try chunkHandle.synchronize()
+            try sourceHandle.close()
+            try chunkHandle.close()
+            return chunkURL
+        } catch {
+            try? sourceHandle.close()
+            try? chunkHandle.close()
+            try? FileManager.default.removeItem(at: chunkURL)
+            if error is CancellationError {
+                throw CancellationError()
+            }
             if let ascError = error as? ASCError {
                 throw ascError
             }
-            throw ASCError.network("Failed to read chunk: \(error.localizedDescription)")
+            throw ASCError.network("Failed to prepare upload chunk \(chunkIndex)")
         }
     }
 
@@ -250,5 +391,15 @@ public actor UploadService {
     /// Returns file name from path
     public func fileName(at filePath: String) -> String {
         return URL(fileURLWithPath: filePath).lastPathComponent
+    }
+}
+
+struct UploadFileSnapshot: Sendable {
+    let url: URL
+    let fileName: String
+    let fileSize: Int
+
+    func discard() {
+        try? FileManager.default.removeItem(at: url)
     }
 }

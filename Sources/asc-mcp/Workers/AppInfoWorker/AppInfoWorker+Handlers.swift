@@ -58,7 +58,7 @@ extension AppInfoWorker {
 
         do {
             let response: ASCAppInfosResponse = try await httpClient.get(
-                "/v1/apps/\(appId)/appInfos",
+                "/v1/apps/\(try ASCPathSegment.encode(appId))/appInfos",
                 as: ASCAppInfosResponse.self
             )
 
@@ -105,7 +105,7 @@ extension AppInfoWorker {
             }
 
             let response: ASCAppInfoResponse = try await httpClient.get(
-                "/v1/appInfos/\(infoId)",
+                "/v1/appInfos/\(try ASCPathSegment.encode(infoId))",
                 parameters: queryParams,
                 as: ASCAppInfoResponse.self
             )
@@ -190,7 +190,7 @@ extension AppInfoWorker {
             )
 
             let response: ASCAppInfoResponse = try await httpClient.patch(
-                "/v1/appInfos/\(infoId)",
+                "/v1/appInfos/\(try ASCPathSegment.encode(infoId))",
                 body: request,
                 as: ASCAppInfoResponse.self
             )
@@ -224,7 +224,7 @@ extension AppInfoWorker {
 
         do {
             let response: ASCAppInfoLocalizationsResponse = try await httpClient.get(
-                "/v1/appInfos/\(infoId)/appInfoLocalizations",
+                "/v1/appInfos/\(try ASCPathSegment.encode(infoId))/appInfoLocalizations",
                 parameters: [:],
                 as: ASCAppInfoLocalizationsResponse.self
             )
@@ -280,7 +280,7 @@ extension AppInfoWorker {
             )
 
             let response: ASCAppInfoLocalizationResponse = try await httpClient.patch(
-                "/v1/appInfoLocalizations/\(localizationId)",
+                "/v1/appInfoLocalizations/\(try ASCPathSegment.encode(localizationId))",
                 body: request,
                 as: ASCAppInfoLocalizationResponse.self
             )
@@ -368,7 +368,7 @@ extension AppInfoWorker {
         }
 
         do {
-            _ = try await httpClient.delete("/v1/appInfoLocalizations/\(localizationId)")
+            _ = try await httpClient.delete("/v1/appInfoLocalizations/\(try ASCPathSegment.encode(localizationId))")
 
             let result = [
                 "success": true,
@@ -401,7 +401,7 @@ extension AppInfoWorker {
 
         do {
             let responseData = try await httpClient.get(
-                "/v1/apps/\(appId)/endUserLicenseAgreement",
+                "/v1/apps/\(try ASCPathSegment.encode(appId))/endUserLicenseAgreement",
                 parameters: [:]
             )
 
@@ -510,7 +510,7 @@ extension AppInfoWorker {
 
             let bodyData = try JSONEncoder().encode(request)
             let responseData = try await httpClient.patch(
-                "/v1/endUserLicenseAgreements/\(eulaId)",
+                "/v1/endUserLicenseAgreements/\(try ASCPathSegment.encode(eulaId))",
                 body: bodyData
             )
             let response = try JSONDecoder().decode(ASCEULAResponse.self, from: responseData)

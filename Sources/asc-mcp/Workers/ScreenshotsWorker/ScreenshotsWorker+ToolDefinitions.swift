@@ -70,7 +70,7 @@ extension ScreenshotsWorker {
     func listScreenshotsTool() -> Tool {
         return Tool(
             name: "screenshots_list",
-            description: "List screenshots in a screenshot set. Returns file info, upload status, and image asset details.",
+            description: "List screenshots in a screenshot set. Returns file info, upload status, image asset details, and safe upload operation metadata. Signed upload URLs and request headers are omitted.",
             inputSchema: .object([
                 "type": .string("object"),
                 "properties": .object([
@@ -95,7 +95,7 @@ extension ScreenshotsWorker {
     func uploadScreenshotTool() -> Tool {
         return Tool(
             name: "screenshots_upload",
-            description: "Upload a screenshot to a screenshot set (full cycle: reserve, upload file, commit). Provide the local file path and the set ID.",
+            description: "Upload a screenshot from an immutable snapshot, then reserve, transfer, commit, and verify Apple processing. Pre-commit failures roll back the reservation; uncertain commits are retained and reconciled. A confirmed commit can return success with deliveryPending=true while Apple continues asynchronous processing; inspect that resource instead of retrying.",
             inputSchema: .object([
                 "type": .string("object"),
                 "properties": .object([
@@ -116,7 +116,7 @@ extension ScreenshotsWorker {
     func getScreenshotTool() -> Tool {
         return Tool(
             name: "screenshots_get",
-            description: "Get details of a specific screenshot. Returns fileName, fileSize, imageAsset, assetDeliveryState, etc.",
+            description: "Get details of a specific screenshot. Returns file info, image asset, delivery state, and safe upload operation metadata. Signed upload URLs and request headers are omitted.",
             inputSchema: .object([
                 "type": .string("object"),
                 "properties": .object([
@@ -234,7 +234,7 @@ extension ScreenshotsWorker {
     func uploadPreviewTool() -> Tool {
         return Tool(
             name: "screenshots_upload_preview",
-            description: "Upload an app preview to a preview set (full cycle: reserve, upload file, commit). Provide the local file path and the set ID.",
+            description: "Upload an app preview from an immutable snapshot, then reserve, transfer, commit, and verify Apple video processing. Pre-commit failures roll back the reservation; uncertain commits are retained for reconciliation. A confirmed commit can return success with deliveryPending=true while Apple continues asynchronous processing; inspect that preview instead of retrying.",
             inputSchema: .object([
                 "type": .string("object"),
                 "properties": .object([
@@ -259,7 +259,7 @@ extension ScreenshotsWorker {
     func getPreviewTool() -> Tool {
         return Tool(
             name: "screenshots_get_preview",
-            description: "Get details of a specific app preview. Returns fileName, fileSize, mimeType, videoUrl, previewImage, assetDeliveryState, etc.",
+            description: "Get details of a specific app preview. Returns file info, video and preview image metadata, delivery state, and safe upload operation metadata. Signed upload URLs and request headers are omitted.",
             inputSchema: .object([
                 "type": .string("object"),
                 "properties": .object([
@@ -276,7 +276,7 @@ extension ScreenshotsWorker {
     func listPreviewsTool() -> Tool {
         return Tool(
             name: "screenshots_list_previews",
-            description: "List app previews in a preview set. Returns file info, upload status, and video details.",
+            description: "List app previews in a preview set. Returns file info, upload status, video details, and safe upload operation metadata. Signed upload URLs and request headers are omitted.",
             inputSchema: .object([
                 "type": .string("object"),
                 "properties": .object([
@@ -301,7 +301,7 @@ extension ScreenshotsWorker {
     func uploadScreenshotBatchTool() -> Tool {
         return Tool(
             name: "screenshots_upload_batch",
-            description: "Upload multiple screenshots to a screenshot set in one call. Each file goes through the full upload cycle (reserve, upload, commit). Returns results for each file.",
+            description: "Upload multiple screenshots sequentially. Each file uses its own immutable snapshot, reservation rollback, commit reconciliation, and processing verification. Confirmed processing-pending commits count as uploaded and include inspect guidance; each file has an independent result.",
             inputSchema: .object([
                 "type": .string("object"),
                 "properties": .object([

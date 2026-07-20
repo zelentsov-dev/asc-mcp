@@ -26,7 +26,7 @@ extension IntroductoryOffersWorker {
                 response = try await httpClient.getPage(
                     nextUrl,
                     scope: PaginationScope(
-                        path: "/v1/subscriptions/\(subscriptionId)/introductoryOffers",
+                        path: "/v1/subscriptions/\(try ASCPathSegment.encode(subscriptionId))/introductoryOffers",
                         requiredParameters: requiredParameters
                     ),
                     as: ASCIntroductoryOffersResponse.self
@@ -45,7 +45,7 @@ extension IntroductoryOffersWorker {
                 }
 
                 response = try await httpClient.get(
-                    "/v1/subscriptions/\(subscriptionId)/introductoryOffers",
+                    "/v1/subscriptions/\(try ASCPathSegment.encode(subscriptionId))/introductoryOffers",
                     parameters: queryParams,
                     as: ASCIntroductoryOffersResponse.self
                 )
@@ -177,7 +177,7 @@ extension IntroductoryOffersWorker {
             )
 
             let response: ASCIntroductoryOfferResponse = try await httpClient.patch(
-                "/v1/subscriptionIntroductoryOffers/\(introOfferId)",
+                "/v1/subscriptionIntroductoryOffers/\(try ASCPathSegment.encode(introOfferId))",
                 body: request,
                 as: ASCIntroductoryOfferResponse.self
             )
@@ -211,7 +211,7 @@ extension IntroductoryOffersWorker {
         }
 
         do {
-            _ = try await httpClient.delete("/v1/subscriptionIntroductoryOffers/\(introOfferId)")
+            _ = try await httpClient.delete("/v1/subscriptionIntroductoryOffers/\(try ASCPathSegment.encode(introOfferId))")
 
             let result = [
                 "success": true,

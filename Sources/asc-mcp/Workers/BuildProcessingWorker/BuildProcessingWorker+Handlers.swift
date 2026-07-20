@@ -23,7 +23,7 @@ extension BuildProcessingWorker {
             ]
             
             let response: ASCBuildResponse = try await httpClient.get(
-                "/v1/builds/\(buildId)",
+                "/v1/builds/\(try ASCPathSegment.encode(buildId))",
                 parameters: queryParams,
                 as: ASCBuildResponse.self
             )
@@ -95,7 +95,7 @@ extension BuildProcessingWorker {
             )
 
             let response: ASCBuildResponse = try await httpClient.patch(
-                "/v1/builds/\(buildId)",
+                "/v1/builds/\(try ASCPathSegment.encode(buildId))",
                 body: updateRequest,
                 as: ASCBuildResponse.self
             )
@@ -140,7 +140,7 @@ extension BuildProcessingWorker {
             ]
 
             let response: ASCBuildResponse = try await httpClient.get(
-                "/v1/builds/\(buildId)",
+                "/v1/builds/\(try ASCPathSegment.encode(buildId))",
                 parameters: queryParams,
                 as: ASCBuildResponse.self
             )
@@ -207,7 +207,7 @@ extension BuildProcessingWorker {
             ]
             
             let response: ASCBuildResponse = try await httpClient.get(
-                "/v1/builds/\(buildId)",
+                "/v1/builds/\(try ASCPathSegment.encode(buildId))",
                 parameters: queryParams,
                 as: ASCBuildResponse.self
             )

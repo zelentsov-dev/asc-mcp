@@ -24,13 +24,13 @@ extension WebhooksWorker {
                 response = try await httpClient.getPage(
                     nextURL,
                     scope: PaginationScope(
-                        path: "/v1/apps/\(appID)/webhooks",
+                        path: "/v1/apps/\(try ASCPathSegment.encode(appID))/webhooks",
                         requiredParameters: requiredParameters
                     ),
                     as: ASCWebhooksResponse.self
                 )
             } else {
-                response = try await httpClient.get("/v1/apps/\(appID)/webhooks", parameters: query, as: ASCWebhooksResponse.self)
+                response = try await httpClient.get("/v1/apps/\(try ASCPathSegment.encode(appID))/webhooks", parameters: query, as: ASCWebhooksResponse.self)
             }
 
             var result: [String: Any] = [
@@ -60,7 +60,7 @@ extension WebhooksWorker {
             if arguments["include_app"]?.boolValue == true {
                 query["include"] = "app"
             }
-            let response = try await httpClient.get("/v1/webhooks/\(webhookID)", parameters: query, as: ASCWebhookResponse.self)
+            let response = try await httpClient.get("/v1/webhooks/\(try ASCPathSegment.encode(webhookID))", parameters: query, as: ASCWebhookResponse.self)
             return MCPResult.jsonObject([
                 "success": true,
                 "webhook": formatWebhook(response.data)
@@ -85,10 +85,13 @@ extension WebhooksWorker {
         }
 
         guard validateWebhookURL(url) else {
-            return MCPResult.error("Parameter 'url' must be an absolute http/https URL")
+            return MCPResult.error(webhookURLValidationMessage)
         }
         guard validateEventTypes(eventTypes) else {
             return MCPResult.error("Parameter 'event_types' contains unsupported App Store Connect webhook event type")
+        }
+        guard validateWebhookSecret(secret) else {
+            return MCPResult.error(webhookSecretValidationMessage)
         }
 
         do {
@@ -125,7 +128,10 @@ extension WebhooksWorker {
             return MCPResult.error("Parameter 'event_types' contains unsupported App Store Connect webhook event type")
         }
         if let url = arguments["url"]?.stringValue, !validateWebhookURL(url) {
-            return MCPResult.error("Parameter 'url' must be an absolute http/https URL")
+            return MCPResult.error(webhookURLValidationMessage)
+        }
+        if let secret = arguments["secret"]?.stringValue, !validateWebhookSecret(secret) {
+            return MCPResult.error(webhookSecretValidationMessage)
         }
 
         let attributes = ASCWebhookUpdateRequest.Attributes(
@@ -141,7 +147,7 @@ extension WebhooksWorker {
 
         do {
             let request = ASCWebhookUpdateRequest(webhookID: webhookID, attributes: attributes)
-            let response = try await httpClient.patch("/v1/webhooks/\(webhookID)", body: request, as: ASCWebhookResponse.self)
+            let response = try await httpClient.patch("/v1/webhooks/\(try ASCPathSegment.encode(webhookID))", body: request, as: ASCWebhookResponse.self)
             return MCPResult.jsonObject([
                 "success": true,
                 "webhook": formatWebhook(response.data)
@@ -162,7 +168,7 @@ extension WebhooksWorker {
         }
 
         do {
-            _ = try await httpClient.delete("/v1/webhooks/\(webhookID)")
+            _ = try await httpClient.delete("/v1/webhooks/\(try ASCPathSegment.encode(webhookID))")
             return MCPResult.jsonObject([
                 "success": true,
                 "message": "Webhook '\(webhookID)' deleted"
@@ -206,13 +212,13 @@ extension WebhooksWorker {
                 response = try await httpClient.getPage(
                     nextURL,
                     scope: PaginationScope(
-                        path: "/v1/webhooks/\(webhookID)/deliveries",
+                        path: "/v1/webhooks/\(try ASCPathSegment.encode(webhookID))/deliveries",
                         requiredParameters: requiredParameters
                     ),
                     as: ASCWebhookDeliveriesResponse.self
                 )
             } else {
-                response = try await httpClient.get("/v1/webhooks/\(webhookID)/deliveries", parameters: query, as: ASCWebhookDeliveriesResponse.self)
+                response = try await httpClient.get("/v1/webhooks/\(try ASCPathSegment.encode(webhookID))/deliveries", parameters: query, as: ASCWebhookDeliveriesResponse.self)
             }
 
             var result: [String: Any] = [
@@ -291,12 +297,43 @@ extension WebhooksWorker {
 
     private func validateWebhookURL(_ value: String) -> Bool {
         guard let components = URLComponents(string: value),
-              let scheme = components.scheme?.lowercased(),
-              ["http", "https"].contains(scheme),
-              components.host != nil else {
+              components.scheme?.lowercased() == "https",
+              components.host?.isEmpty == false,
+              components.user == nil,
+              components.password == nil,
+              components.fragment == nil,
+              components.url != nil else {
             return false
         }
         return true
+    }
+
+    private var webhookURLValidationMessage: String {
+        "Parameter 'url' must be an absolute HTTPS URL with a non-empty host and no user, password, or fragment"
+    }
+
+    private func validateWebhookSecret(_ value: String) -> Bool {
+        let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+        let bytes = Array(trimmed.utf8)
+        guard trimmed.count >= Self.minimumWebhookSecretLength,
+              Set(bytes).count >= 4 else {
+            return false
+        }
+
+        let maximumPatternLength = min(16, bytes.count / 2)
+        for patternLength in 1...maximumPatternLength where bytes.count.isMultiple(of: patternLength) {
+            let repeats = bytes.indices.allSatisfy { index in
+                bytes[index] == bytes[index % patternLength]
+            }
+            if repeats {
+                return false
+            }
+        }
+        return true
+    }
+
+    private var webhookSecretValidationMessage: String {
+        "Parameter 'secret' must contain at least \(Self.minimumWebhookSecretLength) characters and must not be a low-diversity or repeated-pattern value"
     }
 
     private func appendPaging(_ links: ASCPagedDocumentLinks?, _ meta: ASCPagingInformation?, to result: inout [String: Any]) {

@@ -35,7 +35,7 @@ extension AccessibilityWorker {
                 response = try await httpClient.getPage(
                     nextURL,
                     scope: PaginationScope(
-                        path: "/v1/apps/\(appID)/accessibilityDeclarations",
+                        path: "/v1/apps/\(try ASCPathSegment.encode(appID))/accessibilityDeclarations",
                         requiredParameters: requiredParameters
                     ),
                     as: ASCAccessibilityDeclarationsResponse.self
@@ -51,7 +51,7 @@ extension AccessibilityWorker {
                 if let fields = parseStringList(arguments["fields"]) {
                     query["fields[accessibilityDeclarations]"] = fields.joined(separator: ",")
                 }
-                response = try await httpClient.get("/v1/apps/\(appID)/accessibilityDeclarations", parameters: query, as: ASCAccessibilityDeclarationsResponse.self)
+                response = try await httpClient.get("/v1/apps/\(try ASCPathSegment.encode(appID))/accessibilityDeclarations", parameters: query, as: ASCAccessibilityDeclarationsResponse.self)
             }
 
             var result: [String: Any] = [
@@ -84,7 +84,7 @@ extension AccessibilityWorker {
             if let fields = parseStringList(arguments["fields"]) {
                 query["fields[accessibilityDeclarations]"] = fields.joined(separator: ",")
             }
-            let response = try await httpClient.get("/v1/accessibilityDeclarations/\(declarationID)", parameters: query, as: ASCAccessibilityDeclarationResponse.self)
+            let response = try await httpClient.get("/v1/accessibilityDeclarations/\(try ASCPathSegment.encode(declarationID))", parameters: query, as: ASCAccessibilityDeclarationResponse.self)
             return MCPResult.jsonObject([
                 "success": true,
                 "accessibility_declaration": formatDeclaration(response.data)
@@ -144,7 +144,7 @@ extension AccessibilityWorker {
 
         do {
             let request = ASCAccessibilityDeclarationUpdateRequest(declarationID: declarationID, attributes: attributes)
-            let response = try await httpClient.patch("/v1/accessibilityDeclarations/\(declarationID)", body: request, as: ASCAccessibilityDeclarationResponse.self)
+            let response = try await httpClient.patch("/v1/accessibilityDeclarations/\(try ASCPathSegment.encode(declarationID))", body: request, as: ASCAccessibilityDeclarationResponse.self)
             return MCPResult.jsonObject([
                 "success": true,
                 "accessibility_declaration": formatDeclaration(response.data)
@@ -165,7 +165,7 @@ extension AccessibilityWorker {
         }
 
         do {
-            _ = try await httpClient.delete("/v1/accessibilityDeclarations/\(declarationID)")
+            _ = try await httpClient.delete("/v1/accessibilityDeclarations/\(try ASCPathSegment.encode(declarationID))")
             return MCPResult.jsonObject([
                 "success": true,
                 "message": "Accessibility declaration '\(declarationID)' deleted"
@@ -190,12 +190,12 @@ extension AccessibilityWorker {
             if let nextURL = try paginationURL(from: arguments["next_url"]) {
                 response = try await httpClient.getPage(
                     nextURL,
-                    scope: PaginationScope(path: "/v1/apps/\(appID)/relationships/accessibilityDeclarations"),
+                    scope: PaginationScope(path: "/v1/apps/\(try ASCPathSegment.encode(appID))/relationships/accessibilityDeclarations"),
                     as: ASCAccessibilityDeclarationLinkagesResponse.self
                 )
             } else {
                 response = try await httpClient.get(
-                    "/v1/apps/\(appID)/relationships/accessibilityDeclarations",
+                    "/v1/apps/\(try ASCPathSegment.encode(appID))/relationships/accessibilityDeclarations",
                     parameters: defaultListQuery(arguments: arguments),
                     as: ASCAccessibilityDeclarationLinkagesResponse.self
                 )

@@ -22,7 +22,7 @@ extension ProductPageOptimizationWorker {
             if let nextUrl = try paginationURL(from: arguments["next_url"]) {
                 response = try await httpClient.getPage(
                     nextUrl,
-                    scope: PaginationScope(path: "/v1/apps/\(appId)/appStoreVersionExperimentsV2"),
+                    scope: PaginationScope(path: "/v1/apps/\(try ASCPathSegment.encode(appId))/appStoreVersionExperimentsV2"),
                     as: ASCExperimentsResponse.self
                 )
             } else {
@@ -35,7 +35,7 @@ extension ProductPageOptimizationWorker {
                 }
 
                 response = try await httpClient.get(
-                    "/v1/apps/\(appId)/appStoreVersionExperimentsV2",
+                    "/v1/apps/\(try ASCPathSegment.encode(appId))/appStoreVersionExperimentsV2",
                     parameters: queryParams,
                     as: ASCExperimentsResponse.self
                 )
@@ -76,7 +76,7 @@ extension ProductPageOptimizationWorker {
 
         do {
             let response: ASCExperimentResponse = try await httpClient.get(
-                "/v2/appStoreVersionExperiments/\(experimentId)",
+                "/v2/appStoreVersionExperiments/\(try ASCPathSegment.encode(experimentId))",
                 as: ASCExperimentResponse.self
             )
 
@@ -194,7 +194,7 @@ extension ProductPageOptimizationWorker {
             )
 
             let response: ASCExperimentResponse = try await httpClient.patch(
-                "/v2/appStoreVersionExperiments/\(experimentId)",
+                "/v2/appStoreVersionExperiments/\(try ASCPathSegment.encode(experimentId))",
                 body: request,
                 as: ASCExperimentResponse.self
             )
@@ -229,7 +229,7 @@ extension ProductPageOptimizationWorker {
         }
 
         do {
-            _ = try await httpClient.delete("/v2/appStoreVersionExperiments/\(experimentId)")
+            _ = try await httpClient.delete("/v2/appStoreVersionExperiments/\(try ASCPathSegment.encode(experimentId))")
 
             let result = [
                 "success": true,
@@ -264,7 +264,7 @@ extension ProductPageOptimizationWorker {
             if let nextUrl = try paginationURL(from: arguments["next_url"]) {
                 response = try await httpClient.getPage(
                     nextUrl,
-                    scope: PaginationScope(path: "/v2/appStoreVersionExperiments/\(experimentId)/appStoreVersionExperimentTreatments"),
+                    scope: PaginationScope(path: "/v2/appStoreVersionExperiments/\(try ASCPathSegment.encode(experimentId))/appStoreVersionExperimentTreatments"),
                     as: ASCTreatmentsResponse.self
                 )
             } else {
@@ -277,7 +277,7 @@ extension ProductPageOptimizationWorker {
                 }
 
                 response = try await httpClient.get(
-                    "/v2/appStoreVersionExperiments/\(experimentId)/appStoreVersionExperimentTreatments",
+                    "/v2/appStoreVersionExperiments/\(try ASCPathSegment.encode(experimentId))/appStoreVersionExperimentTreatments",
                     parameters: queryParams,
                     as: ASCTreatmentsResponse.self
                 )
@@ -372,7 +372,7 @@ extension ProductPageOptimizationWorker {
             if let nextUrl = try paginationURL(from: arguments["next_url"]) {
                 response = try await httpClient.getPage(
                     nextUrl,
-                    scope: PaginationScope(path: "/v1/appStoreVersionExperimentTreatments/\(treatmentId)/appStoreVersionExperimentTreatmentLocalizations"),
+                    scope: PaginationScope(path: "/v1/appStoreVersionExperimentTreatments/\(try ASCPathSegment.encode(treatmentId))/appStoreVersionExperimentTreatmentLocalizations"),
                     as: ASCTreatmentLocalizationsResponse.self
                 )
             } else {
@@ -385,7 +385,7 @@ extension ProductPageOptimizationWorker {
                 }
 
                 response = try await httpClient.get(
-                    "/v1/appStoreVersionExperimentTreatments/\(treatmentId)/appStoreVersionExperimentTreatmentLocalizations",
+                    "/v1/appStoreVersionExperimentTreatments/\(try ASCPathSegment.encode(treatmentId))/appStoreVersionExperimentTreatmentLocalizations",
                     parameters: queryParams,
                     as: ASCTreatmentLocalizationsResponse.self
                 )

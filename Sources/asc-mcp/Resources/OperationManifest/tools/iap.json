@@ -2252,6 +2252,42 @@
               "fixedValue": true
             }
           ]
+        },
+        {
+          "operationId": "inAppPurchaseImages_getInstance",
+          "method": "get",
+          "path": "/v1/inAppPurchaseImages/{id}",
+          "role": "conditional",
+          "condition": "After PATCH returns a nonterminal image state, or when the PATCH response is ambiguous, reconcile and poll the reserved image by ID until processing reaches a terminal state or local verification stops.",
+          "inputs": [
+            {
+              "sourceKind": "derived",
+              "location": "path",
+              "appleName": "id",
+              "derivedFrom": [
+                "inAppPurchaseImages_createInstance:/data/id"
+              ],
+              "localRole": "Inspect the exact image created by the reservation operation."
+            }
+          ]
+        },
+        {
+          "operationId": "inAppPurchaseImages_deleteInstance",
+          "method": "delete",
+          "path": "/v1/inAppPurchaseImages/{id}",
+          "role": "conditional",
+          "condition": "Before any commit PATCH is attempted, best-effort delete a confirmed reservation when cancellation, a missing upload plan, byte-transfer failure, or commit-body preparation prevents commit; treat 404 as already absent.",
+          "inputs": [
+            {
+              "sourceKind": "derived",
+              "location": "path",
+              "appleName": "id",
+              "derivedFrom": [
+                "inAppPurchaseImages_createInstance:/data/id"
+              ],
+              "localRole": "Rollback only the known reservation for this upload attempt."
+            }
+          ]
         }
       ],
       "fields": [
@@ -2266,7 +2302,7 @@
           "sourceKind": "derived",
           "operationId": "inAppPurchaseImages_createInstance",
           "jsonPointer": "/data/attributes",
-          "localRole": "Derives fileName/fileSize for reserve, supplies binary upload bytes, and drives commit checksum.",
+          "localRole": "Creates an immutable temporary snapshot before reserve, then derives fileName/fileSize, supplies binary upload bytes, and drives the commit checksum from that same snapshot.",
           "derivedFrom": [
             "file_path"
           ]
@@ -2276,11 +2312,13 @@
         "mode": "opaque",
         "sources": [
           { "operationId": "inAppPurchaseImages_createInstance", "statusCode": "201", "mediaType": "application/json" },
-          { "operationId": "inAppPurchaseImages_updateInstance", "statusCode": "200", "mediaType": "application/json" }
+          { "operationId": "inAppPurchaseImages_updateInstance", "statusCode": "200", "mediaType": "application/json" },
+          { "operationId": "inAppPurchaseImages_getInstance", "statusCode": "200", "mediaType": "application/json" },
+          { "operationId": "inAppPurchaseImages_deleteInstance", "statusCode": "204" }
         ],
         "fields": []
       },
-      "note": "The current handler uses the non-deprecated product-scoped image resource documented by Apple 4.4.1; reserve and commit are Apple operations and binary upload is external."
+      "note": "The handler uses the non-deprecated product-scoped image resource documented by Apple 4.4.1 and snapshots the file before reserve; binary upload through Apple's signed operations remains external to OpenAPI. PREPARE_FOR_SUBMISSION, WAITING_FOR_REVIEW, APPROVED, and REJECTED mean upload processing is complete; FAILED is terminal failure; AWAITING_UPLOAD, UPLOAD_COMPLETE, missing, and unknown states remain pending and are polled with conditional GET. After a confirmed 2xx commit, nonterminal processing is an accepted success with uploadCommitted=true, processingComplete=false, deliveryPending=true, and retrySafe=false. If PATCH transport remains ambiguous and reconciliation only shows pending, the outcome stays an error; either way the image is retained with inspection guidance. A mismatched 2xx commit resource triggers one GET of the expected image ID; valid terminal or pending state is interpreted normally, while invalid reconciliation stays an error. A confirmed reservation that fails before PATCH is best-effort deleted independently of cancellation; an unresolved create response instead requires parent-collection inspection because Apple exposes no idempotency key for locating that exact reservation."
     },
     {
       "tool": "iap_upload_review_screenshot",
@@ -2351,6 +2389,42 @@
               "fixedValue": true
             }
           ]
+        },
+        {
+          "operationId": "inAppPurchaseAppStoreReviewScreenshots_getInstance",
+          "method": "get",
+          "path": "/v1/inAppPurchaseAppStoreReviewScreenshots/{id}",
+          "role": "conditional",
+          "condition": "After PATCH returns a nonterminal delivery state, or when the PATCH response is ambiguous, reconcile and poll the reserved review screenshot by ID until processing reaches a terminal state or local verification stops.",
+          "inputs": [
+            {
+              "sourceKind": "derived",
+              "location": "path",
+              "appleName": "id",
+              "derivedFrom": [
+                "inAppPurchaseAppStoreReviewScreenshots_createInstance:/data/id"
+              ],
+              "localRole": "Inspect the exact review screenshot created by the reservation operation."
+            }
+          ]
+        },
+        {
+          "operationId": "inAppPurchaseAppStoreReviewScreenshots_deleteInstance",
+          "method": "delete",
+          "path": "/v1/inAppPurchaseAppStoreReviewScreenshots/{id}",
+          "role": "conditional",
+          "condition": "Before any commit PATCH is attempted, best-effort delete a confirmed reservation when cancellation, a missing upload plan, byte-transfer failure, or commit-body preparation prevents commit; treat 404 as already absent.",
+          "inputs": [
+            {
+              "sourceKind": "derived",
+              "location": "path",
+              "appleName": "id",
+              "derivedFrom": [
+                "inAppPurchaseAppStoreReviewScreenshots_createInstance:/data/id"
+              ],
+              "localRole": "Rollback only the known reservation for this upload attempt."
+            }
+          ]
         }
       ],
       "fields": [
@@ -2363,7 +2437,7 @@
         {
           "toolField": "file_path",
           "sourceKind": "derived",
-          "localRole": "Derives reserve metadata, supplies binary upload bytes, and drives the commit checksum.",
+          "localRole": "Creates an immutable temporary snapshot before reserve, then derives reserve metadata, supplies binary upload bytes, and drives the commit checksum from that same snapshot.",
           "operationId": "inAppPurchaseAppStoreReviewScreenshots_createInstance",
           "jsonPointer": "/data/attributes",
           "derivedFrom": [
@@ -2375,11 +2449,13 @@
         "mode": "opaque",
         "sources": [
           { "operationId": "inAppPurchaseAppStoreReviewScreenshots_createInstance", "statusCode": "201", "mediaType": "application/json" },
-          { "operationId": "inAppPurchaseAppStoreReviewScreenshots_updateInstance", "statusCode": "200", "mediaType": "application/json" }
+          { "operationId": "inAppPurchaseAppStoreReviewScreenshots_updateInstance", "statusCode": "200", "mediaType": "application/json" },
+          { "operationId": "inAppPurchaseAppStoreReviewScreenshots_getInstance", "statusCode": "200", "mediaType": "application/json" },
+          { "operationId": "inAppPurchaseAppStoreReviewScreenshots_deleteInstance", "statusCode": "204" }
         ],
         "fields": []
       },
-      "note": "Reserve and commit are Apple operations; binary transfer to the returned upload URL is a local/external step."
+      "note": "The handler snapshots the file before reserve; binary transfer through Apple's signed operations is a local/external step. COMPLETE is successful; FAILED is terminal failure; any other assetDeliveryState remains pending and is polled with conditional GET. After a confirmed 2xx commit, nonterminal processing is an accepted success with uploadCommitted=true, processingComplete=false, deliveryPending=true, and retrySafe=false. If PATCH transport remains ambiguous and reconciliation only shows pending, the outcome stays an error; either way the review screenshot is retained with inspection guidance. A mismatched 2xx commit resource triggers one GET of the expected screenshot ID; valid terminal or pending state is interpreted normally, while invalid reconciliation stays an error. A confirmed reservation that fails before PATCH is best-effort deleted independently of cancellation; an unresolved create response instead requires parent-collection inspection because Apple exposes no idempotency key for locating that exact reservation."
     }
   ],
   "implementationAliases": []

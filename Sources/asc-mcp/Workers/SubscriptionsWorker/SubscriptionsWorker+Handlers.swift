@@ -43,7 +43,7 @@ extension SubscriptionsWorker {
         do {
             let response: ASCSubscriptionsResponse
 
-            let endpoint = "/v1/subscriptionGroups/\(groupId)/subscriptions"
+            let endpoint = "/v1/subscriptionGroups/\(try ASCPathSegment.encode(groupId))/subscriptions"
 
             if let nextUrl = try paginationURL(from: arguments["next_url"]) {
                 response = try await httpClient.getPage(
@@ -101,7 +101,7 @@ extension SubscriptionsWorker {
 
         do {
             let response: ASCSubscriptionResponse = try await httpClient.get(
-                "/v1/subscriptions/\(subscriptionId)",
+                "/v1/subscriptions/\(try ASCPathSegment.encode(subscriptionId))",
                 as: ASCSubscriptionResponse.self
             )
 
@@ -203,7 +203,7 @@ extension SubscriptionsWorker {
             )
 
             let response: ASCSubscriptionResponse = try await httpClient.patch(
-                "/v1/subscriptions/\(subscriptionId)",
+                "/v1/subscriptions/\(try ASCPathSegment.encode(subscriptionId))",
                 body: request,
                 as: ASCSubscriptionResponse.self
             )
@@ -237,7 +237,7 @@ extension SubscriptionsWorker {
         }
 
         do {
-            _ = try await httpClient.delete("/v1/subscriptions/\(subscriptionId)")
+            _ = try await httpClient.delete("/v1/subscriptions/\(try ASCPathSegment.encode(subscriptionId))")
 
             let result = [
                 "success": true,
@@ -268,7 +268,7 @@ extension SubscriptionsWorker {
         do {
             let response: ASCSubscriptionLocalizationsResponse
 
-            let endpoint = "/v1/subscriptions/\(subscriptionId)/subscriptionLocalizations"
+            let endpoint = "/v1/subscriptions/\(try ASCPathSegment.encode(subscriptionId))/subscriptionLocalizations"
 
             if let nextUrl = try paginationURL(from: arguments["next_url"]) {
                 response = try await httpClient.getPage(
@@ -381,7 +381,7 @@ extension SubscriptionsWorker {
             )
 
             let response: ASCSubscriptionLocalizationResponse = try await httpClient.patch(
-                "/v1/subscriptionLocalizations/\(localizationId)",
+                "/v1/subscriptionLocalizations/\(try ASCPathSegment.encode(localizationId))",
                 body: request,
                 as: ASCSubscriptionLocalizationResponse.self
             )
@@ -412,7 +412,7 @@ extension SubscriptionsWorker {
         }
 
         do {
-            _ = try await httpClient.delete("/v1/subscriptionLocalizations/\(localizationId)")
+            _ = try await httpClient.delete("/v1/subscriptionLocalizations/\(try ASCPathSegment.encode(localizationId))")
 
             let result = [
                 "success": true,
@@ -513,7 +513,7 @@ extension SubscriptionsWorker {
             )
 
             let response: ASCSubscriptionGroupResponse = try await httpClient.patch(
-                "/v1/subscriptionGroups/\(groupId)",
+                "/v1/subscriptionGroups/\(try ASCPathSegment.encode(groupId))",
                 body: request,
                 as: ASCSubscriptionGroupResponse.self
             )
@@ -547,7 +547,7 @@ extension SubscriptionsWorker {
         }
 
         do {
-            _ = try await httpClient.delete("/v1/subscriptionGroups/\(groupId)")
+            _ = try await httpClient.delete("/v1/subscriptionGroups/\(try ASCPathSegment.encode(groupId))")
 
             let result = [
                 "success": true,
@@ -619,7 +619,7 @@ extension SubscriptionsWorker {
         }
 
         do {
-            _ = try await httpClient.delete("/v1/subscriptionPrices/\(priceId)")
+            _ = try await httpClient.delete("/v1/subscriptionPrices/\(try ASCPathSegment.encode(priceId))")
 
             let result = [
                 "success": true,
@@ -652,7 +652,7 @@ extension SubscriptionsWorker {
         do {
             let response: ASCSubscriptionGroupLocalizationsResponse
 
-            let endpoint = "/v1/subscriptionGroups/\(groupId)/subscriptionGroupLocalizations"
+            let endpoint = "/v1/subscriptionGroups/\(try ASCPathSegment.encode(groupId))/subscriptionGroupLocalizations"
 
             if let nextUrl = try paginationURL(from: arguments["next_url"]) {
                 response = try await httpClient.getPage(
@@ -762,7 +762,7 @@ extension SubscriptionsWorker {
 
         do {
             let response: ASCSubscriptionGroupLocalizationResponse = try await httpClient.get(
-                "/v1/subscriptionGroupLocalizations/\(localizationId)",
+                "/v1/subscriptionGroupLocalizations/\(try ASCPathSegment.encode(localizationId))",
                 as: ASCSubscriptionGroupLocalizationResponse.self
             )
 
@@ -806,7 +806,7 @@ extension SubscriptionsWorker {
             )
 
             let response: ASCSubscriptionGroupLocalizationResponse = try await httpClient.patch(
-                "/v1/subscriptionGroupLocalizations/\(localizationId)",
+                "/v1/subscriptionGroupLocalizations/\(try ASCPathSegment.encode(localizationId))",
                 body: request,
                 as: ASCSubscriptionGroupLocalizationResponse.self
             )
@@ -840,7 +840,7 @@ extension SubscriptionsWorker {
         }
 
         do {
-            _ = try await httpClient.delete("/v1/subscriptionGroupLocalizations/\(localizationId)")
+            _ = try await httpClient.delete("/v1/subscriptionGroupLocalizations/\(try ASCPathSegment.encode(localizationId))")
 
             let result = [
                 "success": true,
@@ -859,8 +859,8 @@ extension SubscriptionsWorker {
 
     // MARK: - Subscription Images
 
-    /// Uploads a subscription image (full cycle: reserve -> upload -> commit)
-    /// - Returns: JSON with final image info
+    /// Uploads a subscription image and reconciles its asynchronous processing state
+    /// - Returns: JSON with terminal or accepted processing-pending image info
     func uploadSubscriptionImage(_ params: CallTool.Parameters) async throws -> CallTool.Result {
         guard let arguments = params.arguments,
               let subscriptionId = arguments["subscription_id"]?.stringValue,
@@ -871,66 +871,65 @@ extension SubscriptionsWorker {
             )
         }
 
-        do {
-            let fileSize = try await uploadService.fileSize(at: filePath)
-            let fileName = await uploadService.fileName(at: filePath)
-
-            let createRequest = CreateSubscriptionImageRequest(
-                data: CreateSubscriptionImageRequest.CreateData(
-                    attributes: CreateSubscriptionImageRequest.Attributes(
-                        fileSize: fileSize,
-                        fileName: fileName
-                    ),
-                    relationships: CreateSubscriptionImageRequest.Relationships(
-                        subscription: CreateSubscriptionImageRequest.SubscriptionRelationship(
-                            data: ASCResourceIdentifier(type: "subscriptions", id: subscriptionId)
+        let outcome: UploadTransactionOutcome<ASCSubscriptionImage> = await UploadTransactionRecovery.perform(
+            filePath: filePath,
+            resourceName: "subscription image",
+            expectedType: "subscriptionImages",
+            reservationEndpoint: "/v1/subscriptionImages",
+            httpClient: httpClient,
+            uploadService: uploadService,
+            deliveryPollAttempts: deliveryPollAttempts,
+            deliveryPollIntervalNanoseconds: deliveryPollIntervalNanoseconds,
+            makeReservationBody: { fileSize, fileName in
+                try JSONEncoder().encode(
+                    CreateSubscriptionImageRequest(
+                        data: CreateSubscriptionImageRequest.CreateData(
+                            attributes: CreateSubscriptionImageRequest.Attributes(
+                                fileSize: fileSize,
+                                fileName: fileName
+                            ),
+                            relationships: CreateSubscriptionImageRequest.Relationships(
+                                subscription: CreateSubscriptionImageRequest.SubscriptionRelationship(
+                                    data: ASCResourceIdentifier(type: "subscriptions", id: subscriptionId)
+                                )
+                            )
                         )
                     )
                 )
-            )
-
-            let encoder = JSONEncoder()
-            let bodyData = try encoder.encode(createRequest)
-            let reserveData = try await httpClient.post("/v1/subscriptionImages", body: bodyData)
-            let reserveResponse = try JSONDecoder().decode(ASCSubscriptionImageResponse.self, from: reserveData)
-
-            let imageId = reserveResponse.data.id
-            guard let uploadOperations = reserveResponse.data.attributes?.uploadOperations, !uploadOperations.isEmpty else {
-                return CallTool.Result(
-                    content: [MCPContent.text("Error: No upload operations returned from reservation")],
-                    isError: true
-                )
-            }
-
-            let md5 = try await uploadService.uploadFile(filePath: filePath, uploadOperations: uploadOperations)
-
-            let commitRequest = CommitSubscriptionImageRequest(
-                data: CommitSubscriptionImageRequest.CommitData(
-                    id: imageId,
-                    attributes: CommitSubscriptionImageRequest.Attributes(
-                        sourceFileChecksum: md5,
-                        uploaded: true
+            },
+            decodeResource: {
+                try JSONDecoder().decode(ASCSubscriptionImageResponse.self, from: $0).data
+            },
+            makeCommitBody: { imageId, checksum in
+                try JSONEncoder().encode(
+                    CommitSubscriptionImageRequest(
+                        data: CommitSubscriptionImageRequest.CommitData(
+                            id: imageId,
+                            attributes: CommitSubscriptionImageRequest.Attributes(
+                                sourceFileChecksum: checksum,
+                                uploaded: true
+                            )
+                        )
                     )
                 )
-            )
+            },
+            resourceEndpoint: { "/v1/subscriptionImages/\(try ASCPathSegment.encode($0))" }
+        )
 
-            let commitBody = try encoder.encode(commitRequest)
-            let commitData = try await httpClient.patch("/v1/subscriptionImages/\(imageId)", body: commitBody)
-            let commitResponse = try JSONDecoder().decode(ASCSubscriptionImageResponse.self, from: commitData)
-
-            let result = [
-                "success": true,
-                "image": formatSubscriptionImage(commitResponse.data)
-            ] as [String: Any]
-
-            return MCPResult.jsonObject(result)
-
-        } catch {
-            return CallTool.Result(
-                content: [MCPContent.text("Error: Failed to upload subscription image: \(error.localizedDescription)")],
-                isError: true
-            )
-        }
+        return UploadTransactionRecovery.result(
+            for: outcome,
+            descriptor: UploadRecoveryDescriptor(
+                resourceName: "subscription image",
+                successKey: "image",
+                idArgument: "image_id",
+                getTool: "subscriptions_get_image",
+                getIDArgument: "image_id",
+                deleteTool: "subscriptions_delete_image",
+                inspectionTool: "subscriptions_list_images",
+                inspectionArguments: ["subscription_id": subscriptionId]
+            ),
+            format: formatSubscriptionImage
+        )
     }
 
     /// Gets details of a subscription image
@@ -945,7 +944,7 @@ extension SubscriptionsWorker {
         }
 
         do {
-            let data = try await httpClient.get("/v1/subscriptionImages/\(imageId)")
+            let data = try await httpClient.get("/v1/subscriptionImages/\(try ASCPathSegment.encode(imageId))")
             let response = try JSONDecoder().decode(ASCSubscriptionImageResponse.self, from: data)
 
             let result = [
@@ -975,7 +974,7 @@ extension SubscriptionsWorker {
         }
 
         do {
-            _ = try await httpClient.delete("/v1/subscriptionImages/\(imageId)")
+            _ = try await httpClient.delete("/v1/subscriptionImages/\(try ASCPathSegment.encode(imageId))")
 
             let result = [
                 "success": true,
@@ -994,8 +993,8 @@ extension SubscriptionsWorker {
 
     // MARK: - Subscription Review Screenshots
 
-    /// Uploads a subscription review screenshot (full cycle: reserve -> upload -> commit)
-    /// - Returns: JSON with final screenshot info
+    /// Uploads a subscription review screenshot and reconciles its asynchronous processing state
+    /// - Returns: JSON with terminal or accepted processing-pending screenshot info
     func uploadSubscriptionReviewScreenshot(_ params: CallTool.Parameters) async throws -> CallTool.Result {
         guard let arguments = params.arguments,
               let subscriptionId = arguments["subscription_id"]?.stringValue,
@@ -1006,66 +1005,65 @@ extension SubscriptionsWorker {
             )
         }
 
-        do {
-            let fileSize = try await uploadService.fileSize(at: filePath)
-            let fileName = await uploadService.fileName(at: filePath)
-
-            let createRequest = CreateSubReviewScreenshotRequest(
-                data: CreateSubReviewScreenshotRequest.CreateData(
-                    attributes: CreateSubReviewScreenshotRequest.Attributes(
-                        fileSize: fileSize,
-                        fileName: fileName
-                    ),
-                    relationships: CreateSubReviewScreenshotRequest.Relationships(
-                        subscription: CreateSubReviewScreenshotRequest.SubscriptionRelationship(
-                            data: ASCResourceIdentifier(type: "subscriptions", id: subscriptionId)
+        let outcome: UploadTransactionOutcome<ASCSubReviewScreenshot> = await UploadTransactionRecovery.perform(
+            filePath: filePath,
+            resourceName: "subscription review screenshot",
+            expectedType: "subscriptionAppStoreReviewScreenshots",
+            reservationEndpoint: "/v1/subscriptionAppStoreReviewScreenshots",
+            httpClient: httpClient,
+            uploadService: uploadService,
+            deliveryPollAttempts: deliveryPollAttempts,
+            deliveryPollIntervalNanoseconds: deliveryPollIntervalNanoseconds,
+            makeReservationBody: { fileSize, fileName in
+                try JSONEncoder().encode(
+                    CreateSubReviewScreenshotRequest(
+                        data: CreateSubReviewScreenshotRequest.CreateData(
+                            attributes: CreateSubReviewScreenshotRequest.Attributes(
+                                fileSize: fileSize,
+                                fileName: fileName
+                            ),
+                            relationships: CreateSubReviewScreenshotRequest.Relationships(
+                                subscription: CreateSubReviewScreenshotRequest.SubscriptionRelationship(
+                                    data: ASCResourceIdentifier(type: "subscriptions", id: subscriptionId)
+                                )
+                            )
                         )
                     )
                 )
-            )
-
-            let encoder = JSONEncoder()
-            let bodyData = try encoder.encode(createRequest)
-            let reserveData = try await httpClient.post("/v1/subscriptionAppStoreReviewScreenshots", body: bodyData)
-            let reserveResponse = try JSONDecoder().decode(ASCSubReviewScreenshotResponse.self, from: reserveData)
-
-            let screenshotId = reserveResponse.data.id
-            guard let uploadOperations = reserveResponse.data.attributes?.uploadOperations, !uploadOperations.isEmpty else {
-                return CallTool.Result(
-                    content: [MCPContent.text("Error: No upload operations returned from reservation")],
-                    isError: true
-                )
-            }
-
-            let md5 = try await uploadService.uploadFile(filePath: filePath, uploadOperations: uploadOperations)
-
-            let commitRequest = CommitSubReviewScreenshotRequest(
-                data: CommitSubReviewScreenshotRequest.CommitData(
-                    id: screenshotId,
-                    attributes: CommitSubReviewScreenshotRequest.Attributes(
-                        sourceFileChecksum: md5,
-                        uploaded: true
+            },
+            decodeResource: {
+                try JSONDecoder().decode(ASCSubReviewScreenshotResponse.self, from: $0).data
+            },
+            makeCommitBody: { screenshotId, checksum in
+                try JSONEncoder().encode(
+                    CommitSubReviewScreenshotRequest(
+                        data: CommitSubReviewScreenshotRequest.CommitData(
+                            id: screenshotId,
+                            attributes: CommitSubReviewScreenshotRequest.Attributes(
+                                sourceFileChecksum: checksum,
+                                uploaded: true
+                            )
+                        )
                     )
                 )
-            )
+            },
+            resourceEndpoint: { "/v1/subscriptionAppStoreReviewScreenshots/\(try ASCPathSegment.encode($0))" }
+        )
 
-            let commitBody = try encoder.encode(commitRequest)
-            let commitData = try await httpClient.patch("/v1/subscriptionAppStoreReviewScreenshots/\(screenshotId)", body: commitBody)
-            let commitResponse = try JSONDecoder().decode(ASCSubReviewScreenshotResponse.self, from: commitData)
-
-            let result = [
-                "success": true,
-                "screenshot": formatSubReviewScreenshot(commitResponse.data)
-            ] as [String: Any]
-
-            return MCPResult.jsonObject(result)
-
-        } catch {
-            return CallTool.Result(
-                content: [MCPContent.text("Error: Failed to upload subscription review screenshot: \(error.localizedDescription)")],
-                isError: true
-            )
-        }
+        return UploadTransactionRecovery.result(
+            for: outcome,
+            descriptor: UploadRecoveryDescriptor(
+                resourceName: "subscription review screenshot",
+                successKey: "screenshot",
+                idArgument: "screenshot_id",
+                getTool: "subscriptions_get_review_screenshot",
+                getIDArgument: "screenshot_id",
+                deleteTool: "subscriptions_delete_review_screenshot",
+                inspectionTool: "subscriptions_get_review_screenshot_for_subscription",
+                inspectionArguments: ["subscription_id": subscriptionId]
+            ),
+            format: formatSubReviewScreenshot
+        )
     }
 
     /// Gets details of a subscription review screenshot
@@ -1080,7 +1078,7 @@ extension SubscriptionsWorker {
         }
 
         do {
-            let data = try await httpClient.get("/v1/subscriptionAppStoreReviewScreenshots/\(screenshotId)")
+            let data = try await httpClient.get("/v1/subscriptionAppStoreReviewScreenshots/\(try ASCPathSegment.encode(screenshotId))")
             let response = try JSONDecoder().decode(ASCSubReviewScreenshotResponse.self, from: data)
 
             let result = [
@@ -1110,7 +1108,7 @@ extension SubscriptionsWorker {
         }
 
         do {
-            _ = try await httpClient.delete("/v1/subscriptionAppStoreReviewScreenshots/\(screenshotId)")
+            _ = try await httpClient.delete("/v1/subscriptionAppStoreReviewScreenshots/\(try ASCPathSegment.encode(screenshotId))")
 
             let result = [
                 "success": true,
@@ -1144,7 +1142,7 @@ extension SubscriptionsWorker {
         do {
             let response: ASCSubscriptionImagesResponse
 
-            let endpoint = "/v1/subscriptions/\(subscriptionId)/images"
+            let endpoint = "/v1/subscriptions/\(try ASCPathSegment.encode(subscriptionId))/images"
 
             if let nextUrl = try paginationURL(from: arguments["next_url"]) {
                 response = try await httpClient.getPage(
@@ -1202,7 +1200,7 @@ extension SubscriptionsWorker {
         }
 
         do {
-            let data = try await httpClient.get("/v1/subscriptions/\(subscriptionId)/appStoreReviewScreenshot")
+            let data = try await httpClient.get("/v1/subscriptions/\(try ASCPathSegment.encode(subscriptionId))/appStoreReviewScreenshot")
             let response = try JSONDecoder().decode(ASCSubReviewScreenshotResponse.self, from: data)
 
             let result = [

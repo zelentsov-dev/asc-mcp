@@ -179,7 +179,12 @@ enum ASCOpenAPICoverageRules {
             "/v1/subscription",
             "/v1/subscriptions",
             "/v1/winBackOffers",
-            "/v2/inAppPurchases"
+            "/v2/inAppPurchaseImages",
+            "/v2/inAppPurchaseLocalizations",
+            "/v2/inAppPurchases",
+            "/v2/subscriptionGroupLocalizations",
+            "/v2/subscriptionImages",
+            "/v2/subscriptionLocalizations"
         ],
         "Provisioning and identifiers": [
             "/v1/bundleId",

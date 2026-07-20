@@ -22,7 +22,7 @@ extension CustomProductPagesWorker {
             if let nextUrl = try paginationURL(from: arguments["next_url"]) {
                 response = try await httpClient.getPage(
                     nextUrl,
-                    scope: PaginationScope(path: "/v1/apps/\(appId)/appCustomProductPages"),
+                    scope: PaginationScope(path: "/v1/apps/\(try ASCPathSegment.encode(appId))/appCustomProductPages"),
                     as: ASCCustomProductPagesResponse.self
                 )
             } else {
@@ -36,7 +36,7 @@ extension CustomProductPagesWorker {
                 }
 
                 response = try await httpClient.get(
-                    "/v1/apps/\(appId)/appCustomProductPages",
+                    "/v1/apps/\(try ASCPathSegment.encode(appId))/appCustomProductPages",
                     parameters: queryParams,
                     as: ASCCustomProductPagesResponse.self
                 )
@@ -77,7 +77,7 @@ extension CustomProductPagesWorker {
 
         do {
             let response: ASCCustomProductPageResponse = try await httpClient.get(
-                "/v1/appCustomProductPages/\(pageId)",
+                "/v1/appCustomProductPages/\(try ASCPathSegment.encode(pageId))",
                 as: ASCCustomProductPageResponse.self
             )
 
@@ -209,7 +209,7 @@ extension CustomProductPagesWorker {
             )
 
             let response: ASCCustomProductPageResponse = try await httpClient.patch(
-                "/v1/appCustomProductPages/\(pageId)",
+                "/v1/appCustomProductPages/\(try ASCPathSegment.encode(pageId))",
                 body: request,
                 as: ASCCustomProductPageResponse.self
             )
@@ -244,7 +244,7 @@ extension CustomProductPagesWorker {
         }
 
         do {
-            _ = try await httpClient.delete("/v1/appCustomProductPages/\(pageId)")
+            _ = try await httpClient.delete("/v1/appCustomProductPages/\(try ASCPathSegment.encode(pageId))")
 
             let result = [
                 "success": true,
@@ -279,7 +279,7 @@ extension CustomProductPagesWorker {
             if let nextUrl = try paginationURL(from: arguments["next_url"]) {
                 response = try await httpClient.getPage(
                     nextUrl,
-                    scope: PaginationScope(path: "/v1/appCustomProductPages/\(pageId)/appCustomProductPageVersions"),
+                    scope: PaginationScope(path: "/v1/appCustomProductPages/\(try ASCPathSegment.encode(pageId))/appCustomProductPageVersions"),
                     as: ASCCustomProductPageVersionsResponse.self
                 )
             } else {
@@ -293,7 +293,7 @@ extension CustomProductPagesWorker {
                 }
 
                 response = try await httpClient.get(
-                    "/v1/appCustomProductPages/\(pageId)/appCustomProductPageVersions",
+                    "/v1/appCustomProductPages/\(try ASCPathSegment.encode(pageId))/appCustomProductPageVersions",
                     parameters: queryParams,
                     as: ASCCustomProductPageVersionsResponse.self
                 )
@@ -384,7 +384,7 @@ extension CustomProductPagesWorker {
             if let nextUrl = try paginationURL(from: arguments["next_url"]) {
                 response = try await httpClient.getPage(
                     nextUrl,
-                    scope: PaginationScope(path: "/v1/appCustomProductPageVersions/\(versionId)/appCustomProductPageLocalizations"),
+                    scope: PaginationScope(path: "/v1/appCustomProductPageVersions/\(try ASCPathSegment.encode(versionId))/appCustomProductPageLocalizations"),
                     as: ASCCustomProductPageLocalizationsResponse.self
                 )
             } else {
@@ -398,7 +398,7 @@ extension CustomProductPagesWorker {
                 }
 
                 response = try await httpClient.get(
-                    "/v1/appCustomProductPageVersions/\(versionId)/appCustomProductPageLocalizations",
+                    "/v1/appCustomProductPageVersions/\(try ASCPathSegment.encode(versionId))/appCustomProductPageLocalizations",
                     parameters: queryParams,
                     as: ASCCustomProductPageLocalizationsResponse.self
                 )
@@ -500,7 +500,7 @@ extension CustomProductPagesWorker {
             )
 
             let response: ASCCustomProductPageLocalizationResponse = try await httpClient.patch(
-                "/v1/appCustomProductPageLocalizations/\(localizationId)",
+                "/v1/appCustomProductPageLocalizations/\(try ASCPathSegment.encode(localizationId))",
                 body: request,
                 as: ASCCustomProductPageLocalizationResponse.self
             )

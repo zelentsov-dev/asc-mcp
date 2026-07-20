@@ -56,7 +56,7 @@ extension InAppPurchasesWorker {
                 response = try await httpClient.getPage(
                     nextUrl,
                     scope: PaginationScope(
-                        path: "/v1/apps/\(appId)/inAppPurchasesV2",
+                        path: "/v1/apps/\(try ASCPathSegment.encode(appId))/inAppPurchasesV2",
                         requiredParameters: requiredParameters
                     ),
                     as: ASCInAppPurchasesV2Response.self
@@ -82,7 +82,7 @@ extension InAppPurchasesWorker {
                 }
 
                 response = try await httpClient.get(
-                    "/v1/apps/\(appId)/inAppPurchasesV2",
+                    "/v1/apps/\(try ASCPathSegment.encode(appId))/inAppPurchasesV2",
                     parameters: queryParams,
                     as: ASCInAppPurchasesV2Response.self
                 )
@@ -123,7 +123,7 @@ extension InAppPurchasesWorker {
 
         do {
             let response: ASCInAppPurchaseV2Response = try await httpClient.get(
-                "/v2/inAppPurchases/\(iapId)",
+                "/v2/inAppPurchases/\(try ASCPathSegment.encode(iapId))",
                 as: ASCInAppPurchaseV2Response.self
             )
 
@@ -228,7 +228,7 @@ extension InAppPurchasesWorker {
             )
 
             let response: ASCInAppPurchaseV2Response = try await httpClient.patch(
-                "/v2/inAppPurchases/\(iapId)",
+                "/v2/inAppPurchases/\(try ASCPathSegment.encode(iapId))",
                 body: request,
                 as: ASCInAppPurchaseV2Response.self
             )
@@ -263,7 +263,7 @@ extension InAppPurchasesWorker {
         }
 
         do {
-            _ = try await httpClient.delete("/v2/inAppPurchases/\(iapId)")
+            _ = try await httpClient.delete("/v2/inAppPurchases/\(try ASCPathSegment.encode(iapId))")
 
             let result = [
                 "success": true,
@@ -298,12 +298,12 @@ extension InAppPurchasesWorker {
             if let nextUrl = try paginationURL(from: arguments["next_url"]) {
                 response = try await httpClient.getPage(
                     nextUrl,
-                    scope: PaginationScope(path: "/v2/inAppPurchases/\(iapId)/inAppPurchaseLocalizations"),
+                    scope: PaginationScope(path: "/v2/inAppPurchases/\(try ASCPathSegment.encode(iapId))/inAppPurchaseLocalizations"),
                     as: ASCInAppPurchaseLocalizationsResponse.self
                 )
             } else {
                 response = try await httpClient.get(
-                    "/v2/inAppPurchases/\(iapId)/inAppPurchaseLocalizations",
+                    "/v2/inAppPurchases/\(try ASCPathSegment.encode(iapId))/inAppPurchaseLocalizations",
                     parameters: [:],
                     as: ASCInAppPurchaseLocalizationsResponse.self
                 )
@@ -348,7 +348,7 @@ extension InAppPurchasesWorker {
             if let nextUrl = try paginationURL(from: arguments["next_url"]) {
                 response = try await httpClient.getPage(
                     nextUrl,
-                    scope: PaginationScope(path: "/v1/apps/\(appId)/subscriptionGroups"),
+                    scope: PaginationScope(path: "/v1/apps/\(try ASCPathSegment.encode(appId))/subscriptionGroups"),
                     as: ASCSubscriptionGroupsResponse.self
                 )
             } else {
@@ -362,7 +362,7 @@ extension InAppPurchasesWorker {
                 }
 
                 response = try await httpClient.get(
-                    "/v1/apps/\(appId)/subscriptionGroups",
+                    "/v1/apps/\(try ASCPathSegment.encode(appId))/subscriptionGroups",
                     parameters: queryParams,
                     as: ASCSubscriptionGroupsResponse.self
                 )
@@ -410,7 +410,7 @@ extension InAppPurchasesWorker {
             }
 
             let response: ASCSubscriptionGroupResponse = try await httpClient.get(
-                "/v1/subscriptionGroups/\(groupId)",
+                "/v1/subscriptionGroups/\(try ASCPathSegment.encode(groupId))",
                 parameters: queryParams,
                 as: ASCSubscriptionGroupResponse.self
             )
@@ -512,7 +512,7 @@ extension InAppPurchasesWorker {
             )
 
             let response: ASCInAppPurchaseLocalizationResponse = try await httpClient.patch(
-                "/v1/inAppPurchaseLocalizations/\(localizationId)",
+                "/v1/inAppPurchaseLocalizations/\(try ASCPathSegment.encode(localizationId))",
                 body: request,
                 as: ASCInAppPurchaseLocalizationResponse.self
             )
@@ -544,7 +544,7 @@ extension InAppPurchasesWorker {
         }
 
         do {
-            _ = try await httpClient.delete("/v1/inAppPurchaseLocalizations/\(localizationId)")
+            _ = try await httpClient.delete("/v1/inAppPurchaseLocalizations/\(try ASCPathSegment.encode(localizationId))")
 
             let result = [
                 "success": true,
@@ -628,7 +628,7 @@ extension InAppPurchasesWorker {
                 response = try await httpClient.getPage(
                     nextUrl,
                     scope: PaginationScope(
-                        path: "/v2/inAppPurchases/\(iapId)/pricePoints",
+                        path: "/v2/inAppPurchases/\(try ASCPathSegment.encode(iapId))/pricePoints",
                         requiredParameters: requiredParameters
                     ),
                     as: ASCIAPPricePointsResponse.self
@@ -648,7 +648,7 @@ extension InAppPurchasesWorker {
                 }
 
                 response = try await httpClient.get(
-                    "/v2/inAppPurchases/\(iapId)/pricePoints",
+                    "/v2/inAppPurchases/\(try ASCPathSegment.encode(iapId))/pricePoints",
                     parameters: queryParams,
                     as: ASCIAPPricePointsResponse.self
                 )
@@ -689,7 +689,7 @@ extension InAppPurchasesWorker {
 
         do {
             let response: ASCIAPPriceScheduleResponse = try await httpClient.get(
-                "/v2/inAppPurchases/\(iapId)/iapPriceSchedule",
+                "/v2/inAppPurchases/\(try ASCPathSegment.encode(iapId))/iapPriceSchedule",
                 as: ASCIAPPriceScheduleResponse.self
             )
 
@@ -851,7 +851,7 @@ extension InAppPurchasesWorker {
             }
 
             let response: ASCIAPAvailabilityResponse = try await httpClient.get(
-                "/v1/inAppPurchaseAvailabilities/\(availabilityId)",
+                "/v1/inAppPurchaseAvailabilities/\(try ASCPathSegment.encode(availabilityId))",
                 parameters: queryParams,
                 as: ASCIAPAvailabilityResponse.self
             )
@@ -905,7 +905,7 @@ extension InAppPurchasesWorker {
 
         do {
             let response: ASCIAPReviewScreenshotResponse = try await httpClient.get(
-                "/v2/inAppPurchases/\(iapId)/appStoreReviewScreenshot",
+                "/v2/inAppPurchases/\(try ASCPathSegment.encode(iapId))/appStoreReviewScreenshot",
                 as: ASCIAPReviewScreenshotResponse.self
             )
 
@@ -926,8 +926,8 @@ extension InAppPurchasesWorker {
         }
     }
 
-    /// Uploads a review screenshot for an in-app purchase (full cycle: reserve -> upload -> commit)
-    /// - Returns: JSON with final screenshot info
+    /// Uploads and verifies a review screenshot for an in-app purchase
+    /// - Returns: JSON with terminal or accepted processing-pending screenshot info
     /// - Throws: On file read, upload, or API errors
     func uploadIAPReviewScreenshot(_ params: CallTool.Parameters) async throws -> CallTool.Result {
         guard let arguments = params.arguments,
@@ -939,70 +939,65 @@ extension InAppPurchasesWorker {
             )
         }
 
-        do {
-            // Step 1: Get file info
-            let fileSize = try await uploadService.fileSize(at: filePath)
-            let fileName = await uploadService.fileName(at: filePath)
-
-            // Step 2: Reserve
-            let createRequest = CreateIAPReviewScreenshotRequest(
-                data: CreateIAPReviewScreenshotRequest.CreateData(
-                    attributes: CreateIAPReviewScreenshotRequest.Attributes(
-                        fileName: fileName,
-                        fileSize: fileSize
-                    ),
-                    relationships: CreateIAPReviewScreenshotRequest.Relationships(
-                        inAppPurchaseV2: CreateIAPReviewScreenshotRequest.InAppPurchaseRelationship(
-                            data: ASCResourceIdentifier(type: "inAppPurchases", id: iapId)
+        let outcome: UploadTransactionOutcome<ASCIAPReviewScreenshot> = await UploadTransactionRecovery.perform(
+            filePath: filePath,
+            resourceName: "IAP review screenshot",
+            expectedType: "inAppPurchaseAppStoreReviewScreenshots",
+            reservationEndpoint: "/v1/inAppPurchaseAppStoreReviewScreenshots",
+            httpClient: httpClient,
+            uploadService: uploadService,
+            deliveryPollAttempts: deliveryPollAttempts,
+            deliveryPollIntervalNanoseconds: deliveryPollIntervalNanoseconds,
+            makeReservationBody: { fileSize, fileName in
+                try JSONEncoder().encode(
+                    CreateIAPReviewScreenshotRequest(
+                        data: CreateIAPReviewScreenshotRequest.CreateData(
+                            attributes: CreateIAPReviewScreenshotRequest.Attributes(
+                                fileName: fileName,
+                                fileSize: fileSize
+                            ),
+                            relationships: CreateIAPReviewScreenshotRequest.Relationships(
+                                inAppPurchaseV2: CreateIAPReviewScreenshotRequest.InAppPurchaseRelationship(
+                                    data: ASCResourceIdentifier(type: "inAppPurchases", id: iapId)
+                                )
+                            )
                         )
                     )
                 )
-            )
-
-            let encoder = JSONEncoder()
-            let bodyData = try encoder.encode(createRequest)
-            let reserveData = try await httpClient.post("/v1/inAppPurchaseAppStoreReviewScreenshots", body: bodyData)
-            let reserveResponse = try JSONDecoder().decode(ASCIAPReviewScreenshotResponse.self, from: reserveData)
-
-            let screenshotId = reserveResponse.data.id
-            guard let uploadOperations = reserveResponse.data.attributes?.uploadOperations, !uploadOperations.isEmpty else {
-                return CallTool.Result(
-                    content: [MCPContent.text("Error: No upload operations returned from reservation")],
-                    isError: true
-                )
-            }
-
-            // Step 3: Upload file chunks
-            let md5 = try await uploadService.uploadFile(filePath: filePath, uploadOperations: uploadOperations)
-
-            // Step 4: Commit
-            let commitRequest = CommitIAPReviewScreenshotRequest(
-                data: CommitIAPReviewScreenshotRequest.CommitData(
-                    id: screenshotId,
-                    attributes: CommitIAPReviewScreenshotRequest.Attributes(
-                        sourceFileChecksum: md5,
-                        uploaded: true
+            },
+            decodeResource: {
+                try JSONDecoder().decode(ASCIAPReviewScreenshotResponse.self, from: $0).data
+            },
+            makeCommitBody: { screenshotId, checksum in
+                try JSONEncoder().encode(
+                    CommitIAPReviewScreenshotRequest(
+                        data: CommitIAPReviewScreenshotRequest.CommitData(
+                            id: screenshotId,
+                            attributes: CommitIAPReviewScreenshotRequest.Attributes(
+                                sourceFileChecksum: checksum,
+                                uploaded: true
+                            )
+                        )
                     )
                 )
-            )
+            },
+            resourceEndpoint: { "/v1/inAppPurchaseAppStoreReviewScreenshots/\(try ASCPathSegment.encode($0))" }
+        )
 
-            let commitBody = try encoder.encode(commitRequest)
-            let commitData = try await httpClient.patch("/v1/inAppPurchaseAppStoreReviewScreenshots/\(screenshotId)", body: commitBody)
-            let commitResponse = try JSONDecoder().decode(ASCIAPReviewScreenshotResponse.self, from: commitData)
-
-            let result: [String: Any] = [
-                "success": true,
-                "review_screenshot": formatReviewScreenshot(commitResponse.data)
-            ]
-
-            return MCPResult.jsonObject(result)
-
-        } catch {
-            return CallTool.Result(
-                content: [MCPContent.text("Error: Failed to upload IAP review screenshot: \(error.localizedDescription)")],
-                isError: true
-            )
-        }
+        return UploadTransactionRecovery.result(
+            for: outcome,
+            descriptor: UploadRecoveryDescriptor(
+                resourceName: "IAP review screenshot",
+                successKey: "review_screenshot",
+                idArgument: "screenshot_id",
+                getTool: "iap_get_review_screenshot",
+                getIDArgument: nil,
+                deleteTool: "iap_delete_review_screenshot",
+                inspectionTool: "iap_get_review_screenshot",
+                inspectionArguments: ["iap_id": iapId]
+            ),
+            format: formatReviewScreenshot
+        )
     }
 
     /// Deletes an IAP review screenshot
@@ -1018,7 +1013,7 @@ extension InAppPurchasesWorker {
         }
 
         do {
-            _ = try await httpClient.delete("/v1/inAppPurchaseAppStoreReviewScreenshots/\(screenshotId)")
+            _ = try await httpClient.delete("/v1/inAppPurchaseAppStoreReviewScreenshots/\(try ASCPathSegment.encode(screenshotId))")
 
             let result = [
                 "success": true,
@@ -1037,8 +1032,8 @@ extension InAppPurchasesWorker {
 
     // MARK: - IAP Images
 
-    /// Uploads an IAP image (full cycle: reserve -> upload -> commit)
-    /// - Returns: JSON with final image info
+    /// Uploads an IAP image and reconciles its asynchronous processing state
+    /// - Returns: JSON with terminal or accepted processing-pending image info
     func uploadIAPImage(_ params: CallTool.Parameters) async throws -> CallTool.Result {
         guard let arguments = params.arguments,
               let iapId = arguments["iap_id"]?.stringValue,
@@ -1049,70 +1044,65 @@ extension InAppPurchasesWorker {
             )
         }
 
-        do {
-            // Step 1: Get file info
-            let fileSize = try await uploadService.fileSize(at: filePath)
-            let fileName = await uploadService.fileName(at: filePath)
-
-            // Step 2: Reserve
-            let createRequest = CreateIAPImageRequest(
-                data: CreateIAPImageRequest.CreateData(
-                    attributes: CreateIAPImageRequest.Attributes(
-                        fileSize: fileSize,
-                        fileName: fileName
-                    ),
-                    relationships: CreateIAPImageRequest.Relationships(
-                        inAppPurchase: CreateIAPImageRequest.IAPImageRelationship(
-                            data: ASCResourceIdentifier(type: "inAppPurchases", id: iapId)
+        let outcome: UploadTransactionOutcome<ASCIAPImage> = await UploadTransactionRecovery.perform(
+            filePath: filePath,
+            resourceName: "IAP image",
+            expectedType: "inAppPurchaseImages",
+            reservationEndpoint: "/v1/inAppPurchaseImages",
+            httpClient: httpClient,
+            uploadService: uploadService,
+            deliveryPollAttempts: deliveryPollAttempts,
+            deliveryPollIntervalNanoseconds: deliveryPollIntervalNanoseconds,
+            makeReservationBody: { fileSize, fileName in
+                try JSONEncoder().encode(
+                    CreateIAPImageRequest(
+                        data: CreateIAPImageRequest.CreateData(
+                            attributes: CreateIAPImageRequest.Attributes(
+                                fileSize: fileSize,
+                                fileName: fileName
+                            ),
+                            relationships: CreateIAPImageRequest.Relationships(
+                                inAppPurchase: CreateIAPImageRequest.IAPImageRelationship(
+                                    data: ASCResourceIdentifier(type: "inAppPurchases", id: iapId)
+                                )
+                            )
                         )
                     )
                 )
-            )
-
-            let encoder = JSONEncoder()
-            let bodyData = try encoder.encode(createRequest)
-            let reserveData = try await httpClient.post("/v1/inAppPurchaseImages", body: bodyData)
-            let reserveResponse = try JSONDecoder().decode(ASCIAPImageResponse.self, from: reserveData)
-
-            let imageId = reserveResponse.data.id
-            guard let uploadOperations = reserveResponse.data.attributes?.uploadOperations, !uploadOperations.isEmpty else {
-                return CallTool.Result(
-                    content: [MCPContent.text("Error: No upload operations returned from reservation")],
-                    isError: true
-                )
-            }
-
-            // Step 3: Upload file chunks
-            let md5 = try await uploadService.uploadFile(filePath: filePath, uploadOperations: uploadOperations)
-
-            // Step 4: Commit
-            let commitRequest = CommitIAPImageRequest(
-                data: CommitIAPImageRequest.CommitData(
-                    id: imageId,
-                    attributes: CommitIAPImageRequest.Attributes(
-                        sourceFileChecksum: md5,
-                        uploaded: true
+            },
+            decodeResource: {
+                try JSONDecoder().decode(ASCIAPImageResponse.self, from: $0).data
+            },
+            makeCommitBody: { imageId, checksum in
+                try JSONEncoder().encode(
+                    CommitIAPImageRequest(
+                        data: CommitIAPImageRequest.CommitData(
+                            id: imageId,
+                            attributes: CommitIAPImageRequest.Attributes(
+                                sourceFileChecksum: checksum,
+                                uploaded: true
+                            )
+                        )
                     )
                 )
-            )
+            },
+            resourceEndpoint: { "/v1/inAppPurchaseImages/\(try ASCPathSegment.encode($0))" }
+        )
 
-            let commitBody = try encoder.encode(commitRequest)
-            let commitData = try await httpClient.patch("/v1/inAppPurchaseImages/\(imageId)", body: commitBody)
-            let commitResponse = try JSONDecoder().decode(ASCIAPImageResponse.self, from: commitData)
-
-            let result = [
-                "success": true,
-                "image": formatIAPImage(commitResponse.data)
-            ] as [String: Any]
-
-            return MCPResult.jsonObject(result)
-
-        } catch {
-            return CallTool.Result(
-                content: [MCPContent.text("Error: Failed to upload IAP image: \(error.localizedDescription)")],
-                isError: true
-            )
-        }
+        return UploadTransactionRecovery.result(
+            for: outcome,
+            descriptor: UploadRecoveryDescriptor(
+                resourceName: "IAP image",
+                successKey: "image",
+                idArgument: "image_id",
+                getTool: "iap_get_image",
+                getIDArgument: "image_id",
+                deleteTool: "iap_delete_image",
+                inspectionTool: "iap_list_images",
+                inspectionArguments: ["iap_id": iapId]
+            ),
+            format: formatIAPImage
+        )
     }
 
     /// Gets details of an IAP image
@@ -1127,7 +1117,7 @@ extension InAppPurchasesWorker {
         }
 
         do {
-            let data = try await httpClient.get("/v1/inAppPurchaseImages/\(imageId)")
+            let data = try await httpClient.get("/v1/inAppPurchaseImages/\(try ASCPathSegment.encode(imageId))")
             let response = try JSONDecoder().decode(ASCIAPImageResponse.self, from: data)
 
             let result = [
@@ -1157,7 +1147,7 @@ extension InAppPurchasesWorker {
         }
 
         do {
-            _ = try await httpClient.delete("/v1/inAppPurchaseImages/\(imageId)")
+            _ = try await httpClient.delete("/v1/inAppPurchaseImages/\(try ASCPathSegment.encode(imageId))")
 
             let result = [
                 "success": true,
@@ -1192,7 +1182,7 @@ extension InAppPurchasesWorker {
             if let nextUrl = try paginationURL(from: arguments["next_url"]) {
                 response = try await httpClient.getPage(
                     nextUrl,
-                    scope: PaginationScope(path: "/v2/inAppPurchases/\(iapId)/images"),
+                    scope: PaginationScope(path: "/v2/inAppPurchases/\(try ASCPathSegment.encode(iapId))/images"),
                     as: ASCIAPImagesResponse.self
                 )
             } else {
@@ -1205,7 +1195,7 @@ extension InAppPurchasesWorker {
                 }
 
                 response = try await httpClient.get(
-                    "/v2/inAppPurchases/\(iapId)/images",
+                    "/v2/inAppPurchases/\(try ASCPathSegment.encode(iapId))/images",
                     parameters: queryParams,
                     as: ASCIAPImagesResponse.self
                 )

@@ -57,4 +57,67 @@ struct CompaniesManagerTests {
             #expect(missingPath == path)
         }
     }
+
+    @Test("company resolution rejects empty and ambiguous queries")
+    func companyResolutionRejectsEmptyAndAmbiguousQueries() async throws {
+        let north = TestFactory.makeCompany(id: "north", name: "Acme North")
+        let south = TestFactory.makeCompany(id: "south", name: "Acme South")
+        let manager = try TestFactory.makeCompaniesManager(companies: [north, south])
+
+        do {
+            _ = try await manager.resolveCompany("  \n ")
+            Issue.record("Expected empty company identifier error")
+        } catch let error as CompanyError {
+            guard case .emptyCompanyIdentifier = error else {
+                Issue.record("Expected emptyCompanyIdentifier, got \(error)")
+                return
+            }
+        }
+
+        do {
+            _ = try await manager.resolveCompany("acme")
+            Issue.record("Expected ambiguous company error")
+        } catch let error as CompanyError {
+            guard case .ambiguousCompany(let query, let matches) = error else {
+                Issue.record("Expected ambiguousCompany, got \(error)")
+                return
+            }
+            #expect(query == "acme")
+            #expect(matches == ["Acme North", "Acme South"])
+        }
+    }
+
+    @Test("company resolution prioritizes trimmed exact ID and exact name")
+    func companyResolutionPrioritizesExactMatches() async throws {
+        let north = TestFactory.makeCompany(id: "north", name: "Acme")
+        let south = TestFactory.makeCompany(id: "south", name: "Acme South")
+        let manager = try TestFactory.makeCompaniesManager(companies: [north, south])
+
+        let byID = try await manager.resolveCompany(" NORTH ")
+        let byExactName = try await manager.resolveCompany("acme")
+        let byUniquePartial = try await manager.resolveCompany("me sou")
+
+        #expect(byID == north)
+        #expect(byExactName == north)
+        #expect(byUniquePartial == south)
+    }
+
+    @Test("company resolution rejects duplicate exact IDs")
+    func companyResolutionRejectsDuplicateExactIDs() async throws {
+        let first = TestFactory.makeCompany(id: "shared", name: "First Company")
+        let second = TestFactory.makeCompany(id: "shared", name: "Second Company")
+        let manager = try TestFactory.makeCompaniesManager(companies: [first, second])
+
+        do {
+            _ = try await manager.resolveCompany(" SHARED ")
+            Issue.record("Expected ambiguous company error")
+        } catch let error as CompanyError {
+            guard case .ambiguousCompany(let query, let matches) = error else {
+                Issue.record("Expected ambiguousCompany, got \(error)")
+                return
+            }
+            #expect(query == "SHARED")
+            #expect(matches == ["First Company (ID: shared)", "Second Company (ID: shared)"])
+        }
+    }
 }

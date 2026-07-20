@@ -92,6 +92,8 @@ public actor HTTPClient {
         acceptHeader: String = "application/json"
     ) async throws -> Data {
 
+        let endpoint = try validatedASCAPIEndpoint(endpoint)
+
         // Safe URL construction
         guard var urlComponents = URLComponents(string: "\(baseURL)\(endpoint)") else {
             logger.error("Invalid URL components: \(self.baseURL)\(endpoint)")

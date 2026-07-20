@@ -69,6 +69,55 @@ struct AnalyticsSalesReportHardeningTests {
         #expect(rows.count == 1)
     }
 
+    @Test("financial raw row limit is advertised and clamped to 1 through 200")
+    func financialRawRowLimitIsBounded() async throws {
+        let header = "Quantity\tPartner Share\tPartner Share Currency\tCountry Of Sale (Region)"
+        let body = header + "\n" + Array(
+            repeating: "1\t1.00\tUSD\tUS",
+            count: 205
+        ).joined(separator: "\n")
+        let transport = TestHTTPTransport(responses: [
+            .init(statusCode: 200, body: body),
+            .init(statusCode: 200, body: body)
+        ])
+        let worker = try await makeAnalyticsWorker(transport: transport)
+        let tool = try #require(await worker.getTools().first { $0.name == "analytics_financial_report" })
+        let properties = try analyticsProperties(tool)
+        let limitSchema = try analyticsObject(properties["limit"])
+
+        #expect(limitSchema["minimum"] == .int(1))
+        #expect(limitSchema["maximum"] == .int(200))
+
+        let minimumResult = try await worker.handleTool(CallTool.Parameters(
+            name: "analytics_financial_report",
+            arguments: [
+                "vendor_number": .string("12345678"),
+                "region_code": .string("US"),
+                "report_date": .string("2026-06"),
+                "report_type": .string("FINANCIAL"),
+                "summary_only": .bool(false),
+                "limit": .int(0)
+            ]
+        ))
+        let maximumResult = try await worker.handleTool(CallTool.Parameters(
+            name: "analytics_financial_report",
+            arguments: [
+                "vendor_number": .string("12345678"),
+                "region_code": .string("US"),
+                "report_date": .string("2026-06"),
+                "report_type": .string("FINANCIAL"),
+                "summary_only": .bool(false),
+                "limit": .int(Int.max)
+            ]
+        ))
+
+        let minimumRoot = try analyticsObject(minimumResult.structuredContent)
+        let maximumRoot = try analyticsObject(maximumResult.structuredContent)
+        #expect(minimumRoot["showing_rows"] == .int(1))
+        #expect(maximumRoot["showing_rows"] == .int(200))
+        #expect(await transport.requestCount() == 2)
+    }
+
     @Test("daily sales report can request the latest available date")
     func dailyReportDateIsOptional() async throws {
         let transport = TestHTTPTransport(responses: [
@@ -259,6 +308,29 @@ struct AnalyticsSalesReportHardeningTests {
         #expect(proceeds["USD"] == .double(70))
         let exactProceeds = try analyticsObject(summary["proceeds_by_currency_exact"])
         #expect(exactProceeds["USD"] == .string("70"))
+    }
+
+    @Test("sales report rejects a gzip response with a corrupt checksum")
+    func salesReportRejectsCorruptGzipChecksum() async throws {
+        var compressed = try #require(Data(base64Encoded: Self.gzipSalesTSV))
+        compressed[compressed.count - 8] ^= 0xFF
+        let transport = TestHTTPTransport(responses: [
+            .init(statusCode: 200, data: compressed)
+        ])
+        let worker = try await makeAnalyticsWorker(transport: transport)
+
+        let result = try await worker.handleTool(CallTool.Parameters(
+            name: "analytics_sales_report",
+            arguments: [
+                "vendor_number": .string("12345678"),
+                "report_type": .string("SALES"),
+                "report_sub_type": .string("SUMMARY"),
+                "frequency": .string("DAILY")
+            ]
+        ))
+
+        #expect(result.isError == true)
+        #expect(await transport.requestCount() == 1)
     }
 
     @Test("sales report rejects empty identifiers and invalid dates before network")

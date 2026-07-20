@@ -24,14 +24,14 @@ extension BetaFeedbackWorker {
                 response = try await httpClient.getPage(
                     nextURL,
                     scope: PaginationScope(
-                        path: "/v1/apps/\(appID)/betaFeedbackCrashSubmissions",
+                        path: "/v1/apps/\(try ASCPathSegment.encode(appID))/betaFeedbackCrashSubmissions",
                         requiredParameters: requiredParameters
                     ),
                     as: ASCBetaFeedbackCrashSubmissionsResponse.self
                 )
             } else {
                 response = try await httpClient.get(
-                    "/v1/apps/\(appID)/betaFeedbackCrashSubmissions",
+                    "/v1/apps/\(try ASCPathSegment.encode(appID))/betaFeedbackCrashSubmissions",
                     parameters: query,
                     as: ASCBetaFeedbackCrashSubmissionsResponse.self
                 )
@@ -61,7 +61,7 @@ extension BetaFeedbackWorker {
 
         do {
             let response = try await httpClient.get(
-                "/v1/betaFeedbackCrashSubmissions/\(submissionID)",
+                "/v1/betaFeedbackCrashSubmissions/\(try ASCPathSegment.encode(submissionID))",
                 parameters: relatedQuery(arguments),
                 as: ASCBetaFeedbackCrashSubmissionResponse.self
             )
@@ -85,7 +85,7 @@ extension BetaFeedbackWorker {
         }
 
         return try await fetchCrashLog(
-            endpoint: "/v1/betaFeedbackCrashSubmissions/\(submissionID)/crashLog",
+            endpoint: "/v1/betaFeedbackCrashSubmissions/\(try ASCPathSegment.encode(submissionID))/crashLog",
             arguments: arguments
         )
     }
@@ -101,7 +101,7 @@ extension BetaFeedbackWorker {
         }
 
         return try await fetchCrashLog(
-            endpoint: "/v1/betaCrashLogs/\(crashLogID)",
+            endpoint: "/v1/betaCrashLogs/\(try ASCPathSegment.encode(crashLogID))",
             arguments: arguments
         )
     }
@@ -117,7 +117,7 @@ extension BetaFeedbackWorker {
         }
 
         do {
-            _ = try await httpClient.delete("/v1/betaFeedbackCrashSubmissions/\(submissionID)")
+            _ = try await httpClient.delete("/v1/betaFeedbackCrashSubmissions/\(try ASCPathSegment.encode(submissionID))")
             return MCPResult.jsonObject([
                 "success": true,
                 "message": "Beta feedback crash submission '\(submissionID)' deleted"
@@ -149,14 +149,14 @@ extension BetaFeedbackWorker {
                 response = try await httpClient.getPage(
                     nextURL,
                     scope: PaginationScope(
-                        path: "/v1/apps/\(appID)/betaFeedbackScreenshotSubmissions",
+                        path: "/v1/apps/\(try ASCPathSegment.encode(appID))/betaFeedbackScreenshotSubmissions",
                         requiredParameters: requiredParameters
                     ),
                     as: ASCBetaFeedbackScreenshotSubmissionsResponse.self
                 )
             } else {
                 response = try await httpClient.get(
-                    "/v1/apps/\(appID)/betaFeedbackScreenshotSubmissions",
+                    "/v1/apps/\(try ASCPathSegment.encode(appID))/betaFeedbackScreenshotSubmissions",
                     parameters: query,
                     as: ASCBetaFeedbackScreenshotSubmissionsResponse.self
                 )
@@ -186,7 +186,7 @@ extension BetaFeedbackWorker {
 
         do {
             let response = try await httpClient.get(
-                "/v1/betaFeedbackScreenshotSubmissions/\(submissionID)",
+                "/v1/betaFeedbackScreenshotSubmissions/\(try ASCPathSegment.encode(submissionID))",
                 parameters: relatedQuery(arguments),
                 as: ASCBetaFeedbackScreenshotSubmissionResponse.self
             )
@@ -210,7 +210,7 @@ extension BetaFeedbackWorker {
         }
 
         do {
-            _ = try await httpClient.delete("/v1/betaFeedbackScreenshotSubmissions/\(submissionID)")
+            _ = try await httpClient.delete("/v1/betaFeedbackScreenshotSubmissions/\(try ASCPathSegment.encode(submissionID))")
             return MCPResult.jsonObject([
                 "success": true,
                 "message": "Beta feedback screenshot submission '\(submissionID)' deleted"

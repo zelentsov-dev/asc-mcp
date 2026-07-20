@@ -134,7 +134,7 @@ extension BetaTestersWorker {
             }
 
             let response: ASCBetaTesterResponse = try await httpClient.get(
-                "/v1/betaTesters/\(testerId)",
+                "/v1/betaTesters/\(try ASCPathSegment.encode(testerId))",
                 parameters: queryParams,
                 as: ASCBetaTesterResponse.self
             )
@@ -262,7 +262,7 @@ extension BetaTestersWorker {
         }
 
         do {
-            _ = try await httpClient.delete("/v1/betaTesters/\(testerId)")
+            _ = try await httpClient.delete("/v1/betaTesters/\(try ASCPathSegment.encode(testerId))")
 
             let result: [String: Any] = [
                 "success": true,
@@ -298,7 +298,7 @@ extension BetaTestersWorker {
             if let nextUrl = try paginationURL(from: arguments["next_url"]) {
                 response = try await httpClient.getPage(
                     nextUrl,
-                    scope: PaginationScope(path: "/v1/betaTesters/\(testerId)/apps"),
+                    scope: PaginationScope(path: "/v1/betaTesters/\(try ASCPathSegment.encode(testerId))/apps"),
                     as: ASCAppsResponse.self
                 )
             } else {
@@ -312,7 +312,7 @@ extension BetaTestersWorker {
                 }
 
                 response = try await httpClient.get(
-                    "/v1/betaTesters/\(testerId)/apps",
+                    "/v1/betaTesters/\(try ASCPathSegment.encode(testerId))/apps",
                     parameters: queryParams,
                     as: ASCAppsResponse.self
                 )
@@ -425,7 +425,7 @@ extension BetaTestersWorker {
 
             let bodyData = try JSONEncoder().encode(request)
             _ = try await httpClient.post(
-                "/v1/betaTesters/\(betaTesterId)/relationships/betaGroups",
+                "/v1/betaTesters/\(try ASCPathSegment.encode(betaTesterId))/relationships/betaGroups",
                 body: bodyData
             )
 
@@ -473,7 +473,7 @@ extension BetaTestersWorker {
 
             let bodyData = try JSONEncoder().encode(request)
             _ = try await httpClient.delete(
-                "/v1/betaTesters/\(betaTesterId)/relationships/betaGroups",
+                "/v1/betaTesters/\(try ASCPathSegment.encode(betaTesterId))/relationships/betaGroups",
                 body: bodyData
             )
 
@@ -521,7 +521,7 @@ extension BetaTestersWorker {
 
             let bodyData = try JSONEncoder().encode(request)
             _ = try await httpClient.post(
-                "/v1/betaTesters/\(betaTesterId)/relationships/builds",
+                "/v1/betaTesters/\(try ASCPathSegment.encode(betaTesterId))/relationships/builds",
                 body: bodyData
             )
 
@@ -569,7 +569,7 @@ extension BetaTestersWorker {
 
             let bodyData = try JSONEncoder().encode(request)
             _ = try await httpClient.delete(
-                "/v1/betaTesters/\(betaTesterId)/relationships/builds",
+                "/v1/betaTesters/\(try ASCPathSegment.encode(betaTesterId))/relationships/builds",
                 body: bodyData
             )
 
@@ -609,7 +609,7 @@ extension BetaTestersWorker {
 
             let bodyData = try JSONEncoder().encode(request)
             _ = try await httpClient.delete(
-                "/v1/betaTesters/\(betaTesterId)/relationships/apps",
+                "/v1/betaTesters/\(try ASCPathSegment.encode(betaTesterId))/relationships/apps",
                 body: bodyData
             )
 

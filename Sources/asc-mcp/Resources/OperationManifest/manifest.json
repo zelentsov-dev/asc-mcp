@@ -3062,14 +3062,6 @@
       "reviewAtSpec": "4.4.1"
     },
     {
-      "id": "deferred.inAppPurchaseAppStoreReviewScreenshots_getInstance",
-      "operationId": "inAppPurchaseAppStoreReviewScreenshots_getInstance",
-      "disposition": "deferred",
-      "reason": "The `inAppPurchaseAppStoreReviewScreenshots` resource-group capability is not yet exposed by asc-mcp.",
-      "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
-    },
-    {
       "id": "deferred.inAppPurchaseAvailabilities_availableTerritories_getToManyRelationship",
       "operationId": "inAppPurchaseAvailabilities_availableTerritories_getToManyRelationship",
       "disposition": "deferred",

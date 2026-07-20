@@ -12,7 +12,7 @@ public final class PromotedPurchasesWorker: Sendable {
     }
 
     /// Get list of available tools
-    /// - Returns: Array of 8 promoted purchase tools
+    /// - Returns: Array of 9 promoted purchase tools
     public func getTools() async -> [Tool] {
         return [
             listPromotedPurchasesTool(),
