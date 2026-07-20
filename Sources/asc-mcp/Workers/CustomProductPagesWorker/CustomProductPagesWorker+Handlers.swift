@@ -34,6 +34,9 @@ extension CustomProductPagesWorker {
                 } else {
                     queryParams["limit"] = "25"
                 }
+                if let visible = try commaSeparatedBooleans(arguments["visible"], field: "visible") {
+                    queryParams["filter[visible]"] = visible
+                }
 
                 response = try await httpClient.get(
                     "/v1/apps/\(try ASCPathSegment.encode(appId))/appCustomProductPages",
@@ -140,6 +143,15 @@ extension CustomProductPagesWorker {
             if let templateVersionId = arguments["template_version_id"]?.stringValue {
                 pageRelationships["appStoreVersionTemplate"] = [
                     "data": ["type": "appStoreVersions", "id": templateVersionId]
+                ]
+            }
+            if let templatePageValue = arguments["template_page_id"] {
+                guard let templatePageId = templatePageValue.stringValue,
+                      !templatePageId.isEmpty else {
+                    throw CustomProductPageInputError("'template_page_id' must be a non-empty string")
+                }
+                pageRelationships["customProductPageTemplate"] = [
+                    "data": ["type": "appCustomProductPages", "id": templatePageId]
                 ]
             }
 
@@ -298,6 +310,22 @@ extension CustomProductPagesWorker {
                 } else {
                     queryParams["limit"] = "25"
                 }
+                if let states = try commaSeparatedStrings(
+                    arguments["state"],
+                    field: "state",
+                    allowedValues: [
+                        "PREPARE_FOR_SUBMISSION",
+                        "READY_FOR_REVIEW",
+                        "WAITING_FOR_REVIEW",
+                        "IN_REVIEW",
+                        "ACCEPTED",
+                        "APPROVED",
+                        "REPLACED_WITH_NEW_VERSION",
+                        "REJECTED"
+                    ]
+                ) {
+                    queryParams["filter[state]"] = states
+                }
 
                 response = try await httpClient.get(
                     "/v1/appCustomProductPages/\(try ASCPathSegment.encode(pageId))/appCustomProductPageVersions",
@@ -340,8 +368,12 @@ extension CustomProductPagesWorker {
         }
 
         do {
+            let deepLink = try nullableAbsoluteURI(arguments["deep_link"], field: "deep_link")
             let request = CreateCustomProductPageVersionRequest(
                 data: CreateCustomProductPageVersionRequest.CreateData(
+                    attributes: deepLink.map {
+                        CreateCustomProductPageVersionRequest.Attributes(deepLink: $0)
+                    },
                     relationships: CreateCustomProductPageVersionRequest.Relationships(
                         appCustomProductPage: CreateCustomProductPageVersionRequest.PageRelationship(
                             data: ASCResourceIdentifier(type: "appCustomProductPages", id: pageId)
@@ -402,6 +434,9 @@ extension CustomProductPagesWorker {
                     queryParams["limit"] = String(min(max(limit, 1), 200))
                 } else {
                     queryParams["limit"] = "25"
+                }
+                if let locales = try commaSeparatedStrings(arguments["locale"], field: "locale") {
+                    queryParams["filter[locale]"] = locales
                 }
 
                 response = try await httpClient.get(
@@ -560,4 +595,96 @@ extension CustomProductPagesWorker {
             "promotionalText": (loc.attributes?.promotionalText).jsonSafe
         ]
     }
+
+    private func commaSeparatedStrings(
+        _ value: Value?,
+        field: String,
+        allowedValues: Set<String>? = nil
+    ) throws -> String? {
+        guard let value else { return nil }
+
+        let values: [String]
+        if let string = value.stringValue {
+            values = string.split(separator: ",", omittingEmptySubsequences: false).map {
+                $0.trimmingCharacters(in: .whitespacesAndNewlines)
+            }
+        } else if let array = value.arrayValue {
+            let strings = array.compactMap(\.stringValue)
+            guard strings.count == array.count else {
+                throw CustomProductPageInputError("'\(field)' must contain only strings")
+            }
+            values = strings.map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+        } else {
+            throw CustomProductPageInputError("'\(field)' must be a string or an array of strings")
+        }
+
+        guard !values.isEmpty, values.allSatisfy({ !$0.isEmpty }) else {
+            throw CustomProductPageInputError("'\(field)' must contain at least one non-empty value")
+        }
+        guard Set(values).count == values.count else {
+            throw CustomProductPageInputError("'\(field)' must not contain duplicate values")
+        }
+        if let allowedValues,
+           let unsupported = values.first(where: { !allowedValues.contains($0) }) {
+            throw CustomProductPageInputError(
+                "Unsupported value '\(unsupported)' for '\(field)'. Valid values: \(allowedValues.sorted().joined(separator: ", "))"
+            )
+        }
+        return values.joined(separator: ",")
+    }
+
+    private func commaSeparatedBooleans(_ value: Value?, field: String) throws -> String? {
+        guard let value else { return nil }
+
+        let values: [Bool]
+        if let boolean = value.boolValue {
+            values = [boolean]
+        } else if let array = value.arrayValue {
+            let booleans = array.compactMap(\.boolValue)
+            guard !array.isEmpty, booleans.count == array.count else {
+                throw CustomProductPageInputError("'\(field)' must contain one or more booleans")
+            }
+            values = booleans
+        } else {
+            throw CustomProductPageInputError("'\(field)' must be a boolean or an array of booleans")
+        }
+
+        guard Set(values).count == values.count else {
+            throw CustomProductPageInputError("'\(field)' must not contain duplicate values")
+        }
+        return values.map(String.init).joined(separator: ",")
+    }
+
+    private func nullableAbsoluteURI(
+        _ value: Value?,
+        field: String
+    ) throws -> ASCCustomProductPageNullable<String>? {
+        guard let value else { return nil }
+        if value.isNull {
+            return .null
+        }
+        guard let string = value.stringValue else {
+            throw CustomProductPageInputError("'\(field)' must be an absolute URI or null")
+        }
+        let schemePattern = "^[A-Za-z][A-Za-z0-9+.-]*$"
+        guard !string.isEmpty,
+              string.rangeOfCharacter(from: .whitespacesAndNewlines) == nil,
+              let components = URLComponents(string: string),
+              let scheme = components.scheme,
+              scheme.range(of: schemePattern, options: .regularExpression) != nil,
+              URL(string: string)?.scheme == scheme else {
+            throw CustomProductPageInputError("'\(field)' must be an absolute URI or null")
+        }
+        return .value(string)
+    }
+}
+
+private struct CustomProductPageInputError: LocalizedError {
+    let message: String
+
+    init(_ message: String) {
+        self.message = message
+    }
+
+    var errorDescription: String? { message }
 }

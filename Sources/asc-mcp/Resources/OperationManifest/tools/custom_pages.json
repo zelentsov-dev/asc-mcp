@@ -16,7 +16,11 @@
           "inputs": [
             { "sourceKind": "fixed", "jsonPointer": "/data/type", "fixedValue": "appCustomProductPages" },
             { "sourceKind": "fixed", "jsonPointer": "/data/relationships/app/data/type", "fixedValue": "apps" },
-            { "sourceKind": "fixed", "jsonPointer": "/data/relationships/appStoreVersionTemplate/data/type", "fixedValue": "appStoreVersions" }
+            { "sourceKind": "fixed", "jsonPointer": "/data/relationships/appStoreVersionTemplate/data/type", "fixedValue": "appStoreVersions" },
+            { "sourceKind": "fixed", "jsonPointer": "/data/relationships/customProductPageTemplate/data/type", "fixedValue": "appCustomProductPages" }
+          ],
+          "optionalParameterClassifications": [
+            { "location": "body", "appleName": "/data/relationships/appCustomProductPageVersions", "disposition": "internalControl", "reason": "The create workflow always generates local JSON:API IDs for the first page version and localization, then binds this relationship to that internally constructed inline version graph required by the public locale input.", "reviewAtSpec": "4.4.1" }
           ]
         }
       ],
@@ -25,7 +29,8 @@
         { "toolField": "name", "sourceKind": "requestBody", "operationId": "appCustomProductPages_createInstance", "jsonPointer": "/data/attributes/name" },
         { "toolField": "locale", "sourceKind": "requestBody", "operationId": "appCustomProductPages_createInstance", "jsonPointer": "/included/*/attributes/locale" },
         { "toolField": "promotional_text", "sourceKind": "requestBody", "operationId": "appCustomProductPages_createInstance", "jsonPointer": "/included/*/attributes/promotionalText" },
-        { "toolField": "template_version_id", "sourceKind": "requestBody", "operationId": "appCustomProductPages_createInstance", "jsonPointer": "/data/relationships/appStoreVersionTemplate/data/id" }
+        { "toolField": "template_version_id", "sourceKind": "requestBody", "operationId": "appCustomProductPages_createInstance", "jsonPointer": "/data/relationships/appStoreVersionTemplate/data/id" },
+        { "toolField": "template_page_id", "sourceKind": "requestBody", "operationId": "appCustomProductPages_createInstance", "jsonPointer": "/data/relationships/customProductPageTemplate/data/id" }
       ],
       "response": {
         "mode": "projection",
@@ -41,7 +46,7 @@
           { "outputField": "custom_product_page.state", "localRole": "Legacy compatibility placeholder set to null because Apple exposes state on page versions, not pages." }
         ]
       },
-      "note": "Apple supports inline creation of the first version and localization in this POST. When template_version_id is provided, the handler binds it through appStoreVersionTemplate with resource type appStoreVersions."
+      "note": "Apple supports inline creation of the first version and localization in this POST. The handler can template from either an App Store version or an existing custom product page through Apple's distinct template relationships."
     },
     {
       "tool": "custom_pages_create_localization",
@@ -89,11 +94,15 @@
           "inputs": [
             { "sourceKind": "fixed", "jsonPointer": "/data/type", "fixedValue": "appCustomProductPageVersions" },
             { "sourceKind": "fixed", "jsonPointer": "/data/relationships/appCustomProductPage/data/type", "fixedValue": "appCustomProductPages" }
+          ],
+          "optionalParameterClassifications": [
+            { "location": "body", "appleName": "/data/relationships/appCustomProductPageLocalizations", "disposition": "intentionallyOmitted", "reason": "Apple 4.4.1's standalone AppCustomProductPageVersionCreateRequest has no top-level included member for inline localization resources; this tool creates the version first and callers create its owned localizations through appCustomProductPageLocalizations_createInstance instead of attempting to reparent existing localization IDs.", "reviewAtSpec": "4.4.1" }
           ]
         }
       ],
       "fields": [
-        { "toolField": "page_id", "sourceKind": "requestBody", "operationId": "appCustomProductPageVersions_createInstance", "jsonPointer": "/data/relationships/appCustomProductPage/data/id" }
+        { "toolField": "page_id", "sourceKind": "requestBody", "operationId": "appCustomProductPageVersions_createInstance", "jsonPointer": "/data/relationships/appCustomProductPage/data/id" },
+        { "toolField": "deep_link", "sourceKind": "requestBody", "operationId": "appCustomProductPageVersions_createInstance", "jsonPointer": "/data/attributes/deepLink" }
       ],
       "response": {
         "mode": "projection",
@@ -102,7 +111,7 @@
         ],
         "fields": []
       },
-      "note": "Apple 4.4.1 also accepts optional deepLink and inline localizations, which this narrow MCP tool does not expose."
+      "note": "The tool exposes Apple's nullable deepLink attribute. Localizations are created after the version through the dedicated localization create operation because this standalone request has no inline included resource array."
     },
     {
       "tool": "custom_pages_delete",
@@ -126,7 +135,16 @@
       "effect": "read",
       "implementationState": "asBuilt",
       "operations": [
-        { "operationId": "appCustomProductPages_getInstance", "method": "get", "path": "/v1/appCustomProductPages/{id}", "role": "primary" }
+        {
+          "operationId": "appCustomProductPages_getInstance",
+          "method": "get",
+          "path": "/v1/appCustomProductPages/{id}",
+          "role": "primary",
+          "optionalParameterClassifications": [
+            { "location": "query", "appleName": "include", "disposition": "intentionallyOmitted", "reason": "The get tool projects only the primary appCustomProductPages resource and does not decode Apple's top-level included relationship resources, so exposing include would silently discard the requested expansion.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[appCustomProductPageVersions]", "disposition": "intentionallyOmitted", "reason": "Apple applies this nested limit only when appCustomProductPageVersions is requested through include; the get tool intentionally returns the base page without relationship expansion.", "reviewAtSpec": "4.4.1" }
+          ]
+        }
       ],
       "fields": [
         { "toolField": "page_id", "sourceKind": "parameter", "operationId": "appCustomProductPages_getInstance", "location": "path", "appleName": "id" }
@@ -146,10 +164,20 @@
       "effect": "read",
       "implementationState": "asBuilt",
       "operations": [
-        { "operationId": "apps_appCustomProductPages_getToManyRelated", "method": "get", "path": "/v1/apps/{id}/appCustomProductPages", "role": "primary" }
+        {
+          "operationId": "apps_appCustomProductPages_getToManyRelated",
+          "method": "get",
+          "path": "/v1/apps/{id}/appCustomProductPages",
+          "role": "primary",
+          "optionalParameterClassifications": [
+            { "location": "query", "appleName": "include", "disposition": "intentionallyOmitted", "reason": "The list tool returns only its primary appCustomProductPages array and does not decode Apple's top-level included resources, so relationship expansion is deliberately unavailable.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[appCustomProductPageVersions]", "disposition": "intentionallyOmitted", "reason": "Apple uses this nested limit only for included appCustomProductPageVersions; the list tool does not request or project that relationship.", "reviewAtSpec": "4.4.1" }
+          ]
+        }
       ],
       "fields": [
         { "toolField": "app_id", "sourceKind": "parameter", "operationId": "apps_appCustomProductPages_getToManyRelated", "location": "path", "appleName": "id" },
+        { "toolField": "visible", "sourceKind": "parameter", "operationId": "apps_appCustomProductPages_getToManyRelated", "location": "query", "appleName": "filter[visible]" },
         { "toolField": "limit", "sourceKind": "parameter", "operationId": "apps_appCustomProductPages_getToManyRelated", "location": "query", "appleName": "limit" },
         { "toolField": "next_url", "sourceKind": "local", "localRole": "paginationContinuation" }
       ],
@@ -168,10 +196,22 @@
       "effect": "read",
       "implementationState": "asBuilt",
       "operations": [
-        { "operationId": "appCustomProductPageVersions_appCustomProductPageLocalizations_getToManyRelated", "method": "get", "path": "/v1/appCustomProductPageVersions/{id}/appCustomProductPageLocalizations", "role": "primary" }
+        {
+          "operationId": "appCustomProductPageVersions_appCustomProductPageLocalizations_getToManyRelated",
+          "method": "get",
+          "path": "/v1/appCustomProductPageVersions/{id}/appCustomProductPageLocalizations",
+          "role": "primary",
+          "optionalParameterClassifications": [
+            { "location": "query", "appleName": "include", "disposition": "intentionallyOmitted", "reason": "The localization list projects only primary appCustomProductPageLocalizations resources and does not decode Apple's included screenshot, preview, keyword, or parent-version resources.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[appPreviewSets]", "disposition": "intentionallyOmitted", "reason": "Apple applies this nested limit only when appPreviewSets is included; this tool neither requests nor projects preview-set relationship resources.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[appScreenshotSets]", "disposition": "intentionallyOmitted", "reason": "Apple applies this nested limit only when appScreenshotSets is included; this tool neither requests nor projects screenshot-set relationship resources.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[searchKeywords]", "disposition": "intentionallyOmitted", "reason": "Apple applies this nested limit only when searchKeywords is included; this tool neither requests nor projects keyword relationship resources.", "reviewAtSpec": "4.4.1" }
+          ]
+        }
       ],
       "fields": [
         { "toolField": "version_id", "sourceKind": "parameter", "operationId": "appCustomProductPageVersions_appCustomProductPageLocalizations_getToManyRelated", "location": "path", "appleName": "id" },
+        { "toolField": "locale", "sourceKind": "parameter", "operationId": "appCustomProductPageVersions_appCustomProductPageLocalizations_getToManyRelated", "location": "query", "appleName": "filter[locale]" },
         { "toolField": "limit", "sourceKind": "parameter", "operationId": "appCustomProductPageVersions_appCustomProductPageLocalizations_getToManyRelated", "location": "query", "appleName": "limit" },
         { "toolField": "next_url", "sourceKind": "local", "localRole": "paginationContinuation" }
       ],
@@ -190,10 +230,20 @@
       "effect": "read",
       "implementationState": "asBuilt",
       "operations": [
-        { "operationId": "appCustomProductPages_appCustomProductPageVersions_getToManyRelated", "method": "get", "path": "/v1/appCustomProductPages/{id}/appCustomProductPageVersions", "role": "primary" }
+        {
+          "operationId": "appCustomProductPages_appCustomProductPageVersions_getToManyRelated",
+          "method": "get",
+          "path": "/v1/appCustomProductPages/{id}/appCustomProductPageVersions",
+          "role": "primary",
+          "optionalParameterClassifications": [
+            { "location": "query", "appleName": "include", "disposition": "intentionallyOmitted", "reason": "The version list projects only primary appCustomProductPageVersions resources and does not decode Apple's included page or localization resources.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[appCustomProductPageLocalizations]", "disposition": "intentionallyOmitted", "reason": "Apple applies this nested limit only when appCustomProductPageLocalizations is included; this tool leaves relationship expansion to custom_pages_list_localizations.", "reviewAtSpec": "4.4.1" }
+          ]
+        }
       ],
       "fields": [
         { "toolField": "page_id", "sourceKind": "parameter", "operationId": "appCustomProductPages_appCustomProductPageVersions_getToManyRelated", "location": "path", "appleName": "id" },
+        { "toolField": "state", "sourceKind": "parameter", "operationId": "appCustomProductPages_appCustomProductPageVersions_getToManyRelated", "location": "query", "appleName": "filter[state]" },
         { "toolField": "limit", "sourceKind": "parameter", "operationId": "appCustomProductPages_appCustomProductPageVersions_getToManyRelated", "location": "query", "appleName": "limit" },
         { "toolField": "next_url", "sourceKind": "local", "localRole": "paginationContinuation" }
       ],

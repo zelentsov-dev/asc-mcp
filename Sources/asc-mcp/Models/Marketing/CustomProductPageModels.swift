@@ -82,6 +82,29 @@ public struct CustomProductPageLocalizationAttributes: Codable, Sendable {
 
 // MARK: - Custom Product Page Request Models
 
+/// Encodes either a concrete custom-product-page value or an explicit JSON null.
+public enum ASCCustomProductPageNullable<Value: Codable & Sendable>: Codable, Sendable {
+    case value(Value)
+    case null
+
+    /// Decodes a concrete value or JSON null.
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        self = container.decodeNil() ? .null : .value(try container.decode(Value.self))
+    }
+
+    /// Encodes the concrete value or JSON null.
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        switch self {
+        case .value(let value):
+            try container.encode(value)
+        case .null:
+            try container.encodeNil()
+        }
+    }
+}
+
 /// Create custom product page request
 public struct CreateCustomProductPageRequest: Codable, Sendable {
     public let data: CreateData
@@ -128,7 +151,12 @@ public struct CreateCustomProductPageVersionRequest: Codable, Sendable {
 
     public struct CreateData: Codable, Sendable {
         public var type: String = "appCustomProductPageVersions"
+        public let attributes: Attributes?
         public let relationships: Relationships
+    }
+
+    public struct Attributes: Codable, Sendable {
+        public let deepLink: ASCCustomProductPageNullable<String>?
     }
 
     public struct Relationships: Codable, Sendable {

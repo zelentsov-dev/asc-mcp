@@ -15,6 +15,7 @@ extension CustomProductPagesWorker {
                         "type": .string("string"),
                         "description": .string("App Store Connect app ID")
                     ]),
+                    "visible": booleanListSchema("Filter by one or more visibility values"),
                     "limit": .object([
                         "type": .string("integer"),
                         "description": .string("Max results (default: 25, max: 200)")
@@ -72,6 +73,10 @@ extension CustomProductPagesWorker {
                     "template_version_id": .object([
                         "type": .string("string"),
                         "description": .string("App Store version ID to use as template (optional)")
+                    ]),
+                    "template_page_id": .object([
+                        "type": .string("string"),
+                        "description": .string("Existing custom product page ID to use as template (optional)")
                     ])
                 ]),
                 "required": .array([.string("app_id"), .string("name"), .string("locale")])
@@ -132,6 +137,19 @@ extension CustomProductPagesWorker {
                         "type": .string("string"),
                         "description": .string("Custom product page ID")
                     ]),
+                    "state": enumListSchema(
+                        "Filter by one or more custom product page version states",
+                        values: [
+                            "PREPARE_FOR_SUBMISSION",
+                            "READY_FOR_REVIEW",
+                            "WAITING_FOR_REVIEW",
+                            "IN_REVIEW",
+                            "ACCEPTED",
+                            "APPROVED",
+                            "REPLACED_WITH_NEW_VERSION",
+                            "REJECTED"
+                        ]
+                    ),
                     "limit": .object([
                         "type": .string("integer"),
                         "description": .string("Max results (default: 25, max: 200)")
@@ -156,6 +174,11 @@ extension CustomProductPagesWorker {
                     "page_id": .object([
                         "type": .string("string"),
                         "description": .string("Custom product page ID")
+                    ]),
+                    "deep_link": .object([
+                        "type": .array([.string("string"), .string("null")]),
+                        "format": .string("uri"),
+                        "description": .string("Absolute deep-link URI for the version; null explicitly creates it without a deep link")
                     ])
                 ]),
                 "required": .array([.string("page_id")])
@@ -174,6 +197,7 @@ extension CustomProductPagesWorker {
                         "type": .string("string"),
                         "description": .string("Custom product page version ID")
                     ]),
+                    "locale": stringListSchema("Filter by one or more locale codes"),
                     "limit": .object([
                         "type": .string("integer"),
                         "description": .string("Max results (default: 25, max: 200)")
@@ -232,5 +256,57 @@ extension CustomProductPagesWorker {
                 "required": .array([.string("localization_id")])
             ])
         )
+    }
+
+    private func stringListSchema(_ description: String) -> Value {
+        .object([
+            "description": .string(description),
+            "oneOf": .array([
+                .object(["type": .string("string")]),
+                .object([
+                    "type": .string("array"),
+                    "items": .object(["type": .string("string")]),
+                    "minItems": .int(1),
+                    "uniqueItems": .bool(true)
+                ])
+            ])
+        ])
+    }
+
+    private func enumListSchema(_ description: String, values: [String]) -> Value {
+        let enumValues = Value.array(values.map(Value.string))
+        return .object([
+            "description": .string(description),
+            "oneOf": .array([
+                .object([
+                    "type": .string("string"),
+                    "enum": enumValues
+                ]),
+                .object([
+                    "type": .string("array"),
+                    "items": .object([
+                        "type": .string("string"),
+                        "enum": enumValues
+                    ]),
+                    "minItems": .int(1),
+                    "uniqueItems": .bool(true)
+                ])
+            ])
+        ])
+    }
+
+    private func booleanListSchema(_ description: String) -> Value {
+        .object([
+            "description": .string(description),
+            "oneOf": .array([
+                .object(["type": .string("boolean")]),
+                .object([
+                    "type": .string("array"),
+                    "items": .object(["type": .string("boolean")]),
+                    "minItems": .int(1),
+                    "uniqueItems": .bool(true)
+                ])
+            ])
+        ])
     }
 }
