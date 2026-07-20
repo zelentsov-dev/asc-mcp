@@ -61,7 +61,8 @@ extension SubscriptionsWorker {
                     "name": subscriptionVersionedNullableString("Localized display name; pass null to clear Apple's nullable value"),
                     "description": subscriptionVersionedNullableString("Localized description; pass null to clear Apple's nullable value")
                 ],
-                required: ["localization_id"]
+                required: ["localization_id"],
+                minProperties: 2
             ),
             subscriptionVersionedTool(
                 name: "subscriptions_delete_version_localization",
@@ -165,7 +166,8 @@ extension SubscriptionsWorker {
                     "name": subscriptionVersionedNullableString("Localized group display name; pass null to clear Apple's nullable value"),
                     "custom_app_name": subscriptionVersionedNullableString("Custom app name; pass null to clear Apple's nullable value")
                 ],
-                required: ["localization_id"]
+                required: ["localization_id"],
+                minProperties: 2
             ),
             subscriptionVersionedTool(
                 name: "subscriptions_delete_group_version_localization",
@@ -210,17 +212,22 @@ extension SubscriptionsWorker {
         name: String,
         description: String,
         properties: [String: Value],
-        required: [String]
+        required: [String],
+        minProperties: Int? = nil
     ) -> Tool {
-        Tool(
+        var schema: [String: Value] = [
+            "type": .string("object"),
+            "properties": .object(properties),
+            "required": .array(required.map(Value.string)),
+            "additionalProperties": .bool(false)
+        ]
+        if let minProperties {
+            schema["minProperties"] = .int(minProperties)
+        }
+        return Tool(
             name: name,
             description: description,
-            inputSchema: .object([
-                "type": .string("object"),
-                "properties": .object(properties),
-                "required": .array(required.map(Value.string)),
-                "additionalProperties": .bool(false)
-            ])
+            inputSchema: .object(schema)
         )
     }
 

@@ -74,6 +74,7 @@ struct InAppPurchaseVersionsContractTests {
         let updateDescription = try iapV4ValueObject(updateProperties["description"])
         #expect(updateDescription["maxLength"] == .int(45))
         let updateSchema = try iapV4InputSchema(update)
+        #expect(updateSchema["minProperties"] == .int(2))
         guard case .array(let updateAlternatives)? = updateSchema["anyOf"] else {
             throw IAPV4TestFailure.expectedObject
         }
@@ -87,6 +88,9 @@ struct InAppPurchaseVersionsContractTests {
             return field
         }
         #expect(Set(alternativeFields) == ["name", "description"])
+        let publishedUpdateSchema = try iapV4InputSchema(ToolMetadataPolicy.apply(to: update))
+        #expect(publishedUpdateSchema["minProperties"] == .int(2))
+        #expect(publishedUpdateSchema["anyOf"] == nil)
 
         let createLocalization = try #require(tools.first { $0.name == "iap_create_version_localization" })
         let createLocalizationProperties = try iapV4SchemaProperties(createLocalization)

@@ -121,6 +121,8 @@ extension ReviewSubmissionsWorker {
             inputSchema: .object([
                 "type": .string("object"),
                 "additionalProperties": .bool(false),
+                "minProperties": .int(2),
+                "maxProperties": .int(2),
                 "properties": .object([
                     "submission_id": idSchema("Review submission ID"),
                     "app_store_version_id": idSchema("App Store version ID"),
@@ -203,7 +205,8 @@ extension ReviewSubmissionsWorker {
         .object([
             "type": .string("string"),
             "minLength": .int(1),
-            "description": .string(description)
+            "pattern": .string(#"^(?!\.{1,2}$)[A-Za-z0-9._~-]+$"#),
+            "description": .string("\(description); canonical App Store Connect resource ID")
         ])
     }
 
@@ -244,7 +247,7 @@ extension ReviewSubmissionsWorker {
 
     private func nullableEnumSchema(description: String, values: [String]) -> Value {
         .object([
-            "type": .array([.string("string"), .null]),
+            "type": .array([.string("string"), .string("null")]),
             "enum": .array(values.map(Value.string) + [.null]),
             "description": .string(description)
         ])
@@ -252,7 +255,7 @@ extension ReviewSubmissionsWorker {
 
     private func nullableBoolSchema(_ description: String) -> Value {
         .object([
-            "type": .array([.string("boolean"), .null]),
+            "type": .array([.string("boolean"), .string("null")]),
             "description": .string(description)
         ])
     }

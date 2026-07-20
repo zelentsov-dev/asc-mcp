@@ -68,6 +68,7 @@ extension InAppPurchasesWorker {
                     "description": iapNullableVersionedString("Localized description; pass null to clear Apple's nullable value", maxLength: 45)
                 ],
                 required: ["localization_id"],
+                minProperties: 2,
                 anyOfRequired: [["name"], ["description"]]
             ),
             iapVersionedTool(
@@ -131,6 +132,7 @@ extension InAppPurchasesWorker {
         description: String,
         properties: [String: Value],
         required: [String],
+        minProperties: Int? = nil,
         anyOfRequired: [[String]] = []
     ) -> Tool {
         var schema: [String: Value] = [
@@ -139,6 +141,9 @@ extension InAppPurchasesWorker {
             "required": .array(required.map(Value.string)),
             "additionalProperties": .bool(false)
         ]
+        if let minProperties {
+            schema["minProperties"] = .int(minProperties)
+        }
         if !anyOfRequired.isEmpty {
             schema["anyOf"] = .array(anyOfRequired.map { fields in
                 .object(["required": .array(fields.map(Value.string))])

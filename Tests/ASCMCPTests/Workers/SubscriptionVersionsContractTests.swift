@@ -72,6 +72,18 @@ struct SubscriptionVersionsContractTests {
             }
         }
         for toolName in [
+            "subscriptions_update_version_localization",
+            "subscriptions_update_group_version_localization"
+        ] {
+            let tool = try #require(tools.first { $0.name == toolName })
+            guard case .object(let schema) = tool.inputSchema,
+                  case .object(let publishedSchema) = ToolMetadataPolicy.apply(to: tool).inputSchema else {
+                throw SubscriptionV4TestFailure.expectedObject
+            }
+            #expect(schema["minProperties"] == .int(2))
+            #expect(publishedSchema["minProperties"] == .int(2))
+        }
+        for toolName in [
             "subscriptions_create_version_localization",
             "subscriptions_create_group_version_localization"
         ] {

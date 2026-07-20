@@ -71,21 +71,31 @@ struct ReviewSubmissionsWorkerContractTests {
         )
         #expect(
             create["platform"]?.objectValue?["type"] ==
-                .array([.string("string"), .null])
+                .array([.string("string"), .string("null")])
         )
 
-        let add = try reviewSubmissionProperties(
-            try #require(tools.first { $0.name == "review_submissions_add_item" })
-        )
+        let addTool = try #require(tools.first { $0.name == "review_submissions_add_item" })
+        let add = try reviewSubmissionProperties(addTool)
         #expect(Set(add.keys).isSuperset(of: reviewSubmissionTypedIDFields))
         #expect(add.keys.allSatisfy { !$0.contains("game_center") })
+        #expect(add["submission_id"]?.objectValue?["pattern"] == .string(#"^(?!\.{1,2}$)[A-Za-z0-9._~-]+$"#))
+        guard case .object(let addSchema) = addTool.inputSchema else {
+            throw ReviewSubmissionTestFailure.expectedObject
+        }
+        #expect(addSchema["minProperties"] == .int(2))
+        #expect(addSchema["maxProperties"] == .int(2))
+        guard case .object(let publishedAddSchema) = ToolMetadataPolicy.apply(to: addTool).inputSchema else {
+            throw ReviewSubmissionTestFailure.expectedObject
+        }
+        #expect(publishedAddSchema["minProperties"] == .int(2))
+        #expect(publishedAddSchema["maxProperties"] == .int(2))
 
         let update = try reviewSubmissionProperties(
             try #require(tools.first { $0.name == "review_submissions_update_item" })
         )
         #expect(update["submission_id"] != nil)
-        #expect(update["resolved"]?.objectValue?["type"] == .array([.string("boolean"), .null]))
-        #expect(update["removed"]?.objectValue?["type"] == .array([.string("boolean"), .null]))
+        #expect(update["resolved"]?.objectValue?["type"] == .array([.string("boolean"), .string("null")]))
+        #expect(update["removed"]?.objectValue?["type"] == .array([.string("boolean"), .string("null")]))
 
         let remove = try reviewSubmissionProperties(
             try #require(tools.first { $0.name == "review_submissions_remove_item" })
