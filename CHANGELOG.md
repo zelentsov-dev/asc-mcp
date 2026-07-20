@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.10.0] - 2026-07-20
+
+### Changed
+
+- Xcode Cloud build-run build listings now expose Apple's build-number, expiration, processing-state, beta-review-state, encryption, pre-release version and platform, audience, app, beta-group, App Store version, build-ID, and multi-field sort controls; scalar and array inputs use Apple's comma-separated query encoding.
+- Product build-run listings now expose Apple's related-build filter, and both product and workflow build-run listings accept one or multiple build IDs.
+- Xcode Cloud build-run build listings now return Apple's `/meta/paging/total` value.
+- Bound or explicitly classified all 31 previously unclassified optional Apple inputs associated with the audited Xcode Cloud workflows: 16 bound and 15 intentionally omitted with reviewed reasons.
+
+### Fixed
+
+- Validate every `next_url` across all 16 Xcode Cloud list tools against its concrete parent path, a non-empty cursor, and the complete originating query, including filters, includes, sort order, and effective page size.
+- Reject missing or changed continuation controls, wrong parent paths, unexpected or duplicate query names, empty cursors, and duplicate boolean filter values before network access.
+
+### Compatibility
+
+- No public MCP tool or required input was added, removed, or renamed; this release adds 16 optional inputs across two existing tools and widens the existing workflow build filter from a scalar to scalar-or-array input.
+- Existing first-page calls remain valid. Continuation calls must preserve the complete originating query and Apple's non-empty cursor in `next_url`.
+- The strict contract pin records 2,154 optional Apple inputs: 788 bound, 38 internally controlled, 1,265 intentionally omitted, and 63 still queued for domain review.
+
 ## [3.9.0] - 2026-07-20
 
 ### Changed
