@@ -316,7 +316,11 @@ struct UploadTransactionRecoveryContractTests {
         let fileURL = try uploadRecoveryFile(Data("hello".utf8))
         defer { try? FileManager.default.removeItem(at: fileURL) }
         let apiTransport = TestHTTPTransport(responses: [
-            .init(statusCode: 201, body: uploadRecoveryResponse(flow: flow, state: flow.pendingState)),
+            .init(statusCode: 201, body: uploadRecoveryResponse(
+                flow: flow,
+                state: flow.pendingState,
+                fileName: fileURL.lastPathComponent
+            )),
             .init(statusCode: 204, body: "")
         ])
 
@@ -352,12 +356,14 @@ struct UploadTransactionRecoveryContractTests {
             .response(statusCode: 201, body: uploadRecoveryResponse(
                 flow: flow,
                 state: flow.pendingState,
+                fileName: fileURL.lastPathComponent,
                 includeUploadOperation: true
             )),
             .rawNetworkFailure,
             .response(statusCode: 200, body: uploadRecoveryResponse(
                 flow: flow,
                 state: flow.completedState,
+                fileName: fileURL.lastPathComponent,
                 includeChecksum: true
             ))
         ])
@@ -402,12 +408,14 @@ struct UploadTransactionRecoveryContractTests {
             .response(statusCode: 201, body: uploadRecoveryResponse(
                 flow: flow,
                 state: flow.pendingState,
+                fileName: fileURL.lastPathComponent,
                 includeUploadOperation: true
             )),
             .rawNetworkFailure,
             .response(statusCode: 200, body: uploadRecoveryResponse(
                 flow: flow,
                 state: "FAILED",
+                fileName: fileURL.lastPathComponent,
                 includeChecksum: true
             ))
         ])
@@ -1422,6 +1430,7 @@ private func uploadRecoveryResponse(
     state: String,
     id: String = "asset-1",
     type: String? = nil,
+    fileName: String = "asset.bin",
     includeUploadOperation: Bool = false,
     includeSecretHeader: Bool = false,
     includeChecksum: Bool = false
@@ -1443,7 +1452,7 @@ private func uploadRecoveryResponse(
     let operationsFragment = includeUploadOperation
         ? #", "uploadOperations":[{"method":"PUT","url":"https://upload.example.test/chunk?signed=signed-secret","length":5,"offset":0,"requestHeaders":\#(requestHeaders)}]"#
         : ""
-    return #"{"data":{"type":"\#(type ?? flow.type)","id":"\#(id)","attributes":{"fileSize":5,"fileName":"asset.bin"\#(checksumFragment)\#(stateFragment)\#(operationsFragment)}},"links":{"self":"\#(flow.reservationPath)/\#(id)"}}"#
+    return #"{"data":{"type":"\#(type ?? flow.type)","id":"\#(id)","attributes":{"fileSize":5,"fileName":"\#(fileName)"\#(checksumFragment)\#(stateFragment)\#(operationsFragment)}},"links":{"self":"\#(flow.reservationPath)/\#(id)"}}"#
 }
 
 private func uploadRecoveryFile(_ data: Data) throws -> URL {

@@ -34,7 +34,10 @@ struct IAPLegacyDeprecationTests {
     @Test("supported IAP catalog list is not decorated as a deprecated localization tool")
     func supportedCatalogListIsNotDeprecated() async throws {
         let transport = TestHTTPTransport(responses: [
-            .init(statusCode: 200, body: #"{"data":[],"links":{}}"#)
+            .init(
+                statusCode: 200,
+                body: #"{"data":[],"links":{"self":"https://api.example.test/v1/apps/app-1/inAppPurchasesV2?limit=25"}}"#
+            )
         ])
         let worker = try await legacyIAPWorker(transport)
 
@@ -245,7 +248,7 @@ private enum IAPLegacyCase: String, CaseIterable, Sendable, CustomTestStringConv
     var responseBody: String {
         switch self {
         case .listLocalizations:
-            #"{"data":[],"links":{}}"#
+            #"{"data":[],"links":{"self":"https://api.example.test/v2/inAppPurchases/iap-1/inAppPurchaseLocalizations?limit=25"}}"#
         case .createLocalization, .updateLocalization:
             #"{"data":{"type":"inAppPurchaseLocalizations","id":"loc-1","attributes":{"locale":"en-US","name":"Premium","description":"Copy"}}}"#
         case .deleteLocalization, .deleteImage, .submit:
@@ -253,7 +256,7 @@ private enum IAPLegacyCase: String, CaseIterable, Sendable, CustomTestStringConv
         case .getImage:
             #"{"data":{"type":"inAppPurchaseImages","id":"image-1","attributes":{"fileSize":5,"fileName":"image.png","state":"APPROVED"}}}"#
         case .listImages:
-            #"{"data":[],"links":{}}"#
+            #"{"data":[],"links":{"self":"https://api.example.test/v2/inAppPurchases/iap-1/images?limit=25"}}"#
         }
     }
 

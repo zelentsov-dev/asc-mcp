@@ -404,7 +404,7 @@ struct ExportComplianceWorkerContractTests {
             arguments: arguments
         ))
         let malformedPayload = try exportComplianceObject(malformed.structuredContent)
-        #expect(malformedPayload["reservationState"] == .string("unknown"))
+        #expect(malformedPayload["reservationState"] == .string("committed_unverified"))
         #expect(malformedPayload["retrySafe"] == .bool(false))
         #expect(malformedPayload["inspection"] != nil)
         #expect(malformedPayload["sourceFileChecksumReceipt"] == .string(exportComplianceHelloMD5))
@@ -428,7 +428,7 @@ struct ExportComplianceWorkerContractTests {
                 arguments: arguments
             ))
             let identityPayload = try exportComplianceObject(identity.structuredContent)
-            #expect(identityPayload["reservationState"] == .string("unknown"))
+            #expect(identityPayload["reservationState"] == .string("committed_unverified"))
             #expect(identityPayload["retrySafe"] == .bool(false))
             #expect(identityPayload["sourceFileChecksumReceipt"] == .string(exportComplianceHelloMD5))
         }

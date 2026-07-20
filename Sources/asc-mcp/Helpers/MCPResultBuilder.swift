@@ -335,6 +335,8 @@ enum MCPValueSanitizer {
             "reason",
             "code",
             "failedstep",
+            "idargument",
+            "idsource",
             "recoverytool",
             "recoverytools"
         ].contains(normalized)

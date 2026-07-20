@@ -528,7 +528,7 @@ enum UploadTransactionRecovery {
                 && key != descriptor.checksumReceiptKey
                 && key != descriptor.reservationFingerprintKey
                 && !protectedAdditionalSuccessFields.contains(key) {
-                value[key] = field
+                value[key] = Redactor.redact(field)
             }
         }
         return MCPResult.jsonObject(value, text: payload.text, isError: payload.isError)

@@ -49,6 +49,19 @@ enum Redactor {
         return result
     }
 
+    static func redact(_ value: Any) -> Any {
+        switch value {
+        case let string as String:
+            return redact(string)
+        case let array as [Any]:
+            return array.map { redact($0) }
+        case let object as [String: Any]:
+            return object.mapValues { redact($0) }
+        default:
+            return value
+        }
+    }
+
     static func redactPreservingOpaqueIdentifiers(_ value: String) -> String {
         var result = value
         result = redactBearerTokens(in: result)

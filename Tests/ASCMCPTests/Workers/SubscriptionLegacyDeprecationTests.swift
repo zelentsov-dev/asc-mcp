@@ -232,7 +232,7 @@ private enum SubscriptionLegacyCase: String, CaseIterable, Sendable, CustomTestS
     var responseBody: String {
         switch self {
         case .listLocalizations:
-            #"{"data":[],"links":{}}"#
+            #"{"data":[],"links":{"self":"https://api.example.test/v1/subscriptions/subscription-1/subscriptionLocalizations?limit=25"}}"#
         case .createLocalization, .updateLocalization:
             #"{"data":{"type":"subscriptionLocalizations","id":"localization-1","attributes":{"locale":"en-US","name":"Premium","description":"Copy"}}}"#
         case .getLocalization:
@@ -240,11 +240,11 @@ private enum SubscriptionLegacyCase: String, CaseIterable, Sendable, CustomTestS
         case .deleteLocalization, .deleteGroupLocalization, .deleteImage, .submit:
             ""
         case .listGroupLocalizations:
-            #"{"data":[],"links":{}}"#
+            #"{"data":[],"links":{"self":"https://api.example.test/v1/subscriptionGroups/group-1/subscriptionGroupLocalizations?limit=25"}}"#
         case .createGroupLocalization, .getGroupLocalization, .updateGroupLocalization:
             #"{"data":{"type":"subscriptionGroupLocalizations","id":"group-localization-1","attributes":{"locale":"en-US","name":"Premium Plans","customAppName":"Example Pro"}}}"#
         case .listImages:
-            #"{"data":[],"links":{}}"#
+            #"{"data":[],"links":{"self":"https://api.example.test/v1/subscriptions/subscription-1/images?limit=25"}}"#
         case .getImage:
             #"{"data":{"type":"subscriptionImages","id":"image-1","attributes":{"fileSize":5,"fileName":"image.png","state":"APPROVED"}}}"#
         case .submitGroup:

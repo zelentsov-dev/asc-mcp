@@ -226,7 +226,14 @@ struct CommerceCreateRecoveryContractTests {
         #expect(result.isError == true)
         #expect(await transport.requestCount() == 0)
         let payload = try commerceRecoveryObject(result.structuredContent)
-        #expect(payload["details"] == .null)
+        let details = try commerceRecoveryObject(payload["details"])
+        #expect(details["type"] == .string("parsing"))
+        #expect(details["message"] == .string(
+            "Invalid requested iap_id resource ID for an App Store Connect URL: must not contain path, query, or fragment separators"
+        ))
+        #expect(payload["operationCommitState"] == nil)
+        #expect(payload["outcomeUnknown"] == nil)
+        #expect(payload["retrySafe"] == nil)
     }
 }
 
