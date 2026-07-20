@@ -171,7 +171,9 @@ extension AccessibilityWorker {
     }
 
     private func accessibilitySupportProperties(nullable: Bool = false) -> [String: Value] {
-        let schema: (String) -> Value = nullable ? nullableBoolSchema : boolSchema
+        let schema: (String) -> Value = nullable
+            ? { self.nullableBoolSchema($0) }
+            : { self.boolSchema($0) }
         return [
             "supports_audio_descriptions": schema("Whether the app supports audio descriptions"),
             "supports_captions": schema("Whether the app supports captions"),

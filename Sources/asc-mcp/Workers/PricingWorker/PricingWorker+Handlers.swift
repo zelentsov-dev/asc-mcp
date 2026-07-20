@@ -741,7 +741,7 @@ extension PricingWorker {
         if let related = relationship?.links?.related {
             result["territory_availabilities_related_url"] = related
         }
-        if let relationshipURL = relationship?.links?.self {
+        if let relationshipURL = relationship?.links?.`self` {
             result["territory_availabilities_relationship_url"] = relationshipURL
         }
 
@@ -857,7 +857,7 @@ extension PricingWorker {
                 throw PricingArgumentError("'price_point_id' must be a non-empty string")
             }
             return [
-                PriceScheduleInput(
+                try PriceScheduleInput(
                     pricePointId: pricePointId,
                     startDate: try pricingDate(arguments["start_date"], field: "start_date"),
                     endDate: try pricingDate(arguments["end_date"], field: "end_date")
@@ -952,7 +952,7 @@ extension PricingWorker {
         if let related = relationship?.links?.related {
             result["\(prefix)_related_url"] = related
         }
-        if let relationshipURL = relationship?.links?.self {
+        if let relationshipURL = relationship?.links?.`self` {
             result["\(prefix)_relationship_url"] = relationshipURL
         }
     }
