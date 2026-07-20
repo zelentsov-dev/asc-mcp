@@ -54,7 +54,7 @@
 ```bash
 # 1. Install via Mint
 brew install mint
-mint install zelentsov-dev/asc-mcp@v3.0.2
+mint install zelentsov-dev/asc-mcp@v3.1.0
 
 # 2. Add to Claude Code with env vars (simplest setup)
 claude mcp add asc-mcp \
@@ -86,7 +86,7 @@ Or use a JSON config file — see [Configuration](#configuration) below.
 brew install mint
 
 # Install asc-mcp from GitHub
-mint install zelentsov-dev/asc-mcp@v3.0.2
+mint install zelentsov-dev/asc-mcp@v3.1.0
 
 # Register in Claude Code
 claude mcp add asc-mcp -- ~/.mint/bin/asc-mcp
@@ -97,13 +97,13 @@ To install a specific branch or tag:
 ```bash
 mint install zelentsov-dev/asc-mcp@main      # main branch
 mint install zelentsov-dev/asc-mcp@develop    # develop branch
-mint install zelentsov-dev/asc-mcp@v3.0.2     # specific tag
+mint install zelentsov-dev/asc-mcp@v3.1.0     # specific tag
 ```
 
 To update to the latest version:
 
 ```bash
-mint install zelentsov-dev/asc-mcp@v3.0.2 --force
+mint install zelentsov-dev/asc-mcp@v3.1.0 --force
 ```
 
 ### Option B: Build from Source
@@ -380,8 +380,8 @@ The server exposes **389 tools** across 30 App Store tool domains + 2 core domai
 # Only load apps, builds, and version lifecycle tools
 asc-mcp --workers apps,builds,versions
 
-# Full release + App Store compliance subset (~96 tools, fits within 100-tool clients)
-asc-mcp --workers apps,accessibility,builds,versions,reviews,beta_groups,iap
+# App Store release preparation subset (94 tools, including always-on and build sub-workers)
+asc-mcp --workers apps,accessibility,builds,versions,beta_app,pre_release,app_info,screenshots
 
 # Monetization focus
 asc-mcp --workers apps,iap,subscriptions,pricing,promoted
@@ -419,12 +419,12 @@ swift run asc-mcp openapi-contract-check \
   --spec /tmp/asc-openapi/openapi.oas.json \
   --json-output /tmp/asc-openapi/operation-contract.json \
   --markdown-output /tmp/asc-openapi/operation-contract.md \
-  --structural-strict
+  --strict
 ```
 
-The manifest is pinned to Apple API 4.4.1 by version, SHA-256, path count, and operation count. It currently maps 362 Apple operations, explicitly defers 538, and scopes out 363, covering all 1,263 operations without overlap. CI fails when the Apple document changes, a mapped operation moves or disappears, a public tool or worker drifts from the manifest, an input field loses its binding, response lineage becomes invalid, or a deferred decision expires. Unexposed optional Apple parameters are warnings so they remain visible in the generated backlog.
+The manifest is pinned to Apple API 4.4.1 by version, SHA-256, path count, and operation count. It currently maps 363 Apple operations, explicitly defers 537, and scopes out 363, covering all 1,263 operations without overlap. CI fails when the Apple document changes, a mapped operation moves or disappears, a public tool or worker drifts from the manifest, an input field loses its binding, response lineage becomes invalid, or a deferred decision expires. Unexposed optional Apple parameters are warnings so they remain visible in the generated backlog.
 
-`--structural-strict` is the merge-time ratchet while remediation is phased: every declared `target` or `broken` tool remains an error in reports, and a regression test pins their exact state. The current baseline has no `target` or `broken` implementations and no implementation drift. Tagged CI additionally runs `--strict`, so releases remain blocked if any implementation leaves `asBuilt` or any other contract error appears.
+`--strict` is the merge- and tag-time release gate. Every declared `target` or `broken` tool remains an error in reports, and a regression test pins their exact state. The current baseline has no `target` or `broken` implementations and no implementation drift, so any implementation that leaves `asBuilt` or any other contract error blocks both merges and releases. `--structural-strict` remains available only for local phased remediation work.
 
 This gate proves operation identity, top-level MCP field ownership, required Apple inputs, typed internal values, and response source/pointer lineage. Full MCP type/enum/range parity and complete typed response schemas remain separate optimization phases; the current mapping status is 381 partial and 8 deprecated.
 
@@ -779,6 +779,15 @@ Includes tester list/search/get/create/delete, app relationships, invitations, b
 
 Includes subscription groups, group localizations, subscriptions, subscription localizations, territory-aware prices, price points, price point equalizations, availability, promoted purchase reads, inventory/pricing helpers, intro offers, promotional offers, offer codes, one-time/custom codes, win-back offers, images, and review screenshots. All former public `offer_codes_*`, `intro_offers_*`, `promo_offers_*`, and `winback_*` functionality is exposed through `subscriptions_*`.
 
+The following names remain available for compatibility, but Apple 4.4.1 deprecates their legacy `subscriptionAvailability` resource in favor of plan-type-aware `subscriptionPlanAvailabilities`:
+
+| Tool | Compatibility status |
+|------|----------------------|
+| `subscriptions_get_availability` | Deprecated legacy availability read |
+| `subscriptions_set_availability` | Deprecated legacy availability write |
+| `subscriptions_list_available_territories` | Deprecated legacy territory listing |
+| `subscriptions_inventory` | Deprecated helper; can omit subscriptions beyond the first included relationship page and is not an authoritative complete inventory |
+
 </details>
 
 <details>
@@ -953,10 +962,10 @@ Includes sales, financial, app summary, analytics report request, report, instan
 | `promoted_create` | Create a promotion |
 | `promoted_update` | Update promotion (visibility/order) |
 | `promoted_delete` | Delete a promotion |
-| `promoted_upload_image` | Upload promoted purchase image |
-| `promoted_get_image` | Get promoted purchase image |
-| `promoted_delete_image` | Delete promoted purchase image |
-| `promoted_get_image_for_purchase` | Get image for a promoted purchase |
+| `promoted_upload_image` | Deprecated: returns migration guidance; Apple removed the endpoint |
+| `promoted_get_image` | Deprecated: returns migration guidance; Apple removed the endpoint |
+| `promoted_delete_image` | Deprecated: returns migration guidance; Apple removed the endpoint |
+| `promoted_get_image_for_purchase` | Deprecated: returns migration guidance; Apple removed the relationship |
 
 </details>
 

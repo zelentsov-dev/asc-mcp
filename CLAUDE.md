@@ -82,7 +82,7 @@ Each company needs: `keyID`, `issuerID`, `privateKeyPath` (path to `.p8` file).
 | ScreenshotsWorker | `screenshots_` | 16 | Screenshots, previews, sets, reorder, full upload, batch upload |
 | CustomProductPagesWorker | `custom_pages_` | 10 | Custom product pages, versions, localizations |
 | ProductPageOptimizationWorker | `ppo_` | 9 | A/B test experiments, treatments |
-| PromotedPurchasesWorker | `promoted_` | 9 | Promoted in-app purchases, images upload |
+| PromotedPurchasesWorker | `promoted_` | 9 | Promoted in-app purchases; legacy image tools return migration guidance |
 | ReviewAttachmentsWorker | `review_attachments_` | 4 | App Store review attachments (upload, get, delete, list) |
 | MetricsWorker | `metrics_` | 4 | Performance/power metrics, diagnostics |
 

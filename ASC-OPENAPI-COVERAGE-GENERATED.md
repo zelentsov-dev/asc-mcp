@@ -1,17 +1,16 @@
 # App Store Connect OpenAPI Coverage
 
-Generated: 2026-05-08
+Generated: 2026-07-20
 
 Sources:
 - Apple App Store Connect API overview: https://developer.apple.com/app-store-connect/api/
 - Apple App Store Connect API documentation: https://developer.apple.com/documentation/appstoreconnectapi
 - Apple OpenAPI specification download: https://developer.apple.com/sample-code/app-store-connect/app-store-connect-openapi-specification.zip
-- Apple App Store Connect API 4.3 release: https://developer.apple.com/news/releases/?id=03102026b
 
-Spec: App Store Connect API 4.3 (OpenAPI 3.0.1)
-Apple paths: 923
-Apple operations: 1208
-Classified paths: 923
+Spec: App Store Connect API 4.4.1 (OpenAPI 3.0.1)
+Apple paths: 966
+Apple operations: 1263
+Classified paths: 966
 Unclassified paths: 0
 
 ## Priority Gaps
@@ -27,7 +26,7 @@ Unclassified paths: 0
 | Domain | Status | Priority | Apple paths | Operations | Workers | Notes |
 |---|---|---:|---:|---:|---|---|
 | App Store app metadata and release operations | Partial | P0 | 303 | 380 | `apps`, `accessibility`, `versions`, `app_info`, `pricing`, `app_events`, `screenshots`, `custom_pages`, `ppo`, `promoted`, `review_attachments`, `reviews` | The common release workflow is strong; API 4.0 app-surface additions are the highest App Store coverage gap. |
-| TestFlight builds, testers, groups, and beta app review | Partial | P0 | 115 | 154 | `builds`, `build_processing`, `build_beta`, `beta_groups`, `beta_feedback`, `beta_testers`, `beta_app`, `pre_release`, `beta_license` | Current TestFlight management is useful, but feedback retrieval is now core user value and should become a dedicated worker. |
+| TestFlight builds, testers, groups, and beta app review | Partial | P0 | 115 | 154 | `builds`, `build_processing`, `build_beta`, `beta_groups`, `beta_feedback`, `beta_testers`, `beta_app`, `pre_release`, `beta_license` | Core TestFlight administration and dedicated beta feedback retrieval are covered; recruitment criteria and beta App Clip APIs remain the main gaps. |
 | Essentials: auth, errors, paging, uploads, rate limits | Partial | P1 | 0 | 0 | `auth` | Core runtime behavior is covered; OpenAPI drift is now generated from Apple's official specification. |
 | Provisioning and identifiers | Partial | P1 | 32 | 49 | `provisioning` | Core signing automation exists; Wallet and Apple Pay identifiers are useful next additions. |
 | Reporting, analytics, metrics, and diagnostics | Partial | P1 | 47 | 56 | `analytics`, `metrics` | Read-heavy workflows are safe and valuable; summaries and recommendations are high UX leverage. |
@@ -35,7 +34,7 @@ Unclassified paths: 0
 | Xcode Cloud workflows and builds | Partial | P1 | 56 | 59 | `xcode_cloud` | Covers read-heavy CI dashboards plus start/rebuild build runs; destructive workflow/product management remains intentionally deferred. |
 | Alternative distribution | Missing | P2 | 21 | 28 | none | Region- and entitlement-sensitive APIs should be opt-in and strongly documented. |
 | Game Center | Missing | P2 | 238 | 337 | none | Large domain; should be added only after OpenAPI-driven scaffolding is in place. |
-| In-app purchases, subscriptions, and offers | Covered | P2 | 129 | 163 | `iap`, `subscriptions`, `offer_codes`, `winback`, `intro_offers`, `promo_offers` | Coverage is broad enough for production workflows; future work is mostly schema tightening and OpenAPI drift checks. |
+| In-app purchases, subscriptions, and offers | Partial | P2 | 172 | 218 | `iap`, `subscriptions` | v3 consolidates subscription offers under subscriptions_* and keeps one-time IAP product management under iap_*. Legacy subscriptionAvailability tools remain for compatibility; plan-type-aware availability and a complete inventory are pending. |
 | Users, access, and sandbox testers | Partial | P2 | 13 | 20 | `users`, `sandbox` | User management is serviceable; API key operations should remain carefully annotated as high-risk. |
 | Webhook notifications | Covered | P2 | 6 | 8 | `webhooks` | Covers app webhooks, individual webhook reads, create/update/delete, delivery listing, redelivery, ping testing, and local receiver diagnostics. |
 

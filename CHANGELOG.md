@@ -7,6 +7,86 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.1.0] - 2026-07-20
+
+### Added
+
+- Added a credential-free `openapi-contract-check` command and bundled semantic manifest pinned to Apple App Store Connect API 4.4.1. The gate models all 389 public tools, maps 363 Apple operations, defers 537, scopes out 363, and explicitly accounts for all 1,263 Apple operations.
+- Added credential-free `--version` and `--help` commands.
+
+### Changed
+
+- Aligned app version lifecycle, TestFlight, review details, age ratings, pricing, Product Page Optimization, users, subscriptions and offers, reviews, analytics, and asset workflows with Apple App Store Connect API 4.4.1.
+- Made company switching atomic across concurrent MCP calls so a request cannot observe credentials and workers from different companies; empty or ambiguous company queries are now rejected.
+- Reworked screenshot, preview, in-app purchase, subscription, and review-attachment uploads around immutable file snapshots, bounded-memory file transfer, pre-commit rollback, ambiguous-commit reconciliation, and delivery-state verification.
+- Hardened sales and financial report parsing with strict Apple report combinations, exact decimal aggregation, bounded gzip decoding, and bounded TSV scanning and materialization.
+- Strengthened CI with immutable action revisions, exact annotated-tag provenance checks, warning-clean release builds, strict contract checks, and relocated-binary resource verification.
+
+### Fixed
+
+- Bound every `next_url` request to its original App Store Connect origin, collection path, and required query parameters.
+- Validated cached JWT header, signature, issuer, audience, key ID, issue time, lifetime, and expiry before reuse.
+- Corrected Apple request fields, enums, relationships, response projections, nullable update semantics, and report versions found during the App Store Connect 4.4.1 audit.
+- Preserved actionable resource identifiers and cleanup guidance when upload reservation, transfer, commit, reconciliation, or processing cannot be confirmed.
+
+### Security
+
+- `webhooks_create` and `webhooks_update` now require a non-repeating, sufficiently diverse secret of at least 32 characters and never return it.
+- Webhook callback URLs now require HTTPS and reject credentials, fragments, missing hosts, and malformed ports before any App Store Connect request is sent.
+- Resource identifiers are encoded as single URL path segments, and the HTTP client rejects non-canonical, traversal-capable, query-bearing, or fragment-bearing API endpoints before network access.
+- Signed Apple upload URLs and request headers are no longer exposed in MCP text, structured results, or transport-failure diagnostics.
+- Gzip reports now enforce header, trailer, CRC32, decompressed-size, trailing-data, row, column, scanned-cell, and retained-cell limits before returning results.
+
+### Deprecated
+
+- Promoted-purchase image tools remain registered for compatibility but now return structured migration guidance because Apple removed their backing endpoints in App Store Connect API 4.4.1.
+- `subscriptions_get_availability`, `subscriptions_set_availability`, `subscriptions_list_available_territories`, and `subscriptions_inventory` remain registered for compatibility, but Apple 4.4.1 deprecates their legacy `subscriptionAvailability` resource in favor of plan-type-aware `subscriptionPlanAvailabilities`. The inventory helper can omit subscriptions beyond the first included relationship page and must not be treated as an authoritative complete inventory.
+
+### Compatibility
+
+- All 389 public tool names remain registered, but security and contract fixes intentionally reject weak webhook secrets, non-HTTPS webhook callbacks, unsafe or pre-encoded resource-ID path segments, unsafe or route-mismatched pagination URLs, and unsupported legacy review-attachment input. Pass raw App Store Connect IDs; the MCP now encodes each ID exactly once.
+- Signed upload URLs and headers are intentionally omitted from asset results. Confirmed uploads that Apple is still processing return a non-error pending state with inspection guidance instead of encouraging a duplicate upload.
+- `builds_update_beta_detail` no longer accepts Apple's read-only `internal_build_state` or `external_build_state` fields.
+- `builds_set_beta_localization` now accepts only build-localization fields; move app-level contact and policy metadata to the corresponding `beta_app_*_localization` tools.
+- Replace `app_versions_set_review_details.attachment_file_id` with a separate `review_attachments_upload` call.
+- Subscription offer creators now require the Apple 4.4.1 inputs appropriate to each mode, including `territory_ids`, `customer_eligibilities`, or `price_point_ids` where documented by the tool schema.
+
+## [3.0.2] - 2026-06-03
+
+### Fixed
+
+- Metadata auto-selection now prefers `PREPARE_FOR_SUBMISSION`, `REJECTED`, and `METADATA_REJECTED` versions before `READY_FOR_SALE`.
+- Added current Apple app-version and external-beta states to the public tool schemas.
+
+### Changed
+
+- Refreshed installation examples, architecture documentation, and worker/tool counts for the 389-tool v3 surface.
+
+## [3.0.1] - 2026-06-03
+
+### Fixed
+
+- `apps_update_metadata` no longer rejects `REJECTED` or `METADATA_REJECTED` versions locally; App Store Connect remains the source of truth for editable-state validation.
+- Added regression coverage for rejected-version updates and Apple-side state errors.
+
+## [3.0.0] - 2026-05-29
+
+### Breaking Changes
+
+- Consolidated subscription offer-code, introductory-offer, promotional-offer, and win-back-offer tools under the public `subscriptions_*` namespace. The former standalone worker prefixes are no longer registered.
+
+### Added
+
+- Added the v3 commerce surface for subscription and one-time in-app purchase discovery, pricing, availability, offers, assets, promoted purchases, inventory, and territory-aware price reads.
+
+### Security
+
+- Extended `--read-only` enforcement to the v3 mutation tools before handler execution.
+
+### Changed
+
+- Updated the public surface to 389 tools across 32 worker filter domains and aligned it with Apple App Store Connect API 4.3.1.
+
 ## [2.5.0] - 2026-05-20
 
 ### Fixed
