@@ -302,6 +302,32 @@ struct SubscriptionPricingSummaryContractTests {
         #expect(pricingSummaryText(result).contains("filter[planType]"))
     }
 
+    @Test("continuation requires a non-empty cursor before network access")
+    func continuationRequiresNonEmptyCursor() async throws {
+        for cursor in [String?.none, .some(""), .some(" ")] {
+            let nextURL = try pricingSummaryNextURL(
+                planType: "MONTHLY",
+                limit: 200,
+                cursor: cursor
+            )
+            let transport = TestHTTPTransport(responses: [])
+            let worker = try await pricingSummaryWorker(transport)
+
+            let result = try await worker.handleTool(.init(
+                name: "subscriptions_pricing_summary",
+                arguments: [
+                    "subscription_id": .string("sub-1"),
+                    "territory_id": .string("USA"),
+                    "plan_type": .string("MONTHLY"),
+                    "next_url": .string(nextURL)
+                ]
+            ))
+
+            #expect(result.isError == true)
+            #expect(await transport.requestCount() == 0)
+        }
+    }
+
     @Test("invalid inputs fail before network access")
     func invalidInputsFailBeforeNetwork() async throws {
         let transport = TestHTTPTransport(responses: [])
@@ -449,7 +475,7 @@ private func pricingSummaryNextURL(
     territoryId: String = "USA",
     planType: String? = nil,
     limit: Int,
-    cursor: String
+    cursor: String?
 ) throws -> String {
     var components = URLComponents(string: "https://api.example.test/v1/subscriptions/\(subscriptionId)/prices")
     var queryItems = [
@@ -458,9 +484,11 @@ private func pricingSummaryNextURL(
         URLQueryItem(name: "fields[subscriptionPrices]", value: "startDate,preserved,planType,territory,subscriptionPricePoint"),
         URLQueryItem(name: "fields[subscriptionPricePoints]", value: "customerPrice,proceeds,proceedsYear2,territory,equalizations"),
         URLQueryItem(name: "fields[territories]", value: "currency"),
-        URLQueryItem(name: "limit", value: String(limit)),
-        URLQueryItem(name: "cursor", value: cursor)
+        URLQueryItem(name: "limit", value: String(limit))
     ]
+    if let cursor {
+        queryItems.append(URLQueryItem(name: "cursor", value: cursor))
+    }
     if let planType {
         queryItems.append(URLQueryItem(name: "filter[planType]", value: planType))
     }

@@ -468,25 +468,26 @@ extension OfferCodesWorker {
 
         do {
             let response: ASCOneTimeUseCodesResponse
+            let endpoint = "/v1/subscriptionOfferCodes/\(try ASCPathSegment.encode(offerCodeId))/oneTimeUseCodes"
+            let query = [
+                "limit": String(min(max(arguments["limit"]?.intValue ?? 25, 1), 200))
+            ]
 
             if let nextUrl = try paginationURL(from: arguments["next_url"]) {
                 response = try await httpClient.getPage(
                     nextUrl,
-                    scope: PaginationScope(path: "/v1/subscriptionOfferCodes/\(try ASCPathSegment.encode(offerCodeId))/oneTimeUseCodes"),
+                    scope: PaginationScope(
+                        path: endpoint,
+                        requiredParameters: query,
+                        allowedParameters: Set(query.keys).union(["cursor"]),
+                        requiredNonEmptyParameters: ["cursor"]
+                    ),
                     as: ASCOneTimeUseCodesResponse.self
                 )
             } else {
-                var queryParams: [String: String] = [:]
-
-                if let limit = arguments["limit"]?.intValue {
-                    queryParams["limit"] = String(min(max(limit, 1), 200))
-                } else {
-                    queryParams["limit"] = "25"
-                }
-
                 response = try await httpClient.get(
-                    "/v1/subscriptionOfferCodes/\(try ASCPathSegment.encode(offerCodeId))/oneTimeUseCodes",
-                    parameters: queryParams,
+                    endpoint,
+                    parameters: query,
                     as: ASCOneTimeUseCodesResponse.self
                 )
             }

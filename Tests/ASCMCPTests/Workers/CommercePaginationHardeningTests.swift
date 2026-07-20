@@ -5,9 +5,9 @@ import Testing
 
 @Suite("Commerce Pagination Hardening Tests")
 struct CommercePaginationHardeningTests {
-    @Test("legacy commerce lists accept complete Apple continuation URLs")
+    @Test("commerce lists accept complete Apple continuation URLs")
     func acceptsCompleteContinuations() async throws {
-        for fixture in commercePaginationFixtures() {
+        for fixture in allCommercePaginationFixtures() {
             let transport = TestHTTPTransport(responses: [
                 .init(statusCode: 200, body: #"{"data":[]}"#)
             ])
@@ -32,10 +32,10 @@ struct CommercePaginationHardeningTests {
         }
     }
 
-    @Test("legacy commerce lists reject missing and empty cursors before network access")
+    @Test("commerce lists reject missing and empty cursors before network access")
     func rejectsMissingOrEmptyCursors() async throws {
-        for fixture in commercePaginationFixtures() {
-            for cursor in [String?.none, String?.some("")] {
+        for fixture in allCommercePaginationFixtures() {
+            for cursor in [String?.none, String?.some(""), String?.some(" ")] {
                 let transport = TestHTTPTransport(responses: [])
                 var arguments = fixture.arguments
                 var query = fixture.requiredQuery
@@ -56,9 +56,9 @@ struct CommercePaginationHardeningTests {
         }
     }
 
-    @Test("legacy commerce lists reject missing fixed controls before network access")
+    @Test("commerce lists reject missing fixed controls before network access")
     func rejectsMissingFixedControls() async throws {
-        for fixture in commercePaginationFixtures() {
+        for fixture in allCommercePaginationFixtures() {
             let transport = TestHTTPTransport(responses: [])
             var arguments = fixture.arguments
             var query = fixture.requiredQuery
@@ -77,9 +77,9 @@ struct CommercePaginationHardeningTests {
         }
     }
 
-    @Test("legacy commerce lists reject changed projection, limits, and filters before network access")
+    @Test("commerce lists reject changed projection, limits, and filters before network access")
     func rejectsChangedQueryInvariants() async throws {
-        for fixture in commercePaginationFixtures() {
+        for fixture in allCommercePaginationFixtures() {
             let transport = TestHTTPTransport(responses: [])
             var arguments = fixture.arguments
             var query = fixture.requiredQuery
@@ -98,9 +98,9 @@ struct CommercePaginationHardeningTests {
         }
     }
 
-    @Test("legacy commerce lists reject another concrete parent before network access")
+    @Test("commerce lists reject another concrete parent before network access")
     func rejectsAnotherParent() async throws {
-        for fixture in commercePaginationFixtures() {
+        for fixture in allCommercePaginationFixtures() {
             let transport = TestHTTPTransport(responses: [])
             var arguments = fixture.arguments
             var query = fixture.requiredQuery
@@ -118,9 +118,9 @@ struct CommercePaginationHardeningTests {
         }
     }
 
-    @Test("legacy commerce lists reject duplicate continuation query controls")
+    @Test("commerce lists reject duplicate continuation query controls")
     func rejectsDuplicateQueryControls() async throws {
-        for fixture in commercePaginationFixtures() {
+        for fixture in allCommercePaginationFixtures() {
             let transport = TestHTTPTransport(responses: [])
             var arguments = fixture.arguments
             var query = fixture.requiredQuery
@@ -139,9 +139,9 @@ struct CommercePaginationHardeningTests {
         }
     }
 
-    @Test("legacy commerce lists reject unrequested continuation filters")
+    @Test("commerce lists reject unrequested continuation filters")
     func rejectsUnrequestedFilters() async throws {
-        for fixture in commercePaginationFixtures() {
+        for fixture in allCommercePaginationFixtures() {
             let transport = TestHTTPTransport(responses: [])
             var arguments = fixture.arguments
             var query = fixture.requiredQuery
@@ -197,6 +197,10 @@ private struct CommercePaginationFixture {
     let requiredQuery: [String: String]
     let missingKey: String
     let changedKey: String
+}
+
+private func allCommercePaginationFixtures() -> [CommercePaginationFixture] {
+    commercePaginationFixtures() + adjacentCommercePaginationFixtures()
 }
 
 private func commercePaginationFixtures() -> [CommercePaginationFixture] {
@@ -330,6 +334,219 @@ private func commercePaginationFixtures() -> [CommercePaginationFixture] {
     ]
 }
 
+private func adjacentCommercePaginationFixtures() -> [CommercePaginationFixture] {
+    [
+        CommercePaginationFixture(
+            worker: .iap,
+            toolName: "iap_list_available_territories",
+            operationID: "inAppPurchaseAvailabilities_availableTerritories_getToManyRelated",
+            arguments: ["availability_id": .string("iap-availability-1"), "limit": .int(200)],
+            path: "/v1/inAppPurchaseAvailabilities/iap-availability-1/availableTerritories",
+            wrongParentPath: "/v1/inAppPurchaseAvailabilities/iap-availability-2/availableTerritories",
+            requiredQuery: ["fields[territories]": "currency", "limit": "200"],
+            missingKey: "fields[territories]",
+            changedKey: "limit"
+        ),
+        CommercePaginationFixture(
+            worker: .iap,
+            toolName: "iap_list_one_time_codes",
+            operationID: "inAppPurchaseOfferCodes_oneTimeUseCodes_getToManyRelated",
+            arguments: ["offer_code_id": .string("iap-offer-1"), "limit": .int(200)],
+            path: "/v1/inAppPurchaseOfferCodes/iap-offer-1/oneTimeUseCodes",
+            wrongParentPath: "/v1/inAppPurchaseOfferCodes/iap-offer-2/oneTimeUseCodes",
+            requiredQuery: ["limit": "200"],
+            missingKey: "limit",
+            changedKey: "limit"
+        ),
+        CommercePaginationFixture(
+            worker: .iap,
+            toolName: "iap_list_images",
+            operationID: "inAppPurchasesV2_images_getToManyRelated",
+            arguments: ["iap_id": .string("iap-1"), "limit": .int(200)],
+            path: "/v2/inAppPurchases/iap-1/images",
+            wrongParentPath: "/v2/inAppPurchases/iap-2/images",
+            requiredQuery: ["limit": "200"],
+            missingKey: "limit",
+            changedKey: "limit"
+        ),
+        CommercePaginationFixture(
+            worker: .subscriptions,
+            toolName: "subscriptions_list_intro_offers",
+            operationID: "subscriptions_introductoryOffers_getToManyRelated",
+            arguments: [
+                "subscription_id": .string("sub-1"),
+                "territory_id": .string("USA"),
+                "limit": .int(200)
+            ],
+            path: "/v1/subscriptions/sub-1/introductoryOffers",
+            wrongParentPath: "/v1/subscriptions/sub-2/introductoryOffers",
+            requiredQuery: [
+                "include": "territory,subscriptionPricePoint",
+                "fields[subscriptionIntroductoryOffers]": "startDate,endDate,duration,offerMode,numberOfPeriods,territory,subscriptionPricePoint",
+                "fields[territories]": "currency",
+                "fields[subscriptionPricePoints]": "customerPrice,proceeds,proceedsYear2,territory,equalizations",
+                "filter[territory]": "USA",
+                "limit": "200"
+            ],
+            missingKey: "fields[subscriptionIntroductoryOffers]",
+            changedKey: "limit"
+        ),
+        CommercePaginationFixture(
+            worker: .subscriptions,
+            toolName: "subscriptions_list_promotional_offers",
+            operationID: "subscriptions_promotionalOffers_getToManyRelated",
+            arguments: [
+                "subscription_id": .string("sub-1"),
+                "territory_id": .string("USA"),
+                "limit": .int(200)
+            ],
+            path: "/v1/subscriptions/sub-1/promotionalOffers",
+            wrongParentPath: "/v1/subscriptions/sub-2/promotionalOffers",
+            requiredQuery: [
+                "include": "prices",
+                "fields[subscriptionPromotionalOffers]": "duration,name,numberOfPeriods,offerCode,offerMode,prices",
+                "limit[prices]": "50",
+                "filter[territory]": "USA",
+                "limit": "200"
+            ],
+            missingKey: "limit[prices]",
+            changedKey: "include"
+        ),
+        CommercePaginationFixture(
+            worker: .subscriptions,
+            toolName: "subscriptions_list_offer_codes",
+            operationID: "subscriptions_offerCodes_getToManyRelated",
+            arguments: [
+                "subscription_id": .string("sub-1"),
+                "territory_id": .string("USA"),
+                "limit": .int(200)
+            ],
+            path: "/v1/subscriptions/sub-1/offerCodes",
+            wrongParentPath: "/v1/subscriptions/sub-2/offerCodes",
+            requiredQuery: [
+                "include": "oneTimeUseCodes,customCodes,prices",
+                "fields[subscriptionOfferCodes]": "name,customerEligibilities,offerEligibility,duration,offerMode,numberOfPeriods,totalNumberOfCodes,productionCodeCount,sandboxCodeCount,active,autoRenewEnabled,oneTimeUseCodes,customCodes,prices",
+                "limit[oneTimeUseCodes]": "50",
+                "limit[customCodes]": "50",
+                "limit[prices]": "50",
+                "filter[territory]": "USA",
+                "limit": "200"
+            ],
+            missingKey: "limit[customCodes]",
+            changedKey: "include"
+        ),
+        CommercePaginationFixture(
+            worker: .subscriptions,
+            toolName: "subscriptions_list_offer_code_prices",
+            operationID: "subscriptionOfferCodes_prices_getToManyRelated",
+            arguments: [
+                "offer_code_id": .string("offer-1"),
+                "territory_id": .string("USA"),
+                "limit": .int(200)
+            ],
+            path: "/v1/subscriptionOfferCodes/offer-1/prices",
+            wrongParentPath: "/v1/subscriptionOfferCodes/offer-2/prices",
+            requiredQuery: subscriptionOfferPriceContinuationQuery(
+                resource: "subscriptionOfferCodePrices",
+                limit: "200"
+            ),
+            missingKey: "fields[subscriptionOfferCodePrices]",
+            changedKey: "filter[territory]"
+        ),
+        CommercePaginationFixture(
+            worker: .subscriptions,
+            toolName: "subscriptions_list_promotional_offer_prices",
+            operationID: "subscriptionPromotionalOffers_prices_getToManyRelated",
+            arguments: [
+                "promotional_offer_id": .string("promo-1"),
+                "territory_id": .string("USA"),
+                "limit": .int(200)
+            ],
+            path: "/v1/subscriptionPromotionalOffers/promo-1/prices",
+            wrongParentPath: "/v1/subscriptionPromotionalOffers/promo-2/prices",
+            requiredQuery: subscriptionOfferPriceContinuationQuery(
+                resource: "subscriptionPromotionalOfferPrices",
+                limit: "200"
+            ),
+            missingKey: "fields[subscriptionPromotionalOfferPrices]",
+            changedKey: "filter[territory]"
+        ),
+        CommercePaginationFixture(
+            worker: .subscriptions,
+            toolName: "subscriptions_list_winback_offer_prices",
+            operationID: "winBackOffers_prices_getToManyRelated",
+            arguments: [
+                "winback_offer_id": .string("winback-1"),
+                "territory_id": .string("USA"),
+                "limit": .int(200)
+            ],
+            path: "/v1/winBackOffers/winback-1/prices",
+            wrongParentPath: "/v1/winBackOffers/winback-2/prices",
+            requiredQuery: subscriptionOfferPriceContinuationQuery(
+                resource: "winBackOfferPrices",
+                limit: "200"
+            ),
+            missingKey: "fields[winBackOfferPrices]",
+            changedKey: "filter[territory]"
+        ),
+        CommercePaginationFixture(
+            worker: .subscriptions,
+            toolName: "subscriptions_list_group_localizations",
+            operationID: "subscriptionGroups_subscriptionGroupLocalizations_getToManyRelated",
+            arguments: ["subscription_group_id": .string("group-1"), "limit": .int(200)],
+            path: "/v1/subscriptionGroups/group-1/subscriptionGroupLocalizations",
+            wrongParentPath: "/v1/subscriptionGroups/group-2/subscriptionGroupLocalizations",
+            requiredQuery: ["limit": "200"],
+            missingKey: "limit",
+            changedKey: "limit"
+        ),
+        CommercePaginationFixture(
+            worker: .subscriptions,
+            toolName: "subscriptions_list_images",
+            operationID: "subscriptions_images_getToManyRelated",
+            arguments: ["subscription_id": .string("sub-1"), "limit": .int(200)],
+            path: "/v1/subscriptions/sub-1/images",
+            wrongParentPath: "/v1/subscriptions/sub-2/images",
+            requiredQuery: ["limit": "200"],
+            missingKey: "limit",
+            changedKey: "limit"
+        ),
+        CommercePaginationFixture(
+            worker: .subscriptions,
+            toolName: "subscriptions_list_available_territories",
+            operationID: "subscriptionAvailabilities_availableTerritories_getToManyRelated",
+            arguments: ["availability_id": .string("availability-1"), "limit": .int(200)],
+            path: "/v1/subscriptionAvailabilities/availability-1/availableTerritories",
+            wrongParentPath: "/v1/subscriptionAvailabilities/availability-2/availableTerritories",
+            requiredQuery: ["fields[territories]": "currency", "limit": "200"],
+            missingKey: "fields[territories]",
+            changedKey: "limit"
+        ),
+        CommercePaginationFixture(
+            worker: .subscriptions,
+            toolName: "subscriptions_list_one_time_codes",
+            operationID: "subscriptionOfferCodes_oneTimeUseCodes_getToManyRelated",
+            arguments: ["offer_code_id": .string("offer-1"), "limit": .int(200)],
+            path: "/v1/subscriptionOfferCodes/offer-1/oneTimeUseCodes",
+            wrongParentPath: "/v1/subscriptionOfferCodes/offer-2/oneTimeUseCodes",
+            requiredQuery: ["limit": "200"],
+            missingKey: "limit",
+            changedKey: "limit"
+        ),
+        CommercePaginationFixture(
+            worker: .subscriptions,
+            toolName: "subscriptions_list_winback_offers",
+            operationID: "subscriptions_winBackOffers_getToManyRelated",
+            arguments: ["subscription_id": .string("sub-1"), "limit": .int(200)],
+            path: "/v1/subscriptions/sub-1/winBackOffers",
+            wrongParentPath: "/v1/subscriptions/sub-2/winBackOffers",
+            requiredQuery: ["limit": "200"],
+            missingKey: "limit",
+            changedKey: "limit"
+        )
+    ]
+}
+
 private func iapPricePointContinuationQuery(limit: String, iapID: String?) -> [String: String] {
     var query = [
         "include": "territory",
@@ -356,6 +573,17 @@ private func subscriptionPricePointContinuationQuery(limit: String, subscription
         query["filter[subscription]"] = subscriptionID
     }
     return query
+}
+
+private func subscriptionOfferPriceContinuationQuery(resource: String, limit: String) -> [String: String] {
+    [
+        "include": "territory,subscriptionPricePoint",
+        "fields[\(resource)]": "territory,subscriptionPricePoint",
+        "fields[subscriptionPricePoints]": "customerPrice,proceeds,proceedsYear2,territory,equalizations",
+        "fields[territories]": "currency",
+        "filter[territory]": "USA",
+        "limit": limit
+    ]
 }
 
 private func invokeCommercePaginationFixture(

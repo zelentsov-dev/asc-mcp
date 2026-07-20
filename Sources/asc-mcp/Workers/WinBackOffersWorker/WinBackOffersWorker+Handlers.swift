@@ -17,25 +17,26 @@ extension WinBackOffersWorker {
 
         do {
             let response: ASCWinBackOffersResponse
+            let endpoint = "/v1/subscriptions/\(try ASCPathSegment.encode(subscriptionId))/winBackOffers"
+            let query = [
+                "limit": String(min(max(arguments["limit"]?.intValue ?? 25, 1), 200))
+            ]
 
             if let nextUrl = try paginationURL(from: arguments["next_url"]) {
                 response = try await httpClient.getPage(
                     nextUrl,
-                    scope: PaginationScope(path: "/v1/subscriptions/\(try ASCPathSegment.encode(subscriptionId))/winBackOffers"),
+                    scope: PaginationScope(
+                        path: endpoint,
+                        requiredParameters: query,
+                        allowedParameters: Set(query.keys).union(["cursor"]),
+                        requiredNonEmptyParameters: ["cursor"]
+                    ),
                     as: ASCWinBackOffersResponse.self
                 )
             } else {
-                var queryParams: [String: String] = [:]
-
-                if let limit = arguments["limit"]?.intValue {
-                    queryParams["limit"] = String(min(max(limit, 1), 200))
-                } else {
-                    queryParams["limit"] = "25"
-                }
-
                 response = try await httpClient.get(
-                    "/v1/subscriptions/\(try ASCPathSegment.encode(subscriptionId))/winBackOffers",
-                    parameters: queryParams,
+                    endpoint,
+                    parameters: query,
                     as: ASCWinBackOffersResponse.self
                 )
             }

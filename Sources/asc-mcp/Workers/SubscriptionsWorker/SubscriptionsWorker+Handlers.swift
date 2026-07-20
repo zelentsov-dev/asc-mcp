@@ -673,25 +673,20 @@ extension SubscriptionsWorker {
             let response: ASCSubscriptionGroupLocalizationsResponse
 
             let endpoint = "/v1/subscriptionGroups/\(try ASCPathSegment.encode(groupId))/subscriptionGroupLocalizations"
+            let query = [
+                "limit": String(min(max(arguments["limit"]?.intValue ?? 25, 1), 200))
+            ]
 
             if let nextUrl = try paginationURL(from: arguments["next_url"]) {
                 response = try await httpClient.getPage(
                     nextUrl,
-                    scope: PaginationScope(path: endpoint),
+                    scope: subscriptionCommercePaginationScope(path: endpoint, query: query),
                     as: ASCSubscriptionGroupLocalizationsResponse.self
                 )
             } else {
-                var queryParams: [String: String] = [:]
-
-                if let limit = arguments["limit"]?.intValue {
-                    queryParams["limit"] = String(min(max(limit, 1), 200))
-                } else {
-                    queryParams["limit"] = "25"
-                }
-
                 response = try await httpClient.get(
                     endpoint,
-                    parameters: queryParams,
+                    parameters: query,
                     as: ASCSubscriptionGroupLocalizationsResponse.self
                 )
             }
@@ -1163,25 +1158,20 @@ extension SubscriptionsWorker {
             let response: ASCSubscriptionImagesResponse
 
             let endpoint = "/v1/subscriptions/\(try ASCPathSegment.encode(subscriptionId))/images"
+            let query = [
+                "limit": String(min(max(arguments["limit"]?.intValue ?? 25, 1), 200))
+            ]
 
             if let nextUrl = try paginationURL(from: arguments["next_url"]) {
                 response = try await httpClient.getPage(
                     nextUrl,
-                    scope: PaginationScope(path: endpoint),
+                    scope: subscriptionCommercePaginationScope(path: endpoint, query: query),
                     as: ASCSubscriptionImagesResponse.self
                 )
             } else {
-                var queryParams: [String: String] = [:]
-
-                if let limit = arguments["limit"]?.intValue {
-                    queryParams["limit"] = String(min(max(limit, 1), 200))
-                } else {
-                    queryParams["limit"] = "25"
-                }
-
                 response = try await httpClient.get(
                     endpoint,
-                    parameters: queryParams,
+                    parameters: query,
                     as: ASCSubscriptionImagesResponse.self
                 )
             }

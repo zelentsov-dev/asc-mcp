@@ -1302,25 +1302,21 @@ extension InAppPurchasesWorker {
 
         do {
             let response: ASCIAPImagesResponse
+            let endpoint = "/v2/inAppPurchases/\(try ASCPathSegment.encode(iapId))/images"
+            let query = [
+                "limit": String(min(max(arguments["limit"]?.intValue ?? 25, 1), 200))
+            ]
 
             if let nextUrl = try paginationURL(from: arguments["next_url"]) {
                 response = try await httpClient.getPage(
                     nextUrl,
-                    scope: PaginationScope(path: "/v2/inAppPurchases/\(try ASCPathSegment.encode(iapId))/images"),
+                    scope: iapCommercePaginationScope(path: endpoint, query: query),
                     as: ASCIAPImagesResponse.self
                 )
             } else {
-                var queryParams: [String: String] = [:]
-
-                if let limit = arguments["limit"]?.intValue {
-                    queryParams["limit"] = String(min(max(limit, 1), 200))
-                } else {
-                    queryParams["limit"] = "25"
-                }
-
                 response = try await httpClient.get(
-                    "/v2/inAppPurchases/\(try ASCPathSegment.encode(iapId))/images",
-                    parameters: queryParams,
+                    endpoint,
+                    parameters: query,
                     as: ASCIAPImagesResponse.self
                 )
             }

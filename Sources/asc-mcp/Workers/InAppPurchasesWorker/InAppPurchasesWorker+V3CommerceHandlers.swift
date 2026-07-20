@@ -307,8 +307,7 @@ extension InAppPurchasesWorker {
                 key: "in_app_purchases",
                 defaultQuery: query,
                 extraResult: ["app_id": appId],
-                preserveIncluded: true,
-                requireFullPaginationQuery: true
+                preserveIncluded: true
             )
         } catch {
             return MCPResult.error("Failed to list in_app_purchases: \(error.localizedDescription)")
@@ -336,8 +335,7 @@ extension InAppPurchasesWorker {
                 "limit[oneTimeUseCodes]": "50",
                 "limit[customCodes]": "50",
                 "limit[prices]": "50"
-            ],
-            requireFullPaginationQuery: true
+            ]
         )
     }
 
@@ -619,26 +617,18 @@ extension InAppPurchasesWorker {
         defaultQuery: [String: String],
         extraResult: [String: Any] = [:],
         preserveIncluded: Bool = false,
-        includePaginationState: Bool = false,
-        requireFullPaginationQuery: Bool = false
+        includePaginationState: Bool = false
     ) async throws -> CallTool.Result {
         do {
             let response: PassthroughAPIResponse
             var query = defaultQuery
             query["limit"] = String(clampedIAPLimit(params.arguments?["limit"]?.intValue, defaultValue: 25, max: 200))
             if let nextUrl = try paginationURL(from: params.arguments?["next_url"]) {
-                var requiredParameters: [String: String] = [:]
-                if requireFullPaginationQuery {
-                    requiredParameters = query
-                } else {
-                    for (key, value) in defaultQuery where preserveIncluded || key.hasPrefix("filter[") {
-                        requiredParameters[key] = value
-                    }
-                }
-                let scope = requireFullPaginationQuery
-                    ? iapCommercePaginationScope(path: endpoint, query: query)
-                    : PaginationScope(path: endpoint, requiredParameters: requiredParameters)
-                response = try await httpClient.getPage(nextUrl, scope: scope, as: PassthroughAPIResponse.self)
+                response = try await httpClient.getPage(
+                    nextUrl,
+                    scope: iapCommercePaginationScope(path: endpoint, query: query),
+                    as: PassthroughAPIResponse.self
+                )
             } else {
                 response = try await httpClient.get(endpoint, parameters: query, as: PassthroughAPIResponse.self)
             }
