@@ -15,9 +15,24 @@ extension BetaTestersWorker {
                         "type": .string("string"),
                         "description": .string("App Store Connect app ID to filter testers by app")
                     ]),
+                    "first_name": stringListSchema("Filter by first name"),
+                    "last_name": stringListSchema("Filter by last name"),
+                    "email": stringListSchema("Filter by exact email address"),
+                    "invite_type": enumListSchema("Filter by invitation type", values: ["EMAIL", "PUBLIC_LINK"]),
+                    "group_ids": stringListSchema("Filter by beta group IDs"),
+                    "build_ids": stringListSchema("Filter by build IDs"),
+                    "tester_ids": stringListSchema("Filter by beta tester IDs"),
+                    "sort": .object([
+                        "type": .string("string"),
+                        "description": .string("Sort beta testers"),
+                        "enum": .array([.string("firstName"), .string("-firstName"), .string("lastName"), .string("-lastName"), .string("email"), .string("-email"), .string("inviteType"), .string("-inviteType"), .string("state"), .string("-state")])
+                    ]),
                     "limit": .object([
                         "type": .string("integer"),
-                        "description": .string("Max results (default: 25, max: 200)")
+                        "description": .string("Max results"),
+                        "minimum": .int(1),
+                        "maximum": .int(200),
+                        "default": .int(25)
                     ]),
                     "next_url": .object([
                         "type": .string("string"),
@@ -42,6 +57,17 @@ extension BetaTestersWorker {
                     "app_id": .object([
                         "type": .string("string"),
                         "description": .string("App Store Connect app ID to filter by app")
+                    ]),
+                    "limit": .object([
+                        "type": .string("integer"),
+                        "description": .string("Maximum exact-email matches to return"),
+                        "minimum": .int(1),
+                        "maximum": .int(200),
+                        "default": .int(25)
+                    ]),
+                    "next_url": .object([
+                        "type": .string("string"),
+                        "description": .string("Pagination URL from a previous exact-email search")
                     ])
                 ]),
                 "required": .array([.string("email")])
@@ -61,8 +87,21 @@ extension BetaTestersWorker {
                         "description": .string("Beta tester ID")
                     ]),
                     "include": .object([
-                        "type": .string("string"),
-                        "description": .string("Related resources to include (comma-separated: apps,betaGroups,builds)")
+                        "description": .string("Related resources to include"),
+                        "oneOf": .array([
+                            .object([
+                                "type": .string("string"),
+                                "description": .string("Comma-separated: apps,betaGroups,builds")
+                            ]),
+                            .object([
+                                "type": .string("array"),
+                                "items": .object([
+                                    "type": .string("string"),
+                                    "enum": .array([.string("apps"), .string("betaGroups"), .string("builds")])
+                                ]),
+                                "minItems": .int(1)
+                            ])
+                        ])
                     ])
                 ]),
                 "required": .array([.string("tester_id")])
@@ -91,13 +130,22 @@ extension BetaTestersWorker {
                     ]),
                     "group_ids": .object([
                         "type": .string("array"),
-                        "description": .string("Array of beta group IDs to add the tester to"),
+                        "description": .string("Optional beta group IDs to add the tester to"),
                         "items": .object([
                             "type": .string("string")
-                        ])
+                        ]),
+                        "minItems": .int(1)
+                    ]),
+                    "build_ids": .object([
+                        "type": .string("array"),
+                        "description": .string("Optional build IDs for individual testing"),
+                        "items": .object([
+                            "type": .string("string")
+                        ]),
+                        "minItems": .int(1)
                     ])
                 ]),
-                "required": .array([.string("email"), .string("group_ids")])
+                "required": .array([.string("email")])
             ])
         )
     }
@@ -280,5 +328,33 @@ extension BetaTestersWorker {
                 "required": .array([.string("beta_tester_id"), .string("app_id")])
             ])
         )
+    }
+
+    private func stringListSchema(_ description: String) -> Value {
+        .object([
+            "description": .string(description),
+            "oneOf": .array([
+                .object(["type": .string("string")]),
+                .object([
+                    "type": .string("array"),
+                    "items": .object(["type": .string("string")]),
+                    "minItems": .int(1)
+                ])
+            ])
+        ])
+    }
+
+    private func enumListSchema(_ description: String, values: [String]) -> Value {
+        .object([
+            "description": .string(description),
+            "oneOf": .array([
+                .object(["type": .string("string"), "enum": .array(values.map(Value.string))]),
+                .object([
+                    "type": .string("array"),
+                    "items": .object(["type": .string("string"), "enum": .array(values.map(Value.string))]),
+                    "minItems": .int(1)
+                ])
+            ])
+        ])
     }
 }

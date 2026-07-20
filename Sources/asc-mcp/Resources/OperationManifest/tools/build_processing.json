@@ -12,7 +12,51 @@
           "operationId": "builds_getInstance",
           "method": "get",
           "path": "/v1/builds/{id}",
-          "role": "primary"
+          "role": "primary",
+          "optionalParameterClassifications": [
+            {
+              "location": "query",
+              "appleName": "include",
+              "disposition": "internalControl",
+              "reason": "Readiness always includes buildBetaDetail because TestFlight states are required for the documented result.",
+              "reviewAtSpec": "4.4.1"
+            },
+            {
+              "location": "query",
+              "appleName": "limit[betaBuildLocalizations]",
+              "disposition": "intentionallyOmitted",
+              "reason": "Beta build localizations are not included in readiness checks.",
+              "reviewAtSpec": "4.4.1"
+            },
+            {
+              "location": "query",
+              "appleName": "limit[betaGroups]",
+              "disposition": "intentionallyOmitted",
+              "reason": "Beta groups are not included in readiness checks.",
+              "reviewAtSpec": "4.4.1"
+            },
+            {
+              "location": "query",
+              "appleName": "limit[buildBundles]",
+              "disposition": "intentionallyOmitted",
+              "reason": "Build bundles are not included in readiness checks.",
+              "reviewAtSpec": "4.4.1"
+            },
+            {
+              "location": "query",
+              "appleName": "limit[icons]",
+              "disposition": "intentionallyOmitted",
+              "reason": "Build icons are not included in readiness checks.",
+              "reviewAtSpec": "4.4.1"
+            },
+            {
+              "location": "query",
+              "appleName": "limit[individualTesters]",
+              "disposition": "intentionallyOmitted",
+              "reason": "Individual testers are not included in readiness checks.",
+              "reviewAtSpec": "4.4.1"
+            }
+          ]
         }
       ],
       "fields": [
@@ -46,10 +90,37 @@
           {
             "outputField": "issues",
             "localRole": "Locally generated diagnostic strings."
+          },
+          {
+            "outputField": "warnings",
+            "localRole": "Locally generated export-compliance and App Store submission-scope warnings."
+          },
+          {
+            "outputField": "betaDetails",
+            "operationId": "builds_getInstance",
+            "jsonPointer": "/included"
+          },
+          {
+            "outputField": "version",
+            "operationId": "builds_getInstance",
+            "jsonPointer": "/data/attributes/version"
+          },
+          {
+            "outputField": "minOsVersion",
+            "operationId": "builds_getInstance",
+            "jsonPointer": "/data/attributes/minOsVersion"
+          },
+          {
+            "outputField": "buildId",
+            "localRole": "Echo of the validated public build identifier."
+          },
+          {
+            "outputField": "success",
+            "localRole": "True after Apple returns the Build resource used for the readiness projection."
           }
         ]
       },
-      "note": "Contract is only a Build read. Current readiness semantics are incomplete and unsafe: EXPIRED is treated as internally ready, pre-review external states are treated as testable, and App Store submission requirements are not checked."
+      "note": "Reports build prerequisites and only current testable TestFlight states. Expired and pre-review builds are not marked testable, and App Store version submission status is explicitly NOT_DETERMINED."
     },
     {
       "tool": "builds_get_processing_state",
@@ -62,7 +133,51 @@
           "operationId": "builds_getInstance",
           "method": "get",
           "path": "/v1/builds/{id}",
-          "role": "primary"
+          "role": "primary",
+          "optionalParameterClassifications": [
+            {
+              "location": "query",
+              "appleName": "include",
+              "disposition": "intentionallyOmitted",
+              "reason": "Processing state is a reduced Build projection and does not include related resources.",
+              "reviewAtSpec": "4.4.1"
+            },
+            {
+              "location": "query",
+              "appleName": "limit[betaBuildLocalizations]",
+              "disposition": "intentionallyOmitted",
+              "reason": "Beta build localizations are not included in processing state.",
+              "reviewAtSpec": "4.4.1"
+            },
+            {
+              "location": "query",
+              "appleName": "limit[betaGroups]",
+              "disposition": "intentionallyOmitted",
+              "reason": "Beta groups are not included in processing state.",
+              "reviewAtSpec": "4.4.1"
+            },
+            {
+              "location": "query",
+              "appleName": "limit[buildBundles]",
+              "disposition": "intentionallyOmitted",
+              "reason": "Build bundles are not included in processing state.",
+              "reviewAtSpec": "4.4.1"
+            },
+            {
+              "location": "query",
+              "appleName": "limit[icons]",
+              "disposition": "intentionallyOmitted",
+              "reason": "Build icons are not included in processing state.",
+              "reviewAtSpec": "4.4.1"
+            },
+            {
+              "location": "query",
+              "appleName": "limit[individualTesters]",
+              "disposition": "intentionallyOmitted",
+              "reason": "Individual testers are not included in processing state.",
+              "reviewAtSpec": "4.4.1"
+            }
+          ]
         }
       ],
       "fields": [
@@ -113,7 +228,51 @@
           "operationId": "builds_getInstance",
           "method": "get",
           "path": "/v1/builds/{id}",
-          "role": "primary"
+          "role": "primary",
+          "optionalParameterClassifications": [
+            {
+              "location": "query",
+              "appleName": "include",
+              "disposition": "intentionallyOmitted",
+              "reason": "Processing status is a reduced Build projection and does not include related resources.",
+              "reviewAtSpec": "4.4.1"
+            },
+            {
+              "location": "query",
+              "appleName": "limit[betaBuildLocalizations]",
+              "disposition": "intentionallyOmitted",
+              "reason": "Beta build localizations are not included in processing status.",
+              "reviewAtSpec": "4.4.1"
+            },
+            {
+              "location": "query",
+              "appleName": "limit[betaGroups]",
+              "disposition": "intentionallyOmitted",
+              "reason": "Beta groups are not included in processing status.",
+              "reviewAtSpec": "4.4.1"
+            },
+            {
+              "location": "query",
+              "appleName": "limit[buildBundles]",
+              "disposition": "intentionallyOmitted",
+              "reason": "Build bundles are not included in processing status.",
+              "reviewAtSpec": "4.4.1"
+            },
+            {
+              "location": "query",
+              "appleName": "limit[icons]",
+              "disposition": "intentionallyOmitted",
+              "reason": "Build icons are not included in processing status.",
+              "reviewAtSpec": "4.4.1"
+            },
+            {
+              "location": "query",
+              "appleName": "limit[individualTesters]",
+              "disposition": "intentionallyOmitted",
+              "reason": "Individual testers are not included in processing status.",
+              "reviewAtSpec": "4.4.1"
+            }
+          ]
         }
       ],
       "fields": [
@@ -178,6 +337,22 @@
                 "build_id"
               ],
               "localRole": "Reuse the public build ID as the JSON:API resource ID in the intended update body."
+            }
+          ],
+          "optionalParameterClassifications": [
+            {
+              "location": "body",
+              "appleName": "/data/attributes/expired",
+              "disposition": "intentionallyOmitted",
+              "reason": "This narrowly scoped encryption-compliance tool must not also expire a TestFlight build; expiration requires a separately named destructive action.",
+              "reviewAtSpec": "4.4.1"
+            },
+            {
+              "location": "body",
+              "appleName": "/data/relationships/appEncryptionDeclaration",
+              "disposition": "intentionallyOmitted",
+              "reason": "Linking an App Encryption Declaration is a distinct relationship workflow and is not inferred by the boolean encryption-compliance update.",
+              "reviewAtSpec": "4.4.1"
             }
           ]
         }

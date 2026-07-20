@@ -72,6 +72,28 @@ extension BuildBetaDetailsWorker {
         result["publicLink"] = group.attributes.publicLink.jsonSafe
         result["publicLinkId"] = group.attributes.publicLinkId.jsonSafe
         result["feedbackEnabled"] = group.attributes.feedbackEnabled.jsonSafe
+        result["iosBuildsAvailableForAppleSiliconMac"] = group.attributes.iosBuildsAvailableForAppleSiliconMac.jsonSafe
+        result["iosBuildsAvailableForAppleVision"] = group.attributes.iosBuildsAvailableForAppleVision.jsonSafe
+
+        if let relationships = group.relationships {
+            var relationIds: [String: Any] = [:]
+            if let app = relationships.app?.data {
+                relationIds["appId"] = app.id
+            }
+            if let builds = relationships.builds?.data {
+                relationIds["buildIds"] = builds.map(\.id)
+            }
+            if let testers = relationships.betaTesters?.data {
+                relationIds["betaTesterIds"] = testers.map(\.id)
+            }
+            if let criteria = relationships.betaRecruitmentCriteria?.data {
+                relationIds["betaRecruitmentCriteriaId"] = criteria.id
+            }
+            if let compatibilityURL = relationships.betaRecruitmentCriterionCompatibleBuildCheck?.links?.related {
+                relationIds["betaRecruitmentCriterionCompatibleBuildCheckURL"] = compatibilityURL
+            }
+            result["relationships"] = relationIds
+        }
         
         return result
     }

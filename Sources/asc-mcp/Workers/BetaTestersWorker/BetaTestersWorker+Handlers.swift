@@ -17,6 +17,16 @@ extension BetaTestersWorker {
                let appId = appIdValue.stringValue {
                 queryParams["filter[apps]"] = appId
             }
+            applyStringList(arguments["first_name"], as: "filter[firstName]", to: &queryParams)
+            applyStringList(arguments["last_name"], as: "filter[lastName]", to: &queryParams)
+            applyStringList(arguments["email"], as: "filter[email]", to: &queryParams)
+            applyStringList(arguments["invite_type"], as: "filter[inviteType]", to: &queryParams)
+            applyStringList(arguments["group_ids"], as: "filter[betaGroups]", to: &queryParams)
+            applyStringList(arguments["build_ids"], as: "filter[builds]", to: &queryParams)
+            applyStringList(arguments["tester_ids"], as: "filter[id]", to: &queryParams)
+            if let sort = arguments["sort"]?.stringValue {
+                queryParams["sort"] = sort
+            }
 
             if let limitValue = arguments["limit"],
                let limit = limitValue.intValue {
@@ -56,6 +66,9 @@ extension BetaTestersWorker {
             if let nextUrl = response.links?.next {
                 result["next_url"] = nextUrl
             }
+            if let total = response.meta?.paging?.total {
+                result["total"] = total
+            }
 
             return MCPResult.jsonObject(result)
 
@@ -88,20 +101,38 @@ extension BetaTestersWorker {
                let appId = appIdValue.stringValue {
                 queryParams["filter[apps]"] = appId
             }
+            queryParams["limit"] = String(min(max(arguments["limit"]?.intValue ?? 25, 1), 200))
 
-            let response: ASCBetaTestersResponse = try await httpClient.get(
-                "/v1/betaTesters",
-                parameters: queryParams,
-                as: ASCBetaTestersResponse.self
-            )
+            let response: ASCBetaTestersResponse
+            if let nextUrl = try paginationURL(from: arguments["next_url"]) {
+                var requiredParameters = queryParams
+                requiredParameters.removeValue(forKey: "limit")
+                response = try await httpClient.getPage(
+                    nextUrl,
+                    scope: PaginationScope(path: "/v1/betaTesters", requiredParameters: requiredParameters),
+                    as: ASCBetaTestersResponse.self
+                )
+            } else {
+                response = try await httpClient.get(
+                    "/v1/betaTesters",
+                    parameters: queryParams,
+                    as: ASCBetaTestersResponse.self
+                )
+            }
 
             let testers = response.data.map { formatBetaTester($0) }
 
-            let result: [String: Any] = [
+            var result: [String: Any] = [
                 "success": true,
                 "beta_testers": testers,
                 "count": testers.count
             ]
+            if let nextUrl = response.links?.next {
+                result["next_url"] = nextUrl
+            }
+            if let total = response.meta?.paging?.total {
+                result["total"] = total
+            }
 
             return MCPResult.jsonObject(result)
 
@@ -125,12 +156,16 @@ extension BetaTestersWorker {
             )
         }
 
+        let includes = parseStringList(arguments["include"])
+        let allowedIncludes: Set<String> = ["apps", "betaGroups", "builds"]
+        if let invalidInclude = includes?.first(where: { !allowedIncludes.contains($0) }) {
+            return MCPResult.error("Unsupported include '\(invalidInclude)'. Valid values: apps, betaGroups, builds")
+        }
+
         do {
             var queryParams: [String: String] = [:]
-
-            if let includeValue = arguments["include"],
-               let include = includeValue.stringValue {
-                queryParams["include"] = include
+            if let includes, !includes.isEmpty {
+                queryParams["include"] = includes.joined(separator: ",")
             }
 
             let response: ASCBetaTesterResponse = try await httpClient.get(
@@ -145,6 +180,7 @@ extension BetaTestersWorker {
             if let included = response.included {
                 var includedApps: [[String: Any]] = []
                 var includedGroups: [[String: Any]] = []
+                var includedBuilds: [[String: Any]] = []
 
                 for resource in included {
                     switch resource {
@@ -158,6 +194,14 @@ extension BetaTestersWorker {
                             "id": group.id,
                             "name": group.attributes.name.jsonSafe
                         ])
+                    case .build(let build):
+                        includedBuilds.append([
+                            "id": build.id,
+                            "version": build.attributes.version.jsonSafe,
+                            "processingState": build.attributes.processingState.jsonSafe,
+                            "expired": build.attributes.expired.jsonSafe,
+                            "buildAudienceType": build.attributes.buildAudienceType.jsonSafe
+                        ])
                     }
                 }
 
@@ -166,6 +210,9 @@ extension BetaTestersWorker {
                 }
                 if !includedGroups.isEmpty {
                     testerDict["betaGroups"] = includedGroups
+                }
+                if !includedBuilds.isEmpty {
+                    testerDict["builds"] = includedBuilds
                 }
             }
 
@@ -189,21 +236,33 @@ extension BetaTestersWorker {
     func createBetaTester(_ params: CallTool.Parameters) async throws -> CallTool.Result {
         guard let arguments = params.arguments,
               let emailValue = arguments["email"],
-              let email = emailValue.stringValue,
-              let groupIdsValue = arguments["group_ids"],
-              let groupIdsArray = groupIdsValue.arrayValue else {
+              let email = emailValue.stringValue else {
             return CallTool.Result(
-                content: [MCPContent.text("Required parameters 'email' and 'group_ids' are missing")],
+                content: [MCPContent.text("Required parameter 'email' is missing")],
                 isError: true
             )
         }
 
-        let groupIds = groupIdsArray.compactMap { $0.stringValue }
-        guard !groupIds.isEmpty else {
-            return CallTool.Result(
-                content: [MCPContent.text("'group_ids' must contain at least one beta group ID")],
-                isError: true
-            )
+        let groupIds: [String]?
+        if let values = arguments["group_ids"]?.arrayValue {
+            let ids = values.compactMap(\.stringValue).filter { !$0.isEmpty }
+            guard !ids.isEmpty, ids.count == values.count else {
+                return MCPResult.error("'group_ids' must contain only non-empty beta group IDs")
+            }
+            groupIds = ids
+        } else {
+            groupIds = nil
+        }
+
+        let buildIds: [String]?
+        if let values = arguments["build_ids"]?.arrayValue {
+            let ids = values.compactMap(\.stringValue).filter { !$0.isEmpty }
+            guard !ids.isEmpty, ids.count == values.count else {
+                return MCPResult.error("'build_ids' must contain only non-empty build IDs")
+            }
+            buildIds = ids
+        } else {
+            buildIds = nil
         }
 
         do {
@@ -217,11 +276,17 @@ extension BetaTestersWorker {
                         firstName: firstName,
                         lastName: lastName
                     ),
-                    relationships: CreateBetaTesterRequest.CreateBetaTesterRelationships(
-                        betaGroups: CreateBetaTesterRequest.BetaGroupsRelationship(
-                            data: groupIds.map { ASCResourceIdentifier(type: "betaGroups", id: $0) }
-                        ),
-                        builds: nil
+                    relationships: groupIds == nil && buildIds == nil ? nil : CreateBetaTesterRequest.CreateBetaTesterRelationships(
+                        betaGroups: groupIds.map {
+                            CreateBetaTesterRequest.BetaGroupsRelationship(
+                                data: $0.map { ASCResourceIdentifier(type: "betaGroups", id: $0) }
+                            )
+                        },
+                        builds: buildIds.map {
+                            CreateBetaTesterRequest.BuildsRelationship(
+                                data: $0.map { ASCResourceIdentifier(type: "builds", id: $0) }
+                            )
+                        }
                     )
                 )
             )
@@ -631,7 +696,7 @@ extension BetaTestersWorker {
     // MARK: - Formatting
 
     private func formatBetaTester(_ tester: ASCBetaTester) -> [String: Any] {
-        return [
+        var result: [String: Any] = [
             "id": tester.id,
             "type": tester.type,
             "email": tester.attributes.email.jsonSafe,
@@ -640,6 +705,20 @@ extension BetaTestersWorker {
             "inviteType": tester.attributes.inviteType.jsonSafe,
             "state": tester.attributes.state.jsonSafe
         ]
+        if let relationships = tester.relationships {
+            var relationIds: [String: Any] = [:]
+            if let apps = relationships.apps?.data {
+                relationIds["appIds"] = apps.map(\.id)
+            }
+            if let groups = relationships.betaGroups?.data {
+                relationIds["betaGroupIds"] = groups.map(\.id)
+            }
+            if let builds = relationships.builds?.data {
+                relationIds["buildIds"] = builds.map(\.id)
+            }
+            result["relationships"] = relationIds
+        }
+        return result
     }
 
     private func formatApp(_ app: ASCApp) -> [String: Any] {
@@ -648,5 +727,23 @@ extension BetaTestersWorker {
             "name": (app.attributes?.name).jsonSafe,
             "bundleId": (app.attributes?.bundleId).jsonSafe
         ]
+    }
+
+    private func applyStringList(_ value: Value?, as appleName: String, to query: inout [String: String]) {
+        if let values = parseStringList(value), !values.isEmpty {
+            query[appleName] = values.joined(separator: ",")
+        }
+    }
+
+    private func parseStringList(_ value: Value?) -> [String]? {
+        if let string = value?.stringValue {
+            let values = string.split(separator: ",").map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }.filter { !$0.isEmpty }
+            return values.isEmpty ? nil : values
+        }
+        guard let rawValues = value?.arrayValue, !rawValues.isEmpty else {
+            return nil
+        }
+        let values = rawValues.compactMap(\.stringValue).filter { !$0.isEmpty }
+        return values.count == rawValues.count ? values : nil
     }
 }

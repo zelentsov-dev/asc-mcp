@@ -17,11 +17,31 @@ extension BetaGroupsWorker {
                     ]),
                     "limit": .object([
                         "type": .string("integer"),
-                        "description": .string("Max results (default: 25, max: 200)")
+                        "description": .string("Max results"),
+                        "minimum": .int(1),
+                        "maximum": .int(200),
+                        "default": .int(25)
                     ]),
                     "is_internal": .object([
                         "type": .string("boolean"),
                         "description": .string("Filter internal groups only")
+                    ]),
+                    "name": stringListSchema("Filter by exact group name"),
+                    "build_ids": stringListSchema("Filter by associated build IDs"),
+                    "group_ids": stringListSchema("Filter by beta group IDs"),
+                    "public_link_enabled": .object([
+                        "type": .string("boolean"),
+                        "description": .string("Filter by whether the public link is enabled")
+                    ]),
+                    "public_link_limit_enabled": .object([
+                        "type": .string("boolean"),
+                        "description": .string("Filter by whether a public-link tester limit is enabled")
+                    ]),
+                    "public_link": stringListSchema("Filter by public link value"),
+                    "sort": .object([
+                        "type": .string("string"),
+                        "description": .string("Sort beta groups"),
+                        "enum": .array([.string("name"), .string("-name"), .string("createdDate"), .string("-createdDate"), .string("publicLinkEnabled"), .string("-publicLinkEnabled"), .string("publicLinkLimit"), .string("-publicLinkLimit")])
                     ]),
                     "next_url": .object([
                         "type": .string("string"),
@@ -60,9 +80,29 @@ extension BetaGroupsWorker {
                         "type": .string("boolean"),
                         "description": .string("Enable public invite link")
                     ]),
+                    "public_link_limit_enabled": .object([
+                        "type": .string("boolean"),
+                        "description": .string("Enable a tester limit for the public link")
+                    ]),
+                    "public_link_limit": .object([
+                        "type": .string("integer"),
+                        "description": .string("Maximum testers allowed through the public link")
+                    ]),
                     "feedback_enabled": .object([
                         "type": .string("boolean"),
                         "description": .string("Enable feedback (default: false)")
+                    ]),
+                    "build_ids": .object([
+                        "type": .string("array"),
+                        "description": .string("Optional build IDs to assign when creating the group"),
+                        "items": .object(["type": .string("string")]),
+                        "minItems": .int(1)
+                    ]),
+                    "tester_ids": .object([
+                        "type": .string("array"),
+                        "description": .string("Optional beta tester IDs to assign when creating the group"),
+                        "items": .object(["type": .string("string")]),
+                        "minItems": .int(1)
                     ])
                 ]),
                 "required": .array([.string("app_id"), .string("name")])
@@ -93,9 +133,21 @@ extension BetaGroupsWorker {
                         "type": .string("integer"),
                         "description": .string("Max testers via public link")
                     ]),
+                    "public_link_limit_enabled": .object([
+                        "type": .string("boolean"),
+                        "description": .string("Enable or disable the public-link tester limit")
+                    ]),
                     "feedback_enabled": .object([
                         "type": .string("boolean"),
                         "description": .string("Enable feedback")
+                    ]),
+                    "ios_builds_available_for_apple_silicon_mac": .object([
+                        "type": .string("boolean"),
+                        "description": .string("Make eligible iOS builds available on Apple silicon Macs")
+                    ]),
+                    "ios_builds_available_for_apple_vision": .object([
+                        "type": .string("boolean"),
+                        "description": .string("Make eligible iOS builds available on Apple Vision")
                     ])
                 ]),
                 "required": .array([.string("group_id")])
@@ -239,5 +291,19 @@ extension BetaGroupsWorker {
                 "required": .array([.string("group_id"), .string("tester_ids")])
             ])
         )
+    }
+
+    private func stringListSchema(_ description: String) -> Value {
+        .object([
+            "description": .string(description),
+            "oneOf": .array([
+                .object(["type": .string("string")]),
+                .object([
+                    "type": .string("array"),
+                    "items": .object(["type": .string("string")]),
+                    "minItems": .int(1)
+                ])
+            ])
+        ])
     }
 }

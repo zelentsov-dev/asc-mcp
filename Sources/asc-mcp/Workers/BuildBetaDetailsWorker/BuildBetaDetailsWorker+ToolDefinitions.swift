@@ -137,7 +137,30 @@ extension BuildBetaDetailsWorker {
                     ]),
                     "limit": .object([
                         "type": .string("integer"),
-                        "description": .string("Maximum number of groups to return (1-200)")
+                        "description": .string("Maximum number of groups to return"),
+                        "minimum": .int(1),
+                        "maximum": .int(200),
+                        "default": .int(50)
+                    ]),
+                    "group_ids": stringListSchema("Filter by beta group IDs"),
+                    "name": stringListSchema("Filter by exact group name"),
+                    "is_internal": .object([
+                        "type": .string("boolean"),
+                        "description": .string("Filter by internal group status")
+                    ]),
+                    "public_link_enabled": .object([
+                        "type": .string("boolean"),
+                        "description": .string("Filter by public-link enabled status")
+                    ]),
+                    "public_link_limit_enabled": .object([
+                        "type": .string("boolean"),
+                        "description": .string("Filter by public-link limit enabled status")
+                    ]),
+                    "public_link": stringListSchema("Filter by public link value"),
+                    "sort": .object([
+                        "type": .string("string"),
+                        "description": .string("Sort beta groups"),
+                        "enum": .array([.string("name"), .string("-name"), .string("createdDate"), .string("-createdDate"), .string("publicLinkEnabled"), .string("-publicLinkEnabled"), .string("publicLinkLimit"), .string("-publicLinkLimit")])
                     ]),
                     "next_url": .object([
                         "type": .string("string"),
@@ -286,5 +309,19 @@ extension BuildBetaDetailsWorker {
                 "required": .array([.string("build_id")])
             ])
         )
+    }
+
+    private func stringListSchema(_ description: String) -> Value {
+        .object([
+            "description": .string(description),
+            "oneOf": .array([
+                .object(["type": .string("string")]),
+                .object([
+                    "type": .string("array"),
+                    "items": .object(["type": .string("string")]),
+                    "minItems": .int(1)
+                ])
+            ])
+        ])
     }
 }

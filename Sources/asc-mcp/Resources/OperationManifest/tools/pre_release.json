@@ -12,7 +12,23 @@
           "operationId": "preReleaseVersions_getInstance",
           "method": "get",
           "path": "/v1/preReleaseVersions/{id}",
-          "role": "primary"
+          "role": "primary",
+          "optionalParameterClassifications": [
+            {
+              "location": "query",
+              "appleName": "include",
+              "disposition": "intentionallyOmitted",
+              "reason": "The detail tool preserves relationship IDs and uses dedicated tools for full related builds.",
+              "reviewAtSpec": "4.4.1"
+            },
+            {
+              "location": "query",
+              "appleName": "limit[builds]",
+              "disposition": "intentionallyOmitted",
+              "reason": "Builds are not included by this detail projection.",
+              "reviewAtSpec": "4.4.1"
+            }
+          ]
         }
       ],
       "fields": [
@@ -41,7 +57,7 @@
           }
         ]
       },
-      "note": "Exact resource read; the model and formatter retain only id, type, version, and platform and drop relationships."
+      "note": "Exact resource read preserving app and build relationship IDs when Apple returns them."
     },
     {
       "tool": "pre_release_list",
@@ -54,7 +70,23 @@
           "operationId": "preReleaseVersions_getCollection",
           "method": "get",
           "path": "/v1/preReleaseVersions",
-          "role": "primary"
+          "role": "primary",
+          "optionalParameterClassifications": [
+            {
+              "location": "query",
+              "appleName": "include",
+              "disposition": "intentionallyOmitted",
+              "reason": "The collection preserves relationship IDs and uses pre_release_list_builds for full related Build resources.",
+              "reviewAtSpec": "4.4.1"
+            },
+            {
+              "location": "query",
+              "appleName": "limit[builds]",
+              "disposition": "intentionallyOmitted",
+              "reason": "Builds are not included by the pre-release collection projection.",
+              "reviewAtSpec": "4.4.1"
+            }
+          ]
         }
       ],
       "fields": [
@@ -78,6 +110,41 @@
           "operationId": "preReleaseVersions_getCollection",
           "location": "query",
           "appleName": "filter[version]"
+        },
+        {
+          "toolField": "build_audience_types",
+          "sourceKind": "parameter",
+          "operationId": "preReleaseVersions_getCollection",
+          "location": "query",
+          "appleName": "filter[builds.buildAudienceType]"
+        },
+        {
+          "toolField": "build_expired",
+          "sourceKind": "parameter",
+          "operationId": "preReleaseVersions_getCollection",
+          "location": "query",
+          "appleName": "filter[builds.expired]"
+        },
+        {
+          "toolField": "build_processing_states",
+          "sourceKind": "parameter",
+          "operationId": "preReleaseVersions_getCollection",
+          "location": "query",
+          "appleName": "filter[builds.processingState]"
+        },
+        {
+          "toolField": "build_versions",
+          "sourceKind": "parameter",
+          "operationId": "preReleaseVersions_getCollection",
+          "location": "query",
+          "appleName": "filter[builds.version]"
+        },
+        {
+          "toolField": "build_ids",
+          "sourceKind": "parameter",
+          "operationId": "preReleaseVersions_getCollection",
+          "location": "query",
+          "appleName": "filter[builds]"
         },
         {
           "toolField": "sort",
@@ -118,10 +185,15 @@
             "outputField": "next_url",
             "operationId": "preReleaseVersions_getCollection",
             "jsonPointer": "/links/next"
+          },
+          {
+            "outputField": "total",
+            "operationId": "preReleaseVersions_getCollection",
+            "jsonPointer": "/meta/paging/total"
           }
         ]
       },
-      "note": "Valid subset. Current Apple filters also cover build audience type, expiration, processing state, build version, build ids, sparse fields, includes, and relationship limits."
+      "note": "Exposes all current semantic collection filters and preserves app/build relationship IDs; includes remain controlled by dedicated related-resource tools."
     },
     {
       "tool": "pre_release_list_builds",
@@ -177,10 +249,15 @@
             "outputField": "next_url",
             "operationId": "preReleaseVersions_builds_getToManyRelated",
             "jsonPointer": "/links/next"
+          },
+          {
+            "outputField": "total",
+            "operationId": "preReleaseVersions_builds_getToManyRelated",
+            "jsonPointer": "/meta/paging/total"
           }
         ]
       },
-      "note": "Exact related-resource list, but the output omits expiration, audience, encryption, and other current Build attributes."
+      "note": "Exact related-resource list projecting current Build expiration, minimum OS, audience, processing, and encryption attributes."
     }
   ],
   "implementationAliases": []

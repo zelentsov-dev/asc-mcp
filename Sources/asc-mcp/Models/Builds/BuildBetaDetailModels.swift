@@ -35,6 +35,7 @@ public struct BuildBetaDetailRelationships: Codable, Sendable {
 public struct ASCBetaBuildLocalizationsResponse: Codable, Sendable {
     public let data: [ASCBetaBuildLocalization]
     public let links: ASCPagedDocumentLinks?
+    public let meta: ASCPagingInformation?
 }
 
 /// Beta build localization response
@@ -67,6 +68,7 @@ public struct BetaBuildLocalizationRelationships: Codable, Sendable {
 public struct ASCBetaGroupsResponse: Codable, Sendable {
     public let data: [ASCBetaGroup]
     public let links: ASCPagedDocumentLinks?
+    public let meta: ASCPagingInformation?
 }
 
 /// Beta group data
@@ -89,6 +91,8 @@ public struct BetaGroupAttributes: Codable, Sendable {
     public let publicLink: String?
     public let publicLinkId: String?
     public let feedbackEnabled: Bool?
+    public let iosBuildsAvailableForAppleSiliconMac: Bool?
+    public let iosBuildsAvailableForAppleVision: Bool?
 }
 
 /// Beta group relationships
@@ -96,6 +100,8 @@ public struct BetaGroupRelationships: Codable, Sendable {
     public let app: ASCRelationship?
     public let builds: ASCRelationshipMultiple?
     public let betaTesters: ASCRelationshipMultiple?
+    public let betaRecruitmentCriteria: ASCRelationship?
+    public let betaRecruitmentCriterionCompatibleBuildCheck: ASCRelationship?
 }
 
 // MARK: - Beta Tester Models
@@ -104,6 +110,7 @@ public struct BetaGroupRelationships: Codable, Sendable {
 public struct ASCBetaTestersResponse: Codable, Sendable {
     public let data: [ASCBetaTester]
     public let links: ASCPagedDocumentLinks?
+    public let meta: ASCPagingInformation?
 }
 
 /// Beta tester data
@@ -238,15 +245,23 @@ public struct CreateBetaGroupRequest: Codable, Sendable {
         public let isInternalGroup: Bool?
         public let hasAccessToAllBuilds: Bool?
         public let publicLinkEnabled: Bool?
+        public let publicLinkLimitEnabled: Bool?
+        public let publicLinkLimit: Int?
         public let feedbackEnabled: Bool?
     }
 
     public struct CreateBetaGroupRelationships: Codable, Sendable {
         public let app: AppRelationship
+        public let builds: ResourceIdentifiersRelationship?
+        public let betaTesters: ResourceIdentifiersRelationship?
     }
 
     public struct AppRelationship: Codable, Sendable {
         public let data: ASCResourceIdentifier
+    }
+
+    public struct ResourceIdentifiersRelationship: Codable, Sendable {
+        public let data: [ASCResourceIdentifier]
     }
 }
 
@@ -263,8 +278,11 @@ public struct UpdateBetaGroupRequest: Codable, Sendable {
     public struct UpdateBetaGroupAttributes: Codable, Sendable {
         public let name: String?
         public let publicLinkEnabled: Bool?
+        public let publicLinkLimitEnabled: Bool?
         public let publicLinkLimit: Int?
         public let feedbackEnabled: Bool?
+        public let iosBuildsAvailableForAppleSiliconMac: Bool?
+        public let iosBuildsAvailableForAppleVision: Bool?
     }
 }
 
@@ -300,6 +318,7 @@ public struct ASCBetaTesterResponse: Codable, Sendable {
 public enum ASCBetaTesterIncludedResource: Codable, Sendable {
     case app(BuildIncludedApp)
     case betaGroup(ASCBetaGroup)
+    case build(ASCBuild)
 
     private enum CodingKeys: String, CodingKey {
         case type
@@ -316,6 +335,9 @@ public enum ASCBetaTesterIncludedResource: Codable, Sendable {
         case "betaGroups":
             let group = try ASCBetaGroup(from: decoder)
             self = .betaGroup(group)
+        case "builds":
+            let build = try ASCBuild(from: decoder)
+            self = .build(build)
         default:
             throw DecodingError.dataCorruptedError(
                 forKey: .type,
@@ -331,6 +353,8 @@ public enum ASCBetaTesterIncludedResource: Codable, Sendable {
             try app.encode(to: encoder)
         case .betaGroup(let group):
             try group.encode(to: encoder)
+        case .build(let build):
+            try build.encode(to: encoder)
         }
     }
 }

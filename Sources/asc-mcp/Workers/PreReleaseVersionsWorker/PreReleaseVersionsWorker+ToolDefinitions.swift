@@ -15,22 +15,27 @@ extension PreReleaseVersionsWorker {
                         "type": .string("string"),
                         "description": .string("Filter by app ID")
                     ]),
-                    "platform": .object([
-                        "type": .string("string"),
-                        "description": .string("Filter by platform"),
-                        "enum": .array([.string("IOS"), .string("MAC_OS"), .string("TV_OS"), .string("VISION_OS")])
+                    "platform": enumListSchema("Filter by platform", values: ["IOS", "MAC_OS", "TV_OS", "VISION_OS"]),
+                    "version": stringListSchema("Filter by version string (for example, 2.1.0)"),
+                    "build_audience_types": enumListSchema("Filter by related build audience type", values: ["INTERNAL_ONLY", "APP_STORE_ELIGIBLE"]),
+                    "build_expired": .object([
+                        "type": .string("boolean"),
+                        "description": .string("Filter by related build expiration status")
                     ]),
-                    "version": .object([
-                        "type": .string("string"),
-                        "description": .string("Filter by version string (e.g. '2.1.0')")
-                    ]),
+                    "build_processing_states": enumListSchema("Filter by related build processing state", values: ["PROCESSING", "FAILED", "INVALID", "VALID"]),
+                    "build_versions": stringListSchema("Filter by related build numbers"),
+                    "build_ids": stringListSchema("Filter by related build IDs"),
                     "sort": .object([
                         "type": .string("string"),
-                        "description": .string("Sort order: version, -version")
+                        "description": .string("Sort order"),
+                        "enum": .array([.string("version"), .string("-version")])
                     ]),
                     "limit": .object([
                         "type": .string("integer"),
-                        "description": .string("Max results (default: 25, max: 200)")
+                        "description": .string("Max results"),
+                        "minimum": .int(1),
+                        "maximum": .int(200),
+                        "default": .int(25)
                     ]),
                     "next_url": .object([
                         "type": .string("string"),
@@ -82,5 +87,33 @@ extension PreReleaseVersionsWorker {
                 "required": .array([.string("pre_release_version_id")])
             ])
         )
+    }
+
+    private func stringListSchema(_ description: String) -> Value {
+        .object([
+            "description": .string(description),
+            "oneOf": .array([
+                .object(["type": .string("string")]),
+                .object([
+                    "type": .string("array"),
+                    "items": .object(["type": .string("string")]),
+                    "minItems": .int(1)
+                ])
+            ])
+        ])
+    }
+
+    private func enumListSchema(_ description: String, values: [String]) -> Value {
+        .object([
+            "description": .string(description),
+            "oneOf": .array([
+                .object(["type": .string("string"), "enum": .array(values.map(Value.string))]),
+                .object([
+                    "type": .string("array"),
+                    "items": .object(["type": .string("string"), "enum": .array(values.map(Value.string))]),
+                    "minItems": .int(1)
+                ])
+            ])
+        ])
     }
 }

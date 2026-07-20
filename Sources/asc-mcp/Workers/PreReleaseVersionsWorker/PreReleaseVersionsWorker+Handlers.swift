@@ -16,12 +16,19 @@ extension PreReleaseVersionsWorker {
             if let appId = arguments?["app_id"]?.stringValue {
                 queryParams["filter[app]"] = appId
             }
-            if let platform = arguments?["platform"]?.stringValue {
+            if let platform = commaSeparatedStringList(arguments?["platform"]) {
                 queryParams["filter[platform]"] = platform
             }
-            if let version = arguments?["version"]?.stringValue {
+            if let version = commaSeparatedStringList(arguments?["version"]) {
                 queryParams["filter[version]"] = version
             }
+            applyStringList(arguments?["build_audience_types"], as: "filter[builds.buildAudienceType]", to: &queryParams)
+            if let expired = arguments?["build_expired"]?.boolValue {
+                queryParams["filter[builds.expired]"] = expired ? "true" : "false"
+            }
+            applyStringList(arguments?["build_processing_states"], as: "filter[builds.processingState]", to: &queryParams)
+            applyStringList(arguments?["build_versions"], as: "filter[builds.version]", to: &queryParams)
+            applyStringList(arguments?["build_ids"], as: "filter[builds]", to: &queryParams)
             if let sort = arguments?["sort"]?.stringValue {
                 queryParams["sort"] = sort
             }
@@ -59,6 +66,9 @@ extension PreReleaseVersionsWorker {
             ]
             if let next = response.links?.next {
                 result["next_url"] = next
+            }
+            if let total = response.meta?.paging?.total {
+                result["total"] = total
             }
 
             return MCPResult.jsonObject(result)
@@ -152,6 +162,9 @@ extension PreReleaseVersionsWorker {
             if let next = response.links?.next {
                 result["next_url"] = next
             }
+            if let total = response.meta?.paging?.total {
+                result["total"] = total
+            }
 
             return MCPResult.jsonObject(result)
 
@@ -166,22 +179,66 @@ extension PreReleaseVersionsWorker {
     // MARK: - Formatting
 
     private func formatPreReleaseVersion(_ version: ASCPreReleaseVersionResource) -> [String: Any] {
-        return [
+        var result: [String: Any] = [
             "id": version.id,
             "type": version.type,
             "version": (version.attributes?.version).jsonSafe,
             "platform": (version.attributes?.platform).jsonSafe
         ]
+        if let relationships = version.relationships {
+            var relationIds: [String: Any] = [:]
+            if let app = relationships.app?.data {
+                relationIds["appId"] = app.id
+            }
+            if let builds = relationships.builds?.data {
+                relationIds["buildIds"] = builds.map(\.id)
+            }
+            result["relationships"] = relationIds
+        }
+        return result
     }
 
     private func formatBuild(_ build: ASCBuild) -> [String: Any] {
-        return [
+        var result: [String: Any] = [
             "id": build.id,
             "type": build.type,
             "version": build.attributes.version.jsonSafe,
             "uploadedDate": build.attributes.uploadedDate.jsonSafe,
+            "expirationDate": build.attributes.expirationDate.jsonSafe,
+            "expired": build.attributes.expired.jsonSafe,
+            "minOsVersion": build.attributes.minOsVersion.jsonSafe,
+            "lsMinimumSystemVersion": build.attributes.lsMinimumSystemVersion.jsonSafe,
+            "computedMinMacOsVersion": build.attributes.computedMinMacOsVersion.jsonSafe,
+            "computedMinVisionOsVersion": build.attributes.computedMinVisionOsVersion.jsonSafe,
             "processingState": build.attributes.processingState.jsonSafe,
+            "buildAudienceType": build.attributes.buildAudienceType.jsonSafe,
+            "usesNonExemptEncryption": build.attributes.usesNonExemptEncryption.jsonSafe,
             "buildNumber": build.attributes.version.jsonSafe
         ]
+        if let icon = build.attributes.iconAssetToken {
+            result["iconAssetToken"] = [
+                "templateUrl": icon.templateUrl.jsonSafe,
+                "width": icon.width.jsonSafe,
+                "height": icon.height.jsonSafe
+            ]
+        }
+        return result
+    }
+
+    private func applyStringList(_ value: Value?, as appleName: String, to query: inout [String: String]) {
+        if let encoded = commaSeparatedStringList(value) {
+            query[appleName] = encoded
+        }
+    }
+
+    private func commaSeparatedStringList(_ value: Value?) -> String? {
+        if let string = value?.stringValue, !string.isEmpty {
+            return string
+        }
+        guard let values = value?.arrayValue, !values.isEmpty else {
+            return nil
+        }
+        let strings = values.compactMap(\.stringValue).filter { !$0.isEmpty }
+        return strings.count == values.count ? strings.joined(separator: ",") : nil
     }
 }

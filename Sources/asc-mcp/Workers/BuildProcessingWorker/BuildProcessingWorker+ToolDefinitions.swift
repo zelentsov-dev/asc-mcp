@@ -62,7 +62,7 @@ extension BuildProcessingWorker {
     func checkReadinessTool() -> Tool {
         return Tool(
             name: "builds_check_readiness",
-            description: "Check if a build is ready for submission or TestFlight",
+            description: "Check build-level processing, encryption declaration, expiration, and TestFlight states. App Store version submission readiness is reported as not determined because it requires version-level checks.",
             inputSchema: .object([
                 "type": .string("object"),
                 "properties": .object([

@@ -19,7 +19,18 @@ extension BuildsWorker {
         result["expired"] = build.attributes.expired.jsonSafe
         result["processingState"] = build.attributes.processingState.jsonSafe
         result["minOsVersion"] = build.attributes.minOsVersion.jsonSafe
+        result["lsMinimumSystemVersion"] = build.attributes.lsMinimumSystemVersion.jsonSafe
+        result["computedMinMacOsVersion"] = build.attributes.computedMinMacOsVersion.jsonSafe
+        result["computedMinVisionOsVersion"] = build.attributes.computedMinVisionOsVersion.jsonSafe
+        result["buildAudienceType"] = build.attributes.buildAudienceType.jsonSafe
         result["usesNonExemptEncryption"] = build.attributes.usesNonExemptEncryption.jsonSafe
+        if let icon = build.attributes.iconAssetToken {
+            result["iconAssetToken"] = [
+                "templateUrl": icon.templateUrl.jsonSafe,
+                "width": icon.width.jsonSafe,
+                "height": icon.height.jsonSafe
+            ]
+        }
         
         // Add relationships if present
         if let relationships = build.relationships {
@@ -38,6 +49,50 @@ extension BuildsWorker {
             if let preReleaseVersion = relationships.preReleaseVersion,
                let versionData = preReleaseVersion.data {
                 rels["preReleaseVersionId"] = versionData.id
+            }
+
+            if let appStoreVersion = relationships.appStoreVersion?.data {
+                rels["appStoreVersionId"] = appStoreVersion.id
+            }
+
+            if let betaReviewSubmission = relationships.betaAppReviewSubmission?.data {
+                rels["betaAppReviewSubmissionId"] = betaReviewSubmission.id
+            }
+
+            if let encryptionDeclaration = relationships.appEncryptionDeclaration?.data {
+                rels["appEncryptionDeclarationId"] = encryptionDeclaration.id
+            }
+
+            if let betaGroups = relationships.betaGroups?.data {
+                rels["betaGroupIds"] = betaGroups.map(\.id)
+            }
+
+            if let betaBuildLocalizations = relationships.betaBuildLocalizations?.data {
+                rels["betaBuildLocalizationIds"] = betaBuildLocalizations.map(\.id)
+            }
+
+            if let individualTesters = relationships.individualTesters?.data {
+                rels["individualTesterIds"] = individualTesters.map(\.id)
+            }
+
+            if let icons = relationships.icons?.data {
+                rels["iconIds"] = icons.map(\.id)
+            }
+
+            if let buildBundles = relationships.buildBundles?.data {
+                rels["buildBundleIds"] = buildBundles.map(\.id)
+            }
+
+            if let buildUpload = relationships.buildUpload?.data {
+                rels["buildUploadId"] = buildUpload.id
+            }
+
+            if let perfPowerMetrics = relationships.perfPowerMetrics?.data {
+                rels["perfPowerMetricIds"] = perfPowerMetrics.map(\.id)
+            }
+
+            if let diagnosticSignatures = relationships.diagnosticSignatures?.data {
+                rels["diagnosticSignatureIds"] = diagnosticSignatures.map(\.id)
             }
             
             result["relationships"] = rels

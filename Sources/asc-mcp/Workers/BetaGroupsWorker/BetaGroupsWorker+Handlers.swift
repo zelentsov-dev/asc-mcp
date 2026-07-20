@@ -33,6 +33,19 @@ extension BetaGroupsWorker {
                let isInternal = isInternalValue.boolValue {
                 queryParams["filter[isInternalGroup]"] = isInternal ? "true" : "false"
             }
+            applyStringList(arguments["name"], as: "filter[name]", to: &queryParams)
+            applyStringList(arguments["build_ids"], as: "filter[builds]", to: &queryParams)
+            applyStringList(arguments["group_ids"], as: "filter[id]", to: &queryParams)
+            applyStringList(arguments["public_link"], as: "filter[publicLink]", to: &queryParams)
+            if let enabled = arguments["public_link_enabled"]?.boolValue {
+                queryParams["filter[publicLinkEnabled]"] = enabled ? "true" : "false"
+            }
+            if let enabled = arguments["public_link_limit_enabled"]?.boolValue {
+                queryParams["filter[publicLinkLimitEnabled]"] = enabled ? "true" : "false"
+            }
+            if let sort = arguments["sort"]?.stringValue {
+                queryParams["sort"] = sort
+            }
 
             // Check for pagination URL
             if let nextUrl = try paginationURL(from: arguments["next_url"]) {
@@ -65,6 +78,9 @@ extension BetaGroupsWorker {
             if let nextUrl = response.links?.next {
                 result["next_url"] = nextUrl
             }
+            if let total = response.meta?.paging?.total {
+                result["total"] = total
+            }
 
             return MCPResult.jsonObject(result)
 
@@ -90,6 +106,28 @@ extension BetaGroupsWorker {
             )
         }
 
+        let buildIds: [String]?
+        if let values = arguments["build_ids"]?.arrayValue {
+            let ids = values.compactMap(\.stringValue).filter { !$0.isEmpty }
+            guard !ids.isEmpty, ids.count == values.count else {
+                return MCPResult.error("'build_ids' must contain only non-empty build IDs")
+            }
+            buildIds = ids
+        } else {
+            buildIds = nil
+        }
+
+        let testerIds: [String]?
+        if let values = arguments["tester_ids"]?.arrayValue {
+            let ids = values.compactMap(\.stringValue).filter { !$0.isEmpty }
+            guard !ids.isEmpty, ids.count == values.count else {
+                return MCPResult.error("'tester_ids' must contain only non-empty beta tester IDs")
+            }
+            testerIds = ids
+        } else {
+            testerIds = nil
+        }
+
         do {
             let isInternalGroup = arguments["is_internal_group"]?.boolValue ?? false
             let hasAccessToAllBuilds = arguments["has_access_to_all_builds"]?.boolValue ?? false
@@ -103,12 +141,24 @@ extension BetaGroupsWorker {
                         isInternalGroup: isInternalGroup,
                         hasAccessToAllBuilds: hasAccessToAllBuilds,
                         publicLinkEnabled: publicLinkEnabled,
+                        publicLinkLimitEnabled: arguments["public_link_limit_enabled"]?.boolValue,
+                        publicLinkLimit: arguments["public_link_limit"]?.intValue,
                         feedbackEnabled: feedbackEnabled
                     ),
                     relationships: CreateBetaGroupRequest.CreateBetaGroupRelationships(
                         app: CreateBetaGroupRequest.AppRelationship(
                             data: ASCResourceIdentifier(type: "apps", id: appId)
-                        )
+                        ),
+                        builds: buildIds.map {
+                            CreateBetaGroupRequest.ResourceIdentifiersRelationship(
+                                data: $0.map { ASCResourceIdentifier(type: "builds", id: $0) }
+                            )
+                        },
+                        betaTesters: testerIds.map {
+                            CreateBetaGroupRequest.ResourceIdentifiersRelationship(
+                                data: $0.map { ASCResourceIdentifier(type: "betaTesters", id: $0) }
+                            )
+                        }
                     )
                 )
             )
@@ -148,6 +198,19 @@ extension BetaGroupsWorker {
             )
         }
 
+        let updatableFields = [
+            "name",
+            "public_link_enabled",
+            "public_link_limit_enabled",
+            "public_link_limit",
+            "feedback_enabled",
+            "ios_builds_available_for_apple_silicon_mac",
+            "ios_builds_available_for_apple_vision"
+        ]
+        guard updatableFields.contains(where: { arguments[$0] != nil }) else {
+            return MCPResult.error("At least one updatable beta group field is required")
+        }
+
         do {
             let request = UpdateBetaGroupRequest(
                 data: UpdateBetaGroupRequest.UpdateBetaGroupData(
@@ -155,8 +218,11 @@ extension BetaGroupsWorker {
                     attributes: UpdateBetaGroupRequest.UpdateBetaGroupAttributes(
                         name: arguments["name"]?.stringValue,
                         publicLinkEnabled: arguments["public_link_enabled"]?.boolValue,
+                        publicLinkLimitEnabled: arguments["public_link_limit_enabled"]?.boolValue,
                         publicLinkLimit: arguments["public_link_limit"]?.intValue,
-                        feedbackEnabled: arguments["feedback_enabled"]?.boolValue
+                        feedbackEnabled: arguments["feedback_enabled"]?.boolValue,
+                        iosBuildsAvailableForAppleSiliconMac: arguments["ios_builds_available_for_apple_silicon_mac"]?.boolValue,
+                        iosBuildsAvailableForAppleVision: arguments["ios_builds_available_for_apple_vision"]?.boolValue
                     )
                 )
             )
@@ -360,6 +426,9 @@ extension BetaGroupsWorker {
             if let nextUrl = response.links?.next {
                 result["next_url"] = nextUrl
             }
+            if let total = response.meta?.paging?.total {
+                result["total"] = total
+            }
 
             return MCPResult.jsonObject(result)
 
@@ -491,8 +560,54 @@ extension BetaGroupsWorker {
             "hasAccessToAllBuilds": group.attributes.hasAccessToAllBuilds.jsonSafe,
             "publicLinkEnabled": group.attributes.publicLinkEnabled.jsonSafe,
             "publicLinkLimit": group.attributes.publicLinkLimit.jsonSafe,
+            "publicLinkLimitEnabled": group.attributes.publicLinkLimitEnabled.jsonSafe,
             "publicLink": group.attributes.publicLink.jsonSafe,
-            "feedbackEnabled": group.attributes.feedbackEnabled.jsonSafe
+            "publicLinkId": group.attributes.publicLinkId.jsonSafe,
+            "feedbackEnabled": group.attributes.feedbackEnabled.jsonSafe,
+            "iosBuildsAvailableForAppleSiliconMac": group.attributes.iosBuildsAvailableForAppleSiliconMac.jsonSafe,
+            "iosBuildsAvailableForAppleVision": group.attributes.iosBuildsAvailableForAppleVision.jsonSafe,
+            "relationships": formatBetaGroupRelationships(group.relationships)
         ]
+    }
+
+    private func formatBetaGroupRelationships(_ relationships: BetaGroupRelationships?) -> [String: Any] {
+        guard let relationships else { return [:] }
+        var result: [String: Any] = [:]
+        if let app = relationships.app?.data {
+            result["appId"] = app.id
+        }
+        if let builds = relationships.builds?.data {
+            result["buildIds"] = builds.map(\.id)
+        }
+        if let testers = relationships.betaTesters?.data {
+            result["betaTesterIds"] = testers.map(\.id)
+        }
+        if let criteria = relationships.betaRecruitmentCriteria?.data {
+            result["betaRecruitmentCriteriaId"] = criteria.id
+        }
+        if let compatibilityURL = relationships.betaRecruitmentCriterionCompatibleBuildCheck?.links?.related {
+            result["betaRecruitmentCriterionCompatibleBuildCheckURL"] = compatibilityURL
+        }
+        return result
+    }
+
+    private func applyStringList(_ value: Value?, as appleName: String, to query: inout [String: String]) {
+        if let encoded = commaSeparatedStringList(value) {
+            query[appleName] = encoded
+        }
+    }
+
+    private func commaSeparatedStringList(_ value: Value?) -> String? {
+        if let string = value?.stringValue, !string.isEmpty {
+            return string
+        }
+        guard let values = value?.arrayValue, !values.isEmpty else {
+            return nil
+        }
+        let strings = values.compactMap(\.stringValue).filter { !$0.isEmpty }
+        guard strings.count == values.count else {
+            return nil
+        }
+        return strings.joined(separator: ",")
     }
 }

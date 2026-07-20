@@ -112,6 +112,16 @@
               "sourceKind": "fixed",
               "jsonPointer": "/data/type",
               "fixedValue": "betaTesters"
+            },
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/relationships/betaGroups/data/*/type",
+              "fixedValue": "betaGroups"
+            },
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/relationships/builds/data/*/type",
+              "fixedValue": "builds"
             }
           ]
         }
@@ -140,6 +150,12 @@
           "sourceKind": "requestBody",
           "operationId": "betaTesters_createInstance",
           "jsonPointer": "/data/relationships/betaGroups/data"
+        },
+        {
+          "toolField": "build_ids",
+          "sourceKind": "requestBody",
+          "operationId": "betaTesters_createInstance",
+          "jsonPointer": "/data/relationships/builds/data"
         }
       ],
       "response": {
@@ -159,7 +175,7 @@
           }
         ]
       },
-      "note": "Apple requires only email and permits optional betaGroups and builds relationships. The MCP unnecessarily requires a nonempty group_ids array and cannot create a direct-to-build tester."
+      "note": "Apple requires only email; betaGroups and builds relationships are independently optional and validated when supplied."
     },
     {
       "tool": "beta_testers_delete",
@@ -214,7 +230,30 @@
           "operationId": "betaTesters_getInstance",
           "method": "get",
           "path": "/v1/betaTesters/{id}",
-          "role": "primary"
+          "role": "primary",
+          "optionalParameterClassifications": [
+            {
+              "location": "query",
+              "appleName": "limit[apps]",
+              "disposition": "intentionallyOmitted",
+              "reason": "The detail tool returns Apple's bounded included-app preview; full app access remains paginated through beta_testers_list_apps.",
+              "reviewAtSpec": "4.4.1"
+            },
+            {
+              "location": "query",
+              "appleName": "limit[betaGroups]",
+              "disposition": "intentionallyOmitted",
+              "reason": "The detail tool intentionally returns a bounded included beta-group preview.",
+              "reviewAtSpec": "4.4.1"
+            },
+            {
+              "location": "query",
+              "appleName": "limit[builds]",
+              "disposition": "intentionallyOmitted",
+              "reason": "The detail tool intentionally returns a bounded included-build preview; relationship mutation has dedicated tools.",
+              "reviewAtSpec": "4.4.1"
+            }
+          ]
         }
       ],
       "fields": [
@@ -249,13 +288,23 @@
             "jsonPointer": "/data"
           },
           {
-            "outputField": "included",
+            "outputField": "beta_tester.apps",
+            "operationId": "betaTesters_getInstance",
+            "jsonPointer": "/included"
+          },
+          {
+            "outputField": "beta_tester.betaGroups",
+            "operationId": "betaTesters_getInstance",
+            "jsonPointer": "/included"
+          },
+          {
+            "outputField": "beta_tester.builds",
             "operationId": "betaTesters_getInstance",
             "jsonPointer": "/included"
           }
         ]
       },
-      "note": "Apple documents include=apps,betaGroups,builds. Current decoder supports only apps and betaGroups, so include=builds throws instead of returning a valid response."
+      "note": "Supports and decodes every documented include value: apps, betaGroups, and builds."
     },
     {
       "tool": "beta_testers_list",
@@ -268,7 +317,37 @@
           "operationId": "betaTesters_getCollection",
           "method": "get",
           "path": "/v1/betaTesters",
-          "role": "primary"
+          "role": "primary",
+          "optionalParameterClassifications": [
+            {
+              "location": "query",
+              "appleName": "include",
+              "disposition": "intentionallyOmitted",
+              "reason": "The collection returns tester and relationship-ID projections; included details are available through beta_testers_get.",
+              "reviewAtSpec": "4.4.1"
+            },
+            {
+              "location": "query",
+              "appleName": "limit[apps]",
+              "disposition": "intentionallyOmitted",
+              "reason": "Apps are not included by the tester collection projection.",
+              "reviewAtSpec": "4.4.1"
+            },
+            {
+              "location": "query",
+              "appleName": "limit[betaGroups]",
+              "disposition": "intentionallyOmitted",
+              "reason": "Beta groups are not included by the tester collection projection.",
+              "reviewAtSpec": "4.4.1"
+            },
+            {
+              "location": "query",
+              "appleName": "limit[builds]",
+              "disposition": "intentionallyOmitted",
+              "reason": "Builds are not included by the tester collection projection.",
+              "reviewAtSpec": "4.4.1"
+            }
+          ]
         }
       ],
       "fields": [
@@ -278,6 +357,62 @@
           "operationId": "betaTesters_getCollection",
           "location": "query",
           "appleName": "filter[apps]"
+        },
+        {
+          "toolField": "first_name",
+          "sourceKind": "parameter",
+          "operationId": "betaTesters_getCollection",
+          "location": "query",
+          "appleName": "filter[firstName]"
+        },
+        {
+          "toolField": "last_name",
+          "sourceKind": "parameter",
+          "operationId": "betaTesters_getCollection",
+          "location": "query",
+          "appleName": "filter[lastName]"
+        },
+        {
+          "toolField": "email",
+          "sourceKind": "parameter",
+          "operationId": "betaTesters_getCollection",
+          "location": "query",
+          "appleName": "filter[email]"
+        },
+        {
+          "toolField": "invite_type",
+          "sourceKind": "parameter",
+          "operationId": "betaTesters_getCollection",
+          "location": "query",
+          "appleName": "filter[inviteType]"
+        },
+        {
+          "toolField": "group_ids",
+          "sourceKind": "parameter",
+          "operationId": "betaTesters_getCollection",
+          "location": "query",
+          "appleName": "filter[betaGroups]"
+        },
+        {
+          "toolField": "build_ids",
+          "sourceKind": "parameter",
+          "operationId": "betaTesters_getCollection",
+          "location": "query",
+          "appleName": "filter[builds]"
+        },
+        {
+          "toolField": "tester_ids",
+          "sourceKind": "parameter",
+          "operationId": "betaTesters_getCollection",
+          "location": "query",
+          "appleName": "filter[id]"
+        },
+        {
+          "toolField": "sort",
+          "sourceKind": "parameter",
+          "operationId": "betaTesters_getCollection",
+          "location": "query",
+          "appleName": "sort"
         },
         {
           "toolField": "limit",
@@ -311,10 +446,15 @@
             "outputField": "next_url",
             "operationId": "betaTesters_getCollection",
             "jsonPointer": "/links/next"
+          },
+          {
+            "outputField": "total",
+            "operationId": "betaTesters_getCollection",
+            "jsonPointer": "/meta/paging/total"
           }
         ]
       },
-      "note": "Valid subset; current Apple collection also supports name, email, invite type, group, build, id, sort, fields, includes, and relationship limits."
+      "note": "Exposes every current semantic tester filter and sort while keeping included-resource projection controlled."
     },
     {
       "tool": "beta_testers_list_apps",
@@ -543,7 +683,86 @@
           "operationId": "betaTesters_getCollection",
           "method": "get",
           "path": "/v1/betaTesters",
-          "role": "primary"
+          "role": "primary",
+          "optionalParameterClassifications": [
+            {
+              "location": "query",
+              "appleName": "filter[betaGroups]",
+              "disposition": "intentionallyOmitted",
+              "reason": "Advanced group filtering belongs to beta_testers_list; search is intentionally exact-email plus optional app scope.",
+              "reviewAtSpec": "4.4.1"
+            },
+            {
+              "location": "query",
+              "appleName": "filter[builds]",
+              "disposition": "intentionallyOmitted",
+              "reason": "Advanced build filtering belongs to beta_testers_list; search is intentionally exact-email plus optional app scope.",
+              "reviewAtSpec": "4.4.1"
+            },
+            {
+              "location": "query",
+              "appleName": "filter[firstName]",
+              "disposition": "intentionallyOmitted",
+              "reason": "Name filtering belongs to beta_testers_list; Apple email search is exact.",
+              "reviewAtSpec": "4.4.1"
+            },
+            {
+              "location": "query",
+              "appleName": "filter[id]",
+              "disposition": "intentionallyOmitted",
+              "reason": "A caller with a tester ID should use beta_testers_get.",
+              "reviewAtSpec": "4.4.1"
+            },
+            {
+              "location": "query",
+              "appleName": "filter[inviteType]",
+              "disposition": "intentionallyOmitted",
+              "reason": "Invitation-type filtering belongs to beta_testers_list.",
+              "reviewAtSpec": "4.4.1"
+            },
+            {
+              "location": "query",
+              "appleName": "filter[lastName]",
+              "disposition": "intentionallyOmitted",
+              "reason": "Name filtering belongs to beta_testers_list; Apple email search is exact.",
+              "reviewAtSpec": "4.4.1"
+            },
+            {
+              "location": "query",
+              "appleName": "include",
+              "disposition": "intentionallyOmitted",
+              "reason": "Search returns compact tester matches; beta_testers_get provides included details.",
+              "reviewAtSpec": "4.4.1"
+            },
+            {
+              "location": "query",
+              "appleName": "limit[apps]",
+              "disposition": "intentionallyOmitted",
+              "reason": "Apps are not included in search results.",
+              "reviewAtSpec": "4.4.1"
+            },
+            {
+              "location": "query",
+              "appleName": "limit[betaGroups]",
+              "disposition": "intentionallyOmitted",
+              "reason": "Beta groups are not included in search results.",
+              "reviewAtSpec": "4.4.1"
+            },
+            {
+              "location": "query",
+              "appleName": "limit[builds]",
+              "disposition": "intentionallyOmitted",
+              "reason": "Builds are not included in search results.",
+              "reviewAtSpec": "4.4.1"
+            },
+            {
+              "location": "query",
+              "appleName": "sort",
+              "disposition": "intentionallyOmitted",
+              "reason": "Exact-email search preserves Apple's natural match order and exposes pagination for ambiguous matches.",
+              "reviewAtSpec": "4.4.1"
+            }
+          ]
         }
       ],
       "fields": [
@@ -560,6 +779,18 @@
           "operationId": "betaTesters_getCollection",
           "location": "query",
           "appleName": "filter[apps]"
+        },
+        {
+          "toolField": "limit",
+          "sourceKind": "parameter",
+          "operationId": "betaTesters_getCollection",
+          "location": "query",
+          "appleName": "limit"
+        },
+        {
+          "toolField": "next_url",
+          "sourceKind": "local",
+          "localRole": "Validated pagination URL returned by the prior exact-email search page."
         }
       ],
       "response": {
@@ -576,10 +807,20 @@
             "outputField": "beta_testers",
             "operationId": "betaTesters_getCollection",
             "jsonPointer": "/data"
+          },
+          {
+            "outputField": "next_url",
+            "operationId": "betaTesters_getCollection",
+            "jsonPointer": "/links/next"
+          },
+          {
+            "outputField": "total",
+            "operationId": "betaTesters_getCollection",
+            "jsonPointer": "/meta/paging/total"
           }
         ]
       },
-      "note": "Exact-email collection filter; partial or wildcard matching is not provided by Apple."
+      "note": "Exact-email collection filter with an optional app scope and validated pagination for ambiguous or repeated matches; partial matching is not provided by Apple."
     },
     {
       "tool": "beta_testers_send_invitation",
@@ -599,12 +840,17 @@
               "jsonPointer": "/data/type",
               "fixedValue": "betaTesterInvitations"
             },
-            {
-              "sourceKind": "fixed",
-              "jsonPointer": "/data/relationships/app/data/type",
-              "fixedValue": "apps"
-            }
-          ]
+        {
+          "sourceKind": "fixed",
+          "jsonPointer": "/data/relationships/app/data/type",
+          "fixedValue": "apps"
+        },
+        {
+          "sourceKind": "fixed",
+          "jsonPointer": "/data/relationships/betaTester/data/type",
+          "fixedValue": "betaTesters"
+        }
+      ]
         }
       ],
       "fields": [

@@ -6,6 +6,7 @@ import Foundation
 public struct ASCPreReleaseVersionsResponse: Codable, Sendable {
     public let data: [ASCPreReleaseVersionResource]
     public let links: ASCPagedDocumentLinks?
+    public let meta: ASCPagingInformation?
 }
 
 /// Pre-release version single response
@@ -18,10 +19,17 @@ public struct ASCPreReleaseVersionResource: Codable, Sendable {
     public let type: String
     public let id: String
     public let attributes: PreReleaseVersionResourceAttributes?
+    public let relationships: PreReleaseVersionResourceRelationships?
 }
 
 /// Pre-release version resource attributes
 public struct PreReleaseVersionResourceAttributes: Codable, Sendable {
     public let version: String?
     public let platform: String?
+}
+
+/// Relationships available on a pre-release version resource.
+public struct PreReleaseVersionResourceRelationships: Codable, Sendable {
+    public let builds: ASCRelationshipMultiple?
+    public let app: ASCRelationship?
 }

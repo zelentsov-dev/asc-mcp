@@ -185,8 +185,8 @@ extension BuildProcessingWorker {
         }
     }
     
-    /// Checks if a build is ready for submission or TestFlight distribution
-    /// - Returns: JSON with readiness status, missing requirements, and warnings
+    /// Checks build-level prerequisites and current TestFlight readiness states
+    /// - Returns: JSON with TestFlight readiness, missing build requirements, and App Store submission marked not determined
     /// - Throws: CallTool.Result with error if build_id missing or check fails
     func checkReadiness(_ params: CallTool.Parameters) async throws -> CallTool.Result {
         guard let arguments = params.arguments,
@@ -235,44 +235,52 @@ extension BuildProcessingWorker {
                 }
             }
             
-            // Check readiness conditions
             var issues: [String] = []
-            let warnings: [String] = []
+            var warnings: [String] = []
             
             let isProcessed = processingState == "VALID"
-            let encryptionCompliant = usesNonExemptEncryption != nil
+            let encryptionDeclarationRecorded = usesNonExemptEncryption != nil
             let isNotExpired = !expired
             
-            if !isProcessed {
-                issues.append("Build is still processing (state: \(processingState))")
+            switch processingState {
+            case "VALID":
+                break
+            case "PROCESSING":
+                issues.append("Build is still processing")
+            case "INVALID", "FAILED":
+                issues.append("Build processing failed (state: \(processingState))")
+            default:
+                issues.append("Build processing state is unknown (state: \(processingState))")
             }
             
-            if !encryptionCompliant {
-                issues.append("Encryption compliance not set")
+            if !encryptionDeclarationRecorded {
+                issues.append("Non-exempt encryption declaration is not set")
             }
             
             if !isNotExpired {
                 issues.append("Build has expired")
             }
             
-            if processingState == "INVALID" || processingState == "FAILED" {
-                issues.append("Build processing failed")
+            if usesNonExemptEncryption == true {
+                warnings.append("The build declares non-exempt encryption; additional export-compliance review or documentation may still be required")
             }
             
             // Check beta states
             let internalState = betaDetails["internalBuildState"] as? String ?? ""
             let externalState = betaDetails["externalBuildState"] as? String ?? ""
             
-            let isReadyForInternalTesting = internalState == "READY_FOR_BETA_TESTING" || 
-                                            internalState == "IN_BETA_TESTING" ||
-                                            internalState == "EXPIRED"
-            
-            let isReadyForExternalTesting = externalState == "READY_FOR_BETA_SUBMISSION" ||
-                                            externalState == "IN_BETA_REVIEW" ||
-                                            externalState == "READY_FOR_BETA_TESTING" ||
-                                            externalState == "IN_BETA_TESTING"
-            
-            let isReadyForSubmission = isProcessed && encryptionCompliant && isNotExpired
+            let buildPrerequisitesSatisfied = isProcessed && encryptionDeclarationRecorded && isNotExpired
+            let internalStateIsTestable = internalState == "READY_FOR_BETA_TESTING" || internalState == "IN_BETA_TESTING"
+            let externalStateIsTestable = externalState == "READY_FOR_BETA_TESTING" || externalState == "IN_BETA_TESTING"
+            let isReadyForInternalTesting = buildPrerequisitesSatisfied && internalStateIsTestable
+            let isReadyForExternalTesting = buildPrerequisitesSatisfied && externalStateIsTestable
+            let isReadyForBetaReviewSubmission = buildPrerequisitesSatisfied && externalState == "READY_FOR_BETA_SUBMISSION"
+
+            if betaDetails.isEmpty {
+                issues.append("Build beta detail is unavailable, so TestFlight readiness cannot be determined")
+            }
+
+            warnings.append("App Store version submission readiness is not determined by this tool; version metadata, review details, agreements, and other App Store Connect requirements must be checked separately")
             
             let result = [
                 "success": true,
@@ -281,11 +289,13 @@ extension BuildProcessingWorker {
                 "minOsVersion": minOsVersion,
                 "readiness": [
                     "isProcessed": isProcessed,
-                    "encryptionCompliant": encryptionCompliant,
+                    "encryptionDeclarationRecorded": encryptionDeclarationRecorded,
                     "isNotExpired": isNotExpired,
-                    "isReadyForSubmission": isReadyForSubmission,
+                    "buildPrerequisitesSatisfied": buildPrerequisitesSatisfied,
+                    "appStoreSubmissionStatus": "NOT_DETERMINED",
                     "isReadyForInternalTesting": isReadyForInternalTesting,
-                    "isReadyForExternalTesting": isReadyForExternalTesting
+                    "isReadyForExternalTesting": isReadyForExternalTesting,
+                    "isReadyForBetaReviewSubmission": isReadyForBetaReviewSubmission
                 ],
                 "states": [
                     "processingState": processingState,

@@ -34,24 +34,9 @@ extension BuildBetaDetailsWorker {
         }
         
         do {
-            // First get build to find beta detail relationship
-            let buildResponse: ASCBuildResponse = try await httpClient.get(
-                "/v1/builds/\(try ASCPathSegment.encode(buildId))",
-                parameters: ["include": "buildBetaDetail"],
-                as: ASCBuildResponse.self
-            )
-            
-            guard let betaDetailId = buildResponse.data.relationships?.buildBetaDetail?.data?.id else {
-                return CallTool.Result(
-                    content: [MCPContent.text("Error: No beta detail found for this build")],
-                    isError: true
-                )
-            }
-            
-            // Get full beta detail (only "build" is a valid include value)
             let response: ASCBuildBetaDetailResponse = try await httpClient.get(
-                "/v1/buildBetaDetails/\(try ASCPathSegment.encode(betaDetailId))",
-                parameters: ["include": "build"],
+                "/v1/builds/\(try ASCPathSegment.encode(buildId))/buildBetaDetail",
+                parameters: [:],
                 as: ASCBuildBetaDetailResponse.self
             )
 
@@ -59,6 +44,7 @@ extension BuildBetaDetailsWorker {
 
             let result = [
                 "success": true,
+                "buildId": buildId,
                 "betaDetail": betaDetailInfo,
                 "note": "Use builds_list_beta_localizations to get localizations for this build"
             ] as [String: Any]
@@ -97,10 +83,7 @@ extension BuildBetaDetailsWorker {
         do {
             guard let autoNotifyValue = arguments["auto_notify"],
                   let autoNotify = autoNotifyValue.boolValue else {
-                return CallTool.Result(
-                    content: [MCPContent.text("Warning: No updates provided")],
-                    isError: false
-                )
+                return MCPResult.error("At least one updatable field is required: auto_notify")
             }
             
             let updateRequest = UpdateBuildBetaDetailRequest(
@@ -221,7 +204,7 @@ extension BuildBetaDetailsWorker {
                 )
                 
                 if updateAttributes.whatsNew == nil {
-                    return MCPResult.text("Warning: No updates provided")
+                    return MCPResult.error("At least one updatable field is required: whats_new")
                 }
                 
                 let updateRequest = UpdateBetaBuildLocalizationRequest(
@@ -304,6 +287,9 @@ extension BuildBetaDetailsWorker {
             if let nextUrl = response.links?.next {
                 result["next_url"] = nextUrl
             }
+            if let total = response.meta?.paging?.total {
+                result["total"] = total
+            }
 
             return MCPResult.jsonObject(result)
 
@@ -334,11 +320,27 @@ extension BuildBetaDetailsWorker {
 
             // Check for pagination URL
             if let nextUrl = try paginationURL(from: arguments["next_url"]) {
+                var requiredParameters: [String: String] = ["filter[builds]": buildId]
+                applyBetaGroupStringList(arguments["group_ids"], as: "filter[id]", to: &requiredParameters)
+                applyBetaGroupStringList(arguments["name"], as: "filter[name]", to: &requiredParameters)
+                applyBetaGroupStringList(arguments["public_link"], as: "filter[publicLink]", to: &requiredParameters)
+                if let value = arguments["is_internal"]?.boolValue {
+                    requiredParameters["filter[isInternalGroup]"] = value ? "true" : "false"
+                }
+                if let value = arguments["public_link_enabled"]?.boolValue {
+                    requiredParameters["filter[publicLinkEnabled]"] = value ? "true" : "false"
+                }
+                if let value = arguments["public_link_limit_enabled"]?.boolValue {
+                    requiredParameters["filter[publicLinkLimitEnabled]"] = value ? "true" : "false"
+                }
+                if let sort = arguments["sort"]?.stringValue {
+                    requiredParameters["sort"] = sort
+                }
                 response = try await httpClient.getPage(
                     nextUrl,
                     scope: PaginationScope(
                         path: "/v1/betaGroups",
-                        requiredParameters: ["filter[builds]": buildId]
+                        requiredParameters: requiredParameters
                     ),
                     as: ASCBetaGroupsResponse.self
                 )
@@ -352,6 +354,21 @@ extension BuildBetaDetailsWorker {
                     queryParams["limit"] = String(min(max(limit, 1), 200))
                 } else {
                     queryParams["limit"] = "50"
+                }
+                applyBetaGroupStringList(arguments["group_ids"], as: "filter[id]", to: &queryParams)
+                applyBetaGroupStringList(arguments["name"], as: "filter[name]", to: &queryParams)
+                applyBetaGroupStringList(arguments["public_link"], as: "filter[publicLink]", to: &queryParams)
+                if let value = arguments["is_internal"]?.boolValue {
+                    queryParams["filter[isInternalGroup]"] = value ? "true" : "false"
+                }
+                if let value = arguments["public_link_enabled"]?.boolValue {
+                    queryParams["filter[publicLinkEnabled]"] = value ? "true" : "false"
+                }
+                if let value = arguments["public_link_limit_enabled"]?.boolValue {
+                    queryParams["filter[publicLinkLimitEnabled]"] = value ? "true" : "false"
+                }
+                if let sort = arguments["sort"]?.stringValue {
+                    queryParams["sort"] = sort
                 }
 
                 response = try await httpClient.get(
@@ -371,6 +388,9 @@ extension BuildBetaDetailsWorker {
 
             if let nextUrl = response.links?.next {
                 result["next_url"] = nextUrl
+            }
+            if let total = response.meta?.paging?.total {
+                result["total"] = total
             }
 
             return MCPResult.jsonObject(result)
@@ -433,6 +453,9 @@ extension BuildBetaDetailsWorker {
 
             if let nextUrl = response.links?.next {
                 result["next_url"] = nextUrl
+            }
+            if let total = response.meta?.paging?.total {
+                result["total"] = total
             }
 
             return MCPResult.jsonObject(result)
@@ -643,6 +666,9 @@ extension BuildBetaDetailsWorker {
             if let nextUrl = response.links?.next {
                 result["next_url"] = nextUrl
             }
+            if let total = response.meta?.paging?.total {
+                result["total"] = total
+            }
 
             return MCPResult.jsonObject(result)
 
@@ -701,5 +727,20 @@ extension BuildBetaDetailsWorker {
                 isError: true
             )
         }
+    }
+
+    private func applyBetaGroupStringList(_ value: Value?, as appleName: String, to query: inout [String: String]) {
+        if let string = value?.stringValue, !string.isEmpty {
+            query[appleName] = string
+            return
+        }
+        guard let values = value?.arrayValue, !values.isEmpty else {
+            return
+        }
+        let strings = values.compactMap(\.stringValue).filter { !$0.isEmpty }
+        guard strings.count == values.count else {
+            return
+        }
+        query[appleName] = strings.joined(separator: ",")
     }
 }

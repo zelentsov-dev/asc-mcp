@@ -13,6 +13,7 @@ public struct ASCBuildsResponse: Codable, Sendable {
     public let data: [ASCBuild]
     public let included: [ASCBuildIncludedResource]?
     public let links: ASCPagedDocumentLinks?
+    public let meta: ASCPagingInformation?
 }
 
 /// Build data structure
@@ -32,6 +33,7 @@ public struct BuildAttributes: Codable, Sendable {
     public let minOsVersion: String?
     public let lsMinimumSystemVersion: String?
     public let computedMinMacOsVersion: String?
+    public let computedMinVisionOsVersion: String?
     public let iconAssetToken: ImageAsset?
     public let processingState: String? // PROCESSING, FAILED, INVALID, VALID
     public let buildAudienceType: String? // INTERNAL_ONLY, APP_STORE_ELIGIBLE
@@ -50,6 +52,7 @@ public struct BuildRelationships: Codable, Sendable {
     public let app: ASCRelationship?
     public let appEncryptionDeclaration: ASCRelationship?
     public let betaGroups: ASCRelationshipMultiple?
+    public let betaBuildLocalizations: ASCRelationshipMultiple?
     public let buildBetaDetail: ASCRelationship?
     public let betaAppReviewSubmission: ASCRelationship?
     public let appStoreVersion: ASCRelationship?
@@ -57,6 +60,9 @@ public struct BuildRelationships: Codable, Sendable {
     public let individualTesters: ASCRelationshipMultiple?
     public let preReleaseVersion: ASCRelationship?
     public let buildBundles: ASCRelationshipMultiple?
+    public let buildUpload: ASCRelationship?
+    public let perfPowerMetrics: ASCRelationshipMultiple?
+    public let diagnosticSignatures: ASCRelationshipMultiple?
 }
 
 /// Relationship structure

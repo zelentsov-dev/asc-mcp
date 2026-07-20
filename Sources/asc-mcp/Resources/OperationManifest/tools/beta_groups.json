@@ -117,6 +117,16 @@
               "sourceKind": "fixed",
               "jsonPointer": "/data/relationships/app/data/type",
               "fixedValue": "apps"
+            },
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/relationships/builds/data/*/type",
+              "fixedValue": "builds"
+            },
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/relationships/betaTesters/data/*/type",
+              "fixedValue": "betaTesters"
             }
           ]
         }
@@ -153,10 +163,34 @@
           "jsonPointer": "/data/attributes/publicLinkEnabled"
         },
         {
+          "toolField": "public_link_limit_enabled",
+          "sourceKind": "requestBody",
+          "operationId": "betaGroups_createInstance",
+          "jsonPointer": "/data/attributes/publicLinkLimitEnabled"
+        },
+        {
+          "toolField": "public_link_limit",
+          "sourceKind": "requestBody",
+          "operationId": "betaGroups_createInstance",
+          "jsonPointer": "/data/attributes/publicLinkLimit"
+        },
+        {
           "toolField": "feedback_enabled",
           "sourceKind": "requestBody",
           "operationId": "betaGroups_createInstance",
           "jsonPointer": "/data/attributes/feedbackEnabled"
+        },
+        {
+          "toolField": "build_ids",
+          "sourceKind": "requestBody",
+          "operationId": "betaGroups_createInstance",
+          "jsonPointer": "/data/relationships/builds/data"
+        },
+        {
+          "toolField": "tester_ids",
+          "sourceKind": "requestBody",
+          "operationId": "betaGroups_createInstance",
+          "jsonPointer": "/data/relationships/betaTesters/data"
         }
       ],
       "response": {
@@ -176,7 +210,7 @@
           }
         ]
       },
-      "note": "Implemented attributes are valid. Public-link limit fields and optional initial builds/testers relationships available in 4.4.1 are not exposed."
+      "note": "Creates a group with current public-link controls and optional initial build and beta-tester relationships."
     },
     {
       "tool": "beta_groups_delete",
@@ -230,7 +264,30 @@
           "operationId": "betaGroups_getCollection",
           "method": "get",
           "path": "/v1/betaGroups",
-          "role": "primary"
+          "role": "primary",
+          "optionalParameterClassifications": [
+            {
+              "location": "query",
+              "appleName": "include",
+              "disposition": "intentionallyOmitted",
+              "reason": "The group collection returns stable group and relationship-ID projections; related resources have dedicated tools.",
+              "reviewAtSpec": "4.4.1"
+            },
+            {
+              "location": "query",
+              "appleName": "limit[betaTesters]",
+              "disposition": "intentionallyOmitted",
+              "reason": "Beta testers are not included in the group collection response.",
+              "reviewAtSpec": "4.4.1"
+            },
+            {
+              "location": "query",
+              "appleName": "limit[builds]",
+              "disposition": "intentionallyOmitted",
+              "reason": "Builds are not included in the group collection response.",
+              "reviewAtSpec": "4.4.1"
+            }
+          ]
         }
       ],
       "fields": [
@@ -254,6 +311,55 @@
           "operationId": "betaGroups_getCollection",
           "location": "query",
           "appleName": "filter[isInternalGroup]"
+        },
+        {
+          "toolField": "name",
+          "sourceKind": "parameter",
+          "operationId": "betaGroups_getCollection",
+          "location": "query",
+          "appleName": "filter[name]"
+        },
+        {
+          "toolField": "build_ids",
+          "sourceKind": "parameter",
+          "operationId": "betaGroups_getCollection",
+          "location": "query",
+          "appleName": "filter[builds]"
+        },
+        {
+          "toolField": "group_ids",
+          "sourceKind": "parameter",
+          "operationId": "betaGroups_getCollection",
+          "location": "query",
+          "appleName": "filter[id]"
+        },
+        {
+          "toolField": "public_link_enabled",
+          "sourceKind": "parameter",
+          "operationId": "betaGroups_getCollection",
+          "location": "query",
+          "appleName": "filter[publicLinkEnabled]"
+        },
+        {
+          "toolField": "public_link_limit_enabled",
+          "sourceKind": "parameter",
+          "operationId": "betaGroups_getCollection",
+          "location": "query",
+          "appleName": "filter[publicLinkLimitEnabled]"
+        },
+        {
+          "toolField": "public_link",
+          "sourceKind": "parameter",
+          "operationId": "betaGroups_getCollection",
+          "location": "query",
+          "appleName": "filter[publicLink]"
+        },
+        {
+          "toolField": "sort",
+          "sourceKind": "parameter",
+          "operationId": "betaGroups_getCollection",
+          "location": "query",
+          "appleName": "sort"
         },
         {
           "toolField": "next_url",
@@ -280,10 +386,15 @@
             "outputField": "next_url",
             "operationId": "betaGroups_getCollection",
             "jsonPointer": "/links/next"
+          },
+          {
+            "outputField": "total",
+            "operationId": "betaGroups_getCollection",
+            "jsonPointer": "/meta/paging/total"
           }
         ]
       },
-      "note": "Valid subset of collection filters. Apple also supports name, public-link, builds, id, sort, fields, include, and relationship limits."
+      "note": "Exposes all current semantic collection filters and sort; sparse fields and includes remain intentionally controlled by the projection."
     },
     {
       "tool": "beta_groups_list_testers",
@@ -339,6 +450,11 @@
             "outputField": "next_url",
             "operationId": "betaGroups_betaTesters_getToManyRelated",
             "jsonPointer": "/links/next"
+          },
+          {
+            "outputField": "total",
+            "operationId": "betaGroups_betaTesters_getToManyRelated",
+            "jsonPointer": "/meta/paging/total"
           }
         ]
       },
@@ -488,6 +604,12 @@
           "jsonPointer": "/data/attributes/publicLinkEnabled"
         },
         {
+          "toolField": "public_link_limit_enabled",
+          "sourceKind": "requestBody",
+          "operationId": "betaGroups_updateInstance",
+          "jsonPointer": "/data/attributes/publicLinkLimitEnabled"
+        },
+        {
           "toolField": "public_link_limit",
           "sourceKind": "requestBody",
           "operationId": "betaGroups_updateInstance",
@@ -498,6 +620,18 @@
           "sourceKind": "requestBody",
           "operationId": "betaGroups_updateInstance",
           "jsonPointer": "/data/attributes/feedbackEnabled"
+        },
+        {
+          "toolField": "ios_builds_available_for_apple_silicon_mac",
+          "sourceKind": "requestBody",
+          "operationId": "betaGroups_updateInstance",
+          "jsonPointer": "/data/attributes/iosBuildsAvailableForAppleSiliconMac"
+        },
+        {
+          "toolField": "ios_builds_available_for_apple_vision",
+          "sourceKind": "requestBody",
+          "operationId": "betaGroups_updateInstance",
+          "jsonPointer": "/data/attributes/iosBuildsAvailableForAppleVision"
         }
       ],
       "response": {
@@ -517,7 +651,7 @@
           }
         ]
       },
-      "note": "Implemented fields are valid, but empty PATCH is currently possible and 4.4.1 publicLinkLimitEnabled plus Apple Silicon and Apple Vision availability flags are not exposed."
+      "note": "Exposes every current writable beta-group attribute and rejects empty PATCH requests before network access."
     }
   ],
   "implementationAliases": []

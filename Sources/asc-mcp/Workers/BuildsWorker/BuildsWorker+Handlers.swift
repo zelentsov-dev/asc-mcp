@@ -24,17 +24,29 @@ extension BuildsWorker {
                 "include": "app,buildBetaDetail,preReleaseVersion"
             ]
 
-            if let versionValue = arguments["version"],
-               let version = versionValue.stringValue {
+            if let version = commaSeparatedStringList(arguments["version"]) {
                 queryParams["filter[version]"] = version
             }
-            if let stateValue = arguments["processing_state"],
-               let state = stateValue.stringValue {
+            if let state = commaSeparatedStringList(arguments["processing_state"]) {
                 queryParams["filter[processingState]"] = state
             }
             if let expiredValue = arguments["expired"],
                let expired = expiredValue.boolValue {
                 queryParams["filter[expired]"] = expired ? "true" : "false"
+            }
+            applyStringList(arguments["app_store_version_ids"], as: "filter[appStoreVersion]", to: &queryParams)
+            applyStringList(arguments["beta_review_states"], as: "filter[betaAppReviewSubmission.betaReviewState]", to: &queryParams)
+            applyStringList(arguments["beta_group_ids"], as: "filter[betaGroups]", to: &queryParams)
+            applyStringList(arguments["build_audience_types"], as: "filter[buildAudienceType]", to: &queryParams)
+            applyStringList(arguments["build_ids"], as: "filter[id]", to: &queryParams)
+            applyStringList(arguments["pre_release_platforms"], as: "filter[preReleaseVersion.platform]", to: &queryParams)
+            applyStringList(arguments["pre_release_versions"], as: "filter[preReleaseVersion.version]", to: &queryParams)
+            applyStringList(arguments["pre_release_version_ids"], as: "filter[preReleaseVersion]", to: &queryParams)
+            if let usesNonExemptEncryption = arguments["uses_non_exempt_encryption"]?.boolValue {
+                queryParams["filter[usesNonExemptEncryption]"] = usesNonExemptEncryption ? "true" : "false"
+            }
+            if let declarationExists = arguments["uses_non_exempt_encryption_set"]?.boolValue {
+                queryParams["exists[usesNonExemptEncryption]"] = declarationExists ? "true" : "false"
             }
             if let limitValue = arguments["limit"],
                let limit = limitValue.intValue {
@@ -82,6 +94,12 @@ extension BuildsWorker {
 
             if let nextUrl = response.links?.next {
                 result["next_url"] = nextUrl
+            }
+            if let total = response.meta?.paging?.total {
+                result["total"] = total
+            }
+            if let included = response.included, !included.isEmpty {
+                result["included"] = included.map { formatIncludedResource($0) }
             }
 
             return MCPResult.jsonObject(result)
@@ -190,12 +208,16 @@ extension BuildsWorker {
         }
         
         do {
-            let queryParams: [String: String] = [
+            var queryParams: [String: String] = [
                 "filter[app]": appId,
                 "filter[version]": buildNumber,
                 "include": "app,buildBetaDetail,preReleaseVersion",
-                "limit": "1"
+                "limit": "1",
+                "sort": arguments["sort"]?.stringValue ?? "-uploadedDate"
             ]
+            applyStringList(arguments["pre_release_platforms"], as: "filter[preReleaseVersion.platform]", to: &queryParams)
+            applyStringList(arguments["pre_release_versions"], as: "filter[preReleaseVersion.version]", to: &queryParams)
+            applyStringList(arguments["pre_release_version_ids"], as: "filter[preReleaseVersion]", to: &queryParams)
             
             let response: ASCBuildsResponse = try await httpClient.get(
                 "/v1/builds",
@@ -269,5 +291,26 @@ extension BuildsWorker {
                 isError: true
             )
         }
+    }
+
+    private func applyStringList(_ value: Value?, as appleName: String, to query: inout [String: String]) {
+        if let encoded = commaSeparatedStringList(value) {
+            query[appleName] = encoded
+        }
+    }
+
+    private func commaSeparatedStringList(_ value: Value?) -> String? {
+        if let string = value?.stringValue, !string.isEmpty {
+            return string
+        }
+        guard let values = value?.arrayValue,
+              !values.isEmpty else {
+            return nil
+        }
+        let strings = values.compactMap(\.stringValue).filter { !$0.isEmpty }
+        guard strings.count == values.count else {
+            return nil
+        }
+        return strings.joined(separator: ",")
     }
 }
