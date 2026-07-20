@@ -185,7 +185,8 @@ struct ExportComplianceWorkerContractTests {
                     fileName: "export.pdf",
                     state: "COMPLETE",
                     uploadOperations: true,
-                    includeSecrets: true
+                    includeSecrets: true,
+                    includeDeliverySecrets: true
                 )
             )
         ])
@@ -729,6 +730,7 @@ private func exportComplianceDocumentResponse(
     state: String,
     uploadOperations: Bool = false,
     includeSecrets: Bool = false,
+    includeDeliverySecrets: Bool = false,
     checksum: Bool = false
 ) -> String {
     let operations = uploadOperations
@@ -740,7 +742,10 @@ private func exportComplianceDocumentResponse(
     let checksumValue = checksum
         ? #","sourceFileChecksum":"5d41402abc4b2a76b9719d911017c592""#
         : ""
-    return #"{"data":{"type":"appEncryptionDeclarationDocuments","id":"\#(id)","attributes":{"fileSize":5,"fileName":"\#(fileName)","assetDeliveryState":{"state":"\#(state)","errors":[],"warnings":[]}\#(operations)\#(secrets)\#(checksumValue)}}}"#
+    let errors = includeDeliverySecrets
+        ? #"[{"code":"UPLOAD_FAILED","description":"Retry https://upload.example.test/chunk?signed=signed-secret with token=header-secret"}]"#
+        : "[]"
+    return #"{"data":{"type":"appEncryptionDeclarationDocuments","id":"\#(id)","attributes":{"fileSize":5,"fileName":"\#(fileName)","assetDeliveryState":{"state":"\#(state)","errors":\#(errors),"warnings":[]}\#(operations)\#(secrets)\#(checksumValue)}}}"#
 }
 
 private func exportComplianceBuildResponse(

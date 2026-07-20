@@ -875,9 +875,17 @@ private func exportComplianceAssetMessages(
     (messages ?? []).map { message in
         [
             "code": message.code.jsonSafe,
-            "description": message.description.map(Redactor.redact).jsonSafe
+            "description": message.description.map(exportComplianceSafeAssetDescription).jsonSafe
         ]
     }
+}
+
+private func exportComplianceSafeAssetDescription(_ description: String) -> String {
+    Redactor.redact(description).replacingOccurrences(
+        of: #"(?i)https?://[^\s\"'<>]+"#,
+        with: "[REDACTED_URL]",
+        options: .regularExpression
+    )
 }
 
 private func exportComplianceDocumentClassification(
