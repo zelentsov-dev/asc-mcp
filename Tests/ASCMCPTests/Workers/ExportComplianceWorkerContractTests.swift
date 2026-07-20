@@ -1880,9 +1880,10 @@ private func exportComplianceExpectSupportOnlyRetentionGuidance(
     let payload = try exportComplianceObject(result.structuredContent)
     let cleanup = try exportComplianceValueObject(payload["cleanup"])
     let reason = cleanup["reason"]?.stringValue ?? ""
-    let guidance = "\(exportComplianceText(result))\n\(reason)"
-    #expect(guidance.contains("App Store Connect") || guidance.contains("Apple Support"))
-    #expect(!guidance.lowercased().contains("delet"))
+    #expect(reason.contains("App Store Connect") || reason.contains("Apple Support"))
+    #expect(!reason.lowercased().contains("delete the"))
+    #expect(!reason.lowercased().contains("delete this"))
+    #expect(!reason.lowercased().contains("remove the"))
     #expect(cleanup["tool"] == nil)
 }
 

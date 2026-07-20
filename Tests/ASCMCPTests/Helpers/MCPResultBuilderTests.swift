@@ -114,6 +114,46 @@ struct MCPResultBuilderTests {
         #expect(try exactJSONMirror(from: normalized) == structuredJSON(from: normalized))
     }
 
+    @Test("transport normalization preserves non-secret recovery states and checksums")
+    func transportNormalizationPreservesRecoveryStatesAndChecksums() throws {
+        let checksum = "5d41402abc4b2a76b9719d911017c592"
+        let snapshotPath = "<absolute-path-to-the-exact-reserved-bytes>"
+        let result = MCPResult.json(
+            .object([
+                "success": .bool(false),
+                "error": .string("Reservation requires inspection"),
+                "details": .object([
+                    "creationState": .string("committed_unverified"),
+                    "sourceFileChecksumReceipt": .string(checksum),
+                    "credentialChecksum": .string("api_token_abcdefghijklmnopqrstuvwxyz012345"),
+                    "nextAction": .object([
+                        "arguments": .object([
+                            "file_path": .string(snapshotPath),
+                            "source_file_checksum": .string(checksum)
+                        ])
+                    ])
+                ])
+            ]),
+            text: "Error: Reservation requires inspection",
+            isError: true
+        )
+
+        guard case .object(let payload)? = result.structuredContent,
+              case .object(let details)? = payload["details"],
+              case .object(let nextAction)? = details["nextAction"],
+              case .object(let arguments)? = nextAction["arguments"] else {
+            Issue.record("Expected normalized recovery details")
+            return
+        }
+
+        #expect(details["creationState"] == .string("committed_unverified"))
+        #expect(details["sourceFileChecksumReceipt"] == .string(checksum))
+        #expect(details["credentialChecksum"] == .string("[REDACTED]"))
+        #expect(arguments["file_path"] == .string(snapshotPath))
+        #expect(arguments["source_file_checksum"] == .string(checksum))
+        #expect(try exactJSONMirror(from: result) == structuredJSON(from: result))
+    }
+
     @Test("error result still redacts bearer, base64url, and private-key secrets")
     func errorResultRedactsCredentials() throws {
         let bearer = "abc_def-123~+/=="
