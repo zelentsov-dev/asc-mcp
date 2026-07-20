@@ -342,11 +342,13 @@ struct SubscriptionWriteOptionalInputContractTests {
 
         for (toolName, expectation) in expected {
             let mapping = try #require(manifest.mapping(for: toolName))
-            let bound = Set(mapping.fields.compactMap(\.jsonPointer))
+            let boundPointers: [String] = mapping.fields.compactMap { $0.jsonPointer }
+            let bound = Set(boundPointers)
             #expect(expectation.bound.isSubset(of: bound))
             let omitted = mapping.operations.flatMap { $0.optionalParameterClassifications ?? [] }
                 .filter { $0.location == "body" && $0.disposition == .intentionallyOmitted }
-            #expect(Set(omitted.map(\.appleName)) == expectation.omitted)
+            let omittedNames = Set(omitted.map { $0.appleName })
+            #expect(omittedNames == expectation.omitted)
             #expect(omitted.allSatisfy { $0.reviewAtSpec == "4.4.1" && !$0.reason.isEmpty })
         }
     }
