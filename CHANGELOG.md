@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.9.0] - 2026-07-20
+
+### Changed
+
+- IAP and subscription catalog listings now expose Apple's remaining name, product-ID, state, type, related-subscription-state, and sort controls; scalar and array inputs use Apple's comma-separated query encoding.
+- IAP and subscription localization listings now expose a bounded 1...200 page size.
+- Bound or explicitly classified all 169 previously unclassified optional Apple inputs associated with the IAP and subscription commerce workflows: 22 bound, 31 internally controlled, and 116 intentionally omitted with reviewed reasons.
+
+### Fixed
+
+- Validate every `next_url` across the audited IAP and subscription catalog, localization, price, offer, code, image, territory, and pricing-summary collections against its concrete parent path, a non-empty cursor, and the complete originating query, including fixed includes, sparse fieldsets, relationship limits, filters, sort order, and effective page size.
+- Reject missing or empty cursors, missing or changed continuation controls, duplicate query names, unexpected filters, comma-containing free-text filter values, invalid enum values, empty arrays, and duplicate array values before network access.
+
+### Compatibility
+
+- No public MCP tool or required input was added, removed, or renamed; this release adds 20 optional inputs across seven existing tools, and existing scalar state and type filters remain valid.
+- Free-text filter values containing commas are rejected because Apple's `explode=false` array serialization reserves commas as item delimiters.
+- Existing calls remain valid. Continuation calls must preserve the originating filters, sort order, effective page size, all fixed projection controls, and Apple's non-empty cursor in `next_url`.
+- The strict contract pin records 2,154 optional Apple inputs: 772 bound, 38 internally controlled, 1,250 intentionally omitted, and 94 still queued for domain review.
+
 ## [3.8.0] - 2026-07-20
 
 ### Changed
