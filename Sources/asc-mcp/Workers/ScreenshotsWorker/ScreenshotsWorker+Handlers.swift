@@ -18,25 +18,46 @@ extension ScreenshotsWorker {
 
         do {
             let response: ASCScreenshotSetsResponse
+            let endpoint = "/v1/appStoreVersionLocalizations/\(try ASCPathSegment.encode(localizationId))/appScreenshotSets"
+            var queryParams: [String: String] = [:]
+
+            if let limitValue = arguments["limit"],
+               let limit = limitValue.intValue {
+                queryParams["limit"] = String(min(max(limit, 1), 200))
+            } else {
+                queryParams["limit"] = "25"
+            }
+            try applyStringArrayFilter(
+                arguments["display_types"],
+                fieldName: "display_types",
+                appleName: "filter[screenshotDisplayType]",
+                allowedValues: Set(Self.screenshotDisplayTypes),
+                to: &queryParams
+            )
+            try applyStringArrayFilter(
+                arguments["custom_product_page_localization_ids"],
+                fieldName: "custom_product_page_localization_ids",
+                appleName: "filter[appCustomProductPageLocalization]",
+                to: &queryParams
+            )
+            try applyStringArrayFilter(
+                arguments["treatment_localization_ids"],
+                fieldName: "treatment_localization_ids",
+                appleName: "filter[appStoreVersionExperimentTreatmentLocalization]",
+                to: &queryParams
+            )
 
             if let nextUrl = try paginationURL(from: arguments["next_url"]) {
+                var requiredParameters = queryParams
+                requiredParameters.removeValue(forKey: "limit")
                 response = try await httpClient.getPage(
                     nextUrl,
-                    scope: PaginationScope(path: "/v1/appStoreVersionLocalizations/\(try ASCPathSegment.encode(localizationId))/appScreenshotSets"),
+                    scope: PaginationScope(path: endpoint, requiredParameters: requiredParameters),
                     as: ASCScreenshotSetsResponse.self
                 )
             } else {
-                var queryParams: [String: String] = [:]
-
-                if let limitValue = arguments["limit"],
-                   let limit = limitValue.intValue {
-                    queryParams["limit"] = String(min(max(limit, 1), 200))
-                } else {
-                    queryParams["limit"] = "25"
-                }
-
                 response = try await httpClient.get(
-                    "/v1/appStoreVersionLocalizations/\(try ASCPathSegment.encode(localizationId))/appScreenshotSets",
+                    endpoint,
                     parameters: queryParams,
                     as: ASCScreenshotSetsResponse.self
                 )
@@ -542,25 +563,46 @@ extension ScreenshotsWorker {
 
         do {
             let response: ASCPreviewSetsResponse
+            let endpoint = "/v1/appStoreVersionLocalizations/\(try ASCPathSegment.encode(localizationId))/appPreviewSets"
+            var queryParams: [String: String] = [:]
+
+            if let limitValue = arguments["limit"],
+               let limit = limitValue.intValue {
+                queryParams["limit"] = String(min(max(limit, 1), 200))
+            } else {
+                queryParams["limit"] = "25"
+            }
+            try applyStringArrayFilter(
+                arguments["preview_types"],
+                fieldName: "preview_types",
+                appleName: "filter[previewType]",
+                allowedValues: Set(Self.previewTypes),
+                to: &queryParams
+            )
+            try applyStringArrayFilter(
+                arguments["custom_product_page_localization_ids"],
+                fieldName: "custom_product_page_localization_ids",
+                appleName: "filter[appCustomProductPageLocalization]",
+                to: &queryParams
+            )
+            try applyStringArrayFilter(
+                arguments["treatment_localization_ids"],
+                fieldName: "treatment_localization_ids",
+                appleName: "filter[appStoreVersionExperimentTreatmentLocalization]",
+                to: &queryParams
+            )
 
             if let nextUrl = try paginationURL(from: arguments["next_url"]) {
+                var requiredParameters = queryParams
+                requiredParameters.removeValue(forKey: "limit")
                 response = try await httpClient.getPage(
                     nextUrl,
-                    scope: PaginationScope(path: "/v1/appStoreVersionLocalizations/\(try ASCPathSegment.encode(localizationId))/appPreviewSets"),
+                    scope: PaginationScope(path: endpoint, requiredParameters: requiredParameters),
                     as: ASCPreviewSetsResponse.self
                 )
             } else {
-                var queryParams: [String: String] = [:]
-
-                if let limitValue = arguments["limit"],
-                   let limit = limitValue.intValue {
-                    queryParams["limit"] = String(min(max(limit, 1), 200))
-                } else {
-                    queryParams["limit"] = "25"
-                }
-
                 response = try await httpClient.get(
-                    "/v1/appStoreVersionLocalizations/\(try ASCPathSegment.encode(localizationId))/appPreviewSets",
+                    endpoint,
                     parameters: queryParams,
                     as: ASCPreviewSetsResponse.self
                 )
@@ -702,6 +744,18 @@ extension ScreenshotsWorker {
         }
 
         let mimeType = arguments["mime_type"]?.stringValue ?? "video/mp4"
+        let previewFrameTimeCode: String?
+        do {
+            previewFrameTimeCode = try optionalNonemptyString(
+                arguments["preview_frame_time_code"],
+                fieldName: "preview_frame_time_code"
+            )
+        } catch {
+            return CallTool.Result(
+                content: [MCPContent.text("Error: \(error.localizedDescription)")],
+                isError: true
+            )
+        }
 
         let outcome: UploadTransactionOutcome<ASCPreview> = await UploadTransactionRecovery.perform(
             filePath: filePath,
@@ -719,6 +773,7 @@ extension ScreenshotsWorker {
                             attributes: CreatePreviewRequest.Attributes(
                                 fileName: fileName,
                                 fileSize: fileSize,
+                                previewFrameTimeCode: previewFrameTimeCode,
                                 mimeType: mimeType
                             ),
                             relationships: CreatePreviewRequest.Relationships(
@@ -740,6 +795,7 @@ extension ScreenshotsWorker {
                             id: previewId,
                             attributes: CommitPreviewRequest.Attributes(
                                 sourceFileChecksum: checksum,
+                                previewFrameTimeCode: previewFrameTimeCode,
                                 uploaded: true
                             )
                         )
@@ -1027,5 +1083,52 @@ extension ScreenshotsWorker {
             parents.append(.treatment(id))
         }
         return parents.count == 1 ? parents[0] : nil
+    }
+
+    private func applyStringArrayFilter(
+        _ value: Value?,
+        fieldName: String,
+        appleName: String,
+        allowedValues: Set<String>? = nil,
+        to query: inout [String: String]
+    ) throws {
+        guard let value else {
+            return
+        }
+        guard let rawValues = value.arrayValue else {
+            throw ASCError.parsing("'\(fieldName)' must be an array of strings")
+        }
+        let values = rawValues.compactMap(\.stringValue)
+        guard values.count == rawValues.count else {
+            throw ASCError.parsing("'\(fieldName)' must contain only strings")
+        }
+        guard !values.isEmpty else {
+            throw ASCError.parsing("'\(fieldName)' must contain at least one value")
+        }
+        guard values.allSatisfy({ !$0.isEmpty && $0 == $0.trimmingCharacters(in: .whitespacesAndNewlines) }) else {
+            throw ASCError.parsing("'\(fieldName)' must contain only non-empty values without surrounding whitespace")
+        }
+        guard Set(values).count == values.count else {
+            throw ASCError.parsing("'\(fieldName)' must not contain duplicate values")
+        }
+        if let allowedValues {
+            let unsupported = values.filter { !allowedValues.contains($0) }
+            guard unsupported.isEmpty else {
+                throw ASCError.parsing("Unsupported value(s) for '\(fieldName)': \(unsupported.joined(separator: ", "))")
+            }
+        }
+        query[appleName] = values.joined(separator: ",")
+    }
+
+    private func optionalNonemptyString(_ value: Value?, fieldName: String) throws -> String? {
+        guard let value else {
+            return nil
+        }
+        guard let string = value.stringValue,
+              !string.isEmpty,
+              string == string.trimmingCharacters(in: .whitespacesAndNewlines) else {
+            throw ASCError.parsing("'\(fieldName)' must be a non-empty string without surrounding whitespace")
+        }
+        return string
     }
 }

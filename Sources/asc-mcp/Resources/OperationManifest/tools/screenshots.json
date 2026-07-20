@@ -146,7 +146,21 @@
       "effect": "read",
       "implementationState": "asBuilt",
       "operations": [
-        { "operationId": "appScreenshots_getInstance", "method": "get", "path": "/v1/appScreenshots/{id}", "role": "primary" }
+        {
+          "operationId": "appScreenshots_getInstance",
+          "method": "get",
+          "path": "/v1/appScreenshots/{id}",
+          "role": "primary",
+          "optionalParameterClassifications": [
+            {
+              "location": "query",
+              "appleName": "include",
+              "disposition": "intentionallyOmitted",
+              "reason": "Apple only permits appScreenshotSet here, while screenshots_get returns the screenshot attribute projection and does not decode JSON:API included resources; exposing include would promise parent-set data that the tool discards.",
+              "reviewAtSpec": "4.4.1"
+            }
+          ]
+        }
       ],
       "fields": [
         { "toolField": "screenshot_id", "sourceKind": "parameter", "operationId": "appScreenshots_getInstance", "location": "path", "appleName": "id" }
@@ -166,7 +180,21 @@
       "effect": "read",
       "implementationState": "asBuilt",
       "operations": [
-        { "operationId": "appPreviews_getInstance", "method": "get", "path": "/v1/appPreviews/{id}", "role": "primary" }
+        {
+          "operationId": "appPreviews_getInstance",
+          "method": "get",
+          "path": "/v1/appPreviews/{id}",
+          "role": "primary",
+          "optionalParameterClassifications": [
+            {
+              "location": "query",
+              "appleName": "include",
+              "disposition": "intentionallyOmitted",
+              "reason": "Apple only permits appPreviewSet here, while screenshots_get_preview returns the preview attribute projection and does not decode JSON:API included resources; exposing include would promise parent-set data that the tool discards.",
+              "reviewAtSpec": "4.4.1"
+            }
+          ]
+        }
       ],
       "fields": [
         { "toolField": "preview_id", "sourceKind": "parameter", "operationId": "appPreviews_getInstance", "location": "path", "appleName": "id" }
@@ -193,7 +221,21 @@
       "effect": "read",
       "implementationState": "asBuilt",
       "operations": [
-        { "operationId": "appScreenshotSets_appScreenshots_getToManyRelated", "method": "get", "path": "/v1/appScreenshotSets/{id}/appScreenshots", "role": "primary" }
+        {
+          "operationId": "appScreenshotSets_appScreenshots_getToManyRelated",
+          "method": "get",
+          "path": "/v1/appScreenshotSets/{id}/appScreenshots",
+          "role": "primary",
+          "optionalParameterClassifications": [
+            {
+              "location": "query",
+              "appleName": "include",
+              "disposition": "intentionallyOmitted",
+              "reason": "Apple only permits appScreenshotSet here, while screenshots_list returns ordered screenshot attributes and does not decode JSON:API included resources; callers already identify the parent through set_id.",
+              "reviewAtSpec": "4.4.1"
+            }
+          ]
+        }
       ],
       "fields": [
         { "toolField": "set_id", "sourceKind": "parameter", "operationId": "appScreenshotSets_appScreenshots_getToManyRelated", "location": "path", "appleName": "id" },
@@ -215,10 +257,34 @@
       "effect": "read",
       "implementationState": "asBuilt",
       "operations": [
-        { "operationId": "appStoreVersionLocalizations_appPreviewSets_getToManyRelated", "method": "get", "path": "/v1/appStoreVersionLocalizations/{id}/appPreviewSets", "role": "primary" }
+        {
+          "operationId": "appStoreVersionLocalizations_appPreviewSets_getToManyRelated",
+          "method": "get",
+          "path": "/v1/appStoreVersionLocalizations/{id}/appPreviewSets",
+          "role": "primary",
+          "optionalParameterClassifications": [
+            {
+              "location": "query",
+              "appleName": "include",
+              "disposition": "intentionallyOmitted",
+              "reason": "Apple can include localization parents or appPreviews, but screenshots_list_preview_sets deliberately returns only each base preview set ID, type, and previewType and does not decode included resources.",
+              "reviewAtSpec": "4.4.1"
+            },
+            {
+              "location": "query",
+              "appleName": "limit[appPreviews]",
+              "disposition": "intentionallyOmitted",
+              "reason": "Apple applies this limit only when appPreviews is included; screenshots_list_preview_sets does not request that relationship, and callers page previews through screenshots_list_previews instead.",
+              "reviewAtSpec": "4.4.1"
+            }
+          ]
+        }
       ],
       "fields": [
         { "toolField": "localization_id", "sourceKind": "parameter", "operationId": "appStoreVersionLocalizations_appPreviewSets_getToManyRelated", "location": "path", "appleName": "id" },
+        { "toolField": "preview_types", "sourceKind": "parameter", "operationId": "appStoreVersionLocalizations_appPreviewSets_getToManyRelated", "location": "query", "appleName": "filter[previewType]" },
+        { "toolField": "custom_product_page_localization_ids", "sourceKind": "parameter", "operationId": "appStoreVersionLocalizations_appPreviewSets_getToManyRelated", "location": "query", "appleName": "filter[appCustomProductPageLocalization]" },
+        { "toolField": "treatment_localization_ids", "sourceKind": "parameter", "operationId": "appStoreVersionLocalizations_appPreviewSets_getToManyRelated", "location": "query", "appleName": "filter[appStoreVersionExperimentTreatmentLocalization]" },
         { "toolField": "limit", "sourceKind": "parameter", "operationId": "appStoreVersionLocalizations_appPreviewSets_getToManyRelated", "location": "query", "appleName": "limit" },
         { "toolField": "next_url", "sourceKind": "local", "localRole": "paginationContinuation" }
       ],
@@ -237,7 +303,21 @@
       "effect": "read",
       "implementationState": "asBuilt",
       "operations": [
-        { "operationId": "appPreviewSets_appPreviews_getToManyRelated", "method": "get", "path": "/v1/appPreviewSets/{id}/appPreviews", "role": "primary" }
+        {
+          "operationId": "appPreviewSets_appPreviews_getToManyRelated",
+          "method": "get",
+          "path": "/v1/appPreviewSets/{id}/appPreviews",
+          "role": "primary",
+          "optionalParameterClassifications": [
+            {
+              "location": "query",
+              "appleName": "include",
+              "disposition": "intentionallyOmitted",
+              "reason": "Apple only permits appPreviewSet here, while screenshots_list_previews returns ordered preview attributes and does not decode JSON:API included resources; callers already identify the parent through set_id.",
+              "reviewAtSpec": "4.4.1"
+            }
+          ]
+        }
       ],
       "fields": [
         { "toolField": "set_id", "sourceKind": "parameter", "operationId": "appPreviewSets_appPreviews_getToManyRelated", "location": "path", "appleName": "id" },
@@ -265,10 +345,34 @@
       "effect": "read",
       "implementationState": "asBuilt",
       "operations": [
-        { "operationId": "appStoreVersionLocalizations_appScreenshotSets_getToManyRelated", "method": "get", "path": "/v1/appStoreVersionLocalizations/{id}/appScreenshotSets", "role": "primary" }
+        {
+          "operationId": "appStoreVersionLocalizations_appScreenshotSets_getToManyRelated",
+          "method": "get",
+          "path": "/v1/appStoreVersionLocalizations/{id}/appScreenshotSets",
+          "role": "primary",
+          "optionalParameterClassifications": [
+            {
+              "location": "query",
+              "appleName": "include",
+              "disposition": "intentionallyOmitted",
+              "reason": "Apple can include localization parents or appScreenshots, but screenshots_list_sets deliberately returns only each base screenshot set ID, type, and screenshotDisplayType and does not decode included resources.",
+              "reviewAtSpec": "4.4.1"
+            },
+            {
+              "location": "query",
+              "appleName": "limit[appScreenshots]",
+              "disposition": "intentionallyOmitted",
+              "reason": "Apple applies this limit only when appScreenshots is included; screenshots_list_sets does not request that relationship, and callers page screenshots through screenshots_list instead.",
+              "reviewAtSpec": "4.4.1"
+            }
+          ]
+        }
       ],
       "fields": [
         { "toolField": "localization_id", "sourceKind": "parameter", "operationId": "appStoreVersionLocalizations_appScreenshotSets_getToManyRelated", "location": "path", "appleName": "id" },
+        { "toolField": "display_types", "sourceKind": "parameter", "operationId": "appStoreVersionLocalizations_appScreenshotSets_getToManyRelated", "location": "query", "appleName": "filter[screenshotDisplayType]" },
+        { "toolField": "custom_product_page_localization_ids", "sourceKind": "parameter", "operationId": "appStoreVersionLocalizations_appScreenshotSets_getToManyRelated", "location": "query", "appleName": "filter[appCustomProductPageLocalization]" },
+        { "toolField": "treatment_localization_ids", "sourceKind": "parameter", "operationId": "appStoreVersionLocalizations_appScreenshotSets_getToManyRelated", "location": "query", "appleName": "filter[appStoreVersionExperimentTreatmentLocalization]" },
         { "toolField": "limit", "sourceKind": "parameter", "operationId": "appStoreVersionLocalizations_appScreenshotSets_getToManyRelated", "location": "query", "appleName": "limit" },
         { "toolField": "next_url", "sourceKind": "local", "localRole": "paginationContinuation" }
       ],
@@ -370,6 +474,15 @@
           "path": "/v1/appScreenshots/{id}",
           "role": "conditional",
           "condition": "After PATCH returns a nonterminal delivery state, or when the PATCH response is ambiguous, reconcile and poll the reserved screenshot by ID until processing reaches a terminal state or local verification stops.",
+          "optionalParameterClassifications": [
+            {
+              "location": "query",
+              "appleName": "include",
+              "disposition": "intentionallyOmitted",
+              "reason": "This conditional GET only reconciles the reserved appScreenshot's assetDeliveryState; Apple's appScreenshotSet inclusion cannot affect processing classification and the upload decoder intentionally ignores included resources.",
+              "reviewAtSpec": "4.4.1"
+            }
+          ],
           "inputs": [
             {
               "sourceKind": "derived",
@@ -479,6 +592,15 @@
           "path": "/v1/appScreenshots/{id}",
           "role": "conditional",
           "condition": "For each item, after PATCH returns a nonterminal delivery state, or when its PATCH response is ambiguous, reconcile and poll that reservation by ID until processing reaches a terminal state or local verification stops.",
+          "optionalParameterClassifications": [
+            {
+              "location": "query",
+              "appleName": "include",
+              "disposition": "intentionallyOmitted",
+              "reason": "Each conditional GET only reconciles that appScreenshot's assetDeliveryState; Apple's appScreenshotSet inclusion cannot affect batch processing classification and the upload decoder intentionally ignores included resources.",
+              "reviewAtSpec": "4.4.1"
+            }
+          ],
           "inputs": [
             {
               "sourceKind": "derived",
@@ -588,6 +710,15 @@
           "path": "/v1/appPreviews/{id}",
           "role": "conditional",
           "condition": "After PATCH returns a nonterminal delivery state, or when the PATCH response is ambiguous, reconcile and poll the reserved preview by ID until processing reaches a terminal state or local verification stops.",
+          "optionalParameterClassifications": [
+            {
+              "location": "query",
+              "appleName": "include",
+              "disposition": "intentionallyOmitted",
+              "reason": "This conditional GET only reconciles the reserved appPreview's videoDeliveryState or assetDeliveryState; Apple's appPreviewSet inclusion cannot affect processing classification and the upload decoder intentionally ignores included resources.",
+              "reviewAtSpec": "4.4.1"
+            }
+          ],
           "inputs": [
             {
               "sourceKind": "derived",
@@ -618,7 +749,9 @@
       "fields": [
         { "toolField": "set_id", "sourceKind": "requestBody", "operationId": "appPreviews_createInstance", "jsonPointer": "/data/relationships/appPreviewSet/data/id" },
         { "toolField": "file_path", "sourceKind": "local", "localRole": "Create an immutable temporary snapshot before reservation, then derive fileName, fileSize, transfer bytes, and sourceFileChecksum from that same snapshot.", "derivedFrom": ["fileName", "fileSize", "sourceFileChecksum"] },
-        { "toolField": "mime_type", "sourceKind": "requestBody", "operationId": "appPreviews_createInstance", "jsonPointer": "/data/attributes/mimeType" }
+        { "toolField": "mime_type", "sourceKind": "requestBody", "operationId": "appPreviews_createInstance", "jsonPointer": "/data/attributes/mimeType" },
+        { "toolField": "preview_frame_time_code", "sourceKind": "requestBody", "operationId": "appPreviews_createInstance", "jsonPointer": "/data/attributes/previewFrameTimeCode" },
+        { "toolField": "preview_frame_time_code", "sourceKind": "requestBody", "operationId": "appPreviews_updateInstance", "jsonPointer": "/data/attributes/previewFrameTimeCode" }
       ],
       "response": {
         "mode": "aggregate",

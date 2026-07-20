@@ -229,6 +229,7 @@ public struct CommitPreviewRequest: Codable, Sendable {
     }
     public struct Attributes: Codable, Sendable {
         public let sourceFileChecksum: String?
+        public let previewFrameTimeCode: String?
         public let uploaded: Bool?
     }
 }
@@ -246,6 +247,7 @@ public struct CreatePreviewRequest: Codable, Sendable {
     public struct Attributes: Codable, Sendable {
         public let fileName: String
         public let fileSize: Int
+        public let previewFrameTimeCode: String?
         public let mimeType: String
     }
 

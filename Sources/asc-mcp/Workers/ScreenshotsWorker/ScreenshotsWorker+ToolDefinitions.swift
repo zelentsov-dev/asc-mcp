@@ -15,6 +15,16 @@ extension ScreenshotsWorker {
                         "type": .string("string"),
                         "description": .string("App Store version localization ID")
                     ]),
+                    "display_types": stringArraySchema(
+                        description: "Screenshot display types to include",
+                        allowedValues: Self.screenshotDisplayTypes
+                    ),
+                    "custom_product_page_localization_ids": stringArraySchema(
+                        description: "Custom product page localization IDs to match"
+                    ),
+                    "treatment_localization_ids": stringArraySchema(
+                        description: "Product page optimization treatment localization IDs to match"
+                    ),
                     "limit": .object([
                         "type": .string("integer"),
                         "description": .string("Max results (default: 25, max: 200)")
@@ -192,6 +202,16 @@ extension ScreenshotsWorker {
                         "type": .string("string"),
                         "description": .string("App Store version localization ID")
                     ]),
+                    "preview_types": stringArraySchema(
+                        description: "App preview display types to include",
+                        allowedValues: Self.previewTypes
+                    ),
+                    "custom_product_page_localization_ids": stringArraySchema(
+                        description: "Custom product page localization IDs to match"
+                    ),
+                    "treatment_localization_ids": stringArraySchema(
+                        description: "Product page optimization treatment localization IDs to match"
+                    ),
                     "limit": .object([
                         "type": .string("integer"),
                         "description": .string("Max results (default: 25, max: 200)")
@@ -275,6 +295,10 @@ extension ScreenshotsWorker {
                     "mime_type": .object([
                         "type": .string("string"),
                         "description": .string("MIME type (default: video/mp4). Options: video/mp4, video/quicktime")
+                    ]),
+                    "preview_frame_time_code": .object([
+                        "type": .string("string"),
+                        "description": .string("Timestamp Apple uses for the app preview poster frame")
                     ])
                 ]),
                 "required": .array([.string("set_id"), .string("file_path")])
@@ -371,6 +395,20 @@ extension ScreenshotsWorker {
             .object(["required": .array([.string("app_store_version_localization_id")])]),
             .object(["required": .array([.string("custom_product_page_localization_id")])]),
             .object(["required": .array([.string("treatment_localization_id")])])
+        ])
+    }
+
+    private func stringArraySchema(description: String, allowedValues: [String]? = nil) -> Value {
+        var items: [String: Value] = ["type": .string("string")]
+        if let allowedValues {
+            items["enum"] = .array(allowedValues.map(Value.string))
+        }
+        return .object([
+            "type": .string("array"),
+            "description": .string(description),
+            "minItems": .int(1),
+            "uniqueItems": .bool(true),
+            "items": .object(items)
         ])
     }
 }
