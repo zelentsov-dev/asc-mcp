@@ -10,7 +10,7 @@ struct InAppPurchaseImagesContractTests {
         let transport = TestHTTPTransport(responses: [
             .init(
                 statusCode: 200,
-                body: #"{"data":[{"type":"inAppPurchaseImages","id":"image-1","attributes":{"fileSize":42,"fileName":"offer.png","sourceFileChecksum":"abc","state":"APPROVED","imageAsset":{"templateUrl":"https://example.test/{w}x{h}","width":1200,"height":1200}}}],"links":{"self":"https://api.example.test/v2/inAppPurchases/iap-1/images?limit=200","next":"https://api.example.test/v2/inAppPurchases/iap-1/images?cursor=next"}}"#
+                body: #"{"data":[{"type":"inAppPurchaseImages","id":"image-1","attributes":{"fileSize":42,"fileName":"offer.png","sourceFileChecksum":"abc","state":"APPROVED","imageAsset":{"templateUrl":"https://example.test/{w}x{h}","width":1200,"height":1200}}}],"links":{"self":"https://api.example.test/v2/inAppPurchases/iap-1/images?limit=200","next":"https://api.example.test/v2/inAppPurchases/iap-1/images?cursor=next&limit=200"}}"#
             )
         ])
         let worker = try await makeIAPImagesWorker(transport: transport)
@@ -33,7 +33,7 @@ struct InAppPurchaseImagesContractTests {
         let payload = try iapImagesObject(result.structuredContent)
         #expect(payload["success"] == .bool(true))
         #expect(payload["count"] == .int(1))
-        #expect(payload["next_url"] == .string("https://api.example.test/v2/inAppPurchases/iap-1/images?cursor=next"))
+        #expect(payload["next_url"] == .string("https://api.example.test/v2/inAppPurchases/iap-1/images?cursor=next&limit=200"))
         guard case .array(let images) = payload["images"] else {
             Issue.record("Expected images array")
             return
@@ -51,7 +51,7 @@ struct InAppPurchaseImagesContractTests {
         let transport = TestHTTPTransport(responses: [
             .init(
                 statusCode: 200,
-                body: #"{"data":[],"links":{"self":"https://api.example.test/v2/inAppPurchases/iap-1/images?cursor=next"}}"#
+                body: #"{"data":[],"links":{"self":"https://api.example.test/v2/inAppPurchases/iap-1/images?cursor=next&limit=25"}}"#
             )
         ])
         let worker = try await makeIAPImagesWorker(transport: transport)
@@ -60,15 +60,19 @@ struct InAppPurchaseImagesContractTests {
             name: "iap_list_images",
             arguments: [
                 "iap_id": .string("iap-1"),
-                "next_url": .string("https://api.example.test/v2/inAppPurchases/iap-1/images?cursor=next")
+                "next_url": .string("https://api.example.test/v2/inAppPurchases/iap-1/images?cursor=next&limit=25")
             ]
         ))
 
         #expect(result.isError != true)
         let request = try #require(await transport.recordedRequests().first)
         #expect(request.url?.path == "/v2/inAppPurchases/iap-1/images")
-        #expect(URLComponents(url: try #require(request.url), resolvingAgainstBaseURL: false)?.queryItems?.first?.name == "cursor")
-        #expect(URLComponents(url: try #require(request.url), resolvingAgainstBaseURL: false)?.queryItems?.first?.value == "next")
+        let query = Dictionary(uniqueKeysWithValues: URLComponents(
+            url: try #require(request.url),
+            resolvingAgainstBaseURL: false
+        )?.queryItems?.map { ($0.name, $0.value ?? "") } ?? [])
+        #expect(query["cursor"] == "next")
+        #expect(query["limit"] == "25")
     }
 
     @Test("foreign pagination URL is rejected without a request")

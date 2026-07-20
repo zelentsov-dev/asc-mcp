@@ -577,7 +577,7 @@ struct InAppPurchasesV3WorkerTests {
 
     @Test("availability omission and territory listing have explicit projection semantics")
     func availabilityOmissionAndTerritoryPaginationAreExplicit() async throws {
-        let nextURL = "https://api.example.test/v1/inAppPurchaseAvailabilities/availability-1/availableTerritories?cursor=next"
+        let nextURL = "https://api.example.test/v1/inAppPurchaseAvailabilities/availability-1/availableTerritories?cursor=next&fields%5Bterritories%5D=currency&limit=200"
         let transport = TestHTTPTransport(responses: [
             .init(statusCode: 200, body: """
             {"data":{"type":"inAppPurchaseAvailabilities","id":"availability-1","attributes":{"availableInNewTerritories":true}}}
