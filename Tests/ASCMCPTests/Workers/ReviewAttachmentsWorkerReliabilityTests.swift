@@ -16,6 +16,7 @@ struct ReviewAttachmentsWorkerReliabilityTests {
         #expect(list["limit"]?.objectValue?["minimum"]?.intValue == 1)
         #expect(list["limit"]?.objectValue?["maximum"]?.intValue == 200)
         #expect(list["limit"]?.objectValue?["default"]?.intValue == 25)
+        #expect(list["next_url"]?.objectValue?["description"]?.stringValue?.contains("pass the same limit again") == true)
     }
 
     @Test("get projects current attachment fields and review detail linkage")
@@ -95,13 +96,13 @@ struct ReviewAttachmentsWorkerReliabilityTests {
             .init(statusCode: 200, body: reviewAttachmentsEmptyCollectionResponse())
         ])
         let worker = try await reviewAttachmentsWorker(transport)
-        let nextURL = reviewAttachmentsNextURL(fields: reviewAttachmentsReadFields, limit: 200)
+        let nextURL = reviewAttachmentsNextURL(fields: reviewAttachmentsReadFields, limit: 73)
 
         let result = try await worker.handleTool(.init(
             name: "review_attachments_list",
             arguments: [
                 "review_detail_id": .string("review-detail-1"),
-                "limit": .int(500),
+                "limit": .int(73),
                 "next_url": .string(nextURL)
             ]
         ))
@@ -110,8 +111,26 @@ struct ReviewAttachmentsWorkerReliabilityTests {
         let request = try #require(await transport.recordedRequests().first)
         let query = reviewAttachmentsQuery(request)
         #expect(query["fields[appStoreReviewAttachments]"] == reviewAttachmentsReadFields)
-        #expect(query["limit"] == "200")
+        #expect(query["limit"] == "73")
         #expect(query["cursor"] == "next")
+    }
+
+    @Test("list rejects a custom-limit continuation unless the same limit is repeated")
+    func listRejectsCustomLimitWithoutMatchingArgument() async throws {
+        let transport = TestHTTPTransport(responses: [])
+        let worker = try await reviewAttachmentsWorker(transport)
+        let nextURL = reviewAttachmentsNextURL(fields: reviewAttachmentsReadFields, limit: 73)
+
+        let result = try await worker.handleTool(.init(
+            name: "review_attachments_list",
+            arguments: [
+                "review_detail_id": .string("review-detail-1"),
+                "next_url": .string(nextURL)
+            ]
+        ))
+
+        #expect(result.isError == true)
+        #expect(await transport.requestCount() == 0)
     }
 
     @Test("list rejects continuation projection or page-size drift")

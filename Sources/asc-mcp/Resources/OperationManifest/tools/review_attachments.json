@@ -171,7 +171,7 @@
         {
           "toolField": "next_url",
           "sourceKind": "local",
-          "localRole": "Validate the related collection path and preserve the fixed attachment projection plus the effective clamped page limit."
+          "localRole": "Validate the related collection path and preserve the fixed attachment projection plus the effective clamped page limit; callers repeat a non-default limit with next_url."
         }
       ],
       "response": {
@@ -214,7 +214,7 @@
           }
         ]
       },
-      "note": "The related collection uses the same upload-operation-free projection, preserves that projection and the effective limit across pagination, and returns paging total plus review-detail linkage; the mapping remains partial because the tool has no outputSchema."
+      "note": "The related collection uses the same upload-operation-free projection, requires callers to repeat a non-default limit with next_url so the effective limit remains stable across pagination, and returns paging total plus review-detail linkage; the mapping remains partial because the tool has no outputSchema."
     },
     {
       "tool": "review_attachments_upload",
