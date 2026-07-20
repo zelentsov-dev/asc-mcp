@@ -171,7 +171,7 @@
         {
           "toolField": "next_url",
           "sourceKind": "local",
-          "localRole": "Validate the related collection path and preserve the fixed attachment projection plus the effective clamped page limit; callers repeat a non-default limit with next_url."
+          "localRole": "Strict Apple continuation URL for this exact collection. The caller must repeat every originating list control, including the effective/default limit, filters, sort, include, fields, and nested limits when supported; the exact query and a non-empty cursor are validated before network access."
         }
       ],
       "response": {

@@ -372,7 +372,7 @@
         { "toolField": "review_submission_states", "sourceKind": "parameter", "operationId": "apps_getCollection", "location": "query", "appleName": "filter[reviewSubmissions.state]" },
         { "toolField": "review_submission_platforms", "sourceKind": "parameter", "operationId": "apps_getCollection", "location": "query", "appleName": "filter[reviewSubmissions.platform]" },
         { "toolField": "has_game_center_enabled_versions", "sourceKind": "parameter", "operationId": "apps_getCollection", "location": "query", "appleName": "exists[gameCenterEnabledVersions]" },
-        { "toolField": "next_url", "sourceKind": "local", "localRole": "paginationContinuationPreservingFiltersSortAndEffectiveLimit" }
+        { "toolField": "next_url", "sourceKind": "local", "localRole": "Strict Apple continuation URL for this exact collection. The caller must repeat every originating list control, including the effective/default limit, filters, sort, include, fields, and nested limits when supported; the exact query and a non-empty cursor are validated before network access." }
       ],
       "response": {
         "mode": "projection",
@@ -441,7 +441,7 @@
         { "toolField": "version_id", "sourceKind": "parameter", "operationId": "appStoreVersions_appStoreVersionLocalizations_getToManyRelated", "location": "path", "appleName": "id" },
         { "toolField": "locales", "sourceKind": "parameter", "operationId": "appStoreVersions_appStoreVersionLocalizations_getToManyRelated", "location": "query", "appleName": "filter[locale]" },
         { "toolField": "limit", "sourceKind": "parameter", "operationId": "appStoreVersions_appStoreVersionLocalizations_getToManyRelated", "location": "query", "appleName": "limit" },
-        { "toolField": "next_url", "sourceKind": "local", "localRole": "paginationContinuationPreservingFiltersAndFixedProjection" }
+        { "toolField": "next_url", "sourceKind": "local", "localRole": "Strict Apple continuation URL for this exact collection. The caller must repeat every originating list control, including the effective/default limit, filters, sort, include, fields, and nested limits when supported; the exact query and a non-empty cursor are validated before network access." }
       ],
       "response": {
         "mode": "projection",
@@ -498,7 +498,7 @@
         { "toolField": "app_store_states", "sourceKind": "parameter", "operationId": "apps_appStoreVersions_getToManyRelated", "location": "query", "appleName": "filter[appStoreState]" },
         { "toolField": "app_version_states", "sourceKind": "parameter", "operationId": "apps_appStoreVersions_getToManyRelated", "location": "query", "appleName": "filter[appVersionState]" },
         { "toolField": "platforms", "sourceKind": "parameter", "operationId": "apps_appStoreVersions_getToManyRelated", "location": "query", "appleName": "filter[platform]" },
-        { "toolField": "next_url", "sourceKind": "local", "localRole": "paginationContinuation" }
+        { "toolField": "next_url", "sourceKind": "local", "localRole": "Strict Apple continuation URL for this exact collection. The caller must repeat every originating list control, including the effective/default limit, filters, sort, include, fields, and nested limits when supported; the exact query and a non-empty cursor are validated before network access." }
       ],
       "response": {
         "mode": "projection",

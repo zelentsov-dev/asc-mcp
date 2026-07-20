@@ -424,7 +424,7 @@
         {
           "toolField": "next_url",
           "sourceKind": "local",
-          "localRole": "Validated pagination URL returned by Apple."
+          "localRole": "Strict Apple continuation URL for this exact collection. The caller must repeat every originating list control, including the effective/default limit, filters, sort, include, fields, and nested limits when supported; the exact query and a non-empty cursor are validated before network access."
         }
       ],
       "response": {
@@ -488,7 +488,7 @@
         {
           "toolField": "next_url",
           "sourceKind": "local",
-          "localRole": "Validated pagination URL returned by Apple."
+          "localRole": "Strict Apple continuation URL for this exact collection. The caller must repeat every originating list control, including the effective/default limit, filters, sort, include, fields, and nested limits when supported; the exact query and a non-empty cursor are validated before network access."
         }
       ],
       "response": {
@@ -790,7 +790,7 @@
         {
           "toolField": "next_url",
           "sourceKind": "local",
-          "localRole": "Validated pagination URL returned by the prior exact-email search page."
+          "localRole": "Strict Apple continuation URL for this exact collection. The caller must repeat every originating list control, including the effective/default limit, filters, sort, include, fields, and nested limits when supported; the exact query and a non-empty cursor are validated before network access."
         }
       ],
       "response": {

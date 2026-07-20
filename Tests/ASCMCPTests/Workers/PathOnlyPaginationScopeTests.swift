@@ -7,6 +7,10 @@ import Testing
 struct PathOnlyPaginationScopeTests {
     @Test("all path-only lists preserve exact default and explicit queries")
     func preservesExactQueries() async throws {
+        let fixtures = pathOnlyPaginationFixtures()
+        #expect(fixtures.count == 11)
+        #expect(fixtures.map(\.toolName) == pathOnlyPaginationToolNames)
+
         for fixture in pathOnlyPaginationCases() {
             let firstPageTransport = TestHTTPTransport(responses: [
                 .init(statusCode: 200, body: fixture.responseBody)
@@ -189,6 +193,20 @@ struct PathOnlyPaginationScopeTests {
         }
     }
 }
+
+private let pathOnlyPaginationToolNames = [
+    "accessibility_list_relationships",
+    "analytics_list_segments",
+    "beta_groups_list_testers",
+    "beta_testers_list_apps",
+    "builds_list_beta_localizations",
+    "builds_get_beta_testers",
+    "builds_list_individual_testers",
+    "pre_release_list_builds",
+    "pricing_list_territories",
+    "sandbox_list",
+    "users_list_visible_apps"
+]
 
 private enum PathOnlyPaginationWorker {
     case accessibility

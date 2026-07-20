@@ -99,7 +99,7 @@
         { "toolField": "app_id", "sourceKind": "parameter", "operationId": "apps_webhooks_getToManyRelated", "location": "path", "appleName": "id" },
         { "toolField": "limit", "sourceKind": "parameter", "operationId": "apps_webhooks_getToManyRelated", "location": "query", "appleName": "limit" },
         { "toolField": "include_app", "sourceKind": "parameter", "operationId": "apps_webhooks_getToManyRelated", "location": "query", "appleName": "include", "localRole": "true emits the fixed query value app; false or omission emits no include parameter" },
-        { "toolField": "next_url", "sourceKind": "local", "localRole": "paginationContinuation" }
+        { "toolField": "next_url", "sourceKind": "local", "localRole": "Strict Apple continuation URL for this exact collection. The caller must repeat every originating list control, including the effective/default limit, filters, sort, include, fields, and nested limits when supported; the exact query and a non-empty cursor are validated before network access." }
       ],
       "response": {
         "mode": "projection",
@@ -131,7 +131,7 @@
         { "toolField": "created_before", "sourceKind": "parameter", "operationId": "webhooks_deliveries_getToManyRelated", "location": "query", "appleName": "filter[createdDateLessThan]" },
         { "toolField": "include_event", "sourceKind": "parameter", "operationId": "webhooks_deliveries_getToManyRelated", "location": "query", "appleName": "include", "localRole": "true or omission emits the fixed query value event; false emits no include parameter" },
         { "toolField": "limit", "sourceKind": "parameter", "operationId": "webhooks_deliveries_getToManyRelated", "location": "query", "appleName": "limit" },
-        { "toolField": "next_url", "sourceKind": "local", "localRole": "paginationContinuation" }
+        { "toolField": "next_url", "sourceKind": "local", "localRole": "Strict Apple continuation URL for this exact collection. The caller must repeat every originating list control, including the effective/default limit, filters, sort, include, fields, and nested limits when supported; the exact query and a non-empty cursor are validated before network access." }
       ],
       "response": {
         "mode": "projection",

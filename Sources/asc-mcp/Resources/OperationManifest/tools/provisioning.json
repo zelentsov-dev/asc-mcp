@@ -359,7 +359,7 @@
         { "toolField": "filter_seed_id", "sourceKind": "parameter", "operationId": "bundleIds_getCollection", "location": "query", "appleName": "filter[seedId]" },
         { "toolField": "filter_id", "sourceKind": "parameter", "operationId": "bundleIds_getCollection", "location": "query", "appleName": "filter[id]" },
         { "toolField": "sort", "sourceKind": "parameter", "operationId": "bundleIds_getCollection", "location": "query", "appleName": "sort" },
-        { "toolField": "next_url", "sourceKind": "local", "localRole": "paginationContinuation" }
+        { "toolField": "next_url", "sourceKind": "local", "localRole": "Strict Apple continuation URL for this exact collection. The caller must repeat every originating list control, including the effective/default limit, filters, sort, include, fields, and nested limits when supported; the exact query and a non-empty cursor are validated before network access." }
       ],
       "response": {
         "mode": "projection",
@@ -385,7 +385,7 @@
       "fields": [
         { "toolField": "bundle_id_resource_id", "sourceKind": "parameter", "operationId": "bundleIds_bundleIdCapabilities_getToManyRelated", "location": "path", "appleName": "id" },
         { "toolField": "limit", "sourceKind": "parameter", "operationId": "bundleIds_bundleIdCapabilities_getToManyRelated", "location": "query", "appleName": "limit" },
-        { "toolField": "next_url", "sourceKind": "local", "localRole": "paginationContinuation" }
+        { "toolField": "next_url", "sourceKind": "local", "localRole": "Strict Apple continuation URL for this exact collection. The caller must repeat every originating list control, including the effective/default limit, filters, sort, include, fields, and nested limits when supported; the exact query and a non-empty cursor are validated before network access." }
       ],
       "response": {
         "mode": "projection",
@@ -429,7 +429,7 @@
         { "toolField": "filter_serial_number", "sourceKind": "parameter", "operationId": "certificates_getCollection", "location": "query", "appleName": "filter[serialNumber]" },
         { "toolField": "filter_id", "sourceKind": "parameter", "operationId": "certificates_getCollection", "location": "query", "appleName": "filter[id]" },
         { "toolField": "sort", "sourceKind": "parameter", "operationId": "certificates_getCollection", "location": "query", "appleName": "sort" },
-        { "toolField": "next_url", "sourceKind": "local", "localRole": "paginationContinuation" }
+        { "toolField": "next_url", "sourceKind": "local", "localRole": "Strict Apple continuation URL for this exact collection. The caller must repeat every originating list control, including the effective/default limit, filters, sort, include, fields, and nested limits when supported; the exact query and a non-empty cursor are validated before network access." }
       ],
       "response": {
         "mode": "projection",
@@ -460,7 +460,7 @@
         { "toolField": "filter_udid", "sourceKind": "parameter", "operationId": "devices_getCollection", "location": "query", "appleName": "filter[udid]" },
         { "toolField": "filter_id", "sourceKind": "parameter", "operationId": "devices_getCollection", "location": "query", "appleName": "filter[id]" },
         { "toolField": "sort", "sourceKind": "parameter", "operationId": "devices_getCollection", "location": "query", "appleName": "sort" },
-        { "toolField": "next_url", "sourceKind": "local", "localRole": "paginationContinuation" }
+        { "toolField": "next_url", "sourceKind": "local", "localRole": "Strict Apple continuation URL for this exact collection. The caller must repeat every originating list control, including the effective/default limit, filters, sort, include, fields, and nested limits when supported; the exact query and a non-empty cursor are validated before network access." }
       ],
       "response": {
         "mode": "projection",
@@ -518,7 +518,7 @@
         { "toolField": "filter_name", "sourceKind": "parameter", "operationId": "profiles_getCollection", "location": "query", "appleName": "filter[name]" },
         { "toolField": "filter_id", "sourceKind": "parameter", "operationId": "profiles_getCollection", "location": "query", "appleName": "filter[id]" },
         { "toolField": "sort", "sourceKind": "parameter", "operationId": "profiles_getCollection", "location": "query", "appleName": "sort" },
-        { "toolField": "next_url", "sourceKind": "local", "localRole": "paginationContinuation" }
+        { "toolField": "next_url", "sourceKind": "local", "localRole": "Strict Apple continuation URL for this exact collection. The caller must repeat every originating list control, including the effective/default limit, filters, sort, include, fields, and nested limits when supported; the exact query and a non-empty cursor are validated before network access." }
       ],
       "response": {
         "mode": "projection",

@@ -45,7 +45,7 @@ extension BetaGroupsWorker {
                     ]),
                     "next_url": .object([
                         "type": .string("string"),
-                        "description": .string("Pagination URL from previous response to get next page")
+                        "description": .string("Apple continuation URL from the previous response. Repeat every originating list control, including the effective/default limit, filters, sort, include, fields, and nested limits when supported; the exact query and a non-empty cursor are validated.")
                     ])
                 ]),
                 "required": .array([.string("app_id")])
@@ -213,7 +213,7 @@ extension BetaGroupsWorker {
                     ]),
                     "next_url": .object([
                         "type": .string("string"),
-                        "description": .string("Pagination URL from previous response to get next page")
+                        "description": .string("Apple continuation URL from the previous response. Repeat every originating list control, including the effective/default limit, filters, sort, include, fields, and nested limits when supported; the exact query and a non-empty cursor are validated.")
                     ])
                 ]),
                 "required": .array([.string("group_id")])

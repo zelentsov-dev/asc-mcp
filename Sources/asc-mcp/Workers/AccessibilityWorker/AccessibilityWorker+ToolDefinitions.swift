@@ -13,7 +13,7 @@ extension AccessibilityWorker {
                     "state": enumListSchema("Optional declaration state filter", values: ASCAccessibilityDeclarationState.validRawValues),
                     "fields": fieldsSchema(),
                     "limit": integerSchema("Max results (default: 25, max: 200)"),
-                    "next_url": stringSchema("Pagination URL from a previous response")
+                    "next_url": stringSchema("Apple continuation URL from the previous response. Repeat every originating list control, including the effective/default limit, filters, sort, include, fields, and nested limits when supported; the exact query and a non-empty cursor are validated.")
                 ],
                 required: ["app_id"]
             )
@@ -83,7 +83,7 @@ extension AccessibilityWorker {
                 properties: [
                     "app_id": stringSchema("App ID whose accessibility declaration relationships should be listed"),
                     "limit": integerSchema("Max results (default: 25, max: 200)"),
-                    "next_url": stringSchema("Pagination URL from a previous response")
+                    "next_url": stringSchema("Apple continuation URL from the previous response. Repeat every originating list control, including the effective/default limit, filters, sort, include, fields, and nested limits when supported; the exact query and a non-empty cursor are validated.")
                 ],
                 required: ["app_id"]
             )

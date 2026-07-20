@@ -249,7 +249,7 @@ extension AnalyticsWorker {
                     ]),
                     "next_url": .object([
                         "type": .string("string"),
-                        "description": .string("URL for next page of results (from previous response)")
+                        "description": .string("Apple continuation URL from the previous response. Repeat every originating list control, including the effective/default limit, filters, sort, include, fields, and nested limits when supported; the exact query and a non-empty cursor are validated.")
                     ])
                 ]),
                 "required": .array([.string("app_id")])
@@ -329,7 +329,7 @@ extension AnalyticsWorker {
                     ]),
                     "next_url": .object([
                         "type": .string("string"),
-                        "description": .string("URL for next page of results (from previous response)")
+                        "description": .string("Apple continuation URL from the previous response. Repeat every originating list control, including the effective/default limit, filters, sort, include, fields, and nested limits when supported; the exact query and a non-empty cursor are validated.")
                     ])
                 ]),
                 "required": .array([.string("request_id")])
@@ -399,7 +399,7 @@ extension AnalyticsWorker {
                     ]),
                     "next_url": .object([
                         "type": .string("string"),
-                        "description": .string("URL for next page of results (from previous response)")
+                        "description": .string("Apple continuation URL from the previous response. Repeat every originating list control, including the effective/default limit, filters, sort, include, fields, and nested limits when supported; the exact query and a non-empty cursor are validated.")
                     ])
                 ]),
                 "required": .array([.string("report_id")])
@@ -479,7 +479,7 @@ extension AnalyticsWorker {
                     ]),
                     "next_url": .object([
                         "type": .string("string"),
-                        "description": .string("URL for next page of results (from previous response)")
+                        "description": .string("Apple continuation URL from the previous response. Repeat every originating list control, including the effective/default limit, filters, sort, include, fields, and nested limits when supported; the exact query and a non-empty cursor are validated.")
                     ])
                 ]),
                 "required": .array([.string("instance_id")])

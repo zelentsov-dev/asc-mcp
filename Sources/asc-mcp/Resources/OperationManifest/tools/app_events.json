@@ -404,7 +404,7 @@
         {
           "toolField": "next_url",
           "sourceKind": "local",
-          "localRole": "Validate and follow Apple's pagination URL for this exact collection while preserving active filters, include, and nested limit."
+          "localRole": "Strict Apple continuation URL for this exact collection. The caller must repeat every originating list control, including the effective/default limit, filters, sort, include, fields, and nested limits when supported; the exact query and a non-empty cursor are validated before network access."
         }
       ],
       "response": {
@@ -507,7 +507,7 @@
         {
           "toolField": "next_url",
           "sourceKind": "local",
-          "localRole": "Validate and follow Apple's pagination URL for this exact localization collection while preserving include and nested relationship limits."
+          "localRole": "Strict Apple continuation URL for this exact collection. The caller must repeat every originating list control, including the effective/default limit, filters, sort, include, fields, and nested limits when supported; the exact query and a non-empty cursor are validated before network access."
         }
       ],
       "response": {

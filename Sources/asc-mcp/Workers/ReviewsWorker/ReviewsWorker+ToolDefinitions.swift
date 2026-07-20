@@ -66,7 +66,7 @@ extension ReviewsWorker {
                     "sort": reviewSortSchema(),
                     "next_url": .object([
                         "type": .string("string"),
-                        "description": .string("URL for next page of results (from previous response)")
+                        "description": .string("Apple continuation URL from the previous response. Repeat every originating list control, including the effective/default limit, filters, sort, include, fields, and nested limits when supported; the exact query and a non-empty cursor are validated.")
                     ]),
                     "include_response": .object([
                         "type": .string("boolean"),
@@ -155,7 +155,7 @@ extension ReviewsWorker {
                     "sort": reviewSortSchema(),
                     "next_url": .object([
                         "type": .string("string"),
-                        "description": .string("URL for next page of results (from previous response)")
+                        "description": .string("Apple continuation URL from the previous response. Repeat every originating list control, including the effective/default limit, filters, sort, include, fields, and nested limits when supported; the exact query and a non-empty cursor are validated.")
                     ]),
                     "include_response": .object([
                         "type": .string("boolean"),
@@ -296,7 +296,7 @@ extension ReviewsWorker {
                     ]),
                     "next_url": .object([
                         "type": .string("string"),
-                        "description": .string("URL for the next page from a previous response")
+                        "description": .string("Apple continuation URL from the previous response. Repeat every originating list control, including the effective/default limit, filters, sort, include, fields, and nested limits when supported; the exact query and a non-empty cursor are validated.")
                     ])
                 ]),
                 "required": .array([.string("app_id")])

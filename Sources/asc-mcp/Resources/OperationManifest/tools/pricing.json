@@ -570,7 +570,7 @@
         {
           "toolField": "next_url",
           "sourceKind": "local",
-          "localRole": "Parse an Apple pagination URL and replay its path and query for this collection operation."
+          "localRole": "Strict Apple continuation URL for this exact collection. The caller must repeat every originating list control, including the effective/default limit, filters, sort, include, fields, and nested limits when supported; the exact query and a non-empty cursor are validated before network access."
         }
       ],
       "response": {
@@ -627,7 +627,7 @@
         {
           "toolField": "next_url",
           "sourceKind": "local",
-          "localRole": "Parse an Apple pagination URL and replay its path and query for this collection operation."
+          "localRole": "Strict Apple continuation URL for this exact collection. The caller must repeat every originating list control, including the effective/default limit, filters, sort, include, fields, and nested limits when supported; the exact query and a non-empty cursor are validated before network access."
         }
       ],
       "response": {
@@ -702,7 +702,7 @@
         {
           "toolField": "next_url",
           "sourceKind": "local",
-          "localRole": "Parse an Apple pagination URL and replay its path and query for this related collection operation."
+          "localRole": "Strict Apple continuation URL for this exact collection. The caller must repeat every originating list control, including the effective/default limit, filters, sort, include, fields, and nested limits when supported; the exact query and a non-empty cursor are validated before network access."
         }
       ],
       "response": {
@@ -819,7 +819,7 @@
         {
           "toolField": "next_url",
           "sourceKind": "local",
-          "localRole": "Validate the configured origin and exact /v2/appAvailabilities/{resolvedId}/territoryAvailabilities scope before requesting the continuation page."
+          "localRole": "Strict Apple continuation URL for this exact collection. The caller must repeat every originating list control, including the effective/default limit, filters, sort, include, fields, and nested limits when supported; the exact query and a non-empty cursor are validated before network access."
         }
       ],
       "response": {

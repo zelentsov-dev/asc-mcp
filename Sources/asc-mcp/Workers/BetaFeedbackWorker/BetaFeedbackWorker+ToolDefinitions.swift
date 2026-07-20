@@ -130,7 +130,7 @@ extension BetaFeedbackWorker {
                     defaultValue: false
                 ),
                 "limit": integerSchema("Max results per page", minimum: 1, maximum: 200, defaultValue: 25),
-                "next_url": stringSchema("Pagination URL from a previous response")
+                "next_url": stringSchema("Apple continuation URL from the previous response. Repeat every originating list control, including the effective/default limit, filters, sort, include, fields, and nested limits when supported; the exact query and a non-empty cursor are validated.")
             ],
             required: ["app_id"]
         )

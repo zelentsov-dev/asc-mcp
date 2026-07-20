@@ -36,7 +36,7 @@ extension BetaTestersWorker {
                     ]),
                     "next_url": .object([
                         "type": .string("string"),
-                        "description": .string("Pagination URL from previous response to get next page")
+                        "description": .string("Apple continuation URL from the previous response. Repeat every originating list control, including the effective/default limit, filters, sort, include, fields, and nested limits when supported; the exact query and a non-empty cursor are validated.")
                     ])
                 ])
             ])
@@ -67,7 +67,7 @@ extension BetaTestersWorker {
                     ]),
                     "next_url": .object([
                         "type": .string("string"),
-                        "description": .string("Pagination URL from a previous exact-email search")
+                        "description": .string("Apple continuation URL from the previous response. Repeat every originating list control, including the effective/default limit, filters, sort, include, fields, and nested limits when supported; the exact query and a non-empty cursor are validated.")
                     ])
                 ]),
                 "required": .array([.string("email")])
@@ -184,7 +184,7 @@ extension BetaTestersWorker {
                     ]),
                     "next_url": .object([
                         "type": .string("string"),
-                        "description": .string("Pagination URL from previous response to get next page")
+                        "description": .string("Apple continuation URL from the previous response. Repeat every originating list control, including the effective/default limit, filters, sort, include, fields, and nested limits when supported; the exact query and a non-empty cursor are validated.")
                     ])
                 ]),
                 "required": .array([.string("tester_id")])
