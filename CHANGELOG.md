@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.5.0] - 2026-07-20
+
+### Changed
+
+- Review-attachment reads now request a stable Apple 4.4.1 projection that includes file metadata, delivery state, and review-detail relationship linkage without returning upload operations.
+- `review_attachments_get` and `review_attachments_list` now return `appStoreReviewDetailId`; collection results also return Apple's paging `total` when available.
+- `review_attachments_list` now publishes a bounded 1...200 limit contract and requires non-default limits to be repeated with `next_url` so continuation requests preserve their original page size and projection.
+
+### Fixed
+
+- Reject review-attachment continuation URLs that change the parent review detail, fixed sparse-field projection, or effective page limit before making a network request.
+- Use the same safe sparse-field projection while reconciling a committed upload, avoiding unnecessary presigned upload-operation data during delivery checks.
+- Describe upload input as a generic attachment file instead of incorrectly limiting it to images.
+
+### Compatibility
+
+- No public MCP tool or input was added, removed, or renamed; existing review-attachment calls remain valid.
+- Clients continuing a list started with a non-default `limit` must pass that same `limit` together with Apple's returned `next_url`.
+- The strict contract pin records 2,154 optional Apple inputs: 724 bound, 6 internally controlled, 1,012 intentionally omitted, and 412 still queued for domain review.
+
 ## [3.4.0] - 2026-07-20
 
 ### Changed
