@@ -38,6 +38,11 @@ extension WebhooksWorker {
                 "webhooks": response.data.map(formatWebhook),
                 "count": response.data.count
             ]
+            appendIncluded(
+                response.included,
+                requested: arguments["include_app"]?.boolValue == true,
+                to: &result
+            )
             appendPaging(response.links, response.meta, to: &result)
             return MCPResult.jsonObject(result)
         } catch {
@@ -61,10 +66,16 @@ extension WebhooksWorker {
                 query["include"] = "app"
             }
             let response = try await httpClient.get("/v1/webhooks/\(try ASCPathSegment.encode(webhookID))", parameters: query, as: ASCWebhookResponse.self)
-            return MCPResult.jsonObject([
+            var result: [String: Any] = [
                 "success": true,
                 "webhook": formatWebhook(response.data)
-            ])
+            ]
+            appendIncluded(
+                response.included,
+                requested: arguments["include_app"]?.boolValue == true,
+                to: &result
+            )
+            return MCPResult.jsonObject(result)
         } catch {
             return MCPResult.error("Failed to get webhook: \(error.localizedDescription)")
         }
@@ -342,6 +353,12 @@ extension WebhooksWorker {
         }
         if let total = meta?.paging?.total {
             result["total"] = total
+        }
+    }
+
+    private func appendIncluded(_ included: [JSONValue]?, requested: Bool, to result: inout [String: Any]) {
+        if requested || included?.isEmpty == false {
+            result["included"] = included?.map(\.asAny) ?? []
         }
     }
 

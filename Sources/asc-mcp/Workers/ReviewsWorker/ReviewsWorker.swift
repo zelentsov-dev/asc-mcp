@@ -96,6 +96,7 @@ extension ReviewsWorker {
     /// Reviews API response
     struct ReviewsResponse: Codable, Sendable {
         let data: [CustomerReview]
+        let included: [CustomerReviewResponse]?
         let links: PageLinks?
         let meta: PagingInformation?
     }
@@ -135,14 +136,13 @@ extension ReviewsWorker {
     struct CustomerReviewResponse: Codable, Sendable {
         let id: String
         let type: String
-        let attributes: ResponseAttributes
+        let attributes: ResponseAttributes?
         let relationships: ResponseRelationships?
     }
     
     struct ResponseAttributes: Codable, Sendable {
-        let responseBody: String
-        let createdDate: String?
-        let modifiedDate: String?
+        let responseBody: String?
+        let lastModifiedDate: String?
         let state: String?
     }
     
@@ -200,7 +200,10 @@ extension ReviewsWorker {
 // MARK: - Formatting Helpers
 extension ReviewsWorker {
     /// Format a review as a dictionary for JSON output
-    func formatReviewDict(_ review: CustomerReview) -> [String: Any] {
+    func formatReviewDict(
+        _ review: CustomerReview,
+        includedResponses: [String: CustomerReviewResponse] = [:]
+    ) -> [String: Any] {
         var dict: [String: Any] = [
             "id": review.id,
             "rating": review.attributes.rating,
@@ -216,24 +219,31 @@ extension ReviewsWorker {
         if let territory = review.attributes.territory {
             dict["territory"] = territory
         }
-        dict["has_response"] = review.relationships?.response?.data != nil
+        if let responseID = review.relationships?.response?.data?.id {
+            dict["has_response"] = true
+            if let response = includedResponses[responseID] {
+                dict["response"] = formatResponseDict(response)
+            }
+        } else {
+            dict["has_response"] = false
+        }
         return dict
     }
 
     /// Format a developer response as a dictionary for JSON output
     func formatResponseDict(_ response: CustomerReviewResponse) -> [String: Any] {
-        var dict: [String: Any] = [
-            "id": response.id,
-            "response_body": response.attributes.responseBody
-        ]
-        if let created = response.attributes.createdDate {
-            dict["created_date"] = created
+        var dict: [String: Any] = ["id": response.id]
+        if let responseBody = response.attributes?.responseBody {
+            dict["response_body"] = responseBody
         }
-        if let modified = response.attributes.modifiedDate {
-            dict["modified_date"] = modified
+        if let lastModifiedDate = response.attributes?.lastModifiedDate {
+            dict["last_modified_date"] = lastModifiedDate
         }
-        if let state = response.attributes.state {
+        if let state = response.attributes?.state {
             dict["state"] = state
+        }
+        if let reviewID = response.relationships?.review?.data?.id {
+            dict["review_id"] = reviewID
         }
         return dict
     }

@@ -20,7 +20,7 @@
       ],
       "fields": [
         { "toolField": "user_id", "sourceKind": "parameter", "operationId": "users_visibleApps_createToManyRelationship", "location": "path", "appleName": "id" },
-        { "toolField": "app_ids", "sourceKind": "requestBody", "operationId": "users_visibleApps_createToManyRelationship", "jsonPointer": "/data/*/id", "localRole": "each ID is encoded as an apps resource linkage; non-string array elements are dropped" }
+        { "toolField": "app_ids", "sourceKind": "requestBody", "operationId": "users_visibleApps_createToManyRelationship", "jsonPointer": "/data/*/id", "localRole": "each non-empty unique string ID is encoded as an apps resource linkage; invalid arrays are rejected before the request" }
       ],
       "response": {
         "mode": "local",
@@ -31,7 +31,7 @@
           { "outputField": "message", "localRole": "confirmation synthesized after Apple's content-free 204 response" }
         ]
       },
-      "note": "Exact Apple relationship-add operation. The handler returns a local count-based confirmation after 204 and silently drops non-string app_ids before requiring at least one remaining ID."
+      "note": "Exact Apple relationship-add operation. The handler strictly validates app_ids before the request and returns a local count-based confirmation after Apple's content-free 204 response."
     },
     {
       "tool": "users_cancel_invitation",
@@ -67,7 +67,8 @@
       ],
       "fields": [
         { "toolField": "user_id", "sourceKind": "parameter", "operationId": "users_getInstance", "location": "path", "appleName": "id" },
-        { "toolField": "include", "sourceKind": "parameter", "operationId": "users_getInstance", "location": "query", "appleName": "include" }
+        { "toolField": "include", "sourceKind": "parameter", "operationId": "users_getInstance", "location": "query", "appleName": "include" },
+        { "toolField": "limit_visible_apps", "sourceKind": "parameter", "operationId": "users_getInstance", "location": "query", "appleName": "limit[visibleApps]" }
       ],
       "response": {
         "mode": "projection",
@@ -75,10 +76,12 @@
           { "operationId": "users_getInstance", "statusCode": "200", "mediaType": "application/json" }
         ],
         "fields": [
-          { "outputField": "user", "operationId": "users_getInstance", "jsonPointer": "/data" }
+          { "outputField": "user", "operationId": "users_getInstance", "jsonPointer": "/data" },
+          { "outputField": "user.visibleAppIds", "operationId": "users_getInstance", "jsonPointer": "/data/relationships/visibleApps/data/*/id" },
+          { "outputField": "included", "operationId": "users_getInstance", "jsonPointer": "/included" }
         ]
       },
-      "note": "The include query is sent, but the current ASCUserResponse model/formatter does not return Apple's top-level included visibleApps. Sparse fieldsets are not exposed."
+      "note": "Supports Apple's visibleApps include and nested include limit, preserves top-level included app resources, and projects visible-app relationship IDs. Sparse fieldsets are intentionally handled by the manifest-wide fields policy."
     },
     {
       "tool": "users_invite",
@@ -101,9 +104,10 @@
         { "toolField": "email", "sourceKind": "requestBody", "operationId": "userInvitations_createInstance", "jsonPointer": "/data/attributes/email" },
         { "toolField": "first_name", "sourceKind": "requestBody", "operationId": "userInvitations_createInstance", "jsonPointer": "/data/attributes/firstName" },
         { "toolField": "last_name", "sourceKind": "requestBody", "operationId": "userInvitations_createInstance", "jsonPointer": "/data/attributes/lastName" },
-        { "toolField": "roles", "sourceKind": "requestBody", "operationId": "userInvitations_createInstance", "jsonPointer": "/data/attributes/roles", "localRole": "non-string values are dropped and at least one role must remain" },
+        { "toolField": "roles", "sourceKind": "requestBody", "operationId": "userInvitations_createInstance", "jsonPointer": "/data/attributes/roles", "localRole": "validated as a non-empty unique array against Apple 4.4.1 UserRole values" },
         { "toolField": "all_apps_visible", "sourceKind": "requestBody", "operationId": "userInvitations_createInstance", "jsonPointer": "/data/attributes/allAppsVisible", "localRole": "defaults to true when omitted" },
-        { "toolField": "visible_app_ids", "sourceKind": "requestBody", "operationId": "userInvitations_createInstance", "jsonPointer": "/data/relationships/visibleApps/data/*/id", "localRole": "relationship is omitted when no string IDs remain" }
+        { "toolField": "provisioning_allowed", "sourceKind": "requestBody", "operationId": "userInvitations_createInstance", "jsonPointer": "/data/attributes/provisioningAllowed" },
+        { "toolField": "visible_app_ids", "sourceKind": "requestBody", "operationId": "userInvitations_createInstance", "jsonPointer": "/data/relationships/visibleApps/data/*/id", "localRole": "explicit arrays are validated for non-empty unique string IDs and preserved, including an explicit empty relationship" }
       ],
       "response": {
         "mode": "projection",
@@ -111,10 +115,14 @@
           { "operationId": "userInvitations_createInstance", "statusCode": "201", "mediaType": "application/json" }
         ],
         "fields": [
-          { "outputField": "invitation", "operationId": "userInvitations_createInstance", "jsonPointer": "/data" }
+          { "outputField": "invitation", "operationId": "userInvitations_createInstance", "jsonPointer": "/data" },
+          { "outputField": "invitation.provisioningAllowed", "operationId": "userInvitations_createInstance", "jsonPointer": "/data/attributes/provisioningAllowed" },
+          { "outputField": "invitation.visibleAppIds", "operationId": "userInvitations_createInstance", "jsonPointer": "/data/relationships/visibleApps/data/*/id" },
+          { "outputField": "included", "operationId": "userInvitations_createInstance", "jsonPointer": "/included" },
+          { "outputField": "warnings", "localRole": "present when deprecated ACCESS_TO_REPORTS is submitted" }
         ]
       },
-      "note": "Exact Apple create-invitation operation, but provisioningAllowed is not exposed and visibleApps consistency with allAppsVisible is left to Apple. The formatter omits provisioningAllowed and relationship details."
+      "note": "Covers every Apple 4.4.1 invitation-create attribute and optional visibleApps relationship. Roles and app IDs are strictly validated before the request; account-specific consistency between allAppsVisible and visibleApps remains Apple validation."
     },
     {
       "tool": "users_list",
@@ -127,7 +135,12 @@
       ],
       "fields": [
         { "toolField": "limit", "sourceKind": "parameter", "operationId": "users_getCollection", "location": "query", "appleName": "limit" },
+        { "toolField": "filter_username", "sourceKind": "parameter", "operationId": "users_getCollection", "location": "query", "appleName": "filter[username]" },
         { "toolField": "filter_roles", "sourceKind": "parameter", "operationId": "users_getCollection", "location": "query", "appleName": "filter[roles]" },
+        { "toolField": "filter_visible_apps", "sourceKind": "parameter", "operationId": "users_getCollection", "location": "query", "appleName": "filter[visibleApps]" },
+        { "toolField": "sort", "sourceKind": "parameter", "operationId": "users_getCollection", "location": "query", "appleName": "sort" },
+        { "toolField": "include", "sourceKind": "parameter", "operationId": "users_getCollection", "location": "query", "appleName": "include" },
+        { "toolField": "limit_visible_apps", "sourceKind": "parameter", "operationId": "users_getCollection", "location": "query", "appleName": "limit[visibleApps]" },
         { "toolField": "next_url", "sourceKind": "local", "localRole": "paginationContinuation" }
       ],
       "response": {
@@ -137,10 +150,13 @@
         ],
         "fields": [
           { "outputField": "users", "operationId": "users_getCollection", "jsonPointer": "/data" },
-          { "outputField": "next_url", "operationId": "users_getCollection", "jsonPointer": "/links/next" }
+          { "outputField": "users.visibleAppIds", "operationId": "users_getCollection", "jsonPointer": "/data/*/relationships/visibleApps/data/*/id" },
+          { "outputField": "included", "operationId": "users_getCollection", "jsonPointer": "/included" },
+          { "outputField": "next_url", "operationId": "users_getCollection", "jsonPointer": "/links/next" },
+          { "outputField": "total", "operationId": "users_getCollection", "jsonPointer": "/meta/paging/total" }
         ]
       },
-      "note": "Only roles and limit are exposed. Apple's username, visible-app, sorting, sparse-field, and include controls are omitted."
+      "note": "Supports every non-fieldset Apple 4.4.1 collection control, preserves included visible apps, and returns visible-app relationship IDs. Continuation URLs must retain caller-supplied filters, sort, include, and nested limit invariants."
     },
     {
       "tool": "users_list_invitations",
@@ -153,6 +169,12 @@
       ],
       "fields": [
         { "toolField": "limit", "sourceKind": "parameter", "operationId": "userInvitations_getCollection", "location": "query", "appleName": "limit" },
+        { "toolField": "filter_email", "sourceKind": "parameter", "operationId": "userInvitations_getCollection", "location": "query", "appleName": "filter[email]" },
+        { "toolField": "filter_roles", "sourceKind": "parameter", "operationId": "userInvitations_getCollection", "location": "query", "appleName": "filter[roles]" },
+        { "toolField": "filter_visible_apps", "sourceKind": "parameter", "operationId": "userInvitations_getCollection", "location": "query", "appleName": "filter[visibleApps]" },
+        { "toolField": "sort", "sourceKind": "parameter", "operationId": "userInvitations_getCollection", "location": "query", "appleName": "sort" },
+        { "toolField": "include", "sourceKind": "parameter", "operationId": "userInvitations_getCollection", "location": "query", "appleName": "include" },
+        { "toolField": "limit_visible_apps", "sourceKind": "parameter", "operationId": "userInvitations_getCollection", "location": "query", "appleName": "limit[visibleApps]" },
         { "toolField": "next_url", "sourceKind": "local", "localRole": "paginationContinuation" }
       ],
       "response": {
@@ -162,10 +184,14 @@
         ],
         "fields": [
           { "outputField": "invitations", "operationId": "userInvitations_getCollection", "jsonPointer": "/data" },
-          { "outputField": "next_url", "operationId": "userInvitations_getCollection", "jsonPointer": "/links/next" }
+          { "outputField": "invitations.provisioningAllowed", "operationId": "userInvitations_getCollection", "jsonPointer": "/data/*/attributes/provisioningAllowed" },
+          { "outputField": "invitations.visibleAppIds", "operationId": "userInvitations_getCollection", "jsonPointer": "/data/*/relationships/visibleApps/data/*/id" },
+          { "outputField": "included", "operationId": "userInvitations_getCollection", "jsonPointer": "/included" },
+          { "outputField": "next_url", "operationId": "userInvitations_getCollection", "jsonPointer": "/links/next" },
+          { "outputField": "total", "operationId": "userInvitations_getCollection", "jsonPointer": "/meta/paging/total" }
         ]
       },
-      "note": "The MCP surface omits Apple's email/role filters, sorting, sparse fieldsets, visibleApps include, and nested include limits."
+      "note": "Supports every non-fieldset Apple 4.4.1 invitation collection control, preserves included visible apps, and returns current provisioning and relationship data. Continuation URLs retain caller-supplied query invariants."
     },
     {
       "tool": "users_list_visible_apps",
@@ -191,7 +217,7 @@
           { "outputField": "next_url", "operationId": "users_visibleApps_getToManyRelated", "jsonPointer": "/links/next" }
         ]
       },
-      "note": "Only path, limit, and continuation are exposed; Apple app filters, sorting, fields, and includes are omitted and the formatter returns a selected app projection."
+      "note": "Covers every non-fieldset Apple 4.4.1 input for the related visible-app collection. The formatter intentionally returns a stable selected app projection."
     },
     {
       "tool": "users_remove",
@@ -235,7 +261,7 @@
       ],
       "fields": [
         { "toolField": "user_id", "sourceKind": "parameter", "operationId": "users_visibleApps_deleteToManyRelationship", "location": "path", "appleName": "id" },
-        { "toolField": "app_ids", "sourceKind": "requestBody", "operationId": "users_visibleApps_deleteToManyRelationship", "jsonPointer": "/data/*/id", "localRole": "each ID is encoded as an apps resource linkage; non-string array elements are dropped" }
+        { "toolField": "app_ids", "sourceKind": "requestBody", "operationId": "users_visibleApps_deleteToManyRelationship", "jsonPointer": "/data/*/id", "localRole": "each non-empty unique string ID is encoded as an apps resource linkage; invalid arrays are rejected before the request" }
       ],
       "response": {
         "mode": "local",
@@ -246,7 +272,7 @@
           { "outputField": "message", "localRole": "confirmation synthesized after Apple's content-free 204 response" }
         ]
       },
-      "note": "Exact Apple relationship-delete operation. The handler returns a local count-based confirmation after 204 and silently drops non-string app_ids before requiring at least one remaining ID."
+      "note": "Exact Apple relationship-delete operation. The handler strictly validates app_ids before the request and returns a local count-based confirmation after Apple's content-free 204 response."
     },
     {
       "tool": "users_update",
@@ -281,10 +307,12 @@
         ],
         "fields": [
           { "outputField": "user", "operationId": "users_updateInstance", "jsonPointer": "/data" },
+          { "outputField": "user.visibleAppIds", "operationId": "users_updateInstance", "jsonPointer": "/data/relationships/visibleApps/data/*/id" },
+          { "outputField": "included", "operationId": "users_updateInstance", "jsonPointer": "/included" },
           { "outputField": "warnings", "localRole": "present when deprecated ACCESS_TO_REPORTS is submitted" }
         ]
       },
-      "note": "Covers every writable field in Apple 4.4.1 UserUpdateRequest. At least one update field is required locally. TECHNICAL and unknown roles are rejected before the request; ACCESS_TO_REPORTS remains accepted for compatibility because it is still in Apple's enum, with an explicit deprecation warning from current Apple documentation. No local mutual exclusion is imposed between allAppsVisible and visibleApps because Apple 4.4.1 declares both optional without a cross-field constraint; Apple remains responsible for account-specific validation. The response formatter remains a selected projection of Apple's User resource."
+      "note": "Covers every writable field in Apple 4.4.1 UserUpdateRequest. At least one update field is required locally. TECHNICAL and unknown roles are rejected before the request; ACCESS_TO_REPORTS remains accepted for compatibility because it is still in Apple's enum, with an explicit deprecation warning from current Apple documentation. No local mutual exclusion is imposed between allAppsVisible and visibleApps because Apple 4.4.1 declares both optional without a cross-field constraint; Apple remains responsible for account-specific validation. Relationship IDs and any included resources are preserved in the structured response."
     }
   ],
   "implementationAliases": []

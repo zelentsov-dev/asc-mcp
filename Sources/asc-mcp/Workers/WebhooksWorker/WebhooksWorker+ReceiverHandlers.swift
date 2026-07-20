@@ -37,16 +37,16 @@ extension WebhooksWorker {
         }
 
         do {
+            let signaturePair = try optionalSignaturePair(from: arguments)
             let payload = try payloadData(from: arguments)
             let parsed = try ASCWebhookReceiverParser.parse(payload)
             var result = parsed.dictionary
 
-            if let secret = arguments["secret"]?.stringValue,
-               let signature = arguments["signature"]?.stringValue {
+            if let signaturePair {
                 let verification = ASCWebhookSignatureVerifier.verify(
-                    secret: secret,
+                    secret: signaturePair.secret,
                     payload: payload,
-                    signatureHeader: signature
+                    signatureHeader: signaturePair.signature
                 )
                 result["signature"] = verification.dictionary
             }
@@ -112,16 +112,44 @@ extension WebhooksWorker {
     }
 
     private func payloadData(from arguments: [String: Value]) throws -> Data {
-        if let base64 = arguments["payload_base64"]?.stringValue {
+        let hasPayload = arguments["payload"] != nil
+        let hasBase64Payload = arguments["payload_base64"] != nil
+        guard hasPayload != hasBase64Payload else {
+            throw ASCError.parsing("Provide exactly one of payload or payload_base64")
+        }
+
+        if hasBase64Payload {
+            guard let base64 = arguments["payload_base64"]?.stringValue else {
+                throw ASCError.parsing("payload_base64 must be a string")
+            }
             guard let data = Data(base64Encoded: base64) else {
                 throw ASCError.parsing("payload_base64 is not valid base64")
             }
             return data
         }
-        if let payload = arguments["payload"]?.stringValue,
-           let data = payload.data(using: .utf8) {
-            return data
+
+        guard let payload = arguments["payload"]?.stringValue,
+              let data = payload.data(using: .utf8) else {
+            throw ASCError.parsing("payload must be a raw UTF-8 string")
         }
-        throw ASCError.parsing("Provide payload as a raw UTF-8 string or payload_base64 as exact raw request bytes")
+        return data
+    }
+
+    private func optionalSignaturePair(from arguments: [String: Value]) throws -> (secret: String, signature: String)? {
+        let hasSecret = arguments["secret"] != nil
+        let hasSignature = arguments["signature"] != nil
+        guard hasSecret == hasSignature else {
+            throw ASCError.parsing("Provide secret and signature together, or omit both")
+        }
+        guard hasSecret else {
+            return nil
+        }
+        guard let secret = arguments["secret"]?.stringValue,
+              !secret.isEmpty,
+              let signature = arguments["signature"]?.stringValue,
+              !signature.isEmpty else {
+            throw ASCError.parsing("secret and signature must be non-empty strings")
+        }
+        return (secret, signature)
     }
 }

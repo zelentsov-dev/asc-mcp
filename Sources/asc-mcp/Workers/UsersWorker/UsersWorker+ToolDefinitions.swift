@@ -13,11 +13,21 @@ extension UsersWorker {
                 "properties": .object([
                     "limit": .object([
                         "type": .string("integer"),
-                        "description": .string("Max results (default: 25, max: 200)")
+                        "description": .string("Max results (default: 25, max: 200)"),
+                        "minimum": .int(1),
+                        "maximum": .int(200),
+                        "default": .int(25)
                     ]),
-                    "filter_roles": .object([
-                        "type": .string("string"),
-                        "description": .string("Filter by roles, comma-separated (e.g. ADMIN,DEVELOPER,APP_MANAGER,MARKETING,SALES,CUSTOMER_SUPPORT,FINANCE)")
+                    "filter_username": stringListSchema("Filter by one or more exact usernames"),
+                    "filter_roles": enumListSchema("Filter by one or more roles", values: UsersWorker.assignableRoles),
+                    "filter_visible_apps": stringListSchema("Filter by one or more related visible app IDs"),
+                    "sort": enumListSchema("Sort by username or last name; prefix with - for descending order", values: UsersWorker.userSortValues),
+                    "include": enumListSchema("Include related visible apps", values: UsersWorker.includeValues),
+                    "limit_visible_apps": .object([
+                        "type": .string("integer"),
+                        "description": .string("Maximum included visible apps per user (max: 50)"),
+                        "minimum": .int(1),
+                        "maximum": .int(50)
                     ]),
                     "next_url": .object([
                         "type": .string("string"),
@@ -40,9 +50,12 @@ extension UsersWorker {
                         "type": .string("string"),
                         "description": .string("User resource ID")
                     ]),
-                    "include": .object([
-                        "type": .string("string"),
-                        "description": .string("Related resources to include (e.g. visibleApps)")
+                    "include": enumListSchema("Related resources to include", values: UsersWorker.includeValues),
+                    "limit_visible_apps": .object([
+                        "type": .string("integer"),
+                        "description": .string("Maximum included visible apps (max: 50)"),
+                        "minimum": .int(1),
+                        "maximum": .int(50)
                     ])
                 ]),
                 "required": .array([.string("user_id")])
@@ -129,16 +142,26 @@ extension UsersWorker {
                     ]),
                     "roles": .object([
                         "type": .string("array"),
-                        "items": .object(["type": .string("string")]),
-                        "description": .string("Array of roles to assign (e.g. [\"DEVELOPER\"])")
+                        "items": .object([
+                            "type": .string("string"),
+                            "enum": .array(UsersWorker.assignableRoles.map(Value.string))
+                        ]),
+                        "minItems": .int(1),
+                        "uniqueItems": .bool(true),
+                        "description": .string("Roles to assign. ACCESS_TO_REPORTS is deprecated by Apple but remains accepted for backward compatibility.")
                     ]),
                     "all_apps_visible": .object([
                         "type": .string("boolean"),
                         "description": .string("Whether user can see all apps (default: true)")
                     ]),
+                    "provisioning_allowed": .object([
+                        "type": .string("boolean"),
+                        "description": .string("Whether the invited role can access provisioning on the Apple Developer website")
+                    ]),
                     "visible_app_ids": .object([
                         "type": .string("array"),
                         "items": .object(["type": .string("string")]),
+                        "uniqueItems": .bool(true),
                         "description": .string("Array of app IDs visible to user (when all_apps_visible is false)")
                     ])
                 ]),
@@ -173,7 +196,21 @@ extension UsersWorker {
                 "properties": .object([
                     "limit": .object([
                         "type": .string("integer"),
-                        "description": .string("Max results (default: 25, max: 200)")
+                        "description": .string("Max results (default: 25, max: 200)"),
+                        "minimum": .int(1),
+                        "maximum": .int(200),
+                        "default": .int(25)
+                    ]),
+                    "filter_email": stringListSchema("Filter by one or more exact email addresses"),
+                    "filter_roles": enumListSchema("Filter by one or more roles", values: UsersWorker.assignableRoles),
+                    "filter_visible_apps": stringListSchema("Filter by one or more related visible app IDs"),
+                    "sort": enumListSchema("Sort by email or last name; prefix with - for descending order", values: UsersWorker.invitationSortValues),
+                    "include": enumListSchema("Include related visible apps", values: UsersWorker.includeValues),
+                    "limit_visible_apps": .object([
+                        "type": .string("integer"),
+                        "description": .string("Maximum included visible apps per invitation (max: 50)"),
+                        "minimum": .int(1),
+                        "maximum": .int(50)
                     ]),
                     "next_url": .object([
                         "type": .string("string"),
@@ -224,6 +261,8 @@ extension UsersWorker {
                     "app_ids": .object([
                         "type": .string("array"),
                         "description": .string("Array of app IDs to grant access to"),
+                        "minItems": .int(1),
+                        "uniqueItems": .bool(true),
                         "items": .object([
                             "type": .string("string")
                         ])
@@ -248,6 +287,8 @@ extension UsersWorker {
                     "app_ids": .object([
                         "type": .string("array"),
                         "description": .string("Array of app IDs to remove access from"),
+                        "minItems": .int(1),
+                        "uniqueItems": .bool(true),
                         "items": .object([
                             "type": .string("string")
                         ])
@@ -256,5 +297,38 @@ extension UsersWorker {
                 "required": .array([.string("user_id"), .string("app_ids")])
             ])
         )
+    }
+
+    private func stringListSchema(_ description: String) -> Value {
+        .object([
+            "description": .string(description),
+            "oneOf": .array([
+                .object(["type": .string("string")]),
+                .object([
+                    "type": .string("array"),
+                    "items": .object(["type": .string("string")]),
+                    "minItems": .int(1),
+                    "uniqueItems": .bool(true)
+                ])
+            ])
+        ])
+    }
+
+    private func enumListSchema(_ description: String, values: [String]) -> Value {
+        .object([
+            "description": .string(description),
+            "oneOf": .array([
+                .object(["type": .string("string")]),
+                .object([
+                    "type": .string("array"),
+                    "items": .object([
+                        "type": .string("string"),
+                        "enum": .array(values.map(Value.string))
+                    ]),
+                    "minItems": .int(1),
+                    "uniqueItems": .bool(true)
+                ])
+            ])
+        ])
     }
 }

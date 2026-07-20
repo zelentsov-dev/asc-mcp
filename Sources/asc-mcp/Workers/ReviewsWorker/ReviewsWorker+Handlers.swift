@@ -10,6 +10,24 @@ import MCP
 
 extension ReviewsWorker {
 
+    private struct ReviewCollectionOptions {
+        let queryParameters: [String: String]
+        let requiredParameters: [String: String]
+    }
+
+    private struct ReviewLookupResponse: Codable, Sendable {
+        let data: CustomerReview
+    }
+
+    private struct ReviewExistenceResponse: Codable, Sendable {
+        let data: Resource
+
+        struct Resource: Codable, Sendable {
+            let id: String
+            let type: String
+        }
+    }
+
     private struct TerritoryAccumulator {
         var count = 0
         var ratingTotal = 0
@@ -26,6 +44,7 @@ extension ReviewsWorker {
     private func loadReviewStats(
         appId: String,
         territory: String?,
+        hasPublishedResponse: Bool?,
         startDate: Date?,
         now: Date
     ) async throws -> StreamedReviewStats {
@@ -36,6 +55,9 @@ extension ReviewsWorker {
         ]
         if let territory, territory != "all" {
             parameters["filter[territory]"] = territory
+        }
+        if let hasPublishedResponse {
+            parameters["exists[publishedResponse]"] = String(hasPublishedResponse)
         }
 
         var seenReviewIDs: Set<String> = []
@@ -49,7 +71,8 @@ extension ReviewsWorker {
         var ratingDistribution = Dictionary(uniqueKeysWithValues: (1...5).map { ($0, 0) })
         var territories: [String: TerritoryAccumulator] = [:]
         var nextURL: String?
-        let requiredParameters = parameters.filter { $0.key.hasPrefix("filter[") }
+        var requiredParameters = parameters
+        requiredParameters.removeValue(forKey: "limit")
         let scope = PaginationScope(path: endpoint, requiredParameters: requiredParameters)
 
         while true {
@@ -133,6 +156,170 @@ extension ReviewsWorker {
         )
     }
 
+    private func reviewCollectionOptions(arguments: [String: Value]) throws -> ReviewCollectionOptions {
+        let limit: Int
+        if let value = arguments["limit"] {
+            guard let parsed = value.intValue, (1...200).contains(parsed) else {
+                throw ASCError.parsing("limit must be an integer from 1 through 200")
+            }
+            limit = parsed
+        } else {
+            limit = 100
+        }
+
+        let sort = try reviewSort(arguments["sort"])
+
+        let ratings = try reviewRatings(arguments: arguments)
+        let territories = try reviewTerritories(arguments: arguments)
+        let includeResponse = try optionalBool(arguments["include_response"], name: "include_response")
+        let hasPublishedResponse = try optionalBool(
+            arguments["has_published_response"],
+            name: "has_published_response"
+        )
+
+        var query: [String: String] = [
+            "limit": String(limit),
+            "sort": sort.joined(separator: ",")
+        ]
+        if let ratings {
+            query["filter[rating]"] = ratings.map(String.init).joined(separator: ",")
+        }
+        if let territories {
+            query["filter[territory]"] = territories.joined(separator: ",")
+        }
+        if includeResponse == true {
+            query["include"] = "response"
+        }
+        if let hasPublishedResponse {
+            query["exists[publishedResponse]"] = String(hasPublishedResponse)
+        }
+
+        var required = query
+        required.removeValue(forKey: "limit")
+        return ReviewCollectionOptions(queryParameters: query, requiredParameters: required)
+    }
+
+    private func reviewSort(_ value: Value?) throws -> [String] {
+        guard let value else {
+            return ["-createdDate"]
+        }
+
+        let values: [String]
+        if let scalar = value.stringValue {
+            values = [scalar]
+        } else if let array = value.arrayValue {
+            let strings = array.compactMap(\.stringValue)
+            guard strings.count == array.count else {
+                throw ASCError.parsing("sort must be a string or an array containing only strings")
+            }
+            values = strings
+        } else {
+            throw ASCError.parsing("sort must be a string or an array of strings")
+        }
+
+        guard !values.isEmpty else {
+            throw ASCError.parsing("sort must contain at least one value")
+        }
+        guard values.allSatisfy({ value in
+            let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+            return !trimmed.isEmpty && trimmed == value
+        }) else {
+            throw ASCError.parsing("sort must contain only non-empty strings without surrounding whitespace")
+        }
+        guard Set(values).count == values.count else {
+            throw ASCError.parsing("sort must not contain duplicate values")
+        }
+        let allowedValues = Set(Self.supportedReviewSorts)
+        let unsupported = values.filter { !allowedValues.contains($0) }
+        guard unsupported.isEmpty else {
+            throw ASCError.parsing("Unsupported sort value(s): \(unsupported.joined(separator: ", "))")
+        }
+        return values
+    }
+
+    private func reviewRatings(arguments: [String: Value]) throws -> [Int]? {
+        if arguments["rating"] != nil, arguments["ratings"] != nil {
+            throw ASCError.parsing("Provide rating or ratings, not both")
+        }
+        if let value = arguments["rating"] {
+            guard let rating = value.intValue, (1...5).contains(rating) else {
+                throw ASCError.parsing("rating must be an integer from 1 through 5")
+            }
+            return [rating]
+        }
+        guard let value = arguments["ratings"] else {
+            return nil
+        }
+        guard let values = value.arrayValue, !values.isEmpty else {
+            throw ASCError.parsing("ratings must be a non-empty array")
+        }
+        let ratings = values.compactMap(\.intValue)
+        guard ratings.count == values.count, ratings.allSatisfy({ (1...5).contains($0) }) else {
+            throw ASCError.parsing("ratings must contain only integers from 1 through 5")
+        }
+        guard Set(ratings).count == ratings.count else {
+            throw ASCError.parsing("ratings must not contain duplicates")
+        }
+        return ratings
+    }
+
+    private func reviewTerritories(arguments: [String: Value]) throws -> [String]? {
+        if arguments["territory"] != nil, arguments["territories"] != nil {
+            throw ASCError.parsing("Provide territory or territories, not both")
+        }
+        if let value = arguments["territory"] {
+            guard let rawTerritory = value.stringValue,
+                  let territory = normalizedReviewTerritory(rawTerritory) else {
+                throw ASCError.parsing("territory must be a three-letter ISO 3166-1 alpha-3 code")
+            }
+            return [territory]
+        }
+        guard let value = arguments["territories"] else {
+            return nil
+        }
+        guard let values = value.arrayValue, !values.isEmpty else {
+            throw ASCError.parsing("territories must be a non-empty array")
+        }
+        let rawTerritories = values.compactMap(\.stringValue)
+        guard rawTerritories.count == values.count else {
+            throw ASCError.parsing("territories must contain only strings")
+        }
+        let territories = rawTerritories.compactMap(normalizedReviewTerritory)
+        guard territories.count == rawTerritories.count else {
+            throw ASCError.parsing("territories must contain only three-letter ISO 3166-1 alpha-3 codes")
+        }
+        guard Set(territories).count == territories.count else {
+            throw ASCError.parsing("territories must not contain duplicates")
+        }
+        return territories
+    }
+
+    private func normalizedReviewTerritory(_ value: String) -> String? {
+        let normalized = value.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
+        guard normalized.range(of: "^[A-Z]{3}$", options: .regularExpression) != nil else {
+            return nil
+        }
+        return normalized
+    }
+
+    private func optionalBool(_ value: Value?, name: String) throws -> Bool? {
+        guard let value else {
+            return nil
+        }
+        guard let result = value.boolValue else {
+            throw ASCError.parsing("\(name) must be a boolean")
+        }
+        return result
+    }
+
+    private func includedResponsesByID(_ response: ReviewsResponse) -> [String: CustomerReviewResponse] {
+        var responses: [String: CustomerReviewResponse] = [:]
+        for item in response.included ?? [] where item.type == "customerReviewResponses" {
+            responses[item.id] = item
+        }
+        return responses
+    }
+
     /// Lists customer reviews for an app with filtering and pagination
     /// - Returns: JSON with reviews array and pagination info
     func handleReviewsList(_ params: CallTool.Parameters) async throws -> CallTool.Result {
@@ -145,51 +332,27 @@ extension ReviewsWorker {
             )
         }
 
-        let limit = arguments["limit"]?.intValue ?? 100
-        let rating = arguments["rating"]?.intValue
-        let territory = arguments["territory"]?.stringValue
-        let sort = arguments["sort"]?.stringValue ?? "-createdDate"
-        let includeResponse = arguments["include_response"]?.boolValue ?? false
-
         do {
+            let options = try reviewCollectionOptions(arguments: arguments)
+            let endpoint = "/v1/apps/\(try ASCPathSegment.encode(appId))/customerReviews"
             let response: Data
-
-            var requiredParameters: [String: String] = [:]
-            if let rating {
-                requiredParameters["filter[rating]"] = String(rating)
-            }
-            if let territory {
-                requiredParameters["filter[territory]"] = territory
-            }
-
             if let nextUrl = try paginationURL(from: arguments["next_url"]) {
                 response = try await httpClient.getPage(
                     nextUrl,
                     scope: PaginationScope(
-                        path: "/v1/apps/\(try ASCPathSegment.encode(appId))/customerReviews",
-                        requiredParameters: requiredParameters
+                        path: endpoint,
+                        requiredParameters: options.requiredParameters
                     )
                 )
             } else {
-                var queryParams: [String: String] = [
-                    "limit": String(min(max(limit, 1), 200)),
-                    "sort": sort
-                ]
-                if let rating = rating {
-                    queryParams["filter[rating]"] = String(rating)
-                }
-                if let territory = territory {
-                    queryParams["filter[territory]"] = territory
-                }
-                if includeResponse {
-                    queryParams["include"] = "response"
-                }
-                response = try await httpClient.get("/v1/apps/\(try ASCPathSegment.encode(appId))/customerReviews", parameters: queryParams)
+                response = try await httpClient.get(endpoint, parameters: options.queryParameters)
             }
 
             let reviewsResponse = try parseReviewsResponse(data: response)
-
-            let reviews = reviewsResponse.data.map { formatReviewDict($0) }
+            let includedResponses = includedResponsesByID(reviewsResponse)
+            let reviews = reviewsResponse.data.map {
+                formatReviewDict($0, includedResponses: includedResponses)
+            }
             var result: [String: Any] = [
                 "success": true,
                 "reviews": reviews,
@@ -225,13 +388,9 @@ extension ReviewsWorker {
         }
 
         do {
-            struct SingleReviewResponse: Codable {
-                let data: CustomerReview
-            }
-
-            let reviewResponse: SingleReviewResponse = try await httpClient.get(
+            let reviewResponse: ReviewLookupResponse = try await httpClient.get(
                 "/v1/customerReviews/\(try ASCPathSegment.encode(reviewId))",
-                as: SingleReviewResponse.self
+                as: ReviewLookupResponse.self
             )
 
             let result: [String: Any] = [
@@ -261,51 +420,27 @@ extension ReviewsWorker {
             )
         }
 
-        let limit = arguments["limit"]?.intValue ?? 100
-        let rating = arguments["rating"]?.intValue
-        let territory = arguments["territory"]?.stringValue
-        let sort = arguments["sort"]?.stringValue ?? "-createdDate"
-        let includeResponse = arguments["include_response"]?.boolValue ?? false
-
         do {
+            let options = try reviewCollectionOptions(arguments: arguments)
+            let endpoint = "/v1/appStoreVersions/\(try ASCPathSegment.encode(versionId))/customerReviews"
             let response: Data
-
-            var requiredParameters: [String: String] = [:]
-            if let rating {
-                requiredParameters["filter[rating]"] = String(rating)
-            }
-            if let territory {
-                requiredParameters["filter[territory]"] = territory
-            }
-
             if let nextUrl = try paginationURL(from: arguments["next_url"]) {
                 response = try await httpClient.getPage(
                     nextUrl,
                     scope: PaginationScope(
-                        path: "/v1/appStoreVersions/\(try ASCPathSegment.encode(versionId))/customerReviews",
-                        requiredParameters: requiredParameters
+                        path: endpoint,
+                        requiredParameters: options.requiredParameters
                     )
                 )
             } else {
-                var queryParams: [String: String] = [
-                    "limit": String(min(max(limit, 1), 200)),
-                    "sort": sort
-                ]
-                if let rating = rating {
-                    queryParams["filter[rating]"] = String(rating)
-                }
-                if let territory = territory {
-                    queryParams["filter[territory]"] = territory
-                }
-                if includeResponse {
-                    queryParams["include"] = "response"
-                }
-                response = try await httpClient.get("/v1/appStoreVersions/\(try ASCPathSegment.encode(versionId))/customerReviews", parameters: queryParams)
+                response = try await httpClient.get(endpoint, parameters: options.queryParameters)
             }
 
             let reviewsResponse = try parseReviewsResponse(data: response)
-
-            let reviews = reviewsResponse.data.map { formatReviewDict($0) }
+            let includedResponses = includedResponsesByID(reviewsResponse)
+            let reviews = reviewsResponse.data.map {
+                formatReviewDict($0, includedResponses: includedResponses)
+            }
             var result: [String: Any] = [
                 "success": true,
                 "reviews": reviews,
@@ -355,7 +490,33 @@ extension ReviewsWorker {
                 isError: true
             )
         }
-        let territory = arguments["territory"]?.stringValue
+        let territory: String?
+        if let rawTerritory = arguments["territory"]?.stringValue {
+            if rawTerritory.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() == "all" {
+                territory = "all"
+            } else if let normalized = normalizedReviewTerritory(rawTerritory) {
+                territory = normalized
+            } else {
+                return CallTool.Result(
+                    content: [MCPContent.text("Error: territory must be 'all' or a three-letter ISO 3166-1 alpha-3 code")],
+                    isError: true
+                )
+            }
+        } else {
+            territory = nil
+        }
+        let hasPublishedResponse: Bool?
+        if let value = arguments["has_published_response"] {
+            guard let parsed = value.boolValue else {
+                return CallTool.Result(
+                    content: [MCPContent.text("Error: has_published_response must be a boolean")],
+                    isError: true
+                )
+            }
+            hasPublishedResponse = parsed
+        } else {
+            hasPublishedResponse = nil
+        }
         let now = Date()
         let startDate = reviewPeriodStart(for: period, now: now)
 
@@ -363,6 +524,7 @@ extension ReviewsWorker {
             let collection = try await loadReviewStats(
                 appId: appId,
                 territory: territory,
+                hasPublishedResponse: hasPublishedResponse,
                 startDate: startDate,
                 now: now
             )
@@ -396,6 +558,9 @@ extension ReviewsWorker {
 
             if let territory = territory {
                 result["territory"] = territory
+            }
+            if let hasPublishedResponse {
+                result["has_published_response"] = hasPublishedResponse
             }
 
             if let topTerritories = stats.topTerritories {
@@ -518,34 +683,48 @@ extension ReviewsWorker {
         }
 
         do {
-            struct ReviewWithResponseData: Codable {
-                let data: CustomerReview
-                let included: [CustomerReviewResponse]?
-            }
-
-            let reviewWithResponse: ReviewWithResponseData = try await httpClient.get(
-                "/v1/customerReviews/\(try ASCPathSegment.encode(reviewId))",
-                parameters: ["include": "response"],
-                as: ReviewWithResponseData.self
+            let responseData: ReviewResponseData = try await httpClient.get(
+                "/v1/customerReviews/\(try ASCPathSegment.encode(reviewId))/response",
+                as: ReviewResponseData.self
             )
-
-            guard let responseData = reviewWithResponse.included?.first else {
-                let result: [String: Any] = [
-                    "success": true,
-                    "has_response": false,
-                    "message": "No developer response found for this review"
-                ]
-                return MCPResult.jsonObject(result)
-            }
 
             let result: [String: Any] = [
                 "success": true,
                 "has_response": true,
-                "response": formatResponseDict(responseData)
+                "response": formatResponseDict(responseData.data)
             ]
 
             return MCPResult.jsonObject(result)
 
+        } catch let error as ASCError {
+            switch error {
+            case .api(_, 404), .apiResponse(_, 404):
+                do {
+                    let parent: ReviewExistenceResponse = try await httpClient.get(
+                        "/v1/customerReviews/\(try ASCPathSegment.encode(reviewId))",
+                        as: ReviewExistenceResponse.self
+                    )
+                    guard parent.data.id == reviewId,
+                          parent.data.type == "customerReviews" else {
+                        throw ASCError.parsing("Parent review lookup returned an unexpected resource")
+                    }
+                } catch {
+                    return CallTool.Result(
+                        content: [MCPContent.text("Error: Failed to verify review after response lookup returned 404: \(error.localizedDescription)")],
+                        isError: true
+                    )
+                }
+                return MCPResult.jsonObject([
+                    "success": true,
+                    "has_response": false,
+                    "message": "No developer response found for this review"
+                ])
+            default:
+                return CallTool.Result(
+                    content: [MCPContent.text("Error: Failed to get response: \(error.localizedDescription)")],
+                    isError: true
+                )
+            }
         } catch {
             return CallTool.Result(
                 content: [MCPContent.text("Error: Failed to get response: \(error.localizedDescription)")],
@@ -567,20 +746,45 @@ extension ReviewsWorker {
         }
 
         do {
-            var queryParams: [String: String] = [
-                "filter[platform]": arguments["platform"]?.stringValue ?? "IOS"
-            ]
-
-            if let limit = arguments["limit"]?.intValue {
-                queryParams["limit"] = String(min(max(limit, 1), 200))
+            let platform = arguments["platform"]?.stringValue ?? "IOS"
+            let allowedPlatforms: Set<String> = ["IOS", "MAC_OS", "TV_OS", "VISION_OS"]
+            guard allowedPlatforms.contains(platform) else {
+                throw ASCError.parsing("platform must be IOS, MAC_OS, TV_OS, or VISION_OS")
+            }
+            let limit: Int
+            if let value = arguments["limit"] {
+                guard let parsed = value.intValue, (1...200).contains(parsed) else {
+                    throw ASCError.parsing("limit must be an integer from 1 through 200")
+                }
+                limit = parsed
             } else {
-                queryParams["limit"] = "25"
+                limit = 25
             }
 
-            let responseData = try await httpClient.get(
-                "/v1/apps/\(try ASCPathSegment.encode(appId))/customerReviewSummarizations",
-                parameters: queryParams
-            )
+            let endpoint = "/v1/apps/\(try ASCPathSegment.encode(appId))/customerReviewSummarizations"
+            var queryParams: [String: String] = [
+                "filter[platform]": platform,
+                "limit": String(limit)
+            ]
+            if let rawTerritoryID = arguments["territory_id"]?.stringValue {
+                let territoryID = rawTerritoryID.trimmingCharacters(in: .whitespacesAndNewlines)
+                guard !territoryID.isEmpty else {
+                    throw ASCError.parsing("territory_id must not be empty")
+                }
+                queryParams["filter[territory]"] = territoryID
+            }
+
+            var requiredParameters = queryParams
+            requiredParameters.removeValue(forKey: "limit")
+            let responseData: Data
+            if let nextURL = try paginationURL(from: arguments["next_url"]) {
+                responseData = try await httpClient.getPage(
+                    nextURL,
+                    scope: PaginationScope(path: endpoint, requiredParameters: requiredParameters)
+                )
+            } else {
+                responseData = try await httpClient.get(endpoint, parameters: queryParams)
+            }
 
             let response = try JSONDecoder().decode(PassthroughAPIResponse.self, from: responseData)
 

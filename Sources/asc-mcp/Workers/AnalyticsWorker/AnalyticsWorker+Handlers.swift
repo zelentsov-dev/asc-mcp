@@ -63,6 +63,76 @@ extension AnalyticsWorker {
         return trimmed
     }
 
+    private static let analyticsAccessTypes: Set<String> = ["ONE_TIME_SNAPSHOT", "ONGOING"]
+    private static let analyticsCategories: Set<String> = [
+        "APP_USAGE", "APP_STORE_ENGAGEMENT", "COMMERCE", "FRAMEWORK_USAGE", "PERFORMANCE"
+    ]
+    private static let analyticsGranularities: Set<String> = ["DAILY", "WEEKLY", "MONTHLY"]
+
+    private static func collectionLimit(
+        _ value: Value?,
+        name: String = "limit",
+        maximum: Int = 200,
+        defaultValue: Int = 25
+    ) throws -> Int {
+        guard let value else {
+            return defaultValue
+        }
+        guard let limit = value.intValue, (1...maximum).contains(limit) else {
+            throw ASCError.parsing("\(name) must be an integer from 1 through \(maximum)")
+        }
+        return limit
+    }
+
+    private static func stringList(
+        _ value: Value?,
+        name: String,
+        allowedValues: Set<String>? = nil
+    ) throws -> [String]? {
+        guard let value else {
+            return nil
+        }
+        guard let values = value.arrayValue, !values.isEmpty else {
+            throw ASCError.parsing("\(name) must be a non-empty array")
+        }
+        let strings = values.compactMap(\.stringValue).map {
+            $0.trimmingCharacters(in: .whitespacesAndNewlines)
+        }
+        guard strings.count == values.count, strings.allSatisfy({ !$0.isEmpty }) else {
+            throw ASCError.parsing("\(name) must contain only non-empty strings")
+        }
+        guard Set(strings).count == strings.count else {
+            throw ASCError.parsing("\(name) must not contain duplicates")
+        }
+        if let allowedValues, !strings.allSatisfy({ allowedValues.contains($0) }) {
+            throw ASCError.parsing(
+                "\(name) contains an unsupported value; allowed values: \(allowedValues.sorted().joined(separator: ", "))"
+            )
+        }
+        return strings
+    }
+
+    private static func processingDates(_ value: Value?) throws -> [String]? {
+        guard let dates = try stringList(value, name: "processing_dates") else {
+            return nil
+        }
+        let normalized = dates.compactMap { reportDate($0) }
+        guard normalized.count == dates.count else {
+            throw ASCError.parsing("processing_dates must contain only real dates in YYYY-MM-DD format")
+        }
+        return normalized
+    }
+
+    private static func optionalBool(_ value: Value?, name: String) throws -> Bool? {
+        guard let value else {
+            return nil
+        }
+        guard let result = value.boolValue else {
+            throw ASCError.parsing("\(name) must be a boolean")
+        }
+        return result
+    }
+
     private static func allowedReportVersions(
         reportType: String,
         reportSubType: String,
@@ -459,27 +529,55 @@ extension AnalyticsWorker {
         }
 
         do {
+            let endpoint = "/v1/apps/\(try ASCPathSegment.encode(appId))/analyticsReportRequests"
+            let limit = try Self.collectionLimit(arguments["limit"])
+            let accessTypes = try Self.stringList(
+                arguments["access_types"],
+                name: "access_types",
+                allowedValues: Self.analyticsAccessTypes
+            )
+            let includeReports = try Self.optionalBool(
+                arguments["include_reports"],
+                name: "include_reports"
+            ) ?? false
+            let limitReports: Int?
+            if arguments["limit_reports"] != nil {
+                guard includeReports else {
+                    throw ASCError.parsing("limit_reports requires include_reports=true")
+                }
+                limitReports = try Self.collectionLimit(
+                    arguments["limit_reports"],
+                    name: "limit_reports",
+                    maximum: 50,
+                    defaultValue: 50
+                )
+            } else {
+                limitReports = nil
+            }
+
+            var queryParams: [String: String] = ["limit": String(limit)]
+            if let accessTypes {
+                queryParams["filter[accessType]"] = accessTypes.joined(separator: ",")
+            }
+            if includeReports {
+                queryParams["include"] = "reports"
+            }
+            if let limitReports {
+                queryParams["limit[reports]"] = String(limitReports)
+            }
+            var requiredParameters = queryParams
+            requiredParameters.removeValue(forKey: "limit")
             let response: ASCAnalyticsReportRequestsResponse
 
-            // Check for pagination URL
             if let nextUrl = try paginationURL(from: arguments["next_url"]) {
                 response = try await httpClient.getPage(
                     nextUrl,
-                    scope: PaginationScope(path: "/v1/apps/\(try ASCPathSegment.encode(appId))/analyticsReportRequests"),
+                    scope: PaginationScope(path: endpoint, requiredParameters: requiredParameters),
                     as: ASCAnalyticsReportRequestsResponse.self
                 )
             } else {
-                var queryParams: [String: String] = [:]
-
-                if let limitValue = arguments["limit"],
-                   let limit = limitValue.intValue {
-                    queryParams["limit"] = String(min(max(limit, 1), 200))
-                } else {
-                    queryParams["limit"] = "25"
-                }
-
                 response = try await httpClient.get(
-                    "/v1/apps/\(try ASCPathSegment.encode(appId))/analyticsReportRequests",
+                    endpoint,
                     parameters: queryParams,
                     as: ASCAnalyticsReportRequestsResponse.self
                 )
@@ -495,6 +593,12 @@ extension AnalyticsWorker {
 
             if let nextUrl = response.links?.next {
                 result["next_url"] = nextUrl
+            }
+            if let total = response.meta?.paging?.total {
+                result["total"] = total
+            }
+            if let included = response.included {
+                result["included_reports"] = included.map { formatReport($0) }
             }
 
             return MCPResult.jsonObject(result)
@@ -573,25 +677,34 @@ extension AnalyticsWorker {
         }
 
         do {
+            let endpoint = "/v1/analyticsReportRequests/\(try ASCPathSegment.encode(requestId))/reports"
+            let limit = try Self.collectionLimit(arguments["limit"])
+            let names = try Self.stringList(arguments["names"], name: "names")
+            let categories = try Self.stringList(
+                arguments["categories"],
+                name: "categories",
+                allowedValues: Self.analyticsCategories
+            )
+            var queryParams: [String: String] = ["limit": String(limit)]
+            if let names {
+                queryParams["filter[name]"] = names.joined(separator: ",")
+            }
+            if let categories {
+                queryParams["filter[category]"] = categories.joined(separator: ",")
+            }
+            var requiredParameters = queryParams
+            requiredParameters.removeValue(forKey: "limit")
             let response: ASCAnalyticsReportsResponse
 
             if let nextUrl = try paginationURL(from: arguments["next_url"]) {
                 response = try await httpClient.getPage(
                     nextUrl,
-                    scope: PaginationScope(path: "/v1/analyticsReportRequests/\(try ASCPathSegment.encode(requestId))/reports"),
+                    scope: PaginationScope(path: endpoint, requiredParameters: requiredParameters),
                     as: ASCAnalyticsReportsResponse.self
                 )
             } else {
-                var queryParams: [String: String] = [:]
-
-                if let limit = arguments["limit"]?.intValue {
-                    queryParams["limit"] = String(min(max(limit, 1), 200))
-                } else {
-                    queryParams["limit"] = "25"
-                }
-
                 response = try await httpClient.get(
-                    "/v1/analyticsReportRequests/\(try ASCPathSegment.encode(requestId))/reports",
+                    endpoint,
                     parameters: queryParams,
                     as: ASCAnalyticsReportsResponse.self
                 )
@@ -607,6 +720,9 @@ extension AnalyticsWorker {
 
             if let nextUrl = response.links?.next {
                 result["next_url"] = nextUrl
+            }
+            if let total = response.meta?.paging?.total {
+                result["total"] = total
             }
 
             return MCPResult.jsonObject(result)
@@ -666,25 +782,34 @@ extension AnalyticsWorker {
         }
 
         do {
+            let endpoint = "/v1/analyticsReports/\(try ASCPathSegment.encode(reportId))/instances"
+            let limit = try Self.collectionLimit(arguments["limit"])
+            let granularities = try Self.stringList(
+                arguments["granularities"],
+                name: "granularities",
+                allowedValues: Self.analyticsGranularities
+            )
+            let processingDates = try Self.processingDates(arguments["processing_dates"])
+            var queryParams: [String: String] = ["limit": String(limit)]
+            if let granularities {
+                queryParams["filter[granularity]"] = granularities.joined(separator: ",")
+            }
+            if let processingDates {
+                queryParams["filter[processingDate]"] = processingDates.joined(separator: ",")
+            }
+            var requiredParameters = queryParams
+            requiredParameters.removeValue(forKey: "limit")
             let response: ASCAnalyticsReportInstancesResponse
 
             if let nextUrl = try paginationURL(from: arguments["next_url"]) {
                 response = try await httpClient.getPage(
                     nextUrl,
-                    scope: PaginationScope(path: "/v1/analyticsReports/\(try ASCPathSegment.encode(reportId))/instances"),
+                    scope: PaginationScope(path: endpoint, requiredParameters: requiredParameters),
                     as: ASCAnalyticsReportInstancesResponse.self
                 )
             } else {
-                var queryParams: [String: String] = [:]
-
-                if let limit = arguments["limit"]?.intValue {
-                    queryParams["limit"] = String(min(max(limit, 1), 200))
-                } else {
-                    queryParams["limit"] = "25"
-                }
-
                 response = try await httpClient.get(
-                    "/v1/analyticsReports/\(try ASCPathSegment.encode(reportId))/instances",
+                    endpoint,
                     parameters: queryParams,
                     as: ASCAnalyticsReportInstancesResponse.self
                 )
@@ -700,6 +825,9 @@ extension AnalyticsWorker {
 
             if let nextUrl = response.links?.next {
                 result["next_url"] = nextUrl
+            }
+            if let total = response.meta?.paging?.total {
+                result["total"] = total
             }
 
             return MCPResult.jsonObject(result)
@@ -759,25 +887,19 @@ extension AnalyticsWorker {
         }
 
         do {
+            let endpoint = "/v1/analyticsReportInstances/\(try ASCPathSegment.encode(instanceId))/segments"
+            let queryParams = ["limit": String(try Self.collectionLimit(arguments["limit"]))]
             let response: ASCAnalyticsReportSegmentsResponse
 
             if let nextUrl = try paginationURL(from: arguments["next_url"]) {
                 response = try await httpClient.getPage(
                     nextUrl,
-                    scope: PaginationScope(path: "/v1/analyticsReportInstances/\(try ASCPathSegment.encode(instanceId))/segments"),
+                    scope: PaginationScope(path: endpoint),
                     as: ASCAnalyticsReportSegmentsResponse.self
                 )
             } else {
-                var queryParams: [String: String] = [:]
-
-                if let limit = arguments["limit"]?.intValue {
-                    queryParams["limit"] = String(min(max(limit, 1), 200))
-                } else {
-                    queryParams["limit"] = "25"
-                }
-
                 response = try await httpClient.get(
-                    "/v1/analyticsReportInstances/\(try ASCPathSegment.encode(instanceId))/segments",
+                    endpoint,
                     parameters: queryParams,
                     as: ASCAnalyticsReportSegmentsResponse.self
                 )
@@ -793,6 +915,9 @@ extension AnalyticsWorker {
 
             if let nextUrl = response.links?.next {
                 result["next_url"] = nextUrl
+            }
+            if let total = response.meta?.paging?.total {
+                result["total"] = total
             }
 
             return MCPResult.jsonObject(result)
@@ -819,13 +944,54 @@ extension AnalyticsWorker {
             )
         }
 
-        let categoryFilter = arguments["category"]?.stringValue
+        let categoryFilter: String?
+        if let categoryValue = arguments["category"] {
+            guard let category = categoryValue.stringValue else {
+                return CallTool.Result(
+                    content: [MCPContent.text("Invalid category: value must be a string")],
+                    isError: true
+                )
+            }
+            guard Self.analyticsCategories.contains(category) else {
+                return CallTool.Result(
+                    content: [MCPContent.text("Unsupported category '\(category)'")],
+                    isError: true
+                )
+            }
+            categoryFilter = category
+        } else {
+            categoryFilter = nil
+        }
+        let nameFilter: String?
+        if let nameValue = arguments["name"] {
+            guard let rawName = nameValue.stringValue,
+                  let name = Self.nonEmptyIdentifier(rawName) else {
+                return CallTool.Result(
+                    content: [MCPContent.text("Invalid name: value must be a non-empty string")],
+                    isError: true
+                )
+            }
+            nameFilter = name
+        } else {
+            nameFilter = nil
+        }
 
         do {
-            // Fetch all reports for this request (paginated)
             var allReports: [ASCAnalyticsReport] = []
             let reportsPath = "/v1/analyticsReportRequests/\(try ASCPathSegment.encode(requestId))/reports"
-            let reportsScope = PaginationScope(path: reportsPath)
+            var reportsQuery: [String: String] = ["limit": "200"]
+            if let categoryFilter {
+                reportsQuery["filter[category]"] = categoryFilter
+            }
+            if let nameFilter {
+                reportsQuery["filter[name]"] = nameFilter
+            }
+            var reportsRequiredParameters = reportsQuery
+            reportsRequiredParameters.removeValue(forKey: "limit")
+            let reportsScope = PaginationScope(
+                path: reportsPath,
+                requiredParameters: reportsRequiredParameters
+            )
             var nextURL: String?
             var seenNextURLs: Set<String> = []
 
@@ -840,7 +1006,7 @@ extension AnalyticsWorker {
                 } else {
                     response = try await httpClient.get(
                         reportsPath,
-                        parameters: ["limit": "200"],
+                        parameters: reportsQuery,
                         as: ASCAnalyticsReportsResponse.self
                     )
                 }
@@ -853,15 +1019,12 @@ extension AnalyticsWorker {
                 nextURL = next
             }
 
-            // Filter by category if specified
-            let filteredReports: [ASCAnalyticsReport]
-            if let category = categoryFilter {
-                filteredReports = allReports.filter { $0.attributes?.category == category }
-            } else {
-                filteredReports = allReports
+            let filteredReports = allReports.filter { report in
+                let categoryMatches = categoryFilter == nil || report.attributes?.category == categoryFilter
+                let nameMatches = nameFilter == nil || report.attributes?.name == nameFilter
+                return categoryMatches && nameMatches
             }
 
-            // Check instances for each report
             var readyCount = 0
             var pendingCount = 0
             var reportDetails: [[String: Any]] = []
@@ -890,7 +1053,6 @@ extension AnalyticsWorker {
                     "instances_count": instancesCount
                 ]
 
-                // Include first instance processing date if available
                 if let firstInstance = instancesResponse.data.first,
                    let processingDate = firstInstance.attributes?.processingDate {
                     detail["latest_processing_date"] = processingDate
@@ -910,6 +1072,9 @@ extension AnalyticsWorker {
 
             if let category = categoryFilter {
                 result["category_filter"] = category
+            }
+            if let nameFilter {
+                result["name_filter"] = nameFilter
             }
 
             return MCPResult.jsonObject(result)
@@ -961,6 +1126,12 @@ extension AnalyticsWorker {
         }
         if let stoppedDueToInactivity = request.attributes?.stoppedDueToInactivity {
             dict["stopped_due_to_inactivity"] = stoppedDueToInactivity
+        }
+        if let reportIDs = request.relationships?.reports?.data?.map(\.id) {
+            dict["report_ids"] = reportIDs
+        }
+        if let reportsTotal = request.relationships?.reports?.meta?.paging?.total {
+            dict["reports_total"] = reportsTotal
         }
         return dict
     }

@@ -12,7 +12,9 @@ import Foundation
 /// Response containing a list of analytics report requests
 public struct ASCAnalyticsReportRequestsResponse: Codable, Sendable {
     public let data: [ASCAnalyticsReportRequest]
+    public let included: [ASCAnalyticsReport]?
     public let links: ASCPagedDocumentLinks?
+    public let meta: ASCPagingInformation?
 }
 
 /// Response containing a single analytics report request
@@ -25,12 +27,25 @@ public struct ASCAnalyticsReportRequest: Codable, Sendable {
     public let type: String
     public let id: String
     public let attributes: AnalyticsReportRequestAttributes?
+    public let relationships: AnalyticsReportRequestRelationships?
 }
 
 /// Attributes for an analytics report request
 public struct AnalyticsReportRequestAttributes: Codable, Sendable {
     public let accessType: String?
     public let stoppedDueToInactivity: Bool?
+}
+
+/// Relationships exposed by an analytics report request
+public struct AnalyticsReportRequestRelationships: Codable, Sendable {
+    public let reports: AnalyticsReportsRelationship?
+}
+
+/// Analytics reports relationship data, links, and pagination metadata
+public struct AnalyticsReportsRelationship: Codable, Sendable {
+    public let data: [ASCResourceIdentifier]?
+    public let links: ASCRelationshipLinks?
+    public let meta: ASCPagingInformation?
 }
 
 // MARK: - Create Analytics Report Request
@@ -64,6 +79,7 @@ public struct CreateAnalyticsReportRequestRequest: Codable, Sendable {
 public struct ASCAnalyticsReportsResponse: Codable, Sendable {
     public let data: [ASCAnalyticsReport]
     public let links: ASCPagedDocumentLinks?
+    public let meta: ASCPagingInformation?
 }
 
 /// Response containing a single analytics report
@@ -90,6 +106,7 @@ public struct AnalyticsReportAttributes: Codable, Sendable {
 public struct ASCAnalyticsReportInstancesResponse: Codable, Sendable {
     public let data: [ASCAnalyticsReportInstance]
     public let links: ASCPagedDocumentLinks?
+    public let meta: ASCPagingInformation?
 }
 
 /// Response containing a single analytics report instance
@@ -116,6 +133,7 @@ public struct AnalyticsReportInstanceAttributes: Codable, Sendable {
 public struct ASCAnalyticsReportSegmentsResponse: Codable, Sendable {
     public let data: [ASCAnalyticsReportSegment]
     public let links: ASCPagedDocumentLinks?
+    public let meta: ASCPagingInformation?
 }
 
 /// Analytics report segment resource

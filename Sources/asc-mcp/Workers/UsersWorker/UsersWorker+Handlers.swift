@@ -11,18 +11,44 @@ extension UsersWorker {
 
         do {
             let response: ASCUsersResponse
-            var queryParams: [String: String] = [:]
-
-            if let limitValue = arguments?["limit"],
-               let limit = limitValue.intValue {
-                queryParams["limit"] = String(min(max(limit, 1), 200))
-            } else {
-                queryParams["limit"] = "25"
-            }
-
-            if let rolesValue = arguments?["filter_roles"],
-               let roles = rolesValue.stringValue {
-                queryParams["filter[roles]"] = roles
+            let limit = try boundedInteger(
+                arguments?["limit"],
+                name: "limit",
+                range: 1...200,
+                defaultValue: 25
+            ) ?? 25
+            var queryParams: [String: String] = [
+                "limit": String(limit)
+            ]
+            queryParams["filter[username]"] = try commaSeparated(
+                arguments?["filter_username"],
+                name: "filter_username"
+            )
+            queryParams["filter[roles]"] = try commaSeparated(
+                arguments?["filter_roles"],
+                name: "filter_roles",
+                allowedValues: Set(UsersWorker.assignableRoles)
+            )
+            queryParams["filter[visibleApps]"] = try commaSeparated(
+                arguments?["filter_visible_apps"],
+                name: "filter_visible_apps"
+            )
+            queryParams["sort"] = try commaSeparated(
+                arguments?["sort"],
+                name: "sort",
+                allowedValues: Set(UsersWorker.userSortValues)
+            )
+            queryParams["include"] = try commaSeparated(
+                arguments?["include"],
+                name: "include",
+                allowedValues: Set(UsersWorker.includeValues)
+            )
+            if let includedLimit = try boundedInteger(
+                arguments?["limit_visible_apps"],
+                name: "limit_visible_apps",
+                range: 1...50
+            ) {
+                queryParams["limit[visibleApps]"] = String(includedLimit)
             }
 
             if let nextUrl = try paginationURL(from: arguments?["next_url"]) {
@@ -54,6 +80,10 @@ extension UsersWorker {
             if let next = response.links?.next {
                 result["next_url"] = next
             }
+            if let total = response.meta?.paging?.total {
+                result["total"] = total
+            }
+            appendIncluded(response.included, to: &result)
 
             return MCPResult.jsonObject(result)
 
@@ -79,10 +109,17 @@ extension UsersWorker {
 
         do {
             var queryParams: [String: String] = [:]
-
-            if let includeValue = arguments["include"],
-               let include = includeValue.stringValue {
-                queryParams["include"] = include
+            queryParams["include"] = try commaSeparated(
+                arguments["include"],
+                name: "include",
+                allowedValues: Set(UsersWorker.includeValues)
+            )
+            if let includedLimit = try boundedInteger(
+                arguments["limit_visible_apps"],
+                name: "limit_visible_apps",
+                range: 1...50
+            ) {
+                queryParams["limit[visibleApps]"] = String(includedLimit)
             }
 
             let response: ASCUserResponse = try await httpClient.get(
@@ -93,10 +130,11 @@ extension UsersWorker {
 
             let user = formatUser(response.data)
 
-            let result = [
+            var result = [
                 "success": true,
                 "user": user
             ] as [String: Any]
+            appendIncluded(response.included, to: &result)
 
             return MCPResult.jsonObject(result)
 
@@ -119,23 +157,16 @@ extension UsersWorker {
 
         let roles: [String]?
         if let rolesValue = arguments["roles"] {
-            guard let rolesArray = rolesValue.arrayValue else {
-                return MCPResult.error("'roles' must be an array of strings")
-            }
-            let parsedRoles = rolesArray.compactMap(\.stringValue)
-            guard parsedRoles.count == rolesArray.count, !parsedRoles.isEmpty else {
-                return MCPResult.error("'roles' must contain at least one string role")
-            }
-            guard Set(parsedRoles).count == parsedRoles.count else {
-                return MCPResult.error("'roles' must not contain duplicate values")
-            }
-            let invalidRoles = parsedRoles.filter { !UsersWorker.assignableRoles.contains($0) }
-            guard invalidRoles.isEmpty else {
-                return MCPResult.error(
-                    "Unsupported role(s): \(invalidRoles.joined(separator: ", ")). Valid roles: \(UsersWorker.assignableRoles.joined(separator: ", "))"
+            do {
+                roles = try validatedStringArray(
+                    rolesValue,
+                    name: "roles",
+                    allowEmpty: false,
+                    allowedValues: Set(UsersWorker.assignableRoles)
                 )
+            } catch {
+                return MCPResult.error(error.localizedDescription)
             }
-            roles = parsedRoles
         } else {
             roles = nil
         }
@@ -162,17 +193,15 @@ extension UsersWorker {
 
         let visibleAppIds: [String]?
         if let value = arguments["visible_app_ids"] {
-            guard let array = value.arrayValue else {
-                return MCPResult.error("'visible_app_ids' must be an array of strings")
+            do {
+                visibleAppIds = try validatedStringArray(
+                    value,
+                    name: "visible_app_ids",
+                    allowEmpty: true
+                )
+            } catch {
+                return MCPResult.error(error.localizedDescription)
             }
-            let parsed = array.compactMap(\.stringValue)
-            guard parsed.count == array.count, parsed.allSatisfy({ !$0.isEmpty }) else {
-                return MCPResult.error("'visible_app_ids' must contain only non-empty string IDs")
-            }
-            guard Set(parsed).count == parsed.count else {
-                return MCPResult.error("'visible_app_ids' must not contain duplicate values")
-            }
-            visibleAppIds = parsed
         } else {
             visibleAppIds = nil
         }
@@ -221,6 +250,7 @@ extension UsersWorker {
                     "ACCESS_TO_REPORTS is deprecated by Apple and remains accepted only for backward compatibility."
                 ]
             }
+            appendIncluded(response.included, to: &result)
 
             return MCPResult.jsonObject(result)
 
@@ -272,37 +302,52 @@ extension UsersWorker {
               let firstName = firstNameValue.stringValue,
               let lastNameValue = arguments["last_name"],
               let lastName = lastNameValue.stringValue,
-              let rolesValue = arguments["roles"],
-              let rolesArray = rolesValue.arrayValue else {
+              let rolesValue = arguments["roles"] else {
             return CallTool.Result(
                 content: [MCPContent.text("Required parameters: email, first_name, last_name, roles")],
                 isError: true
             )
         }
 
-        let roles = rolesArray.compactMap { $0.stringValue }
-        guard !roles.isEmpty else {
-            return CallTool.Result(
-                content: [MCPContent.text("'roles' must contain at least one role")],
-                isError: true
+        let roles: [String]
+        let allAppsVisible: Bool
+        let provisioningAllowed: Bool?
+        let visibleAppIds: [String]?
+        do {
+            roles = try validatedStringArray(
+                rolesValue,
+                name: "roles",
+                allowEmpty: false,
+                allowedValues: Set(UsersWorker.assignableRoles)
             )
+            allAppsVisible = try optionalBool(
+                arguments["all_apps_visible"],
+                name: "all_apps_visible"
+            ) ?? true
+            provisioningAllowed = try optionalBool(
+                arguments["provisioning_allowed"],
+                name: "provisioning_allowed"
+            )
+            if let value = arguments["visible_app_ids"] {
+                visibleAppIds = try validatedStringArray(
+                    value,
+                    name: "visible_app_ids",
+                    allowEmpty: true
+                )
+            } else {
+                visibleAppIds = nil
+            }
+        } catch {
+            return MCPResult.error(error.localizedDescription)
         }
 
         do {
-            let allAppsVisible = arguments["all_apps_visible"]?.boolValue ?? true
-
-            var relationships: CreateUserInvitationRequest.CreateUserInvitationRelationships? = nil
-
-            if let visibleAppIdsValue = arguments["visible_app_ids"],
-               let visibleAppIdsArray = visibleAppIdsValue.arrayValue {
-                let appIds = visibleAppIdsArray.compactMap { $0.stringValue }
-                if !appIds.isEmpty {
-                    relationships = CreateUserInvitationRequest.CreateUserInvitationRelationships(
-                        visibleApps: CreateUserInvitationRequest.VisibleAppsRelationship(
-                            data: appIds.map { ASCResourceIdentifier(type: "apps", id: $0) }
-                        )
+            let relationships = visibleAppIds.map { appIds in
+                CreateUserInvitationRequest.CreateUserInvitationRelationships(
+                    visibleApps: CreateUserInvitationRequest.VisibleAppsRelationship(
+                        data: appIds.map { ASCResourceIdentifier(type: "apps", id: $0) }
                     )
-                }
+                )
             }
 
             let request = CreateUserInvitationRequest(
@@ -313,7 +358,7 @@ extension UsersWorker {
                         lastName: lastName,
                         roles: roles,
                         allAppsVisible: allAppsVisible,
-                        provisioningAllowed: nil
+                        provisioningAllowed: provisioningAllowed
                     ),
                     relationships: relationships
                 )
@@ -327,10 +372,16 @@ extension UsersWorker {
 
             let invitation = formatInvitation(response.data)
 
-            let result = [
+            var result = [
                 "success": true,
                 "invitation": invitation
             ] as [String: Any]
+            if !UsersWorker.deprecatedRoles.isDisjoint(with: roles) {
+                result["warnings"] = [
+                    "ACCESS_TO_REPORTS is deprecated by Apple and remains accepted only for backward compatibility."
+                ]
+            }
+            appendIncluded(response.included, to: &result)
 
             return MCPResult.jsonObject(result)
 
@@ -349,23 +400,58 @@ extension UsersWorker {
 
         do {
             let response: ASCUserInvitationsResponse
+            let limit = try boundedInteger(
+                arguments?["limit"],
+                name: "limit",
+                range: 1...200,
+                defaultValue: 25
+            ) ?? 25
+            var queryParams: [String: String] = [
+                "limit": String(limit)
+            ]
+            queryParams["filter[email]"] = try commaSeparated(
+                arguments?["filter_email"],
+                name: "filter_email"
+            )
+            queryParams["filter[roles]"] = try commaSeparated(
+                arguments?["filter_roles"],
+                name: "filter_roles",
+                allowedValues: Set(UsersWorker.assignableRoles)
+            )
+            queryParams["filter[visibleApps]"] = try commaSeparated(
+                arguments?["filter_visible_apps"],
+                name: "filter_visible_apps"
+            )
+            queryParams["sort"] = try commaSeparated(
+                arguments?["sort"],
+                name: "sort",
+                allowedValues: Set(UsersWorker.invitationSortValues)
+            )
+            queryParams["include"] = try commaSeparated(
+                arguments?["include"],
+                name: "include",
+                allowedValues: Set(UsersWorker.includeValues)
+            )
+            if let includedLimit = try boundedInteger(
+                arguments?["limit_visible_apps"],
+                name: "limit_visible_apps",
+                range: 1...50
+            ) {
+                queryParams["limit[visibleApps]"] = String(includedLimit)
+            }
 
             if let nextUrl = try paginationURL(from: arguments?["next_url"]) {
+                var requiredParameters = queryParams
+                requiredParameters.removeValue(forKey: "limit")
                 response = try await httpClient.getPage(
                     nextUrl,
-                    scope: PaginationScope(path: "/v1/userInvitations"),
+                    scope: PaginationScope(
+                        path: "/v1/userInvitations",
+                        requiredParameters: requiredParameters
+                    ),
                     as: ASCUserInvitationsResponse.self
                 )
             } else {
-                var queryParams: [String: String] = [:]
-
-                if let limitValue = arguments?["limit"],
-                   let limit = limitValue.intValue {
-                    queryParams["limit"] = String(min(max(limit, 1), 200))
-                } else {
-                    queryParams["limit"] = "25"
-                }
-
                 response = try await httpClient.get(
                     "/v1/userInvitations",
                     parameters: queryParams,
@@ -383,6 +469,10 @@ extension UsersWorker {
             if let next = response.links?.next {
                 result["next_url"] = next
             }
+            if let total = response.meta?.paging?.total {
+                result["total"] = total
+            }
+            appendIncluded(response.included, to: &result)
 
             return MCPResult.jsonObject(result)
 
@@ -489,20 +579,22 @@ extension UsersWorker {
         guard let arguments = params.arguments,
               let idValue = arguments["user_id"],
               let userId = idValue.stringValue,
-              let appIdsValue = arguments["app_ids"],
-              let appIdsArray = appIdsValue.arrayValue else {
+              let appIdsValue = arguments["app_ids"] else {
             return CallTool.Result(
                 content: [MCPContent.text("Required parameters: user_id, app_ids")],
                 isError: true
             )
         }
 
-        let appIds = appIdsArray.compactMap { $0.stringValue }
-        guard !appIds.isEmpty else {
-            return CallTool.Result(
-                content: [MCPContent.text("'app_ids' must contain at least one app ID")],
-                isError: true
+        let appIds: [String]
+        do {
+            appIds = try validatedStringArray(
+                appIdsValue,
+                name: "app_ids",
+                allowEmpty: false
             )
+        } catch {
+            return MCPResult.error(error.localizedDescription)
         }
 
         do {
@@ -537,20 +629,22 @@ extension UsersWorker {
         guard let arguments = params.arguments,
               let idValue = arguments["user_id"],
               let userId = idValue.stringValue,
-              let appIdsValue = arguments["app_ids"],
-              let appIdsArray = appIdsValue.arrayValue else {
+              let appIdsValue = arguments["app_ids"] else {
             return CallTool.Result(
                 content: [MCPContent.text("Required parameters: user_id, app_ids")],
                 isError: true
             )
         }
 
-        let appIds = appIdsArray.compactMap { $0.stringValue }
-        guard !appIds.isEmpty else {
-            return CallTool.Result(
-                content: [MCPContent.text("'app_ids' must contain at least one app ID")],
-                isError: true
+        let appIds: [String]
+        do {
+            appIds = try validatedStringArray(
+                appIdsValue,
+                name: "app_ids",
+                allowEmpty: false
             )
+        } catch {
+            return MCPResult.error(error.localizedDescription)
         }
 
         do {
@@ -591,7 +685,7 @@ extension UsersWorker {
             "roles": (user.attributes?.roles).jsonSafe,
             "allAppsVisible": (user.attributes?.allAppsVisible).jsonSafe,
             "provisioningAllowed": (user.attributes?.provisioningAllowed).jsonSafe,
-            "expirationDate": (user.attributes?.expirationDate).jsonSafe
+            "visibleAppIds": (user.relationships?.visibleApps?.data?.map(\.id)).jsonSafe
         ]
     }
 
@@ -615,7 +709,131 @@ extension UsersWorker {
             "lastName": (invitation.attributes?.lastName).jsonSafe,
             "roles": (invitation.attributes?.roles).jsonSafe,
             "allAppsVisible": (invitation.attributes?.allAppsVisible).jsonSafe,
-            "expirationDate": (invitation.attributes?.expirationDate).jsonSafe
+            "provisioningAllowed": (invitation.attributes?.provisioningAllowed).jsonSafe,
+            "expirationDate": (invitation.attributes?.expirationDate).jsonSafe,
+            "visibleAppIds": (invitation.relationships?.visibleApps?.data?.map(\.id)).jsonSafe
         ]
+    }
+
+    private func appendIncluded(_ included: [JSONValue]?, to result: inout [String: Any]) {
+        if let included, !included.isEmpty {
+            result["included"] = included.map(\.asAny)
+        }
+    }
+
+    private func boundedInteger(
+        _ value: Value?,
+        name: String,
+        range: ClosedRange<Int>,
+        defaultValue: Int? = nil
+    ) throws -> Int? {
+        guard let value else {
+            return defaultValue
+        }
+        guard let integer = value.intValue, range.contains(integer) else {
+            throw UsersInputValidationError("'\(name)' must be an integer from \(range.lowerBound) through \(range.upperBound)")
+        }
+        return integer
+    }
+
+    private func optionalBool(_ value: Value?, name: String) throws -> Bool? {
+        guard let value else {
+            return nil
+        }
+        guard let boolean = value.boolValue else {
+            throw UsersInputValidationError("'\(name)' must be a boolean")
+        }
+        return boolean
+    }
+
+    private func commaSeparated(
+        _ value: Value?,
+        name: String,
+        allowedValues: Set<String>? = nil
+    ) throws -> String? {
+        guard let value else {
+            return nil
+        }
+
+        let values: [String]
+        if let string = value.stringValue {
+            values = string.split(separator: ",", omittingEmptySubsequences: false).map {
+                $0.trimmingCharacters(in: .whitespacesAndNewlines)
+            }
+        } else if let array = value.arrayValue {
+            let strings = array.compactMap(\.stringValue)
+            guard strings.count == array.count else {
+                throw UsersInputValidationError("'\(name)' must be a string or an array of strings")
+            }
+            values = strings.map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+        } else {
+            throw UsersInputValidationError("'\(name)' must be a string or an array of strings")
+        }
+
+        guard !values.isEmpty, values.allSatisfy({ !$0.isEmpty }) else {
+            throw UsersInputValidationError("'\(name)' must contain at least one non-empty value")
+        }
+        guard Set(values).count == values.count else {
+            throw UsersInputValidationError("'\(name)' must not contain duplicate values")
+        }
+        if let allowedValues {
+            let unsupported = values.filter { !allowedValues.contains($0) }
+            guard unsupported.isEmpty else {
+                throw UsersInputValidationError("Unsupported value(s) for '\(name)': \(unsupported.joined(separator: ", "))")
+            }
+        }
+
+        return values.joined(separator: ",")
+    }
+
+    private func validatedStringArray(
+        _ value: Value,
+        name: String,
+        allowEmpty: Bool,
+        allowedValues: Set<String>? = nil
+    ) throws -> [String] {
+        guard let array = value.arrayValue else {
+            throw UsersInputValidationError("'\(name)' must be an array of strings")
+        }
+        let values = array.compactMap(\.stringValue)
+        guard values.count == array.count else {
+            throw UsersInputValidationError("'\(name)' must contain only strings")
+        }
+        guard allowEmpty || !values.isEmpty else {
+            throw UsersInputValidationError("'\(name)' must contain at least one value")
+        }
+        guard values.allSatisfy({ value in
+            let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+            return !trimmed.isEmpty && trimmed == value
+        }) else {
+            throw UsersInputValidationError("'\(name)' must contain only non-empty strings without surrounding whitespace")
+        }
+        guard Set(values).count == values.count else {
+            throw UsersInputValidationError("'\(name)' must not contain duplicate values")
+        }
+        if let allowedValues {
+            let unsupported = values.filter { !allowedValues.contains($0) }
+            guard unsupported.isEmpty else {
+                if name == "roles" {
+                    throw UsersInputValidationError(
+                        "Unsupported role(s): \(unsupported.joined(separator: ", ")). Valid roles: \(allowedValues.sorted().joined(separator: ", "))"
+                    )
+                }
+                throw UsersInputValidationError("Unsupported value(s) for '\(name)': \(unsupported.joined(separator: ", "))")
+            }
+        }
+        return values
+    }
+}
+
+private struct UsersInputValidationError: LocalizedError {
+    let message: String
+
+    init(_ message: String) {
+        self.message = message
+    }
+
+    var errorDescription: String? {
+        message
     }
 }

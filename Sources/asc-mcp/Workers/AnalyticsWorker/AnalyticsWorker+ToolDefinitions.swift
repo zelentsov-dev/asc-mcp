@@ -220,7 +220,32 @@ extension AnalyticsWorker {
                     ]),
                     "limit": .object([
                         "type": .string("integer"),
-                        "description": .string("Maximum number of results to return (1-200, default: 25)")
+                        "description": .string("Maximum number of results to return (1-200, default: 25)"),
+                        "minimum": .int(1),
+                        "maximum": .int(200)
+                    ]),
+                    "access_types": .object([
+                        "type": .string("array"),
+                        "description": .string("Filter by one or more analytics report access types"),
+                        "items": .object([
+                            "type": .string("string"),
+                            "enum": .array([
+                                .string("ONE_TIME_SNAPSHOT"),
+                                .string("ONGOING")
+                            ])
+                        ]),
+                        "minItems": .int(1),
+                        "uniqueItems": .bool(true)
+                    ]),
+                    "include_reports": .object([
+                        "type": .string("boolean"),
+                        "description": .string("Include related analytics report resources and relationship IDs")
+                    ]),
+                    "limit_reports": .object([
+                        "type": .string("integer"),
+                        "description": .string("Maximum included reports per request (1-50; requires include_reports=true)"),
+                        "minimum": .int(1),
+                        "maximum": .int(50)
                     ]),
                     "next_url": .object([
                         "type": .string("string"),
@@ -272,7 +297,35 @@ extension AnalyticsWorker {
                     ]),
                     "limit": .object([
                         "type": .string("integer"),
-                        "description": .string("Maximum number of results to return (1-200, default: 25)")
+                        "description": .string("Maximum number of results to return (1-200, default: 25)"),
+                        "minimum": .int(1),
+                        "maximum": .int(200)
+                    ]),
+                    "names": .object([
+                        "type": .string("array"),
+                        "description": .string("Filter by one or more exact analytics report names"),
+                        "items": .object([
+                            "type": .string("string"),
+                            "minLength": .int(1)
+                        ]),
+                        "minItems": .int(1),
+                        "uniqueItems": .bool(true)
+                    ]),
+                    "categories": .object([
+                        "type": .string("array"),
+                        "description": .string("Filter by one or more analytics report categories"),
+                        "items": .object([
+                            "type": .string("string"),
+                            "enum": .array([
+                                .string("APP_USAGE"),
+                                .string("APP_STORE_ENGAGEMENT"),
+                                .string("COMMERCE"),
+                                .string("FRAMEWORK_USAGE"),
+                                .string("PERFORMANCE")
+                            ])
+                        ]),
+                        "minItems": .int(1),
+                        "uniqueItems": .bool(true)
                     ]),
                     "next_url": .object([
                         "type": .string("string"),
@@ -316,7 +369,33 @@ extension AnalyticsWorker {
                     ]),
                     "limit": .object([
                         "type": .string("integer"),
-                        "description": .string("Maximum number of results to return (1-200, default: 25)")
+                        "description": .string("Maximum number of results to return (1-200, default: 25)"),
+                        "minimum": .int(1),
+                        "maximum": .int(200)
+                    ]),
+                    "granularities": .object([
+                        "type": .string("array"),
+                        "description": .string("Filter by one or more report granularities"),
+                        "items": .object([
+                            "type": .string("string"),
+                            "enum": .array([
+                                .string("DAILY"),
+                                .string("WEEKLY"),
+                                .string("MONTHLY")
+                            ])
+                        ]),
+                        "minItems": .int(1),
+                        "uniqueItems": .bool(true)
+                    ]),
+                    "processing_dates": .object([
+                        "type": .string("array"),
+                        "description": .string("Filter by one or more processing dates in YYYY-MM-DD format"),
+                        "items": .object([
+                            "type": .string("string"),
+                            "format": .string("date")
+                        ]),
+                        "minItems": .int(1),
+                        "uniqueItems": .bool(true)
                     ]),
                     "next_url": .object([
                         "type": .string("string"),
@@ -368,6 +447,11 @@ extension AnalyticsWorker {
                             .string("FRAMEWORK_USAGE"),
                             .string("PERFORMANCE")
                         ])
+                    ]),
+                    "name": .object([
+                        "type": .string("string"),
+                        "description": .string("Optional exact report-name filter"),
+                        "minLength": .int(1)
                     ])
                 ]),
                 "required": .array([.string("request_id")])
@@ -389,7 +473,9 @@ extension AnalyticsWorker {
                     ]),
                     "limit": .object([
                         "type": .string("integer"),
-                        "description": .string("Maximum number of results to return (1-200, default: 25)")
+                        "description": .string("Maximum number of results to return (1-200, default: 25)"),
+                        "minimum": .int(1),
+                        "maximum": .int(200)
                     ]),
                     "next_url": .object([
                         "type": .string("string"),

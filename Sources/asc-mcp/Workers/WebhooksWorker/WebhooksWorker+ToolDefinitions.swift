@@ -5,7 +5,7 @@ extension WebhooksWorker {
     func listWebhooksTool() -> Tool {
         Tool(
             name: "webhooks_list",
-            description: "List webhook notification configurations for an app. Returns webhook IDs, enabled state, URL, event types, and pagination info.",
+            description: "List webhook notification configurations for an app. Returns webhook IDs, enabled state, URL, event types, pagination info, and lossless included app resources when requested.",
             inputSchema: baseSchema(
                 properties: [
                     "app_id": stringSchema("App ID whose webhooks should be listed"),
@@ -21,7 +21,7 @@ extension WebhooksWorker {
     func getWebhookTool() -> Tool {
         Tool(
             name: "webhooks_get",
-            description: "Get one webhook notification configuration by ID.",
+            description: "Get one webhook notification configuration by ID, preserving the included app resource when requested.",
             inputSchema: baseSchema(
                 properties: [
                     "webhook_id": stringSchema("Webhook ID"),
@@ -129,7 +129,7 @@ extension WebhooksWorker {
     func verifySignatureTool() -> Tool {
         Tool(
             name: "webhooks_verify_signature",
-            description: "Verify an App Store Connect webhook x-apple-signature HMAC against the exact raw request body. This is local and does not call Apple. Provide the body via either `payload` (raw UTF-8) or `payload_base64`.",
+            description: "Verify an App Store Connect webhook x-apple-signature HMAC against the exact raw request body. This is local and does not call Apple. Provide exactly one body input: `payload` (raw UTF-8) or `payload_base64`.",
             inputSchema: baseSchema(
                 properties: [
                     "secret": stringSchema("Webhook secret configured in App Store Connect"),
@@ -145,7 +145,7 @@ extension WebhooksWorker {
     func parsePayloadTool() -> Tool {
         Tool(
             name: "webhooks_parse_payload",
-            description: "Parse and normalize a raw App Store Connect webhook payload, including nested event payload JSON when Apple sends it as a string. This is local and read-only. Provide the body via either `payload` (raw UTF-8) or `payload_base64`.",
+            description: "Parse and normalize a raw App Store Connect webhook payload, including nested event payload JSON when Apple sends it as a string. This is local and read-only. Provide exactly one body input: `payload` (raw UTF-8) or `payload_base64`. For signature verification, provide both `secret` and `signature`, or omit both.",
             inputSchema: baseSchema(
                 properties: [
                     "payload": stringSchema("Exact raw UTF-8 request body received by your webhook endpoint"),
@@ -161,7 +161,7 @@ extension WebhooksWorker {
     func triageEventTool() -> Tool {
         Tool(
             name: "webhooks_triage_event",
-            description: "Turn a webhook event or failed delivery context into an actionable MCP triage plan with recommended read-only lookup tools. Provide at least one of: `event_type`, `payload`, or `payload_base64`.",
+            description: "Turn a webhook event or failed delivery context into an actionable MCP triage plan with recommended read-only lookup tools. Provide `event_type` or exactly one raw body input: `payload` or `payload_base64`.",
             inputSchema: baseSchema(
                 properties: [
                     "payload": stringSchema("Optional exact raw UTF-8 webhook request body"),

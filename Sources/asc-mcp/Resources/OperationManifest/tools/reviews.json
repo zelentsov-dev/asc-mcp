@@ -58,13 +58,23 @@
             "jsonPointer": "/data/attributes/responseBody"
           },
           {
+            "outputField": "response.last_modified_date",
+            "operationId": "customerReviewResponses_createInstance",
+            "jsonPointer": "/data/attributes/lastModifiedDate"
+          },
+          {
             "outputField": "response.state",
             "operationId": "customerReviewResponses_createInstance",
             "jsonPointer": "/data/attributes/state"
+          },
+          {
+            "outputField": "response.review_id",
+            "operationId": "customerReviewResponses_createInstance",
+            "jsonPointer": "/data/relationships/review/data/id"
           }
         ]
       },
-      "note": "Apple POST creates or replaces the response for the related review. Partial: the local 5000-character limit is not present in OpenAPI 4.4.1, and the decoder expects createdDate/modifiedDate instead of Apple's lastModifiedDate, so that timestamp is dropped."
+      "note": "Apple POST creates or replaces the response for the related review and projects Apple's current responseBody, lastModifiedDate, state, and review relationship. Partial because the local 5000-character limit is stricter than OpenAPI 4.4.1 and the tool has no declared output schema."
     },
     {
       "tool": "reviews_delete_response",
@@ -118,7 +128,16 @@
           "operationId": "customerReviews_getInstance",
           "method": "get",
           "path": "/v1/customerReviews/{id}",
-          "role": "primary"
+          "role": "primary",
+          "optionalParameterClassifications": [
+            {
+              "location": "query",
+              "appleName": "include",
+              "disposition": "intentionallyOmitted",
+              "reason": "The detail tool returns the review attributes and response relationship presence; the full response has a dedicated reviews_get_response tool and territory is already projected from review attributes.",
+              "reviewAtSpec": "4.4.1"
+            }
+          ]
         }
       ],
       "fields": [
@@ -187,24 +206,55 @@
           }
         ]
       },
-      "note": "Partial projection: sparse fields, includes, reviewTerritory, and the full response resource are not exposed."
+      "note": "Stable review projection with response relationship presence. Sparse fieldsets follow the manifest-wide policy; include is intentionally omitted because related response lookup has a dedicated tool and the review already contains its territory attribute."
     },
     {
       "tool": "reviews_get_response",
-      "kind": "direct",
+      "kind": "compound",
       "status": "partial",
       "effect": "read",
       "implementationState": "asBuilt",
       "operations": [
         {
+          "operationId": "customerReviews_response_getToOneRelated",
+          "method": "get",
+          "path": "/v1/customerReviews/{id}/response",
+          "role": "primary",
+          "optionalParameterClassifications": [
+            {
+              "location": "query",
+              "appleName": "include",
+              "disposition": "intentionallyOmitted",
+              "reason": "The caller already supplies the review ID and can use reviews_get when the full related review resource is needed.",
+              "reviewAtSpec": "4.4.1"
+            }
+          ]
+        },
+        {
           "operationId": "customerReviews_getInstance",
           "method": "get",
           "path": "/v1/customerReviews/{id}",
-          "role": "primary",
-          "condition": "Always sends include=response and projects the first included resource."
+          "role": "conditional",
+          "condition": "Only after customerReviews_response_getToOneRelated returns 404, to distinguish an existing review without a response from a missing or inaccessible parent review.",
+          "optionalParameterClassifications": [
+            {
+              "location": "query",
+              "appleName": "include",
+              "disposition": "intentionallyOmitted",
+              "reason": "The conditional lookup only confirms that the parent review exists and does not project related resources.",
+              "reviewAtSpec": "4.4.1"
+            }
+          ]
         }
       ],
       "fields": [
+        {
+          "toolField": "review_id",
+          "sourceKind": "parameter",
+          "operationId": "customerReviews_response_getToOneRelated",
+          "location": "path",
+          "appleName": "id"
+        },
         {
           "toolField": "review_id",
           "sourceKind": "parameter",
@@ -216,6 +266,11 @@
       "response": {
         "mode": "projection",
         "sources": [
+          {
+            "operationId": "customerReviews_response_getToOneRelated",
+            "statusCode": "200",
+            "mediaType": "application/json"
+          },
           {
             "operationId": "customerReviews_getInstance",
             "statusCode": "200",
@@ -229,19 +284,38 @@
           },
           {
             "outputField": "has_response",
-            "operationId": "customerReviews_getInstance",
-            "jsonPointer": "/included",
-            "localRole": "firstIncludedResourcePresence"
+            "operationId": "customerReviews_response_getToOneRelated",
+            "jsonPointer": "/data",
+            "localRole": "true for Apple 200; false for relationship 404 only after customerReviews_getInstance confirms the parent review exists"
           },
           {
-            "outputField": "response",
-            "operationId": "customerReviews_getInstance",
-            "jsonPointer": "/included",
-            "localRole": "firstIncludedResourceProjection"
+            "outputField": "response.id",
+            "operationId": "customerReviews_response_getToOneRelated",
+            "jsonPointer": "/data/id"
+          },
+          {
+            "outputField": "response.response_body",
+            "operationId": "customerReviews_response_getToOneRelated",
+            "jsonPointer": "/data/attributes/responseBody"
+          },
+          {
+            "outputField": "response.last_modified_date",
+            "operationId": "customerReviews_response_getToOneRelated",
+            "jsonPointer": "/data/attributes/lastModifiedDate"
+          },
+          {
+            "outputField": "response.state",
+            "operationId": "customerReviews_response_getToOneRelated",
+            "jsonPointer": "/data/attributes/state"
+          },
+          {
+            "outputField": "response.review_id",
+            "operationId": "customerReviews_response_getToOneRelated",
+            "jsonPointer": "/data/relationships/review/data/id"
           }
         ]
       },
-      "note": "Partial: the implementation does not call the dedicated customerReviews_response_getToOneRelated operation, assumes the first included resource is a customerReviewResponse, and drops Apple's lastModifiedDate because the local model names do not match."
+      "note": "Uses Apple's documented to-one related response endpoint and projects the current CustomerReviewResponseV1 shape. A relationship 404 becomes has_response=false only after customerReviews_getInstance confirms the parent review exists; a missing or failed parent lookup remains an error. Sparse fieldsets follow the manifest-wide policy; include=review is intentionally omitted."
     },
     {
       "tool": "reviews_list",
@@ -254,7 +328,16 @@
           "operationId": "apps_customerReviews_getToManyRelated",
           "method": "get",
           "path": "/v1/apps/{id}/customerReviews",
-          "role": "primary"
+          "role": "primary",
+          "optionalParameterClassifications": [
+            {
+              "location": "query",
+              "appleName": "filter[reviewTerritory]",
+              "disposition": "intentionallyOmitted",
+              "reason": "The public territory and territories inputs use Apple's documented three-letter filter[territory] values; the related-resource-ID filter would duplicate that capability with opaque IDs.",
+              "reviewAtSpec": "4.4.1"
+            }
+          ]
         }
       ],
       "fields": [
@@ -280,6 +363,14 @@
           "appleName": "filter[rating]"
         },
         {
+          "toolField": "ratings",
+          "sourceKind": "parameter",
+          "operationId": "apps_customerReviews_getToManyRelated",
+          "location": "query",
+          "appleName": "filter[rating]",
+          "localRole": "commaSeparatedArrayQuery"
+        },
+        {
           "toolField": "territory",
           "sourceKind": "parameter",
           "operationId": "apps_customerReviews_getToManyRelated",
@@ -287,11 +378,20 @@
           "appleName": "filter[territory]"
         },
         {
+          "toolField": "territories",
+          "sourceKind": "parameter",
+          "operationId": "apps_customerReviews_getToManyRelated",
+          "location": "query",
+          "appleName": "filter[territory]",
+          "localRole": "commaSeparatedArrayQuery"
+        },
+        {
           "toolField": "sort",
           "sourceKind": "parameter",
           "operationId": "apps_customerReviews_getToManyRelated",
           "location": "query",
-          "appleName": "sort"
+          "appleName": "sort",
+          "localRole": "backward-compatible scalar or ordered string array encoded with explode=false CSV semantics"
         },
         {
           "toolField": "next_url",
@@ -305,6 +405,13 @@
           "location": "query",
           "appleName": "include",
           "localRole": "booleanMapsToResponseIncludeOrOmission"
+        },
+        {
+          "toolField": "has_published_response",
+          "sourceKind": "parameter",
+          "operationId": "apps_customerReviews_getToManyRelated",
+          "location": "query",
+          "appleName": "exists[publishedResponse]"
         }
       ],
       "response": {
@@ -328,6 +435,12 @@
             "localRole": "reviewProjection"
           },
           {
+            "outputField": "reviews.response",
+            "operationId": "apps_customerReviews_getToManyRelated",
+            "jsonPointer": "/included",
+            "localRole": "relationshipIDMatchedCustomerReviewResponseProjectionWhenRequested"
+          },
+          {
             "outputField": "count",
             "operationId": "apps_customerReviews_getToManyRelated",
             "jsonPointer": "/data",
@@ -345,7 +458,7 @@
           }
         ]
       },
-      "note": "Partial: territory documentation uses Apple's three-letter TerritoryCode values; rating is modeled as one integer although Apple accepts an array; include=response is requested but included response bodies are discarded. reviewTerritory, exists[publishedResponse], sparse fields, and multi-value filters are absent."
+      "note": "Covers Apple's semantic collection controls with scalar compatibility plus native multi-value rating, territory, and ordered sort inputs encoded with explode=false CSV semantics, published-response existence filtering, and protected continuation scope. include=response preserves and relationship-matches Apple's included response resources. Sparse fieldsets follow the manifest-wide policy; filter[reviewTerritory] is intentionally omitted in favor of public alpha-3 territory codes."
     },
     {
       "tool": "reviews_list_for_version",
@@ -358,7 +471,16 @@
           "operationId": "appStoreVersions_customerReviews_getToManyRelated",
           "method": "get",
           "path": "/v1/appStoreVersions/{id}/customerReviews",
-          "role": "primary"
+          "role": "primary",
+          "optionalParameterClassifications": [
+            {
+              "location": "query",
+              "appleName": "filter[reviewTerritory]",
+              "disposition": "intentionallyOmitted",
+              "reason": "The public territory and territories inputs use Apple's documented three-letter filter[territory] values; the related-resource-ID filter would duplicate that capability with opaque IDs.",
+              "reviewAtSpec": "4.4.1"
+            }
+          ]
         }
       ],
       "fields": [
@@ -384,6 +506,14 @@
           "appleName": "filter[rating]"
         },
         {
+          "toolField": "ratings",
+          "sourceKind": "parameter",
+          "operationId": "appStoreVersions_customerReviews_getToManyRelated",
+          "location": "query",
+          "appleName": "filter[rating]",
+          "localRole": "commaSeparatedArrayQuery"
+        },
+        {
           "toolField": "territory",
           "sourceKind": "parameter",
           "operationId": "appStoreVersions_customerReviews_getToManyRelated",
@@ -391,11 +521,20 @@
           "appleName": "filter[territory]"
         },
         {
+          "toolField": "territories",
+          "sourceKind": "parameter",
+          "operationId": "appStoreVersions_customerReviews_getToManyRelated",
+          "location": "query",
+          "appleName": "filter[territory]",
+          "localRole": "commaSeparatedArrayQuery"
+        },
+        {
           "toolField": "sort",
           "sourceKind": "parameter",
           "operationId": "appStoreVersions_customerReviews_getToManyRelated",
           "location": "query",
-          "appleName": "sort"
+          "appleName": "sort",
+          "localRole": "backward-compatible scalar or ordered string array encoded with explode=false CSV semantics"
         },
         {
           "toolField": "next_url",
@@ -409,6 +548,13 @@
           "location": "query",
           "appleName": "include",
           "localRole": "booleanMapsToResponseIncludeOrOmission"
+        },
+        {
+          "toolField": "has_published_response",
+          "sourceKind": "parameter",
+          "operationId": "appStoreVersions_customerReviews_getToManyRelated",
+          "location": "query",
+          "appleName": "exists[publishedResponse]"
         }
       ],
       "response": {
@@ -432,6 +578,12 @@
             "localRole": "reviewProjection"
           },
           {
+            "outputField": "reviews.response",
+            "operationId": "appStoreVersions_customerReviews_getToManyRelated",
+            "jsonPointer": "/included",
+            "localRole": "relationshipIDMatchedCustomerReviewResponseProjectionWhenRequested"
+          },
+          {
             "outputField": "count",
             "operationId": "appStoreVersions_customerReviews_getToManyRelated",
             "jsonPointer": "/data",
@@ -449,7 +601,7 @@
           }
         ]
       },
-      "note": "Partial for the same filter and included-resource gaps as reviews_list: territory documentation uses Apple's three-letter TerritoryCode values, multi-value filters are narrowed to scalars, and included response bodies are not returned."
+      "note": "Version-scoped equivalent of reviews_list with multi-value filters and ordered scalar-or-array sort encoded with explode=false CSV semantics, published-response existence filtering, protected continuation scope, and included response projection. Sparse fieldsets follow the manifest-wide policy; filter[reviewTerritory] is intentionally omitted in favor of public alpha-3 territory codes."
     },
     {
       "tool": "reviews_stats",
@@ -463,7 +615,44 @@
           "method": "get",
           "path": "/v1/apps/{id}/customerReviews",
           "role": "primary",
-          "condition": "Uses limit=200 and sort=-createdDate. Streams and deduplicates each page by review ID without retaining all review bodies. Follows every page for all_time; bounded periods stop only after a page contains an item older than the inclusive rolling UTC boundary."
+          "condition": "Uses limit=200 and sort=-createdDate. Streams and deduplicates each page by review ID without retaining all review bodies. Follows every page for all_time; bounded periods stop only after a page contains an item older than the inclusive rolling UTC boundary.",
+          "inputs": [
+            {
+              "sourceKind": "fixed",
+              "location": "query",
+              "appleName": "limit",
+              "fixedValue": 200
+            },
+            {
+              "sourceKind": "fixed",
+              "location": "query",
+              "appleName": "sort",
+              "fixedValue": ["-createdDate"]
+            }
+          ],
+          "optionalParameterClassifications": [
+            {
+              "location": "query",
+              "appleName": "filter[rating]",
+              "disposition": "intentionallyOmitted",
+              "reason": "The aggregate must retrieve every rating to calculate a complete 1-through-5 distribution.",
+              "reviewAtSpec": "4.4.1"
+            },
+            {
+              "location": "query",
+              "appleName": "filter[reviewTerritory]",
+              "disposition": "intentionallyOmitted",
+              "reason": "The statistics tool uses public alpha-3 filter[territory] values instead of opaque related territory resource IDs.",
+              "reviewAtSpec": "4.4.1"
+            },
+            {
+              "location": "query",
+              "appleName": "include",
+              "disposition": "intentionallyOmitted",
+              "reason": "Statistics require only review attributes and do not download related response or territory resources.",
+              "reviewAtSpec": "4.4.1"
+            }
+          ]
         }
       ],
       "fields": [
@@ -486,6 +675,13 @@
           "location": "query",
           "appleName": "filter[territory]",
           "localRole": "valueAllOmitsAppleFilter"
+        },
+        {
+          "toolField": "has_published_response",
+          "sourceKind": "parameter",
+          "operationId": "apps_customerReviews_getToManyRelated",
+          "location": "query",
+          "appleName": "exists[publishedResponse]"
         }
       ],
       "response": {
@@ -505,6 +701,14 @@
           {
             "outputField": "period",
             "localRole": "requestedWindowLabel"
+          },
+          {
+            "outputField": "territory",
+            "localRole": "normalizedRequestEchoWhenProvided"
+          },
+          {
+            "outputField": "has_published_response",
+            "localRole": "requestEchoWhenProvided"
           },
           {
             "outputField": "total_in_sample",
@@ -558,7 +762,7 @@
           }
         ]
       },
-      "note": "The handler validates a trimmed non-empty app ID, then streams Apple pagination into deduplicated numeric accumulators to produce complete statistics for the requested rolling UTC period without retaining all review bodies. Repeated or invalid next URLs fail instead of returning partial results. last_quarter remains an input alias for compatibility and normalizes to last_3_months. Territory documentation uses Apple's three-letter codes."
+      "note": "The handler validates and normalizes inputs, then streams Apple pagination into deduplicated numeric accumulators for the requested rolling UTC period. Fixed descending sort, territory and published-response filters are protected on every continuation; repeated or invalid next URLs fail instead of returning partial results. last_quarter remains a compatibility alias for last_3_months."
     },
     {
       "tool": "reviews_summarizations",
@@ -571,7 +775,16 @@
           "operationId": "apps_customerReviewSummarizations_getToManyRelated",
           "method": "get",
           "path": "/v1/apps/{id}/customerReviewSummarizations",
-          "role": "primary"
+          "role": "primary",
+          "optionalParameterClassifications": [
+            {
+              "location": "query",
+              "appleName": "include",
+              "disposition": "intentionallyOmitted",
+              "reason": "The tool returns Apple's summarization resources unchanged and preserves the related territory ID already present on each resource; callers do not need duplicated included territory resources.",
+              "reviewAtSpec": "4.4.1"
+            }
+          ]
         }
       ],
       "fields": [
@@ -595,6 +808,18 @@
           "operationId": "apps_customerReviewSummarizations_getToManyRelated",
           "location": "query",
           "appleName": "limit"
+        },
+        {
+          "toolField": "territory_id",
+          "sourceKind": "parameter",
+          "operationId": "apps_customerReviewSummarizations_getToManyRelated",
+          "location": "query",
+          "appleName": "filter[territory]"
+        },
+        {
+          "toolField": "next_url",
+          "sourceKind": "local",
+          "localRole": "paginationContinuation"
         }
       ],
       "response": {
@@ -623,7 +848,7 @@
           }
         ]
       },
-      "note": "Read-only Apple GET. Partial: territory, sparse fields, include=territory, and continuation input are absent."
+      "note": "Read-only Apple GET with platform, related-territory filtering, bounded limit, and protected continuation support. Sparse fieldsets follow the manifest-wide policy; include=territory is intentionally omitted because the passthrough resource retains its territory relationship."
     }
   ],
   "implementationAliases": []

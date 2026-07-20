@@ -80,10 +80,11 @@
           { "operationId": "webhooks_getInstance", "statusCode": "200", "mediaType": "application/json" }
         ],
         "fields": [
-          { "outputField": "webhook", "operationId": "webhooks_getInstance", "jsonPointer": "/data" }
+          { "outputField": "webhook", "operationId": "webhooks_getInstance", "jsonPointer": "/data" },
+          { "outputField": "included", "operationId": "webhooks_getInstance", "jsonPointer": "/included", "localRole": "lossless projection of the included app resource when include_app is true" }
         ]
       },
-      "note": "The include=app request is supported, but the decoded response model and formatter discard Apple's top-level included app resource. Sparse fieldsets are not exposed."
+      "note": "The include=app request and Apple's top-level included app resource are preserved. Sparse fieldsets are intentionally omitted by the manifest-wide Apple 4.4.1 policy."
     },
     {
       "tool": "webhooks_list",
@@ -107,11 +108,12 @@
         ],
         "fields": [
           { "outputField": "webhooks", "operationId": "apps_webhooks_getToManyRelated", "jsonPointer": "/data" },
+          { "outputField": "included", "operationId": "apps_webhooks_getToManyRelated", "jsonPointer": "/included", "localRole": "lossless projection of included app resources when include_app is true" },
           { "outputField": "next_url", "operationId": "apps_webhooks_getToManyRelated", "jsonPointer": "/links/next" },
           { "outputField": "total", "operationId": "apps_webhooks_getToManyRelated", "jsonPointer": "/meta/paging/total" }
         ]
       },
-      "note": "The include=app request is supported, but included app resources are discarded by the current response model. Sparse fieldsets are not exposed."
+      "note": "The include=app request and Apple's top-level included app resources are preserved. Sparse fieldsets are intentionally omitted by the manifest-wide Apple 4.4.1 policy."
     },
     {
       "tool": "webhooks_list_deliveries",
@@ -153,10 +155,10 @@
       "implementationState": "asBuilt",
       "operations": [],
       "fields": [
-        { "toolField": "payload", "sourceKind": "local", "localRole": "raw UTF-8 webhook body alternative" },
-        { "toolField": "payload_base64", "sourceKind": "local", "localRole": "base64 raw-byte webhook body alternative; takes precedence over payload" },
-        { "toolField": "secret", "sourceKind": "local", "localRole": "optional HMAC-SHA256 verification key when signature is also present" },
-        { "toolField": "signature", "sourceKind": "local", "localRole": "optional x-apple-signature value when secret is also present" }
+        { "toolField": "payload", "sourceKind": "local", "localRole": "exactly one raw-body alternative: UTF-8 webhook body" },
+        { "toolField": "payload_base64", "sourceKind": "local", "localRole": "exactly one raw-body alternative: base64 raw webhook bytes" },
+        { "toolField": "secret", "sourceKind": "local", "localRole": "optional HMAC-SHA256 verification key; must be supplied together with signature" },
+        { "toolField": "signature", "sourceKind": "local", "localRole": "optional x-apple-signature value; must be supplied together with secret" }
       ],
       "response": {
         "mode": "local",
@@ -168,7 +170,7 @@
           { "outputField": "signature", "localRole": "optional ASCWebhookSignatureVerifier result" }
         ]
       },
-      "note": "Local receiver helper, not an Apple REST operation. Signature verification is silently skipped when only one of secret/signature is supplied. Related-resource extraction does not reliably handle every Apple 4.4.1 payload shape; BUILD_UPLOAD and BUILD_BETA_DETAIL triage currently expect build resource types rather than buildUploads/buildBetaDetails, and direct background-resource relationships are incomplete."
+      "note": "Local receiver helper, not an Apple REST operation. Runtime validation requires exactly one raw-body representation and rejects incomplete secret/signature pairs before parsing. Related-resource extraction does not reliably handle every Apple 4.4.1 payload shape; BUILD_UPLOAD and BUILD_BETA_DETAIL triage currently expect build resource types rather than buildUploads/buildBetaDetails, and direct background-resource relationships are incomplete."
     },
     {
       "tool": "webhooks_ping",
@@ -243,8 +245,8 @@
       "implementationState": "asBuilt",
       "operations": [],
       "fields": [
-        { "toolField": "payload", "sourceKind": "local", "localRole": "optional raw UTF-8 webhook body" },
-        { "toolField": "payload_base64", "sourceKind": "local", "localRole": "optional base64 raw-byte webhook body; takes precedence over payload" },
+        { "toolField": "payload", "sourceKind": "local", "localRole": "optional UTF-8 webhook body; mutually exclusive with payload_base64" },
+        { "toolField": "payload_base64", "sourceKind": "local", "localRole": "optional base64 raw webhook bytes; mutually exclusive with payload" },
         { "toolField": "event_type", "sourceKind": "local", "localRole": "explicit Apple webhook event type, preferred over the parsed payload value" },
         { "toolField": "resource_type", "sourceKind": "local", "localRole": "explicit related resource type used only when resource_id is also present" },
         { "toolField": "resource_id", "sourceKind": "local", "localRole": "explicit related resource identifier" },
@@ -263,7 +265,7 @@
           { "outputField": "nextSteps", "localRole": "local recovery and lookup guidance" }
         ]
       },
-      "note": "Local policy helper, not an Apple REST operation. Specialized triage covers only part of the Apple event catalog; BUILD_UPLOAD and BUILD_BETA_DETAIL resource-type assumptions and some background/alternative-distribution relationship shapes are currently incomplete."
+      "note": "Local policy helper, not an Apple REST operation. Runtime validation requires event_type or one unambiguous raw-body representation. Specialized triage covers only part of the Apple event catalog; BUILD_UPLOAD and BUILD_BETA_DETAIL resource-type assumptions and some background/alternative-distribution relationship shapes are currently incomplete."
     },
     {
       "tool": "webhooks_update",
@@ -312,8 +314,8 @@
       "fields": [
         { "toolField": "secret", "sourceKind": "local", "localRole": "HMAC-SHA256 key" },
         { "toolField": "signature", "sourceKind": "local", "localRole": "x-apple-signature header normalization and constant-time comparison" },
-        { "toolField": "payload", "sourceKind": "local", "localRole": "raw UTF-8 body alternative" },
-        { "toolField": "payload_base64", "sourceKind": "local", "localRole": "base64 raw-byte body alternative; takes precedence over payload" }
+        { "toolField": "payload", "sourceKind": "local", "localRole": "exactly one raw-body alternative: UTF-8 body" },
+        { "toolField": "payload_base64", "sourceKind": "local", "localRole": "exactly one raw-body alternative: base64 raw bytes" }
       ],
       "response": {
         "mode": "local",
@@ -324,7 +326,7 @@
           { "outputField": "reason", "localRole": "local normalization or mismatch diagnostic" }
         ]
       },
-      "note": "Local receiver helper, not an Apple REST operation. Verification is byte-sensitive and requires payload or payload_base64 at runtime even though the current MCP schema marks only secret and signature as required."
+      "note": "Local receiver helper, not an Apple REST operation. Verification is byte-sensitive and runtime validation requires exactly one of payload or payload_base64 because Anthropic-compatible MCP schemas cannot retain a top-level oneOf constraint."
     }
   ],
   "implementationAliases": []

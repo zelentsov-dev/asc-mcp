@@ -5,12 +5,16 @@ import Foundation
 /// Users list response
 public struct ASCUsersResponse: Codable, Sendable {
     public let data: [ASCUser]
+    public let included: [JSONValue]?
     public let links: ASCPagedDocumentLinks?
+    public let meta: ASCPagingInformation?
 }
 
 /// User single response
 public struct ASCUserResponse: Codable, Sendable {
     public let data: ASCUser
+    public let included: [JSONValue]?
+    public let links: JSONValue?
 }
 
 /// User resource
@@ -29,7 +33,6 @@ public struct UserAttributes: Codable, Sendable {
     public let roles: [String]?
     public let allAppsVisible: Bool?
     public let provisioningAllowed: Bool?
-    public let expirationDate: String?
 }
 
 /// User relationships
@@ -98,12 +101,16 @@ public struct UpdateUserRequest: Codable, Sendable {
 /// User invitations list response
 public struct ASCUserInvitationsResponse: Codable, Sendable {
     public let data: [ASCUserInvitation]
+    public let included: [JSONValue]?
     public let links: ASCPagedDocumentLinks?
+    public let meta: ASCPagingInformation?
 }
 
 /// User invitation single response
 public struct ASCUserInvitationResponse: Codable, Sendable {
     public let data: ASCUserInvitation
+    public let included: [JSONValue]?
+    public let links: JSONValue?
 }
 
 /// User invitation resource
@@ -111,6 +118,7 @@ public struct ASCUserInvitation: Codable, Sendable {
     public let type: String
     public let id: String
     public let attributes: UserInvitationAttributes?
+    public let relationships: UserRelationships?
 }
 
 /// User invitation attributes

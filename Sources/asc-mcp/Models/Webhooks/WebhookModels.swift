@@ -19,14 +19,14 @@ public enum ASCWebhookEventTypes {
 
 public struct ASCWebhooksResponse: Codable, Sendable {
     public let data: [ASCWebhook]
-    let included: [JSONValue]?
+    public let included: [JSONValue]?
     public let links: ASCPagedDocumentLinks?
     public let meta: ASCPagingInformation?
 }
 
 public struct ASCWebhookResponse: Codable, Sendable {
     public let data: ASCWebhook
-    let included: [JSONValue]?
+    public let included: [JSONValue]?
     let links: JSONValue?
 }
 

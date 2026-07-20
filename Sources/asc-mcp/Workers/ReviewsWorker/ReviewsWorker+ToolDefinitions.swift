@@ -9,6 +9,8 @@ import Foundation
 import MCP
 
 extension ReviewsWorker {
+    static let supportedReviewSorts = ["rating", "-rating", "createdDate", "-createdDate"]
+
     /// Creates tool definition for listing customer reviews
     func createReviewsListTool() -> Tool {
         return Tool(
@@ -23,20 +25,45 @@ extension ReviewsWorker {
                     ]),
                     "limit": .object([
                         "type": .string("integer"),
-                        "description": .string("Maximum number of reviews to return (1-200, default: 100)")
+                        "description": .string("Maximum number of reviews to return (1-200, default: 100)"),
+                        "minimum": .int(1),
+                        "maximum": .int(200)
                     ]),
                     "rating": .object([
                         "type": .string("integer"),
-                        "description": .string("Filter by rating (1-5)")
+                        "description": .string("Filter by one rating (1-5). Use ratings for multiple values."),
+                        "minimum": .int(1),
+                        "maximum": .int(5)
+                    ]),
+                    "ratings": .object([
+                        "type": .string("array"),
+                        "description": .string("Filter by one or more ratings"),
+                        "items": .object([
+                            "type": .string("integer"),
+                            "minimum": .int(1),
+                            "maximum": .int(5)
+                        ]),
+                        "minItems": .int(1),
+                        "uniqueItems": .bool(true)
                     ]),
                     "territory": .object([
                         "type": .string("string"),
-                        "description": .string("Apple ISO 3166-1 alpha-3 territory code (USA, RUS, DEU, JPN)")
+                        "description": .string("One Apple ISO 3166-1 alpha-3 territory code (USA, RUS, DEU, JPN)"),
+                        "minLength": .int(3),
+                        "maxLength": .int(3)
                     ]),
-                    "sort": .object([
-                        "type": .string("string"),
-                        "description": .string("Sort order: -createdDate (newest first), createdDate, rating, -rating")
+                    "territories": .object([
+                        "type": .string("array"),
+                        "description": .string("One or more Apple ISO 3166-1 alpha-3 territory codes"),
+                        "items": .object([
+                            "type": .string("string"),
+                            "minLength": .int(3),
+                            "maxLength": .int(3)
+                        ]),
+                        "minItems": .int(1),
+                        "uniqueItems": .bool(true)
                     ]),
+                    "sort": reviewSortSchema(),
                     "next_url": .object([
                         "type": .string("string"),
                         "description": .string("URL for next page of results (from previous response)")
@@ -44,6 +71,10 @@ extension ReviewsWorker {
                     "include_response": .object([
                         "type": .string("boolean"),
                         "description": .string("Include developer responses inline with reviews (default: false)")
+                    ]),
+                    "has_published_response": .object([
+                        "type": .string("boolean"),
+                        "description": .string("Filter reviews by whether they have a published developer response")
                     ])
                 ]),
                 "required": .array([.string("app_id")])
@@ -83,20 +114,45 @@ extension ReviewsWorker {
                     ]),
                     "limit": .object([
                         "type": .string("integer"),
-                        "description": .string("Maximum number of reviews to return (1-200, default: 100)")
+                        "description": .string("Maximum number of reviews to return (1-200, default: 100)"),
+                        "minimum": .int(1),
+                        "maximum": .int(200)
                     ]),
                     "rating": .object([
                         "type": .string("integer"),
-                        "description": .string("Filter by rating (1-5)")
+                        "description": .string("Filter by one rating (1-5). Use ratings for multiple values."),
+                        "minimum": .int(1),
+                        "maximum": .int(5)
+                    ]),
+                    "ratings": .object([
+                        "type": .string("array"),
+                        "description": .string("Filter by one or more ratings"),
+                        "items": .object([
+                            "type": .string("integer"),
+                            "minimum": .int(1),
+                            "maximum": .int(5)
+                        ]),
+                        "minItems": .int(1),
+                        "uniqueItems": .bool(true)
                     ]),
                     "territory": .object([
                         "type": .string("string"),
-                        "description": .string("Filter by Apple's ISO 3166-1 alpha-3 territory code (e.g., USA, RUS, DEU)")
+                        "description": .string("Filter by one Apple ISO 3166-1 alpha-3 territory code (e.g., USA, RUS, DEU)"),
+                        "minLength": .int(3),
+                        "maxLength": .int(3)
                     ]),
-                    "sort": .object([
-                        "type": .string("string"),
-                        "description": .string("Sort order: -createdDate (newest first), createdDate, rating, -rating")
+                    "territories": .object([
+                        "type": .string("array"),
+                        "description": .string("One or more Apple ISO 3166-1 alpha-3 territory codes"),
+                        "items": .object([
+                            "type": .string("string"),
+                            "minLength": .int(3),
+                            "maxLength": .int(3)
+                        ]),
+                        "minItems": .int(1),
+                        "uniqueItems": .bool(true)
                     ]),
+                    "sort": reviewSortSchema(),
                     "next_url": .object([
                         "type": .string("string"),
                         "description": .string("URL for next page of results (from previous response)")
@@ -104,6 +160,10 @@ extension ReviewsWorker {
                     "include_response": .object([
                         "type": .string("boolean"),
                         "description": .string("Include developer responses inline with reviews (default: false)")
+                    ]),
+                    "has_published_response": .object([
+                        "type": .string("boolean"),
+                        "description": .string("Filter reviews by whether they have a published developer response")
                     ])
                 ]),
                 "required": .array([.string("version_id")])
@@ -137,6 +197,10 @@ extension ReviewsWorker {
                     "territory": .object([
                         "type": .string("string"),
                         "description": .string("Filter by Apple's ISO 3166-1 alpha-3 territory code (e.g., USA, RUS, DEU) or 'all' for all territories")
+                    ]),
+                    "has_published_response": .object([
+                        "type": .string("boolean"),
+                        "description": .string("Restrict statistics to reviews with or without a published developer response")
                     ])
                 ]),
                 "required": .array([.string("app_id")])
@@ -221,11 +285,43 @@ extension ReviewsWorker {
                     ]),
                     "limit": .object([
                         "type": .string("integer"),
-                        "description": .string("Maximum number of summarizations to return (default: 25)")
+                        "description": .string("Maximum number of summarizations to return (1-200, default: 25)"),
+                        "minimum": .int(1),
+                        "maximum": .int(200)
+                    ]),
+                    "territory_id": .object([
+                        "type": .string("string"),
+                        "description": .string("Optional related App Store Connect territory resource ID"),
+                        "minLength": .int(1)
+                    ]),
+                    "next_url": .object([
+                        "type": .string("string"),
+                        "description": .string("URL for the next page from a previous response")
                     ])
                 ]),
                 "required": .array([.string("app_id")])
             ])
         )
+    }
+
+    private func reviewSortSchema() -> Value {
+        .object([
+            "description": .string("Sort by rating or created date; prefix with - for descending order. Accepts one value or an ordered array (default: -createdDate)."),
+            "oneOf": .array([
+                .object([
+                    "type": .string("string"),
+                    "enum": .array(Self.supportedReviewSorts.map(Value.string))
+                ]),
+                .object([
+                    "type": .string("array"),
+                    "items": .object([
+                        "type": .string("string"),
+                        "enum": .array(Self.supportedReviewSorts.map(Value.string))
+                    ]),
+                    "minItems": .int(1),
+                    "uniqueItems": .bool(true)
+                ])
+            ])
+        ])
     }
 }

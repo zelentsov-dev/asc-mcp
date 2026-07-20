@@ -388,6 +388,140 @@ struct WebhooksWorkerTests {
         #expect(pingData["type"] as? String == "webhookPings")
     }
 
+    @Test("list and get preserve included app resources")
+    func listAndGetPreserveIncludedApps() async throws {
+        let responseBody = """
+        {
+          "data": [
+            {
+              "type": "webhooks",
+              "id": "webhook-1",
+              "attributes": {
+                "enabled": true,
+                "eventTypes": ["APP_STORE_VERSION_APP_VERSION_STATE_UPDATED"],
+                "name": "Release events",
+                "url": "https://example.com/webhook"
+              },
+              "relationships": {
+                "app": { "data": { "type": "apps", "id": "app-1" } }
+              }
+            }
+          ],
+          "included": [
+            {
+              "type": "apps",
+              "id": "app-1",
+              "attributes": {
+                "name": "Example App",
+                "bundleId": "com.example.app"
+              }
+            }
+          ],
+          "links": { "self": "https://api.example.test/v1/apps/app-1/webhooks" }
+        }
+        """
+        let singleResponseBody = """
+        {
+          "data": {
+            "type": "webhooks",
+            "id": "webhook-1",
+            "attributes": {
+              "enabled": true,
+              "eventTypes": ["APP_STORE_VERSION_APP_VERSION_STATE_UPDATED"],
+              "name": "Release events",
+              "url": "https://example.com/webhook"
+            },
+            "relationships": {
+              "app": { "data": { "type": "apps", "id": "app-1" } }
+            }
+          },
+          "included": [
+            {
+              "type": "apps",
+              "id": "app-1",
+              "attributes": {
+                "name": "Example App",
+                "bundleId": "com.example.app"
+              }
+            }
+          ],
+          "links": { "self": "https://api.example.test/v1/webhooks/webhook-1" }
+        }
+        """
+        let transport = TestHTTPTransport(responses: [
+            .init(statusCode: 200, body: responseBody),
+            .init(statusCode: 200, body: singleResponseBody)
+        ])
+        let client = await HTTPClient(
+            jwtService: try TestFactory.makeJWTService(),
+            baseURL: "https://api.example.test",
+            transport: transport,
+            maxRetries: 1
+        )
+        let worker = WebhooksWorker(httpClient: client)
+
+        let list = try await worker.handleTool(
+            CallTool.Parameters(
+                name: "webhooks_list",
+                arguments: [
+                    "app_id": .string("app-1"),
+                    "include_app": .bool(true)
+                ]
+            )
+        )
+        let get = try await worker.handleTool(
+            CallTool.Parameters(
+                name: "webhooks_get",
+                arguments: [
+                    "webhook_id": .string("webhook-1"),
+                    "include_app": .bool(true)
+                ]
+            )
+        )
+
+        for result in [list, get] {
+            #expect(result.isError == nil)
+            let object = try structuredObject(result)
+            let included = try #require(object["included"]?.arrayValue)
+            let app = try #require(included.first?.objectValue)
+            #expect(app["type"] == .string("apps"))
+            #expect(app["id"] == .string("app-1"))
+            let attributes = try #require(app["attributes"]?.objectValue)
+            #expect(attributes["name"] == .string("Example App"))
+            #expect(attributes["bundleId"] == .string("com.example.app"))
+        }
+
+        let requests = await transport.recordedRequests()
+        #expect(requests.count == 2)
+        for request in requests {
+            let components = try #require(URLComponents(url: try #require(request.url), resolvingAgainstBaseURL: false))
+            #expect(components.queryItems?.first { $0.name == "include" }?.value == "app")
+        }
+    }
+
+    @Test("update rejects an empty patch before the network call")
+    func updateRejectsEmptyPatch() async throws {
+        let transport = TestHTTPTransport(responses: [])
+        let client = await HTTPClient(
+            jwtService: try TestFactory.makeJWTService(),
+            baseURL: "https://api.example.test",
+            transport: transport,
+            maxRetries: 1
+        )
+        let worker = WebhooksWorker(httpClient: client)
+
+        let result = try await worker.handleTool(
+            CallTool.Parameters(
+                name: "webhooks_update",
+                arguments: ["webhook_id": .string("webhook-1")]
+            )
+        )
+
+        #expect(result.isError == true)
+        #expect(textContent(result).contains("At least one update field is required"))
+        #expect(await transport.requestCount() == 0)
+    }
+
     @Test("verify signature validates Apple x-apple-signature HMAC")
     func verifySignatureValidatesAppleHeader() async throws {
         let worker = WebhooksWorker(httpClient: try await TestFactory.makeHTTPClient())
@@ -439,6 +573,7 @@ struct WebhooksWorkerTests {
 
         let object = try structuredObject(result)
         #expect(object["success"] == .bool(true))
+        #expect(object["signature"] == nil)
 
         let event = try #require(object["event"]?.objectValue)
         #expect(event["id"] == .string("event-1"))
@@ -454,6 +589,86 @@ struct WebhooksWorkerTests {
         #expect(recommendations.contains { recommendation in
             recommendation.objectValue?["tool"] == .string("builds_get")
         })
+    }
+
+    @Test("parse payload verifies only a complete signature pair")
+    func parsePayloadVerifiesCompleteSignaturePair() async throws {
+        let worker = WebhooksWorker(httpClient: try await TestFactory.makeHTTPClient())
+        let payload = Self.webhookEnvelopePayload
+        let signature = Self.signature(secret: "top-secret", payload: payload)
+
+        let verified = try await worker.handleTool(
+            CallTool.Parameters(
+                name: "webhooks_parse_payload",
+                arguments: [
+                    "payload": .string(payload),
+                    "secret": .string("top-secret"),
+                    "signature": .string("hmacsha256=\(signature)")
+                ]
+            )
+        )
+
+        let object = try structuredObject(verified)
+        let verification = try #require(object["signature"]?.objectValue)
+        #expect(verification["valid"] == .bool(true))
+
+        for incompleteArguments: [String: Value] in [
+            ["payload": .string("not-json"), "secret": .string("top-secret")],
+            ["payload": .string("not-json"), "signature": .string("hmacsha256=\(signature)")]
+        ] {
+            let incomplete = try await worker.handleTool(
+                CallTool.Parameters(
+                    name: "webhooks_parse_payload",
+                    arguments: incompleteArguments
+                )
+            )
+            #expect(incomplete.isError == true)
+            #expect(textContent(incomplete).contains("secret and signature together"))
+            #expect(!textContent(incomplete).contains("not valid JSON"))
+        }
+    }
+
+    @Test("receiver helpers reject ambiguous raw payload inputs")
+    func receiverHelpersRejectAmbiguousPayloadInputs() async throws {
+        let worker = WebhooksWorker(httpClient: try await TestFactory.makeHTTPClient())
+        let payload = Self.webhookEnvelopePayload
+        let payloadBase64 = Data(payload.utf8).base64EncodedString()
+        let signature = Self.signature(secret: "top-secret", payload: payload)
+
+        let calls: [(String, [String: Value])] = [
+            (
+                "webhooks_verify_signature",
+                [
+                    "secret": .string("top-secret"),
+                    "signature": .string("hmacsha256=\(signature)"),
+                    "payload": .string(payload),
+                    "payload_base64": .string(payloadBase64)
+                ]
+            ),
+            (
+                "webhooks_parse_payload",
+                [
+                    "payload": .string(payload),
+                    "payload_base64": .string(payloadBase64)
+                ]
+            ),
+            (
+                "webhooks_triage_event",
+                [
+                    "event_type": .string("BUILD_UPLOAD_STATE_UPDATED"),
+                    "payload": .string(payload),
+                    "payload_base64": .string(payloadBase64)
+                ]
+            )
+        ]
+
+        for (name, arguments) in calls {
+            let result = try await worker.handleTool(
+                CallTool.Parameters(name: name, arguments: arguments)
+            )
+            #expect(result.isError == true)
+            #expect(textContent(result).contains("exactly one of payload or payload_base64"))
+        }
     }
 
     @Test("parse payload also accepts direct Apple event payload")

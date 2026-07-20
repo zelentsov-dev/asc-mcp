@@ -24,7 +24,7 @@ struct ReviewsStatsHardeningTests {
 
     @Test("all-time stats follow every customer reviews page")
     func allTimeStatsFollowPagination() async throws {
-        let nextURL = "https://api.example.test/v1/apps/app-1/customerReviews?cursor=next-page&limit=200&filter%5Bterritory%5D=USA"
+        let nextURL = "https://api.example.test/v1/apps/app-1/customerReviews?cursor=next-page&limit=200&filter%5Bterritory%5D=USA&sort=-createdDate"
         let transport = TestHTTPTransport(responses: [
             .init(statusCode: 200, body: reviewsPage(
                 reviews: [
@@ -154,7 +154,7 @@ struct ReviewsStatsHardeningTests {
     @Test("bounded stats aggregate pages numerically and deduplicate review IDs")
     func boundedStatsAggregatePagesAndDeduplicate() async throws {
         let recentDate = ISO8601DateFormatter().string(from: Date().addingTimeInterval(-60))
-        let secondPage = "https://api.example.test/v1/apps/app-1/customerReviews?cursor=second"
+        let secondPage = "https://api.example.test/v1/apps/app-1/customerReviews?cursor=second&sort=-createdDate"
         let transport = TestHTTPTransport(responses: [
             .init(statusCode: 200, body: reviewsPage(
                 reviews: [

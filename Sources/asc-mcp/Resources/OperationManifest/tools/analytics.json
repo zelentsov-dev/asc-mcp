@@ -198,7 +198,15 @@
           "method": "get",
           "path": "/v1/analyticsReportRequests/{id}/reports",
           "role": "primary",
-          "condition": "Paginates all reports with limit=200."
+          "condition": "Paginates reports with limit=200 while preserving optional category and exact-name filters.",
+          "inputs": [
+            {
+              "sourceKind": "fixed",
+              "location": "query",
+              "appleName": "limit",
+              "fixedValue": 200
+            }
+          ]
         },
         {
           "operationId": "analyticsReports_instances_getToManyRelated",
@@ -206,6 +214,22 @@
           "path": "/v1/analyticsReports/{id}/instances",
           "role": "supporting",
           "condition": "Called once per locally filtered report with limit=1.",
+          "optionalParameterClassifications": [
+            {
+              "location": "query",
+              "appleName": "filter[granularity]",
+              "disposition": "intentionallyOmitted",
+              "reason": "The readiness heuristic only needs to know whether any report instance exists, regardless of granularity.",
+              "reviewAtSpec": "4.4.1"
+            },
+            {
+              "location": "query",
+              "appleName": "filter[processingDate]",
+              "disposition": "intentionallyOmitted",
+              "reason": "The readiness heuristic only needs to know whether any report instance exists, regardless of processing date.",
+              "reviewAtSpec": "4.4.1"
+            }
+          ],
           "inputs": [
             {
               "sourceKind": "derived",
@@ -213,6 +237,12 @@
               "appleName": "id",
               "derivedFrom": ["analyticsReportRequests_reports_getToManyRelated:/data/*/id"],
               "localRole": "iterateFilteredReportIdentifiers"
+            },
+            {
+              "sourceKind": "fixed",
+              "location": "query",
+              "appleName": "limit",
+              "fixedValue": 1
             }
           ]
         }
@@ -227,8 +257,19 @@
         },
         {
           "toolField": "category",
-          "sourceKind": "local",
-          "localRole": "postFetchReportCategoryFilter"
+          "sourceKind": "parameter",
+          "operationId": "analyticsReportRequests_reports_getToManyRelated",
+          "location": "query",
+          "appleName": "filter[category]",
+          "localRole": "serverFilterWithDefensiveExactPostFilter"
+        },
+        {
+          "toolField": "name",
+          "sourceKind": "parameter",
+          "operationId": "analyticsReportRequests_reports_getToManyRelated",
+          "location": "query",
+          "appleName": "filter[name]",
+          "localRole": "serverFilterWithDefensiveExactPostFilter"
         }
       ],
       "response": {
@@ -255,6 +296,10 @@
             "localRole": "requestIdentifierEcho"
           },
           {
+            "outputField": "total_reports",
+            "localRole": "filteredReportCount"
+          },
+          {
             "outputField": "reports",
             "operationId": "analyticsReportRequests_reports_getToManyRelated",
             "jsonPointer": "/data",
@@ -267,10 +312,18 @@
           {
             "outputField": "pending",
             "localRole": "reportsWithNoReturnedInstance"
+          },
+          {
+            "outputField": "category_filter",
+            "localRole": "optionalAppliedCategoryFilterEcho"
+          },
+          {
+            "outputField": "name_filter",
+            "localRole": "optionalAppliedNameFilterEcho"
           }
         ]
       },
-      "note": "Partial local readiness heuristic, not an Apple status operation. Any one instance is labeled ready even though Apple can publish late corrections and privacy thresholds can suppress data; the N+1 probe does not establish snapshot completeness. category is filtered locally despite an Apple filter[category] parameter on the reports operation."
+      "note": "Partial local readiness heuristic, not an Apple status operation. Report category and exact name are sent as Apple filters, preserved across pagination, and defensively rechecked locally. Any one instance is labeled ready even though Apple can publish late corrections and privacy thresholds can suppress data; the N+1 probe does not establish snapshot completeness. Instance granularity and processing-date filters are intentionally omitted because readiness checks for any available instance."
     },
     {
       "tool": "analytics_create_report_request",
@@ -335,7 +388,7 @@
           }
         ]
       },
-      "note": "Partial because the public tool has no explicit output schema or lifecycle guidance; Apple can take one to two days to produce the first instances and only Admin can create the request."
+      "note": "The Apple 4.4.1 create body has no optional semantic attributes or relationships: every documented body field is bound by a tool field or a fixed resource type. The tool remains partial because it has no explicit output schema or lifecycle guidance; Apple can take one to two days to produce the first instances and only Admin can create the request."
     },
     {
       "tool": "analytics_financial_report",
@@ -490,7 +543,7 @@
           }
         ]
       },
-      "note": "Partial projection without sparse-fields input or an explicit output schema."
+      "note": "Sparse fieldsets follow the manifest-wide policy; this stable projection remains partial only because the tool has no explicit output schema."
     },
     {
       "tool": "analytics_get_report",
@@ -546,7 +599,7 @@
           }
         ]
       },
-      "note": "Partial projection without sparse-fields input or an explicit output schema."
+      "note": "Sparse fieldsets follow the manifest-wide policy; this stable projection remains partial only because the tool has no explicit output schema."
     },
     {
       "tool": "analytics_list_instances",
@@ -576,6 +629,20 @@
           "operationId": "analyticsReports_instances_getToManyRelated",
           "location": "query",
           "appleName": "limit"
+        },
+        {
+          "toolField": "granularities",
+          "sourceKind": "parameter",
+          "operationId": "analyticsReports_instances_getToManyRelated",
+          "location": "query",
+          "appleName": "filter[granularity]"
+        },
+        {
+          "toolField": "processing_dates",
+          "sourceKind": "parameter",
+          "operationId": "analyticsReports_instances_getToManyRelated",
+          "location": "query",
+          "appleName": "filter[processingDate]"
         },
         {
           "toolField": "next_url",
@@ -613,10 +680,15 @@
             "outputField": "next_url",
             "operationId": "analyticsReports_instances_getToManyRelated",
             "jsonPointer": "/links/next"
+          },
+          {
+            "outputField": "total",
+            "operationId": "analyticsReports_instances_getToManyRelated",
+            "jsonPointer": "/meta/paging/total"
           }
         ]
       },
-      "note": "Partial: Apple filter[granularity], filter[processingDate], and sparse fields are not exposed. Consumers must account for later processingDate corrections when selecting partitions."
+      "note": "All non-sparse Apple 4.4.1 query parameters are exposed with strict enum and calendar-date validation, and continuation URLs must preserve every requested filter. Sparse fieldsets follow the manifest-wide policy. Consumers must still account for later processingDate corrections when selecting partitions; the tool remains partial because it has no explicit output schema."
     },
     {
       "tool": "analytics_list_report_requests",
@@ -648,6 +720,29 @@
           "appleName": "limit"
         },
         {
+          "toolField": "access_types",
+          "sourceKind": "parameter",
+          "operationId": "apps_analyticsReportRequests_getToManyRelated",
+          "location": "query",
+          "appleName": "filter[accessType]"
+        },
+        {
+          "toolField": "include_reports",
+          "sourceKind": "parameter",
+          "operationId": "apps_analyticsReportRequests_getToManyRelated",
+          "location": "query",
+          "appleName": "include",
+          "localRole": "trueMapsToReportsAndFalseOmitsParameter"
+        },
+        {
+          "toolField": "limit_reports",
+          "sourceKind": "parameter",
+          "operationId": "apps_analyticsReportRequests_getToManyRelated",
+          "location": "query",
+          "appleName": "limit[reports]",
+          "localRole": "requiresIncludeReportsTrue"
+        },
+        {
           "toolField": "next_url",
           "sourceKind": "local",
           "localRole": "paginationContinuation"
@@ -674,6 +769,23 @@
             "localRole": "requestProjection"
           },
           {
+            "outputField": "report_requests.report_ids",
+            "operationId": "apps_analyticsReportRequests_getToManyRelated",
+            "jsonPointer": "/data/*/relationships/reports/data",
+            "localRole": "includedRelationshipIdentifierProjection"
+          },
+          {
+            "outputField": "report_requests.reports_total",
+            "operationId": "apps_analyticsReportRequests_getToManyRelated",
+            "jsonPointer": "/data/*/relationships/reports/meta/paging/total"
+          },
+          {
+            "outputField": "included_reports",
+            "operationId": "apps_analyticsReportRequests_getToManyRelated",
+            "jsonPointer": "/included",
+            "localRole": "includedAnalyticsReportProjection"
+          },
+          {
             "outputField": "count",
             "operationId": "apps_analyticsReportRequests_getToManyRelated",
             "jsonPointer": "/data",
@@ -683,10 +795,15 @@
             "outputField": "next_url",
             "operationId": "apps_analyticsReportRequests_getToManyRelated",
             "jsonPointer": "/links/next"
+          },
+          {
+            "outputField": "total",
+            "operationId": "apps_analyticsReportRequests_getToManyRelated",
+            "jsonPointer": "/meta/paging/total"
           }
         ]
       },
-      "note": "Partial: filter[accessType], sparse fields, include=reports, and limit[reports] are not exposed."
+      "note": "All non-sparse Apple 4.4.1 query parameters are exposed. include_reports maps a true boolean to include=reports; limit_reports is accepted only with that include and is capped at Apple's nested limit of 50. Requested access/include/nested-limit semantics are preserved across continuation URLs, and the response projects relationship identifiers, included reports, and collection totals. Sparse fieldsets follow the manifest-wide policy; the tool remains partial because it has no explicit output schema."
     },
     {
       "tool": "analytics_list_reports",
@@ -716,6 +833,20 @@
           "operationId": "analyticsReportRequests_reports_getToManyRelated",
           "location": "query",
           "appleName": "limit"
+        },
+        {
+          "toolField": "names",
+          "sourceKind": "parameter",
+          "operationId": "analyticsReportRequests_reports_getToManyRelated",
+          "location": "query",
+          "appleName": "filter[name]"
+        },
+        {
+          "toolField": "categories",
+          "sourceKind": "parameter",
+          "operationId": "analyticsReportRequests_reports_getToManyRelated",
+          "location": "query",
+          "appleName": "filter[category]"
         },
         {
           "toolField": "next_url",
@@ -753,10 +884,15 @@
             "outputField": "next_url",
             "operationId": "analyticsReportRequests_reports_getToManyRelated",
             "jsonPointer": "/links/next"
+          },
+          {
+            "outputField": "total",
+            "operationId": "analyticsReportRequests_reports_getToManyRelated",
+            "jsonPointer": "/meta/paging/total"
           }
         ]
       },
-      "note": "Partial: Apple filter[name], filter[category], and sparse fields are not exposed."
+      "note": "All non-sparse Apple 4.4.1 query parameters are exposed with exact name and documented category filtering, and continuation URLs must preserve requested filters. Sparse fieldsets follow the manifest-wide policy; the tool remains partial because it has no explicit output schema."
     },
     {
       "tool": "analytics_list_segments",
@@ -831,10 +967,15 @@
             "outputField": "next_url",
             "operationId": "analyticsReportInstances_segments_getToManyRelated",
             "jsonPointer": "/links/next"
+          },
+          {
+            "outputField": "total",
+            "operationId": "analyticsReportInstances_segments_getToManyRelated",
+            "jsonPointer": "/meta/paging/total"
           }
         ]
       },
-      "note": "Partial: sparse fields are absent and the workflow only returns segment metadata. Apple's presigned URLs expire after five minutes; the tool does not immediately download all gzip TSV segments or verify sizeInBytes and MD5 checksum."
+      "note": "The only non-sparse Apple 4.4.1 collection parameter is exposed and totals are projected; sparse fieldsets follow the manifest-wide policy. The workflow remains partial because it only returns segment metadata and has no explicit output schema. Apple's presigned URLs expire after five minutes; the tool does not immediately download all gzip TSV segments or verify sizeInBytes and MD5 checksum."
     },
     {
       "tool": "analytics_sales_report",

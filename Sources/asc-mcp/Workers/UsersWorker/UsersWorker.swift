@@ -19,6 +19,9 @@ public final class UsersWorker: Sendable {
         "GENERATE_INDIVIDUAL_KEYS"
     ]
     static let deprecatedRoles: Set<String> = ["ACCESS_TO_REPORTS"]
+    static let userSortValues = ["username", "-username", "lastName", "-lastName"]
+    static let invitationSortValues = ["email", "-email", "lastName", "-lastName"]
+    static let includeValues = ["visibleApps"]
 
     let httpClient: HTTPClient
 
