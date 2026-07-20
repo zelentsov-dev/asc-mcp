@@ -4,7 +4,11 @@ import MCP
 // MARK: - Tool Handlers
 extension AppLifecycleWorker {
 
-    private func versionFilterValue(_ name: String, from arguments: [String: Value]) throws -> String? {
+    private func versionFilterValues(
+        _ name: String,
+        from arguments: [String: Value],
+        allowedValues: Set<String>? = nil
+    ) throws -> [String]? {
         guard let value = arguments[name] else {
             return nil
         }
@@ -13,12 +17,39 @@ extension AppLifecycleWorker {
         }
         let strings = try items.map { item in
             guard let string = item.stringValue,
-                  !string.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+                  string == string.trimmingCharacters(in: .whitespacesAndNewlines),
+                  !string.isEmpty else {
                 throw AppLifecycleQueryArgumentError("\(name) must contain only non-empty strings")
             }
             return string
         }
-        return strings.joined(separator: ",")
+        guard Set(strings).count == strings.count else {
+            throw AppLifecycleQueryArgumentError("\(name) must not contain duplicate values")
+        }
+        if let allowedValues,
+           let invalidValue = strings.first(where: { !allowedValues.contains($0) }) {
+            throw AppLifecycleQueryArgumentError(
+                "\(name) contains unsupported value '\(invalidValue)'; allowed values: \(allowedValues.sorted().joined(separator: ", "))"
+            )
+        }
+        return strings
+    }
+
+    private func boundedInteger(
+        _ name: String,
+        from arguments: [String: Value],
+        default defaultValue: Int,
+        range: ClosedRange<Int>
+    ) throws -> Int {
+        guard let value = arguments[name] else {
+            return defaultValue
+        }
+        guard let integer = value.intValue, range.contains(integer) else {
+            throw AppLifecycleQueryArgumentError(
+                "\(name) must be an integer from \(range.lowerBound) through \(range.upperBound)"
+            )
+        }
+        return integer
     }
 
     /// Creates a new app version for release
@@ -79,101 +110,92 @@ extension AppLifecycleWorker {
     /// - Returns: JSON array of versions with their IDs, version strings, platforms and states
     /// - Throws: CallTool.Result with error if app_id missing or API call fails
     func listVersions(_ params: CallTool.Parameters) async throws -> CallTool.Result {
-        guard let arguments = params.arguments,
-              let appId = arguments["app_id"]?.stringValue else {
-            return CallTool.Result(
-                content: [MCPContent.text("Error: Required parameter 'app_id' is missing")],
-                isError: true
-            )
+        guard let arguments = params.arguments else {
+            return MCPResult.error("Required parameter 'app_id' is missing")
         }
-
-        let effectiveLimit = min(max(arguments["limit"]?.intValue ?? 25, 1), 200)
-
         do {
-            let responseData: Data
+            let appId = try requiredIdentifier("app_id", from: arguments)
+            let effectiveLimit = try boundedInteger(
+                "limit",
+                from: arguments,
+                default: 25,
+                range: 1...200
+            )
+            let appStoreStates = try versionFilterValues(
+                "states",
+                from: arguments,
+                allowedValues: Self.appStoreStates
+            )
+            let appVersionStates = try versionFilterValues(
+                "app_version_states",
+                from: arguments,
+                allowedValues: Self.appVersionStates
+            )
+            let versionIDs = try versionFilterValues("version_ids", from: arguments)
+            let versionStrings = try versionFilterValues("version_strings", from: arguments)
+            let pluralPlatforms = try versionFilterValues(
+                "platforms",
+                from: arguments,
+                allowedValues: Self.platforms
+            )
+            let legacyPlatform = try optionalIdentifier("platform", from: arguments)
+            guard pluralPlatforms == nil || legacyPlatform == nil else {
+                throw AppLifecycleQueryArgumentError("platform and platforms cannot be used together")
+            }
+            if let legacyPlatform, !Self.platforms.contains(legacyPlatform) {
+                throw AppLifecycleQueryArgumentError(
+                    "platform contains unsupported value '\(legacyPlatform)'; allowed values: \(Self.platforms.sorted().joined(separator: ", "))"
+                )
+            }
 
-            // Check for pagination URL
+            var queryParameters: [String: String] = [
+                "include": "build,appStoreVersionPhasedRelease",
+                "limit": String(effectiveLimit)
+            ]
+            if let appStoreStates {
+                queryParameters["filter[appStoreState]"] = appStoreStates.joined(separator: ",")
+            }
+            if let appVersionStates {
+                queryParameters["filter[appVersionState]"] = appVersionStates.joined(separator: ",")
+            }
+            if let platforms = pluralPlatforms ?? legacyPlatform.map({ [$0] }) {
+                queryParameters["filter[platform]"] = platforms.joined(separator: ",")
+            }
+            if let versionIDs {
+                queryParameters["filter[id]"] = versionIDs.joined(separator: ",")
+            }
+            if let versionStrings {
+                queryParameters["filter[versionString]"] = versionStrings.joined(separator: ",")
+            }
+
+            let responseData: Data
             if let nextUrl = try paginationURL(from: arguments["next_url"]) {
-                var requiredParameters: [String: String] = [
-                    "include": "build,appStoreVersionSubmission,appStoreVersionPhasedRelease"
-                ]
-                if let states = arguments["states"]?.arrayValue {
-                    let stateStrings = states.compactMap { $0.stringValue }
-                    if !stateStrings.isEmpty {
-                        requiredParameters["filter[appStoreState]"] = stateStrings.joined(separator: ",")
-                    }
-                }
-                if let states = arguments["app_version_states"]?.arrayValue {
-                    let stateStrings = states.compactMap { $0.stringValue }
-                    if !stateStrings.isEmpty {
-                        requiredParameters["filter[appVersionState]"] = stateStrings.joined(separator: ",")
-                    }
-                }
-                if let platform = arguments["platform"]?.stringValue {
-                    requiredParameters["filter[platform]"] = platform
-                }
-                if let versionIDs = try versionFilterValue("version_ids", from: arguments) {
-                    requiredParameters["filter[id]"] = versionIDs
-                }
-                if let versionStrings = try versionFilterValue("version_strings", from: arguments) {
-                    requiredParameters["filter[versionString]"] = versionStrings
-                }
-                requiredParameters["limit"] = String(effectiveLimit)
                 responseData = try await httpClient.getPage(
                     nextUrl,
                     scope: PaginationScope.strict(
                         path: "/v1/apps/\(try ASCPathSegment.encode(appId))/appStoreVersions",
-                        query: requiredParameters
+                        query: queryParameters
                     )
                 )
             } else {
-                var queryParams: [String: String] = [
-                    "include": "build,appStoreVersionSubmission,appStoreVersionPhasedRelease"
-                ]
-
-                // Add state filter
-                if let states = arguments["states"]?.arrayValue {
-                    let stateStrings = states.compactMap { $0.stringValue }
-                    if !stateStrings.isEmpty {
-                        queryParams["filter[appStoreState]"] = stateStrings.joined(separator: ",")
-                    }
-                }
-
-                if let states = arguments["app_version_states"]?.arrayValue {
-                    let stateStrings = states.compactMap { $0.stringValue }
-                    if !stateStrings.isEmpty {
-                        queryParams["filter[appVersionState]"] = stateStrings.joined(separator: ",")
-                    }
-                }
-
-                // Add platform filter
-                if let platform = arguments["platform"]?.stringValue {
-                    queryParams["filter[platform]"] = platform
-                }
-                if let versionIDs = try versionFilterValue("version_ids", from: arguments) {
-                    queryParams["filter[id]"] = versionIDs
-                }
-                if let versionStrings = try versionFilterValue("version_strings", from: arguments) {
-                    queryParams["filter[versionString]"] = versionStrings
-                }
-
-                queryParams["limit"] = String(effectiveLimit)
-
                 responseData = try await httpClient.get(
                     "/v1/apps/\(try ASCPathSegment.encode(appId))/appStoreVersions",
-                    parameters: queryParams
+                    parameters: queryParameters
                 )
             }
 
             let response = try JSONDecoder().decode(PassthroughAPIResponse.self, from: responseData)
+            guard let versions = response.data.arrayValue else {
+                throw AppLifecycleQueryArgumentError("Apple returned a non-array app version collection")
+            }
 
             var result: [String: Any] = [
                 "success": true,
                 "versions": response.data.asAny,
-                "app_id": appId
+                "app_id": appId,
+                "count": versions.count
             ]
 
-            // Extract next_url from links
             if case .object(let linksObj) = response.links,
                case .string(let nextUrl) = linksObj["next"] {
                 result["next_url"] = nextUrl
@@ -181,6 +203,12 @@ extension AppLifecycleWorker {
 
             if let included = response.included {
                 result["included"] = included.map { $0.asAny }
+            }
+            if let meta = response.meta {
+                result["meta"] = meta.asAny
+                if let total = pagingTotal(from: meta) {
+                    result["total"] = total
+                }
             }
 
             return MCPResult.jsonObject(result)
@@ -207,7 +235,7 @@ extension AppLifecycleWorker {
 
         do {
             let queryParams: [String: String] = [
-                "include": "build,appStoreVersionSubmission,appStoreVersionPhasedRelease,appStoreReviewDetail"
+                "include": "build,appStoreVersionPhasedRelease"
             ]
 
             let response = try await httpClient.get(
@@ -232,6 +260,101 @@ extension AppLifecycleWorker {
                 content: [MCPContent.text("Error: Failed to get version: \(error.localizedDescription)")],
                 isError: true
             )
+        }
+    }
+
+    /// Gets the app-level age rating questionnaire for an App Info resource
+    /// - Returns: JSON with the complete age rating declaration and selected App Info ID
+    /// - Throws: CallTool.Result with error if app_info_id is missing or the API call fails
+    func getAgeRatingDeclaration(_ params: CallTool.Parameters) async throws -> CallTool.Result {
+        guard let arguments = params.arguments else {
+            return MCPResult.error("Required parameter 'app_info_id' is missing")
+        }
+
+        do {
+            let appInfoId = try requiredIdentifier("app_info_id", from: arguments)
+            let response = try await httpClient.get(
+                "/v1/appInfos/\(try ASCPathSegment.encode(appInfoId))/ageRatingDeclaration",
+                parameters: [:],
+                as: PassthroughAPIResponse.self
+            )
+
+            return MCPResult.jsonObject([
+                "success": true,
+                "app_info_id": appInfoId,
+                "age_rating_declaration": response.data.asAny
+            ])
+        } catch {
+            return MCPResult.error("Failed to get age rating declaration: \(error.localizedDescription)")
+        }
+    }
+
+    /// Lists calculated App Store age ratings for every territory of an App Info resource
+    /// - Returns: JSON with territory ratings, included territory resources, paging metadata and continuation URL
+    /// - Throws: CallTool.Result with error if inputs are invalid or the API call fails
+    func listTerritoryAgeRatings(_ params: CallTool.Parameters) async throws -> CallTool.Result {
+        guard let arguments = params.arguments else {
+            return MCPResult.error("Required parameter 'app_info_id' is missing")
+        }
+
+        do {
+            let appInfoId = try requiredIdentifier("app_info_id", from: arguments)
+            let effectiveLimit = try boundedInteger(
+                "limit",
+                from: arguments,
+                default: 200,
+                range: 1...200
+            )
+            let endpoint = "/v1/appInfos/\(try ASCPathSegment.encode(appInfoId))/territoryAgeRatings"
+            let queryParameters = [
+                "fields[territoryAgeRatings]": "appStoreAgeRating,territory",
+                "fields[territories]": "currency",
+                "include": "territory",
+                "limit": String(effectiveLimit)
+            ]
+
+            let response: PassthroughAPIResponse
+            if let nextUrl = try paginationURL(from: arguments["next_url"]) {
+                response = try await httpClient.getPage(
+                    nextUrl,
+                    scope: PaginationScope.strict(path: endpoint, query: queryParameters),
+                    as: PassthroughAPIResponse.self
+                )
+            } else {
+                response = try await httpClient.get(
+                    endpoint,
+                    parameters: queryParameters,
+                    as: PassthroughAPIResponse.self
+                )
+            }
+
+            guard let ratings = response.data.arrayValue else {
+                throw AppLifecycleQueryArgumentError("Apple returned a non-array territory age rating collection")
+            }
+
+            var result: [String: Any] = [
+                "success": true,
+                "app_info_id": appInfoId,
+                "territory_age_ratings": response.data.asAny,
+                "count": ratings.count
+            ]
+            if let included = response.included {
+                result["included_territories"] = included.map(\.asAny)
+            }
+            if case .object(let links) = response.links,
+               case .string(let nextUrl) = links["next"] {
+                result["next_url"] = nextUrl
+            }
+            if let meta = response.meta {
+                result["meta"] = meta.asAny
+                if let total = pagingTotal(from: meta) {
+                    result["total"] = total
+                }
+            }
+
+            return MCPResult.jsonObject(result)
+        } catch {
+            return MCPResult.error("Failed to list territory age ratings: \(error.localizedDescription)")
         }
     }
 
@@ -293,6 +416,7 @@ extension AppLifecycleWorker {
                 "success": true,
                 "version": [
                     "id": v.id,
+                    "platform": (v.attributes?.platform).jsonSafe,
                     "version_string": (v.attributes?.versionString).jsonSafe,
                     "state": (v.attributes?.appVersionState ?? v.attributes?.appStoreState).jsonSafe,
                     "appVersionState": (v.attributes?.appVersionState).jsonSafe,
@@ -301,6 +425,8 @@ extension AppLifecycleWorker {
                     "app_store_state": (v.attributes?.appStoreState).jsonSafe,
                     "release_type": (v.attributes?.releaseType).jsonSafe,
                     "review_type": (v.attributes?.reviewType).jsonSafe,
+                    "earliest_release_date": (v.attributes?.earliestReleaseDate).jsonSafe,
+                    "copyright": (v.attributes?.copyright).jsonSafe,
                     "downloadable": (v.attributes?.downloadable).jsonSafe,
                     "uses_idfa": (v.attributes?.usesIdfa).jsonSafe,
                     "created_date": (v.attributes?.createdDate).jsonSafe
@@ -502,16 +628,26 @@ extension AppLifecycleWorker {
     /// - Returns: JSON with phased release details including ID and current state
     /// - Throws: CallTool.Result with error if version_id missing or creation fails
     func createPhasedRelease(_ params: CallTool.Parameters) async throws -> CallTool.Result {
-        guard let arguments = params.arguments,
-              let versionId = arguments["version_id"]?.stringValue else {
-            return CallTool.Result(
-                content: [MCPContent.text("Error: Required parameter 'version_id' is missing")],
-                isError: true
-            )
+        guard let arguments = params.arguments else {
+            return MCPResult.error("Required parameter 'version_id' is missing")
         }
 
         do {
-            let state = arguments["phased_release_state"]?.stringValue ?? "INACTIVE"
+            let versionId = try requiredIdentifier("version_id", from: arguments)
+            let state = try optionalIdentifier("phased_release_state", from: arguments) ?? "INACTIVE"
+            guard Self.phasedReleaseCreateStates.contains(state) else {
+                throw AppLifecycleArgumentError(
+                    "phased_release_state must be one of: \(Self.phasedReleaseCreateStates.sorted().joined(separator: ", "))"
+                )
+            }
+            if state == "ACTIVE" {
+                let confirmation = try optionalIdentifier("confirm_version_id", from: arguments)
+                guard confirmation == versionId else {
+                    return MCPResult.error(
+                        "Creating an ACTIVE phased release starts distribution. Set confirm_version_id to the exact version_id to continue."
+                    )
+                }
+            }
 
             let request = CreatePhasedReleaseRequest(versionId: versionId, state: state)
             let response = try await httpClient.post(
@@ -574,16 +710,27 @@ extension AppLifecycleWorker {
     /// - Returns: JSON with updated phased release state and percentage
     /// - Throws: CallTool.Result with error if required parameters missing or update fails
     func updatePhasedRelease(_ params: CallTool.Parameters) async throws -> CallTool.Result {
-        guard let arguments = params.arguments,
-              let phasedReleaseId = arguments["phased_release_id"]?.stringValue,
-              let state = arguments["phased_release_state"]?.stringValue else {
-            return CallTool.Result(
-                content: [MCPContent.text("Error: Required parameters missing: phased_release_id, phased_release_state")],
-                isError: true
-            )
+        guard let arguments = params.arguments else {
+            return MCPResult.error("Required parameters missing: phased_release_id, phased_release_state")
         }
 
         do {
+            let phasedReleaseId = try requiredIdentifier("phased_release_id", from: arguments)
+            let state = try requiredIdentifier("phased_release_state", from: arguments)
+            guard Self.phasedReleaseUpdateStates.contains(state) else {
+                throw AppLifecycleArgumentError(
+                    "phased_release_state must be one of: \(Self.phasedReleaseUpdateStates.sorted().joined(separator: ", "))"
+                )
+            }
+            if state == "COMPLETE" {
+                let confirmation = try optionalIdentifier("confirm_phased_release_id", from: arguments)
+                guard confirmation == phasedReleaseId else {
+                    return MCPResult.error(
+                        "COMPLETE immediately releases the version to all users. Set confirm_phased_release_id to the exact phased_release_id to continue."
+                    )
+                }
+            }
+
             let request = UpdatePhasedReleaseRequest(phasedReleaseId: phasedReleaseId, state: state)
             let response = try await httpClient.patch(
                 "/v1/appStoreVersionPhasedReleases/\(try ASCPathSegment.encode(phasedReleaseId))",
@@ -608,12 +755,18 @@ extension AppLifecycleWorker {
     }
 
     func deletePhasedRelease(_ params: CallTool.Parameters) async throws -> CallTool.Result {
-        guard let arguments = params.arguments,
-              let phasedReleaseId = arguments["phased_release_id"]?.stringValue else {
+        guard let arguments = params.arguments else {
             return MCPResult.error("Required parameter 'phased_release_id' is missing")
         }
 
         do {
+            let phasedReleaseId = try requiredIdentifier("phased_release_id", from: arguments)
+            let confirmation = try optionalIdentifier("confirm_phased_release_id", from: arguments)
+            guard confirmation == phasedReleaseId else {
+                return MCPResult.error(
+                    "Deleting a phased release cancels an eligible planned rollout. Set confirm_phased_release_id to the exact phased_release_id to continue."
+                )
+            }
             _ = try await httpClient.delete(
                 "/v1/appStoreVersionPhasedReleases/\(try ASCPathSegment.encode(phasedReleaseId))"
             )
@@ -936,7 +1089,7 @@ extension AppLifecycleWorker {
             ) {
                 attributes["koreaAgeRatingOverride"] = value
             }
-            if let value = try nullableString("developer_age_rating_info_url", from: arguments) {
+            if let value = try nullableAbsoluteURI("developer_age_rating_info_url", from: arguments) {
                 attributes["developerAgeRatingInfoUrl"] = value
             }
         } catch {
@@ -1081,6 +1234,11 @@ private extension AppLifecycleWorker {
         } catch let error as ASCError {
             switch error {
             case .api(_, 404), .apiResponse(_, 404):
+                _ = try await httpClient.get(
+                    "/v1/appStoreVersions/\(try ASCPathSegment.encode(versionId))",
+                    parameters: ["fields[appStoreVersions]": "versionString"],
+                    as: ASCAppStoreVersionResponse.self
+                )
                 return nil
             default:
                 throw error
@@ -1165,6 +1323,82 @@ private extension AppLifecycleWorker {
         }
         return .bool(bool)
     }
+
+    func nullableAbsoluteURI(
+        _ name: String,
+        from arguments: [String: Value]
+    ) throws -> NullableAttributeValue? {
+        guard let value = arguments[name] else {
+            return nil
+        }
+        if value.isNull {
+            return .null
+        }
+        guard let string = value.stringValue else {
+            throw AppLifecycleArgumentError("\(name) must be an absolute URI or null")
+        }
+        let schemePattern = "^[A-Za-z][A-Za-z0-9+.-]*$"
+        guard !string.isEmpty,
+              string.rangeOfCharacter(from: .whitespacesAndNewlines) == nil,
+              let components = URLComponents(string: string),
+              let scheme = components.scheme,
+              scheme.range(of: schemePattern, options: .regularExpression) != nil,
+              URL(string: string)?.scheme == scheme else {
+            throw AppLifecycleArgumentError("\(name) must be an absolute URI or null")
+        }
+        return .string(string)
+    }
+
+    func pagingTotal(from meta: JSONValue) -> Int? {
+        guard let paging = meta.objectValue?["paging"]?.objectValue,
+              case .int(let total)? = paging["total"] else {
+            return nil
+        }
+        return total
+    }
+
+    static let platforms: Set<String> = ["IOS", "MAC_OS", "TV_OS", "VISION_OS"]
+    static let phasedReleaseCreateStates: Set<String> = ["INACTIVE", "ACTIVE", "PAUSED"]
+    static let phasedReleaseUpdateStates: Set<String> = ["ACTIVE", "PAUSED", "COMPLETE"]
+    static let appStoreStates: Set<String> = [
+        "ACCEPTED",
+        "DEVELOPER_REMOVED_FROM_SALE",
+        "DEVELOPER_REJECTED",
+        "IN_REVIEW",
+        "INVALID_BINARY",
+        "METADATA_REJECTED",
+        "PENDING_APPLE_RELEASE",
+        "PENDING_CONTRACT",
+        "PENDING_DEVELOPER_RELEASE",
+        "PREPARE_FOR_SUBMISSION",
+        "PREORDER_READY_FOR_SALE",
+        "PROCESSING_FOR_APP_STORE",
+        "READY_FOR_REVIEW",
+        "READY_FOR_SALE",
+        "REJECTED",
+        "REMOVED_FROM_SALE",
+        "WAITING_FOR_EXPORT_COMPLIANCE",
+        "WAITING_FOR_REVIEW",
+        "REPLACED_WITH_NEW_VERSION",
+        "NOT_APPLICABLE"
+    ]
+    static let appVersionStates: Set<String> = [
+        "ACCEPTED",
+        "DEVELOPER_REJECTED",
+        "IN_REVIEW",
+        "INVALID_BINARY",
+        "METADATA_REJECTED",
+        "PENDING_APPLE_RELEASE",
+        "PENDING_DEVELOPER_RELEASE",
+        "PREPARE_FOR_SUBMISSION",
+        "PROCESSING_FOR_DISTRIBUTION",
+        "READY_FOR_DISTRIBUTION",
+        "READY_FOR_REVIEW",
+        "REJECTED",
+        "REPLACED_WITH_NEW_VERSION",
+        "WAITING_FOR_EXPORT_COMPLIANCE",
+        "WAITING_FOR_REVIEW"
+    ]
 }
 
 private struct ReviewDetailAttributes {

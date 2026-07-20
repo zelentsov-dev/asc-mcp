@@ -411,6 +411,7 @@ struct PassthroughAPIResponse: Codable, Sendable {
     let data: JSONValue
     let included: [JSONValue]?
     let links: JSONValue?
+    let meta: JSONValue?
 }
 
 /// Wrapper for single-resource response where we need to extract the ID

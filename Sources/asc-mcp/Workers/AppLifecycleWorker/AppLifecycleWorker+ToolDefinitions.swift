@@ -134,8 +134,19 @@ extension AppLifecycleWorker {
                     ]),
                     "platform": .object([
                         "type": .string("string"),
-                        "description": .string("Filter by platform"),
-                        "enum": .array([.string("IOS"), .string("MAC_OS"), .string("TV_OS"), .string("VISION_OS")])
+                        "description": .string("Deprecated single-platform compatibility filter. Use platforms for Apple's array-valued filter[platform]."),
+                        "enum": .array([.string("IOS"), .string("MAC_OS"), .string("TV_OS"), .string("VISION_OS")]),
+                        "deprecated": .bool(true)
+                    ]),
+                    "platforms": .object([
+                        "type": .string("array"),
+                        "items": .object([
+                            "type": .string("string"),
+                            "enum": .array([.string("IOS"), .string("MAC_OS"), .string("TV_OS"), .string("VISION_OS")])
+                        ]),
+                        "description": .string("Filter by one or more platforms using Apple's filter[platform] array contract"),
+                        "minItems": .int(1),
+                        "uniqueItems": .bool(true)
                     ]),
                     "limit": .object([
                         "type": .string("integer"),
@@ -157,7 +168,7 @@ extension AppLifecycleWorker {
     func getVersionTool() -> Tool {
         Tool(
             name: "app_versions_get",
-            description: "Get detailed information about a specific app version",
+            description: "Get an App Store version with build and phased-release data. Deprecated submission data and sensitive review details are excluded from the default projection.",
             inputSchema: .object([
                 "type": .string("object"),
                 "properties": .object([
@@ -167,6 +178,53 @@ extension AppLifecycleWorker {
                     ])
                 ]),
                 "required": .array([.string("version_id")])
+            ])
+        )
+    }
+
+    func getAgeRatingDeclarationTool() -> Tool {
+        Tool(
+            name: "app_versions_get_age_rating_declaration",
+            description: "Get the complete App Info age rating questionnaire used by App Store review. Use app_info_id from app_info_list; calculated territory ratings are available from app_versions_list_territory_age_ratings.",
+            inputSchema: .object([
+                "type": .string("object"),
+                "properties": .object([
+                    "app_info_id": .object([
+                        "type": .string("string"),
+                        "description": .string("Authoritative App Info ID from app_info_list"),
+                        "minLength": .int(1)
+                    ])
+                ]),
+                "required": .array([.string("app_info_id")])
+            ])
+        )
+    }
+
+    func listTerritoryAgeRatingsTool() -> Tool {
+        Tool(
+            name: "app_versions_list_territory_age_ratings",
+            description: "List Apple's calculated App Store age rating for every territory of an App Info resource, including territory currency details.",
+            inputSchema: .object([
+                "type": .string("object"),
+                "properties": .object([
+                    "app_info_id": .object([
+                        "type": .string("string"),
+                        "description": .string("Authoritative App Info ID from app_info_list"),
+                        "minLength": .int(1)
+                    ]),
+                    "limit": .object([
+                        "type": .string("integer"),
+                        "description": .string("Maximum number of territory ratings to return (default: 200)"),
+                        "minimum": .int(1),
+                        "maximum": .int(200),
+                        "default": .int(200)
+                    ]),
+                    "next_url": .object([
+                        "type": .string("string"),
+                        "description": .string("Apple continuation URL from the previous response. Repeat app_info_id and the effective limit; the fixed full field projection and cursor are validated.")
+                    ])
+                ]),
+                "required": .array([.string("app_info_id")])
             ])
         )
     }
@@ -286,7 +344,7 @@ extension AppLifecycleWorker {
     func createPhasedReleaseTool() -> Tool {
         Tool(
             name: "app_versions_create_phased_release",
-            description: "Create a phased release for gradual rollout",
+            description: "Configure Apple's seven-day phased rollout. ACTIVE starts distribution and requires exact version-ID confirmation.",
             inputSchema: .object([
                 "type": .string("object"),
                 "properties": .object([
@@ -296,8 +354,13 @@ extension AppLifecycleWorker {
                     ]),
                     "phased_release_state": .object([
                         "type": .string("string"),
-                        "description": .string("Initial state of phased release"),
-                        "enum": .array([.string("INACTIVE"), .string("ACTIVE"), .string("PAUSED")])
+                        "description": .string("Initial state of phased release. Defaults to INACTIVE; ACTIVE starts the rollout."),
+                        "enum": .array([.string("INACTIVE"), .string("ACTIVE"), .string("PAUSED")]),
+                        "default": .string("INACTIVE")
+                    ]),
+                    "confirm_version_id": .object([
+                        "type": .string("string"),
+                        "description": .string("Exact version_id required when the initial state is ACTIVE")
                     ])
                 ]),
                 "required": .array([.string("version_id")])
@@ -325,7 +388,7 @@ extension AppLifecycleWorker {
     func updatePhasedReleaseTool() -> Tool {
         Tool(
             name: "app_versions_update_phased_release",
-            description: "Update phased release state (pause/resume/complete). Get phased_release_id from app_versions_get_phased_release.",
+            description: "Pause, resume, or immediately complete a phased rollout. COMPLETE releases to all users and requires exact phased-release-ID confirmation.",
             inputSchema: .object([
                 "type": .string("object"),
                 "properties": .object([
@@ -337,6 +400,10 @@ extension AppLifecycleWorker {
                         "type": .string("string"),
                         "description": .string("New state for phased release"),
                         "enum": .array([.string("ACTIVE"), .string("PAUSED"), .string("COMPLETE")])
+                    ]),
+                    "confirm_phased_release_id": .object([
+                        "type": .string("string"),
+                        "description": .string("Exact phased_release_id required when COMPLETE immediately releases the version to all users")
                     ])
                 ]),
                 "required": .array([.string("phased_release_id"), .string("phased_release_state")])
@@ -347,13 +414,17 @@ extension AppLifecycleWorker {
     func deletePhasedReleaseTool() -> Tool {
         Tool(
             name: "app_versions_delete_phased_release",
-            description: "Delete a phased release configuration",
+            description: "Cancel an eligible planned phased release before rollout begins. Apple rejects deletion after rollout starts; exact phased-release-ID confirmation is required.",
             inputSchema: .object([
                 "type": .string("object"),
                 "properties": .object([
                     "phased_release_id": .object([
                         "type": .string("string"),
                         "description": .string("Phased release ID")
+                    ]),
+                    "confirm_phased_release_id": .object([
+                        "type": .string("string"),
+                        "description": .string("Exact phased_release_id required to confirm cancellation of an eligible planned rollout")
                     ])
                 ]),
                 "required": .array([.string("phased_release_id")])
@@ -556,7 +627,8 @@ extension AppLifecycleWorker {
                     ]),
                     "developer_age_rating_info_url": .object([
                         "type": .array([.string("string"), .string("null")]),
-                        "description": .string("URL with developer's age rating information")
+                        "description": .string("Absolute URI with developer's age rating information"),
+                        "format": .string("uri")
                     ])
                 ]),
                 "anyOf": .array([

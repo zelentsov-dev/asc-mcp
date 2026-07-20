@@ -15,6 +15,8 @@ public final class AppLifecycleWorker: Sendable {
             createVersionTool(),
             listVersionsTool(),
             getVersionTool(),
+            getAgeRatingDeclarationTool(),
+            listTerritoryAgeRatingsTool(),
             updateVersionTool(),
             attachBuildTool(),
             submitForReviewTool(),
@@ -39,6 +41,10 @@ public final class AppLifecycleWorker: Sendable {
             return try await listVersions(params)
         case "app_versions_get":
             return try await getVersion(params)
+        case "app_versions_get_age_rating_declaration":
+            return try await getAgeRatingDeclaration(params)
+        case "app_versions_list_territory_age_ratings":
+            return try await listTerritoryAgeRatings(params)
         case "app_versions_update":
             return try await updateVersion(params)
         case "app_versions_attach_build":
