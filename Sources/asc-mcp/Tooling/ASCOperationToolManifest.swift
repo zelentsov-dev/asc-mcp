@@ -224,6 +224,7 @@ struct ASCOptionalParameterFamilyRule: Codable, Sendable, Equatable {
 struct ASCOperationManifestIndex: Codable, Sendable, Equatable {
     let schemaVersion: Int
     let specPin: ASCSpecPin
+    let optionalInputCoveragePin: ASCOptionalInputCoverage?
     let optionalParameterFamilyRules: [ASCOptionalParameterFamilyRule]?
     let scopeRules: [ASCOperationScopeRule]
     let waivers: [ASCOperationWaiver]
@@ -231,12 +232,14 @@ struct ASCOperationManifestIndex: Codable, Sendable, Equatable {
     init(
         schemaVersion: Int,
         specPin: ASCSpecPin,
+        optionalInputCoveragePin: ASCOptionalInputCoverage? = nil,
         optionalParameterFamilyRules: [ASCOptionalParameterFamilyRule]? = nil,
         scopeRules: [ASCOperationScopeRule],
         waivers: [ASCOperationWaiver]
     ) {
         self.schemaVersion = schemaVersion
         self.specPin = specPin
+        self.optionalInputCoveragePin = optionalInputCoveragePin
         self.optionalParameterFamilyRules = optionalParameterFamilyRules
         self.scopeRules = scopeRules
         self.waivers = waivers

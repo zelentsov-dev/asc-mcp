@@ -74,6 +74,21 @@ struct OperationManifestStrictJSONTests {
         }
     }
 
+    @Test("optional input coverage pin rejects unknown keys")
+    func optionalInputCoveragePinRejectsUnknownKeys() {
+        let data = Data(
+            #"{"schemaVersion":2,"specPin":{"version":"4.4","sha256":"bad","pathCount":1,"operationCount":1},"optionalInputCoveragePin":{"total":1,"bound":1,"internalControl":0,"intentionallyOmitted":0,"unclassified":0,"unclassifiedInputs":0},"scopeRules":[],"waivers":[]}"#.utf8
+        )
+
+        #expect(throws: ASCOperationManifestError.unknownKey(
+            source: "manifest.json",
+            path: "$.optionalInputCoveragePin",
+            key: "unclassifiedInputs"
+        )) {
+            try ASCOperationManifestJSONValidator.validateIndex(data, source: "manifest.json")
+        }
+    }
+
     @Test("response and alias objects reject unknown keys")
     func responseAndAliasObjectsRejectUnknownKeys() {
         let responseData = Data(

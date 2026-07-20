@@ -6,6 +6,13 @@
     "pathCount": 966,
     "operationCount": 1263
   },
+  "optionalInputCoveragePin": {
+    "total": 2138,
+    "bound": 672,
+    "internalControl": 6,
+    "intentionallyOmitted": 958,
+    "unclassified": 502
+  },
   "optionalParameterFamilyRules": [
     {
       "family": "sparseFields",
@@ -2399,6 +2406,14 @@
       "reviewAtSpec": "4.4.1"
     },
     {
+      "id": "deferred.buildBetaDetails_getInstance",
+      "operationId": "buildBetaDetails_getInstance",
+      "disposition": "deferred",
+      "reason": "The public beta-detail tool resolves through a build ID and does not accept a BuildBetaDetail resource ID.",
+      "owner": "asc-mcp",
+      "reviewAtSpec": "4.4.1"
+    },
+    {
       "id": "deferred.buildBetaDetails_build_getToOneRelated",
       "operationId": "buildBetaDetails_build_getToOneRelated",
       "disposition": "deferred",
@@ -2569,14 +2584,6 @@
     {
       "id": "deferred.builds_betaAppReviewSubmission_getToOneRelated",
       "operationId": "builds_betaAppReviewSubmission_getToOneRelated",
-      "disposition": "deferred",
-      "reason": "The `builds` resource-group capability is not yet exposed by asc-mcp.",
-      "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
-    },
-    {
-      "id": "deferred.builds_buildBetaDetail_getToOneRelated",
-      "operationId": "builds_buildBetaDetail_getToOneRelated",
       "disposition": "deferred",
       "reason": "The `builds` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
@@ -3009,14 +3016,6 @@
     {
       "id": "deferred.customerReviews_response_getToOneRelationship",
       "operationId": "customerReviews_response_getToOneRelationship",
-      "disposition": "deferred",
-      "reason": "The `customerReviews` resource-group capability is not yet exposed by asc-mcp.",
-      "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
-    },
-    {
-      "id": "deferred.customerReviews_response_getToOneRelated",
-      "operationId": "customerReviews_response_getToOneRelated",
       "disposition": "deferred",
       "reason": "The `customerReviews` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",

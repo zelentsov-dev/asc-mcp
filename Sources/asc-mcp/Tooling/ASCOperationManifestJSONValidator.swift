@@ -2,10 +2,14 @@ import Foundation
 
 enum ASCOperationManifestJSONValidator {
     private static let indexKeys: Set<String> = [
-        "schemaVersion", "specPin", "optionalParameterFamilyRules", "scopeRules", "waivers"
+        "schemaVersion", "specPin", "optionalInputCoveragePin",
+        "optionalParameterFamilyRules", "scopeRules", "waivers"
     ]
     private static let specPinKeys: Set<String> = [
         "version", "sha256", "pathCount", "operationCount"
+    ]
+    private static let optionalInputCoveragePinKeys: Set<String> = [
+        "total", "bound", "internalControl", "intentionallyOmitted", "unclassified"
     ]
     private static let scopeRuleKeys: Set<String> = [
         "pathPrefix", "disposition", "reason", "owner", "reviewAtSpec"
@@ -64,6 +68,12 @@ enum ASCOperationManifestJSONValidator {
             allowed: specPinKeys,
             source: source,
             path: "$.specPin"
+        )
+        try validateObject(
+            object["optionalInputCoveragePin"],
+            allowed: optionalInputCoveragePinKeys,
+            source: source,
+            path: "$.optionalInputCoveragePin"
         )
         try validateArray(
             object["optionalParameterFamilyRules"],

@@ -317,6 +317,41 @@ struct OperationToolManifestTests {
         #expect(current == nil)
     }
 
+    @Test("strict operation contract pins optional input coverage")
+    func strictOperationContractPinsOptionalInputCoverage() {
+        let coverage = ASCOptionalInputCoverage(
+            total: 5,
+            bound: 2,
+            internalControl: 1,
+            intentionallyOmitted: 1,
+            unclassified: 1
+        )
+        let missing = ASCOperationContractCommand.strictOptionalInputCoverageDiagnostic(
+            pin: nil,
+            actual: coverage
+        )
+        let exact = ASCOperationContractCommand.strictOptionalInputCoverageDiagnostic(
+            pin: coverage,
+            actual: coverage
+        )
+        let drifted = ASCOperationContractCommand.strictOptionalInputCoverageDiagnostic(
+            pin: ASCOptionalInputCoverage(
+                total: 5,
+                bound: 1,
+                internalControl: 1,
+                intentionallyOmitted: 1,
+                unclassified: 2
+            ),
+            actual: coverage
+        )
+
+        #expect(missing?.severity == .error)
+        #expect(missing?.code == .manifestOptionalInputCoveragePinMissing)
+        #expect(exact == nil)
+        #expect(drifted?.severity == .error)
+        #expect(drifted?.code == .manifestOptionalInputCoverageDrift)
+    }
+
     @Test("reviewed sparse fields do not hide includes or relationship limits")
     func reviewedSparseFieldFamily() throws {
         let originalSpec = try ASCOpenAPISpec.parse(loadFixture("openapi_minimal.oas"))
@@ -941,6 +976,7 @@ struct OperationToolManifestTests {
         )
 
         #expect(manifest.index.schemaVersion == 2)
+        #expect(manifest.index.optionalInputCoveragePin != nil)
         #expect(manifest.tools.count == 389)
         #expect(Set(manifest.tools.map(\.tool)) == Set(tools.map(\.name)))
         #expect(Set(manifest.workers.map(\.workerKey)) == Set(snapshots.map(\.key)))

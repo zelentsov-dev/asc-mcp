@@ -9,6 +9,8 @@ enum ASCContractDiagnosticSeverity: String, Codable, Sendable {
 enum ASCContractDiagnosticCode: String, Codable, Sendable {
     case manifestUnsupportedVersion = "manifest.unsupported_version"
     case manifestStrictSchemaVersion = "manifest.strict_schema_version"
+    case manifestOptionalInputCoveragePinMissing = "manifest.optional_input_coverage_pin_missing"
+    case manifestOptionalInputCoverageDrift = "manifest.optional_input_coverage_drift"
     case specVersionMismatch = "spec.version_mismatch"
     case specChecksumMismatch = "spec.checksum_mismatch"
     case specPathCountMismatch = "spec.path_count_mismatch"

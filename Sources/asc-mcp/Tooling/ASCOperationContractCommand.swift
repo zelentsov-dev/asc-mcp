@@ -43,14 +43,22 @@ enum ASCOperationContractCommand {
             manifest: manifest,
             workerSnapshots: workerSnapshots
         )
-        if args.contains("--strict"),
-           let diagnostic = strictSchemaDiagnostic(schemaVersion: manifest.index.schemaVersion) {
-            diagnostics.append(diagnostic)
-        }
         let optionalInputCoverage = analyzer.optionalInputCoverage(
             spec: spec,
             manifest: manifest
         )
+        if args.contains("--strict") {
+            if let diagnostic = strictSchemaDiagnostic(
+                schemaVersion: manifest.index.schemaVersion
+            ) {
+                diagnostics.append(diagnostic)
+            } else if let diagnostic = strictOptionalInputCoverageDiagnostic(
+                pin: manifest.index.optionalInputCoveragePin,
+                actual: optionalInputCoverage
+            ) {
+                diagnostics.append(diagnostic)
+            }
+        }
         let errorCount = diagnostics.filter { $0.severity == .error }.count
         let warningCount = diagnostics.filter { $0.severity == .warning }.count
         let implementationDriftCount = diagnostics.filter {
@@ -168,6 +176,37 @@ enum ASCOperationContractCommand {
             operationID: nil,
             field: nil
         )
+    }
+
+    static func strictOptionalInputCoverageDiagnostic(
+        pin: ASCOptionalInputCoverage?,
+        actual: ASCOptionalInputCoverage
+    ) -> ASCContractDiagnostic? {
+        guard let pin else {
+            return ASCContractDiagnostic(
+                severity: .error,
+                code: .manifestOptionalInputCoveragePinMissing,
+                message: "Strict operation-contract checks require optionalInputCoveragePin.",
+                tool: nil,
+                operationID: nil,
+                field: nil
+            )
+        }
+        guard pin != actual else {
+            return nil
+        }
+        return ASCContractDiagnostic(
+            severity: .error,
+            code: .manifestOptionalInputCoverageDrift,
+            message: "Optional input coverage drifted from the manifest pin: expected \(coverageDescription(pin)); found \(coverageDescription(actual)).",
+            tool: nil,
+            operationID: nil,
+            field: nil
+        )
+    }
+
+    private static func coverageDescription(_ coverage: ASCOptionalInputCoverage) -> String {
+        "total=\(coverage.total), bound=\(coverage.bound), internal=\(coverage.internalControl), intentionallyOmitted=\(coverage.intentionallyOmitted), unclassified=\(coverage.unclassified)"
     }
 
     private static func renderMarkdown(
