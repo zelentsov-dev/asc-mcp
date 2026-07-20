@@ -203,6 +203,10 @@ struct XcodeCloudWorkerTests {
 
     @Test("list products supports filters, include, and pagination result")
     func listProductsSupportsFiltersAndInclude() async throws {
+        let nextURL =
+            "https://api.example.test/v1/ciProducts?cursor=abc&limit=1" +
+            "&filter%5BproductType%5D=APP&filter%5Bapp%5D=app-1" +
+            "&include=app%2CprimaryRepositories"
         let transport = XcodeCloudMockTransport(body: """
         {
           "data": [{
@@ -223,7 +227,7 @@ struct XcodeCloudWorkerTests {
           }],
           "links": {
             "self": "https://api.example.test/v1/ciProducts?limit=1",
-            "next": "https://api.example.test/v1/ciProducts?cursor=abc&limit=1"
+            "next": "\(nextURL)"
           },
           "meta": { "paging": { "total": 12, "limit": 1 } }
         }
@@ -268,6 +272,26 @@ struct XcodeCloudWorkerTests {
         #expect(product["workflowIds"] == .null)
         #expect(product["workflowsUrl"] == .string("https://api.example.test/v1/ciProducts/product-1/workflows"))
         #expect(product["primaryRepositoryIds"] == .array([]))
+        #expect(root["next_url"] == .string(nextURL))
+
+        let continuation = try await worker.handleTool(CallTool.Parameters(
+            name: "xcode_cloud_products_list",
+            arguments: [
+                "limit": .int(1),
+                "product_type": .string("APP"),
+                "app_id": .string("app-1"),
+                "include": .array([.string("app"), .string("primaryRepositories")]),
+                "next_url": .string(nextURL)
+            ]
+        ))
+
+        #expect(continuation.isError == nil)
+        let continuationQuery = await transport.lastQueryItems()
+        #expect(continuationQuery["cursor"] == "abc")
+        #expect(continuationQuery["limit"] == "1")
+        #expect(continuationQuery["filter[productType]"] == "APP")
+        #expect(continuationQuery["filter[app]"] == "app-1")
+        #expect(continuationQuery["include"] == "app,primaryRepositories")
     }
 
     @Test("workflow pagination rejects another product parent before transport")
