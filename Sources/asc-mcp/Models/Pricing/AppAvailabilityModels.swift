@@ -58,6 +58,7 @@ public struct TerritoryAvailabilityInlineCreate: Codable, Sendable {
         }
 
         /// Creates nullable attributes for an inline territory availability.
+        /// Omitted MCP fields and explicit null inputs both become nil and are encoded as JSON null.
         /// - Returns: A territory availability attributes value.
         /// - Throws: Never.
         public init(available: Bool?, releaseDate: String?, preOrderEnabled: Bool?) {
@@ -76,7 +77,7 @@ public struct TerritoryAvailabilityInlineCreate: Codable, Sendable {
             preOrderEnabled = try container.decodeIfPresent(Bool.self, forKey: .preOrderEnabled)
         }
 
-        /// Encodes all nullable territory availability attributes, preserving explicit nulls.
+        /// Encodes every nullable territory availability attribute, including omitted values as JSON null.
         /// - Returns: No value; the attributes are written to the encoder.
         /// - Throws: An encoding error when the encoder cannot write an attribute.
         public func encode(to encoder: Encoder) throws {
