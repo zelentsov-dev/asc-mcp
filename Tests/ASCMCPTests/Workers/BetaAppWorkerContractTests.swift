@@ -107,6 +107,7 @@ struct BetaAppWorkerContractTests {
         #expect(submitted["relationshipBuildId"] == .null)
         #expect(submitted["buildId"] == .string("build-1"))
         #expect(submitted["buildIdSource"] == .string("request"))
+        #expect(submitted["relationshipFallbackBuildId"] == nil)
         let localizationRoot = try betaAppContractObject(results[1].structuredContent)
         let localization = try betaAppContractObject(localizationRoot["localization"])
         #expect(localization["selfURL"] == .string("https://api.example.test/v1/betaAppLocalizations/loc-created"))
@@ -368,6 +369,7 @@ struct BetaAppWorkerContractTests {
         #expect(submission["buildId"] == .string("build-1"))
         #expect(submission["relationshipBuildId"] == .string("build-1"))
         #expect(submission["buildIdSource"] == .string("relationship"))
+        #expect(submission["relationshipFallbackBuildId"] == nil)
         #expect(submission["betaReviewState"] == .string("IN_REVIEW"))
         #expect(submission["buildRelatedURL"] == .string("https://api.appstoreconnect.apple.com/v1/betaAppReviewSubmissions/submission-1/build"))
         #expect(submission["selfURL"] == .string("https://api.example.test/v1/betaAppReviewSubmissions/submission-1"))
@@ -423,6 +425,7 @@ struct BetaAppWorkerContractTests {
         #expect(submission["relationshipBuildId"] == .null)
         #expect(submission["buildId"] == .string("build-1"))
         #expect(submission["buildIdSource"] == .string("filter"))
+        #expect(submission["relationshipFallbackBuildId"] == nil)
     }
 
     @Test("single included build is a deterministic get fallback")
@@ -451,6 +454,7 @@ struct BetaAppWorkerContractTests {
         #expect(submission["relationshipBuildId"] == .null)
         #expect(submission["buildId"] == .string("build-1"))
         #expect(submission["buildIdSource"] == .string("included"))
+        #expect(submission["relationshipFallbackBuildId"] == nil)
         let includedBuild = try betaAppContractObject(try betaAppContractArray(root["includedBuilds"]).first)
         #expect(includedBuild["version"] == .string("42"))
     }
@@ -476,6 +480,7 @@ struct BetaAppWorkerContractTests {
         #expect(submission["relationshipBuildId"] == .null)
         #expect(submission["buildId"] == .string("build-2"))
         #expect(submission["buildIdSource"] == .string("included"))
+        #expect(submission["relationshipFallbackBuildId"] == nil)
     }
 
     @Test("ambiguous included builds resolve through the relationship endpoint")
@@ -691,7 +696,7 @@ struct BetaAppWorkerContractTests {
     @Test("localization continuation preserves sparse fields and effective limit")
     func localizationContinuationPreservesScope() async throws {
         let path = "/v1/apps/app-1/betaAppLocalizations"
-        let parameters = [
+        let explicitParameters = [
             "cursor": "next",
             "fields[betaAppLocalizations]": "feedbackEmail,marketingUrl,privacyPolicyUrl,tvOsPrivacyPolicy,description,locale",
             "limit": "200"
@@ -705,27 +710,71 @@ struct BetaAppWorkerContractTests {
             arguments: [
                 "app_id": .string("app-1"),
                 "limit": .int(500),
-                "next_url": .string(betaAppContractPaginationURL(path: path, parameters: parameters))
+                "next_url": .string(betaAppContractPaginationURL(path: path, parameters: explicitParameters))
             ]
         ))
         #expect(accepted.isError != true)
         #expect(await acceptedTransport.requestCount() == 1)
+        #expect(betaAppContractQuery(try #require(await acceptedTransport.recordedRequests().first)) == explicitParameters)
 
-        var invalidParameters: [[String: String]] = []
-        var missingFields = parameters
+        var defaultParameters = explicitParameters
+        defaultParameters["limit"] = "25"
+        let defaultTransport = TestHTTPTransport(responses: [
+            .init(statusCode: 200, body: betaAppLocalizationPage())
+        ])
+        let defaultWorker = BetaAppWorker(httpClient: try await makeBetaAppContractClient(defaultTransport))
+        let defaultResult = try await defaultWorker.handleTool(CallTool.Parameters(
+            name: "beta_app_list_localizations",
+            arguments: [
+                "app_id": .string("app-1"),
+                "next_url": .string(betaAppContractPaginationURL(path: path, parameters: defaultParameters))
+            ]
+        ))
+        #expect(defaultResult.isError != true)
+        #expect(await defaultTransport.requestCount() == 1)
+        #expect(betaAppContractQuery(try #require(await defaultTransport.recordedRequests().first)) == defaultParameters)
+
+        var invalidURLs: [String] = []
+        var missingFields = explicitParameters
         missingFields.removeValue(forKey: "fields[betaAppLocalizations]")
-        invalidParameters.append(missingFields)
-        var changedFields = parameters
+        invalidURLs.append(betaAppContractPaginationURL(path: path, parameters: missingFields))
+        var changedFields = explicitParameters
         changedFields["fields[betaAppLocalizations]"] = "locale"
-        invalidParameters.append(changedFields)
-        var missingLimit = parameters
+        invalidURLs.append(betaAppContractPaginationURL(path: path, parameters: changedFields))
+        var missingLimit = explicitParameters
         missingLimit.removeValue(forKey: "limit")
-        invalidParameters.append(missingLimit)
-        var changedLimit = parameters
+        invalidURLs.append(betaAppContractPaginationURL(path: path, parameters: missingLimit))
+        var changedLimit = explicitParameters
         changedLimit["limit"] = "25"
-        invalidParameters.append(changedLimit)
+        invalidURLs.append(betaAppContractPaginationURL(path: path, parameters: changedLimit))
+        var missingCursor = explicitParameters
+        missingCursor.removeValue(forKey: "cursor")
+        invalidURLs.append(betaAppContractPaginationURL(path: path, parameters: missingCursor))
+        var emptyCursor = explicitParameters
+        emptyCursor["cursor"] = ""
+        invalidURLs.append(betaAppContractPaginationURL(path: path, parameters: emptyCursor))
+        var blankCursor = explicitParameters
+        blankCursor["cursor"] = "   "
+        invalidURLs.append(betaAppContractPaginationURL(path: path, parameters: blankCursor))
+        var injectedQuery = explicitParameters
+        injectedQuery["filter[locale]"] = "en-US"
+        invalidURLs.append(betaAppContractPaginationURL(path: path, parameters: injectedQuery))
+        invalidURLs.append(betaAppContractPaginationURL(
+            path: path,
+            parameters: explicitParameters,
+            additionalParameters: [("cursor", "second")]
+        ))
+        invalidURLs.append(betaAppContractPaginationURL(
+            path: path,
+            parameters: explicitParameters,
+            additionalParameters: [("limit", "200")]
+        ))
+        invalidURLs.append(betaAppContractPaginationURL(
+            path: "/v1/apps/app-2/betaAppLocalizations",
+            parameters: explicitParameters
+        ))
 
-        for invalid in invalidParameters {
+        for invalidURL in invalidURLs {
             let transport = TestHTTPTransport(responses: [])
             let worker = BetaAppWorker(httpClient: try await makeBetaAppContractClient(transport))
             let result = try await worker.handleTool(CallTool.Parameters(
@@ -733,7 +782,7 @@ struct BetaAppWorkerContractTests {
                 arguments: [
                     "app_id": .string("app-1"),
                     "limit": .int(500),
-                    "next_url": .string(betaAppContractPaginationURL(path: path, parameters: invalid))
+                    "next_url": .string(invalidURL)
                 ]
             ))
             #expect(result.isError == true)
@@ -744,7 +793,7 @@ struct BetaAppWorkerContractTests {
     @Test("submission continuation preserves filters include sparse fields and effective limit")
     func submissionContinuationPreservesScope() async throws {
         let path = "/v1/betaAppReviewSubmissions"
-        let parameters = [
+        let explicitParameters = [
             "cursor": "next",
             "filter[build]": "build-1,build-2",
             "filter[betaReviewState]": "WAITING_FOR_REVIEW,IN_REVIEW",
@@ -763,14 +812,33 @@ struct BetaAppWorkerContractTests {
         ])
         let acceptedWorker = BetaAppWorker(httpClient: try await makeBetaAppContractClient(acceptedTransport))
         var acceptedArguments = arguments
-        acceptedArguments["next_url"] = .string(betaAppContractPaginationURL(path: path, parameters: parameters))
+        acceptedArguments["next_url"] = .string(betaAppContractPaginationURL(path: path, parameters: explicitParameters))
         let accepted = try await acceptedWorker.handleTool(CallTool.Parameters(
             name: "beta_app_list_submissions",
             arguments: acceptedArguments
         ))
         #expect(accepted.isError != true)
         #expect(await acceptedTransport.requestCount() == 1)
+        #expect(betaAppContractQuery(try #require(await acceptedTransport.recordedRequests().first)) == explicitParameters)
 
+        var defaultParameters = explicitParameters
+        defaultParameters["limit"] = "25"
+        let defaultTransport = TestHTTPTransport(responses: [
+            .init(statusCode: 200, body: betaAppSubmissionPage())
+        ])
+        let defaultWorker = BetaAppWorker(httpClient: try await makeBetaAppContractClient(defaultTransport))
+        var defaultArguments = arguments
+        defaultArguments.removeValue(forKey: "limit")
+        defaultArguments["next_url"] = .string(betaAppContractPaginationURL(path: path, parameters: defaultParameters))
+        let defaultResult = try await defaultWorker.handleTool(CallTool.Parameters(
+            name: "beta_app_list_submissions",
+            arguments: defaultArguments
+        ))
+        #expect(defaultResult.isError != true)
+        #expect(await defaultTransport.requestCount() == 1)
+        #expect(betaAppContractQuery(try #require(await defaultTransport.recordedRequests().first)) == defaultParameters)
+
+        var invalidURLs: [String] = []
         let mutations: [(String, String?)] = [
             ("filter[build]", nil),
             ("filter[build]", "build-1"),
@@ -786,12 +854,42 @@ struct BetaAppWorkerContractTests {
             ("limit", "25")
         ]
         for (field, replacement) in mutations {
-            var invalid = parameters
+            var invalid = explicitParameters
             invalid[field] = replacement
+            invalidURLs.append(betaAppContractPaginationURL(path: path, parameters: invalid))
+        }
+        var missingCursor = explicitParameters
+        missingCursor.removeValue(forKey: "cursor")
+        invalidURLs.append(betaAppContractPaginationURL(path: path, parameters: missingCursor))
+        var emptyCursor = explicitParameters
+        emptyCursor["cursor"] = ""
+        invalidURLs.append(betaAppContractPaginationURL(path: path, parameters: emptyCursor))
+        var blankCursor = explicitParameters
+        blankCursor["cursor"] = "   "
+        invalidURLs.append(betaAppContractPaginationURL(path: path, parameters: blankCursor))
+        var injectedQuery = explicitParameters
+        injectedQuery["sort"] = "-submittedDate"
+        invalidURLs.append(betaAppContractPaginationURL(path: path, parameters: injectedQuery))
+        invalidURLs.append(betaAppContractPaginationURL(
+            path: path,
+            parameters: explicitParameters,
+            additionalParameters: [("cursor", "second")]
+        ))
+        invalidURLs.append(betaAppContractPaginationURL(
+            path: path,
+            parameters: explicitParameters,
+            additionalParameters: [("filter[build]", "build-1,build-2")]
+        ))
+        invalidURLs.append(betaAppContractPaginationURL(
+            path: "/v1/apps/app-1/betaAppReviewSubmissions",
+            parameters: explicitParameters
+        ))
+
+        for invalidURL in invalidURLs {
             let transport = TestHTTPTransport(responses: [])
             let worker = BetaAppWorker(httpClient: try await makeBetaAppContractClient(transport))
             var invalidArguments = arguments
-            invalidArguments["next_url"] = .string(betaAppContractPaginationURL(path: path, parameters: invalid))
+            invalidArguments["next_url"] = .string(invalidURL)
             let result = try await worker.handleTool(CallTool.Parameters(
                 name: "beta_app_list_submissions",
                 arguments: invalidArguments
@@ -799,6 +897,22 @@ struct BetaAppWorkerContractTests {
             #expect(result.isError == true)
             #expect(await transport.requestCount() == 0)
         }
+
+        var documentedInjection = explicitParameters
+        documentedInjection.removeValue(forKey: "filter[betaReviewState]")
+        documentedInjection["filter[betaReviewState]"] = "APPROVED"
+        let injectionTransport = TestHTTPTransport(responses: [])
+        let injectionWorker = BetaAppWorker(httpClient: try await makeBetaAppContractClient(injectionTransport))
+        let injectionResult = try await injectionWorker.handleTool(CallTool.Parameters(
+            name: "beta_app_list_submissions",
+            arguments: [
+                "build_id": .array([.string("build-1"), .string("build-2")]),
+                "limit": .int(500),
+                "next_url": .string(betaAppContractPaginationURL(path: path, parameters: documentedInjection))
+            ]
+        ))
+        #expect(injectionResult.isError == true)
+        #expect(await injectionTransport.requestCount() == 0)
     }
 
     @Test("beta app schemas expose nullable updates arrays and bounds")
@@ -917,11 +1031,15 @@ private func betaAppContractDictionary(_ value: Any?) throws -> [String: Any] {
     try #require(value as? [String: Any])
 }
 
-private func betaAppContractPaginationURL(path: String, parameters: [String: String]) -> String {
+private func betaAppContractPaginationURL(
+    path: String,
+    parameters: [String: String],
+    additionalParameters: [(String, String)] = []
+) -> String {
     var components = URLComponents(string: "https://api.example.test\(path)")!
     components.queryItems = parameters.sorted { $0.key < $1.key }.map {
         URLQueryItem(name: $0.key, value: $0.value)
-    }
+    } + additionalParameters.map { URLQueryItem(name: $0.0, value: $0.1) }
     return components.url!.absoluteString
 }
 

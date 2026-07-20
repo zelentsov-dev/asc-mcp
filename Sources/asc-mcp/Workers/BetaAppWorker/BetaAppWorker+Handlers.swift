@@ -36,7 +36,9 @@ extension BetaAppWorker {
                     nextUrl,
                     scope: PaginationScope(
                         path: "/v1/apps/\(try ASCPathSegment.encode(appId))/betaAppLocalizations",
-                        requiredParameters: queryParams
+                        requiredParameters: queryParams,
+                        allowedParameters: Set(queryParams.keys).union(["cursor"]),
+                        requiredNonEmptyParameters: ["cursor"]
                     ),
                     as: ASCBetaAppLocalizationsResponse.self
                 )
@@ -387,7 +389,9 @@ extension BetaAppWorker {
                     nextUrl,
                     scope: PaginationScope(
                         path: "/v1/betaAppReviewSubmissions",
-                        requiredParameters: queryParams
+                        requiredParameters: queryParams,
+                        allowedParameters: Set(queryParams.keys).union(["cursor"]),
+                        requiredNonEmptyParameters: ["cursor"]
                     ),
                     as: ASCBetaAppReviewSubmissionsResponse.self
                 )
@@ -614,7 +618,7 @@ extension BetaAppWorker {
     ) -> [String: Any] {
         let relationshipBuildID = submission.relationships?.build?.data?.id
 
-        return [
+        var result: [String: Any] = [
             "id": submission.id,
             "type": submission.type,
             "betaReviewState": (submission.attributes?.betaReviewState).jsonSafe,
@@ -622,10 +626,13 @@ extension BetaAppWorker {
             "buildId": resolution.id,
             "buildIdSource": resolution.source,
             "relationshipBuildId": relationshipBuildID.jsonSafe,
-            "relationshipFallbackBuildId": resolution.relationshipFallbackID.jsonSafe,
             "buildRelatedURL": (submission.relationships?.build?.links?.related).jsonSafe,
             "selfURL": (submission.links?.`self`).jsonSafe
         ]
+        if let relationshipFallbackID = resolution.relationshipFallbackID {
+            result["relationshipFallbackBuildId"] = relationshipFallbackID
+        }
+        return result
     }
 
     private func resolveBuild(
