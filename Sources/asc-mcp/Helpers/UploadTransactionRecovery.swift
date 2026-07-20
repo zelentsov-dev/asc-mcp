@@ -7,7 +7,7 @@ struct UploadRecoveryDescriptor: Sendable {
     let idArgument: String
     let getTool: String?
     let getIDArgument: String?
-    let deleteTool: String
+    let deleteTool: String?
     let inspectionTool: String
     let inspectionArguments: [String: String]
 }
@@ -38,6 +38,7 @@ enum UploadTransactionOutcome<Resource: RecoverableUploadResource>: Sendable {
 enum UploadCleanupOutcome: Sendable {
     case deleted
     case alreadyAbsent
+    case unavailable(String)
     case failed(String)
 
     var status: String {
@@ -46,6 +47,8 @@ enum UploadCleanupOutcome: Sendable {
             return "deleted"
         case .alreadyAbsent:
             return "already_absent"
+        case .unavailable:
+            return "unavailable"
         case .failed:
             return "failed"
         }
@@ -55,10 +58,15 @@ enum UploadCleanupOutcome: Sendable {
         switch self {
         case .deleted, .alreadyAbsent:
             return true
-        case .failed:
+        case .unavailable, .failed:
             return false
         }
     }
+}
+
+enum UploadReservationCleanupPolicy: Sendable {
+    case delete
+    case retain(String)
 }
 
 enum UploadTransactionRecovery {
@@ -69,6 +77,9 @@ enum UploadTransactionRecovery {
         reservationEndpoint: String,
         httpClient: HTTPClient,
         uploadService: UploadService,
+        cleanupPolicy: UploadReservationCleanupPolicy = .delete,
+        existingResource: Resource? = nil,
+        validateSnapshot: @Sendable (Resource?, Int, String) throws -> Void = { _, _, _ in },
         deliveryPollAttempts: Int,
         deliveryPollIntervalNanoseconds: UInt64,
         makeReservationBody: @Sendable (Int, String) throws -> Data,
@@ -76,7 +87,37 @@ enum UploadTransactionRecovery {
         makeCommitBody: @Sendable (String, String) throws -> Data,
         resourceEndpoint: @Sendable (String) throws -> String
     ) async -> UploadTransactionOutcome<Resource> {
+        let existingEndpoint: String?
+        if let existingResource {
+            guard !existingResource.id.isEmpty, existingResource.type == expectedType else {
+                return .reservationUnresolved(
+                    "The existing \(resourceName) reservation identity could not be confirmed."
+                )
+            }
+            do {
+                existingEndpoint = try resourceEndpoint(existingResource.id)
+            } catch {
+                return .reservationUnresolved(
+                    "The existing \(resourceName) reservation has an invalid resource id."
+                )
+            }
+        } else {
+            existingEndpoint = nil
+        }
+
         if Task.isCancelled {
+            if let existingResource, let existingEndpoint {
+                let cleanup = await rollbackReservation(
+                    httpClient: httpClient,
+                    endpoint: existingEndpoint,
+                    policy: cleanupPolicy
+                )
+                return .preCommitFailure(
+                    "The \(resourceName) upload was cancelled before transfer.",
+                    existingResource,
+                    cleanup
+                )
+            }
             return .beforeReservation("The \(resourceName) upload was cancelled before reservation.")
         }
 
@@ -84,64 +125,114 @@ enum UploadTransactionRecovery {
         do {
             snapshot = try await uploadService.prepareSnapshot(filePath: filePath)
         } catch {
+            if let existingResource, let existingEndpoint {
+                let cleanup = await rollbackReservation(
+                    httpClient: httpClient,
+                    endpoint: existingEndpoint,
+                    policy: cleanupPolicy
+                )
+                return .preCommitFailure(
+                    "Failed to read \(resourceName): \(error.localizedDescription)",
+                    existingResource,
+                    cleanup
+                )
+            }
             return .beforeReservation("Failed to read \(resourceName): \(error.localizedDescription)")
         }
         defer { snapshot.discard() }
 
         if Task.isCancelled {
+            if let existingResource, let existingEndpoint {
+                let cleanup = await rollbackReservation(
+                    httpClient: httpClient,
+                    endpoint: existingEndpoint,
+                    policy: cleanupPolicy
+                )
+                return .preCommitFailure(
+                    "The \(resourceName) upload was cancelled before transfer.",
+                    existingResource,
+                    cleanup
+                )
+            }
             return .beforeReservation("The \(resourceName) upload was cancelled before reservation.")
         }
 
-        let reservationBody: Data
         do {
-            reservationBody = try makeReservationBody(snapshot.fileSize, snapshot.fileName)
+            try validateSnapshot(existingResource, snapshot.fileSize, snapshot.fileName)
         } catch {
-            return .beforeReservation("Failed to prepare the \(resourceName) reservation: \(error.localizedDescription)")
-        }
-
-        let reservationData: Data
-        do {
-            reservationData = try await httpClient.post(reservationEndpoint, body: reservationBody)
-        } catch {
-            return .reservationUnresolved(
-                "The \(resourceName) reservation request did not return a confirmed response: \(error.localizedDescription)"
+            if let existingResource, let existingEndpoint {
+                let cleanup = await rollbackReservation(
+                    httpClient: httpClient,
+                    endpoint: existingEndpoint,
+                    policy: cleanupPolicy
+                )
+                return .preCommitFailure(
+                    "The \(resourceName) file does not match its reservation: \(error.localizedDescription)",
+                    existingResource,
+                    cleanup
+                )
+            }
+            return .beforeReservation(
+                "The \(resourceName) file is invalid for reservation: \(error.localizedDescription)"
             )
         }
 
         let reserved: Resource
-        do {
-            reserved = try decodeResource(reservationData)
-        } catch {
-            return .reservationUnresolved(
-                "Apple returned an unreadable \(resourceName) reservation response: \(error.localizedDescription)"
-            )
-        }
-
-        guard !reserved.id.isEmpty else {
-            return .reservationUnresolved(
-                "Apple returned a \(resourceName) reservation without a usable resource id."
-            )
-        }
-
-        guard reserved.type == expectedType else {
-            return .reservationUnresolved(
-                "Apple returned an unexpected resource type for the \(resourceName) reservation, so its identity could not be confirmed."
-            )
-        }
-
         let endpoint: String
-        do {
-            endpoint = try resourceEndpoint(reserved.id)
-        } catch {
-            return .reservationUnresolved(
-                "Apple returned a \(resourceName) reservation with an invalid resource id."
-            )
+        if let existingResource, let existingEndpoint {
+            reserved = existingResource
+            endpoint = existingEndpoint
+        } else {
+            let reservationBody: Data
+            do {
+                reservationBody = try makeReservationBody(snapshot.fileSize, snapshot.fileName)
+            } catch {
+                return .beforeReservation("Failed to prepare the \(resourceName) reservation: \(error.localizedDescription)")
+            }
+
+            let reservationData: Data
+            do {
+                reservationData = try await httpClient.post(reservationEndpoint, body: reservationBody)
+            } catch {
+                return .reservationUnresolved(
+                    "The \(resourceName) reservation request did not return a confirmed response: \(error.localizedDescription)"
+                )
+            }
+
+            do {
+                reserved = try decodeResource(reservationData)
+            } catch {
+                return .reservationUnresolved(
+                    "Apple returned an unreadable \(resourceName) reservation response: \(error.localizedDescription)"
+                )
+            }
+
+            guard !reserved.id.isEmpty else {
+                return .reservationUnresolved(
+                    "Apple returned a \(resourceName) reservation without a usable resource id."
+                )
+            }
+
+            guard reserved.type == expectedType else {
+                return .reservationUnresolved(
+                    "Apple returned an unexpected resource type for the \(resourceName) reservation, so its identity could not be confirmed."
+                )
+            }
+
+            do {
+                endpoint = try resourceEndpoint(reserved.id)
+            } catch {
+                return .reservationUnresolved(
+                    "Apple returned a \(resourceName) reservation with an invalid resource id."
+                )
+            }
         }
 
         if Task.isCancelled {
             let cleanup = await rollbackReservation(
                 httpClient: httpClient,
-                endpoint: endpoint
+                endpoint: endpoint,
+                policy: cleanupPolicy
             )
             return .preCommitFailure(
                 "The \(resourceName) upload was cancelled after reservation and before commit.",
@@ -153,7 +244,8 @@ enum UploadTransactionRecovery {
         guard let operations = reserved.recoveryUploadOperations, !operations.isEmpty else {
             let cleanup = await rollbackReservation(
                 httpClient: httpClient,
-                endpoint: endpoint
+                endpoint: endpoint,
+                policy: cleanupPolicy
             )
             return .preCommitFailure(
                 "Apple returned no upload operations for the \(resourceName) reservation.",
@@ -168,7 +260,8 @@ enum UploadTransactionRecovery {
         } catch {
             let cleanup = await rollbackReservation(
                 httpClient: httpClient,
-                endpoint: endpoint
+                endpoint: endpoint,
+                policy: cleanupPolicy
             )
             return .preCommitFailure(
                 "Failed to transfer \(resourceName) bytes through Apple's upload endpoint.",
@@ -183,7 +276,8 @@ enum UploadTransactionRecovery {
         } catch {
             let cleanup = await rollbackReservation(
                 httpClient: httpClient,
-                endpoint: endpoint
+                endpoint: endpoint,
+                policy: cleanupPolicy
             )
             return .preCommitFailure(
                 "Failed to prepare the \(resourceName) commit: \(error.localizedDescription)",
@@ -195,7 +289,8 @@ enum UploadTransactionRecovery {
         if Task.isCancelled {
             let cleanup = await rollbackReservation(
                 httpClient: httpClient,
-                endpoint: endpoint
+                endpoint: endpoint,
+                policy: cleanupPolicy
             )
             return .preCommitFailure(
                 "The \(resourceName) commit was not attempted because the operation was cancelled.",
@@ -538,8 +633,13 @@ enum UploadTransactionRecovery {
 
     private static func rollbackReservation(
         httpClient: HTTPClient,
-        endpoint: String
+        endpoint: String,
+        policy: UploadReservationCleanupPolicy
     ) async -> UploadCleanupOutcome {
+        if case .retain(let reason) = policy {
+            return .unavailable(reason)
+        }
+
         let task = Task.detached { () -> UploadCleanupOutcome in
             do {
                 _ = try await httpClient.delete(endpoint)
@@ -626,9 +726,14 @@ enum UploadTransactionRecovery {
 
         case .preCommitFailure(let message, let resource, let cleanup):
             let safeMessage = Redactor.redact(message)
-            let manualGuidance = cleanup.reservationDeleted
-                ? ""
-                : " Use \(descriptor.deleteTool) with \(descriptor.idArgument) '\(resource.id)' to retry cleanup."
+            let manualGuidance: String
+            if cleanup.reservationDeleted {
+                manualGuidance = ""
+            } else if let deleteTool = descriptor.deleteTool {
+                manualGuidance = " Use \(deleteTool) with \(descriptor.idArgument) '\(resource.id)' to retry cleanup."
+            } else {
+                manualGuidance = " Inspect the retained reservation before retrying."
+            }
             return (
                 [
                     "success": false,
@@ -701,8 +806,16 @@ enum UploadTransactionRecovery {
         ]
         if case .failed(let reason) = cleanup {
             value["reason"] = reason
-            value["tool"] = descriptor.deleteTool
-            value["arguments"] = [descriptor.idArgument: resourceID]
+            if let deleteTool = descriptor.deleteTool {
+                value["tool"] = deleteTool
+                value["arguments"] = [descriptor.idArgument: resourceID]
+            }
+        }
+        if case .unavailable(let reason) = cleanup {
+            value["reason"] = reason
+            value["inspectTool"] = descriptor.getTool ?? descriptor.inspectionTool
+            value["inspectArguments"] = descriptor.getIDArgument.map { [$0: resourceID] }
+                ?? descriptor.inspectionArguments
         }
         return value
     }
@@ -720,11 +833,13 @@ enum UploadTransactionRecovery {
         var value: [String: Any] = [
             "status": "not_attempted",
             "reason": reason,
-            "tool": descriptor.deleteTool,
-            "arguments": [descriptor.idArgument: resourceID],
             "inspectTool": descriptor.getTool ?? descriptor.inspectionTool,
             "inspectArguments": inspectArguments
         ]
+        if let deleteTool = descriptor.deleteTool {
+            value["tool"] = deleteTool
+            value["arguments"] = [descriptor.idArgument: resourceID]
+        }
         if descriptor.getTool == nil {
             value["inspectTool"] = descriptor.inspectionTool
         }
