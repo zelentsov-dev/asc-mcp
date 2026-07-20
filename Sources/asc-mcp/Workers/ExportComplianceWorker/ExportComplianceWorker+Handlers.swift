@@ -216,7 +216,6 @@ extension ExportComplianceWorker {
         return exportComplianceUploadResult(
             outcome,
             descriptor: exportComplianceUploadDescriptor(declarationID: declarationID),
-            filePath: filePath,
             authoritativeChecksum: nil
         )
     }
@@ -440,7 +439,6 @@ extension ExportComplianceWorker {
         return exportComplianceUploadResult(
             outcome,
             descriptor: exportComplianceUploadDescriptor(documentID: documentID),
-            filePath: filePath,
             authoritativeChecksum: authoritativeChecksum
         )
     }
@@ -1229,7 +1227,6 @@ private func exportComplianceUploadDescriptor(
 private func exportComplianceUploadResult(
     _ outcome: UploadTransactionOutcome<ASCExportComplianceDocument>,
     descriptor: UploadRecoveryDescriptor,
-    filePath: String,
     authoritativeChecksum: String?
 ) -> CallTool.Result {
     if case .processingPending(_, let document, _) = outcome,
@@ -1300,7 +1297,7 @@ private func exportComplianceUploadResult(
                 "tool": "export_compliance_upload_document",
                 "arguments": [
                     "document_id": documentID,
-                    "file_path": filePath,
+                    "file_path": "<absolute-path-to-the-exact-reserved-bytes>",
                     "source_file_checksum": checksum
                 ],
                 "instruction": "Resume only with local bytes whose lowercase MD5 exactly matches this receipt."

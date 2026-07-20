@@ -920,6 +920,7 @@ struct ExportComplianceWorkerContractTests {
         #expect(payload["sourceFileChecksumReceipt"] == .string(exportComplianceHelloMD5))
         let nextAction = try exportComplianceValueObject(payload["nextAction"])
         let arguments = try exportComplianceValueObject(nextAction["arguments"])
+        #expect(arguments["file_path"] == .string("<absolute-path-to-the-exact-reserved-bytes>"))
         #expect(arguments["source_file_checksum"] == .string(exportComplianceHelloMD5))
     }
 
