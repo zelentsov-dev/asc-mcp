@@ -1164,4 +1164,27 @@ struct ParameterValidationTests {
         let result = try await worker.handleTool(params)
         #expect(result.isError == true)
     }
+
+    // MARK: - ReviewSubmissionsWorker
+
+    @Test("review submission tools reject missing required parameters")
+    func reviewSubmissionToolsMissing() async throws {
+        let client = try await TestFactory.makeHTTPClient()
+        let worker = ReviewSubmissionsWorker(httpClient: client)
+
+        for name in [
+            "review_submissions_list",
+            "review_submissions_get",
+            "review_submissions_create",
+            "review_submissions_list_items",
+            "review_submissions_add_item",
+            "review_submissions_update_item",
+            "review_submissions_remove_item",
+            "review_submissions_submit",
+            "review_submissions_cancel"
+        ] {
+            let result = try await worker.handleTool(CallTool.Parameters(name: name, arguments: nil))
+            #expect(result.isError == true, "Expected missing parameter error from \(name)")
+        }
+    }
 }

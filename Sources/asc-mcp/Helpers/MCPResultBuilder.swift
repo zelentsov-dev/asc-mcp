@@ -325,7 +325,10 @@ enum MCPValueSanitizer {
             with: "",
             options: .regularExpression
         )
-        if normalized.hasSuffix("state") || normalized.contains("checksum") {
+        if normalized.hasSuffix("state") ||
+            normalized.contains("checksum") ||
+            normalized == "filename" ||
+            normalized == "fingerprintkey" {
             return true
         }
         return [

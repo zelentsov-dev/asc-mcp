@@ -58,6 +58,69 @@ struct HTTPClientTests {
         #expect(rateLimit?.userHourRemaining == 3598)
     }
 
+    @Test(
+        "GET accepts only the Apple-documented 200 status",
+        arguments: [201, 202, 206, 299]
+    )
+    func getRejectsUnexpectedSuccessfulStatus(_ statusCode: Int) async throws {
+        let transport = ScriptedHTTPTransport(steps: [
+            .response(statusCode: statusCode, headers: [:], body: #"{"data":[]}"#)
+        ])
+        let client = await HTTPClient(
+            jwtService: try TestFactory.makeJWTService(),
+            baseURL: "https://api.example.test",
+            transport: transport,
+            maxRetries: 2
+        )
+
+        do {
+            _ = try await client.get("/v1/apps")
+            Issue.record("Expected GET to reject HTTP \(statusCode)")
+        } catch let error as ASCError {
+            guard case .api(let message, let actualStatusCode) = error else {
+                Issue.record("Expected a typed API status error, got \(error)")
+                return
+            }
+            #expect(actualStatusCode == statusCode)
+            #expect(message.contains("expected 200"))
+        }
+
+        #expect(await transport.requestCount() == 1)
+    }
+
+    @Test(
+        "raw GET accepts only the Apple-documented 200 status",
+        arguments: [201, 202, 206, 299]
+    )
+    func rawGetRejectsUnexpectedSuccessfulStatus(_ statusCode: Int) async throws {
+        let transport = ScriptedHTTPTransport(steps: [
+            .response(statusCode: statusCode, headers: [:], body: "payload")
+        ])
+        let client = await HTTPClient(
+            jwtService: try TestFactory.makeJWTService(),
+            baseURL: "https://api.example.test",
+            transport: transport,
+            maxRetries: 2
+        )
+
+        do {
+            _ = try await client.getRaw(
+                "/v1/salesReports",
+                accept: "application/a-gzip"
+            )
+            Issue.record("Expected raw GET to reject HTTP \(statusCode)")
+        } catch let error as ASCError {
+            guard case .api(let message, let actualStatusCode) = error else {
+                Issue.record("Expected a typed API status error, got \(error)")
+                return
+            }
+            #expect(actualStatusCode == statusCode)
+            #expect(message.contains("expected 200"))
+        }
+
+        #expect(await transport.requestCount() == 1)
+    }
+
     @Test("refreshes token on 401 and retries")
     func refreshesOn401() async throws {
         let transport = MockHTTPTransport(responses: [
@@ -317,6 +380,66 @@ struct HTTPClientTests {
 
         #expect(String(data: data, encoding: .utf8) == #"{"ok":true}"#)
         #expect(await transport.requestCount() == 2)
+    }
+
+    @Test("mutation receipts preserve the exact successful status")
+    func mutationReceiptsPreserveExactSuccessfulStatus() async throws {
+        let transport = ScriptedHTTPTransport(steps: [
+            .response(statusCode: 201, headers: [:], body: #"{"data":{"id":"created"}}"#),
+            .response(statusCode: 200, headers: [:], body: #"{"data":{"id":"updated"}}"#)
+        ])
+        let client = await HTTPClient(
+            jwtService: try TestFactory.makeJWTService(),
+            baseURL: "https://api.example.test",
+            transport: transport,
+            maxRetries: 2
+        )
+
+        let create = try await client.postReceipt("/v1/resources", body: Data())
+        let update = try await client.patchReceipt("/v1/resources/resource-1", body: Data())
+
+        #expect(create.statusCode == 201)
+        #expect(String(data: create.data, encoding: .utf8)?.contains("created") == true)
+        #expect(update.statusCode == 200)
+        #expect(String(data: update.data, encoding: .utf8)?.contains("updated") == true)
+        #expect(await transport.requestCount() == 2)
+    }
+
+    @Test("POST and PATCH do not repeat ambiguous server failures")
+    func mutationsDoNotRepeatAmbiguousServerFailures() async throws {
+        for method in ["POST", "PATCH"] {
+            let transport = ScriptedHTTPTransport(steps: [
+                .response(
+                    statusCode: 500,
+                    headers: ["Retry-After": "0"],
+                    body: #"{"errors":[{"status":"500","detail":"failed"}]}"#
+                ),
+                .response(statusCode: 200, headers: [:], body: #"{"data":{}}"#)
+            ])
+            let client = await HTTPClient(
+                jwtService: try TestFactory.makeJWTService(),
+                baseURL: "https://api.example.test",
+                transport: transport,
+                maxRetries: 2
+            )
+
+            do {
+                if method == "POST" {
+                    _ = try await client.postReceipt("/v1/resources", body: Data())
+                } else {
+                    _ = try await client.patchReceipt("/v1/resources/resource-1", body: Data())
+                }
+                Issue.record("Expected HTTP 500 for \(method)")
+            } catch let error as ASCError {
+                guard case .apiResponse(_, let statusCode) = error else {
+                    Issue.record("Expected a typed API response error for \(method), got \(error)")
+                    continue
+                }
+                #expect(statusCode == 500)
+            }
+
+            #expect(await transport.requestCount() == 1)
+        }
     }
 
     @Test("decodes Apple error response")

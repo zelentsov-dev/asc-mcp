@@ -8,8 +8,13 @@ struct UploadRecoveryDescriptor: Sendable {
     let getTool: String?
     let getIDArgument: String?
     let deleteTool: String?
+    let deleteConfirmationArgument: String?
     let inspectionTool: String
     let inspectionArguments: [String: String]
+    let inspectionPageLimit: Int?
+    let inspectionNextURLArgument: String?
+    let reservationFingerprintKey: String?
+    let inspectionCandidateFields: [String]
     let checksumReceiptKey: String?
 
     init(
@@ -19,8 +24,13 @@ struct UploadRecoveryDescriptor: Sendable {
         getTool: String?,
         getIDArgument: String?,
         deleteTool: String?,
+        deleteConfirmationArgument: String? = nil,
         inspectionTool: String,
         inspectionArguments: [String: String],
+        inspectionPageLimit: Int? = nil,
+        inspectionNextURLArgument: String? = nil,
+        reservationFingerprintKey: String? = nil,
+        inspectionCandidateFields: [String] = [],
         checksumReceiptKey: String? = nil
     ) {
         self.resourceName = resourceName
@@ -29,8 +39,13 @@ struct UploadRecoveryDescriptor: Sendable {
         self.getTool = getTool
         self.getIDArgument = getIDArgument
         self.deleteTool = deleteTool
+        self.deleteConfirmationArgument = deleteConfirmationArgument
         self.inspectionTool = inspectionTool
         self.inspectionArguments = inspectionArguments
+        self.inspectionPageLimit = inspectionPageLimit
+        self.inspectionNextURLArgument = inspectionNextURLArgument
+        self.reservationFingerprintKey = reservationFingerprintKey
+        self.inspectionCandidateFields = inspectionCandidateFields
         self.checksumReceiptKey = checksumReceiptKey
     }
 }
@@ -48,15 +63,33 @@ enum UploadDeliveryStatus: Sendable {
     case failed(String)
 }
 
+struct UploadReservationFingerprint: Sendable, Equatable {
+    let fileName: String
+    let fileSize: Int
+    let checksum: String
+
+    init(snapshot: UploadFileSnapshot) {
+        fileName = snapshot.fileName
+        fileSize = snapshot.fileSize
+        checksum = snapshot.md5Checksum
+    }
+}
+
 enum UploadTransactionOutcome<Resource: RecoverableUploadResource>: Sendable {
     case success(Resource, reconciledAfterCommit: Bool)
     case processingPending(String, Resource, reconciledAfterCommit: Bool)
     case beforeReservation(String)
     case reservationRejected(String)
-    case reservationUnresolved(String, checksumReceipt: String?)
+    case reservationUnresolved(String, fingerprint: UploadReservationFingerprint?)
+    case reservationCommittedUnverified(
+        statusCode: Int,
+        message: String,
+        fingerprint: UploadReservationFingerprint?
+    )
     case preCommitFailure(String, Resource, UploadCleanupOutcome, checksumReceipt: String?)
     case commitFailed(String, Resource)
     case commitUnresolved(String, Resource)
+    case commitCommittedUnverified(statusCode: Int, message: String, resource: Resource)
 }
 
 enum UploadCleanupOutcome: Sendable {
@@ -130,7 +163,11 @@ enum UploadTransactionRecovery {
         existingResource: Resource? = nil,
         validateSnapshot: @Sendable (Resource?, UploadFileSnapshot) throws -> Void = { _, _ in },
         validateReservedResource: @Sendable (Resource, UploadFileSnapshot) throws -> Void = { _, _ in },
-        reservationFailureDisposition: @Sendable (Error) -> UploadReservationFailureDisposition = { _ in .unresolved },
+        reservationFailureDisposition: @Sendable (Error) -> UploadReservationFailureDisposition = { error in
+            ASCNonIdempotentWriteRecovery.failureDisposition(for: error, phase: .request) == .rejected
+                ? .rejected
+                : .unresolved
+        },
         deliveryPollAttempts: Int,
         deliveryPollIntervalNanoseconds: UInt64,
         makeReservationBody: @Sendable (Int, String) throws -> Data,
@@ -143,7 +180,7 @@ enum UploadTransactionRecovery {
             guard !existingResource.id.isEmpty, existingResource.type == expectedType else {
                 return .reservationUnresolved(
                     "The existing \(resourceName) reservation identity could not be confirmed.",
-                    checksumReceipt: nil
+                    fingerprint: nil
                 )
             }
             do {
@@ -151,7 +188,7 @@ enum UploadTransactionRecovery {
             } catch {
                 return .reservationUnresolved(
                     "The existing \(resourceName) reservation has an invalid resource id.",
-                    checksumReceipt: nil
+                    fingerprint: nil
                 )
             }
         } else {
@@ -195,6 +232,7 @@ enum UploadTransactionRecovery {
             return .beforeReservation("Failed to read \(resourceName): \(error.localizedDescription)")
         }
         defer { snapshot.discard() }
+        let reservationFingerprint = UploadReservationFingerprint(snapshot: snapshot)
 
         if Task.isCancelled {
             if let existingResource, let existingEndpoint {
@@ -247,9 +285,12 @@ enum UploadTransactionRecovery {
                 return .beforeReservation("Failed to prepare the \(resourceName) reservation: \(error.localizedDescription)")
             }
 
-            let reservationData: Data
+            let reservationReceipt: ASCMutationReceipt
             do {
-                reservationData = try await httpClient.post(reservationEndpoint, body: reservationBody)
+                reservationReceipt = try await httpClient.postReceipt(
+                    reservationEndpoint,
+                    body: reservationBody
+                )
             } catch {
                 if reservationFailureDisposition(error) == .rejected {
                     return .reservationRejected(
@@ -258,39 +299,51 @@ enum UploadTransactionRecovery {
                 }
                 return .reservationUnresolved(
                     "The \(resourceName) reservation request did not return a confirmed response: \(error.localizedDescription)",
-                    checksumReceipt: snapshot.md5Checksum
+                    fingerprint: reservationFingerprint
+                )
+            }
+
+            guard reservationReceipt.statusCode == 201 else {
+                return .reservationCommittedUnverified(
+                    statusCode: reservationReceipt.statusCode,
+                    message: "Apple accepted the \(resourceName) reservation with unexpected HTTP status \(reservationReceipt.statusCode); expected 201.",
+                    fingerprint: reservationFingerprint
                 )
             }
 
             do {
-                reserved = try decodeResource(reservationData)
+                reserved = try decodeResource(reservationReceipt.data)
             } catch {
-                return .reservationUnresolved(
-                    "Apple returned an unreadable \(resourceName) reservation response: \(error.localizedDescription)",
-                    checksumReceipt: snapshot.md5Checksum
+                return .reservationCommittedUnverified(
+                    statusCode: reservationReceipt.statusCode,
+                    message: "Apple accepted the \(resourceName) reservation but returned an unreadable response: \(error.localizedDescription)",
+                    fingerprint: reservationFingerprint
                 )
             }
 
             guard !reserved.id.isEmpty else {
-                return .reservationUnresolved(
-                    "Apple returned a \(resourceName) reservation without a usable resource id.",
-                    checksumReceipt: snapshot.md5Checksum
+                return .reservationCommittedUnverified(
+                    statusCode: reservationReceipt.statusCode,
+                    message: "Apple accepted the \(resourceName) reservation without returning a usable resource id.",
+                    fingerprint: reservationFingerprint
                 )
             }
 
             guard reserved.type == expectedType else {
-                return .reservationUnresolved(
-                    "Apple returned an unexpected resource type for the \(resourceName) reservation, so its identity could not be confirmed.",
-                    checksumReceipt: snapshot.md5Checksum
+                return .reservationCommittedUnverified(
+                    statusCode: reservationReceipt.statusCode,
+                    message: "Apple accepted the \(resourceName) reservation but returned an unexpected resource type, so its identity could not be confirmed.",
+                    fingerprint: reservationFingerprint
                 )
             }
 
             do {
                 endpoint = try resourceEndpoint(reserved.id)
             } catch {
-                return .reservationUnresolved(
-                    "Apple returned a \(resourceName) reservation with an invalid resource id.",
-                    checksumReceipt: snapshot.md5Checksum
+                return .reservationCommittedUnverified(
+                    statusCode: reservationReceipt.statusCode,
+                    message: "Apple accepted the \(resourceName) reservation but returned an invalid resource id.",
+                    fingerprint: reservationFingerprint
                 )
             }
         }
@@ -387,9 +440,9 @@ enum UploadTransactionRecovery {
             )
         }
 
-        let commitData: Data
+        let commitReceipt: ASCMutationReceipt
         do {
-            commitData = try await httpClient.patch(endpoint, body: commitBody)
+            commitReceipt = try await httpClient.patchReceipt(endpoint, body: commitBody)
         } catch {
             let commitContext = "The \(resourceName) commit did not return a confirmed response: \(error.localizedDescription)"
             return await reconcileCommit(
@@ -406,9 +459,17 @@ enum UploadTransactionRecovery {
             )
         }
 
+        guard commitReceipt.statusCode == 200 else {
+            return .commitCommittedUnverified(
+                statusCode: commitReceipt.statusCode,
+                message: "Apple accepted the \(resourceName) commit with unexpected HTTP status \(commitReceipt.statusCode); expected 200.",
+                resource: reserved
+            )
+        }
+
         let committed: Resource
         do {
-            committed = try decodeResource(commitData)
+            committed = try decodeResource(commitReceipt.data)
         } catch {
             return await reconcileCommit(
                 httpClient: httpClient,
@@ -454,10 +515,23 @@ enum UploadTransactionRecovery {
     static func result<Resource: RecoverableUploadResource>(
         for outcome: UploadTransactionOutcome<Resource>,
         descriptor: UploadRecoveryDescriptor,
+        additionalSuccessFields: [String: Any] = [:],
         format: (Resource) -> [String: Any]
     ) -> CallTool.Result {
         let payload = payload(for: outcome, descriptor: descriptor, format: format)
-        return MCPResult.jsonObject(payload.value, text: payload.text, isError: payload.isError)
+        var value = payload.value
+        if !payload.isError {
+            for (key, field) in additionalSuccessFields
+            where value[key] == nil
+                && key != descriptor.successKey
+                && key != descriptor.idArgument
+                && key != descriptor.checksumReceiptKey
+                && key != descriptor.reservationFingerprintKey
+                && !protectedAdditionalSuccessFields.contains(key) {
+                value[key] = field
+            }
+        }
+        return MCPResult.jsonObject(value, text: payload.text, isError: payload.isError)
     }
 
     static func failurePayload<Resource: RecoverableUploadResource>(
@@ -813,30 +887,68 @@ enum UploadTransactionRecovery {
                 true
             )
 
-        case .reservationUnresolved(let message, let checksumReceipt):
+        case .reservationUnresolved(let message, let fingerprint):
             let safeMessage = Redactor.redact(message)
             var value: [String: Any] = [
                 "success": false,
                 "error": safeMessage,
                 "reservationState": "unknown",
                 "reservationIdKnown": false,
+                "operationCommitState": "unknown",
+                "outcomeUnknown": true,
+                "inspectionRequired": true,
                 "retrySafe": false,
-                "inspection": inspectionGuidance(descriptor)
+                "inspection": inspectionGuidance(descriptor, fingerprint: fingerprint)
             ]
             let receiptPublished: Bool
             if let checksumReceiptKey = descriptor.checksumReceiptKey,
-               let checksumReceipt {
-                value[checksumReceiptKey] = checksumReceipt
+               let fingerprint {
+                value[checksumReceiptKey] = fingerprint.checksum
                 receiptPublished = true
             } else {
                 receiptPublished = false
             }
-            let recoveryInstruction = receiptPublished
-                ? "Preserve the checksum receipt and inspect the parent collection before retrying to avoid a duplicate."
-                : "Inspect the parent collection before retrying to avoid a duplicate."
+            publishReservationFingerprint(fingerprint, descriptor: descriptor, value: &value)
+            let recoveryInstruction: String
+            if hasCandidateMatchGuidance(fingerprint, descriptor: descriptor) {
+                recoveryInstruction = "Preserve the reservation fingerprint, inspect every page of the parent collection, and require a unique candidate match before retrying to avoid a duplicate."
+            } else if receiptPublished {
+                recoveryInstruction = "Preserve the checksum receipt and inspect the parent collection before retrying to avoid a duplicate."
+            } else {
+                recoveryInstruction = "Inspect the parent collection before retrying to avoid a duplicate."
+            }
             return (
                 value,
                 "Error: \(safeMessage) The reservation id is unavailable. \(recoveryInstruction)",
+                true
+            )
+
+        case .reservationCommittedUnverified(let statusCode, let message, let fingerprint):
+            let safeMessage = Redactor.redact(message)
+            var value: [String: Any] = [
+                "success": false,
+                "error": safeMessage,
+                "statusCode": statusCode,
+                "reservationState": "committed_unverified",
+                "reservationIdKnown": false,
+                "operationCommitState": "committed_unverified",
+                "operationCommitted": true,
+                "outcomeUnknown": false,
+                "inspectionRequired": true,
+                "retrySafe": false,
+                "inspection": inspectionGuidance(descriptor, fingerprint: fingerprint)
+            ]
+            if let checksumReceiptKey = descriptor.checksumReceiptKey,
+               let fingerprint {
+                value[checksumReceiptKey] = fingerprint.checksum
+            }
+            publishReservationFingerprint(fingerprint, descriptor: descriptor, value: &value)
+            let recoveryInstruction = hasCandidateMatchGuidance(fingerprint, descriptor: descriptor)
+                ? " Preserve the reservation fingerprint, inspect every page, and require a unique candidate match before another reservation attempt."
+                : " Inspect the parent collection before another reservation attempt."
+            return (
+                value,
+                "Error: \(safeMessage)\(recoveryInstruction)",
                 true
             )
 
@@ -862,7 +974,10 @@ enum UploadTransactionRecovery {
             } else if cleanup.outcomeUnknown || cleanup.completionUnverified {
                 manualGuidance = " Inspect the exact reservation resource id '\(resource.id)' before another cleanup attempt."
             } else if let deleteTool = descriptor.deleteTool {
-                manualGuidance = " Use \(deleteTool) with \(descriptor.idArgument) '\(resource.id)' to retry cleanup."
+                let confirmationGuidance = descriptor.deleteConfirmationArgument.map {
+                    " and \($0) '\(resource.id)'"
+                } ?? ""
+                manualGuidance = " Use \(deleteTool) with \(descriptor.idArgument) '\(resource.id)'\(confirmationGuidance) to retry cleanup."
             } else {
                 manualGuidance = " Inspect the retained reservation before retrying."
             }
@@ -954,6 +1069,35 @@ enum UploadTransactionRecovery {
                 "Error: \(safeMessage) \(retentionText)",
                 true
             )
+
+        case .commitCommittedUnverified(let statusCode, let message, let resource):
+            let safeMessage = Redactor.redact(message)
+            return (
+                [
+                    "success": false,
+                    "error": safeMessage,
+                    "statusCode": statusCode,
+                    "resourceId": resource.id,
+                    descriptor.idArgument: resource.id,
+                    descriptor.successKey: format(resource),
+                    "uploadCommitted": true,
+                    "processingComplete": false,
+                    "deliveryPending": true,
+                    "operationCommitState": "committed_unverified",
+                    "operationCommitted": true,
+                    "outcomeUnknown": false,
+                    "inspectionRequired": true,
+                    "cleanup": retainedGuidance(
+                        resourceID: resource.id,
+                        reason: "Automatic deletion was not attempted because Apple accepted the commit with an unexpected successful status.",
+                        descriptor: descriptor
+                    ),
+                    "reservationDeleted": false,
+                    "retrySafe": false
+                ],
+                "Error: \(safeMessage) Inspect the exact resource before another upload or cleanup attempt.",
+                true
+            )
         }
     }
 
@@ -970,7 +1114,10 @@ enum UploadTransactionRecovery {
             value["reason"] = reason
             if let deleteTool = descriptor.deleteTool {
                 value["tool"] = deleteTool
-                value["arguments"] = [descriptor.idArgument: resourceID]
+                value["arguments"] = deleteArguments(
+                    resourceID: resourceID,
+                    descriptor: descriptor
+                )
             }
         }
         if case .commitUnknown(let reason) = cleanup {
@@ -1020,12 +1167,26 @@ enum UploadTransactionRecovery {
         ]
         if let deleteTool = descriptor.deleteTool {
             value["tool"] = deleteTool
-            value["arguments"] = [descriptor.idArgument: resourceID]
+            value["arguments"] = deleteArguments(
+                resourceID: resourceID,
+                descriptor: descriptor
+            )
         }
         if descriptor.getTool == nil {
             value["inspectTool"] = descriptor.inspectionTool
         }
         return value
+    }
+
+    private static func deleteArguments(
+        resourceID: String,
+        descriptor: UploadRecoveryDescriptor
+    ) -> [String: String] {
+        var arguments = [descriptor.idArgument: resourceID]
+        if let confirmationArgument = descriptor.deleteConfirmationArgument {
+            arguments[confirmationArgument] = resourceID
+        }
+        return arguments
     }
 
     private static func postCommitRetentionReason(
@@ -1036,12 +1197,82 @@ enum UploadTransactionRecovery {
         deletable ? deletableReason : retainedReason
     }
 
-    private static func inspectionGuidance(_ descriptor: UploadRecoveryDescriptor) -> [String: Any] {
-        [
+    private static func inspectionGuidance(
+        _ descriptor: UploadRecoveryDescriptor,
+        fingerprint: UploadReservationFingerprint?
+    ) -> [String: Any] {
+        var arguments = descriptor.inspectionArguments.reduce(into: [String: Any]()) {
+            $0[$1.key] = $1.value
+        }
+        if let pageLimit = descriptor.inspectionPageLimit {
+            arguments["limit"] = pageLimit
+        }
+
+        var guidance: [String: Any] = [
             "tool": descriptor.inspectionTool,
-            "arguments": descriptor.inspectionArguments
+            "arguments": arguments
         ]
+        if let nextURLArgument = descriptor.inspectionNextURLArgument {
+            guidance["continue_with_next_url"] = true
+            guidance["next_url_argument"] = nextURLArgument
+        }
+        if let fingerprintKey = descriptor.reservationFingerprintKey,
+           hasCandidateMatchGuidance(fingerprint, descriptor: descriptor) {
+            guidance["candidate_match"] = [
+                "fingerprint_key": fingerprintKey,
+                "candidate_fields": descriptor.inspectionCandidateFields,
+                "require_unique_match_before_retry": true
+            ] as [String: Any]
+        }
+        return guidance
     }
+
+    private static func hasCandidateMatchGuidance(
+        _ fingerprint: UploadReservationFingerprint?,
+        descriptor: UploadRecoveryDescriptor
+    ) -> Bool {
+        fingerprint != nil &&
+            descriptor.reservationFingerprintKey != nil &&
+            !descriptor.inspectionCandidateFields.isEmpty
+    }
+
+    private static func publishReservationFingerprint(
+        _ fingerprint: UploadReservationFingerprint?,
+        descriptor: UploadRecoveryDescriptor,
+        value: inout [String: Any]
+    ) {
+        guard let fingerprint,
+              let fingerprintKey = descriptor.reservationFingerprintKey else {
+            return
+        }
+        value[fingerprintKey] = [
+            "file_name": fingerprint.fileName,
+            "file_size": fingerprint.fileSize,
+            "checksum": fingerprint.checksum
+        ] as [String: Any]
+    }
+
+    private static let protectedAdditionalSuccessFields: Set<String> = [
+        "success",
+        "error",
+        "details",
+        "retrySafe",
+        "outcomeUnknown",
+        "operationCommitState",
+        "operationCommitted",
+        "inspectionRequired",
+        "uploadCommitted",
+        "processingComplete",
+        "deliveryPending",
+        "reservationCreated",
+        "reservationState",
+        "reservationIdKnown",
+        "reservationDeleted",
+        "cleanup",
+        "inspection",
+        "resourceId",
+        "reconciledAfterCommit"
+    ]
 }
 
 extension ASCScreenshot: RecoverableUploadResource {

@@ -46,6 +46,7 @@ enum ASCToolCatalogFactory {
         "ppo": "Product Page Optimization (A/B Tests)",
         "promoted": "Promoted Purchases",
         "review_attachments": "Review Attachments",
+        "review_submissions": "Review Submissions",
         "metrics": "Performance Metrics"
     ]
 

@@ -254,14 +254,14 @@ struct WorkerToolDefinitionsTests {
         #expect(names.contains("beta_groups_remove_builds"))
     }
 
-    // MARK: - InAppPurchasesWorker (46 tools)
+    // MARK: - InAppPurchasesWorker (59 tools)
 
-    @Test("InAppPurchasesWorker returns 46 tools with correct names")
+    @Test("InAppPurchasesWorker returns 59 tools with correct names")
     func inAppPurchasesWorkerTools() async throws {
         let client = try await TestFactory.makeHTTPClient()
         let worker = InAppPurchasesWorker(httpClient: client, uploadService: UploadService())
         let tools = await worker.getTools()
-        #expect(tools.count == 46)
+        #expect(tools.count == 59)
         let names = Set(tools.map(\.name))
         #expect(names.contains("iap_list"))
         #expect(names.contains("iap_get"))
@@ -309,6 +309,19 @@ struct WorkerToolDefinitionsTests {
         #expect(names.contains("iap_get_custom_code"))
         #expect(names.contains("iap_update_custom_code"))
         #expect(names.contains("iap_deactivate_custom_code"))
+        #expect(names.contains("iap_create_version"))
+        #expect(names.contains("iap_get_version"))
+        #expect(names.contains("iap_list_versions"))
+        #expect(names.contains("iap_list_version_localizations"))
+        #expect(names.contains("iap_create_version_localization"))
+        #expect(names.contains("iap_get_version_localization"))
+        #expect(names.contains("iap_update_version_localization"))
+        #expect(names.contains("iap_delete_version_localization"))
+        #expect(names.contains("iap_get_version_image"))
+        #expect(names.contains("iap_list_version_images"))
+        #expect(names.contains("iap_upload_version_image"))
+        #expect(names.contains("iap_get_version_image_resource"))
+        #expect(names.contains("iap_delete_version_image"))
     }
 
     // MARK: - ProvisioningWorker (17 tools)
@@ -454,14 +467,14 @@ struct WorkerToolDefinitionsTests {
         #expect(names.contains("analytics_check_snapshot_status"))
     }
 
-    // MARK: - SubscriptionsWorker (73 tools)
+    // MARK: - SubscriptionsWorker (99 tools)
 
-    @Test("SubscriptionsWorker returns 73 tools with correct names")
+    @Test("SubscriptionsWorker returns 99 tools with correct names")
     func subscriptionsWorkerTools() async throws {
         let client = try await TestFactory.makeHTTPClient()
         let worker = SubscriptionsWorker(httpClient: client, uploadService: UploadService())
         let tools = await worker.getTools()
-        #expect(tools.count == 73)
+        #expect(tools.count == 99)
         let names = Set(tools.map(\.name))
         #expect(names.contains("subscriptions_list"))
         #expect(names.contains("subscriptions_get"))
@@ -499,6 +512,12 @@ struct WorkerToolDefinitionsTests {
         #expect(names.contains("subscriptions_create_price"))
         #expect(names.contains("subscriptions_get_price_point"))
         #expect(names.contains("subscriptions_list_price_point_equalizations"))
+        #expect(names.contains("subscriptions_list_price_point_adjusted_equalizations"))
+        #expect(names.contains("subscriptions_create_plan_availability"))
+        #expect(names.contains("subscriptions_get_plan_availability"))
+        #expect(names.contains("subscriptions_update_plan_availability"))
+        #expect(names.contains("subscriptions_list_plan_availabilities"))
+        #expect(names.contains("subscriptions_list_plan_availability_territories"))
         #expect(names.contains("subscriptions_get_availability"))
         #expect(names.contains("subscriptions_set_availability"))
         #expect(names.contains("subscriptions_list_available_territories"))
@@ -506,6 +525,26 @@ struct WorkerToolDefinitionsTests {
         #expect(names.contains("subscriptions_inventory"))
         #expect(names.contains("subscriptions_pricing_summary"))
         #expect(names.contains("subscriptions_prepare_offer_prices"))
+        #expect(names.contains("subscriptions_create_version"))
+        #expect(names.contains("subscriptions_get_version"))
+        #expect(names.contains("subscriptions_list_versions"))
+        #expect(names.contains("subscriptions_list_version_localizations"))
+        #expect(names.contains("subscriptions_create_version_localization"))
+        #expect(names.contains("subscriptions_get_version_localization"))
+        #expect(names.contains("subscriptions_update_version_localization"))
+        #expect(names.contains("subscriptions_delete_version_localization"))
+        #expect(names.contains("subscriptions_list_version_images"))
+        #expect(names.contains("subscriptions_upload_version_image"))
+        #expect(names.contains("subscriptions_get_version_image"))
+        #expect(names.contains("subscriptions_delete_version_image"))
+        #expect(names.contains("subscriptions_create_group_version"))
+        #expect(names.contains("subscriptions_get_group_version"))
+        #expect(names.contains("subscriptions_list_group_versions"))
+        #expect(names.contains("subscriptions_list_group_version_localizations"))
+        #expect(names.contains("subscriptions_create_group_version_localization"))
+        #expect(names.contains("subscriptions_get_group_version_localization"))
+        #expect(names.contains("subscriptions_update_group_version_localization"))
+        #expect(names.contains("subscriptions_delete_group_version_localization"))
         #expect(names.contains("subscriptions_list_intro_offers"))
         #expect(names.contains("subscriptions_create_intro_offer"))
         #expect(names.contains("subscriptions_update_intro_offer"))
@@ -810,6 +849,8 @@ struct WorkerToolDefinitionsTests {
         allNames += (await ProductPageOptimizationWorker(httpClient: client).getTools()).map(\.name)
         allNames += (await PromotedPurchasesWorker(httpClient: client, uploadService: UploadService()).getTools()).map(\.name)
         allNames += (await MetricsWorker(httpClient: client).getTools()).map(\.name)
+        allNames += (await ReviewAttachmentsWorker(httpClient: client, uploadService: UploadService()).getTools()).map(\.name)
+        allNames += (await ReviewSubmissionsWorker(httpClient: client).getTools()).map(\.name)
 
         let uniqueNames = Set(allNames)
         #expect(allNames.count == uniqueNames.count, "Duplicate tool names found")
@@ -856,6 +897,7 @@ struct WorkerToolDefinitionsTests {
             tools += await PromotedPurchasesWorker(httpClient: client, uploadService: UploadService()).getTools()
             tools += await MetricsWorker(httpClient: client).getTools()
             tools += await ReviewAttachmentsWorker(httpClient: client, uploadService: UploadService()).getTools()
+            tools += await ReviewSubmissionsWorker(httpClient: client).getTools()
             return tools
         }()
 
@@ -904,6 +946,7 @@ struct WorkerToolDefinitionsTests {
             tools += await PromotedPurchasesWorker(httpClient: client, uploadService: UploadService()).getTools()
             tools += await MetricsWorker(httpClient: client).getTools()
             tools += await ReviewAttachmentsWorker(httpClient: client, uploadService: UploadService()).getTools()
+            tools += await ReviewSubmissionsWorker(httpClient: client).getTools()
             return tools
         }()
 
@@ -935,5 +978,26 @@ struct WorkerToolDefinitionsTests {
         #expect(names.contains("review_attachments_get"))
         #expect(names.contains("review_attachments_delete"))
         #expect(names.contains("review_attachments_list"))
+    }
+
+    // MARK: - ReviewSubmissionsWorker (9 tools)
+
+    @Test("ReviewSubmissionsWorker returns 9 tools with correct names")
+    func reviewSubmissionsWorkerTools() async throws {
+        let client = try await TestFactory.makeHTTPClient()
+        let worker = ReviewSubmissionsWorker(httpClient: client)
+        let tools = await worker.getTools()
+        #expect(tools.count == 9)
+        #expect(Set(tools.map(\.name)) == [
+            "review_submissions_list",
+            "review_submissions_get",
+            "review_submissions_create",
+            "review_submissions_list_items",
+            "review_submissions_add_item",
+            "review_submissions_update_item",
+            "review_submissions_remove_item",
+            "review_submissions_submit",
+            "review_submissions_cancel"
+        ])
     }
 }

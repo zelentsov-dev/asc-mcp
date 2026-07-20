@@ -196,7 +196,7 @@
     {
       "tool": "subscriptions_create_group_localization",
       "kind": "direct",
-      "status": "partial",
+      "status": "deprecated",
       "effect": "write",
       "implementationState": "asBuilt",
       "operations": [
@@ -253,7 +253,7 @@
         ],
         "fields": []
       },
-      "note": "The current handler uses the non-deprecated product-scoped subscription-group localization operations documented by Apple 4.4.1; no subscriptionGroupVersion resolver is part of this tool."
+      "note": "Deprecated by Apple 4.4.1. Backward-compatible only: the handler keeps the legacy group-scoped operation unchanged, emits a structured success warning, never creates or selects a version, and points callers to subscriptions_create_group_version plus subscriptions_create_group_version_localization."
     },
     {
       "tool": "subscriptions_create_intro_offer",
@@ -371,7 +371,7 @@
     {
       "tool": "subscriptions_create_localization",
       "kind": "direct",
-      "status": "partial",
+      "status": "deprecated",
       "effect": "write",
       "implementationState": "asBuilt",
       "operations": [
@@ -428,7 +428,7 @@
         ],
         "fields": []
       },
-      "note": "The current handler uses the non-deprecated product-scoped subscription localization operations documented by Apple 4.4.1; no subscriptionVersion resolver is part of this tool."
+      "note": "Deprecated by Apple 4.4.1. Backward-compatible only: the handler keeps the legacy product-scoped operation unchanged, emits a structured success warning, never creates or selects a version, and points callers to subscriptions_create_version plus subscriptions_create_version_localization."
     },
     {
       "tool": "subscriptions_create_offer_code",
@@ -549,6 +549,92 @@
         "fields": []
       },
       "note": "The handler requires explicit customer eligibility values and non-empty territory pricing, validates paid/free pricing rules, and enforces that autoRenewEnabled=false is limited to FREE_TRIAL offers that replace introductory offers."
+    },
+    {
+      "tool": "subscriptions_create_plan_availability",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "write",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "subscriptionPlanAvailabilities_createInstance",
+          "method": "post",
+          "path": "/v1/subscriptionPlanAvailabilities",
+          "role": "primary",
+          "condition": null,
+          "inputs": [
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/type",
+              "fixedValue": "subscriptionPlanAvailabilities"
+            },
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/relationships/subscription/data/type",
+              "fixedValue": "subscriptions"
+            },
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/relationships/availableTerritories/data/*/type",
+              "fixedValue": "territories"
+            }
+          ]
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "subscription_id",
+          "sourceKind": "requestBody",
+          "operationId": "subscriptionPlanAvailabilities_createInstance",
+          "jsonPointer": "/data/relationships/subscription/data/id"
+        },
+        {
+          "toolField": "plan_type",
+          "sourceKind": "requestBody",
+          "operationId": "subscriptionPlanAvailabilities_createInstance",
+          "jsonPointer": "/data/attributes/planType"
+        },
+        {
+          "toolField": "territory_ids",
+          "sourceKind": "requestBody",
+          "operationId": "subscriptionPlanAvailabilities_createInstance",
+          "jsonPointer": "/data/relationships/availableTerritories/data/*/id"
+        },
+        {
+          "toolField": "available_in_new_territories",
+          "sourceKind": "requestBody",
+          "operationId": "subscriptionPlanAvailabilities_createInstance",
+          "jsonPointer": "/data/attributes/availableInNewTerritories",
+          "localRole": "Preserves omission, Boolean value, and explicit JSON null as distinct request states."
+        }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          { "operationId": "subscriptionPlanAvailabilities_createInstance", "statusCode": "201", "mediaType": "application/json" }
+        ],
+        "fields": [
+          { "outputField": "success", "localRole": "Set true after Apple creates the resource." },
+          { "outputField": "plan_availability.id", "operationId": "subscriptionPlanAvailabilities_createInstance", "jsonPointer": "/data/id" },
+          { "outputField": "plan_availability.type", "operationId": "subscriptionPlanAvailabilities_createInstance", "jsonPointer": "/data/type" },
+          { "outputField": "plan_availability.plan_type", "operationId": "subscriptionPlanAvailabilities_createInstance", "jsonPointer": "/data/attributes/planType" },
+          { "outputField": "plan_availability.available_in_new_territories", "operationId": "subscriptionPlanAvailabilities_createInstance", "jsonPointer": "/data/attributes/availableInNewTerritories" },
+          { "outputField": "plan_availability.available_territory_ids", "operationId": "subscriptionPlanAvailabilities_createInstance", "jsonPointer": "/data/relationships/availableTerritories/data/*/id" },
+          { "outputField": "plan_availability.available_territories", "localRole": "Build one projected territory per availableTerritories linkage; emit null when Apple omits linkage data." },
+          { "outputField": "plan_availability.available_territories.*.id", "operationId": "subscriptionPlanAvailabilities_createInstance", "jsonPointer": "/data/relationships/availableTerritories/data/*/id" },
+          { "outputField": "plan_availability.available_territories.*.type", "operationId": "subscriptionPlanAvailabilities_createInstance", "jsonPointer": "/data/relationships/availableTerritories/data/*/type" },
+          { "outputField": "plan_availability.available_territories.*.currency", "operationId": "subscriptionPlanAvailabilities_createInstance", "jsonPointer": "/included", "localRole": "Join the included territory matching each availableTerritories linkage ID; emit null when it is not included." },
+          { "outputField": "plan_availability.available_territories_total", "operationId": "subscriptionPlanAvailabilities_createInstance", "jsonPointer": "/data/relationships/availableTerritories/meta/paging/total" },
+          { "outputField": "plan_availability.available_territories_limit", "operationId": "subscriptionPlanAvailabilities_createInstance", "jsonPointer": "/data/relationships/availableTerritories/meta/paging/limit" },
+          { "outputField": "plan_availability.available_territories_count", "operationId": "subscriptionPlanAvailabilities_createInstance", "jsonPointer": "/data/relationships/availableTerritories/data", "localRole": "Count the availableTerritories relationship identifiers; emit null when Apple omits linkage data." },
+          { "outputField": "plan_availability.available_territories_next_cursor", "operationId": "subscriptionPlanAvailabilities_createInstance", "jsonPointer": "/data/relationships/availableTerritories/meta/paging/nextCursor" },
+          { "outputField": "plan_availability.available_territories_included_count", "localRole": "Count related identifiers with a matching included territory resource; emit null when linkage data is absent." },
+          { "outputField": "plan_availability.available_territories_truncated", "localRole": "True when Apple supplies a next cursor or the relationship total exceeds its identifier count; emit null when linkage data is absent and truncation cannot be determined." },
+          { "outputField": "plan_availability.available_territories_completeness_known", "localRole": "When linkage data is present, report whether Apple supplied a relationship total or next cursor; otherwise emit null." }
+        ]
+      },
+      "note": "Implements Apple's plan-type-aware availability create contract with typed planType, exact JSON:API linkage, and nullable availableInNewTerritories semantics. An ambiguous POST or response decode returns write_outcome=not_confirmed, retrySafe=false, the complete requested availability fingerprint, and list/get recovery guidance instead of encouraging a duplicate create."
     },
     {
       "tool": "subscriptions_create_price",
@@ -1072,7 +1158,7 @@
     {
       "tool": "subscriptions_delete_group_localization",
       "kind": "direct",
-      "status": "partial",
+      "status": "deprecated",
       "effect": "write",
       "implementationState": "asBuilt",
       "operations": [
@@ -1100,12 +1186,12 @@
         ],
         "fields": []
       },
-      "note": "The current handler uses the non-deprecated product-scoped subscription-group localization operations documented by Apple 4.4.1; no subscriptionGroupVersion resolver is part of this tool."
+      "note": "Deprecated by Apple 4.4.1. Backward-compatible only: the handler deletes through the unchanged legacy group-scoped endpoint, emits a structured success warning, and points callers to subscriptions_delete_group_version_localization."
     },
     {
       "tool": "subscriptions_delete_image",
       "kind": "direct",
-      "status": "partial",
+      "status": "deprecated",
       "effect": "write",
       "implementationState": "asBuilt",
       "operations": [
@@ -1133,7 +1219,7 @@
         ],
         "fields": []
       },
-      "note": "The current handler and Apple 4.4.1 both use the non-deprecated product-scoped subscriptionImages resource."
+      "note": "Deprecated by Apple 4.4.1. Backward-compatible only: the handler deletes through the unchanged legacy product-scoped endpoint, emits a structured success warning, and points callers to subscriptions_delete_version_image."
     },
     {
       "tool": "subscriptions_delete_intro_offer",
@@ -1171,7 +1257,7 @@
     {
       "tool": "subscriptions_delete_localization",
       "kind": "direct",
-      "status": "partial",
+      "status": "deprecated",
       "effect": "write",
       "implementationState": "asBuilt",
       "operations": [
@@ -1199,7 +1285,7 @@
         ],
         "fields": []
       },
-      "note": "The current handler uses the non-deprecated product-scoped subscription localization operations documented by Apple 4.4.1; no subscriptionVersion resolver is part of this tool."
+      "note": "Deprecated by Apple 4.4.1. Backward-compatible only: the handler deletes through the unchanged legacy product-scoped endpoint, emits a structured success warning, and points callers to subscriptions_delete_version_localization."
     },
     {
       "tool": "subscriptions_delete_price",
@@ -1520,6 +1606,7 @@
       "status": "deprecated",
       "effect": "read",
       "implementationState": "asBuilt",
+      "replacementTool": "subscriptions_list_plan_availabilities",
       "operations": [
         {
           "operationId": "subscriptions_subscriptionAvailability_getToOneRelated",
@@ -1671,7 +1758,7 @@
     {
       "tool": "subscriptions_get_group_localization",
       "kind": "direct",
-      "status": "partial",
+      "status": "deprecated",
       "effect": "read",
       "implementationState": "asBuilt",
       "operations": [
@@ -1708,12 +1795,12 @@
         ],
         "fields": []
       },
-      "note": "The current handler uses the non-deprecated product-scoped subscription-group localization operations documented by Apple 4.4.1; no subscriptionGroupVersion resolver is part of this tool."
+      "note": "Deprecated by Apple 4.4.1. Backward-compatible only: the handler reads through the unchanged legacy group-scoped endpoint, emits a structured success warning, and points callers to subscriptions_get_group_version_localization."
     },
     {
       "tool": "subscriptions_get_image",
       "kind": "direct",
-      "status": "partial",
+      "status": "deprecated",
       "effect": "read",
       "implementationState": "asBuilt",
       "operations": [
@@ -1750,12 +1837,12 @@
         ],
         "fields": []
       },
-      "note": "The current handler and Apple 4.4.1 both use the non-deprecated product-scoped subscriptionImages resource."
+      "note": "Deprecated by Apple 4.4.1. Backward-compatible only: the handler reads through the unchanged legacy product-scoped endpoint, emits a structured success warning, and points callers to subscriptions_get_version_image."
     },
     {
       "tool": "subscriptions_get_localization",
       "kind": "direct",
-      "status": "partial",
+      "status": "deprecated",
       "effect": "read",
       "implementationState": "asBuilt",
       "operations": [
@@ -1792,7 +1879,7 @@
         ],
         "fields": []
       },
-      "note": "The current handler uses the non-deprecated product-scoped subscription localization operations documented by Apple 4.4.1; no subscriptionVersion resolver is part of this tool."
+      "note": "Deprecated by Apple 4.4.1. Backward-compatible only: the handler reads through the unchanged legacy product-scoped endpoint, emits a structured success warning, and points callers to subscriptions_get_version_localization."
     },
     {
       "tool": "subscriptions_get_offer_code",
@@ -1956,6 +2043,63 @@
         ]
       },
       "note": "Apple returns text/csv with no query parameters; the handler preserves the UTF-8 CSV payload without JSON decoding."
+    },
+    {
+      "tool": "subscriptions_get_plan_availability",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "subscriptionPlanAvailabilities_getInstance",
+          "method": "get",
+          "path": "/v1/subscriptionPlanAvailabilities/{id}",
+          "role": "primary",
+          "condition": null,
+          "inputs": [
+            { "sourceKind": "fixed", "location": "query", "appleName": "include", "fixedValue": ["availableTerritories"] },
+            { "sourceKind": "fixed", "location": "query", "appleName": "fields[subscriptionPlanAvailabilities]", "fixedValue": ["availableInNewTerritories", "planType", "availableTerritories"] },
+            { "sourceKind": "fixed", "location": "query", "appleName": "fields[territories]", "fixedValue": ["currency"] },
+            { "sourceKind": "fixed", "location": "query", "appleName": "limit[availableTerritories]", "fixedValue": 50 }
+          ]
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "plan_availability_id",
+          "sourceKind": "parameter",
+          "operationId": "subscriptionPlanAvailabilities_getInstance",
+          "location": "path",
+          "appleName": "id"
+        }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          { "operationId": "subscriptionPlanAvailabilities_getInstance", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": [
+          { "outputField": "success", "localRole": "Set true after a successful Apple response." },
+          { "outputField": "plan_availability.id", "operationId": "subscriptionPlanAvailabilities_getInstance", "jsonPointer": "/data/id" },
+          { "outputField": "plan_availability.type", "operationId": "subscriptionPlanAvailabilities_getInstance", "jsonPointer": "/data/type" },
+          { "outputField": "plan_availability.plan_type", "operationId": "subscriptionPlanAvailabilities_getInstance", "jsonPointer": "/data/attributes/planType" },
+          { "outputField": "plan_availability.available_in_new_territories", "operationId": "subscriptionPlanAvailabilities_getInstance", "jsonPointer": "/data/attributes/availableInNewTerritories" },
+          { "outputField": "plan_availability.available_territory_ids", "operationId": "subscriptionPlanAvailabilities_getInstance", "jsonPointer": "/data/relationships/availableTerritories/data/*/id" },
+          { "outputField": "plan_availability.available_territories", "localRole": "Build one projected territory per availableTerritories linkage; emit null when Apple omits linkage data." },
+          { "outputField": "plan_availability.available_territories.*.id", "operationId": "subscriptionPlanAvailabilities_getInstance", "jsonPointer": "/data/relationships/availableTerritories/data/*/id" },
+          { "outputField": "plan_availability.available_territories.*.type", "operationId": "subscriptionPlanAvailabilities_getInstance", "jsonPointer": "/data/relationships/availableTerritories/data/*/type" },
+          { "outputField": "plan_availability.available_territories.*.currency", "operationId": "subscriptionPlanAvailabilities_getInstance", "jsonPointer": "/included", "localRole": "Join the included territory matching each availableTerritories linkage ID; emit null when it is not included." },
+          { "outputField": "plan_availability.available_territories_total", "operationId": "subscriptionPlanAvailabilities_getInstance", "jsonPointer": "/data/relationships/availableTerritories/meta/paging/total" },
+          { "outputField": "plan_availability.available_territories_limit", "operationId": "subscriptionPlanAvailabilities_getInstance", "jsonPointer": "/data/relationships/availableTerritories/meta/paging/limit" },
+          { "outputField": "plan_availability.available_territories_count", "operationId": "subscriptionPlanAvailabilities_getInstance", "jsonPointer": "/data/relationships/availableTerritories/data", "localRole": "Count the availableTerritories relationship identifiers; emit null when Apple omits linkage data." },
+          { "outputField": "plan_availability.available_territories_next_cursor", "operationId": "subscriptionPlanAvailabilities_getInstance", "jsonPointer": "/data/relationships/availableTerritories/meta/paging/nextCursor" },
+          { "outputField": "plan_availability.available_territories_included_count", "localRole": "Count related identifiers with a matching included territory resource; emit null when linkage data is absent." },
+          { "outputField": "plan_availability.available_territories_truncated", "localRole": "True when Apple supplies a next cursor or the relationship total exceeds its identifier count; emit null when linkage data is absent and truncation cannot be determined." },
+          { "outputField": "plan_availability.available_territories_completeness_known", "localRole": "When linkage data is present, report whether Apple supplied a relationship total or next cursor; otherwise emit null." }
+        ]
+      },
+      "note": "Uses a fixed sparse-field projection and includes at most 50 related territories; callers use the dedicated paginated territory tool for the full collection."
     },
     {
       "tool": "subscriptions_get_price_point",
@@ -2556,6 +2700,7 @@
       "status": "deprecated",
       "effect": "read",
       "implementationState": "asBuilt",
+      "replacementTool": "subscriptions_list_plan_availability_territories",
       "operations": [
         {
           "operationId": "subscriptionAvailabilities_availableTerritories_getToManyRelated",
@@ -2598,7 +2743,7 @@
     {
       "tool": "subscriptions_list_group_localizations",
       "kind": "direct",
-      "status": "partial",
+      "status": "deprecated",
       "effect": "read",
       "implementationState": "asBuilt",
       "operations": [
@@ -2647,7 +2792,7 @@
         ],
         "fields": []
       },
-      "note": "The current handler uses the non-deprecated product-scoped subscription-group localization operations documented by Apple 4.4.1; no subscriptionGroupVersion resolver is part of this tool."
+      "note": "Deprecated by Apple 4.4.1. Backward-compatible only: the handler lists through the unchanged legacy group-scoped endpoint, emits a structured success warning, never selects a version, and points callers to subscriptions_list_group_versions plus subscriptions_list_group_version_localizations."
     },
     {
       "tool": "subscriptions_list_groups",
@@ -2748,7 +2893,7 @@
     {
       "tool": "subscriptions_list_images",
       "kind": "direct",
-      "status": "partial",
+      "status": "deprecated",
       "effect": "read",
       "implementationState": "asBuilt",
       "operations": [
@@ -2797,7 +2942,7 @@
         ],
         "fields": []
       },
-      "note": "The handler uses Apple's GET /v1/subscriptions/{id}/images operation and preserves validated pagination URLs."
+      "note": "Deprecated by Apple 4.4.1. Backward-compatible only: the handler keeps GET /v1/subscriptions/{id}/images and its validated pagination unchanged, emits a structured success warning, never selects a version, and points callers to subscriptions_list_versions plus subscriptions_list_version_images."
     },
     {
       "tool": "subscriptions_list_intro_offers",
@@ -2863,7 +3008,7 @@
     {
       "tool": "subscriptions_list_localizations",
       "kind": "direct",
-      "status": "partial",
+      "status": "deprecated",
       "effect": "read",
       "implementationState": "asBuilt",
       "operations": [
@@ -2912,7 +3057,7 @@
         ],
         "fields": []
       },
-      "note": "The current handler uses the non-deprecated product-scoped subscription localization operations documented by Apple 4.4.1; no subscriptionVersion resolver is part of this tool."
+      "note": "Deprecated by Apple 4.4.1. Backward-compatible only: the handler lists through the unchanged legacy product-scoped endpoint, emits a structured success warning, never selects a version, and points callers to subscriptions_list_versions plus subscriptions_list_version_localizations."
     },
     {
       "tool": "subscriptions_list_offer_code_prices",
@@ -3110,6 +3255,225 @@
         "fields": []
       },
       "note": "Apple 4.4.1 operation identity and all public inputs are classified; response remains opaque, so the semantic mapping is partial."
+    },
+    {
+      "tool": "subscriptions_list_plan_availabilities",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "subscriptions_planAvailabilities_getToManyRelated",
+          "method": "get",
+          "path": "/v1/subscriptions/{id}/planAvailabilities",
+          "role": "primary",
+          "condition": null,
+          "inputs": [
+            { "sourceKind": "fixed", "location": "query", "appleName": "include", "fixedValue": ["availableTerritories"] },
+            { "sourceKind": "fixed", "location": "query", "appleName": "fields[subscriptionPlanAvailabilities]", "fixedValue": ["availableInNewTerritories", "planType", "availableTerritories"] },
+            { "sourceKind": "fixed", "location": "query", "appleName": "fields[territories]", "fixedValue": ["currency"] },
+            { "sourceKind": "fixed", "location": "query", "appleName": "limit[availableTerritories]", "fixedValue": 50 }
+          ]
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "subscription_id",
+          "sourceKind": "parameter",
+          "operationId": "subscriptions_planAvailabilities_getToManyRelated",
+          "location": "path",
+          "appleName": "id"
+        },
+        {
+          "toolField": "limit",
+          "sourceKind": "parameter",
+          "operationId": "subscriptions_planAvailabilities_getToManyRelated",
+          "location": "query",
+          "appleName": "limit"
+        },
+        {
+          "toolField": "next_url",
+          "sourceKind": "local",
+          "localRole": "Validated Apple pagination URL bound to the concrete parent path and full originating query projection."
+        }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          { "operationId": "subscriptions_planAvailabilities_getToManyRelated", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": [
+          { "outputField": "success", "localRole": "Set true after a successful Apple response." },
+          { "outputField": "plan_availabilities", "operationId": "subscriptions_planAvailabilities_getToManyRelated", "jsonPointer": "/data" },
+          { "outputField": "plan_availabilities.*.id", "operationId": "subscriptions_planAvailabilities_getToManyRelated", "jsonPointer": "/data/*/id" },
+          { "outputField": "plan_availabilities.*.type", "operationId": "subscriptions_planAvailabilities_getToManyRelated", "jsonPointer": "/data/*/type" },
+          { "outputField": "plan_availabilities.*.plan_type", "operationId": "subscriptions_planAvailabilities_getToManyRelated", "jsonPointer": "/data/*/attributes/planType" },
+          { "outputField": "plan_availabilities.*.available_in_new_territories", "operationId": "subscriptions_planAvailabilities_getToManyRelated", "jsonPointer": "/data/*/attributes/availableInNewTerritories" },
+          { "outputField": "plan_availabilities.*.available_territory_ids", "operationId": "subscriptions_planAvailabilities_getToManyRelated", "jsonPointer": "/data/*/relationships/availableTerritories/data/*/id" },
+          { "outputField": "plan_availabilities.*.available_territories", "localRole": "Build one projected territory per availability linkage; emit null when Apple omits linkage data." },
+          { "outputField": "plan_availabilities.*.available_territories.*.id", "operationId": "subscriptions_planAvailabilities_getToManyRelated", "jsonPointer": "/data/*/relationships/availableTerritories/data/*/id" },
+          { "outputField": "plan_availabilities.*.available_territories.*.type", "operationId": "subscriptions_planAvailabilities_getToManyRelated", "jsonPointer": "/data/*/relationships/availableTerritories/data/*/type" },
+          { "outputField": "plan_availabilities.*.available_territories.*.currency", "operationId": "subscriptions_planAvailabilities_getToManyRelated", "jsonPointer": "/included", "localRole": "Join the included territory matching each availability linkage ID; emit null when it is not included." },
+          { "outputField": "plan_availabilities.*.available_territories_total", "operationId": "subscriptions_planAvailabilities_getToManyRelated", "jsonPointer": "/data/*/relationships/availableTerritories/meta/paging/total" },
+          { "outputField": "plan_availabilities.*.available_territories_limit", "operationId": "subscriptions_planAvailabilities_getToManyRelated", "jsonPointer": "/data/*/relationships/availableTerritories/meta/paging/limit" },
+          { "outputField": "plan_availabilities.*.available_territories_count", "operationId": "subscriptions_planAvailabilities_getToManyRelated", "jsonPointer": "/data/*/relationships/availableTerritories/data", "localRole": "Count each availability's related territory identifiers; emit null when Apple omits linkage data." },
+          { "outputField": "plan_availabilities.*.available_territories_next_cursor", "operationId": "subscriptions_planAvailabilities_getToManyRelated", "jsonPointer": "/data/*/relationships/availableTerritories/meta/paging/nextCursor" },
+          { "outputField": "plan_availabilities.*.available_territories_included_count", "localRole": "Count related identifiers with a matching included territory resource; emit null when linkage data is absent." },
+          { "outputField": "plan_availabilities.*.available_territories_truncated", "localRole": "True when Apple supplies a next cursor or the relationship total exceeds its identifier count; emit null when linkage data is absent and truncation cannot be determined." },
+          { "outputField": "plan_availabilities.*.available_territories_completeness_known", "localRole": "When linkage data is present, report whether Apple supplied a relationship total or next cursor; otherwise emit null." },
+          { "outputField": "count", "operationId": "subscriptions_planAvailabilities_getToManyRelated", "jsonPointer": "/data", "localRole": "Current Apple page resource count." },
+          { "outputField": "total", "operationId": "subscriptions_planAvailabilities_getToManyRelated", "jsonPointer": "/meta/paging/total" },
+          { "outputField": "next_url", "operationId": "subscriptions_planAvailabilities_getToManyRelated", "jsonPointer": "/links/next", "localRole": "Apple continuation URL or null." }
+        ]
+      },
+      "note": "Lists plan-type-aware availability resources with a fixed territory projection and a continuation bound to the complete originating query."
+    },
+    {
+      "tool": "subscriptions_list_plan_availability_territories",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "subscriptionPlanAvailabilities_availableTerritories_getToManyRelated",
+          "method": "get",
+          "path": "/v1/subscriptionPlanAvailabilities/{id}/availableTerritories",
+          "role": "primary",
+          "condition": null,
+          "inputs": [
+            { "sourceKind": "fixed", "location": "query", "appleName": "fields[territories]", "fixedValue": ["currency"] }
+          ]
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "plan_availability_id",
+          "sourceKind": "parameter",
+          "operationId": "subscriptionPlanAvailabilities_availableTerritories_getToManyRelated",
+          "location": "path",
+          "appleName": "id"
+        },
+        {
+          "toolField": "limit",
+          "sourceKind": "parameter",
+          "operationId": "subscriptionPlanAvailabilities_availableTerritories_getToManyRelated",
+          "location": "query",
+          "appleName": "limit"
+        },
+        {
+          "toolField": "next_url",
+          "sourceKind": "local",
+          "localRole": "Validated Apple pagination URL bound to the concrete parent path and full originating query projection."
+        }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          { "operationId": "subscriptionPlanAvailabilities_availableTerritories_getToManyRelated", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": [
+          { "outputField": "success", "localRole": "Set true after a successful Apple response." },
+          { "outputField": "territories", "operationId": "subscriptionPlanAvailabilities_availableTerritories_getToManyRelated", "jsonPointer": "/data" },
+          { "outputField": "territories.*.id", "operationId": "subscriptionPlanAvailabilities_availableTerritories_getToManyRelated", "jsonPointer": "/data/*/id" },
+          { "outputField": "territories.*.currency", "operationId": "subscriptionPlanAvailabilities_availableTerritories_getToManyRelated", "jsonPointer": "/data/*/attributes/currency" },
+          { "outputField": "count", "operationId": "subscriptionPlanAvailabilities_availableTerritories_getToManyRelated", "jsonPointer": "/data", "localRole": "Current Apple page resource count." },
+          { "outputField": "total", "operationId": "subscriptionPlanAvailabilities_availableTerritories_getToManyRelated", "jsonPointer": "/meta/paging/total" },
+          { "outputField": "next_url", "operationId": "subscriptionPlanAvailabilities_availableTerritories_getToManyRelated", "jsonPointer": "/links/next", "localRole": "Apple continuation URL or null." }
+        ]
+      },
+      "note": "Provides the complete paginated territory collection without exposing the duplicate relationship-linkage reader or replacement endpoint."
+    },
+    {
+      "tool": "subscriptions_list_price_point_adjusted_equalizations",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "subscriptionPricePoints_adjustedEqualizations_getToManyRelated",
+          "method": "get",
+          "path": "/v1/subscriptionPricePoints/{id}/adjustedEqualizations",
+          "role": "primary",
+          "condition": null,
+          "inputs": [
+            { "sourceKind": "fixed", "location": "query", "appleName": "include", "fixedValue": ["territory"] },
+            { "sourceKind": "fixed", "location": "query", "appleName": "fields[subscriptionPricePoints]", "fixedValue": ["customerPrice", "proceeds", "proceedsYear2", "territory", "adjustedEqualizations"] },
+            { "sourceKind": "fixed", "location": "query", "appleName": "fields[territories]", "fixedValue": ["currency"] }
+          ]
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "price_point_id",
+          "sourceKind": "parameter",
+          "operationId": "subscriptionPricePoints_adjustedEqualizations_getToManyRelated",
+          "location": "path",
+          "appleName": "id"
+        },
+        {
+          "toolField": "territory_ids",
+          "sourceKind": "parameter",
+          "operationId": "subscriptionPricePoints_adjustedEqualizations_getToManyRelated",
+          "location": "query",
+          "appleName": "filter[territory]"
+        },
+        {
+          "toolField": "subscription_ids",
+          "sourceKind": "parameter",
+          "operationId": "subscriptionPricePoints_adjustedEqualizations_getToManyRelated",
+          "location": "query",
+          "appleName": "filter[subscription]"
+        },
+        {
+          "toolField": "upfront_price_point_ids",
+          "sourceKind": "parameter",
+          "operationId": "subscriptionPricePoints_adjustedEqualizations_getToManyRelated",
+          "location": "query",
+          "appleName": "filter[upfrontPricePointId]"
+        },
+        {
+          "toolField": "plan_types",
+          "sourceKind": "parameter",
+          "operationId": "subscriptionPricePoints_adjustedEqualizations_getToManyRelated",
+          "location": "query",
+          "appleName": "filter[planType]"
+        },
+        {
+          "toolField": "limit",
+          "sourceKind": "parameter",
+          "operationId": "subscriptionPricePoints_adjustedEqualizations_getToManyRelated",
+          "location": "query",
+          "appleName": "limit"
+        },
+        {
+          "toolField": "next_url",
+          "sourceKind": "local",
+          "localRole": "Validated Apple pagination URL bound to the concrete parent path and full originating query projection."
+        }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          { "operationId": "subscriptionPricePoints_adjustedEqualizations_getToManyRelated", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": [
+          { "outputField": "success", "localRole": "Set true after a successful Apple response." },
+          { "outputField": "price_points", "operationId": "subscriptionPricePoints_adjustedEqualizations_getToManyRelated", "jsonPointer": "/data" },
+          { "outputField": "price_points.*.id", "operationId": "subscriptionPricePoints_adjustedEqualizations_getToManyRelated", "jsonPointer": "/data/*/id" },
+          { "outputField": "price_points.*.territory_id", "operationId": "subscriptionPricePoints_adjustedEqualizations_getToManyRelated", "jsonPointer": "/data/*/relationships/territory/data/id" },
+          { "outputField": "price_points.*.currency", "operationId": "subscriptionPricePoints_adjustedEqualizations_getToManyRelated", "jsonPointer": "/included", "localRole": "Resolve currency from the included territory matching the relationship ID." },
+          { "outputField": "price_points.*.customer_price", "operationId": "subscriptionPricePoints_adjustedEqualizations_getToManyRelated", "jsonPointer": "/data/*/attributes/customerPrice" },
+          { "outputField": "price_points.*.proceeds", "operationId": "subscriptionPricePoints_adjustedEqualizations_getToManyRelated", "jsonPointer": "/data/*/attributes/proceeds" },
+          { "outputField": "price_points.*.proceeds_year2", "operationId": "subscriptionPricePoints_adjustedEqualizations_getToManyRelated", "jsonPointer": "/data/*/attributes/proceedsYear2" },
+          { "outputField": "count", "operationId": "subscriptionPricePoints_adjustedEqualizations_getToManyRelated", "jsonPointer": "/data", "localRole": "Current Apple page resource count." },
+          { "outputField": "total", "operationId": "subscriptionPricePoints_adjustedEqualizations_getToManyRelated", "jsonPointer": "/meta/paging/total" },
+          { "outputField": "next_url", "operationId": "subscriptionPricePoints_adjustedEqualizations_getToManyRelated", "jsonPointer": "/links/next", "localRole": "Apple continuation URL or null." }
+        ]
+      },
+      "note": "Exposes Apple 4.4.1 adjusted equalizations with all four documented filters, typed plan values, the 8000-item limit, included territory currency, total, and strict continuation scope."
     },
     {
       "tool": "subscriptions_list_price_point_equalizations",
@@ -3805,6 +4169,7 @@
       "status": "deprecated",
       "effect": "write",
       "implementationState": "asBuilt",
+      "replacementTool": "subscriptions_create_plan_availability",
       "operations": [
         {
           "operationId": "subscriptionAvailabilities_createInstance",
@@ -3858,7 +4223,7 @@
     {
       "tool": "subscriptions_submit",
       "kind": "direct",
-      "status": "partial",
+      "status": "deprecated",
       "effect": "write",
       "implementationState": "asBuilt",
       "operations": [
@@ -3897,12 +4262,12 @@
         ],
         "fields": []
       },
-      "note": "The current handler and Apple 4.4.1 both submit the product-scoped subscription through POST /v1/subscriptionSubmissions; ReviewSubmissionItems/version resolution is not part of this tool."
+      "note": "Deprecated by Apple 4.4.1. Backward-compatible only: the handler keeps POST /v1/subscriptionSubmissions unchanged, emits a structured success warning, never creates or selects a version, and points callers to subscriptions_create_version followed by review_submissions_create, review_submissions_add_item, and review_submissions_submit."
     },
     {
       "tool": "subscriptions_submit_group",
       "kind": "direct",
-      "status": "partial",
+      "status": "deprecated",
       "effect": "write",
       "implementationState": "asBuilt",
       "operations": [
@@ -3941,7 +4306,7 @@
         ],
         "fields": []
       },
-      "note": "The current handler and Apple 4.4.1 both submit the product-scoped group through POST /v1/subscriptionGroupSubmissions; ReviewSubmissionItems/version resolution is not part of this tool."
+      "note": "Deprecated by Apple 4.4.1. Backward-compatible only: the handler keeps POST /v1/subscriptionGroupSubmissions unchanged, emits a structured success warning, never creates or selects a version, and points callers to subscriptions_create_group_version followed by review_submissions_create, review_submissions_add_item, and review_submissions_submit."
     },
     {
       "tool": "subscriptions_update",
@@ -4162,7 +4527,7 @@
     {
       "tool": "subscriptions_update_group_localization",
       "kind": "direct",
-      "status": "partial",
+      "status": "deprecated",
       "effect": "write",
       "implementationState": "asBuilt",
       "operations": [
@@ -4217,7 +4582,7 @@
         ],
         "fields": []
       },
-      "note": "The current handler uses the non-deprecated product-scoped subscription-group localization operations documented by Apple 4.4.1; no subscriptionGroupVersion resolver is part of this tool."
+      "note": "Deprecated by Apple 4.4.1. Backward-compatible only: the handler updates through the unchanged legacy group-scoped endpoint, emits a structured success warning, and points callers to subscriptions_update_group_version_localization."
     },
     {
       "tool": "subscriptions_update_intro_offer",
@@ -4276,7 +4641,7 @@
     {
       "tool": "subscriptions_update_localization",
       "kind": "direct",
-      "status": "partial",
+      "status": "deprecated",
       "effect": "write",
       "implementationState": "asBuilt",
       "operations": [
@@ -4331,7 +4696,7 @@
         ],
         "fields": []
       },
-      "note": "The current handler uses the non-deprecated product-scoped subscription localization operations documented by Apple 4.4.1; no subscriptionVersion resolver is part of this tool."
+      "note": "Deprecated by Apple 4.4.1. Backward-compatible only: the handler updates through the unchanged legacy product-scoped endpoint, emits a structured success warning, and points callers to subscriptions_update_version_localization."
     },
     {
       "tool": "subscriptions_update_offer_code",
@@ -4386,6 +4751,89 @@
         "fields": []
       },
       "note": "Apple 4.4.1 operation identity and all public inputs are classified; response remains opaque, so the semantic mapping is partial."
+    },
+    {
+      "tool": "subscriptions_update_plan_availability",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "write",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "subscriptionPlanAvailabilities_updateInstance",
+          "method": "patch",
+          "path": "/v1/subscriptionPlanAvailabilities/{id}",
+          "role": "primary",
+          "condition": "Requires at least one of available_in_new_territories or territory_ids.",
+          "inputs": [
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/type",
+              "fixedValue": "subscriptionPlanAvailabilities"
+            },
+            {
+              "sourceKind": "derived",
+              "jsonPointer": "/data/id",
+              "derivedFrom": ["plan_availability_id"],
+              "localRole": "Reuse the validated path identifier as the JSON:API resource ID."
+            },
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/relationships/availableTerritories/data/*/type",
+              "fixedValue": "territories"
+            }
+          ]
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "plan_availability_id",
+          "sourceKind": "parameter",
+          "operationId": "subscriptionPlanAvailabilities_updateInstance",
+          "location": "path",
+          "appleName": "id"
+        },
+        {
+          "toolField": "available_in_new_territories",
+          "sourceKind": "requestBody",
+          "operationId": "subscriptionPlanAvailabilities_updateInstance",
+          "jsonPointer": "/data/attributes/availableInNewTerritories",
+          "localRole": "Preserves omission, Boolean value, and explicit JSON null as distinct update states."
+        },
+        {
+          "toolField": "territory_ids",
+          "sourceKind": "requestBody",
+          "operationId": "subscriptionPlanAvailabilities_updateInstance",
+          "jsonPointer": "/data/relationships/availableTerritories/data/*/id",
+          "localRole": "When present, replaces the complete availableTerritories linkage; an empty array removes all territories."
+        }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          { "operationId": "subscriptionPlanAvailabilities_updateInstance", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": [
+          { "outputField": "success", "localRole": "Set true after Apple updates the resource." },
+          { "outputField": "plan_availability.id", "operationId": "subscriptionPlanAvailabilities_updateInstance", "jsonPointer": "/data/id" },
+          { "outputField": "plan_availability.type", "operationId": "subscriptionPlanAvailabilities_updateInstance", "jsonPointer": "/data/type" },
+          { "outputField": "plan_availability.plan_type", "operationId": "subscriptionPlanAvailabilities_updateInstance", "jsonPointer": "/data/attributes/planType" },
+          { "outputField": "plan_availability.available_in_new_territories", "operationId": "subscriptionPlanAvailabilities_updateInstance", "jsonPointer": "/data/attributes/availableInNewTerritories" },
+          { "outputField": "plan_availability.available_territory_ids", "operationId": "subscriptionPlanAvailabilities_updateInstance", "jsonPointer": "/data/relationships/availableTerritories/data/*/id" },
+          { "outputField": "plan_availability.available_territories", "localRole": "Build one projected territory per availableTerritories linkage; emit null when Apple omits linkage data." },
+          { "outputField": "plan_availability.available_territories.*.id", "operationId": "subscriptionPlanAvailabilities_updateInstance", "jsonPointer": "/data/relationships/availableTerritories/data/*/id" },
+          { "outputField": "plan_availability.available_territories.*.type", "operationId": "subscriptionPlanAvailabilities_updateInstance", "jsonPointer": "/data/relationships/availableTerritories/data/*/type" },
+          { "outputField": "plan_availability.available_territories.*.currency", "operationId": "subscriptionPlanAvailabilities_updateInstance", "jsonPointer": "/included", "localRole": "Join the included territory matching each availableTerritories linkage ID; emit null when it is not included." },
+          { "outputField": "plan_availability.available_territories_total", "operationId": "subscriptionPlanAvailabilities_updateInstance", "jsonPointer": "/data/relationships/availableTerritories/meta/paging/total" },
+          { "outputField": "plan_availability.available_territories_limit", "operationId": "subscriptionPlanAvailabilities_updateInstance", "jsonPointer": "/data/relationships/availableTerritories/meta/paging/limit" },
+          { "outputField": "plan_availability.available_territories_count", "operationId": "subscriptionPlanAvailabilities_updateInstance", "jsonPointer": "/data/relationships/availableTerritories/data", "localRole": "Count the availableTerritories relationship identifiers; emit null when Apple omits linkage data." },
+          { "outputField": "plan_availability.available_territories_next_cursor", "operationId": "subscriptionPlanAvailabilities_updateInstance", "jsonPointer": "/data/relationships/availableTerritories/meta/paging/nextCursor" },
+          { "outputField": "plan_availability.available_territories_included_count", "localRole": "Count related identifiers with a matching included territory resource; emit null when linkage data is absent." },
+          { "outputField": "plan_availability.available_territories_truncated", "localRole": "True when Apple supplies a next cursor or the relationship total exceeds its identifier count; emit null when linkage data is absent and truncation cannot be determined." },
+          { "outputField": "plan_availability.available_territories_completeness_known", "localRole": "When linkage data is present, report whether Apple supplied a relationship total or next cursor; otherwise emit null." }
+        ]
+      },
+      "note": "Updates only Apple's mutable fields, preserves nullable Boolean tri-state semantics, and keeps planType immutable."
     },
     {
       "tool": "subscriptions_update_promotional_offer",
@@ -4570,7 +5018,7 @@
     {
       "tool": "subscriptions_upload_image",
       "kind": "compound",
-      "status": "partial",
+      "status": "deprecated",
       "effect": "write",
       "implementationState": "asBuilt",
       "operations": [
@@ -4711,7 +5159,7 @@
         ],
         "fields": []
       },
-      "note": "The handler uses the non-deprecated product-scoped image reserve/commit operations documented by Apple 4.4.1, snapshots the file before reserve, and does not involve a subscriptionVersion resolver; binary upload through Apple's signed operations is external to OpenAPI. PREPARE_FOR_SUBMISSION, WAITING_FOR_REVIEW, APPROVED, and REJECTED mean upload processing is complete; FAILED is terminal failure; AWAITING_UPLOAD, UPLOAD_COMPLETE, missing, and unknown states remain pending and are polled with conditional GET. After a confirmed 2xx commit, nonterminal processing is an accepted success with uploadCommitted=true, processingComplete=false, deliveryPending=true, and retrySafe=false. If PATCH transport remains ambiguous and reconciliation only shows pending, the outcome stays an error; either way the image is retained with inspection guidance. A mismatched 2xx commit resource triggers one GET of the expected image ID; valid terminal or pending state is interpreted normally, while invalid reconciliation stays an error. A confirmed reservation that fails before PATCH is best-effort deleted independently of cancellation; an unresolved create response instead requires parent-collection inspection because Apple exposes no idempotency key for locating that exact reservation."
+      "note": "Deprecated by Apple 4.4.1. Backward-compatible only: this handler preserves the legacy product-scoped reserve, signed transfer, commit, reconciliation, and rollback behavior and emits a structured success warning; it never creates or selects a version. Use subscriptions_create_version plus subscriptions_upload_version_image. PREPARE_FOR_SUBMISSION, WAITING_FOR_REVIEW, APPROVED, and REJECTED mean legacy upload processing is complete; FAILED is terminal failure; AWAITING_UPLOAD, UPLOAD_COMPLETE, missing, and unknown states remain pending. Confirmed nonterminal commits remain accepted and retained with exact inspection guidance; only confirmed pre-commit reservations are eligible for best-effort rollback."
     },
     {
       "tool": "subscriptions_upload_review_screenshot",
@@ -4858,6 +5306,451 @@
         "fields": []
       },
       "note": "The handler snapshots the file before reserve; binary transfer through Apple's signed operations is a local/external step. COMPLETE is successful; FAILED is terminal failure; any other assetDeliveryState remains pending and is polled with conditional GET. After a confirmed 2xx commit, nonterminal processing is an accepted success with uploadCommitted=true, processingComplete=false, deliveryPending=true, and retrySafe=false. If PATCH transport remains ambiguous and reconciliation only shows pending, the outcome stays an error; either way the review screenshot is retained with inspection guidance. A mismatched 2xx commit resource triggers one GET of the expected screenshot ID; valid terminal or pending state is interpreted normally, while invalid reconciliation stays an error. A confirmed reservation that fails before PATCH is best-effort deleted independently of cancellation; an unresolved create response instead requires parent-collection inspection because Apple exposes no idempotency key for locating that exact reservation."
+    },
+    {
+      "tool": "subscriptions_create_version",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "write",
+      "implementationState": "asBuilt",
+      "operations": [{
+        "operationId": "subscriptionVersions_createInstance", "method": "post", "path": "/v1/subscriptionVersions", "role": "primary", "condition": null,
+        "inputs": [
+          {"sourceKind": "fixed", "jsonPointer": "/data/type", "fixedValue": "subscriptionVersions"},
+          {"sourceKind": "fixed", "jsonPointer": "/data/relationships/subscription/data/type", "fixedValue": "subscriptions"}
+        ]
+      }],
+      "fields": [{"toolField": "subscription_id", "sourceKind": "requestBody", "operationId": "subscriptionVersions_createInstance", "jsonPointer": "/data/relationships/subscription/data/id"}],
+      "response": {
+        "mode": "projection",
+        "sources": [{"operationId": "subscriptionVersions_createInstance", "statusCode": "201", "mediaType": "application/json"}],
+        "fields": [
+          {"outputField":"success","localRole":"Set true after the created version and its identity pass validation."},
+          {"outputField":"version","operationId":"subscriptionVersions_createInstance","jsonPointer":"/data","localRole":"Project stable version fields and bounded relationship-page metadata when Apple supplies it."},
+          {"outputField":"version.images_page.ids","operationId":"subscriptionVersions_createInstance","jsonPointer":"/data/relationships/images/data/*/id","localRole":"Emit null when Apple omits relationship.data; preserve an explicit empty data array as []."},
+          {"outputField":"version.images_page.count","localRole":"Emit null when Apple omits relationship.data; otherwise count the embedded image identifiers, including zero for an explicit empty page."},
+          {"outputField":"version.images_page.total","operationId":"subscriptionVersions_createInstance","jsonPointer":"/data/relationships/images/meta/paging/total"},
+          {"outputField":"version.images_page.limit","operationId":"subscriptionVersions_createInstance","jsonPointer":"/data/relationships/images/meta/paging/limit"},
+          {"outputField":"version.images_page.next_cursor","operationId":"subscriptionVersions_createInstance","jsonPointer":"/data/relationships/images/meta/paging/nextCursor"},
+          {"outputField":"version.images_page.truncated","localRole":"Emit null when Apple omits relationship.data; otherwise true when Apple supplies a next cursor or the relationship total exceeds the embedded image ID count."},
+          {"outputField":"version.images_page.completeness_known","localRole":"Emit false when Apple omits relationship.data; otherwise report whether Apple supplied a relationship total or next cursor."},
+          {"outputField":"version.localizations_page.ids","operationId":"subscriptionVersions_createInstance","jsonPointer":"/data/relationships/localizations/data/*/id","localRole":"Emit null when Apple omits relationship.data; preserve an explicit empty data array as []."},
+          {"outputField":"version.localizations_page.count","localRole":"Emit null when Apple omits relationship.data; otherwise count the embedded localization identifiers, including zero for an explicit empty page."},
+          {"outputField":"version.localizations_page.total","operationId":"subscriptionVersions_createInstance","jsonPointer":"/data/relationships/localizations/meta/paging/total"},
+          {"outputField":"version.localizations_page.limit","operationId":"subscriptionVersions_createInstance","jsonPointer":"/data/relationships/localizations/meta/paging/limit"},
+          {"outputField":"version.localizations_page.next_cursor","operationId":"subscriptionVersions_createInstance","jsonPointer":"/data/relationships/localizations/meta/paging/nextCursor"},
+          {"outputField":"version.localizations_page.truncated","localRole":"Emit null when Apple omits relationship.data; otherwise true when Apple supplies a next cursor or the relationship total exceeds the embedded localization ID count."},
+          {"outputField":"version.localizations_page.completeness_known","localRole":"Emit false when Apple omits relationship.data; otherwise report whether Apple supplied a relationship total or next cursor."}
+        ]
+      },
+      "note": "Creates one explicit Apple 4.4.1 subscription metadata version; legacy product-scoped tools never create versions implicitly. An ambiguous POST or response decode returns write_outcome=not_confirmed, retrySafe=false, the subscription ID, and list/get recovery guidance instead of encouraging a duplicate create."
+    },
+    {
+      "tool": "subscriptions_get_version",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [{
+        "operationId": "subscriptionVersions_getInstance", "method": "get", "path": "/v1/subscriptionVersions/{id}", "role": "primary", "condition": null,
+        "optionalParameterClassifications": [
+          {"location":"query","appleName":"include","disposition":"intentionallyOmitted","reason":"The stable projection does not expose arbitrary relationship expansion.","reviewAtSpec":"4.4.1"},
+          {"location":"query","appleName":"limit[images]","disposition":"intentionallyOmitted","reason":"Images are paged through subscriptions_list_version_images.","reviewAtSpec":"4.4.1"},
+          {"location":"query","appleName":"limit[localizations]","disposition":"intentionallyOmitted","reason":"Localizations are paged through subscriptions_list_version_localizations.","reviewAtSpec":"4.4.1"}
+        ]
+      }],
+      "fields": [{"toolField":"version_id","sourceKind":"parameter","operationId":"subscriptionVersions_getInstance","location":"path","appleName":"id"}],
+      "response": {
+        "mode":"projection",
+        "sources":[{"operationId":"subscriptionVersions_getInstance","statusCode":"200","mediaType":"application/json"}],
+        "fields":[
+          {"outputField":"success","localRole":"Set true after the version identity and self link pass validation."},
+          {"outputField":"version","operationId":"subscriptionVersions_getInstance","jsonPointer":"/data","localRole":"Project stable version fields and bounded relationship-page metadata when Apple supplies it."},
+          {"outputField":"version.images_page.ids","operationId":"subscriptionVersions_getInstance","jsonPointer":"/data/relationships/images/data/*/id","localRole":"Emit null when Apple omits relationship.data; preserve an explicit empty data array as []."},
+          {"outputField":"version.images_page.count","localRole":"Emit null when Apple omits relationship.data; otherwise count the embedded image identifiers, including zero for an explicit empty page."},
+          {"outputField":"version.images_page.total","operationId":"subscriptionVersions_getInstance","jsonPointer":"/data/relationships/images/meta/paging/total"},
+          {"outputField":"version.images_page.limit","operationId":"subscriptionVersions_getInstance","jsonPointer":"/data/relationships/images/meta/paging/limit"},
+          {"outputField":"version.images_page.next_cursor","operationId":"subscriptionVersions_getInstance","jsonPointer":"/data/relationships/images/meta/paging/nextCursor"},
+          {"outputField":"version.images_page.truncated","localRole":"Emit null when Apple omits relationship.data; otherwise true when Apple supplies a next cursor or the relationship total exceeds the embedded image ID count."},
+          {"outputField":"version.images_page.completeness_known","localRole":"Emit false when Apple omits relationship.data; otherwise report whether Apple supplied a relationship total or next cursor."},
+          {"outputField":"version.localizations_page.ids","operationId":"subscriptionVersions_getInstance","jsonPointer":"/data/relationships/localizations/data/*/id","localRole":"Emit null when Apple omits relationship.data; preserve an explicit empty data array as []."},
+          {"outputField":"version.localizations_page.count","localRole":"Emit null when Apple omits relationship.data; otherwise count the embedded localization identifiers, including zero for an explicit empty page."},
+          {"outputField":"version.localizations_page.total","operationId":"subscriptionVersions_getInstance","jsonPointer":"/data/relationships/localizations/meta/paging/total"},
+          {"outputField":"version.localizations_page.limit","operationId":"subscriptionVersions_getInstance","jsonPointer":"/data/relationships/localizations/meta/paging/limit"},
+          {"outputField":"version.localizations_page.next_cursor","operationId":"subscriptionVersions_getInstance","jsonPointer":"/data/relationships/localizations/meta/paging/nextCursor"},
+          {"outputField":"version.localizations_page.truncated","localRole":"Emit null when Apple omits relationship.data; otherwise true when Apple supplies a next cursor or the relationship total exceeds the embedded localization ID count."},
+          {"outputField":"version.localizations_page.completeness_known","localRole":"Emit false when Apple omits relationship.data; otherwise report whether Apple supplied a relationship total or next cursor."}
+        ]
+      },
+      "note": "Returns the stable version projection and relationship identifiers from Apple's discrete subscription version resource."
+    },
+    {
+      "tool": "subscriptions_list_versions",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [{
+        "operationId":"subscriptions_versions_getToManyRelated","method":"get","path":"/v1/subscriptions/{id}/versions","role":"primary","condition":null,
+        "optionalParameterClassifications":[
+          {"location":"query","appleName":"include","disposition":"intentionallyOmitted","reason":"The stable paginated projection does not expose arbitrary relationship expansion.","reviewAtSpec":"4.4.1"},
+          {"location":"query","appleName":"limit[images]","disposition":"intentionallyOmitted","reason":"Images have their own bounded continuation tool.","reviewAtSpec":"4.4.1"},
+          {"location":"query","appleName":"limit[localizations]","disposition":"intentionallyOmitted","reason":"Localizations have their own bounded continuation tool.","reviewAtSpec":"4.4.1"}
+        ]
+      }],
+      "fields":[
+        {"toolField":"subscription_id","sourceKind":"parameter","operationId":"subscriptions_versions_getToManyRelated","location":"path","appleName":"id"},
+        {"toolField":"filter_state","sourceKind":"parameter","operationId":"subscriptions_versions_getToManyRelated","location":"query","appleName":"filter[state]"},
+        {"toolField":"limit","sourceKind":"parameter","operationId":"subscriptions_versions_getToManyRelated","location":"query","appleName":"limit"},
+        {"toolField":"next_url","sourceKind":"local","localRole":"Continue only an Apple URL whose origin, path, fixed filter, limit, unique non-empty cursor, and parameter set match the original request."}
+      ],
+      "response":{
+        "mode":"projection",
+        "sources":[{"operationId":"subscriptions_versions_getToManyRelated","statusCode":"200","mediaType":"application/json"}],
+        "fields":[
+          {"outputField":"success","localRole":"Set true after the page passes parent identity, paging, and self-link validation."},
+          {"outputField":"versions","operationId":"subscriptions_versions_getToManyRelated","jsonPointer":"/data","localRole":"Project stable version fields and bounded relationship-page metadata when Apple supplies it."},
+          {"outputField":"versions.*.images_page.ids","operationId":"subscriptions_versions_getToManyRelated","jsonPointer":"/data/*/relationships/images/data/*/id","localRole":"Emit null when Apple omits relationship.data; preserve an explicit empty data array as []."},
+          {"outputField":"versions.*.images_page.count","localRole":"Emit null when Apple omits relationship.data; otherwise count the embedded image identifiers, including zero for an explicit empty page."},
+          {"outputField":"versions.*.images_page.total","operationId":"subscriptions_versions_getToManyRelated","jsonPointer":"/data/*/relationships/images/meta/paging/total"},
+          {"outputField":"versions.*.images_page.limit","operationId":"subscriptions_versions_getToManyRelated","jsonPointer":"/data/*/relationships/images/meta/paging/limit"},
+          {"outputField":"versions.*.images_page.next_cursor","operationId":"subscriptions_versions_getToManyRelated","jsonPointer":"/data/*/relationships/images/meta/paging/nextCursor"},
+          {"outputField":"versions.*.images_page.truncated","localRole":"Emit null when Apple omits relationship.data; otherwise true when Apple supplies a next cursor or the relationship total exceeds that version's embedded image ID count."},
+          {"outputField":"versions.*.images_page.completeness_known","localRole":"Emit false when Apple omits relationship.data; otherwise report whether Apple supplied a relationship total or next cursor."},
+          {"outputField":"versions.*.localizations_page.ids","operationId":"subscriptions_versions_getToManyRelated","jsonPointer":"/data/*/relationships/localizations/data/*/id","localRole":"Emit null when Apple omits relationship.data; preserve an explicit empty data array as []."},
+          {"outputField":"versions.*.localizations_page.count","localRole":"Emit null when Apple omits relationship.data; otherwise count the embedded localization identifiers, including zero for an explicit empty page."},
+          {"outputField":"versions.*.localizations_page.total","operationId":"subscriptions_versions_getToManyRelated","jsonPointer":"/data/*/relationships/localizations/meta/paging/total"},
+          {"outputField":"versions.*.localizations_page.limit","operationId":"subscriptions_versions_getToManyRelated","jsonPointer":"/data/*/relationships/localizations/meta/paging/limit"},
+          {"outputField":"versions.*.localizations_page.next_cursor","operationId":"subscriptions_versions_getToManyRelated","jsonPointer":"/data/*/relationships/localizations/meta/paging/nextCursor"},
+          {"outputField":"versions.*.localizations_page.truncated","localRole":"Emit null when Apple omits relationship.data; otherwise true when Apple supplies a next cursor or the relationship total exceeds that version's embedded localization ID count."},
+          {"outputField":"versions.*.localizations_page.completeness_known","localRole":"Emit false when Apple omits relationship.data; otherwise report whether Apple supplied a relationship total or next cursor."},
+          {"outputField":"count","operationId":"subscriptions_versions_getToManyRelated","jsonPointer":"/data","localRole":"Current validated Apple page resource count."},
+          {"outputField":"total","operationId":"subscriptions_versions_getToManyRelated","jsonPointer":"/meta/paging/total"},
+          {"outputField":"next_url","operationId":"subscriptions_versions_getToManyRelated","jsonPointer":"/links/next","localRole":"Apple continuation URL when another page exists; otherwise omitted."}
+        ]
+      },
+      "note":"Lists Apple 4.4.1 subscription versions with exact state validation and scope-locked pagination."
+    },
+    {
+      "tool":"subscriptions_list_version_localizations","kind":"direct","status":"partial","effect":"read","implementationState":"asBuilt",
+      "operations":[{"operationId":"subscriptionVersions_localizations_getToManyRelated","method":"get","path":"/v1/subscriptionVersions/{id}/localizations","role":"primary","condition":null,"optionalParameterClassifications":[
+        {"location":"query","appleName":"include","disposition":"intentionallyOmitted","reason":"The stable projection does not expose arbitrary relationship expansion.","reviewAtSpec":"4.4.1"}
+      ]}],
+      "fields":[
+        {"toolField":"version_id","sourceKind":"parameter","operationId":"subscriptionVersions_localizations_getToManyRelated","location":"path","appleName":"id"},
+        {"toolField":"limit","sourceKind":"parameter","operationId":"subscriptionVersions_localizations_getToManyRelated","location":"query","appleName":"limit"},
+        {"toolField":"next_url","sourceKind":"local","localRole":"Continue only an Apple URL whose origin, path, limit, unique non-empty cursor, and parameter set match the original request."}
+      ],
+      "response":{"mode":"opaque","sources":[{"operationId":"subscriptionVersions_localizations_getToManyRelated","statusCode":"200","mediaType":"application/json"}],"fields":[]},
+      "note":"Lists localizations owned by one explicit subscription version."
+    },
+    {
+      "tool":"subscriptions_create_version_localization","kind":"direct","status":"partial","effect":"write","implementationState":"asBuilt",
+      "operations":[{"operationId":"subscriptionLocalizationsV2_createInstance","method":"post","path":"/v2/subscriptionLocalizations","role":"primary","condition":null,"inputs":[
+        {"sourceKind":"fixed","jsonPointer":"/data/type","fixedValue":"subscriptionLocalizations"},
+        {"sourceKind":"fixed","jsonPointer":"/data/relationships/version/data/type","fixedValue":"subscriptionVersions"}
+      ]}],
+      "fields":[
+        {"toolField":"version_id","sourceKind":"requestBody","operationId":"subscriptionLocalizationsV2_createInstance","jsonPointer":"/data/relationships/version/data/id"},
+        {"toolField":"locale","sourceKind":"requestBody","operationId":"subscriptionLocalizationsV2_createInstance","jsonPointer":"/data/attributes/locale"},
+        {"toolField":"name","sourceKind":"requestBody","operationId":"subscriptionLocalizationsV2_createInstance","jsonPointer":"/data/attributes/name"},
+        {"toolField":"description","sourceKind":"requestBody","operationId":"subscriptionLocalizationsV2_createInstance","jsonPointer":"/data/attributes/description"}
+      ],
+      "response":{"mode":"opaque","sources":[{"operationId":"subscriptionLocalizationsV2_createInstance","statusCode":"201","mediaType":"application/json"}],"fields":[]},
+      "note":"Creates localization metadata directly under an explicit subscription version and preserves omitted, string, and null description semantics. An ambiguous POST or response decode returns write_outcome=not_confirmed, retrySafe=false, the requested parent and metadata fingerprint, and list/get recovery guidance instead of encouraging a duplicate localization."
+    },
+    {
+      "tool":"subscriptions_get_version_localization","kind":"direct","status":"partial","effect":"read","implementationState":"asBuilt",
+      "operations":[{"operationId":"subscriptionLocalizationsV2_getInstance","method":"get","path":"/v2/subscriptionLocalizations/{id}","role":"primary","condition":null,"optionalParameterClassifications":[
+        {"location":"query","appleName":"include","disposition":"intentionallyOmitted","reason":"The stable projection does not expose arbitrary relationship expansion.","reviewAtSpec":"4.4.1"}
+      ]}],
+      "fields":[{"toolField":"localization_id","sourceKind":"parameter","operationId":"subscriptionLocalizationsV2_getInstance","location":"path","appleName":"id"}],
+      "response":{"mode":"opaque","sources":[{"operationId":"subscriptionLocalizationsV2_getInstance","statusCode":"200","mediaType":"application/json"}],"fields":[]},
+      "note":"Gets one v2 subscription version localization by resource ID."
+    },
+    {
+      "tool":"subscriptions_update_version_localization","kind":"direct","status":"partial","effect":"write","implementationState":"asBuilt",
+      "operations":[{"operationId":"subscriptionLocalizationsV2_updateInstance","method":"patch","path":"/v2/subscriptionLocalizations/{id}","role":"primary","condition":null,"inputs":[{"sourceKind":"fixed","jsonPointer":"/data/type","fixedValue":"subscriptionLocalizations"}]}],
+      "fields":[
+        {"toolField":"localization_id","sourceKind":"parameter","operationId":"subscriptionLocalizationsV2_updateInstance","location":"path","appleName":"id"},
+        {"toolField":"localization_id","sourceKind":"requestBody","operationId":"subscriptionLocalizationsV2_updateInstance","jsonPointer":"/data/id"},
+        {"toolField":"name","sourceKind":"requestBody","operationId":"subscriptionLocalizationsV2_updateInstance","jsonPointer":"/data/attributes/name"},
+        {"toolField":"description","sourceKind":"requestBody","operationId":"subscriptionLocalizationsV2_updateInstance","jsonPointer":"/data/attributes/description"}
+      ],
+      "response":{"mode":"opaque","sources":[{"operationId":"subscriptionLocalizationsV2_updateInstance","statusCode":"200","mediaType":"application/json"}],"fields":[]},
+      "note":"Updates at least one v2 localization attribute and preserves string versus explicit null."
+    },
+    {
+      "tool":"subscriptions_delete_version_localization","kind":"direct","status":"partial","effect":"destructive","implementationState":"asBuilt",
+      "operations":[{"operationId":"subscriptionLocalizationsV2_deleteInstance","method":"delete","path":"/v2/subscriptionLocalizations/{id}","role":"primary","condition":null}],
+      "fields":[
+        {"toolField":"localization_id","sourceKind":"parameter","operationId":"subscriptionLocalizationsV2_deleteInstance","location":"path","appleName":"id"},
+        {"toolField":"confirm_localization_id","sourceKind":"local","localRole":"Require an exact canonical match with localization_id before any Apple request is sent."}
+      ],
+      "response":{"mode":"local","sources":[{"operationId":"subscriptionLocalizationsV2_deleteInstance","statusCode":"204"}],"fields":[
+        {"outputField":"success","localRole":"Set true after Apple confirms deletion with 204."},
+        {"outputField":"localization_id","localRole":"Echo the exact deleted localization ID."},
+        {"outputField":"deleted","localRole":"Set true after confirmed deletion."},
+        {"outputField":"deletionState","localRole":"Set to confirmed after Apple's 204 response."},
+        {"outputField":"outcomeUnknown","localRole":"Set false for a confirmed deletion."},
+        {"outputField":"retrySafe","localRole":"Set false because the destructive operation is already confirmed."}
+      ]},
+      "note":"Deletes one v2 localization resource by its exact ID."
+    },
+    {
+      "tool":"subscriptions_list_version_images","kind":"direct","status":"partial","effect":"read","implementationState":"asBuilt",
+      "operations":[{"operationId":"subscriptionVersions_images_getToManyRelated","method":"get","path":"/v1/subscriptionVersions/{id}/images","role":"primary","condition":null}],
+      "fields":[
+        {"toolField":"version_id","sourceKind":"parameter","operationId":"subscriptionVersions_images_getToManyRelated","location":"path","appleName":"id"},
+        {"toolField":"limit","sourceKind":"parameter","operationId":"subscriptionVersions_images_getToManyRelated","location":"query","appleName":"limit"},
+        {"toolField":"next_url","sourceKind":"local","localRole":"Continue only an Apple URL whose origin, path, limit, unique non-empty cursor, and parameter set match the original request."}
+      ],
+      "response":{"mode":"opaque","sources":[{"operationId":"subscriptionVersions_images_getToManyRelated","statusCode":"200","mediaType":"application/json"}],"fields":[]},
+      "note":"Lists all promotional images owned by one explicit subscription version while intentionally omitting Apple's opaque assetToken from the public projection."
+    },
+    {
+      "tool":"subscriptions_upload_version_image","kind":"compound","status":"partial","effect":"write","implementationState":"asBuilt",
+      "operations":[
+        {"operationId":"subscriptionImagesV2_createInstance","method":"post","path":"/v2/subscriptionImages","role":"primary","condition":null,"inputs":[
+          {"sourceKind":"fixed","jsonPointer":"/data/type","fixedValue":"subscriptionImages"},
+          {"sourceKind":"fixed","jsonPointer":"/data/relationships/version/data/type","fixedValue":"subscriptionVersions"}
+        ]},
+        {"operationId":"subscriptionImagesV2_updateInstance","method":"patch","path":"/v2/subscriptionImages/{id}","role":"supporting","condition":null,"inputs":[
+          {"sourceKind":"derived","location":"path","appleName":"id","derivedFrom":["subscriptionImagesV2_createInstance:/data/id"],"localRole":"Use Apple's reserved image ID as the commit path ID."},
+          {"sourceKind":"fixed","jsonPointer":"/data/type","fixedValue":"subscriptionImages"},
+          {"sourceKind":"derived","jsonPointer":"/data/id","derivedFrom":["subscriptionImagesV2_createInstance:/data/id"],"localRole":"Use Apple's reserved image ID as the commit resource ID."},
+          {"sourceKind":"fixed","jsonPointer":"/data/attributes/uploaded","fixedValue":true}
+        ]},
+        {"operationId":"subscriptionImagesV2_getInstance","method":"get","path":"/v2/subscriptionImages/{id}","role":"conditional","condition":"After PATCH returns a nonterminal assetDeliveryState, or when PATCH is ambiguous, reconcile and poll the exact reserved image.","inputs":[
+          {"sourceKind":"derived","location":"path","appleName":"id","derivedFrom":["subscriptionImagesV2_createInstance:/data/id"],"localRole":"Inspect the exact image created by the reservation."}
+        ]},
+        {"operationId":"subscriptionImagesV2_deleteInstance","method":"delete","path":"/v2/subscriptionImages/{id}","role":"conditional","condition":"Before commit, best-effort delete a confirmed reservation after cancellation, missing upload operations, transfer failure, or commit-body failure; treat 404 as already absent.","inputs":[
+          {"sourceKind":"derived","location":"path","appleName":"id","derivedFrom":["subscriptionImagesV2_createInstance:/data/id"],"localRole":"Rollback only the confirmed reservation for this upload attempt."}
+        ]}
+      ],
+      "fields":[
+        {"toolField":"version_id","sourceKind":"requestBody","operationId":"subscriptionImagesV2_createInstance","jsonPointer":"/data/relationships/version/data/id"},
+        {"toolField":"file_path","sourceKind":"derived","operationId":"subscriptionImagesV2_createInstance","jsonPointer":"/data/attributes","derivedFrom":["file_path"],"localRole":"Create an immutable snapshot, derive fileName and fileSize, transfer its bytes through Apple's signed operations, and discard it after reconciliation."}
+      ],
+      "response":{"mode":"opaque","sources":[
+        {"operationId":"subscriptionImagesV2_createInstance","statusCode":"201","mediaType":"application/json"},
+        {"operationId":"subscriptionImagesV2_updateInstance","statusCode":"200","mediaType":"application/json"},
+        {"operationId":"subscriptionImagesV2_getInstance","statusCode":"200","mediaType":"application/json"},
+        {"operationId":"subscriptionImagesV2_deleteInstance","statusCode":"204"}
+      ],"fields":[
+        {"outputField":"success","localRole":"False on structured recovery failures; true on completed or accepted upload results."},
+        {"outputField":"error","localRole":"Stable failure summary when reservation or commit verification cannot complete."},
+        {"outputField":"statusCode","localRole":"Apple status code when a 2xx reservation response was committed but could not be verified."},
+        {"outputField":"reservationState","localRole":"Unknown or committed_unverified reservation state for ambiguous reserve outcomes."},
+        {"outputField":"reservationIdKnown","localRole":"False when Apple did not return a safely attributable reservation ID."},
+        {"outputField":"operationCommitState","localRole":"Unknown when Apple may have committed an operation that cannot be reconciled."},
+        {"outputField":"operationCommitted","localRole":"True when a 2xx response proves commit despite response verification failure."},
+        {"outputField":"outcomeUnknown","localRole":"True when Apple may have committed the operation and safe retry cannot be established."},
+        {"outputField":"inspectionRequired","localRole":"True when deterministic collection or exact-resource inspection is required."},
+        {"outputField":"retrySafe","localRole":"False for all unresolved, committed-unverified, retained, or confirmed destructive outcomes."},
+        {"outputField":"reservationFingerprint","localRole":"Stable reservation fingerprint emitted when the reserve outcome cannot be identified safely."},
+        {"outputField":"reservationFingerprint.file_name","localRole":"Snapshot file name used to match inspection candidates."},
+        {"outputField":"reservationFingerprint.file_size","localRole":"Snapshot byte count used to match inspection candidates."},
+        {"outputField":"reservationFingerprint.checksum","localRole":"Snapshot checksum used as the authoritative reservation fingerprint."},
+        {"outputField":"inspection","localRole":"Full-pagination reservation inspection guidance for ambiguous create outcomes."},
+        {"outputField":"inspection.tool","localRole":"Use subscriptions_list_version_images for collection recovery."},
+        {"outputField":"inspection.arguments","localRole":"Scope the collection inspection to the parent version and a bounded page size."},
+        {"outputField":"inspection.arguments.version_id","localRole":"Inspect only the exact parent version."},
+        {"outputField":"inspection.arguments.limit","localRole":"Use the maximum bounded page size of 200."},
+        {"outputField":"inspection.continue_with_next_url","localRole":"Continue through every strict next_url page before deciding whether the reservation exists."},
+        {"outputField":"inspection.next_url_argument","localRole":"Names next_url as the transport-only continuation input."},
+        {"outputField":"inspection.candidate_match.fingerprint_key","localRole":"Match candidates against reservationFingerprint."},
+        {"outputField":"inspection.candidate_match.candidate_fields","localRole":"Compare candidate file_name and file_size fields."},
+        {"outputField":"inspection.candidate_match.require_unique_match_before_retry","localRole":"Retry only after inspection establishes a unique candidate outcome."},
+        {"outputField":"cleanup","localRole":"Describe rollback state or retained-resource inspect/delete guidance."},
+        {"outputField":"cleanup.status","localRole":"Rollback or retention state for the reserved resource."},
+        {"outputField":"cleanup.resourceId","localRole":"Confirmed reserved resource ID when Apple returned one."},
+        {"outputField":"cleanup.reason","localRole":"Reason cleanup failed, was unavailable, or was intentionally not attempted."},
+        {"outputField":"cleanup.tool","localRole":"Explicit destructive cleanup tool when deletion remains available."},
+        {"outputField":"cleanup.arguments","localRole":"Exact destructive cleanup arguments, including the confirmation ID."},
+        {"outputField":"cleanup.arguments.image_id","localRole":"Use the exact retained reservation ID as the destructive cleanup target."},
+        {"outputField":"cleanup.arguments.confirm_image_id","localRole":"Repeat the exact retained reservation ID as the required delete confirmation."},
+        {"outputField":"cleanup.operationCommitState","localRole":"Expose unknown or committed commit reconciliation state."},
+        {"outputField":"cleanup.outcomeUnknown","localRole":"True only when Apple may have committed the operation but reconciliation cannot prove it."},
+        {"outputField":"cleanup.retrySafe","localRole":"False whenever retry could duplicate or destroy an unresolved upload."},
+        {"outputField":"cleanup.inspectTool","localRole":"Read tool for retained-resource inspection."},
+        {"outputField":"cleanup.inspectArguments","localRole":"Exact arguments for retained-resource inspection."},
+        {"outputField":"cleanup.inspectArguments.image_id","localRole":"Inspect only the exact confirmed reservation ID."},
+        {"outputField":"cleanup.statusCode","localRole":"Apple status code for a committed but unverified operation."},
+        {"outputField":"cleanup.operationCommitted","localRole":"True when a 2xx response proves the operation was committed even though projection verification failed."},
+        {"outputField":"cleanup.inspectionRequired","localRole":"True when the retained resource needs deterministic inspection."}
+      ]},
+      "note":"The safe Apple 4.4.1 version-image workflow snapshots before reserve, transfers through signed operations, commits only uploaded=true because the v2 schema has no checksum field, reconciles processing, rolls back only pre-commit failures, and returns exact inspect/delete guidance for retained resources."
+    },
+    {
+      "tool":"subscriptions_get_version_image","kind":"direct","status":"partial","effect":"read","implementationState":"asBuilt",
+      "operations":[{"operationId":"subscriptionImagesV2_getInstance","method":"get","path":"/v2/subscriptionImages/{id}","role":"primary","condition":null}],
+      "fields":[{"toolField":"image_id","sourceKind":"parameter","operationId":"subscriptionImagesV2_getInstance","location":"path","appleName":"id"}],
+      "response":{"mode":"opaque","sources":[{"operationId":"subscriptionImagesV2_getInstance","statusCode":"200","mediaType":"application/json"}],"fields":[]},
+      "note":"Gets one v2 subscription version image resource by exact ID while intentionally omitting Apple's opaque assetToken from the public projection."
+    },
+    {
+      "tool":"subscriptions_delete_version_image","kind":"direct","status":"partial","effect":"destructive","implementationState":"asBuilt",
+      "operations":[{"operationId":"subscriptionImagesV2_deleteInstance","method":"delete","path":"/v2/subscriptionImages/{id}","role":"primary","condition":null}],
+      "fields":[
+        {"toolField":"image_id","sourceKind":"parameter","operationId":"subscriptionImagesV2_deleteInstance","location":"path","appleName":"id"},
+        {"toolField":"confirm_image_id","sourceKind":"local","localRole":"Require an exact canonical match with image_id before any Apple request is sent."}
+      ],
+      "response":{"mode":"local","sources":[{"operationId":"subscriptionImagesV2_deleteInstance","statusCode":"204"}],"fields":[
+        {"outputField":"success","localRole":"Set true after Apple confirms deletion with 204."},
+        {"outputField":"image_id","localRole":"Echo the exact deleted image ID."},
+        {"outputField":"deleted","localRole":"Set true after confirmed deletion."},
+        {"outputField":"deletionState","localRole":"Set to confirmed after Apple's 204 response."},
+        {"outputField":"outcomeUnknown","localRole":"Set false for a confirmed deletion."},
+        {"outputField":"retrySafe","localRole":"Set false because the destructive operation is already confirmed."}
+      ]},
+      "note":"Deletes one v2 subscription version image resource by exact ID."
+    },
+    {
+      "tool":"subscriptions_create_group_version","kind":"direct","status":"partial","effect":"write","implementationState":"asBuilt",
+      "operations":[{"operationId":"subscriptionGroupVersions_createInstance","method":"post","path":"/v1/subscriptionGroupVersions","role":"primary","condition":null,"inputs":[
+        {"sourceKind":"fixed","jsonPointer":"/data/type","fixedValue":"subscriptionGroupVersions"},
+        {"sourceKind":"fixed","jsonPointer":"/data/relationships/subscriptionGroup/data/type","fixedValue":"subscriptionGroups"}
+      ]}],
+      "fields":[{"toolField":"group_id","sourceKind":"requestBody","operationId":"subscriptionGroupVersions_createInstance","jsonPointer":"/data/relationships/subscriptionGroup/data/id"}],
+      "response":{
+        "mode":"projection",
+        "sources":[{"operationId":"subscriptionGroupVersions_createInstance","statusCode":"201","mediaType":"application/json"}],
+        "fields":[
+          {"outputField":"success","localRole":"Set true after the created group version and its identity pass validation."},
+          {"outputField":"version","operationId":"subscriptionGroupVersions_createInstance","jsonPointer":"/data","localRole":"Project stable group-version fields and bounded localization-page metadata when Apple supplies it."},
+          {"outputField":"version.localizations_page.ids","operationId":"subscriptionGroupVersions_createInstance","jsonPointer":"/data/relationships/localizations/data/*/id","localRole":"Emit null when Apple omits relationship.data; preserve an explicit empty data array as []."},
+          {"outputField":"version.localizations_page.count","localRole":"Emit null when Apple omits relationship.data; otherwise count the embedded localization identifiers, including zero for an explicit empty page."},
+          {"outputField":"version.localizations_page.total","operationId":"subscriptionGroupVersions_createInstance","jsonPointer":"/data/relationships/localizations/meta/paging/total"},
+          {"outputField":"version.localizations_page.limit","operationId":"subscriptionGroupVersions_createInstance","jsonPointer":"/data/relationships/localizations/meta/paging/limit"},
+          {"outputField":"version.localizations_page.next_cursor","operationId":"subscriptionGroupVersions_createInstance","jsonPointer":"/data/relationships/localizations/meta/paging/nextCursor"},
+          {"outputField":"version.localizations_page.truncated","localRole":"Emit null when Apple omits relationship.data; otherwise true when Apple supplies a next cursor or the relationship total exceeds the embedded localization ID count."},
+          {"outputField":"version.localizations_page.completeness_known","localRole":"Emit false when Apple omits relationship.data; otherwise report whether Apple supplied a relationship total or next cursor."}
+        ]
+      },
+      "note":"Creates one explicit Apple 4.4.1 subscription group metadata version. An ambiguous POST or response decode returns write_outcome=not_confirmed, retrySafe=false, the group ID, and list/get recovery guidance instead of encouraging a duplicate create."
+    },
+    {
+      "tool":"subscriptions_get_group_version","kind":"direct","status":"partial","effect":"read","implementationState":"asBuilt",
+      "operations":[{"operationId":"subscriptionGroupVersions_getInstance","method":"get","path":"/v1/subscriptionGroupVersions/{id}","role":"primary","condition":null,"optionalParameterClassifications":[
+        {"location":"query","appleName":"include","disposition":"intentionallyOmitted","reason":"The stable projection does not expose arbitrary relationship expansion.","reviewAtSpec":"4.4.1"},
+        {"location":"query","appleName":"limit[localizations]","disposition":"intentionallyOmitted","reason":"Localizations are paged through subscriptions_list_group_version_localizations.","reviewAtSpec":"4.4.1"}
+      ]}],
+      "fields":[{"toolField":"version_id","sourceKind":"parameter","operationId":"subscriptionGroupVersions_getInstance","location":"path","appleName":"id"}],
+      "response":{
+        "mode":"projection",
+        "sources":[{"operationId":"subscriptionGroupVersions_getInstance","statusCode":"200","mediaType":"application/json"}],
+        "fields":[
+          {"outputField":"success","localRole":"Set true after the group version identity and self link pass validation."},
+          {"outputField":"version","operationId":"subscriptionGroupVersions_getInstance","jsonPointer":"/data","localRole":"Project stable group-version fields and bounded localization-page metadata when Apple supplies it."},
+          {"outputField":"version.localizations_page.ids","operationId":"subscriptionGroupVersions_getInstance","jsonPointer":"/data/relationships/localizations/data/*/id","localRole":"Emit null when Apple omits relationship.data; preserve an explicit empty data array as []."},
+          {"outputField":"version.localizations_page.count","localRole":"Emit null when Apple omits relationship.data; otherwise count the embedded localization identifiers, including zero for an explicit empty page."},
+          {"outputField":"version.localizations_page.total","operationId":"subscriptionGroupVersions_getInstance","jsonPointer":"/data/relationships/localizations/meta/paging/total"},
+          {"outputField":"version.localizations_page.limit","operationId":"subscriptionGroupVersions_getInstance","jsonPointer":"/data/relationships/localizations/meta/paging/limit"},
+          {"outputField":"version.localizations_page.next_cursor","operationId":"subscriptionGroupVersions_getInstance","jsonPointer":"/data/relationships/localizations/meta/paging/nextCursor"},
+          {"outputField":"version.localizations_page.truncated","localRole":"Emit null when Apple omits relationship.data; otherwise true when Apple supplies a next cursor or the relationship total exceeds the embedded localization ID count."},
+          {"outputField":"version.localizations_page.completeness_known","localRole":"Emit false when Apple omits relationship.data; otherwise report whether Apple supplied a relationship total or next cursor."}
+        ]
+      },
+      "note":"Returns the stable projection for one discrete subscription group version."
+    },
+    {
+      "tool":"subscriptions_list_group_versions","kind":"direct","status":"partial","effect":"read","implementationState":"asBuilt",
+      "operations":[{"operationId":"subscriptionGroups_versions_getToManyRelated","method":"get","path":"/v1/subscriptionGroups/{id}/versions","role":"primary","condition":null,"optionalParameterClassifications":[
+        {"location":"query","appleName":"include","disposition":"intentionallyOmitted","reason":"The stable paginated projection does not expose arbitrary relationship expansion.","reviewAtSpec":"4.4.1"},
+        {"location":"query","appleName":"limit[localizations]","disposition":"intentionallyOmitted","reason":"Localizations have their own bounded continuation tool.","reviewAtSpec":"4.4.1"}
+      ]}],
+      "fields":[
+        {"toolField":"group_id","sourceKind":"parameter","operationId":"subscriptionGroups_versions_getToManyRelated","location":"path","appleName":"id"},
+        {"toolField":"filter_state","sourceKind":"parameter","operationId":"subscriptionGroups_versions_getToManyRelated","location":"query","appleName":"filter[state]"},
+        {"toolField":"limit","sourceKind":"parameter","operationId":"subscriptionGroups_versions_getToManyRelated","location":"query","appleName":"limit"},
+        {"toolField":"next_url","sourceKind":"local","localRole":"Continue only an Apple URL whose origin, path, fixed filter, limit, unique non-empty cursor, and parameter set match the original request."}
+      ],
+      "response":{
+        "mode":"projection",
+        "sources":[{"operationId":"subscriptionGroups_versions_getToManyRelated","statusCode":"200","mediaType":"application/json"}],
+        "fields":[
+          {"outputField":"success","localRole":"Set true after the page passes parent identity, paging, and self-link validation."},
+          {"outputField":"versions","operationId":"subscriptionGroups_versions_getToManyRelated","jsonPointer":"/data","localRole":"Project stable group-version fields and bounded localization-page metadata when Apple supplies it."},
+          {"outputField":"versions.*.localizations_page.ids","operationId":"subscriptionGroups_versions_getToManyRelated","jsonPointer":"/data/*/relationships/localizations/data/*/id","localRole":"Emit null when Apple omits relationship.data; preserve an explicit empty data array as []."},
+          {"outputField":"versions.*.localizations_page.count","localRole":"Emit null when Apple omits relationship.data; otherwise count the embedded localization identifiers, including zero for an explicit empty page."},
+          {"outputField":"versions.*.localizations_page.total","operationId":"subscriptionGroups_versions_getToManyRelated","jsonPointer":"/data/*/relationships/localizations/meta/paging/total"},
+          {"outputField":"versions.*.localizations_page.limit","operationId":"subscriptionGroups_versions_getToManyRelated","jsonPointer":"/data/*/relationships/localizations/meta/paging/limit"},
+          {"outputField":"versions.*.localizations_page.next_cursor","operationId":"subscriptionGroups_versions_getToManyRelated","jsonPointer":"/data/*/relationships/localizations/meta/paging/nextCursor"},
+          {"outputField":"versions.*.localizations_page.truncated","localRole":"Emit null when Apple omits relationship.data; otherwise true when Apple supplies a next cursor or the relationship total exceeds that version's embedded localization ID count."},
+          {"outputField":"versions.*.localizations_page.completeness_known","localRole":"Emit false when Apple omits relationship.data; otherwise report whether Apple supplied a relationship total or next cursor."},
+          {"outputField":"count","operationId":"subscriptionGroups_versions_getToManyRelated","jsonPointer":"/data","localRole":"Current validated Apple page resource count."},
+          {"outputField":"total","operationId":"subscriptionGroups_versions_getToManyRelated","jsonPointer":"/meta/paging/total"},
+          {"outputField":"next_url","operationId":"subscriptionGroups_versions_getToManyRelated","jsonPointer":"/links/next","localRole":"Apple continuation URL when another page exists; otherwise omitted."}
+        ]
+      },
+      "note":"Lists Apple 4.4.1 subscription group versions with exact state validation and scope-locked pagination."
+    },
+    {
+      "tool":"subscriptions_list_group_version_localizations","kind":"direct","status":"partial","effect":"read","implementationState":"asBuilt",
+      "operations":[{"operationId":"subscriptionGroupVersions_localizations_getToManyRelated","method":"get","path":"/v1/subscriptionGroupVersions/{id}/localizations","role":"primary","condition":null,"optionalParameterClassifications":[
+        {"location":"query","appleName":"include","disposition":"intentionallyOmitted","reason":"The stable projection does not expose arbitrary relationship expansion.","reviewAtSpec":"4.4.1"}
+      ]}],
+      "fields":[
+        {"toolField":"version_id","sourceKind":"parameter","operationId":"subscriptionGroupVersions_localizations_getToManyRelated","location":"path","appleName":"id"},
+        {"toolField":"limit","sourceKind":"parameter","operationId":"subscriptionGroupVersions_localizations_getToManyRelated","location":"query","appleName":"limit"},
+        {"toolField":"next_url","sourceKind":"local","localRole":"Continue only an Apple URL whose origin, path, limit, unique non-empty cursor, and parameter set match the original request."}
+      ],
+      "response":{"mode":"opaque","sources":[{"operationId":"subscriptionGroupVersions_localizations_getToManyRelated","statusCode":"200","mediaType":"application/json"}],"fields":[]},
+      "note":"Lists localizations owned by one explicit subscription group version."
+    },
+    {
+      "tool":"subscriptions_create_group_version_localization","kind":"direct","status":"partial","effect":"write","implementationState":"asBuilt",
+      "operations":[{"operationId":"subscriptionGroupLocalizationsV2_createInstance","method":"post","path":"/v2/subscriptionGroupLocalizations","role":"primary","condition":null,"inputs":[
+        {"sourceKind":"fixed","jsonPointer":"/data/type","fixedValue":"subscriptionGroupLocalizations"},
+        {"sourceKind":"fixed","jsonPointer":"/data/relationships/version/data/type","fixedValue":"subscriptionGroupVersions"}
+      ]}],
+      "fields":[
+        {"toolField":"version_id","sourceKind":"requestBody","operationId":"subscriptionGroupLocalizationsV2_createInstance","jsonPointer":"/data/relationships/version/data/id"},
+        {"toolField":"locale","sourceKind":"requestBody","operationId":"subscriptionGroupLocalizationsV2_createInstance","jsonPointer":"/data/attributes/locale"},
+        {"toolField":"name","sourceKind":"requestBody","operationId":"subscriptionGroupLocalizationsV2_createInstance","jsonPointer":"/data/attributes/name"},
+        {"toolField":"custom_app_name","sourceKind":"requestBody","operationId":"subscriptionGroupLocalizationsV2_createInstance","jsonPointer":"/data/attributes/customAppName"}
+      ],
+      "response":{"mode":"opaque","sources":[{"operationId":"subscriptionGroupLocalizationsV2_createInstance","statusCode":"201","mediaType":"application/json"}],"fields":[]},
+      "note":"Creates localization metadata directly under an explicit group version and preserves omitted, string, and null customAppName semantics. An ambiguous POST or response decode returns write_outcome=not_confirmed, retrySafe=false, the requested parent and metadata fingerprint, and list/get recovery guidance instead of encouraging a duplicate localization."
+    },
+    {
+      "tool":"subscriptions_get_group_version_localization","kind":"direct","status":"partial","effect":"read","implementationState":"asBuilt",
+      "operations":[{"operationId":"subscriptionGroupLocalizationsV2_getInstance","method":"get","path":"/v2/subscriptionGroupLocalizations/{id}","role":"primary","condition":null,"optionalParameterClassifications":[
+        {"location":"query","appleName":"include","disposition":"intentionallyOmitted","reason":"The stable projection does not expose arbitrary relationship expansion.","reviewAtSpec":"4.4.1"}
+      ]}],
+      "fields":[{"toolField":"localization_id","sourceKind":"parameter","operationId":"subscriptionGroupLocalizationsV2_getInstance","location":"path","appleName":"id"}],
+      "response":{"mode":"opaque","sources":[{"operationId":"subscriptionGroupLocalizationsV2_getInstance","statusCode":"200","mediaType":"application/json"}],"fields":[]},
+      "note":"Gets one v2 subscription group version localization by resource ID."
+    },
+    {
+      "tool":"subscriptions_update_group_version_localization","kind":"direct","status":"partial","effect":"write","implementationState":"asBuilt",
+      "operations":[{"operationId":"subscriptionGroupLocalizationsV2_updateInstance","method":"patch","path":"/v2/subscriptionGroupLocalizations/{id}","role":"primary","condition":null,"inputs":[{"sourceKind":"fixed","jsonPointer":"/data/type","fixedValue":"subscriptionGroupLocalizations"}]}],
+      "fields":[
+        {"toolField":"localization_id","sourceKind":"parameter","operationId":"subscriptionGroupLocalizationsV2_updateInstance","location":"path","appleName":"id"},
+        {"toolField":"localization_id","sourceKind":"requestBody","operationId":"subscriptionGroupLocalizationsV2_updateInstance","jsonPointer":"/data/id"},
+        {"toolField":"name","sourceKind":"requestBody","operationId":"subscriptionGroupLocalizationsV2_updateInstance","jsonPointer":"/data/attributes/name"},
+        {"toolField":"custom_app_name","sourceKind":"requestBody","operationId":"subscriptionGroupLocalizationsV2_updateInstance","jsonPointer":"/data/attributes/customAppName"}
+      ],
+      "response":{"mode":"opaque","sources":[{"operationId":"subscriptionGroupLocalizationsV2_updateInstance","statusCode":"200","mediaType":"application/json"}],"fields":[]},
+      "note":"Updates at least one v2 group localization attribute and preserves string versus explicit null."
+    },
+    {
+      "tool":"subscriptions_delete_group_version_localization","kind":"direct","status":"partial","effect":"destructive","implementationState":"asBuilt",
+      "operations":[{"operationId":"subscriptionGroupLocalizationsV2_deleteInstance","method":"delete","path":"/v2/subscriptionGroupLocalizations/{id}","role":"primary","condition":null}],
+      "fields":[
+        {"toolField":"localization_id","sourceKind":"parameter","operationId":"subscriptionGroupLocalizationsV2_deleteInstance","location":"path","appleName":"id"},
+        {"toolField":"confirm_localization_id","sourceKind":"local","localRole":"Require an exact canonical match with localization_id before any Apple request is sent."}
+      ],
+      "response":{"mode":"local","sources":[{"operationId":"subscriptionGroupLocalizationsV2_deleteInstance","statusCode":"204"}],"fields":[
+        {"outputField":"success","localRole":"Set true after Apple confirms deletion with 204."},
+        {"outputField":"localization_id","localRole":"Echo the exact deleted localization ID."},
+        {"outputField":"deleted","localRole":"Set true after confirmed deletion."},
+        {"outputField":"deletionState","localRole":"Set to confirmed after Apple's 204 response."},
+        {"outputField":"outcomeUnknown","localRole":"Set false for a confirmed deletion."},
+        {"outputField":"retrySafe","localRole":"Set false because the destructive operation is already confirmed."}
+      ]},
+      "note":"Deletes one v2 group localization resource by its exact ID."
     }
   ],
   "implementationAliases": []

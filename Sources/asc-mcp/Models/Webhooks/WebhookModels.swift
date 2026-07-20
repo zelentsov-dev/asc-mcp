@@ -129,6 +129,7 @@ public struct ASCPagingInformation: Codable, Sendable {
     public struct Paging: Codable, Sendable {
         public let total: Int?
         public let limit: Int?
+        public let nextCursor: String?
     }
 }
 

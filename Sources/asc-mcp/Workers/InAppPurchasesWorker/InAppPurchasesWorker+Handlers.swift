@@ -3,7 +3,7 @@ import MCP
 
 // MARK: - Tool Handlers
 extension InAppPurchasesWorker {
-    private func validateIAPLocalizationArguments(
+    func validateIAPLocalizationArguments(
         _ arguments: [String: Value],
         locale: String? = nil
     ) -> [ASCMetadataValidator.FieldError] {
@@ -102,7 +102,6 @@ extension InAppPurchasesWorker {
             if let next = response.links?.next {
                 result["next_url"] = next
             }
-
             return MCPResult.jsonObject(result)
 
         } catch {
@@ -328,6 +327,11 @@ extension InAppPurchasesWorker {
             if let next = response.links?.next {
                 result["next_url"] = next
             }
+            appendLegacyIAPDeprecation(
+                to: &result,
+                tool: "iap_list_localizations",
+                replacements: ["iap_list_versions", "iap_list_version_localizations"]
+            )
 
             return MCPResult.jsonObject(result)
 
@@ -502,10 +506,19 @@ extension InAppPurchasesWorker {
 
             let localization = formatLocalization(response.data)
 
-            let result = [
+            var result = [
                 "success": true,
                 "localization": localization
             ] as [String: Any]
+            appendLegacyIAPDeprecation(
+                to: &result,
+                tool: "iap_create_localization",
+                replacements: [
+                    "iap_list_versions",
+                    "iap_create_version",
+                    "iap_create_version_localization"
+                ]
+            )
 
             return MCPResult.jsonObject(result)
 
@@ -547,10 +560,15 @@ extension InAppPurchasesWorker {
 
             let localization = formatLocalization(response.data)
 
-            let result = [
+            var result = [
                 "success": true,
                 "localization": localization
             ] as [String: Any]
+            appendLegacyIAPDeprecation(
+                to: &result,
+                tool: "iap_update_localization",
+                replacements: ["iap_update_version_localization"]
+            )
 
             return MCPResult.jsonObject(result)
 
@@ -574,10 +592,15 @@ extension InAppPurchasesWorker {
         do {
             _ = try await httpClient.delete("/v1/inAppPurchaseLocalizations/\(try ASCPathSegment.encode(localizationId))")
 
-            let result = [
+            var result = [
                 "success": true,
                 "message": "IAP localization '\(localizationId)' deleted"
             ] as [String: Any]
+            appendLegacyIAPDeprecation(
+                to: &result,
+                tool: "iap_delete_localization",
+                replacements: ["iap_delete_version_localization"]
+            )
 
             return MCPResult.jsonObject(result)
 
@@ -613,10 +636,21 @@ extension InAppPurchasesWorker {
             let bodyData = try encoder.encode(request)
             _ = try await httpClient.post("/v1/inAppPurchaseSubmissions", body: bodyData)
 
-            let result = [
+            var result = [
                 "success": true,
                 "message": "IAP '\(iapId)' submitted for review"
             ] as [String: Any]
+            appendLegacyIAPDeprecation(
+                to: &result,
+                tool: "iap_submit_for_review",
+                replacements: [
+                    "iap_list_versions",
+                    "iap_create_version",
+                    "review_submissions_create",
+                    "review_submissions_add_item",
+                    "review_submissions_submit"
+                ]
+            )
 
             return MCPResult.jsonObject(result)
 
@@ -1203,6 +1237,14 @@ extension InAppPurchasesWorker {
                 inspectionTool: "iap_list_images",
                 inspectionArguments: ["iap_id": iapId]
             ),
+            additionalSuccessFields: legacyIAPDeprecationFields(
+                tool: "iap_upload_image",
+                replacements: [
+                    "iap_list_versions",
+                    "iap_create_version",
+                    "iap_upload_version_image"
+                ]
+            ),
             format: formatIAPImage
         )
     }
@@ -1222,10 +1264,15 @@ extension InAppPurchasesWorker {
             let data = try await httpClient.get("/v1/inAppPurchaseImages/\(try ASCPathSegment.encode(imageId))")
             let response = try JSONDecoder().decode(ASCIAPImageResponse.self, from: data)
 
-            let result = [
+            var result = [
                 "success": true,
                 "image": formatIAPImage(response.data)
             ] as [String: Any]
+            appendLegacyIAPDeprecation(
+                to: &result,
+                tool: "iap_get_image",
+                replacements: ["iap_get_version_image_resource"]
+            )
 
             return MCPResult.jsonObject(result)
 
@@ -1251,10 +1298,15 @@ extension InAppPurchasesWorker {
         do {
             _ = try await httpClient.delete("/v1/inAppPurchaseImages/\(try ASCPathSegment.encode(imageId))")
 
-            let result = [
+            var result = [
                 "success": true,
                 "message": "IAP image '\(imageId)' deleted"
             ] as [String: Any]
+            appendLegacyIAPDeprecation(
+                to: &result,
+                tool: "iap_delete_image",
+                replacements: ["iap_delete_version_image"]
+            )
 
             return MCPResult.jsonObject(result)
 
@@ -1306,6 +1358,11 @@ extension InAppPurchasesWorker {
             if let next = response.links?.next {
                 result["next_url"] = next
             }
+            appendLegacyIAPDeprecation(
+                to: &result,
+                tool: "iap_list_images",
+                replacements: ["iap_list_versions", "iap_get_version_image"]
+            )
 
             return MCPResult.jsonObject(result)
 
@@ -1408,6 +1465,27 @@ extension InAppPurchasesWorker {
             allowedParameters: Set(query.keys).union(["cursor"]),
             requiredNonEmptyParameters: ["cursor"]
         )
+    }
+
+    private func appendLegacyIAPDeprecation(
+        to result: inout [String: Any],
+        tool: String,
+        replacements: [String]
+    ) {
+        for (key, value) in legacyIAPDeprecationFields(tool: tool, replacements: replacements) {
+            result[key] = value
+        }
+    }
+
+    private func legacyIAPDeprecationFields(tool: String, replacements: [String]) -> [String: Any] {
+        [
+            "deprecated": true,
+            "deprecated_since": "App Store Connect API 4.4.1",
+            "warnings": [
+                "\(tool) uses an Apple-deprecated product-scoped commerce API and remains available only for backward compatibility. It does not create or select a version automatically."
+            ],
+            "replacement_tools": replacements
+        ]
     }
 
     private static let supportedIAPTypes: Set<String> = [

@@ -166,7 +166,7 @@ extension SubscriptionsWorker {
     func listSubscriptionLocalizationsTool() -> Tool {
         return Tool(
             name: "subscriptions_list_localizations",
-            description: "List localizations for a subscription",
+            description: "DEPRECATED since App Store Connect API 4.4.1. Use subscriptions_list_versions and subscriptions_list_version_localizations. List legacy product-scoped subscription localizations without creating or selecting a version.",
             inputSchema: .object([
                 "type": .string("object"),
                 "properties": .object([
@@ -237,7 +237,7 @@ extension SubscriptionsWorker {
     func createSubscriptionLocalizationTool() -> Tool {
         return Tool(
             name: "subscriptions_create_localization",
-            description: "Create a localization for a subscription",
+            description: "DEPRECATED since App Store Connect API 4.4.1. Use subscriptions_create_version and subscriptions_create_version_localization. Create a legacy product-scoped subscription localization without automatic version migration.",
             inputSchema: .object([
                 "type": .string("object"),
                 "properties": .object([
@@ -266,7 +266,7 @@ extension SubscriptionsWorker {
     func updateSubscriptionLocalizationTool() -> Tool {
         return Tool(
             name: "subscriptions_update_localization",
-            description: "Update a localization for a subscription",
+            description: "DEPRECATED since App Store Connect API 4.4.1. Use subscriptions_update_version_localization. Update a legacy product-scoped subscription localization without automatic version migration.",
             inputSchema: .object([
                 "type": .string("object"),
                 "properties": .object([
@@ -291,7 +291,7 @@ extension SubscriptionsWorker {
     func deleteSubscriptionLocalizationTool() -> Tool {
         return Tool(
             name: "subscriptions_delete_localization",
-            description: "Delete a localization for a subscription",
+            description: "DEPRECATED since App Store Connect API 4.4.1. Use subscriptions_delete_version_localization. Delete a legacy product-scoped subscription localization without automatic version migration.",
             inputSchema: .object([
                 "type": .string("object"),
                 "properties": .object([
@@ -429,7 +429,7 @@ extension SubscriptionsWorker {
     func listSubscriptionGroupLocalizationsTool() -> Tool {
         return Tool(
             name: "subscriptions_list_group_localizations",
-            description: "List localizations for a subscription group (display name, custom app name per locale)",
+            description: "DEPRECATED since App Store Connect API 4.4.1. Use subscriptions_list_group_versions and subscriptions_list_group_version_localizations. List legacy group-scoped localizations without creating or selecting a version.",
             inputSchema: .object([
                 "type": .string("object"),
                 "properties": .object([
@@ -454,7 +454,7 @@ extension SubscriptionsWorker {
     func createSubscriptionGroupLocalizationTool() -> Tool {
         return Tool(
             name: "subscriptions_create_group_localization",
-            description: "Create a localization for a subscription group (display name and optional custom app name for a locale)",
+            description: "DEPRECATED since App Store Connect API 4.4.1. Use subscriptions_create_group_version and subscriptions_create_group_version_localization. Create a legacy group-scoped localization without automatic version migration.",
             inputSchema: .object([
                 "type": .string("object"),
                 "properties": .object([
@@ -483,7 +483,7 @@ extension SubscriptionsWorker {
     func getSubscriptionGroupLocalizationTool() -> Tool {
         return Tool(
             name: "subscriptions_get_group_localization",
-            description: "Get details of a specific subscription group localization",
+            description: "DEPRECATED since App Store Connect API 4.4.1. Use subscriptions_get_group_version_localization. Get a legacy group-scoped localization without automatic version migration.",
             inputSchema: .object([
                 "type": .string("object"),
                 "properties": .object([
@@ -500,7 +500,7 @@ extension SubscriptionsWorker {
     func updateSubscriptionGroupLocalizationTool() -> Tool {
         return Tool(
             name: "subscriptions_update_group_localization",
-            description: "Update a subscription group localization (name and/or custom app name)",
+            description: "DEPRECATED since App Store Connect API 4.4.1. Use subscriptions_update_group_version_localization. Update a legacy group-scoped localization without automatic version migration.",
             inputSchema: .object([
                 "type": .string("object"),
                 "properties": .object([
@@ -525,7 +525,7 @@ extension SubscriptionsWorker {
     func deleteSubscriptionGroupLocalizationTool() -> Tool {
         return Tool(
             name: "subscriptions_delete_group_localization",
-            description: "Delete a subscription group localization",
+            description: "DEPRECATED since App Store Connect API 4.4.1. Use subscriptions_delete_group_version_localization. Delete a legacy group-scoped localization without automatic version migration.",
             inputSchema: .object([
                 "type": .string("object"),
                 "properties": .object([
@@ -559,7 +559,7 @@ extension SubscriptionsWorker {
     func submitSubscriptionTool() -> Tool {
         return Tool(
             name: "subscriptions_submit",
-            description: "Submit a subscription for App Review",
+            description: "DEPRECATED since App Store Connect API 4.4.1. Use subscriptions_create_version, then review_submissions_create, review_submissions_add_item, and review_submissions_submit. This tool keeps the legacy submission endpoint and never creates or selects a version automatically.",
             inputSchema: .object([
                 "type": .string("object"),
                 "properties": .object([
@@ -578,7 +578,7 @@ extension SubscriptionsWorker {
     func uploadSubscriptionImageTool() -> Tool {
         return Tool(
             name: "subscriptions_upload_image",
-            description: "Upload a subscription promotional image from an immutable snapshot, then reserve, transfer, commit, and verify Apple processing. Pre-commit failures roll back; uncertain commits are retained and reconciled. A confirmed commit can return success with deliveryPending=true while Apple continues asynchronous processing; inspect that image instead of retrying.",
+            description: "DEPRECATED since App Store Connect API 4.4.1. Use subscriptions_create_version and subscriptions_upload_version_image. Upload a legacy product-scoped promotional image without automatic version migration; pre-commit failures roll back and uncertain commits are retained and reconciled.",
             inputSchema: .object([
                 "type": .string("object"),
                 "properties": .object([
@@ -599,7 +599,7 @@ extension SubscriptionsWorker {
     func getSubscriptionImageTool() -> Tool {
         return Tool(
             name: "subscriptions_get_image",
-            description: "Get details of a subscription image",
+            description: "DEPRECATED since App Store Connect API 4.4.1. Use subscriptions_get_version_image. Get a legacy product-scoped subscription image without automatic version migration.",
             inputSchema: .object([
                 "type": .string("object"),
                 "properties": .object([
@@ -616,7 +616,7 @@ extension SubscriptionsWorker {
     func deleteSubscriptionImageTool() -> Tool {
         return Tool(
             name: "subscriptions_delete_image",
-            description: "Delete a subscription image",
+            description: "DEPRECATED since App Store Connect API 4.4.1. Use subscriptions_delete_version_image. Delete a legacy product-scoped subscription image without automatic version migration.",
             inputSchema: .object([
                 "type": .string("object"),
                 "properties": .object([
@@ -692,7 +692,7 @@ extension SubscriptionsWorker {
     func listSubscriptionImagesTool() -> Tool {
         return Tool(
             name: "subscriptions_list_images",
-            description: "List promotional images for a subscription",
+            description: "DEPRECATED since App Store Connect API 4.4.1. Use subscriptions_list_versions and subscriptions_list_version_images. List legacy product-scoped subscription images without creating or selecting a version.",
             inputSchema: .object([
                 "type": .string("object"),
                 "properties": .object([

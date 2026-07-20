@@ -1,0 +1,442 @@
+{
+  "workerKey": "review_submissions",
+  "tools": [
+    {
+      "tool": "review_submissions_add_item",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "write",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "reviewSubmissionItems_createInstance",
+          "method": "post",
+          "path": "/v1/reviewSubmissionItems",
+          "role": "primary",
+          "optionalParameterClassifications": [
+            { "location": "body", "appleName": "/data/relationships/appStoreVersionExperiment", "disposition": "intentionallyOmitted", "reason": "The legacy PPO relationship is intentionally rejected; this worker accepts only appStoreVersionExperimentV2.", "reviewAtSpec": "4.4.1" },
+            { "location": "body", "appleName": "/data/relationships/gameCenterAchievementVersion", "disposition": "intentionallyOmitted", "reason": "Game Center review items remain in the separately scoped Game Center product.", "reviewAtSpec": "4.4.1" },
+            { "location": "body", "appleName": "/data/relationships/gameCenterActivityVersion", "disposition": "intentionallyOmitted", "reason": "Game Center review items remain in the separately scoped Game Center product.", "reviewAtSpec": "4.4.1" },
+            { "location": "body", "appleName": "/data/relationships/gameCenterChallengeVersion", "disposition": "intentionallyOmitted", "reason": "Game Center review items remain in the separately scoped Game Center product.", "reviewAtSpec": "4.4.1" },
+            { "location": "body", "appleName": "/data/relationships/gameCenterLeaderboardSetVersion", "disposition": "intentionallyOmitted", "reason": "Game Center review items remain in the separately scoped Game Center product.", "reviewAtSpec": "4.4.1" },
+            { "location": "body", "appleName": "/data/relationships/gameCenterLeaderboardVersion", "disposition": "intentionallyOmitted", "reason": "Game Center review items remain in the separately scoped Game Center product.", "reviewAtSpec": "4.4.1" }
+          ],
+          "inputs": [
+            { "sourceKind": "fixed", "jsonPointer": "/data/type", "fixedValue": "reviewSubmissionItems" },
+            { "sourceKind": "fixed", "jsonPointer": "/data/relationships/reviewSubmission/data/type", "fixedValue": "reviewSubmissions" },
+            { "sourceKind": "fixed", "jsonPointer": "/data/relationships/appStoreVersion/data/type", "fixedValue": "appStoreVersions" },
+            { "sourceKind": "fixed", "jsonPointer": "/data/relationships/appCustomProductPageVersion/data/type", "fixedValue": "appCustomProductPageVersions" },
+            { "sourceKind": "fixed", "jsonPointer": "/data/relationships/appStoreVersionExperimentV2/data/type", "fixedValue": "appStoreVersionExperiments" },
+            { "sourceKind": "fixed", "jsonPointer": "/data/relationships/appEvent/data/type", "fixedValue": "appEvents" },
+            { "sourceKind": "fixed", "jsonPointer": "/data/relationships/backgroundAssetVersion/data/type", "fixedValue": "backgroundAssetVersions" },
+            { "sourceKind": "fixed", "jsonPointer": "/data/relationships/inAppPurchaseVersion/data/type", "fixedValue": "inAppPurchaseVersions" },
+            { "sourceKind": "fixed", "jsonPointer": "/data/relationships/subscriptionVersion/data/type", "fixedValue": "subscriptionVersions" },
+            { "sourceKind": "fixed", "jsonPointer": "/data/relationships/subscriptionGroupVersion/data/type", "fixedValue": "subscriptionGroupVersions" }
+          ]
+        }
+      ],
+      "fields": [
+        { "toolField": "submission_id", "sourceKind": "requestBody", "operationId": "reviewSubmissionItems_createInstance", "jsonPointer": "/data/relationships/reviewSubmission/data/id" },
+        { "toolField": "app_store_version_id", "sourceKind": "requestBody", "operationId": "reviewSubmissionItems_createInstance", "jsonPointer": "/data/relationships/appStoreVersion/data/id" },
+        { "toolField": "app_custom_product_page_version_id", "sourceKind": "requestBody", "operationId": "reviewSubmissionItems_createInstance", "jsonPointer": "/data/relationships/appCustomProductPageVersion/data/id" },
+        { "toolField": "app_store_version_experiment_v2_id", "sourceKind": "requestBody", "operationId": "reviewSubmissionItems_createInstance", "jsonPointer": "/data/relationships/appStoreVersionExperimentV2/data/id" },
+        { "toolField": "app_event_id", "sourceKind": "requestBody", "operationId": "reviewSubmissionItems_createInstance", "jsonPointer": "/data/relationships/appEvent/data/id" },
+        { "toolField": "background_asset_version_id", "sourceKind": "requestBody", "operationId": "reviewSubmissionItems_createInstance", "jsonPointer": "/data/relationships/backgroundAssetVersion/data/id" },
+        { "toolField": "in_app_purchase_version_id", "sourceKind": "requestBody", "operationId": "reviewSubmissionItems_createInstance", "jsonPointer": "/data/relationships/inAppPurchaseVersion/data/id" },
+        { "toolField": "subscription_version_id", "sourceKind": "requestBody", "operationId": "reviewSubmissionItems_createInstance", "jsonPointer": "/data/relationships/subscriptionVersion/data/id" },
+        { "toolField": "subscription_group_version_id", "sourceKind": "requestBody", "operationId": "reviewSubmissionItems_createInstance", "jsonPointer": "/data/relationships/subscriptionGroupVersion/data/id" }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          { "operationId": "reviewSubmissionItems_createInstance", "statusCode": "201", "mediaType": "application/json" }
+        ],
+        "fields": [
+          { "outputField": "success", "localRole": "successfulCreate" },
+          { "outputField": "submission_id", "localRole": "Echo the owning review submission ID for recovery." },
+          { "outputField": "item", "operationId": "reviewSubmissionItems_createInstance", "jsonPointer": "/data" },
+          { "outputField": "recovery", "localRole": "Expose deterministic inspect, update, and remove tool references." }
+        ]
+      },
+      "note": "Exactly one of eight typed resource-version IDs is accepted at runtime; legacy PPO and all Game Center relationships are rejected before any network request. A successful create is confirmed only when Apple returns a path-safe reviewSubmissionItems ID and exactly the requested relationship name, JSON:API type, and resource ID; mismatches return write_outcome=not_confirmed with owning-submission inspection steps."
+    },
+    {
+      "tool": "review_submissions_cancel",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "destructive",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "reviewSubmissions_updateInstance",
+          "method": "patch",
+          "path": "/v1/reviewSubmissions/{id}",
+          "role": "primary",
+          "optionalParameterClassifications": [
+            { "location": "body", "appleName": "/data/attributes/platform", "disposition": "intentionallyOmitted", "reason": "Cancellation preserves the platform selected when the submission was created.", "reviewAtSpec": "4.4.1" },
+            { "location": "body", "appleName": "/data/attributes/submitted", "disposition": "intentionallyOmitted", "reason": "Cancellation never combines canceled=true with the distinct submit transition.", "reviewAtSpec": "4.4.1" }
+          ],
+          "inputs": [
+            { "sourceKind": "derived", "jsonPointer": "/data/id", "derivedFrom": ["submission_id"], "localRole": "Copy the path ID into the JSON:API resource identifier." },
+            { "sourceKind": "fixed", "jsonPointer": "/data/type", "fixedValue": "reviewSubmissions" },
+            { "sourceKind": "fixed", "jsonPointer": "/data/attributes/canceled", "fixedValue": true }
+          ]
+        }
+      ],
+      "fields": [
+        { "toolField": "submission_id", "sourceKind": "parameter", "operationId": "reviewSubmissions_updateInstance", "location": "path", "appleName": "id" }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          { "operationId": "reviewSubmissions_updateInstance", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": [
+          { "outputField": "success", "localRole": "successfulUpdate" },
+          { "outputField": "submission", "operationId": "reviewSubmissions_updateInstance", "jsonPointer": "/data" },
+          { "outputField": "submission.item_ids", "operationId": "reviewSubmissions_updateInstance", "jsonPointer": "/data/relationships/items/data/*/id", "localRole": "Emit null when Apple omits relationship.data; preserve an explicit empty data array as []." },
+          { "outputField": "submission.item_included_count", "localRole": "Emit null when Apple omits relationship.data; otherwise count the embedded item identifiers, including zero for an explicit empty page." },
+          { "outputField": "submission.item_total", "operationId": "reviewSubmissions_updateInstance", "jsonPointer": "/data/relationships/items/meta/paging/total" },
+          { "outputField": "submission.item_limit", "operationId": "reviewSubmissions_updateInstance", "jsonPointer": "/data/relationships/items/meta/paging/limit" },
+          { "outputField": "submission.item_next_cursor", "operationId": "reviewSubmissions_updateInstance", "jsonPointer": "/data/relationships/items/meta/paging/nextCursor" },
+          { "outputField": "submission.items_truncated", "localRole": "True for a nested next cursor, or when the relationship total exceeds a known embedded item count; otherwise null when truncation cannot be inferred." },
+          { "outputField": "submission.items_complete", "localRole": "Inverse of items_truncated when truncation is known; otherwise null." },
+          { "outputField": "submission.items_completeness_known", "localRole": "True exactly when items_truncated can be determined." },
+          { "outputField": "submission.items_inspection", "localRole": "Emit only when items_truncated is true, with full-pagination review_submissions_list_items guidance." },
+          { "outputField": "submission.items_inspection.tool", "localRole": "Use review_submissions_list_items for nested item inspection." },
+          { "outputField": "submission.items_inspection.arguments.submission_id", "localRole": "Inspect the exact parent submission." },
+          { "outputField": "submission.items_inspection.arguments.limit", "localRole": "Use the maximum bounded page size of 200." },
+          { "outputField": "submission.items_inspection.continue_with_next_url", "localRole": "Continue through every strict next_url page." }
+        ]
+      },
+      "note": "Dedicated cancellation transition with a normalized submission projection; failed writes retain the submission ID and deterministic inspection steps."
+    },
+    {
+      "tool": "review_submissions_create",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "write",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "reviewSubmissions_createInstance",
+          "method": "post",
+          "path": "/v1/reviewSubmissions",
+          "role": "primary",
+          "inputs": [
+            { "sourceKind": "fixed", "jsonPointer": "/data/type", "fixedValue": "reviewSubmissions" },
+            { "sourceKind": "fixed", "jsonPointer": "/data/relationships/app/data/type", "fixedValue": "apps" }
+          ]
+        }
+      ],
+      "fields": [
+        { "toolField": "app_id", "sourceKind": "requestBody", "operationId": "reviewSubmissions_createInstance", "jsonPointer": "/data/relationships/app/data/id" },
+        { "toolField": "platform", "sourceKind": "requestBody", "operationId": "reviewSubmissions_createInstance", "jsonPointer": "/data/attributes/platform" }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          { "operationId": "reviewSubmissions_createInstance", "statusCode": "201", "mediaType": "application/json" }
+        ],
+        "fields": [
+          { "outputField": "success", "localRole": "successfulCreate" },
+          { "outputField": "submission", "operationId": "reviewSubmissions_createInstance", "jsonPointer": "/data" },
+          { "outputField": "submission.item_ids", "operationId": "reviewSubmissions_createInstance", "jsonPointer": "/data/relationships/items/data/*/id", "localRole": "Emit null when Apple omits relationship.data; preserve an explicit empty data array as []." },
+          { "outputField": "submission.item_included_count", "localRole": "Emit null when Apple omits relationship.data; otherwise count the embedded item identifiers, including zero for an explicit empty page." },
+          { "outputField": "submission.item_total", "operationId": "reviewSubmissions_createInstance", "jsonPointer": "/data/relationships/items/meta/paging/total" },
+          { "outputField": "submission.item_limit", "operationId": "reviewSubmissions_createInstance", "jsonPointer": "/data/relationships/items/meta/paging/limit" },
+          { "outputField": "submission.item_next_cursor", "operationId": "reviewSubmissions_createInstance", "jsonPointer": "/data/relationships/items/meta/paging/nextCursor" },
+          { "outputField": "submission.items_truncated", "localRole": "True for a nested next cursor, or when the relationship total exceeds a known embedded item count; otherwise null when truncation cannot be inferred." },
+          { "outputField": "submission.items_complete", "localRole": "Inverse of items_truncated when truncation is known; otherwise null." },
+          { "outputField": "submission.items_completeness_known", "localRole": "True exactly when items_truncated can be determined." },
+          { "outputField": "submission.items_inspection", "localRole": "Emit only when items_truncated is true, with full-pagination review_submissions_list_items guidance." },
+          { "outputField": "submission.items_inspection.tool", "localRole": "Use review_submissions_list_items for nested item inspection." },
+          { "outputField": "submission.items_inspection.arguments.submission_id", "localRole": "Inspect the exact parent submission." },
+          { "outputField": "submission.items_inspection.arguments.limit", "localRole": "Use the maximum bounded page size of 200." },
+          { "outputField": "submission.items_inspection.continue_with_next_url", "localRole": "Continue through every strict next_url page." }
+        ]
+      },
+      "note": "The platform input preserves omitted versus explicit null and all four Apple 4.4.1 Platform values; failed writes retain the app ID and deterministic list recovery."
+    },
+    {
+      "tool": "review_submissions_get",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "reviewSubmissions_getInstance",
+          "method": "get",
+          "path": "/v1/reviewSubmissions/{id}",
+          "role": "primary",
+          "inputs": [
+            { "sourceKind": "fixed", "location": "query", "appleName": "fields[reviewSubmissions]", "fixedValue": ["platform", "submittedDate", "state", "app", "items", "appStoreVersionForReview", "submittedByActor", "lastUpdatedByActor"] },
+            { "sourceKind": "fixed", "location": "query", "appleName": "fields[apps]", "fixedValue": ["name", "bundleId", "sku", "primaryLocale"] },
+            { "sourceKind": "fixed", "location": "query", "appleName": "fields[reviewSubmissionItems]", "fixedValue": ["state", "appStoreVersion", "appCustomProductPageVersion", "appStoreVersionExperiment", "appStoreVersionExperimentV2", "appEvent", "backgroundAssetVersion", "gameCenterAchievementVersion", "gameCenterActivityVersion", "gameCenterChallengeVersion", "gameCenterLeaderboardSetVersion", "gameCenterLeaderboardVersion", "inAppPurchaseVersion", "subscriptionVersion", "subscriptionGroupVersion"] },
+            { "sourceKind": "fixed", "location": "query", "appleName": "fields[appStoreVersions]", "fixedValue": ["platform", "versionString", "appStoreState", "appVersionState", "reviewType", "releaseType", "createdDate"] },
+            { "sourceKind": "fixed", "location": "query", "appleName": "fields[actors]", "fixedValue": ["actorType", "userFirstName", "userLastName", "userEmail", "apiKeyId"] }
+          ]
+        }
+      ],
+      "fields": [
+        { "toolField": "submission_id", "sourceKind": "parameter", "operationId": "reviewSubmissions_getInstance", "location": "path", "appleName": "id" },
+        { "toolField": "include", "sourceKind": "parameter", "operationId": "reviewSubmissions_getInstance", "location": "query", "appleName": "include" },
+        { "toolField": "item_limit", "sourceKind": "parameter", "operationId": "reviewSubmissions_getInstance", "location": "query", "appleName": "limit[items]" }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          { "operationId": "reviewSubmissions_getInstance", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": [
+          { "outputField": "success", "localRole": "successfulRead" },
+          { "outputField": "submission", "operationId": "reviewSubmissions_getInstance", "jsonPointer": "/data" },
+          { "outputField": "submission.item_ids", "operationId": "reviewSubmissions_getInstance", "jsonPointer": "/data/relationships/items/data/*/id", "localRole": "Emit null when Apple omits relationship.data; preserve an explicit empty data array as []." },
+          { "outputField": "submission.item_included_count", "localRole": "Emit null when Apple omits relationship.data; otherwise count the embedded item identifiers, including zero for an explicit empty page." },
+          { "outputField": "submission.item_total", "operationId": "reviewSubmissions_getInstance", "jsonPointer": "/data/relationships/items/meta/paging/total" },
+          { "outputField": "submission.item_limit", "operationId": "reviewSubmissions_getInstance", "jsonPointer": "/data/relationships/items/meta/paging/limit" },
+          { "outputField": "submission.item_next_cursor", "operationId": "reviewSubmissions_getInstance", "jsonPointer": "/data/relationships/items/meta/paging/nextCursor" },
+          { "outputField": "submission.items_truncated", "localRole": "True for a nested next cursor, or when the relationship total exceeds a known embedded item count; otherwise null when truncation cannot be inferred." },
+          { "outputField": "submission.items_complete", "localRole": "Inverse of items_truncated when truncation is known; otherwise null." },
+          { "outputField": "submission.items_completeness_known", "localRole": "True exactly when items_truncated can be determined." },
+          { "outputField": "submission.items_inspection", "localRole": "Emit only when items_truncated is true, with full-pagination review_submissions_list_items guidance." },
+          { "outputField": "submission.items_inspection.tool", "localRole": "Use review_submissions_list_items for nested item inspection." },
+          { "outputField": "submission.items_inspection.arguments.submission_id", "localRole": "Inspect the exact parent submission." },
+          { "outputField": "submission.items_inspection.arguments.limit", "localRole": "Use the maximum bounded page size of 200." },
+          { "outputField": "submission.items_inspection.continue_with_next_url", "localRole": "Continue through every strict next_url page." },
+          { "outputField": "included", "operationId": "reviewSubmissions_getInstance", "jsonPointer": "/included" },
+          { "outputField": "actors", "operationId": "reviewSubmissions_getInstance", "jsonPointer": "/included" }
+        ]
+      },
+      "note": "The fixed sparse projections and caller-selected includes provide all identifiers and actor context needed to resume a partial submission workflow."
+    },
+    {
+      "tool": "review_submissions_list",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "reviewSubmissions_getCollection",
+          "method": "get",
+          "path": "/v1/reviewSubmissions",
+          "role": "primary",
+          "inputs": [
+            { "sourceKind": "fixed", "location": "query", "appleName": "fields[reviewSubmissions]", "fixedValue": ["platform", "submittedDate", "state", "app", "items", "appStoreVersionForReview", "submittedByActor", "lastUpdatedByActor"] },
+            { "sourceKind": "fixed", "location": "query", "appleName": "fields[apps]", "fixedValue": ["name", "bundleId", "sku", "primaryLocale"] },
+            { "sourceKind": "fixed", "location": "query", "appleName": "fields[reviewSubmissionItems]", "fixedValue": ["state", "appStoreVersion", "appCustomProductPageVersion", "appStoreVersionExperiment", "appStoreVersionExperimentV2", "appEvent", "backgroundAssetVersion", "gameCenterAchievementVersion", "gameCenterActivityVersion", "gameCenterChallengeVersion", "gameCenterLeaderboardSetVersion", "gameCenterLeaderboardVersion", "inAppPurchaseVersion", "subscriptionVersion", "subscriptionGroupVersion"] },
+            { "sourceKind": "fixed", "location": "query", "appleName": "fields[appStoreVersions]", "fixedValue": ["platform", "versionString", "appStoreState", "appVersionState", "reviewType", "releaseType", "createdDate"] },
+            { "sourceKind": "fixed", "location": "query", "appleName": "fields[actors]", "fixedValue": ["actorType", "userFirstName", "userLastName", "userEmail", "apiKeyId"] }
+          ]
+        }
+      ],
+      "fields": [
+        { "toolField": "app_id", "sourceKind": "parameter", "operationId": "reviewSubmissions_getCollection", "location": "query", "appleName": "filter[app]" },
+        { "toolField": "states", "sourceKind": "parameter", "operationId": "reviewSubmissions_getCollection", "location": "query", "appleName": "filter[state]" },
+        { "toolField": "platforms", "sourceKind": "parameter", "operationId": "reviewSubmissions_getCollection", "location": "query", "appleName": "filter[platform]" },
+        { "toolField": "include", "sourceKind": "parameter", "operationId": "reviewSubmissions_getCollection", "location": "query", "appleName": "include" },
+        { "toolField": "item_limit", "sourceKind": "parameter", "operationId": "reviewSubmissions_getCollection", "location": "query", "appleName": "limit[items]" },
+        { "toolField": "limit", "sourceKind": "parameter", "operationId": "reviewSubmissions_getCollection", "location": "query", "appleName": "limit" },
+        { "toolField": "next_url", "sourceKind": "local", "localRole": "Validate the exact origin, collection path, complete originating query, query allowlist, and non-empty cursor." }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          { "operationId": "reviewSubmissions_getCollection", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": [
+          { "outputField": "success", "localRole": "successfulRead" },
+          { "outputField": "app_id", "localRole": "Echo the required ownership filter." },
+          { "outputField": "submissions", "operationId": "reviewSubmissions_getCollection", "jsonPointer": "/data" },
+          { "outputField": "submissions.*.item_ids", "operationId": "reviewSubmissions_getCollection", "jsonPointer": "/data/*/relationships/items/data/*/id", "localRole": "Emit null when Apple omits relationship.data; preserve an explicit empty data array as []." },
+          { "outputField": "submissions.*.item_included_count", "localRole": "Emit null when Apple omits relationship.data; otherwise count the embedded item identifiers, including zero for an explicit empty page." },
+          { "outputField": "submissions.*.item_total", "operationId": "reviewSubmissions_getCollection", "jsonPointer": "/data/*/relationships/items/meta/paging/total" },
+          { "outputField": "submissions.*.item_limit", "operationId": "reviewSubmissions_getCollection", "jsonPointer": "/data/*/relationships/items/meta/paging/limit" },
+          { "outputField": "submissions.*.item_next_cursor", "operationId": "reviewSubmissions_getCollection", "jsonPointer": "/data/*/relationships/items/meta/paging/nextCursor" },
+          { "outputField": "submissions.*.items_truncated", "localRole": "True for a nested next cursor, or when the relationship total exceeds a known embedded item count; otherwise null when truncation cannot be inferred." },
+          { "outputField": "submissions.*.items_complete", "localRole": "Inverse of items_truncated when truncation is known; otherwise null." },
+          { "outputField": "submissions.*.items_completeness_known", "localRole": "True exactly when items_truncated can be determined." },
+          { "outputField": "submissions.*.items_inspection", "localRole": "Emit only when items_truncated is true, with full-pagination review_submissions_list_items guidance." },
+          { "outputField": "submissions.*.items_inspection.tool", "localRole": "Use review_submissions_list_items for nested item inspection." },
+          { "outputField": "submissions.*.items_inspection.arguments.submission_id", "localRole": "Inspect the exact parent submission." },
+          { "outputField": "submissions.*.items_inspection.arguments.limit", "localRole": "Use the maximum bounded page size of 200." },
+          { "outputField": "submissions.*.items_inspection.continue_with_next_url", "localRole": "Continue through every strict next_url page." },
+          { "outputField": "included", "operationId": "reviewSubmissions_getCollection", "jsonPointer": "/included" },
+          { "outputField": "next_url", "operationId": "reviewSubmissions_getCollection", "jsonPointer": "/links/next" },
+          { "outputField": "total", "operationId": "reviewSubmissions_getCollection", "jsonPointer": "/meta/paging/total" }
+        ]
+      },
+      "note": "App ownership is mandatory; scalar, strict CSV, and unique-array filters are validated before the request, and continuation URLs preserve every originating query value."
+    },
+    {
+      "tool": "review_submissions_list_items",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "reviewSubmissions_items_getToManyRelated",
+          "method": "get",
+          "path": "/v1/reviewSubmissions/{id}/items",
+          "role": "primary",
+          "inputs": [
+            { "sourceKind": "fixed", "location": "query", "appleName": "fields[reviewSubmissionItems]", "fixedValue": ["state", "appStoreVersion", "appCustomProductPageVersion", "appStoreVersionExperiment", "appStoreVersionExperimentV2", "appEvent", "backgroundAssetVersion", "gameCenterAchievementVersion", "gameCenterActivityVersion", "gameCenterChallengeVersion", "gameCenterLeaderboardSetVersion", "gameCenterLeaderboardVersion", "inAppPurchaseVersion", "subscriptionVersion", "subscriptionGroupVersion"] },
+            { "sourceKind": "fixed", "location": "query", "appleName": "fields[appStoreVersions]", "fixedValue": ["platform", "versionString", "appStoreState", "appVersionState", "reviewType", "releaseType", "createdDate"] },
+            { "sourceKind": "fixed", "location": "query", "appleName": "fields[appCustomProductPageVersions]", "fixedValue": ["version", "state", "deepLink"] },
+            { "sourceKind": "fixed", "location": "query", "appleName": "fields[appStoreVersionExperiments]", "fixedValue": ["name", "trafficProportion", "state", "reviewRequired", "startDate", "endDate", "platform"] },
+            { "sourceKind": "fixed", "location": "query", "appleName": "fields[appEvents]", "fixedValue": ["referenceName", "badge", "eventState", "deepLink", "purchaseRequirement", "primaryLocale", "priority", "purpose"] },
+            { "sourceKind": "fixed", "location": "query", "appleName": "fields[backgroundAssetVersions]", "fixedValue": ["createdDate", "platforms", "state", "stateDetails", "version", "locale"] },
+            { "sourceKind": "fixed", "location": "query", "appleName": "fields[inAppPurchaseVersions]", "fixedValue": ["version", "state"] },
+            { "sourceKind": "fixed", "location": "query", "appleName": "fields[subscriptionVersions]", "fixedValue": ["version", "state"] },
+            { "sourceKind": "fixed", "location": "query", "appleName": "fields[subscriptionGroupVersions]", "fixedValue": ["version", "state"] },
+            { "sourceKind": "fixed", "location": "query", "appleName": "include", "fixedValue": ["appStoreVersion", "appCustomProductPageVersion", "appStoreVersionExperimentV2", "appEvent", "backgroundAssetVersion", "inAppPurchaseVersion", "subscriptionVersion", "subscriptionGroupVersion"] }
+          ]
+        }
+      ],
+      "fields": [
+        { "toolField": "submission_id", "sourceKind": "parameter", "operationId": "reviewSubmissions_items_getToManyRelated", "location": "path", "appleName": "id" },
+        { "toolField": "limit", "sourceKind": "parameter", "operationId": "reviewSubmissions_items_getToManyRelated", "location": "query", "appleName": "limit" },
+        { "toolField": "next_url", "sourceKind": "local", "localRole": "Validate the exact parent path, complete fixed projection, effective limit, query allowlist, and non-empty cursor." }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          { "operationId": "reviewSubmissions_items_getToManyRelated", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": [
+          { "outputField": "success", "localRole": "successfulRead" },
+          { "outputField": "submission_id", "localRole": "Echo the parent review submission ID." },
+          { "outputField": "items", "operationId": "reviewSubmissions_items_getToManyRelated", "jsonPointer": "/data" },
+          { "outputField": "included", "operationId": "reviewSubmissions_items_getToManyRelated", "jsonPointer": "/included" },
+          { "outputField": "next_url", "operationId": "reviewSubmissions_items_getToManyRelated", "jsonPointer": "/links/next" },
+          { "outputField": "total", "operationId": "reviewSubmissions_items_getToManyRelated", "jsonPointer": "/meta/paging/total" }
+        ]
+      },
+      "note": "All Apple relationship identity fields are requested so legacy PPO and scoped Game Center items remain identifiable, while compound includes stay limited to the eight relationships this worker can add; the linkage-only twin endpoint remains deferred."
+    },
+    {
+      "tool": "review_submissions_remove_item",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "destructive",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "reviewSubmissionItems_deleteInstance",
+          "method": "delete",
+          "path": "/v1/reviewSubmissionItems/{id}",
+          "role": "primary"
+        }
+      ],
+      "fields": [
+        { "toolField": "submission_id", "sourceKind": "local", "localRole": "Retain the exact parent submission ID for scope-locked, fully paginated recovery inspection without sending it to the delete endpoint." },
+        { "toolField": "item_id", "sourceKind": "parameter", "operationId": "reviewSubmissionItems_deleteInstance", "location": "path", "appleName": "id" },
+        { "toolField": "confirm_item_id", "sourceKind": "local", "localRole": "Require an exact canonical match with item_id before any Apple request is sent." }
+      ],
+      "response": {
+        "mode": "local",
+        "sources": [
+          { "operationId": "reviewSubmissionItems_deleteInstance", "statusCode": "204" }
+        ],
+        "fields": [
+          { "outputField": "success", "localRole": "successful204" },
+          { "outputField": "item_id", "localRole": "Echo the deleted review item ID." },
+          { "outputField": "message", "localRole": "Deterministic deletion confirmation." }
+        ]
+      },
+      "note": "Apple returns 204 without a body; the confirmation is synthesized locally, while failed writes retain the item ID and parent-inspection guidance."
+    },
+    {
+      "tool": "review_submissions_submit",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "destructive",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "reviewSubmissions_updateInstance",
+          "method": "patch",
+          "path": "/v1/reviewSubmissions/{id}",
+          "role": "primary",
+          "optionalParameterClassifications": [
+            { "location": "body", "appleName": "/data/attributes/platform", "disposition": "intentionallyOmitted", "reason": "Submission preserves the platform selected when the submission was created.", "reviewAtSpec": "4.4.1" },
+            { "location": "body", "appleName": "/data/attributes/canceled", "disposition": "intentionallyOmitted", "reason": "Submission never combines submitted=true with the distinct cancellation transition.", "reviewAtSpec": "4.4.1" }
+          ],
+          "inputs": [
+            { "sourceKind": "derived", "jsonPointer": "/data/id", "derivedFrom": ["submission_id"], "localRole": "Copy the path ID into the JSON:API resource identifier." },
+            { "sourceKind": "fixed", "jsonPointer": "/data/type", "fixedValue": "reviewSubmissions" },
+            { "sourceKind": "fixed", "jsonPointer": "/data/attributes/submitted", "fixedValue": true }
+          ]
+        }
+      ],
+      "fields": [
+        { "toolField": "submission_id", "sourceKind": "parameter", "operationId": "reviewSubmissions_updateInstance", "location": "path", "appleName": "id" }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          { "operationId": "reviewSubmissions_updateInstance", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": [
+          { "outputField": "success", "localRole": "successfulUpdate" },
+          { "outputField": "submission", "operationId": "reviewSubmissions_updateInstance", "jsonPointer": "/data" },
+          { "outputField": "submission.item_ids", "operationId": "reviewSubmissions_updateInstance", "jsonPointer": "/data/relationships/items/data/*/id", "localRole": "Emit null when Apple omits relationship.data; preserve an explicit empty data array as []." },
+          { "outputField": "submission.item_included_count", "localRole": "Emit null when Apple omits relationship.data; otherwise count the embedded item identifiers, including zero for an explicit empty page." },
+          { "outputField": "submission.item_total", "operationId": "reviewSubmissions_updateInstance", "jsonPointer": "/data/relationships/items/meta/paging/total" },
+          { "outputField": "submission.item_limit", "operationId": "reviewSubmissions_updateInstance", "jsonPointer": "/data/relationships/items/meta/paging/limit" },
+          { "outputField": "submission.item_next_cursor", "operationId": "reviewSubmissions_updateInstance", "jsonPointer": "/data/relationships/items/meta/paging/nextCursor" },
+          { "outputField": "submission.items_truncated", "localRole": "True for a nested next cursor, or when the relationship total exceeds a known embedded item count; otherwise null when truncation cannot be inferred." },
+          { "outputField": "submission.items_complete", "localRole": "Inverse of items_truncated when truncation is known; otherwise null." },
+          { "outputField": "submission.items_completeness_known", "localRole": "True exactly when items_truncated can be determined." },
+          { "outputField": "submission.items_inspection", "localRole": "Emit only when items_truncated is true, with full-pagination review_submissions_list_items guidance." },
+          { "outputField": "submission.items_inspection.tool", "localRole": "Use review_submissions_list_items for nested item inspection." },
+          { "outputField": "submission.items_inspection.arguments.submission_id", "localRole": "Inspect the exact parent submission." },
+          { "outputField": "submission.items_inspection.arguments.limit", "localRole": "Use the maximum bounded page size of 200." },
+          { "outputField": "submission.items_inspection.continue_with_next_url", "localRole": "Continue through every strict next_url page." }
+        ]
+      },
+      "note": "Dedicated submission transition with a normalized submission projection; failed writes retain the submission ID and deterministic inspection steps."
+    },
+    {
+      "tool": "review_submissions_update_item",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "write",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "reviewSubmissionItems_updateInstance",
+          "method": "patch",
+          "path": "/v1/reviewSubmissionItems/{id}",
+          "role": "primary",
+          "inputs": [
+            { "sourceKind": "derived", "jsonPointer": "/data/id", "derivedFrom": ["item_id"], "localRole": "Copy the path ID into the JSON:API resource identifier." },
+            { "sourceKind": "fixed", "jsonPointer": "/data/type", "fixedValue": "reviewSubmissionItems" }
+          ]
+        }
+      ],
+      "fields": [
+        { "toolField": "submission_id", "sourceKind": "local", "localRole": "Retain the exact parent submission ID for postflight validation and fully paginated recovery inspection without sending it to the update endpoint." },
+        { "toolField": "item_id", "sourceKind": "parameter", "operationId": "reviewSubmissionItems_updateInstance", "location": "path", "appleName": "id" },
+        { "toolField": "resolved", "sourceKind": "requestBody", "operationId": "reviewSubmissionItems_updateInstance", "jsonPointer": "/data/attributes/resolved" },
+        { "toolField": "removed", "sourceKind": "requestBody", "operationId": "reviewSubmissionItems_updateInstance", "jsonPointer": "/data/attributes/removed" }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          { "operationId": "reviewSubmissionItems_updateInstance", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": [
+          { "outputField": "success", "localRole": "successfulUpdate" },
+          { "outputField": "item", "operationId": "reviewSubmissionItems_updateInstance", "jsonPointer": "/data" },
+          { "outputField": "recovery", "localRole": "Expose deterministic update and remove tool references." }
+        ]
+      },
+      "note": "Both Apple attributes retain tri-state omitted, Boolean, and explicit null semantics; at least one must be present, and failed writes retain the item ID and parent-inspection guidance."
+    }
+  ],
+  "implementationAliases": []
+}

@@ -7,12 +7,12 @@
     "operationCount": 1263
   },
   "optionalInputCoveragePin": {
-    "total": 2265,
-    "bound": 839,
+    "total": 2428,
+    "bound": 924,
     "internalControl": 40,
-    "intentionallyOmitted": 1386,
+    "intentionallyOmitted": 1464,
     "unclassified": 0,
-    "identitySHA256": "0619458cedace74ef1ba62f64aa4d47eb4d03d3147fa325b57fd7f97664b6b28"
+    "identitySHA256": "5bb9c377a13d404e0374945d0016a9739c5cc2c3acd1e851108c24ffea5ba67d"
   },
   "optionalParameterFamilyRules": [
     {
@@ -1786,7 +1786,7 @@
       "id": "deferred.apps_reviewSubmissions_getToManyRelationship",
       "operationId": "apps_reviewSubmissions_getToManyRelationship",
       "disposition": "deferred",
-      "reason": "The `apps` resource-group capability is not yet exposed by asc-mcp.",
+      "reason": "`review_submissions_list` uses Apple's filtered collection endpoint to return submissions for one required app with state and platform filters; this app-scoped linkage-only relationship document is a lower-value duplicate.",
       "owner": "asc-mcp",
       "reviewAtSpec": "4.4.1"
     },
@@ -1826,7 +1826,7 @@
       "id": "deferred.apps_reviewSubmissions_getToManyRelated",
       "operationId": "apps_reviewSubmissions_getToManyRelated",
       "disposition": "deferred",
-      "reason": "The `apps` resource-group capability is not yet exposed by asc-mcp.",
+      "reason": "`review_submissions_list` exposes the equivalent app-owned submission collection through Apple's required filter[app] query and adds state, platform, include, and strict pagination controls; the alternate related-resource path is intentionally deferred.",
       "owner": "asc-mcp",
       "reviewAtSpec": "4.4.1"
     },
@@ -3087,50 +3087,10 @@
       "reviewAtSpec": "4.4.1"
     },
     {
-      "id": "deferred.inAppPurchaseVersions_createInstance",
-      "operationId": "inAppPurchaseVersions_createInstance",
-      "disposition": "deferred",
-      "reason": "The `inAppPurchaseVersions` resource-group capability is not yet exposed by asc-mcp.",
-      "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
-    },
-    {
-      "id": "deferred.inAppPurchaseVersions_getInstance",
-      "operationId": "inAppPurchaseVersions_getInstance",
-      "disposition": "deferred",
-      "reason": "The `inAppPurchaseVersions` resource-group capability is not yet exposed by asc-mcp.",
-      "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
-    },
-    {
-      "id": "deferred.inAppPurchaseVersions_image_getToOneRelated",
-      "operationId": "inAppPurchaseVersions_image_getToOneRelated",
-      "disposition": "deferred",
-      "reason": "The `inAppPurchaseVersions` resource-group capability is not yet exposed by asc-mcp.",
-      "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
-    },
-    {
-      "id": "deferred.inAppPurchaseVersions_images_getToManyRelated",
-      "operationId": "inAppPurchaseVersions_images_getToManyRelated",
-      "disposition": "deferred",
-      "reason": "The `inAppPurchaseVersions` resource-group capability is not yet exposed by asc-mcp.",
-      "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
-    },
-    {
-      "id": "deferred.inAppPurchaseVersions_localizations_getToManyRelated",
-      "operationId": "inAppPurchaseVersions_localizations_getToManyRelated",
-      "disposition": "deferred",
-      "reason": "The `inAppPurchaseVersions` resource-group capability is not yet exposed by asc-mcp.",
-      "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
-    },
-    {
       "id": "deferred.inAppPurchaseVersions_image_getToOneRelationship",
       "operationId": "inAppPurchaseVersions_image_getToOneRelationship",
       "disposition": "deferred",
-      "reason": "The `inAppPurchaseVersions` resource-group capability is not yet exposed by asc-mcp.",
+      "reason": "`iap_get_version_image` returns the singular related review image itself; the linkage-only relationship document would duplicate that workflow without additional public value.",
       "owner": "asc-mcp",
       "reviewAtSpec": "4.4.1"
     },
@@ -3138,7 +3098,7 @@
       "id": "deferred.inAppPurchaseVersions_images_getToManyRelationship",
       "operationId": "inAppPurchaseVersions_images_getToManyRelationship",
       "disposition": "deferred",
-      "reason": "The `inAppPurchaseVersions` resource-group capability is not yet exposed by asc-mcp.",
+      "reason": "The plural IAP image relationship is semantically ambiguous beside Apple's documented singular review screenshot, so its linkage-only document remains deferred with the plural related-resource endpoint.",
       "owner": "asc-mcp",
       "reviewAtSpec": "4.4.1"
     },
@@ -3146,7 +3106,7 @@
       "id": "deferred.inAppPurchaseVersions_localizations_getToManyRelationship",
       "operationId": "inAppPurchaseVersions_localizations_getToManyRelationship",
       "disposition": "deferred",
-      "reason": "The `inAppPurchaseVersions` resource-group capability is not yet exposed by asc-mcp.",
+      "reason": "`iap_list_version_localizations` returns the related localization resources and IDs; the linkage-only relationship document is a lower-value duplicate.",
       "owner": "asc-mcp",
       "reviewAtSpec": "4.4.1"
     },
@@ -3383,50 +3343,10 @@
       "reviewAtSpec": "4.4.1"
     },
     {
-      "id": "deferred.reviewSubmissionItems_deleteInstance",
-      "operationId": "reviewSubmissionItems_deleteInstance",
-      "disposition": "deferred",
-      "reason": "The `reviewSubmissionItems` resource-group capability is not yet exposed by asc-mcp.",
-      "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
-    },
-    {
-      "id": "deferred.reviewSubmissionItems_updateInstance",
-      "operationId": "reviewSubmissionItems_updateInstance",
-      "disposition": "deferred",
-      "reason": "The `reviewSubmissionItems` resource-group capability is not yet exposed by asc-mcp.",
-      "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
-    },
-    {
-      "id": "deferred.reviewSubmissions_getCollection",
-      "operationId": "reviewSubmissions_getCollection",
-      "disposition": "deferred",
-      "reason": "The `reviewSubmissions` resource-group capability is not yet exposed by asc-mcp.",
-      "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
-    },
-    {
-      "id": "deferred.reviewSubmissions_getInstance",
-      "operationId": "reviewSubmissions_getInstance",
-      "disposition": "deferred",
-      "reason": "The `reviewSubmissions` resource-group capability is not yet exposed by asc-mcp.",
-      "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
-    },
-    {
-      "id": "deferred.reviewSubmissions_items_getToManyRelated",
-      "operationId": "reviewSubmissions_items_getToManyRelated",
-      "disposition": "deferred",
-      "reason": "The `reviewSubmissions` resource-group capability is not yet exposed by asc-mcp.",
-      "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
-    },
-    {
       "id": "deferred.reviewSubmissions_items_getToManyRelationship",
       "operationId": "reviewSubmissions_items_getToManyRelationship",
       "disposition": "deferred",
-      "reason": "The `reviewSubmissions` resource-group capability is not yet exposed by asc-mcp.",
+      "reason": "`review_submissions_list_items` returns typed review item resources and IDs for recovery; the linkage-only relationship document is a lower-value duplicate.",
       "owner": "asc-mcp",
       "reviewAtSpec": "4.4.1"
     },
@@ -3519,34 +3439,10 @@
       "reviewAtSpec": "4.4.1"
     },
     {
-      "id": "deferred.subscriptionGroupVersions_createInstance",
-      "operationId": "subscriptionGroupVersions_createInstance",
-      "disposition": "deferred",
-      "reason": "The `subscriptionGroupVersions` resource-group capability is not yet exposed by asc-mcp.",
-      "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
-    },
-    {
-      "id": "deferred.subscriptionGroupVersions_getInstance",
-      "operationId": "subscriptionGroupVersions_getInstance",
-      "disposition": "deferred",
-      "reason": "The `subscriptionGroupVersions` resource-group capability is not yet exposed by asc-mcp.",
-      "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
-    },
-    {
-      "id": "deferred.subscriptionGroupVersions_localizations_getToManyRelated",
-      "operationId": "subscriptionGroupVersions_localizations_getToManyRelated",
-      "disposition": "deferred",
-      "reason": "The `subscriptionGroupVersions` resource-group capability is not yet exposed by asc-mcp.",
-      "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
-    },
-    {
       "id": "deferred.subscriptionGroupVersions_localizations_getToManyRelationship",
       "operationId": "subscriptionGroupVersions_localizations_getToManyRelationship",
       "disposition": "deferred",
-      "reason": "The `subscriptionGroupVersions` resource-group capability is not yet exposed by asc-mcp.",
+      "reason": "`subscriptions_list_group_version_localizations` returns the related localization resources and IDs; the linkage-only relationship document is a lower-value duplicate.",
       "owner": "asc-mcp",
       "reviewAtSpec": "4.4.1"
     },
@@ -3570,15 +3466,7 @@
       "id": "deferred.subscriptionGroups_versions_getToManyRelationship",
       "operationId": "subscriptionGroups_versions_getToManyRelationship",
       "disposition": "deferred",
-      "reason": "The `subscriptionGroups` resource-group capability is not yet exposed by asc-mcp.",
-      "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
-    },
-    {
-      "id": "deferred.subscriptionGroups_versions_getToManyRelated",
-      "operationId": "subscriptionGroups_versions_getToManyRelated",
-      "disposition": "deferred",
-      "reason": "The `subscriptionGroups` resource-group capability is not yet exposed by asc-mcp.",
+      "reason": "`subscriptions_list_group_versions` returns the related metadata versions and IDs; the linkage-only relationship document is a lower-value duplicate.",
       "owner": "asc-mcp",
       "reviewAtSpec": "4.4.1"
     },
@@ -3623,42 +3511,10 @@
       "reviewAtSpec": "4.4.1"
     },
     {
-      "id": "deferred.subscriptionPlanAvailabilities_createInstance",
-      "operationId": "subscriptionPlanAvailabilities_createInstance",
-      "disposition": "deferred",
-      "reason": "The `subscriptionPlanAvailabilities` resource-group capability is not yet exposed by asc-mcp.",
-      "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
-    },
-    {
-      "id": "deferred.subscriptionPlanAvailabilities_getInstance",
-      "operationId": "subscriptionPlanAvailabilities_getInstance",
-      "disposition": "deferred",
-      "reason": "The `subscriptionPlanAvailabilities` resource-group capability is not yet exposed by asc-mcp.",
-      "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
-    },
-    {
-      "id": "deferred.subscriptionPlanAvailabilities_updateInstance",
-      "operationId": "subscriptionPlanAvailabilities_updateInstance",
-      "disposition": "deferred",
-      "reason": "The `subscriptionPlanAvailabilities` resource-group capability is not yet exposed by asc-mcp.",
-      "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
-    },
-    {
-      "id": "deferred.subscriptionPlanAvailabilities_availableTerritories_getToManyRelated",
-      "operationId": "subscriptionPlanAvailabilities_availableTerritories_getToManyRelated",
-      "disposition": "deferred",
-      "reason": "The `subscriptionPlanAvailabilities` resource-group capability is not yet exposed by asc-mcp.",
-      "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
-    },
-    {
       "id": "deferred.subscriptionPlanAvailabilities_availableTerritories_getToManyRelationship",
       "operationId": "subscriptionPlanAvailabilities_availableTerritories_getToManyRelationship",
       "disposition": "deferred",
-      "reason": "The `subscriptionPlanAvailabilities` resource-group capability is not yet exposed by asc-mcp.",
+      "reason": "`subscriptions_list_plan_availability_territories` returns the related territory resources and IDs with pagination; the linkage-only relationship document is a lower-value duplicate.",
       "owner": "asc-mcp",
       "reviewAtSpec": "4.4.1"
     },
@@ -3666,15 +3522,7 @@
       "id": "deferred.subscriptionPlanAvailabilities_availableTerritories_replaceToManyRelationship",
       "operationId": "subscriptionPlanAvailabilities_availableTerritories_replaceToManyRelationship",
       "disposition": "deferred",
-      "reason": "The `subscriptionPlanAvailabilities` resource-group capability is not yet exposed by asc-mcp.",
-      "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
-    },
-    {
-      "id": "deferred.subscriptionPricePoints_adjustedEqualizations_getToManyRelated",
-      "operationId": "subscriptionPricePoints_adjustedEqualizations_getToManyRelated",
-      "disposition": "deferred",
-      "reason": "The `subscriptionPricePoints` resource-group capability is not yet exposed by asc-mcp.",
+      "reason": "`subscriptions_update_plan_availability` already replaces the complete territory relationship through the resource PATCH and can update the nullable availability attribute atomically; a second relationship-only mutation is intentionally deferred.",
       "owner": "asc-mcp",
       "reviewAtSpec": "4.4.1"
     },
@@ -3695,42 +3543,10 @@
       "reviewAtSpec": "4.4.1"
     },
     {
-      "id": "deferred.subscriptionVersions_createInstance",
-      "operationId": "subscriptionVersions_createInstance",
-      "disposition": "deferred",
-      "reason": "The `subscriptionVersions` resource-group capability is not yet exposed by asc-mcp.",
-      "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
-    },
-    {
-      "id": "deferred.subscriptionVersions_getInstance",
-      "operationId": "subscriptionVersions_getInstance",
-      "disposition": "deferred",
-      "reason": "The `subscriptionVersions` resource-group capability is not yet exposed by asc-mcp.",
-      "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
-    },
-    {
       "id": "deferred.subscriptionVersions_image_getToOneRelated",
       "operationId": "subscriptionVersions_image_getToOneRelated",
       "disposition": "deferred",
-      "reason": "The `subscriptionVersions` resource-group capability is not yet exposed by asc-mcp.",
-      "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
-    },
-    {
-      "id": "deferred.subscriptionVersions_images_getToManyRelated",
-      "operationId": "subscriptionVersions_images_getToManyRelated",
-      "disposition": "deferred",
-      "reason": "The `subscriptionVersions` resource-group capability is not yet exposed by asc-mcp.",
-      "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
-    },
-    {
-      "id": "deferred.subscriptionVersions_localizations_getToManyRelated",
-      "operationId": "subscriptionVersions_localizations_getToManyRelated",
-      "disposition": "deferred",
-      "reason": "The `subscriptionVersions` resource-group capability is not yet exposed by asc-mcp.",
+      "reason": "Apple 4.4.1 documents plural version-owned subscription promotional images, which `subscriptions_list_version_images` exposes. The overlapping singular related-resource endpoint is deferred until Apple clarifies its distinct semantics.",
       "owner": "asc-mcp",
       "reviewAtSpec": "4.4.1"
     },
@@ -3738,7 +3554,7 @@
       "id": "deferred.subscriptionVersions_image_getToOneRelationship",
       "operationId": "subscriptionVersions_image_getToOneRelationship",
       "disposition": "deferred",
-      "reason": "The `subscriptionVersions` resource-group capability is not yet exposed by asc-mcp.",
+      "reason": "The singular subscription image relationship is semantically ambiguous beside Apple's documented plural promotional images, so its linkage-only document remains deferred with the singular related-resource endpoint.",
       "owner": "asc-mcp",
       "reviewAtSpec": "4.4.1"
     },
@@ -3746,7 +3562,7 @@
       "id": "deferred.subscriptionVersions_images_getToManyRelationship",
       "operationId": "subscriptionVersions_images_getToManyRelationship",
       "disposition": "deferred",
-      "reason": "The `subscriptionVersions` resource-group capability is not yet exposed by asc-mcp.",
+      "reason": "`subscriptions_list_version_images` returns the related promotional image resources and IDs; the linkage-only relationship document is a lower-value duplicate.",
       "owner": "asc-mcp",
       "reviewAtSpec": "4.4.1"
     },
@@ -3754,15 +3570,7 @@
       "id": "deferred.subscriptionVersions_localizations_getToManyRelationship",
       "operationId": "subscriptionVersions_localizations_getToManyRelationship",
       "disposition": "deferred",
-      "reason": "The `subscriptionVersions` resource-group capability is not yet exposed by asc-mcp.",
-      "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
-    },
-    {
-      "id": "deferred.subscriptions_planAvailabilities_getToManyRelated",
-      "operationId": "subscriptions_planAvailabilities_getToManyRelated",
-      "disposition": "deferred",
-      "reason": "The `subscriptions` resource-group capability is not yet exposed by asc-mcp.",
+      "reason": "`subscriptions_list_version_localizations` returns the related localization resources and IDs; the linkage-only relationship document is a lower-value duplicate.",
       "owner": "asc-mcp",
       "reviewAtSpec": "4.4.1"
     },
@@ -3810,7 +3618,7 @@
       "id": "deferred.subscriptions_planAvailabilities_getToManyRelationship",
       "operationId": "subscriptions_planAvailabilities_getToManyRelationship",
       "disposition": "deferred",
-      "reason": "The `subscriptions` resource-group capability is not yet exposed by asc-mcp.",
+      "reason": "`subscriptions_list_plan_availabilities` returns the related plan availability resources and IDs; the linkage-only relationship document is a lower-value duplicate.",
       "owner": "asc-mcp",
       "reviewAtSpec": "4.4.1"
     },
@@ -3874,21 +3682,13 @@
       "id": "deferred.subscriptions_versions_getToManyRelationship",
       "operationId": "subscriptions_versions_getToManyRelationship",
       "disposition": "deferred",
-      "reason": "The `subscriptions` resource-group capability is not yet exposed by asc-mcp.",
+      "reason": "`subscriptions_list_versions` returns the related metadata versions and IDs; the linkage-only relationship document is a lower-value duplicate.",
       "owner": "asc-mcp",
       "reviewAtSpec": "4.4.1"
     },
     {
       "id": "deferred.subscriptions_winBackOffers_getToManyRelationship",
       "operationId": "subscriptions_winBackOffers_getToManyRelationship",
-      "disposition": "deferred",
-      "reason": "The `subscriptions` resource-group capability is not yet exposed by asc-mcp.",
-      "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
-    },
-    {
-      "id": "deferred.subscriptions_versions_getToManyRelated",
-      "operationId": "subscriptions_versions_getToManyRelated",
       "disposition": "deferred",
       "reason": "The `subscriptions` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
@@ -3971,70 +3771,6 @@
       "operationId": "appStoreVersionExperimentsV2_appStoreVersionExperimentTreatments_getToManyRelationship",
       "disposition": "deferred",
       "reason": "The `appStoreVersionExperiments` resource-group capability is not yet exposed by asc-mcp.",
-      "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
-    },
-    {
-      "id": "deferred.inAppPurchaseImagesV2_createInstance",
-      "operationId": "inAppPurchaseImagesV2_createInstance",
-      "disposition": "deferred",
-      "reason": "The `inAppPurchaseImages` resource-group capability is not yet exposed by asc-mcp.",
-      "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
-    },
-    {
-      "id": "deferred.inAppPurchaseImagesV2_deleteInstance",
-      "operationId": "inAppPurchaseImagesV2_deleteInstance",
-      "disposition": "deferred",
-      "reason": "The `inAppPurchaseImages` resource-group capability is not yet exposed by asc-mcp.",
-      "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
-    },
-    {
-      "id": "deferred.inAppPurchaseImagesV2_getInstance",
-      "operationId": "inAppPurchaseImagesV2_getInstance",
-      "disposition": "deferred",
-      "reason": "The `inAppPurchaseImages` resource-group capability is not yet exposed by asc-mcp.",
-      "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
-    },
-    {
-      "id": "deferred.inAppPurchaseImagesV2_updateInstance",
-      "operationId": "inAppPurchaseImagesV2_updateInstance",
-      "disposition": "deferred",
-      "reason": "The `inAppPurchaseImages` resource-group capability is not yet exposed by asc-mcp.",
-      "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
-    },
-    {
-      "id": "deferred.inAppPurchaseLocalizationsV2_createInstance",
-      "operationId": "inAppPurchaseLocalizationsV2_createInstance",
-      "disposition": "deferred",
-      "reason": "The `inAppPurchaseLocalizations` resource-group capability is not yet exposed by asc-mcp.",
-      "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
-    },
-    {
-      "id": "deferred.inAppPurchaseLocalizationsV2_deleteInstance",
-      "operationId": "inAppPurchaseLocalizationsV2_deleteInstance",
-      "disposition": "deferred",
-      "reason": "The `inAppPurchaseLocalizations` resource-group capability is not yet exposed by asc-mcp.",
-      "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
-    },
-    {
-      "id": "deferred.inAppPurchaseLocalizationsV2_getInstance",
-      "operationId": "inAppPurchaseLocalizationsV2_getInstance",
-      "disposition": "deferred",
-      "reason": "The `inAppPurchaseLocalizations` resource-group capability is not yet exposed by asc-mcp.",
-      "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
-    },
-    {
-      "id": "deferred.inAppPurchaseLocalizationsV2_updateInstance",
-      "operationId": "inAppPurchaseLocalizationsV2_updateInstance",
-      "disposition": "deferred",
-      "reason": "The `inAppPurchaseLocalizations` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
       "reviewAtSpec": "4.4.1"
     },
@@ -4122,111 +3858,7 @@
       "id": "deferred.inAppPurchasesV2_versions_getToManyRelationship",
       "operationId": "inAppPurchasesV2_versions_getToManyRelationship",
       "disposition": "deferred",
-      "reason": "The `inAppPurchases` resource-group capability is not yet exposed by asc-mcp.",
-      "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
-    },
-    {
-      "id": "deferred.inAppPurchasesV2_versions_getToManyRelated",
-      "operationId": "inAppPurchasesV2_versions_getToManyRelated",
-      "disposition": "deferred",
-      "reason": "The `inAppPurchases` resource-group capability is not yet exposed by asc-mcp.",
-      "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
-    },
-    {
-      "id": "deferred.subscriptionGroupLocalizationsV2_createInstance",
-      "operationId": "subscriptionGroupLocalizationsV2_createInstance",
-      "disposition": "deferred",
-      "reason": "The `subscriptionGroupLocalizations` resource-group capability is not yet exposed by asc-mcp.",
-      "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
-    },
-    {
-      "id": "deferred.subscriptionGroupLocalizationsV2_deleteInstance",
-      "operationId": "subscriptionGroupLocalizationsV2_deleteInstance",
-      "disposition": "deferred",
-      "reason": "The `subscriptionGroupLocalizations` resource-group capability is not yet exposed by asc-mcp.",
-      "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
-    },
-    {
-      "id": "deferred.subscriptionGroupLocalizationsV2_getInstance",
-      "operationId": "subscriptionGroupLocalizationsV2_getInstance",
-      "disposition": "deferred",
-      "reason": "The `subscriptionGroupLocalizations` resource-group capability is not yet exposed by asc-mcp.",
-      "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
-    },
-    {
-      "id": "deferred.subscriptionGroupLocalizationsV2_updateInstance",
-      "operationId": "subscriptionGroupLocalizationsV2_updateInstance",
-      "disposition": "deferred",
-      "reason": "The `subscriptionGroupLocalizations` resource-group capability is not yet exposed by asc-mcp.",
-      "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
-    },
-    {
-      "id": "deferred.subscriptionImagesV2_createInstance",
-      "operationId": "subscriptionImagesV2_createInstance",
-      "disposition": "deferred",
-      "reason": "The `subscriptionImages` resource-group capability is not yet exposed by asc-mcp.",
-      "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
-    },
-    {
-      "id": "deferred.subscriptionImagesV2_deleteInstance",
-      "operationId": "subscriptionImagesV2_deleteInstance",
-      "disposition": "deferred",
-      "reason": "The `subscriptionImages` resource-group capability is not yet exposed by asc-mcp.",
-      "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
-    },
-    {
-      "id": "deferred.subscriptionImagesV2_getInstance",
-      "operationId": "subscriptionImagesV2_getInstance",
-      "disposition": "deferred",
-      "reason": "The `subscriptionImages` resource-group capability is not yet exposed by asc-mcp.",
-      "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
-    },
-    {
-      "id": "deferred.subscriptionImagesV2_updateInstance",
-      "operationId": "subscriptionImagesV2_updateInstance",
-      "disposition": "deferred",
-      "reason": "The `subscriptionImages` resource-group capability is not yet exposed by asc-mcp.",
-      "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
-    },
-    {
-      "id": "deferred.subscriptionLocalizationsV2_createInstance",
-      "operationId": "subscriptionLocalizationsV2_createInstance",
-      "disposition": "deferred",
-      "reason": "The `subscriptionLocalizations` resource-group capability is not yet exposed by asc-mcp.",
-      "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
-    },
-    {
-      "id": "deferred.subscriptionLocalizationsV2_deleteInstance",
-      "operationId": "subscriptionLocalizationsV2_deleteInstance",
-      "disposition": "deferred",
-      "reason": "The `subscriptionLocalizations` resource-group capability is not yet exposed by asc-mcp.",
-      "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
-    },
-    {
-      "id": "deferred.subscriptionLocalizationsV2_getInstance",
-      "operationId": "subscriptionLocalizationsV2_getInstance",
-      "disposition": "deferred",
-      "reason": "The `subscriptionLocalizations` resource-group capability is not yet exposed by asc-mcp.",
-      "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
-    },
-    {
-      "id": "deferred.subscriptionLocalizationsV2_updateInstance",
-      "operationId": "subscriptionLocalizationsV2_updateInstance",
-      "disposition": "deferred",
-      "reason": "The `subscriptionLocalizations` resource-group capability is not yet exposed by asc-mcp.",
+      "reason": "`iap_list_versions` returns the related metadata versions and IDs; the linkage-only relationship document is a lower-value duplicate.",
       "owner": "asc-mcp",
       "reviewAtSpec": "4.4.1"
     },

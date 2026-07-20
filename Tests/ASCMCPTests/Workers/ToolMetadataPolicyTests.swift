@@ -9,12 +9,32 @@ struct ToolMetadataPolicyTests {
     func allToolsReceiveAnnotationsAndMeta() async throws {
         let tools = try await TestFactory.collectAllWorkerTools().map(ToolMetadataPolicy.apply)
 
-        #expect(tools.count == 403)
+        #expect(tools.count == 451)
         for tool in tools {
             #expect(tool.annotations.isEmpty == false)
             #expect(tool.annotations.openWorldHint == true)
             #expect(tool._meta?.fields["anthropic/maxResultSizeChars"] != nil)
         }
+
+        let promotedDeleteImage = try #require(
+            tools.first { $0.name == "promoted_delete_image" }
+        )
+        #expect(promotedDeleteImage.annotations.readOnlyHint == true)
+        #expect(promotedDeleteImage.annotations.destructiveHint == false)
+        #expect(promotedDeleteImage.annotations.idempotentHint == true)
+    }
+
+    @Test("IAP version image collection remains read-only metadata")
+    func iapVersionImageCollectionRemainsReadOnly() async throws {
+        let client = try await TestFactory.makeHTTPClient()
+        let worker = InAppPurchasesWorker(httpClient: client, uploadService: UploadService())
+        let tools = await worker.getTools()
+        let rawTool = try #require(tools.first { $0.name == "iap_list_version_images" })
+        let tool = ToolMetadataPolicy.apply(to: rawTool)
+
+        #expect(tool.annotations.readOnlyHint == true)
+        #expect(tool.annotations.destructiveHint == false)
+        #expect(tool.annotations.idempotentHint == true)
     }
 
     @Test("classifies known read-only and destructive tools")
@@ -89,6 +109,68 @@ struct ToolMetadataPolicyTests {
         #expect(reviewSummarizations.annotations.readOnlyHint == true)
         #expect(reviewSummarizations.annotations.destructiveHint == false)
         #expect(reviewSummarizations.annotations.idempotentHint == true)
+
+        let reviewSubmissionList = ToolMetadataPolicy.apply(
+            to: Self.sampleTool(named: "review_submissions_list")
+        )
+        #expect(reviewSubmissionList.annotations.readOnlyHint == true)
+        #expect(reviewSubmissionList.annotations.destructiveHint == false)
+
+        let reviewSubmissionSubmit = ToolMetadataPolicy.apply(
+            to: Self.sampleTool(named: "review_submissions_submit")
+        )
+        #expect(reviewSubmissionSubmit.annotations.readOnlyHint == false)
+        #expect(reviewSubmissionSubmit.annotations.destructiveHint == true)
+
+        let newDestructiveTools = [
+            "iap_delete_version_image",
+            "iap_delete_version_localization",
+            "review_submissions_cancel",
+            "review_submissions_remove_item",
+            "review_submissions_submit",
+            "subscriptions_delete_group_version_localization",
+            "subscriptions_delete_version_image",
+            "subscriptions_delete_version_localization"
+        ]
+        for toolName in newDestructiveTools {
+            let tool = ToolMetadataPolicy.apply(to: Self.sampleTool(named: toolName))
+            #expect(tool.annotations.readOnlyHint == false, "Expected destructive metadata for \(toolName)")
+            #expect(tool.annotations.destructiveHint == true, "Expected destructive metadata for \(toolName)")
+            #expect(tool.annotations.idempotentHint == false, "Expected non-idempotent metadata for \(toolName)")
+        }
+
+        let newReadOnlyTools = [
+            "iap_get_version",
+            "iap_get_version_image",
+            "iap_get_version_image_resource",
+            "iap_get_version_localization",
+            "iap_list_version_images",
+            "iap_list_version_localizations",
+            "iap_list_versions",
+            "review_submissions_get",
+            "review_submissions_list",
+            "review_submissions_list_items",
+            "subscriptions_get_group_version",
+            "subscriptions_get_group_version_localization",
+            "subscriptions_get_plan_availability",
+            "subscriptions_get_version",
+            "subscriptions_get_version_image",
+            "subscriptions_get_version_localization",
+            "subscriptions_list_group_version_localizations",
+            "subscriptions_list_group_versions",
+            "subscriptions_list_plan_availabilities",
+            "subscriptions_list_plan_availability_territories",
+            "subscriptions_list_price_point_adjusted_equalizations",
+            "subscriptions_list_version_images",
+            "subscriptions_list_version_localizations",
+            "subscriptions_list_versions"
+        ]
+        for toolName in newReadOnlyTools {
+            let tool = ToolMetadataPolicy.apply(to: Self.sampleTool(named: toolName))
+            #expect(tool.annotations.readOnlyHint == true, "Expected read-only metadata for \(toolName)")
+            #expect(tool.annotations.destructiveHint == false, "Expected non-destructive metadata for \(toolName)")
+            #expect(tool.annotations.idempotentHint == true, "Expected idempotent metadata for \(toolName)")
+        }
     }
 
     @Test("max result metadata follows policy")

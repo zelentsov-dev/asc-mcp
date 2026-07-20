@@ -167,7 +167,7 @@ extension InAppPurchasesWorker {
     func listIAPLocalizationsTool() -> Tool {
         return Tool(
             name: "iap_list_localizations",
-            description: "List localizations for an in-app purchase",
+            description: "Apple 4.4.1 release notes deprecate this legacy product-scoped localization API. No auto-migration is performed. Use iap_list_versions and iap_list_version_localizations.",
             inputSchema: .object([
                 "type": .string("object"),
                 "properties": .object([
@@ -272,7 +272,7 @@ extension InAppPurchasesWorker {
     func createIAPLocalizationTool() -> Tool {
         return Tool(
             name: "iap_create_localization",
-            description: "Create a localization for an in-app purchase",
+            description: "Apple 4.4.1 release notes deprecate this legacy product-scoped localization API. No auto-migration is performed. Use iap_list_versions first, iap_create_version when needed, then iap_create_version_localization.",
             inputSchema: .object([
                 "type": .string("object"),
                 "properties": .object([
@@ -301,7 +301,7 @@ extension InAppPurchasesWorker {
     func updateIAPLocalizationTool() -> Tool {
         return Tool(
             name: "iap_update_localization",
-            description: "Update a localization for an in-app purchase",
+            description: "Apple 4.4.1 release notes deprecate this legacy product-scoped localization API. No auto-migration is performed. Use iap_update_version_localization.",
             inputSchema: .object([
                 "type": .string("object"),
                 "properties": .object([
@@ -326,7 +326,7 @@ extension InAppPurchasesWorker {
     func deleteIAPLocalizationTool() -> Tool {
         return Tool(
             name: "iap_delete_localization",
-            description: "Delete a localization for an in-app purchase",
+            description: "Apple 4.4.1 release notes deprecate this legacy product-scoped localization API. No auto-migration is performed. Use iap_delete_version_localization.",
             inputSchema: .object([
                 "type": .string("object"),
                 "properties": .object([
@@ -343,7 +343,7 @@ extension InAppPurchasesWorker {
     func submitIAPForReviewTool() -> Tool {
         return Tool(
             name: "iap_submit_for_review",
-            description: "Submit an in-app purchase for App Review",
+            description: "Apple 4.4.1 release notes deprecate this legacy product-scoped submission API. No auto-migration is performed. Use iap_list_versions first, iap_create_version when needed, then review_submissions_create, review_submissions_add_item, and review_submissions_submit with the IAP version.",
             inputSchema: .object([
                 "type": .string("object"),
                 "properties": .object([
@@ -568,7 +568,7 @@ extension InAppPurchasesWorker {
     func uploadIAPImageTool() -> Tool {
         return Tool(
             name: "iap_upload_image",
-            description: "Upload an IAP promotional image from an immutable snapshot, then reserve, transfer, commit, and verify Apple processing. Pre-commit failures roll back; uncertain commits are retained and reconciled. A confirmed commit can return success with deliveryPending=true while Apple continues asynchronous processing; inspect that image instead of retrying.",
+            description: "Apple 4.4.1 release notes deprecate this legacy product-scoped IAP image API. No auto-migration is performed. Use iap_list_versions first, iap_create_version when needed, then iap_upload_version_image. This compatibility flow still snapshots, reserves, transfers, commits, rolls back pre-commit failures, and reconciles uncertain commits.",
             inputSchema: .object([
                 "type": .string("object"),
                 "properties": .object([
@@ -589,7 +589,7 @@ extension InAppPurchasesWorker {
     func getIAPImageTool() -> Tool {
         return Tool(
             name: "iap_get_image",
-            description: "Get details of an in-app purchase image",
+            description: "Apple 4.4.1 release notes deprecate this legacy product-scoped IAP image API. No auto-migration is performed. Use iap_get_version_image_resource.",
             inputSchema: .object([
                 "type": .string("object"),
                 "properties": .object([
@@ -606,7 +606,7 @@ extension InAppPurchasesWorker {
     func deleteIAPImageTool() -> Tool {
         return Tool(
             name: "iap_delete_image",
-            description: "Delete an in-app purchase image",
+            description: "Apple 4.4.1 release notes deprecate this legacy product-scoped IAP image API. No auto-migration is performed. Use iap_delete_version_image.",
             inputSchema: .object([
                 "type": .string("object"),
                 "properties": .object([
@@ -661,7 +661,7 @@ extension InAppPurchasesWorker {
     func listIAPImagesTool() -> Tool {
         return Tool(
             name: "iap_list_images",
-            description: "List images for an in-app purchase",
+            description: "Apple 4.4.1 release notes deprecate this legacy product-scoped IAP image API. No auto-migration is performed. Use iap_list_versions and iap_get_version_image.",
             inputSchema: .object([
                 "type": .string("object"),
                 "properties": .object([

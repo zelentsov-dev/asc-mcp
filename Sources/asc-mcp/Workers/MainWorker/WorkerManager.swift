@@ -266,6 +266,7 @@ private struct WorkerGraph: Sendable {
     let promotedPurchasesWorker: PromotedPurchasesWorker
     let metricsWorker: MetricsWorker
     let reviewAttachmentsWorker: ReviewAttachmentsWorker
+    let reviewSubmissionsWorker: ReviewSubmissionsWorker
 
     init(httpClient: HTTPClient, companiesManager: CompaniesManager, uploadService: UploadService) {
         self.appsWorker = AppsWorker(client: httpClient)
@@ -299,6 +300,7 @@ private struct WorkerGraph: Sendable {
         self.promotedPurchasesWorker = PromotedPurchasesWorker(httpClient: httpClient, uploadService: uploadService)
         self.metricsWorker = MetricsWorker(httpClient: httpClient)
         self.reviewAttachmentsWorker = ReviewAttachmentsWorker(httpClient: httpClient, uploadService: uploadService)
+        self.reviewSubmissionsWorker = ReviewSubmissionsWorker(httpClient: httpClient)
     }
 }
 
@@ -315,7 +317,8 @@ public actor WorkerManager {
         "beta_groups", "beta_feedback", "beta_testers", "iap", "provisioning",
         "app_info", "pricing", "users", "app_events", "analytics", "subscriptions",
         "sandbox", "beta_app", "pre_release", "beta_license", "screenshots",
-        "custom_pages", "ppo", "promoted", "metrics", "review_attachments"
+        "custom_pages", "ppo", "promoted", "metrics", "review_attachments",
+        "review_submissions"
     ]
 
     private let dependencies: WorkerDependencies
@@ -486,7 +489,8 @@ public actor WorkerManager {
             WorkerDescriptor(key: "ppo", enabledKeys: ["ppo"], prefixes: ["ppo_"], getTools: { await graph.productPageOptimizationWorker.getTools() }, handle: { try await graph.productPageOptimizationWorker.handleTool($0) }),
             WorkerDescriptor(key: "promoted", enabledKeys: ["promoted"], prefixes: ["promoted_"], getTools: { await graph.promotedPurchasesWorker.getTools() }, handle: { try await graph.promotedPurchasesWorker.handleTool($0) }),
             WorkerDescriptor(key: "metrics", enabledKeys: ["metrics"], prefixes: ["metrics_"], getTools: { await graph.metricsWorker.getTools() }, handle: { try await graph.metricsWorker.handleTool($0) }),
-            WorkerDescriptor(key: "review_attachments", enabledKeys: ["review_attachments"], prefixes: ["review_attachments_"], getTools: { await graph.reviewAttachmentsWorker.getTools() }, handle: { try await graph.reviewAttachmentsWorker.handleTool($0) })
+            WorkerDescriptor(key: "review_attachments", enabledKeys: ["review_attachments"], prefixes: ["review_attachments_"], getTools: { await graph.reviewAttachmentsWorker.getTools() }, handle: { try await graph.reviewAttachmentsWorker.handleTool($0) }),
+            WorkerDescriptor(key: "review_submissions", enabledKeys: ["review_submissions"], prefixes: ["review_submissions_"], getTools: { await graph.reviewSubmissionsWorker.getTools() }, handle: { try await graph.reviewSubmissionsWorker.handleTool($0) })
         ]
     }
 

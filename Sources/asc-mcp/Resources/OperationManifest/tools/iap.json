@@ -140,7 +140,7 @@
     {
       "tool": "iap_create_localization",
       "kind": "direct",
-      "status": "partial",
+      "status": "deprecated",
       "effect": "write",
       "implementationState": "asBuilt",
       "operations": [
@@ -197,7 +197,7 @@
         ],
         "fields": []
       },
-      "note": "The current handler uses the non-deprecated product-scoped localization operation documented by Apple 4.4.1; no version resolver is part of this tool."
+      "note": "Apple 4.4.1 deprecated this product-scoped create operation. The compatibility tool still calls it unchanged, returns a structured warning, never creates a version automatically, and directs callers through iap_list_versions, iap_create_version when needed, and iap_create_version_localization."
     },
     {
       "tool": "iap_create_offer_code",
@@ -478,7 +478,7 @@
     {
       "tool": "iap_delete_image",
       "kind": "direct",
-      "status": "partial",
+      "status": "deprecated",
       "effect": "write",
       "implementationState": "asBuilt",
       "operations": [
@@ -506,12 +506,12 @@
         ],
         "fields": []
       },
-      "note": "The current handler and Apple 4.4.1 both use the non-deprecated product-scoped inAppPurchaseImages resource."
+      "note": "Apple 4.4.1 deprecated this product-scoped delete operation. The compatibility tool still calls it unchanged, returns a structured warning, and names iap_delete_version_image as its replacement."
     },
     {
       "tool": "iap_delete_localization",
       "kind": "direct",
-      "status": "partial",
+      "status": "deprecated",
       "effect": "write",
       "implementationState": "asBuilt",
       "operations": [
@@ -539,7 +539,7 @@
         ],
         "fields": []
       },
-      "note": "The current handler uses the non-deprecated product-scoped localization operation documented by Apple 4.4.1; no version resolver is part of this tool."
+      "note": "Apple 4.4.1 deprecated this product-scoped delete operation. The compatibility tool still calls it unchanged, returns a structured warning, and names iap_delete_version_localization as its replacement."
     },
     {
       "tool": "iap_delete_review_screenshot",
@@ -885,7 +885,7 @@
     {
       "tool": "iap_get_image",
       "kind": "direct",
-      "status": "partial",
+      "status": "deprecated",
       "effect": "read",
       "implementationState": "asBuilt",
       "operations": [
@@ -922,7 +922,7 @@
         ],
         "fields": []
       },
-      "note": "The current handler and Apple 4.4.1 both use the non-deprecated product-scoped inAppPurchaseImages resource."
+      "note": "Apple 4.4.1 deprecated this product-scoped get operation. The compatibility tool still calls it unchanged, returns a structured warning, and names iap_get_version_image_resource as its replacement."
     },
     {
       "tool": "iap_get_offer_code",
@@ -1659,7 +1659,7 @@
     {
       "tool": "iap_list_images",
       "kind": "direct",
-      "status": "partial",
+      "status": "deprecated",
       "effect": "read",
       "implementationState": "asBuilt",
       "operations": [
@@ -1708,12 +1708,12 @@
         ],
         "fields": []
       },
-      "note": "The handler uses Apple's current GET /v2/inAppPurchases/{id}/images relationship endpoint with bounded pagination and rejects foreign hosts, wrong collection paths, or a parent ID different from iap_id. The mapping remains partial because the MCP output has no outputSchema."
+      "note": "Apple 4.4.1 deprecated this product-scoped image collection. The compatibility tool preserves its bounded strict-pagination behavior, returns a structured warning, never resolves a version automatically, and names iap_list_versions plus iap_get_version_image as replacements."
     },
     {
       "tool": "iap_list_localizations",
       "kind": "direct",
-      "status": "partial",
+      "status": "deprecated",
       "effect": "read",
       "implementationState": "asBuilt",
       "operations": [
@@ -1762,7 +1762,7 @@
         ],
         "fields": []
       },
-      "note": "The current handler uses the non-deprecated product-scoped localization operation documented by Apple 4.4.1; no version resolver is part of this tool."
+      "note": "Apple 4.4.1 deprecated this product-scoped localization collection. The compatibility tool still calls it unchanged, returns a structured warning, never resolves a version automatically, and names iap_list_versions plus iap_list_version_localizations as replacements."
     },
     {
       "tool": "iap_list_offer_code_prices",
@@ -2566,7 +2566,7 @@
     {
       "tool": "iap_submit_for_review",
       "kind": "direct",
-      "status": "partial",
+      "status": "deprecated",
       "effect": "write",
       "implementationState": "asBuilt",
       "operations": [
@@ -2605,7 +2605,7 @@
         ],
         "fields": []
       },
-      "note": "The current handler and Apple 4.4.1 both submit the product-scoped IAP through POST /v1/inAppPurchaseSubmissions; ReviewSubmissionItems/version resolution is not part of this tool."
+      "note": "Apple 4.4.1 deprecated product-scoped IAP submissions. The compatibility tool still calls POST /v1/inAppPurchaseSubmissions unchanged, returns a structured warning, never creates a version or ReviewSubmission automatically, and directs callers through iap_list_versions, iap_create_version when needed, review_submissions_create, review_submissions_add_item, and review_submissions_submit."
     },
     {
       "tool": "iap_update",
@@ -2730,7 +2730,7 @@
     {
       "tool": "iap_update_localization",
       "kind": "direct",
-      "status": "partial",
+      "status": "deprecated",
       "effect": "write",
       "implementationState": "asBuilt",
       "operations": [
@@ -2785,7 +2785,7 @@
         ],
         "fields": []
       },
-      "note": "The current handler uses the non-deprecated product-scoped localization operation documented by Apple 4.4.1; no version resolver is part of this tool."
+      "note": "Apple 4.4.1 deprecated this product-scoped update operation. The compatibility tool still calls it unchanged, returns a structured warning, and names iap_update_version_localization as its replacement."
     },
     {
       "tool": "iap_update_offer_code",
@@ -2898,7 +2898,7 @@
     {
       "tool": "iap_upload_image",
       "kind": "compound",
-      "status": "partial",
+      "status": "deprecated",
       "effect": "write",
       "implementationState": "asBuilt",
       "operations": [
@@ -3039,7 +3039,7 @@
         ],
         "fields": []
       },
-      "note": "The handler uses the non-deprecated product-scoped image resource documented by Apple 4.4.1 and snapshots the file before reserve; binary upload through Apple's signed operations remains external to OpenAPI. PREPARE_FOR_SUBMISSION, WAITING_FOR_REVIEW, APPROVED, and REJECTED mean upload processing is complete; FAILED is terminal failure; AWAITING_UPLOAD, UPLOAD_COMPLETE, missing, and unknown states remain pending and are polled with conditional GET. After a confirmed 2xx commit, nonterminal processing is an accepted success with uploadCommitted=true, processingComplete=false, deliveryPending=true, and retrySafe=false. If PATCH transport remains ambiguous and reconciliation only shows pending, the outcome stays an error; either way the image is retained with inspection guidance. A mismatched 2xx commit resource triggers one GET of the expected image ID; valid terminal or pending state is interpreted normally, while invalid reconciliation stays an error. A confirmed reservation that fails before PATCH is best-effort deleted independently of cancellation; an unresolved create response instead requires parent-collection inspection because Apple exposes no idempotency key for locating that exact reservation."
+      "note": "Apple 4.4.1 deprecated this product-scoped image upload. The compatibility tool still calls the v1 create/update/get/delete operations unchanged, returns a structured warning, never creates a version automatically, and directs callers through iap_list_versions, iap_create_version when needed, and iap_upload_version_image. It retains the immutable snapshot, signed transfer, pre-commit rollback, terminal-state polling, and ambiguous-commit reconciliation contract."
     },
     {
       "tool": "iap_upload_review_screenshot",
@@ -3186,6 +3186,569 @@
         "fields": []
       },
       "note": "The handler snapshots the file before reserve; binary transfer through Apple's signed operations is a local/external step. COMPLETE is successful; FAILED is terminal failure; any other assetDeliveryState remains pending and is polled with conditional GET. After a confirmed 2xx commit, nonterminal processing is an accepted success with uploadCommitted=true, processingComplete=false, deliveryPending=true, and retrySafe=false. If PATCH transport remains ambiguous and reconciliation only shows pending, the outcome stays an error; either way the review screenshot is retained with inspection guidance. A mismatched 2xx commit resource triggers one GET of the expected screenshot ID; valid terminal or pending state is interpreted normally, while invalid reconciliation stays an error. A confirmed reservation that fails before PATCH is best-effort deleted independently of cancellation; an unresolved create response instead requires parent-collection inspection because Apple exposes no idempotency key for locating that exact reservation."
+    },
+    {
+      "tool": "iap_create_version",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "write",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "inAppPurchaseVersions_createInstance",
+          "method": "post",
+          "path": "/v1/inAppPurchaseVersions",
+          "role": "primary",
+          "condition": null,
+          "inputs": [
+            { "sourceKind": "fixed", "jsonPointer": "/data/type", "fixedValue": "inAppPurchaseVersions" },
+            { "sourceKind": "fixed", "jsonPointer": "/data/relationships/inAppPurchase/data/type", "fixedValue": "inAppPurchases" }
+          ]
+        }
+      ],
+      "fields": [
+        { "toolField": "iap_id", "sourceKind": "requestBody", "operationId": "inAppPurchaseVersions_createInstance", "jsonPointer": "/data/relationships/inAppPurchase/data/id" }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          { "operationId": "inAppPurchaseVersions_createInstance", "statusCode": "201", "mediaType": "application/json" }
+        ],
+        "fields": [
+          { "outputField": "success", "localRole": "Set true after the created version and its ownership pass validation." },
+          { "outputField": "version", "operationId": "inAppPurchaseVersions_createInstance", "jsonPointer": "/data", "localRole": "Project stable version fields and relationship-page metadata when Apple supplies each relationship." },
+          { "outputField": "version.image_ids", "operationId": "inAppPurchaseVersions_createInstance", "jsonPointer": "/data/relationships/images/data/*/id", "localRole": "Omit when the images relationship or relationship.data is absent; preserve an explicit empty data array as []." },
+          { "outputField": "version.images_page.ids", "operationId": "inAppPurchaseVersions_createInstance", "jsonPointer": "/data/relationships/images/data/*/id", "localRole": "Present only when the images relationship includes relationship.data." },
+          { "outputField": "version.images_page.count", "localRole": "Present only when relationship.data is returned; count its image identifiers, including zero for an explicit empty page." },
+          { "outputField": "version.images_page.data_returned", "localRole": "False when the relationship exists but Apple omits relationship.data; true when data is present." },
+          { "outputField": "version.images_page.total", "operationId": "inAppPurchaseVersions_createInstance", "jsonPointer": "/data/relationships/images/meta/paging/total" },
+          { "outputField": "version.images_page.limit", "operationId": "inAppPurchaseVersions_createInstance", "jsonPointer": "/data/relationships/images/meta/paging/limit" },
+          { "outputField": "version.images_page.next_cursor", "operationId": "inAppPurchaseVersions_createInstance", "jsonPointer": "/data/relationships/images/meta/paging/nextCursor" },
+          { "outputField": "version.images_page.truncated", "localRole": "Null when relationship.data is omitted; otherwise true for a next cursor or a total greater than the returned image count." },
+          { "outputField": "version.images_page.completeness_known", "localRole": "False when relationship.data is omitted; otherwise true only when Apple supplies a total or next cursor." },
+          { "outputField": "version.localization_ids", "operationId": "inAppPurchaseVersions_createInstance", "jsonPointer": "/data/relationships/localizations/data/*/id", "localRole": "Omit when the localizations relationship or relationship.data is absent; preserve an explicit empty data array as []." },
+          { "outputField": "version.localizations_page.ids", "operationId": "inAppPurchaseVersions_createInstance", "jsonPointer": "/data/relationships/localizations/data/*/id", "localRole": "Present only when the localizations relationship includes relationship.data." },
+          { "outputField": "version.localizations_page.count", "localRole": "Present only when relationship.data is returned; count its localization identifiers, including zero for an explicit empty page." },
+          { "outputField": "version.localizations_page.data_returned", "localRole": "False when the relationship exists but Apple omits relationship.data; true when data is present." },
+          { "outputField": "version.localizations_page.total", "operationId": "inAppPurchaseVersions_createInstance", "jsonPointer": "/data/relationships/localizations/meta/paging/total" },
+          { "outputField": "version.localizations_page.limit", "operationId": "inAppPurchaseVersions_createInstance", "jsonPointer": "/data/relationships/localizations/meta/paging/limit" },
+          { "outputField": "version.localizations_page.next_cursor", "operationId": "inAppPurchaseVersions_createInstance", "jsonPointer": "/data/relationships/localizations/meta/paging/nextCursor" },
+          { "outputField": "version.localizations_page.truncated", "localRole": "Null when relationship.data is omitted; otherwise true for a next cursor or a total greater than the returned localization count." },
+          { "outputField": "version.localizations_page.completeness_known", "localRole": "False when relationship.data is omitted; otherwise true only when Apple supplies a total or next cursor." }
+        ]
+      },
+      "note": "Creates one explicit Apple 4.4.1 in-app purchase version; it never auto-creates a version while invoking a legacy product-scoped tool. An ambiguous POST or response decode returns write_outcome=not_confirmed, retrySafe=false, the IAP ID, and list/get recovery guidance instead of encouraging a duplicate create."
+    },
+    {
+      "tool": "iap_get_version",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "inAppPurchaseVersions_getInstance",
+          "method": "get",
+          "path": "/v1/inAppPurchaseVersions/{id}",
+          "role": "primary",
+          "condition": null,
+          "optionalParameterClassifications": [
+            { "location": "query", "appleName": "include", "disposition": "intentionallyOmitted", "reason": "The tool avoids arbitrary relationship expansion.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[images]", "disposition": "intentionallyOmitted", "reason": "Images are not included inline.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[localizations]", "disposition": "intentionallyOmitted", "reason": "Localizations are not included inline.", "reviewAtSpec": "4.4.1" }
+          ]
+        }
+      ],
+      "fields": [
+        { "toolField": "version_id", "sourceKind": "parameter", "operationId": "inAppPurchaseVersions_getInstance", "location": "path", "appleName": "id" }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          { "operationId": "inAppPurchaseVersions_getInstance", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": [
+          { "outputField": "success", "localRole": "Set true after the version identity and document links pass validation." },
+          { "outputField": "version", "operationId": "inAppPurchaseVersions_getInstance", "jsonPointer": "/data", "localRole": "Project stable version fields and relationship-page metadata when Apple supplies each relationship." },
+          { "outputField": "version.image_ids", "operationId": "inAppPurchaseVersions_getInstance", "jsonPointer": "/data/relationships/images/data/*/id", "localRole": "Omit when the images relationship or relationship.data is absent; preserve an explicit empty data array as []." },
+          { "outputField": "version.images_page.ids", "operationId": "inAppPurchaseVersions_getInstance", "jsonPointer": "/data/relationships/images/data/*/id", "localRole": "Present only when the images relationship includes relationship.data." },
+          { "outputField": "version.images_page.count", "localRole": "Present only when relationship.data is returned; count its image identifiers, including zero for an explicit empty page." },
+          { "outputField": "version.images_page.data_returned", "localRole": "False when the relationship exists but Apple omits relationship.data; true when data is present." },
+          { "outputField": "version.images_page.total", "operationId": "inAppPurchaseVersions_getInstance", "jsonPointer": "/data/relationships/images/meta/paging/total" },
+          { "outputField": "version.images_page.limit", "operationId": "inAppPurchaseVersions_getInstance", "jsonPointer": "/data/relationships/images/meta/paging/limit" },
+          { "outputField": "version.images_page.next_cursor", "operationId": "inAppPurchaseVersions_getInstance", "jsonPointer": "/data/relationships/images/meta/paging/nextCursor" },
+          { "outputField": "version.images_page.truncated", "localRole": "Null when relationship.data is omitted; otherwise true for a next cursor or a total greater than the returned image count." },
+          { "outputField": "version.images_page.completeness_known", "localRole": "False when relationship.data is omitted; otherwise true only when Apple supplies a total or next cursor." },
+          { "outputField": "version.localization_ids", "operationId": "inAppPurchaseVersions_getInstance", "jsonPointer": "/data/relationships/localizations/data/*/id", "localRole": "Omit when the localizations relationship or relationship.data is absent; preserve an explicit empty data array as []." },
+          { "outputField": "version.localizations_page.ids", "operationId": "inAppPurchaseVersions_getInstance", "jsonPointer": "/data/relationships/localizations/data/*/id", "localRole": "Present only when the localizations relationship includes relationship.data." },
+          { "outputField": "version.localizations_page.count", "localRole": "Present only when relationship.data is returned; count its localization identifiers, including zero for an explicit empty page." },
+          { "outputField": "version.localizations_page.data_returned", "localRole": "False when the relationship exists but Apple omits relationship.data; true when data is present." },
+          { "outputField": "version.localizations_page.total", "operationId": "inAppPurchaseVersions_getInstance", "jsonPointer": "/data/relationships/localizations/meta/paging/total" },
+          { "outputField": "version.localizations_page.limit", "operationId": "inAppPurchaseVersions_getInstance", "jsonPointer": "/data/relationships/localizations/meta/paging/limit" },
+          { "outputField": "version.localizations_page.next_cursor", "operationId": "inAppPurchaseVersions_getInstance", "jsonPointer": "/data/relationships/localizations/meta/paging/nextCursor" },
+          { "outputField": "version.localizations_page.truncated", "localRole": "Null when relationship.data is omitted; otherwise true for a next cursor or a total greater than the returned localization count." },
+          { "outputField": "version.localizations_page.completeness_known", "localRole": "False when relationship.data is omitted; otherwise true only when Apple supplies a total or next cursor." }
+        ]
+      },
+      "note": "Returns the integer version, review state, and relationship identifiers when Apple supplies them."
+    },
+    {
+      "tool": "iap_list_versions",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "inAppPurchasesV2_versions_getToManyRelated",
+          "method": "get",
+          "path": "/v2/inAppPurchases/{id}/versions",
+          "role": "primary",
+          "condition": null,
+          "optionalParameterClassifications": [
+            { "location": "query", "appleName": "include", "disposition": "intentionallyOmitted", "reason": "The list avoids arbitrary relationship expansion.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[images]", "disposition": "intentionallyOmitted", "reason": "Images are not included inline.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[localizations]", "disposition": "intentionallyOmitted", "reason": "Localizations are not included inline.", "reviewAtSpec": "4.4.1" }
+          ]
+        }
+      ],
+      "fields": [
+        { "toolField": "iap_id", "sourceKind": "parameter", "operationId": "inAppPurchasesV2_versions_getToManyRelated", "location": "path", "appleName": "id" },
+        { "toolField": "filter_state", "sourceKind": "parameter", "operationId": "inAppPurchasesV2_versions_getToManyRelated", "location": "query", "appleName": "filter[state]" },
+        { "toolField": "limit", "sourceKind": "parameter", "operationId": "inAppPurchasesV2_versions_getToManyRelated", "location": "query", "appleName": "limit" },
+        { "toolField": "next_url", "sourceKind": "local", "localRole": "Validated same-origin Apple continuation restricted to the concrete IAP versions path, full originating query, and one non-empty cursor." }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          { "operationId": "inAppPurchasesV2_versions_getToManyRelated", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": [
+          { "outputField": "success", "localRole": "Set true after the page passes ownership, paging, and document-link validation." },
+          { "outputField": "versions", "operationId": "inAppPurchasesV2_versions_getToManyRelated", "jsonPointer": "/data", "localRole": "Project stable version fields and relationship-page metadata when Apple supplies each relationship." },
+          { "outputField": "versions.*.image_ids", "operationId": "inAppPurchasesV2_versions_getToManyRelated", "jsonPointer": "/data/*/relationships/images/data/*/id", "localRole": "Omit when the images relationship or relationship.data is absent; preserve an explicit empty data array as []." },
+          { "outputField": "versions.*.images_page.ids", "operationId": "inAppPurchasesV2_versions_getToManyRelated", "jsonPointer": "/data/*/relationships/images/data/*/id", "localRole": "Present only when the images relationship includes relationship.data." },
+          { "outputField": "versions.*.images_page.count", "localRole": "Present only when relationship.data is returned; count its image identifiers, including zero for an explicit empty page." },
+          { "outputField": "versions.*.images_page.data_returned", "localRole": "False when the relationship exists but Apple omits relationship.data; true when data is present." },
+          { "outputField": "versions.*.images_page.total", "operationId": "inAppPurchasesV2_versions_getToManyRelated", "jsonPointer": "/data/*/relationships/images/meta/paging/total" },
+          { "outputField": "versions.*.images_page.limit", "operationId": "inAppPurchasesV2_versions_getToManyRelated", "jsonPointer": "/data/*/relationships/images/meta/paging/limit" },
+          { "outputField": "versions.*.images_page.next_cursor", "operationId": "inAppPurchasesV2_versions_getToManyRelated", "jsonPointer": "/data/*/relationships/images/meta/paging/nextCursor" },
+          { "outputField": "versions.*.images_page.truncated", "localRole": "Null when relationship.data is omitted; otherwise true for a next cursor or a total greater than the returned image count." },
+          { "outputField": "versions.*.images_page.completeness_known", "localRole": "False when relationship.data is omitted; otherwise true only when Apple supplies a total or next cursor." },
+          { "outputField": "versions.*.localization_ids", "operationId": "inAppPurchasesV2_versions_getToManyRelated", "jsonPointer": "/data/*/relationships/localizations/data/*/id", "localRole": "Omit when the localizations relationship or relationship.data is absent; preserve an explicit empty data array as []." },
+          { "outputField": "versions.*.localizations_page.ids", "operationId": "inAppPurchasesV2_versions_getToManyRelated", "jsonPointer": "/data/*/relationships/localizations/data/*/id", "localRole": "Present only when the localizations relationship includes relationship.data." },
+          { "outputField": "versions.*.localizations_page.count", "localRole": "Present only when relationship.data is returned; count its localization identifiers, including zero for an explicit empty page." },
+          { "outputField": "versions.*.localizations_page.data_returned", "localRole": "False when the relationship exists but Apple omits relationship.data; true when data is present." },
+          { "outputField": "versions.*.localizations_page.total", "operationId": "inAppPurchasesV2_versions_getToManyRelated", "jsonPointer": "/data/*/relationships/localizations/meta/paging/total" },
+          { "outputField": "versions.*.localizations_page.limit", "operationId": "inAppPurchasesV2_versions_getToManyRelated", "jsonPointer": "/data/*/relationships/localizations/meta/paging/limit" },
+          { "outputField": "versions.*.localizations_page.next_cursor", "operationId": "inAppPurchasesV2_versions_getToManyRelated", "jsonPointer": "/data/*/relationships/localizations/meta/paging/nextCursor" },
+          { "outputField": "versions.*.localizations_page.truncated", "localRole": "Null when relationship.data is omitted; otherwise true for a next cursor or a total greater than the returned localization count." },
+          { "outputField": "versions.*.localizations_page.completeness_known", "localRole": "False when relationship.data is omitted; otherwise true only when Apple supplies a total or next cursor." },
+          { "outputField": "count", "operationId": "inAppPurchasesV2_versions_getToManyRelated", "jsonPointer": "/data", "localRole": "Current validated Apple page resource count." },
+          { "outputField": "total", "operationId": "inAppPurchasesV2_versions_getToManyRelated", "jsonPointer": "/meta/paging/total" },
+          { "outputField": "next_url", "operationId": "inAppPurchasesV2_versions_getToManyRelated", "jsonPointer": "/links/next", "localRole": "Apple continuation URL when another page exists; otherwise omitted." }
+        ]
+      },
+      "note": "State filters reject commas and duplicates; limit is 1 through 200; output includes page count, Apple paging total, and strict next_url."
+    },
+    {
+      "tool": "iap_list_version_localizations",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "inAppPurchaseVersions_localizations_getToManyRelated",
+          "method": "get",
+          "path": "/v1/inAppPurchaseVersions/{id}/localizations",
+          "role": "primary",
+          "condition": null,
+          "optionalParameterClassifications": [
+            { "location": "query", "appleName": "include", "disposition": "intentionallyOmitted", "reason": "The list avoids redundant parent expansion.", "reviewAtSpec": "4.4.1" }
+          ]
+        }
+      ],
+      "fields": [
+        { "toolField": "version_id", "sourceKind": "parameter", "operationId": "inAppPurchaseVersions_localizations_getToManyRelated", "location": "path", "appleName": "id" },
+        { "toolField": "limit", "sourceKind": "parameter", "operationId": "inAppPurchaseVersions_localizations_getToManyRelated", "location": "query", "appleName": "limit" },
+        { "toolField": "next_url", "sourceKind": "local", "localRole": "Validated same-origin Apple continuation restricted to the concrete version-localizations path, full originating query, and one non-empty cursor." }
+      ],
+      "response": {
+        "mode": "opaque",
+        "sources": [
+          { "operationId": "inAppPurchaseVersions_localizations_getToManyRelated", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": []
+      },
+      "note": "Uses the Apple 4.4.1 version-owned localization collection and exposes total plus strict continuation."
+    },
+    {
+      "tool": "iap_create_version_localization",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "write",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "inAppPurchaseLocalizationsV2_createInstance",
+          "method": "post",
+          "path": "/v2/inAppPurchaseLocalizations",
+          "role": "primary",
+          "condition": null,
+          "inputs": [
+            { "sourceKind": "fixed", "jsonPointer": "/data/type", "fixedValue": "inAppPurchaseLocalizations" },
+            { "sourceKind": "fixed", "jsonPointer": "/data/relationships/version/data/type", "fixedValue": "inAppPurchaseVersions" }
+          ]
+        }
+      ],
+      "fields": [
+        { "toolField": "version_id", "sourceKind": "requestBody", "operationId": "inAppPurchaseLocalizationsV2_createInstance", "jsonPointer": "/data/relationships/version/data/id" },
+        { "toolField": "locale", "sourceKind": "requestBody", "operationId": "inAppPurchaseLocalizationsV2_createInstance", "jsonPointer": "/data/attributes/locale" },
+        { "toolField": "name", "sourceKind": "requestBody", "operationId": "inAppPurchaseLocalizationsV2_createInstance", "jsonPointer": "/data/attributes/name" },
+        { "toolField": "description", "sourceKind": "requestBody", "operationId": "inAppPurchaseLocalizationsV2_createInstance", "jsonPointer": "/data/attributes/description" }
+      ],
+      "response": {
+        "mode": "opaque",
+        "sources": [
+          { "operationId": "inAppPurchaseLocalizationsV2_createInstance", "statusCode": "201", "mediaType": "application/json" }
+        ],
+        "fields": []
+      },
+      "note": "The optional nullable description preserves omitted, string, and explicit null independently. An ambiguous POST or response decode returns write_outcome=not_confirmed, retrySafe=false, the requested parent and metadata fingerprint, and list/get recovery guidance instead of encouraging a duplicate localization."
+    },
+    {
+      "tool": "iap_get_version_localization",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "inAppPurchaseLocalizationsV2_getInstance",
+          "method": "get",
+          "path": "/v2/inAppPurchaseLocalizations/{id}",
+          "role": "primary",
+          "condition": null,
+          "optionalParameterClassifications": [
+            { "location": "query", "appleName": "include", "disposition": "intentionallyOmitted", "reason": "The tool avoids redundant parent expansion.", "reviewAtSpec": "4.4.1" }
+          ]
+        }
+      ],
+      "fields": [
+        { "toolField": "localization_id", "sourceKind": "parameter", "operationId": "inAppPurchaseLocalizationsV2_getInstance", "location": "path", "appleName": "id" }
+      ],
+      "response": {
+        "mode": "opaque",
+        "sources": [
+          { "operationId": "inAppPurchaseLocalizationsV2_getInstance", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": []
+      },
+      "note": "Reads the Apple 4.4.1 v2 version-localization resource without product-scoped fallback."
+    },
+    {
+      "tool": "iap_update_version_localization",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "write",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "inAppPurchaseLocalizationsV2_updateInstance",
+          "method": "patch",
+          "path": "/v2/inAppPurchaseLocalizations/{id}",
+          "role": "primary",
+          "condition": null,
+          "inputs": [
+            { "sourceKind": "fixed", "jsonPointer": "/data/type", "fixedValue": "inAppPurchaseLocalizations" },
+            { "sourceKind": "derived", "jsonPointer": "/data/id", "derivedFrom": ["localization_id"], "localRole": "Reuse localization_id as the JSON:API resource ID." }
+          ]
+        }
+      ],
+      "fields": [
+        { "toolField": "localization_id", "sourceKind": "parameter", "operationId": "inAppPurchaseLocalizationsV2_updateInstance", "location": "path", "appleName": "id" },
+        { "toolField": "name", "sourceKind": "requestBody", "operationId": "inAppPurchaseLocalizationsV2_updateInstance", "jsonPointer": "/data/attributes/name" },
+        { "toolField": "description", "sourceKind": "requestBody", "operationId": "inAppPurchaseLocalizationsV2_updateInstance", "jsonPointer": "/data/attributes/description" }
+      ],
+      "response": {
+        "mode": "opaque",
+        "sources": [
+          { "operationId": "inAppPurchaseLocalizationsV2_updateInstance", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": []
+      },
+      "note": "Requires at least one mutable field and preserves omitted, string, and explicit null independently for name and description."
+    },
+    {
+      "tool": "iap_delete_version_localization",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "destructive",
+      "implementationState": "asBuilt",
+      "operations": [
+        { "operationId": "inAppPurchaseLocalizationsV2_deleteInstance", "method": "delete", "path": "/v2/inAppPurchaseLocalizations/{id}", "role": "primary", "condition": null }
+      ],
+      "fields": [
+        { "toolField": "localization_id", "sourceKind": "parameter", "operationId": "inAppPurchaseLocalizationsV2_deleteInstance", "location": "path", "appleName": "id" },
+        { "toolField": "confirm_localization_id", "sourceKind": "local", "localRole": "Require an exact canonical match with localization_id before any Apple request is sent." }
+      ],
+      "response": {
+        "mode": "local",
+        "sources": [
+          { "operationId": "inAppPurchaseLocalizationsV2_deleteInstance", "statusCode": "204" }
+        ],
+        "fields": [
+          { "outputField": "success", "localRole": "Set true after Apple confirms deletion with 204." },
+          { "outputField": "localization_id", "localRole": "Echo the exact deleted localization ID." },
+          { "outputField": "deleted", "localRole": "Set true after confirmed deletion." },
+          { "outputField": "deletionState", "localRole": "Set to confirmed after Apple's 204 response." },
+          { "outputField": "outcomeUnknown", "localRole": "Set false for a confirmed deletion." },
+          { "outputField": "retrySafe", "localRole": "Set false because the destructive operation is already confirmed." }
+        ]
+      },
+      "note": "Deletes only the explicitly identified v2 version-localization resource."
+    },
+    {
+      "tool": "iap_get_version_image",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "inAppPurchaseVersions_image_getToOneRelated",
+          "method": "get",
+          "path": "/v1/inAppPurchaseVersions/{id}/image",
+          "role": "primary",
+          "condition": null
+        }
+      ],
+      "fields": [
+        { "toolField": "version_id", "sourceKind": "parameter", "operationId": "inAppPurchaseVersions_image_getToOneRelated", "location": "path", "appleName": "id" }
+      ],
+      "response": {
+        "mode": "opaque",
+        "sources": [
+          { "operationId": "inAppPurchaseVersions_image_getToOneRelated", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": []
+      },
+      "note": "Uses Apple's documented singular version image relationship; iap_list_version_images exposes the distinct paginated plural relationship."
+    },
+    {
+      "tool": "iap_list_version_images",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "inAppPurchaseVersions_images_getToManyRelated",
+          "method": "get",
+          "path": "/v1/inAppPurchaseVersions/{id}/images",
+          "role": "primary",
+          "condition": null
+        }
+      ],
+      "fields": [
+        { "toolField": "version_id", "sourceKind": "parameter", "operationId": "inAppPurchaseVersions_images_getToManyRelated", "location": "path", "appleName": "id" },
+        { "toolField": "limit", "sourceKind": "parameter", "operationId": "inAppPurchaseVersions_images_getToManyRelated", "location": "query", "appleName": "limit" },
+        { "toolField": "next_url", "sourceKind": "local", "localRole": "Transport-only continuation validated against the same Apple origin, exact version-owned images path, effective limit, and one non-empty cursor." }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          { "operationId": "inAppPurchaseVersions_images_getToManyRelated", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": [
+          { "outputField": "success", "localRole": "Set true after the page passes resource identity, paging, and document-link validation." },
+          { "outputField": "images", "localRole": "Project each Apple image without assetToken or uploadOperations." },
+          { "outputField": "images.*.id", "operationId": "inAppPurchaseVersions_images_getToManyRelated", "jsonPointer": "/data/*/id" },
+          { "outputField": "images.*.type", "operationId": "inAppPurchaseVersions_images_getToManyRelated", "jsonPointer": "/data/*/type" },
+          { "outputField": "images.*.file_name", "operationId": "inAppPurchaseVersions_images_getToManyRelated", "jsonPointer": "/data/*/attributes/fileName" },
+          { "outputField": "images.*.file_size", "operationId": "inAppPurchaseVersions_images_getToManyRelated", "jsonPointer": "/data/*/attributes/fileSize" },
+          { "outputField": "images.*.delivery_state", "operationId": "inAppPurchaseVersions_images_getToManyRelated", "jsonPointer": "/data/*/attributes/assetDeliveryState/state" },
+          { "outputField": "images.*.image_asset.template_url", "operationId": "inAppPurchaseVersions_images_getToManyRelated", "jsonPointer": "/data/*/attributes/imageAsset/templateUrl" },
+          { "outputField": "images.*.image_asset.width", "operationId": "inAppPurchaseVersions_images_getToManyRelated", "jsonPointer": "/data/*/attributes/imageAsset/width" },
+          { "outputField": "images.*.image_asset.height", "operationId": "inAppPurchaseVersions_images_getToManyRelated", "jsonPointer": "/data/*/attributes/imageAsset/height" },
+          { "outputField": "images.*.errors.*.code", "operationId": "inAppPurchaseVersions_images_getToManyRelated", "jsonPointer": "/data/*/attributes/assetDeliveryState/errors/*/code" },
+          { "outputField": "images.*.errors.*.description", "operationId": "inAppPurchaseVersions_images_getToManyRelated", "jsonPointer": "/data/*/attributes/assetDeliveryState/errors/*/description" },
+          { "outputField": "images.*.warnings.*.code", "operationId": "inAppPurchaseVersions_images_getToManyRelated", "jsonPointer": "/data/*/attributes/assetDeliveryState/warnings/*/code" },
+          { "outputField": "images.*.warnings.*.description", "operationId": "inAppPurchaseVersions_images_getToManyRelated", "jsonPointer": "/data/*/attributes/assetDeliveryState/warnings/*/description" },
+          { "outputField": "count", "operationId": "inAppPurchaseVersions_images_getToManyRelated", "jsonPointer": "/data", "localRole": "Current validated Apple page resource count." },
+          { "outputField": "total", "operationId": "inAppPurchaseVersions_images_getToManyRelated", "jsonPointer": "/meta/paging/total" },
+          { "outputField": "next_url", "operationId": "inAppPurchaseVersions_images_getToManyRelated", "jsonPointer": "/links/next", "localRole": "Apple continuation URL when another page exists; otherwise omitted." }
+        ]
+      },
+      "note": "Lists one validated page of plural version-owned IAP review images with a 1 through 200 limit, scope-locked continuation, and a safe projection that excludes upload credentials."
+    },
+    {
+      "tool": "iap_upload_version_image",
+      "kind": "compound",
+      "status": "partial",
+      "effect": "write",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "inAppPurchaseImagesV2_createInstance",
+          "method": "post",
+          "path": "/v2/inAppPurchaseImages",
+          "role": "primary",
+          "condition": null,
+          "inputs": [
+            { "sourceKind": "fixed", "jsonPointer": "/data/type", "fixedValue": "inAppPurchaseImages" },
+            { "sourceKind": "fixed", "jsonPointer": "/data/relationships/version/data/type", "fixedValue": "inAppPurchaseVersions" }
+          ]
+        },
+        {
+          "operationId": "inAppPurchaseImagesV2_updateInstance",
+          "method": "patch",
+          "path": "/v2/inAppPurchaseImages/{id}",
+          "role": "supporting",
+          "condition": null,
+          "inputs": [
+            { "sourceKind": "derived", "location": "path", "appleName": "id", "derivedFrom": ["inAppPurchaseImagesV2_createInstance:/data/id"], "localRole": "Use Apple's reserved image ID as the commit path ID." },
+            { "sourceKind": "fixed", "jsonPointer": "/data/type", "fixedValue": "inAppPurchaseImages" },
+            { "sourceKind": "derived", "jsonPointer": "/data/id", "derivedFrom": ["inAppPurchaseImagesV2_createInstance:/data/id"], "localRole": "Use Apple's reserved image ID as the commit resource ID." },
+            { "sourceKind": "fixed", "jsonPointer": "/data/attributes/uploaded", "fixedValue": true }
+          ]
+        },
+        {
+          "operationId": "inAppPurchaseImagesV2_getInstance",
+          "method": "get",
+          "path": "/v2/inAppPurchaseImages/{id}",
+          "role": "conditional",
+          "condition": "After PATCH returns a nonterminal assetDeliveryState, or when PATCH is ambiguous, reconcile and poll the exact reserved image.",
+          "inputs": [
+            { "sourceKind": "derived", "location": "path", "appleName": "id", "derivedFrom": ["inAppPurchaseImagesV2_createInstance:/data/id"], "localRole": "Inspect the exact image created by the reservation." }
+          ]
+        },
+        {
+          "operationId": "inAppPurchaseImagesV2_deleteInstance",
+          "method": "delete",
+          "path": "/v2/inAppPurchaseImages/{id}",
+          "role": "conditional",
+          "condition": "Before commit, best-effort delete a confirmed reservation after cancellation, missing upload operations, transfer failure, or commit-body failure; treat 404 as already absent.",
+          "inputs": [
+            { "sourceKind": "derived", "location": "path", "appleName": "id", "derivedFrom": ["inAppPurchaseImagesV2_createInstance:/data/id"], "localRole": "Rollback only the confirmed reservation for this upload attempt." }
+          ]
+        }
+      ],
+      "fields": [
+        { "toolField": "version_id", "sourceKind": "requestBody", "operationId": "inAppPurchaseImagesV2_createInstance", "jsonPointer": "/data/relationships/version/data/id" },
+        { "toolField": "file_path", "sourceKind": "derived", "operationId": "inAppPurchaseImagesV2_createInstance", "jsonPointer": "/data/attributes", "derivedFrom": ["file_path"], "localRole": "Create an immutable snapshot, derive fileName and fileSize, transfer its bytes through Apple's signed operations, and discard it after reconciliation." }
+      ],
+      "response": {
+        "mode": "opaque",
+        "sources": [
+          { "operationId": "inAppPurchaseImagesV2_createInstance", "statusCode": "201", "mediaType": "application/json" },
+          { "operationId": "inAppPurchaseImagesV2_updateInstance", "statusCode": "200", "mediaType": "application/json" },
+          { "operationId": "inAppPurchaseImagesV2_getInstance", "statusCode": "200", "mediaType": "application/json" },
+          { "operationId": "inAppPurchaseImagesV2_deleteInstance", "statusCode": "204" }
+        ],
+        "fields": [
+          { "outputField": "success", "localRole": "False on structured recovery failures; true on completed or accepted upload results." },
+          { "outputField": "error", "localRole": "Stable failure summary when reservation or commit verification cannot complete." },
+          { "outputField": "statusCode", "localRole": "Apple status code when a 2xx reservation response was committed but could not be verified." },
+          { "outputField": "reservationState", "localRole": "Unknown or committed_unverified reservation state for ambiguous reserve outcomes." },
+          { "outputField": "reservationIdKnown", "localRole": "False when Apple did not return a safely attributable reservation ID." },
+          { "outputField": "operationCommitState", "localRole": "Unknown when Apple may have committed an operation that cannot be reconciled." },
+          { "outputField": "operationCommitted", "localRole": "True when a 2xx response proves commit despite response verification failure." },
+          { "outputField": "outcomeUnknown", "localRole": "True when Apple may have committed the operation and safe retry cannot be established." },
+          { "outputField": "inspectionRequired", "localRole": "True when deterministic collection or exact-resource inspection is required." },
+          { "outputField": "retrySafe", "localRole": "False for all unresolved, committed-unverified, retained, or confirmed destructive outcomes." },
+          { "outputField": "sourceFileChecksumReceipt", "localRole": "IAP upload snapshot checksum receipt retained for support and ambiguous reservation recovery." },
+          { "outputField": "reservationFingerprint", "localRole": "Stable reservation fingerprint emitted when the reserve outcome cannot be identified safely." },
+          { "outputField": "reservationFingerprint.file_name", "localRole": "Snapshot file name used to match inspection candidates." },
+          { "outputField": "reservationFingerprint.file_size", "localRole": "Snapshot byte count used to match inspection candidates." },
+          { "outputField": "reservationFingerprint.checksum", "localRole": "Snapshot checksum used as the authoritative reservation fingerprint." },
+          { "outputField": "inspection", "localRole": "Full-pagination reservation inspection guidance for ambiguous create outcomes." },
+          { "outputField": "inspection.tool", "localRole": "Use iap_list_version_images for collection recovery." },
+          { "outputField": "inspection.arguments", "localRole": "Scope the collection inspection to the parent version and a bounded page size." },
+          { "outputField": "inspection.arguments.version_id", "localRole": "Inspect only the exact parent version." },
+          { "outputField": "inspection.arguments.limit", "localRole": "Use the maximum bounded page size of 200." },
+          { "outputField": "inspection.continue_with_next_url", "localRole": "Continue through every strict next_url page before deciding whether the reservation exists." },
+          { "outputField": "inspection.next_url_argument", "localRole": "Names next_url as the transport-only continuation input." },
+          { "outputField": "inspection.candidate_match.fingerprint_key", "localRole": "Match candidates against reservationFingerprint." },
+          { "outputField": "inspection.candidate_match.candidate_fields", "localRole": "Compare candidate file_name and file_size fields." },
+          { "outputField": "inspection.candidate_match.require_unique_match_before_retry", "localRole": "Retry only after inspection establishes a unique candidate outcome." },
+          { "outputField": "cleanup", "localRole": "Describe rollback state or retained-resource inspect/delete guidance." },
+          { "outputField": "cleanup.status", "localRole": "Rollback or retention state for the reserved resource." },
+          { "outputField": "cleanup.resourceId", "localRole": "Confirmed reserved resource ID when Apple returned one." },
+          { "outputField": "cleanup.reason", "localRole": "Reason cleanup failed, was unavailable, or was intentionally not attempted." },
+          { "outputField": "cleanup.tool", "localRole": "Explicit destructive cleanup tool when deletion remains available." },
+          { "outputField": "cleanup.arguments", "localRole": "Exact destructive cleanup arguments, including the confirmation ID." },
+          { "outputField": "cleanup.arguments.image_id", "localRole": "Use the exact retained reservation ID as the destructive cleanup target." },
+          { "outputField": "cleanup.arguments.confirm_image_id", "localRole": "Repeat the exact retained reservation ID as the required delete confirmation." },
+          { "outputField": "cleanup.operationCommitState", "localRole": "Expose unknown or committed commit reconciliation state." },
+          { "outputField": "cleanup.outcomeUnknown", "localRole": "True only when Apple may have committed the operation but reconciliation cannot prove it." },
+          { "outputField": "cleanup.retrySafe", "localRole": "False whenever retry could duplicate or destroy an unresolved upload." },
+          { "outputField": "cleanup.inspectTool", "localRole": "Read tool for retained-resource inspection." },
+          { "outputField": "cleanup.inspectArguments", "localRole": "Exact arguments for retained-resource inspection." },
+          { "outputField": "cleanup.inspectArguments.image_id", "localRole": "Inspect only the exact confirmed reservation ID." },
+          { "outputField": "cleanup.statusCode", "localRole": "Apple status code for a committed but unverified operation." },
+          { "outputField": "cleanup.operationCommitted", "localRole": "True when a 2xx response proves the operation was committed even though projection verification failed." },
+          { "outputField": "cleanup.inspectionRequired", "localRole": "True when the retained resource needs deterministic inspection." }
+        ]
+      },
+      "note": "The tool is the safe create-and-PATCH workflow for Apple 4.4.1 version images. It never exposes a stranded raw reservation API. Binary transfer is external to OpenAPI. COMPLETE is terminal success, FAILED terminal failure, and other assetDeliveryState values remain pending. Pre-commit failures roll back; ambiguous or accepted commits retain the resource and provide exact inspect/delete guidance."
+    },
+    {
+      "tool": "iap_get_version_image_resource",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "inAppPurchaseImagesV2_getInstance",
+          "method": "get",
+          "path": "/v2/inAppPurchaseImages/{id}",
+          "role": "primary",
+          "condition": null
+        }
+      ],
+      "fields": [
+        { "toolField": "image_id", "sourceKind": "parameter", "operationId": "inAppPurchaseImagesV2_getInstance", "location": "path", "appleName": "id" }
+      ],
+      "response": {
+        "mode": "opaque",
+        "sources": [
+          { "operationId": "inAppPurchaseImagesV2_getInstance", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": []
+      },
+      "note": "Inspects the exact v2 image resource used by upload recovery without returning the upload asset token or signed operations."
+    },
+    {
+      "tool": "iap_delete_version_image",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "destructive",
+      "implementationState": "asBuilt",
+      "operations": [
+        { "operationId": "inAppPurchaseImagesV2_deleteInstance", "method": "delete", "path": "/v2/inAppPurchaseImages/{id}", "role": "primary", "condition": null }
+      ],
+      "fields": [
+        { "toolField": "image_id", "sourceKind": "parameter", "operationId": "inAppPurchaseImagesV2_deleteInstance", "location": "path", "appleName": "id" },
+        { "toolField": "confirm_image_id", "sourceKind": "local", "localRole": "Require an exact canonical match with image_id before any Apple request is sent." }
+      ],
+      "response": {
+        "mode": "local",
+        "sources": [
+          { "operationId": "inAppPurchaseImagesV2_deleteInstance", "statusCode": "204" }
+        ],
+        "fields": [
+          { "outputField": "success", "localRole": "Set true after Apple confirms deletion with 204." },
+          { "outputField": "image_id", "localRole": "Echo the exact deleted image ID." },
+          { "outputField": "deleted", "localRole": "Set true after confirmed deletion." },
+          { "outputField": "deletionState", "localRole": "Set to confirmed after Apple's 204 response." },
+          { "outputField": "outcomeUnknown", "localRole": "Set false for a confirmed deletion." },
+          { "outputField": "retrySafe", "localRole": "Set false because the destructive operation is already confirmed." }
+        ]
+      },
+      "note": "Deletes only the explicitly identified Apple 4.4.1 v2 version image."
     }
   ],
   "implementationAliases": []

@@ -31,6 +31,9 @@ struct WorkerRoutingTests {
 
         let attachment = try await manager.routeTool(CallTool.Parameters(name: "review_attachments_get", arguments: nil))
         #expect(attachment.isError == true)
+
+        let submission = try await manager.routeTool(CallTool.Parameters(name: "review_submissions_get", arguments: nil))
+        #expect(submission.isError == true)
     }
 
     @Test("WorkerManager routes and filters export compliance independently")
@@ -601,6 +604,18 @@ struct WorkerRoutingTests {
         let client = try await TestFactory.makeHTTPClient()
         let worker = ReviewAttachmentsWorker(httpClient: client, uploadService: UploadService())
         let params = CallTool.Parameters(name: "review_attachments_nonexistent", arguments: nil)
+        await #expect(throws: MCPError.self) {
+            _ = try await worker.handleTool(params)
+        }
+    }
+
+    // MARK: - ReviewSubmissionsWorker
+
+    @Test("ReviewSubmissionsWorker throws MCPError.methodNotFound for unknown tool")
+    func reviewSubmissionsWorkerUnknownTool() async throws {
+        let client = try await TestFactory.makeHTTPClient()
+        let worker = ReviewSubmissionsWorker(httpClient: client)
+        let params = CallTool.Parameters(name: "review_submissions_nonexistent", arguments: nil)
         await #expect(throws: MCPError.self) {
             _ = try await worker.handleTool(params)
         }

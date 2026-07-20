@@ -21,7 +21,7 @@ struct ASCCoverageInventoryTests {
         }
     }
 
-    @Test("commerce coverage discloses App Store Connect 4.4.1 gaps")
+    @Test("commerce coverage tracks App Store Connect 4.4.1 capabilities and remaining gaps")
     func commerceCoverageDisclosesCurrentGaps() throws {
         let commerce = try #require(
             ASCCoverageInventory.areas.first {
@@ -30,7 +30,12 @@ struct ASCCoverageInventoryTests {
         )
 
         #expect(commerce.status == .partial)
-        #expect(commerce.missingCapabilities.contains("plan-type-aware subscriptionPlanAvailabilities"))
+        #expect(commerce.coveredCapabilities.contains {
+            $0.contains("plan-type-aware availability")
+        })
+        #expect(commerce.coveredCapabilities.contains {
+            $0.contains("paginated plural version-owned IAP review images")
+        })
         #expect(commerce.missingCapabilities.contains("authoritative fully paginated subscription inventory"))
     }
 

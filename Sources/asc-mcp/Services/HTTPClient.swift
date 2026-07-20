@@ -6,6 +6,11 @@ struct ASCDeleteReceipt: Sendable {
     let statusCode: Int
 }
 
+struct ASCMutationReceipt: Sendable {
+    let data: Data
+    let statusCode: Int
+}
+
 private struct HTTPResponsePayload: Sendable {
     let data: Data
     let statusCode: Int
@@ -48,7 +53,7 @@ public actor HTTPClient {
 
     /// Fetches a pagination link only when it remains inside the supplied collection scope.
     /// - Parameters:
-    ///   - nextURL: Absolute URL returned by an App Store Connect `links.next` field.
+    ///   - nextURL: Absolute or root-relative URL returned by an App Store Connect `links.next` field.
     ///   - scope: Exact collection path and query invariants established by the originating tool call.
     /// - Returns: Raw response data for the validated next page.
     /// - Throws: `ASCError` when the link is invalid, leaves the configured origin or scope, or the request fails.
@@ -59,17 +64,34 @@ public actor HTTPClient {
 
     /// Performs GET request to App Store Connect API
     public func get(_ endpoint: String, parameters: [String: String] = [:]) async throws -> Data {
-        return try await request(.GET, endpoint: endpoint, parameters: parameters).data
+        let response = try await request(.GET, endpoint: endpoint, parameters: parameters)
+        guard response.statusCode == 200 else {
+            throw ASCError.api(
+                "GET returned unexpected successful HTTP status \(response.statusCode); expected 200",
+                response.statusCode
+            )
+        }
+        return response.data
     }
 
     /// Performs POST request to App Store Connect API
     public func post(_ endpoint: String, body: Data? = nil) async throws -> Data {
-        return try await request(.POST, endpoint: endpoint, body: body).data
+        try await postReceipt(endpoint, body: body).data
+    }
+
+    func postReceipt(_ endpoint: String, body: Data? = nil) async throws -> ASCMutationReceipt {
+        let response = try await request(.POST, endpoint: endpoint, body: body)
+        return ASCMutationReceipt(data: response.data, statusCode: response.statusCode)
     }
 
     /// Performs PATCH request to App Store Connect API
     public func patch(_ endpoint: String, body: Data) async throws -> Data {
-        return try await request(.PATCH, endpoint: endpoint, body: body).data
+        try await patchReceipt(endpoint, body: body).data
+    }
+
+    func patchReceipt(_ endpoint: String, body: Data) async throws -> ASCMutationReceipt {
+        let response = try await request(.PATCH, endpoint: endpoint, body: body)
+        return ASCMutationReceipt(data: response.data, statusCode: response.statusCode)
     }
 
     /// Performs PUT request to App Store Connect API
@@ -108,7 +130,19 @@ public actor HTTPClient {
     /// GET request with custom Accept header (for gzip reports like salesReports/financeReports)
     /// - Returns: Raw response data (may be gzip-compressed)
     public func getRaw(_ endpoint: String, parameters: [String: String] = [:], accept: String) async throws -> Data {
-        return try await request(.GET, endpoint: endpoint, parameters: parameters, acceptHeader: accept).data
+        let response = try await request(
+            .GET,
+            endpoint: endpoint,
+            parameters: parameters,
+            acceptHeader: accept
+        )
+        guard response.statusCode == 200 else {
+            throw ASCError.api(
+                "GET returned unexpected successful HTTP status \(response.statusCode); expected 200",
+                response.statusCode
+            )
+        }
+        return response.data
     }
 
     /// Base method for HTTP requests with retry logic
@@ -360,7 +394,7 @@ private extension HTTPURLResponse {
 extension HTTPClient {
     /// Fetches and decodes a pagination link after enforcing its originating collection scope.
     /// - Parameters:
-    ///   - nextURL: Absolute URL returned by an App Store Connect `links.next` field.
+    ///   - nextURL: Absolute or root-relative URL returned by an App Store Connect `links.next` field.
     ///   - scope: Exact collection path and query invariants established by the originating tool call.
     ///   - type: Response type expected from the originating collection.
     /// - Returns: Decoded response for the validated next page.

@@ -5,12 +5,311 @@ import Testing
 
 @Suite("Upload Transaction Recovery Contract Tests")
 struct UploadTransactionRecoveryContractTests {
+    @Test("ambiguous reservation inspection binds an immutable fingerprint across every page")
+    func ambiguousReservationInspectionIncludesFingerprintAndPaginationGuidance() async throws {
+        let fileURL = try uploadRecoveryFile(Data("hello".utf8))
+        defer { try? FileManager.default.removeItem(at: fileURL) }
+        let descriptor = UploadRecoveryDescriptor(
+            resourceName: "probe",
+            successKey: "resource",
+            idArgument: "resource_id",
+            getTool: "probe_get",
+            getIDArgument: "resource_id",
+            deleteTool: "probe_delete",
+            inspectionTool: "probe_list",
+            inspectionArguments: ["parent_id": "parent-1"],
+            inspectionPageLimit: 200,
+            inspectionNextURLArgument: "next_url",
+            reservationFingerprintKey: "reservationFingerprint",
+            inspectionCandidateFields: ["file_name", "file_size"]
+        )
+
+        let ambiguousOutcome = try await performProbeReservation(
+            fileURL: fileURL,
+            apiTransport: UploadRecoveryScriptTransport(steps: [.rawNetworkFailure])
+        )
+        guard case .reservationUnresolved(_, let ambiguousFingerprint) = ambiguousOutcome else {
+            Issue.record("Expected an unresolved reservation outcome")
+            return
+        }
+        #expect(ambiguousFingerprint?.fileName == fileURL.lastPathComponent)
+        #expect(ambiguousFingerprint?.fileSize == 5)
+        #expect(ambiguousFingerprint?.checksum == "5d41402abc4b2a76b9719d911017c592")
+
+        let result = UploadTransactionRecovery.result(
+            for: ambiguousOutcome,
+            descriptor: descriptor,
+            format: { ["id": $0.id, "type": $0.type] }
+        )
+
+        let payload = try uploadRecoveryObject(result.structuredContent)
+        let fingerprint = try uploadRecoveryValueObject(payload["reservationFingerprint"])
+        #expect(fingerprint["file_name"] == .string(fileURL.lastPathComponent))
+        #expect(fingerprint["file_size"] == .int(5))
+        #expect(fingerprint["checksum"] == .string("5d41402abc4b2a76b9719d911017c592"))
+        let inspection = try uploadRecoveryValueObject(payload["inspection"])
+        #expect(inspection["tool"] == .string("probe_list"))
+        let arguments = try uploadRecoveryValueObject(inspection["arguments"])
+        #expect(arguments["parent_id"] == .string("parent-1"))
+        #expect(arguments["limit"] == .int(200))
+        #expect(inspection["continue_with_next_url"] == .bool(true))
+        #expect(inspection["next_url_argument"] == .string("next_url"))
+        let candidateMatch = try uploadRecoveryValueObject(inspection["candidate_match"])
+        #expect(candidateMatch["fingerprint_key"] == .string("reservationFingerprint"))
+        #expect(candidateMatch["candidate_fields"] == .array([.string("file_name"), .string("file_size")]))
+        #expect(candidateMatch["require_unique_match_before_retry"] == .bool(true))
+        #expect(uploadRecoveryText(result).contains("require a unique candidate match"))
+
+        let acceptedOutcome = try await performProbeReservation(
+            fileURL: fileURL,
+            apiTransport: TestHTTPTransport(responses: [.init(statusCode: 202, body: "")])
+        )
+        guard case .reservationCommittedUnverified(
+            let statusCode,
+            _,
+            let acceptedFingerprint
+        ) = acceptedOutcome else {
+            Issue.record("Expected an accepted but unverified reservation outcome")
+            return
+        }
+        #expect(statusCode == 202)
+        #expect(acceptedFingerprint == ambiguousFingerprint)
+        let acceptedResult = UploadTransactionRecovery.result(
+            for: acceptedOutcome,
+            descriptor: descriptor,
+            format: { ["id": $0.id, "type": $0.type] }
+        )
+        let acceptedPayload = try uploadRecoveryObject(acceptedResult.structuredContent)
+        #expect(acceptedPayload["reservationFingerprint"] == payload["reservationFingerprint"])
+        let acceptedInspection = try uploadRecoveryValueObject(acceptedPayload["inspection"])
+        #expect(acceptedInspection["candidate_match"] == inspection["candidate_match"])
+        #expect(uploadRecoveryText(acceptedResult).contains("require a unique candidate match"))
+
+        let legacyResult = UploadTransactionRecovery.result(
+            for: ambiguousOutcome,
+            descriptor: UploadRecoveryDescriptor(
+                resourceName: "probe",
+                successKey: "resource",
+                idArgument: "resource_id",
+                getTool: "probe_get",
+                getIDArgument: "resource_id",
+                deleteTool: "probe_delete",
+                inspectionTool: "probe_list",
+                inspectionArguments: ["parent_id": "parent-1"]
+            ),
+            format: { ["id": $0.id, "type": $0.type] }
+        )
+        let legacyPayload = try uploadRecoveryObject(legacyResult.structuredContent)
+        let legacyInspection = try uploadRecoveryValueObject(legacyPayload["inspection"])
+        let legacyArguments = try uploadRecoveryValueObject(legacyInspection["arguments"])
+        #expect(legacyArguments == ["parent_id": .string("parent-1")])
+        #expect(legacyPayload["reservationFingerprint"] == nil)
+        #expect(legacyInspection["continue_with_next_url"] == nil)
+        #expect(legacyInspection["next_url_argument"] == nil)
+        #expect(legacyInspection["candidate_match"] == nil)
+    }
+
+    @Test("cleanup guidance includes the exact destructive confirmation argument")
+    func cleanupGuidanceIncludesConfirmationArgument() throws {
+        let resource = UploadRecoveryProbeResource(type: "probeResources", id: "probe-1")
+        let descriptor = UploadRecoveryDescriptor(
+            resourceName: "probe",
+            successKey: "resource",
+            idArgument: "resource_id",
+            getTool: "probe_get",
+            getIDArgument: "resource_id",
+            deleteTool: "probe_delete",
+            deleteConfirmationArgument: "confirm_resource_id",
+            inspectionTool: "probe_list",
+            inspectionArguments: [:]
+        )
+
+        let failedCleanup = UploadTransactionRecovery.result(
+            for: UploadTransactionOutcome<UploadRecoveryProbeResource>.preCommitFailure(
+                "Upload failed",
+                resource,
+                .failed("Delete was rejected"),
+                checksumReceipt: nil
+            ),
+            descriptor: descriptor,
+            format: { ["id": $0.id, "type": $0.type] }
+        )
+        let failedPayload = try uploadRecoveryObject(failedCleanup.structuredContent)
+        let failedGuidance = try uploadRecoveryValueObject(failedPayload["cleanup"])
+        let failedArguments = try uploadRecoveryValueObject(failedGuidance["arguments"])
+        #expect(failedArguments["resource_id"] == .string("probe-1"))
+        #expect(failedArguments["confirm_resource_id"] == .string("probe-1"))
+        #expect(uploadRecoveryText(failedCleanup).contains("confirm_resource_id 'probe-1'"))
+
+        let retained = UploadTransactionRecovery.result(
+            for: UploadTransactionOutcome<UploadRecoveryProbeResource>.processingPending(
+                "Processing is pending",
+                resource,
+                reconciledAfterCommit: false
+            ),
+            descriptor: descriptor,
+            format: { ["id": $0.id, "type": $0.type] }
+        )
+        let retainedPayload = try uploadRecoveryObject(retained.structuredContent)
+        let retainedGuidance = try uploadRecoveryValueObject(retainedPayload["cleanup"])
+        let retainedArguments = try uploadRecoveryValueObject(retainedGuidance["arguments"])
+        #expect(retainedArguments["resource_id"] == .string("probe-1"))
+        #expect(retainedArguments["confirm_resource_id"] == .string("probe-1"))
+    }
+
+    @Test("additional success metadata cannot override recovery state and remains redacted")
+    func additionalSuccessMetadataIsBounded() throws {
+        let resource = UploadRecoveryProbeResource(type: "probeResources", id: "probe-1")
+        let result = UploadTransactionRecovery.result(
+            for: UploadTransactionOutcome<UploadRecoveryProbeResource>.success(
+                resource,
+                reconciledAfterCommit: false
+            ),
+            descriptor: UploadRecoveryDescriptor(
+                resourceName: "probe",
+                successKey: "resource",
+                idArgument: "resource_id",
+                getTool: "probe_get",
+                getIDArgument: "resource_id",
+                deleteTool: "probe_delete",
+                inspectionTool: "probe_list",
+                inspectionArguments: [:]
+            ),
+            additionalSuccessFields: [
+                "success": false,
+                "resource": ["id": "forged"],
+                "retrySafe": true,
+                "operationCommitState": "committed_unverified",
+                "resourceId": "forged",
+                "resource_id": "forged",
+                "deprecated": true,
+                "providerStatus": "opaque_abcdefghijklmnopqrstuvwxyz012345"
+            ],
+            format: { ["id": $0.id, "type": $0.type] }
+        )
+
+        #expect(result.isError != true)
+        let payload = try uploadRecoveryObject(result.structuredContent)
+        #expect(payload["success"] == .bool(true))
+        #expect(payload["retrySafe"] == nil)
+        #expect(payload["operationCommitState"] == nil)
+        #expect(payload["resourceId"] == nil)
+        #expect(payload["resource_id"] == nil)
+        #expect(payload["deprecated"] == .bool(true))
+        #expect(payload["providerStatus"] == .string("[REDACTED]"))
+        let formatted = try uploadRecoveryValueObject(payload["resource"])
+        #expect(formatted["id"] == .string("probe-1"))
+    }
+
+    @Test("unexpected successful reservation status is committed and unverified", arguments: [200, 202, 204])
+    func unexpectedReservationStatusIsNotOrdinarySuccess(_ statusCode: Int) async throws {
+        let fileURL = try uploadRecoveryFile(Data("hello".utf8))
+        defer { try? FileManager.default.removeItem(at: fileURL) }
+        let flow = UploadFlow.screenshot
+        let apiTransport = TestHTTPTransport(responses: [
+            .init(
+                statusCode: statusCode,
+                body: uploadRecoveryResponse(
+                    flow: flow,
+                    state: flow.pendingState,
+                    includeUploadOperation: true
+                )
+            )
+        ])
+
+        let result = try await invokeUpload(
+            flow,
+            fileURL: fileURL,
+            apiTransport: apiTransport,
+            uploadTransport: TestHTTPTransport(responses: [])
+        )
+
+        #expect(result.isError == true)
+        #expect(await apiTransport.recordedRequests().map(\.httpMethod) == ["POST"])
+        let payload = try uploadRecoveryObject(result.structuredContent)
+        #expect(payload["statusCode"] == .int(statusCode))
+        #expect(payload["reservationState"] == .string("committed_unverified"))
+        #expect(payload["reservationIdKnown"] == .bool(false))
+        #expect(payload["operationCommitState"] == .string("committed_unverified"))
+        #expect(payload["operationCommitted"] == .bool(true))
+        #expect(payload["outcomeUnknown"] == .bool(false))
+        #expect(payload["inspectionRequired"] == .bool(true))
+        #expect(payload["retrySafe"] == .bool(false))
+    }
+
+    @Test("deterministic reservation 4xx is rejected before creation")
+    func deterministicReservationRejectionIsNotAmbiguous() async throws {
+        let fileURL = try uploadRecoveryFile(Data("hello".utf8))
+        defer { try? FileManager.default.removeItem(at: fileURL) }
+        let apiTransport = TestHTTPTransport(responses: [
+            .init(statusCode: 422, body: uploadRecoveryAPIError(status: 422))
+        ])
+
+        let result = try await invokeUpload(
+            .screenshot,
+            fileURL: fileURL,
+            apiTransport: apiTransport,
+            uploadTransport: TestHTTPTransport(responses: [])
+        )
+
+        #expect(result.isError == true)
+        #expect(await apiTransport.recordedRequests().map(\.httpMethod) == ["POST"])
+        let payload = try uploadRecoveryObject(result.structuredContent)
+        #expect(payload["reservationState"] == .string("rejected"))
+        #expect(payload["reservationCreated"] == .bool(false))
+        #expect(payload["outcomeUnknown"] == nil)
+        #expect(payload["operationCommitted"] == nil)
+        #expect(payload["retrySafe"] == .bool(true))
+    }
+
+    @Test("unexpected successful commit status is committed and unverified", arguments: [201, 202, 204])
+    func unexpectedCommitStatusIsNotOrdinarySuccess(_ statusCode: Int) async throws {
+        let fileURL = try uploadRecoveryFile(Data("hello".utf8))
+        defer { try? FileManager.default.removeItem(at: fileURL) }
+        let flow = UploadFlow.screenshot
+        let apiTransport = TestHTTPTransport(responses: [
+            .init(statusCode: 201, body: uploadRecoveryResponse(
+                flow: flow,
+                state: flow.pendingState,
+                includeUploadOperation: true
+            )),
+            .init(statusCode: statusCode, body: uploadRecoveryResponse(
+                flow: flow,
+                state: flow.completedState,
+                includeChecksum: true
+            ))
+        ])
+
+        let result = try await invokeUpload(
+            flow,
+            fileURL: fileURL,
+            apiTransport: apiTransport,
+            uploadTransport: TestHTTPTransport(responses: [.init(statusCode: 200, body: "")])
+        )
+
+        #expect(result.isError == true)
+        #expect(await apiTransport.recordedRequests().map(\.httpMethod) == ["POST", "PATCH"])
+        let payload = try uploadRecoveryObject(result.structuredContent)
+        #expect(payload["statusCode"] == .int(statusCode))
+        #expect(payload["resourceId"] == .string("asset-1"))
+        #expect(payload["uploadCommitted"] == .bool(true))
+        #expect(payload["processingComplete"] == .bool(false))
+        #expect(payload["operationCommitState"] == .string("committed_unverified"))
+        #expect(payload["operationCommitted"] == .bool(true))
+        #expect(payload["outcomeUnknown"] == .bool(false))
+        #expect(payload["inspectionRequired"] == .bool(true))
+        #expect(payload["reservationDeleted"] == .bool(false))
+        #expect(payload["retrySafe"] == .bool(false))
+    }
+
     @Test("missing upload operations roll back every resource family", arguments: [
         UploadFlow.screenshot,
         UploadFlow.preview,
         UploadFlow.iapImage,
+        UploadFlow.iapVersionImage,
         UploadFlow.iapReviewScreenshot,
         UploadFlow.subscriptionImage,
+        UploadFlow.subscriptionVersionImage,
         UploadFlow.subscriptionReviewScreenshot
     ])
     func missingOperationsRollBack(_ flow: UploadFlow) async throws {
@@ -40,8 +339,10 @@ struct UploadTransactionRecoveryContractTests {
         UploadFlow.screenshot,
         UploadFlow.preview,
         UploadFlow.iapImage,
+        UploadFlow.iapVersionImage,
         UploadFlow.iapReviewScreenshot,
         UploadFlow.subscriptionImage,
+        UploadFlow.subscriptionVersionImage,
         UploadFlow.subscriptionReviewScreenshot
     ])
     func lostPatchReconciles(_ flow: UploadFlow) async throws {
@@ -88,8 +389,10 @@ struct UploadTransactionRecoveryContractTests {
         UploadFlow.screenshot,
         UploadFlow.preview,
         UploadFlow.iapImage,
+        UploadFlow.iapVersionImage,
         UploadFlow.iapReviewScreenshot,
         UploadFlow.subscriptionImage,
+        UploadFlow.subscriptionVersionImage,
         UploadFlow.subscriptionReviewScreenshot
     ])
     func failedStateAfterLostPatchIsNotSuccess(_ flow: UploadFlow) async throws {
@@ -682,6 +985,11 @@ struct UploadTransactionRecoveryContractTests {
         #expect(await apiTransport.recordedRequests().map(\.httpMethod) == ["POST"])
         let payload = try uploadRecoveryObject(result.structuredContent)
         #expect(payload["reservationIdKnown"] == .bool(false))
+        #expect(payload["reservationState"] == .string("unknown"))
+        #expect(payload["operationCommitState"] == .string("unknown"))
+        #expect(payload["operationCommitted"] == nil)
+        #expect(payload["outcomeUnknown"] == .bool(true))
+        #expect(payload["inspectionRequired"] == .bool(true))
         #expect(payload["retrySafe"] == .bool(false))
         #expect(payload["sourceFileChecksumReceipt"] == nil)
         #expect(uploadRecoveryText(result).contains("checksum receipt") == false)
@@ -706,6 +1014,11 @@ struct UploadTransactionRecoveryContractTests {
         #expect(await apiTransport.recordedRequests().map(\.httpMethod) == ["POST"])
         let payload = try uploadRecoveryObject(result.structuredContent)
         #expect(payload["reservationIdKnown"] == .bool(false))
+        #expect(payload["reservationState"] == .string("committed_unverified"))
+        #expect(payload["operationCommitState"] == .string("committed_unverified"))
+        #expect(payload["operationCommitted"] == .bool(true))
+        #expect(payload["outcomeUnknown"] == .bool(false))
+        #expect(payload["inspectionRequired"] == .bool(true))
         #expect(payload["retrySafe"] == .bool(false))
     }
 
@@ -856,6 +1169,11 @@ struct UploadTransactionRecoveryContractTests {
         #expect(await apiTransport.recordedRequests().map(\.httpMethod) == ["POST"])
         let payload = try uploadRecoveryObject(result.structuredContent)
         #expect(payload["reservationIdKnown"] == .bool(false))
+        #expect(payload["reservationState"] == .string("committed_unverified"))
+        #expect(payload["operationCommitState"] == .string("committed_unverified"))
+        #expect(payload["operationCommitted"] == .bool(true))
+        #expect(payload["outcomeUnknown"] == .bool(false))
+        #expect(payload["inspectionRequired"] == .bool(true))
         #expect(payload["retrySafe"] == .bool(false))
     }
 
@@ -863,8 +1181,10 @@ struct UploadTransactionRecoveryContractTests {
         UploadFlow.screenshot,
         UploadFlow.preview,
         UploadFlow.iapImage,
+        UploadFlow.iapVersionImage,
         UploadFlow.iapReviewScreenshot,
         UploadFlow.subscriptionImage,
+        UploadFlow.subscriptionVersionImage,
         UploadFlow.subscriptionReviewScreenshot
     ])
     func transferErrorsDoNotExposeUploadCredentials(_ flow: UploadFlow) async throws {
@@ -902,17 +1222,19 @@ enum UploadFlow: String, Sendable {
     case screenshot
     case preview
     case iapImage
+    case iapVersionImage
     case iapReviewScreenshot
     case subscriptionImage
+    case subscriptionVersionImage
     case subscriptionReviewScreenshot
 
     var type: String {
         switch self {
         case .screenshot: return "appScreenshots"
         case .preview: return "appPreviews"
-        case .iapImage: return "inAppPurchaseImages"
+        case .iapImage, .iapVersionImage: return "inAppPurchaseImages"
         case .iapReviewScreenshot: return "inAppPurchaseAppStoreReviewScreenshots"
-        case .subscriptionImage: return "subscriptionImages"
+        case .subscriptionImage, .subscriptionVersionImage: return "subscriptionImages"
         case .subscriptionReviewScreenshot: return "subscriptionAppStoreReviewScreenshots"
         }
     }
@@ -922,8 +1244,10 @@ enum UploadFlow: String, Sendable {
         case .screenshot: return "/v1/appScreenshots"
         case .preview: return "/v1/appPreviews"
         case .iapImage: return "/v1/inAppPurchaseImages"
+        case .iapVersionImage: return "/v2/inAppPurchaseImages"
         case .iapReviewScreenshot: return "/v1/inAppPurchaseAppStoreReviewScreenshots"
         case .subscriptionImage: return "/v1/subscriptionImages"
+        case .subscriptionVersionImage: return "/v2/subscriptionImages"
         case .subscriptionReviewScreenshot: return "/v1/subscriptionAppStoreReviewScreenshots"
         }
     }
@@ -998,6 +1322,18 @@ private func invokeUpload(
             arguments: ["iap_id": .string("iap-1"), "file_path": .string(fileURL.path)]
         ))
 
+    case .iapVersionImage:
+        let worker = InAppPurchasesWorker(
+            httpClient: client,
+            uploadService: uploadService,
+            deliveryPollAttempts: pollAttempts,
+            deliveryPollIntervalNanoseconds: 0
+        )
+        return try await worker.handleTool(CallTool.Parameters(
+            name: "iap_upload_version_image",
+            arguments: ["version_id": .string("iap-version-1"), "file_path": .string(fileURL.path)]
+        ))
+
     case .iapReviewScreenshot:
         let worker = InAppPurchasesWorker(
             httpClient: client,
@@ -1022,6 +1358,18 @@ private func invokeUpload(
             arguments: ["subscription_id": .string("subscription-1"), "file_path": .string(fileURL.path)]
         ))
 
+    case .subscriptionVersionImage:
+        let worker = SubscriptionsWorker(
+            httpClient: client,
+            uploadService: uploadService,
+            deliveryPollAttempts: pollAttempts,
+            deliveryPollIntervalNanoseconds: 0
+        )
+        return try await worker.handleTool(CallTool.Parameters(
+            name: "subscriptions_upload_version_image",
+            arguments: ["version_id": .string("subscription-version-1"), "file_path": .string(fileURL.path)]
+        ))
+
     case .subscriptionReviewScreenshot:
         let worker = SubscriptionsWorker(
             httpClient: client,
@@ -1034,6 +1382,39 @@ private func invokeUpload(
             arguments: ["subscription_id": .string("subscription-1"), "file_path": .string(fileURL.path)]
         ))
     }
+}
+
+private func performProbeReservation(
+    fileURL: URL,
+    apiTransport: any HTTPTransport
+) async throws -> UploadTransactionOutcome<UploadRecoveryProbeResource> {
+    let client = await HTTPClient(
+        jwtService: try TestFactory.makeJWTService(),
+        baseURL: "https://api.example.test",
+        transport: apiTransport,
+        maxRetries: 3
+    )
+    return await UploadTransactionRecovery.perform(
+        filePath: fileURL.path,
+        resourceName: "probe",
+        expectedType: "probeResources",
+        reservationEndpoint: "/v1/probeResources",
+        httpClient: client,
+        uploadService: UploadService(
+            transport: TestHTTPTransport(responses: []),
+            batchSize: 1
+        ),
+        deliveryPollAttempts: 0,
+        deliveryPollIntervalNanoseconds: 0,
+        makeReservationBody: { _, _ in Data() },
+        decodeResource: { _ in
+            UploadRecoveryProbeResource(type: "probeResources", id: "probe-1")
+        },
+        makeCommitBody: { _, _ in Data() },
+        resourceEndpoint: {
+            "/v1/probeResources/\(try ASCPathSegment.encode($0))"
+        }
+    )
 }
 
 private func uploadRecoveryResponse(
@@ -1062,7 +1443,7 @@ private func uploadRecoveryResponse(
     let operationsFragment = includeUploadOperation
         ? #", "uploadOperations":[{"method":"PUT","url":"https://upload.example.test/chunk?signed=signed-secret","length":5,"offset":0,"requestHeaders":\#(requestHeaders)}]"#
         : ""
-    return #"{"data":{"type":"\#(type ?? flow.type)","id":"\#(id)","attributes":{"fileSize":5,"fileName":"asset.bin"\#(checksumFragment)\#(stateFragment)\#(operationsFragment)}}}"#
+    return #"{"data":{"type":"\#(type ?? flow.type)","id":"\#(id)","attributes":{"fileSize":5,"fileName":"asset.bin"\#(checksumFragment)\#(stateFragment)\#(operationsFragment)}},"links":{"self":"\#(flow.reservationPath)/\#(id)"}}"#
 }
 
 private func uploadRecoveryFile(_ data: Data) throws -> URL {
@@ -1135,6 +1516,14 @@ private func uploadRecoveryText(_ result: CallTool.Result) -> String {
 private enum UploadRecoveryTestFailure: Error {
     case expectedObject
     case expectedDictionary
+}
+
+private struct UploadRecoveryProbeResource: RecoverableUploadResource {
+    let type: String
+    let id: String
+
+    var recoveryUploadOperations: [ASCUploadOperation]? { nil }
+    var recoveryDeliveryStatus: UploadDeliveryStatus { .complete("COMPLETE") }
 }
 
 private actor UploadRecoveryScriptTransport: HTTPTransport {

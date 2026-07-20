@@ -7,6 +7,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.16.0] - 2026-07-20
+
+### Added
+
+- Added 13 version-scoped in-app purchase tools for draft versions, localizations, and review images introduced by App Store Connect API 4.4.1.
+- Added 26 subscription tools for subscription versions, group versions, version-scoped metadata, and subscription plan availability.
+- Added a dedicated `review_submissions` worker with 9 tools for submission discovery, item assembly, submission, cancellation, and recovery inspection.
+
+### Changed
+
+- Legacy in-app purchase and subscription metadata workflows now return structured migration guidance to the version-scoped Apple 4.4.1 replacements.
+- Commerce collection reads bind every continuation request to its exact parent, filters, field projection, include set, and effective page size.
+- Non-idempotent commerce writes distinguish confirmed rejection, unknown request outcome, and accepted-but-unverified responses before presenting recovery guidance.
+- Review submission projections expose `item_next_cursor`, `items_truncated`, `items_complete`, and `items_completeness_known`, distinguishing proven-truncated or proven-complete embedded collections from unknown completeness. `item_ids` and `item_included_count` separately preserve missing versus explicitly empty relationship data; an empty relationship without paging metadata remains known-empty linkage data with unknown collection completeness.
+- Ambiguous upload-reservation recovery returns `reservationFingerprint` with `file_name`, `file_size`, and `checksum`, directs clients through every parent-collection page, and requires one unique candidate match before retry.
+
+### Fixed
+
+- Require Apple JSON:API responses to contain the documented resource type, canonical identity, requested identity where applicable, and required document and resource links.
+- Require exact resource-ID confirmation for every newly exposed commerce DELETE operation.
+- Preserve typed DELETE outcomes: only HTTP 204 confirms completion; ambiguous transport or server failures return `unknown`, and unexpected successful statuses return `committed_unverified`, always with `retrySafe=false`.
+- Keep legacy deprecation wrappers and recovery errors machine-readable instead of flattening structured failures into text.
+- Mark the deprecated local-only `promoted_delete_image` guidance tool as read-only and non-destructive.
+- Accept Apple-specification root-relative continuation links only after resolving them against the configured origin and applying the same strict path, query, and cursor validation as absolute links.
+- Require the Apple-documented HTTP 200 status for every App Store Connect GET response and preserve `meta.paging.nextCursor` for continuation-consistency checks.
+
+### Compatibility
+
+- The public surface grows from 403 to 451 tools and from 33 to 34 worker filter keys; no existing tool is removed or renamed.
+- The IAP worker grows from 46 to 59 tools, subscriptions from 73 to 99, and the new review-submissions worker exposes 9 tools.
+- New commerce DELETE tools require an exact confirmation ID; callers must inspect `unknown` or `committed_unverified` outcomes before attempting another mutation.
+- The operation manifest maps 421 Apple operations, explicitly defers 479, and scopes out 363; all 1,263 pinned Apple 4.4.1 operations remain accounted for without overlap.
+- The optional-input pin is fully classified at 2,428 total: 924 bound, 40 internally controlled, 1,464 intentionally omitted, and 0 unclassified; its identity SHA-256 is `5bb9c377a13d404e0374945d0016a9739c5cc2c3acd1e851108c24ffea5ba67d`.
+
 ## [3.15.0] - 2026-07-20
 
 ### Added

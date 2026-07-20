@@ -60,20 +60,42 @@ func validatedPaginationRequest(
     baseURL: String,
     scope: PaginationScope
 ) throws -> PaginationRequest {
+    let trimmedURL = fullURL.trimmingCharacters(in: .whitespacesAndNewlines)
     guard !fullURL.isEmpty,
+          trimmedURL == fullURL,
           let baseComponents = URLComponents(string: baseURL),
           let baseScheme = baseComponents.scheme,
           let baseHost = baseComponents.host,
           baseComponents.user == nil,
           baseComponents.password == nil,
           baseComponents.fragment == nil,
-          let components = URLComponents(string: fullURL),
-          let scheme = components.scheme,
+          let parsedComponents = URLComponents(string: fullURL),
+          parsedComponents.user == nil,
+          parsedComponents.password == nil,
+          parsedComponents.fragment == nil else {
+        throw invalidPaginationURL("must be an absolute configured-origin URL or a root-relative API URL without credentials or a fragment")
+    }
+
+    let components: URLComponents
+    if parsedComponents.scheme == nil, parsedComponents.host == nil {
+        guard fullURL.hasPrefix("/"), !fullURL.hasPrefix("//") else {
+            throw invalidPaginationURL("relative links must be root-relative API URLs")
+        }
+        var resolvedComponents = parsedComponents
+        resolvedComponents.scheme = baseScheme
+        resolvedComponents.host = baseHost
+        resolvedComponents.port = baseComponents.port
+        components = resolvedComponents
+    } else {
+        components = parsedComponents
+    }
+
+    guard let scheme = components.scheme,
           let host = components.host,
           components.user == nil,
           components.password == nil,
           components.fragment == nil else {
-        throw invalidPaginationURL("must be an absolute URL without credentials or a fragment")
+        throw invalidPaginationURL("must resolve to the configured App Store Connect origin")
     }
 
     guard ["http", "https"].contains(baseScheme.lowercased()),

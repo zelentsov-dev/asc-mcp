@@ -7,9 +7,10 @@ Source baseline:
 - Apple API 4.0 release notes: https://developer.apple.com/documentation/appstoreconnectapi/app-store-connect-api-4-0-release-notes
 - Apple Webhook notifications: https://developer.apple.com/documentation/appstoreconnectapi/webhook-notifications
 
-Update 2026-05-07: automated OpenAPI coverage tooling is now available. See `ASC-OPENAPI-COVERAGE-GENERATED.md` for the generated Apple 4.3 path/operation matrix.
+Update 2026-05-07: automated OpenAPI coverage tooling is now available. See `ASC-OPENAPI-COVERAGE-GENERATED.md` for the generated Apple 4.4.1 path/operation matrix.
 Update 2026-05-08: accessibility declaration management is covered by `accessibility_*` tools.
 Update 2026-05-08: local webhook receiver helpers are available for signature verification, payload parsing, and event/delivery triage.
+Update 2026-07-20: Apple 4.4.1 versioned commerce metadata, plan-type-aware subscription availability, adjusted equalizations, and generic review submissions are covered.
 
 This matrix tracks current `asc-mcp` coverage against the official App Store Connect API documentation. It is intentionally product-oriented: it names what users can do today, what is missing, and which additions should come first.
 
@@ -28,11 +29,11 @@ P1 additions:
 | Area | Status | Priority | Current worker keys | Missing / next |
 |---|---|---:|---|---|
 | Essentials: auth, errors, paging, uploads, rate limits | Partial | P1 | `auth` | API key inventory/revocation helpers |
-| App Store app metadata and release operations | Partial | P0 | `apps`, `accessibility`, `versions`, `app_info`, `pricing`, `app_events`, `screenshots`, `custom_pages`, `ppo`, `promoted`, `review_attachments`, `reviews` | App Clips; background assets; app tags; routing app coverages; customer review summary endpoint |
+| App Store app metadata and release operations | Partial | P0 | `apps`, `accessibility`, `versions`, `app_info`, `pricing`, `app_events`, `screenshots`, `custom_pages`, `ppo`, `promoted`, `review_attachments`, `review_submissions`, `reviews` | App Clips; background assets; app tags; routing app coverages; customer review summary endpoint |
 | TestFlight builds, testers, groups, and beta app review | Partial | P0 | `builds`, `build_processing`, `build_beta`, `beta_groups`, `beta_feedback`, `beta_testers`, `beta_app`, `pre_release`, `beta_license` | beta recruitment criteria; beta app clip invocation/localization APIs |
 | Webhook notifications | Covered | P2 | `webhooks` | OpenAPI drift checks and hosted receiver examples |
 | Webhook notification receiver resources | Partial | P1 | `webhooks` | hosted receiver server templates; prompt/resource templates for event triage |
-| In-app purchases, subscriptions, and offers | Covered | P2 | `iap`, `subscriptions`, `offer_codes`, `winback`, `intro_offers`, `promo_offers` | OpenAPI drift checks and schema tightening |
+| In-app purchases, subscriptions, and offers | Partial | P2 | `iap`, `subscriptions` | authoritative fully paginated subscription inventory |
 | Provisioning and identifiers | Partial | P1 | `provisioning` | merchant IDs; pass type IDs |
 | Users, access, and sandbox testers | Partial | P2 | `users`, `sandbox` | API key inventory helpers; API key revocation workflow |
 | Reporting, analytics, metrics, and diagnostics | Partial | P1 | `analytics`, `metrics` | analytics segment discovery ergonomics; customer review summarization; perf power metric recommendations |

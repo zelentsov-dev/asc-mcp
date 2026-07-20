@@ -18,6 +18,17 @@ public final class SubscriptionsWorker: Sendable {
     ]
     static let subscriptionCatalogSortValues = ["name", "-name"]
     static let subscriptionGroupSortValues = ["referenceName", "-referenceName"]
+    static let subscriptionVersionStates = [
+        "PREPARE_FOR_SUBMISSION",
+        "READY_FOR_REVIEW",
+        "WAITING_FOR_REVIEW",
+        "IN_REVIEW",
+        "ACCEPTED",
+        "APPROVED",
+        "REPLACED_WITH_NEW_VERSION",
+        "REJECTED",
+        "DEVELOPER_REJECTED"
+    ]
 
     let httpClient: HTTPClient
     let uploadService: UploadService
@@ -75,7 +86,7 @@ public final class SubscriptionsWorker: Sendable {
             deleteSubscriptionReviewScreenshotTool(),
             listSubscriptionImagesTool(),
             getSubscriptionReviewScreenshotForSubscriptionTool()
-        ] + v3CommerceTools()
+        ] + v3CommerceTools() + subscriptionPlanAvailabilityTools() + versionedMetadataTools()
     }
 
     /// Handle tool calls (for WorkerManager routing)
@@ -92,13 +103,25 @@ public final class SubscriptionsWorker: Sendable {
         case "subscriptions_delete":
             return try await deleteSubscription(params)
         case "subscriptions_list_localizations":
-            return try await listSubscriptionLocalizations(params)
+            return legacySubscriptionResult(
+                try await listSubscriptionLocalizations(params),
+                tool: params.name
+            )
         case "subscriptions_create_localization":
-            return try await createSubscriptionLocalization(params)
+            return legacySubscriptionResult(
+                try await createSubscriptionLocalization(params),
+                tool: params.name
+            )
         case "subscriptions_update_localization":
-            return try await updateSubscriptionLocalization(params)
+            return legacySubscriptionResult(
+                try await updateSubscriptionLocalization(params),
+                tool: params.name
+            )
         case "subscriptions_delete_localization":
-            return try await deleteSubscriptionLocalization(params)
+            return legacySubscriptionResult(
+                try await deleteSubscriptionLocalization(params),
+                tool: params.name
+            )
         case "subscriptions_list_prices":
             return try await listSubscriptionPrices(params)
         case "subscriptions_list_price_points":
@@ -110,25 +133,52 @@ public final class SubscriptionsWorker: Sendable {
         case "subscriptions_delete_group":
             return try await deleteSubscriptionGroup(params)
         case "subscriptions_submit":
-            return try await submitSubscription(params)
+            return legacySubscriptionResult(
+                try await submitSubscription(params),
+                tool: params.name
+            )
         case "subscriptions_list_group_localizations":
-            return try await listSubscriptionGroupLocalizations(params)
+            return legacySubscriptionResult(
+                try await listSubscriptionGroupLocalizations(params),
+                tool: params.name
+            )
         case "subscriptions_create_group_localization":
-            return try await createSubscriptionGroupLocalization(params)
+            return legacySubscriptionResult(
+                try await createSubscriptionGroupLocalization(params),
+                tool: params.name
+            )
         case "subscriptions_get_group_localization":
-            return try await getSubscriptionGroupLocalization(params)
+            return legacySubscriptionResult(
+                try await getSubscriptionGroupLocalization(params),
+                tool: params.name
+            )
         case "subscriptions_update_group_localization":
-            return try await updateSubscriptionGroupLocalization(params)
+            return legacySubscriptionResult(
+                try await updateSubscriptionGroupLocalization(params),
+                tool: params.name
+            )
         case "subscriptions_delete_group_localization":
-            return try await deleteSubscriptionGroupLocalization(params)
+            return legacySubscriptionResult(
+                try await deleteSubscriptionGroupLocalization(params),
+                tool: params.name
+            )
         case "subscriptions_delete_price":
             return try await deleteSubscriptionPrice(params)
         case "subscriptions_upload_image":
-            return try await uploadSubscriptionImage(params)
+            return legacySubscriptionResult(
+                try await uploadSubscriptionImage(params),
+                tool: params.name
+            )
         case "subscriptions_get_image":
-            return try await getSubscriptionImage(params)
+            return legacySubscriptionResult(
+                try await getSubscriptionImage(params),
+                tool: params.name
+            )
         case "subscriptions_delete_image":
-            return try await deleteSubscriptionImage(params)
+            return legacySubscriptionResult(
+                try await deleteSubscriptionImage(params),
+                tool: params.name
+            )
         case "subscriptions_upload_review_screenshot":
             return try await uploadSubscriptionReviewScreenshot(params)
         case "subscriptions_get_review_screenshot":
@@ -136,7 +186,10 @@ public final class SubscriptionsWorker: Sendable {
         case "subscriptions_delete_review_screenshot":
             return try await deleteSubscriptionReviewScreenshot(params)
         case "subscriptions_list_images":
-            return try await listSubscriptionImages(params)
+            return legacySubscriptionResult(
+                try await listSubscriptionImages(params),
+                tool: params.name
+            )
         case "subscriptions_get_review_screenshot_for_subscription":
             return try await getSubscriptionReviewScreenshotForSubscription(params)
         case "subscriptions_list_groups":
@@ -144,21 +197,39 @@ public final class SubscriptionsWorker: Sendable {
         case "subscriptions_get_group":
             return try await getSubscriptionGroup(params)
         case "subscriptions_submit_group":
-            return try await submitSubscriptionGroup(params)
+            return legacySubscriptionResult(
+                try await submitSubscriptionGroup(params),
+                tool: params.name
+            )
         case "subscriptions_get_localization":
-            return try await getSubscriptionLocalization(params)
+            return legacySubscriptionResult(
+                try await getSubscriptionLocalization(params),
+                tool: params.name
+            )
         case "subscriptions_create_price":
             return try await createSubscriptionPrice(params)
         case "subscriptions_get_price_point":
             return try await getSubscriptionPricePoint(params)
         case "subscriptions_list_price_point_equalizations":
             return try await listSubscriptionPricePointEqualizations(params)
+        case "subscriptions_list_price_point_adjusted_equalizations":
+            return try await listSubscriptionPricePointAdjustedEqualizations(params)
         case "subscriptions_get_availability":
             return try await getSubscriptionAvailability(params)
         case "subscriptions_set_availability":
             return try await setSubscriptionAvailability(params)
         case "subscriptions_list_available_territories":
             return try await listSubscriptionAvailableTerritories(params)
+        case "subscriptions_create_plan_availability":
+            return try await createSubscriptionPlanAvailability(params)
+        case "subscriptions_get_plan_availability":
+            return try await getSubscriptionPlanAvailability(params)
+        case "subscriptions_update_plan_availability":
+            return try await updateSubscriptionPlanAvailability(params)
+        case "subscriptions_list_plan_availabilities":
+            return try await listSubscriptionPlanAvailabilities(params)
+        case "subscriptions_list_plan_availability_territories":
+            return try await listSubscriptionPlanAvailabilityTerritories(params)
         case "subscriptions_get_promoted_purchase":
             return try await getSubscriptionPromotedPurchase(params)
         case "subscriptions_inventory":
@@ -167,6 +238,46 @@ public final class SubscriptionsWorker: Sendable {
             return try await getSubscriptionPricingSummary(params)
         case "subscriptions_prepare_offer_prices":
             return try await prepareSubscriptionOfferPrices(params)
+        case "subscriptions_create_version":
+            return try await createSubscriptionVersion(params)
+        case "subscriptions_get_version":
+            return try await getSubscriptionVersion(params)
+        case "subscriptions_list_versions":
+            return try await listSubscriptionVersions(params)
+        case "subscriptions_list_version_localizations":
+            return try await listSubscriptionVersionLocalizations(params)
+        case "subscriptions_create_version_localization":
+            return try await createSubscriptionVersionLocalization(params)
+        case "subscriptions_get_version_localization":
+            return try await getSubscriptionVersionLocalization(params)
+        case "subscriptions_update_version_localization":
+            return try await updateSubscriptionVersionLocalization(params)
+        case "subscriptions_delete_version_localization":
+            return try await deleteSubscriptionVersionLocalization(params)
+        case "subscriptions_list_version_images":
+            return try await listSubscriptionVersionImages(params)
+        case "subscriptions_upload_version_image":
+            return try await uploadSubscriptionVersionImage(params)
+        case "subscriptions_get_version_image":
+            return try await getSubscriptionVersionImage(params)
+        case "subscriptions_delete_version_image":
+            return try await deleteSubscriptionVersionImage(params)
+        case "subscriptions_create_group_version":
+            return try await createSubscriptionGroupVersion(params)
+        case "subscriptions_get_group_version":
+            return try await getSubscriptionGroupVersion(params)
+        case "subscriptions_list_group_versions":
+            return try await listSubscriptionGroupVersions(params)
+        case "subscriptions_list_group_version_localizations":
+            return try await listSubscriptionGroupVersionLocalizations(params)
+        case "subscriptions_create_group_version_localization":
+            return try await createSubscriptionGroupVersionLocalization(params)
+        case "subscriptions_get_group_version_localization":
+            return try await getSubscriptionGroupVersionLocalization(params)
+        case "subscriptions_update_group_version_localization":
+            return try await updateSubscriptionGroupVersionLocalization(params)
+        case "subscriptions_delete_group_version_localization":
+            return try await deleteSubscriptionGroupVersionLocalization(params)
         case "subscriptions_list_intro_offers",
             "subscriptions_create_intro_offer",
             "subscriptions_update_intro_offer",

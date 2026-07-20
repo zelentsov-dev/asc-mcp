@@ -32,6 +32,22 @@ struct PaginationHelperTests {
         #expect(request.parameters["cursor"] == "abc")
     }
 
+    @Test func acceptsRootRelativeAppleNextLink() throws {
+        let request = try validatedPaginationRequest(
+            "/v1/builds?filter%5Bapp%5D=app-1&limit=25&cursor=abc",
+            baseURL: baseURL,
+            scope: PaginationScope.strict(
+                path: "/v1/builds",
+                query: ["filter[app]": "app-1", "limit": "25"]
+            )
+        )
+
+        #expect(request.path == "/v1/builds")
+        #expect(request.parameters["filter[app]"] == "app-1")
+        #expect(request.parameters["limit"] == "25")
+        #expect(request.parameters["cursor"] == "abc")
+    }
+
     @Test func distinguishesMissingPaginationArgument() throws {
         #expect(try paginationURL(from: nil) == nil)
         #expect(try paginationURL(from: .string("https://api.example.test/v1/apps?cursor=abc")) != nil)
@@ -53,10 +69,11 @@ struct PaginationHelperTests {
 
     @Test(arguments: [
         "",
-        "/v1/apps?cursor=abc",
+        "v1/apps?cursor=abc",
+        "//evil.example.com/v1/apps?cursor=abc",
         "not a URL"
     ])
-    func rejectsMalformedOrRelativeLink(_ nextURL: String) {
+    func rejectsMalformedOrUnsafeRelativeLink(_ nextURL: String) {
         #expect(throws: ASCError.self) {
             try validatedPaginationRequest(
                 nextURL,

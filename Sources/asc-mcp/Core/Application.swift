@@ -72,6 +72,7 @@ public func runApplication(options: AppRuntimeOptions = AppRuntimeOptions()) asy
         - promoted_* -- promoted in-app purchases
         - metrics_* -- performance metrics and diagnostics
         - review_attachments_* -- app store review attachments (upload, get, delete, list)
+        - review_submissions_* -- App Store review submission inspection, recovery, item assembly, submission, and cancellation
         """,
         capabilities: Server.Capabilities(
             tools: Server.Capabilities.Tools(listChanged: true)

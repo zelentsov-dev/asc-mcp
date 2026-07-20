@@ -68,8 +68,8 @@ enum ASCCoverageInventory {
             priority: .p0,
             workerKeys: [
                 "apps", "accessibility", "versions", "app_info", "pricing", "app_events",
-                "screenshots", "custom_pages", "ppo", "promoted", "review_attachments", "reviews",
-                "export_compliance"
+                "screenshots", "custom_pages", "ppo", "promoted", "review_attachments",
+                "review_submissions", "reviews", "export_compliance"
             ],
             coveredCapabilities: [
                 "apps, app info, version lifecycle, review responses",
@@ -84,6 +84,7 @@ enum ASCCoverageInventory {
                 "product page optimization",
                 "promoted purchases",
                 "review attachments",
+                "generic review submission assembly, submission, cancellation, and recovery",
                 "export-compliance release gate"
             ],
             missingCapabilities: [
@@ -166,9 +167,11 @@ enum ASCCoverageInventory {
             priority: .p2,
             workerKeys: ["iap", "subscriptions"],
             coveredCapabilities: [
-                "IAP and subscription CRUD",
-                "subscription groups and localizations",
-                "territory-aware prices, price points, equalizations, and legacy availability compatibility",
+                "IAP and subscription CRUD with versioned metadata",
+                "subscription group versions and version-owned localizations",
+                "singular and paginated plural version-owned IAP review images and subscription promotional images",
+                "territory-aware prices, price points, adjusted equalizations, and plan-type-aware availability",
+                "legacy localization, image, submission, and availability compatibility with explicit migration guidance",
                 "IAP and subscription offer codes",
                 "win-back offers",
                 "introductory offers",
@@ -177,10 +180,9 @@ enum ASCCoverageInventory {
                 "review screenshot and image uploads"
             ],
             missingCapabilities: [
-                "plan-type-aware subscriptionPlanAvailabilities",
                 "authoritative fully paginated subscription inventory"
             ],
-            notes: "v3 consolidates subscription offers under subscriptions_* and keeps one-time IAP product management under iap_*. Legacy subscriptionAvailability tools remain for compatibility; plan-type-aware availability and a complete inventory are pending."
+            notes: "Apple 4.4.1 versioned metadata, generic review submission handoff, plan-type-aware subscription availability, and adjusted equalizations are covered. Legacy product-scoped tools remain explicit compatibility paths; an authoritative fully paginated subscription inventory is still pending."
         ),
         ASCCoverageArea(
             name: "Provisioning and identifiers",

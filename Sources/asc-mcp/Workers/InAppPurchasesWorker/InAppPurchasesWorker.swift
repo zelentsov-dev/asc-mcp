@@ -23,6 +23,17 @@ public final class InAppPurchasesWorker: Sendable {
         "NON_RENEWING_SUBSCRIPTION"
     ]
     static let iapCatalogSortValues = ["name", "-name", "inAppPurchaseType", "-inAppPurchaseType"]
+    static let iapVersionStates = [
+        "PREPARE_FOR_SUBMISSION",
+        "READY_FOR_REVIEW",
+        "WAITING_FOR_REVIEW",
+        "IN_REVIEW",
+        "ACCEPTED",
+        "APPROVED",
+        "REPLACED_WITH_NEW_VERSION",
+        "REJECTED",
+        "DEVELOPER_REJECTED"
+    ]
     static let subscriptionCatalogStates = [
         "MISSING_METADATA",
         "READY_TO_SUBMIT",
@@ -36,6 +47,21 @@ public final class InAppPurchasesWorker: Sendable {
         "REJECTED"
     ]
     static let subscriptionGroupSortValues = ["referenceName", "-referenceName"]
+    private static let versionedArgumentNames: [String: Set<String>] = [
+        "iap_create_version": ["iap_id"],
+        "iap_get_version": ["version_id"],
+        "iap_list_versions": ["iap_id", "filter_state", "limit", "next_url"],
+        "iap_list_version_localizations": ["version_id", "limit", "next_url"],
+        "iap_create_version_localization": ["version_id", "locale", "name", "description"],
+        "iap_get_version_localization": ["localization_id"],
+        "iap_update_version_localization": ["localization_id", "name", "description"],
+        "iap_delete_version_localization": ["localization_id", "confirm_localization_id"],
+        "iap_get_version_image": ["version_id"],
+        "iap_list_version_images": ["version_id", "limit", "next_url"],
+        "iap_upload_version_image": ["version_id", "file_path"],
+        "iap_get_version_image_resource": ["image_id"],
+        "iap_delete_version_image": ["image_id", "confirm_image_id"]
+    ]
 
     let httpClient: HTTPClient
     let uploadService: UploadService
@@ -88,11 +114,21 @@ public final class InAppPurchasesWorker: Sendable {
             getIAPImageTool(),
             deleteIAPImageTool(),
             listIAPImagesTool()
-        ] + v3CommerceTools()
+        ] + v3CommerceTools() + versionedCommerceTools()
     }
 
     /// Handle tool calls (for WorkerManager routing)
     public func handleTool(_ params: CallTool.Parameters) async throws -> CallTool.Result {
+        if let allowedNames = Self.versionedArgumentNames[params.name],
+           let arguments = params.arguments {
+            let unknownNames = Set(arguments.keys).subtracting(allowedNames).sorted()
+            guard unknownNames.isEmpty else {
+                return MCPResult.error(
+                    "Unknown parameter(s) for \(params.name): \(unknownNames.joined(separator: ", "))"
+                )
+            }
+        }
+
         switch params.name {
         case "iap_list":
             return try await listIAP(params)
@@ -186,6 +222,32 @@ public final class InAppPurchasesWorker: Sendable {
             return try await updateIAPCustomCode(params)
         case "iap_deactivate_custom_code":
             return try await deactivateIAPCustomCode(params)
+        case "iap_create_version":
+            return try await createIAPVersion(params)
+        case "iap_get_version":
+            return try await getIAPVersion(params)
+        case "iap_list_versions":
+            return try await listIAPVersions(params)
+        case "iap_list_version_localizations":
+            return try await listIAPVersionLocalizations(params)
+        case "iap_create_version_localization":
+            return try await createIAPVersionLocalization(params)
+        case "iap_get_version_localization":
+            return try await getIAPVersionLocalization(params)
+        case "iap_update_version_localization":
+            return try await updateIAPVersionLocalization(params)
+        case "iap_delete_version_localization":
+            return try await deleteIAPVersionLocalization(params)
+        case "iap_get_version_image":
+            return try await getIAPVersionImage(params)
+        case "iap_list_version_images":
+            return try await listIAPVersionImages(params)
+        case "iap_upload_version_image":
+            return try await uploadIAPVersionImage(params)
+        case "iap_get_version_image_resource":
+            return try await getIAPVersionImageResource(params)
+        case "iap_delete_version_image":
+            return try await deleteIAPVersionImage(params)
         default:
             throw MCPError.methodNotFound("Unknown tool: \(params.name)")
         }

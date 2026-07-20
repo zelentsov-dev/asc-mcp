@@ -49,7 +49,7 @@ Each company needs: `keyID`, `issuerID`, `privateKeyPath` (path to `.p8` file).
 
 **WorkerManager** (`Workers/MainWorker/WorkerManager.swift`) — central registry, routes tool calls by prefix.
 
-**Workers** (37 Swift worker classes; 33 `--workers` filter keys; 403 tools):
+**Workers** (38 Swift worker classes; 34 `--workers` filter keys; 451 tools):
 
 | Worker | Prefix | Tools | Domain |
 |--------|--------|-------|--------|
@@ -67,7 +67,7 @@ Each company needs: `keyID`, `issuerID`, `privateKeyPath` (path to `.p8` file).
 | ReviewsWorker | `reviews_` | 8 | Customer reviews, responses, AI summarizations |
 | BetaGroupsWorker | `beta_groups_` | 9 | TestFlight groups CRUD, testers, builds |
 | BetaFeedbackWorker | `beta_feedback_` | 8 | TestFlight feedback screenshots, crash submissions, crash logs |
-| InAppPurchasesWorker | `iap_` | 46 | IAP, pricing, availability, offer codes, review assets |
+| InAppPurchasesWorker | `iap_` | 59 | IAP, versioned metadata, pricing, availability, offer codes, review assets |
 | ProvisioningWorker | `provisioning_` | 17 | Bundle IDs, devices, certificates, profiles, capabilities |
 | BetaTestersWorker | `beta_testers_` | 12 | Tester management, search, invite, relationships, invitations |
 | AppInfoWorker | `app_info_` | 10 | App info, categories, localizations, EULA |
@@ -75,7 +75,7 @@ Each company needs: `keyID`, `issuerID`, `privateKeyPath` (path to `.p8` file).
 | UsersWorker | `users_` | 10 | Team members, roles, invitations, visible apps |
 | AppEventsWorker | `app_events_` | 9 | In-app events CRUD, localizations |
 | AnalyticsWorker | `analytics_` | 11 | Sales/financial reports, app summary, analytics reports/instances/segments, snapshot status |
-| SubscriptionsWorker | `subscriptions_` | 73 | Subscription lifecycle, pricing, availability, offers, assets; includes offer-code, intro, promotional, and win-back sub-worker behavior |
+| SubscriptionsWorker | `subscriptions_` | 99 | Subscription and group versions, pricing, plan availability, offers, assets; includes offer-code, intro, promotional, and win-back sub-worker behavior |
 | SandboxTestersWorker | `sandbox_` | 3 | Sandbox testers (list, update, clear purchase history) |
 | BetaAppWorker | `beta_app_` | 10 | Beta app localizations, review submissions, review details |
 | PreReleaseVersionsWorker | `pre_release_` | 3 | Pre-release versions (list, get, builds) |
@@ -85,6 +85,7 @@ Each company needs: `keyID`, `issuerID`, `privateKeyPath` (path to `.p8` file).
 | ProductPageOptimizationWorker | `ppo_` | 9 | A/B test experiments, treatments |
 | PromotedPurchasesWorker | `promoted_` | 9 | Promoted in-app purchases; legacy image tools return migration guidance |
 | ReviewAttachmentsWorker | `review_attachments_` | 4 | App Store review attachments (upload, get, delete, list) |
+| ReviewSubmissionsWorker | `review_submissions_` | 9 | Generic App Store review submissions and submission items |
 | MetricsWorker | `metrics_` | 4 | Performance/power metrics, diagnostics |
 
 **Services**: HTTPClient (actor, GET/POST/PATCH/PUT/DELETE + retry with 429), JWTService (ES256), CompaniesManager

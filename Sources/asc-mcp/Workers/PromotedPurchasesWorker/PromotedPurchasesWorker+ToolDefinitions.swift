@@ -179,7 +179,14 @@ extension PromotedPurchasesWorker {
                     ])
                 ]),
                 "required": .array([.string("image_id")])
-            ])
+            ]),
+            annotations: Tool.Annotations(
+                title: nil,
+                readOnlyHint: true,
+                destructiveHint: false,
+                idempotentHint: true,
+                openWorldHint: true
+            )
         )
     }
 
