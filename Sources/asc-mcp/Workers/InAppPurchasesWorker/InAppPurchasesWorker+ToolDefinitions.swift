@@ -434,6 +434,8 @@ extension InAppPurchasesWorker {
             description: "Set price schedule for an in-app purchase",
             inputSchema: .object([
                 "type": .string("object"),
+                "additionalProperties": .bool(false),
+                "maxProperties": .int(3),
                 "properties": .object([
                     "iap_id": .object([
                         "type": .string("string"),

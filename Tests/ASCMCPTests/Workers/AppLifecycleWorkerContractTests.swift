@@ -422,6 +422,37 @@ struct AppLifecycleWorkerContractTests {
         #expect(await transport.requestCount() == 0)
     }
 
+    @Test("age rating target without attributes fails before network access", arguments: [
+        "app_info_id",
+        "version_id"
+    ])
+    func ageRatingTargetWithoutAttributesFailsBeforeNetwork(_ targetKey: String) async throws {
+        let transport = TestHTTPTransport(responses: [])
+        let worker = try await makeContractWorker(transport: transport)
+
+        let result = try await worker.handleTool(CallTool.Parameters(
+            name: "app_versions_update_age_rating",
+            arguments: [targetKey: .string("target-1")]
+        ))
+
+        #expect(result.isError == true)
+        #expect(await transport.requestCount() == 0)
+    }
+
+    @Test("age rating attributes without a target fail before network access")
+    func ageRatingAttributesWithoutTargetFailBeforeNetwork() async throws {
+        let transport = TestHTTPTransport(responses: [])
+        let worker = try await makeContractWorker(transport: transport)
+
+        let result = try await worker.handleTool(CallTool.Parameters(
+            name: "app_versions_update_age_rating",
+            arguments: ["advertising": .bool(false)]
+        ))
+
+        #expect(result.isError == true)
+        #expect(await transport.requestCount() == 0)
+    }
+
     @Test("legacy version lookup rejects one incompatible App Info")
     func ageRatingRejectsSingleIncompatibleAppInfo() async throws {
         let transport = TestHTTPTransport(responses: [

@@ -125,6 +125,28 @@ struct InAppPurchasesV3WorkerTests {
         #expect(territory["currency"] == .string("USD"))
     }
 
+    @Test("IAP availability rejects missing or ambiguous selectors before the network")
+    func availabilityRejectsInvalidSelectors() async throws {
+        let transport = TestHTTPTransport(responses: [])
+        let worker = try await makeIAPWorker(transport: transport)
+
+        let missing = try await worker.handleTool(CallTool.Parameters(
+            name: "iap_get_availability",
+            arguments: ["include_territories": .bool(true)]
+        ))
+        let ambiguous = try await worker.handleTool(CallTool.Parameters(
+            name: "iap_get_availability",
+            arguments: [
+                "iap_id": .string("iap-1"),
+                "availability_id": .string("availability-1")
+            ]
+        ))
+
+        #expect(missing.isError == true)
+        #expect(ambiguous.isError == true)
+        #expect(await transport.requestCount() == 0)
+    }
+
     @Test("IAP pricing summary reads schedule prices by territory")
     func pricingSummaryReadsSchedulePricesByTerritory() async throws {
         let transport = TestHTTPTransport(responses: [
@@ -440,6 +462,12 @@ struct InAppPurchasesV3WorkerTests {
         let itemRequired = Set(try iapArray(item["required"]).compactMap(\.stringValue))
         #expect(itemRequired == ["price_point_id"])
         #expect(try iapArray(priceRoot["allOf"]).count == 1)
+        #expect(priceRoot["additionalProperties"] == .bool(false))
+        #expect(priceRoot["maxProperties"] == .int(3))
+        let publishedPriceRoot = try iapObject(ToolMetadataPolicy.apply(to: priceTool).inputSchema)
+        #expect(publishedPriceRoot["allOf"] == nil)
+        #expect(publishedPriceRoot["maxProperties"] == .int(3))
+        #expect(publishedPriceRoot["additionalProperties"] == .bool(false))
 
         let availabilityTool = try #require(tools.first { $0.name == "iap_get_availability" })
         let availabilityRoot = try iapObject(availabilityTool.inputSchema)

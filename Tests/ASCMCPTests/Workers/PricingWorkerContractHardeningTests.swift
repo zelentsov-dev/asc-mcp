@@ -5,6 +5,23 @@ import Testing
 
 @Suite("Pricing Worker Contract Hardening Tests")
 struct PricingWorkerContractHardeningTests {
+    @Test("published availability creation requires at least one territory source")
+    func availabilityCreationSchemaPreservesSourceRequirement() async throws {
+        let worker = try await makePricingHardeningWorker(
+            transport: TestHTTPTransport(responses: [])
+        )
+        let tools = await worker.getTools()
+        let tool = try #require(tools.first { $0.name == "pricing_create_availability" })
+        let raw = try pricingHardeningObject(tool.inputSchema)
+        let published = try pricingHardeningObject(ToolMetadataPolicy.apply(to: tool).inputSchema)
+
+        #expect(raw["minProperties"] == .int(3))
+        #expect(raw["additionalProperties"] == .bool(false))
+        #expect(published["minProperties"] == .int(3))
+        #expect(published["additionalProperties"] == .bool(false))
+        #expect(published["anyOf"] == nil)
+    }
+
     @Test("price schedule exposes nested limits, linkage classification, and truncation")
     func priceScheduleCompleteness() async throws {
         let transport = TestHTTPTransport(responses: [
@@ -115,6 +132,23 @@ struct PricingWorkerContractHardeningTests {
         let attributes = try #require(included[0]["attributes"] as? [String: Any])
         #expect(attributes["startDate"] is NSNull)
         #expect(attributes["endDate"] is NSNull)
+    }
+
+    @Test("price schedule rejects a missing price mode before the network")
+    func rejectsMissingPriceScheduleMode() async throws {
+        let transport = TestHTTPTransport(responses: [])
+        let worker = try await makePricingHardeningWorker(transport: transport)
+
+        let result = try await worker.handleTool(CallTool.Parameters(
+            name: "pricing_set_price_schedule",
+            arguments: [
+                "app_id": .string("app-1"),
+                "base_territory_id": .string("USA")
+            ]
+        ))
+
+        #expect(result.isError == true)
+        #expect(await transport.requestCount() == 0)
     }
 
     @Test("price schedule rejects conflicting input modes before the network")

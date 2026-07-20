@@ -64,8 +64,19 @@ struct ScreenshotsOptionalInputsContractTests {
         #expect(try screenshotsValueArray(previewItems["enum"]).contains(.string("APPLE_VISION_PRO")))
 
         let createScreenshotTool = try #require(tools.first { $0.name == "screenshots_create_set" })
+        let createScreenshotRoot = try screenshotsValueObject(createScreenshotTool.inputSchema)
+        let publishedScreenshotRoot = try screenshotsValueObject(
+            ToolMetadataPolicy.apply(to: createScreenshotTool).inputSchema
+        )
+        #expect(createScreenshotRoot["minProperties"] == .int(2))
+        #expect(createScreenshotRoot["maxProperties"] == .int(2))
+        #expect(createScreenshotRoot["additionalProperties"] == .bool(false))
+        #expect(publishedScreenshotRoot["minProperties"] == .int(2))
+        #expect(publishedScreenshotRoot["maxProperties"] == .int(2))
+        #expect(publishedScreenshotRoot["additionalProperties"] == .bool(false))
+        #expect(publishedScreenshotRoot["oneOf"] == nil)
         let createScreenshotProperties = try screenshotsValueObject(
-            try screenshotsValueObject(createScreenshotTool.inputSchema)["properties"]
+            createScreenshotRoot["properties"]
         )
         let displayType = try screenshotsValueObject(createScreenshotProperties["display_type"])
         #expect(
@@ -74,8 +85,19 @@ struct ScreenshotsOptionalInputsContractTests {
         )
 
         let createPreviewTool = try #require(tools.first { $0.name == "screenshots_create_preview_set" })
+        let createPreviewRoot = try screenshotsValueObject(createPreviewTool.inputSchema)
+        let publishedPreviewRoot = try screenshotsValueObject(
+            ToolMetadataPolicy.apply(to: createPreviewTool).inputSchema
+        )
+        #expect(createPreviewRoot["minProperties"] == .int(2))
+        #expect(createPreviewRoot["maxProperties"] == .int(2))
+        #expect(createPreviewRoot["additionalProperties"] == .bool(false))
+        #expect(publishedPreviewRoot["minProperties"] == .int(2))
+        #expect(publishedPreviewRoot["maxProperties"] == .int(2))
+        #expect(publishedPreviewRoot["additionalProperties"] == .bool(false))
+        #expect(publishedPreviewRoot["oneOf"] == nil)
         let createPreviewProperties = try screenshotsValueObject(
-            try screenshotsValueObject(createPreviewTool.inputSchema)["properties"]
+            createPreviewRoot["properties"]
         )
         let previewType = try screenshotsValueObject(createPreviewProperties["preview_type"])
         #expect(

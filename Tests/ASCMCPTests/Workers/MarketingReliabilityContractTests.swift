@@ -254,7 +254,14 @@ struct MarketingReliabilityContractTests {
         let enabled = try marketingValueObject(properties["enabled"])
         #expect(try marketingValueArray(enabled["type"]) == [.string("boolean"), .string("null")])
 
-        let result = try await worker.handleTool(CallTool.Parameters(
+        let missingProduct = try await worker.handleTool(CallTool.Parameters(
+            name: "promoted_create",
+            arguments: [
+                "app_id": .string("app-1"),
+                "visible": .bool(true)
+            ]
+        ))
+        let ambiguousProduct = try await worker.handleTool(CallTool.Parameters(
             name: "promoted_create",
             arguments: [
                 "app_id": .string("app-1"),
@@ -264,7 +271,8 @@ struct MarketingReliabilityContractTests {
             ]
         ))
 
-        #expect(result.isError == true)
+        #expect(missingProduct.isError == true)
+        #expect(ambiguousProduct.isError == true)
         #expect(await transport.requestCount() == 0)
     }
 

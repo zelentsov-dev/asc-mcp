@@ -45,6 +45,9 @@ extension ScreenshotsWorker {
             description: "Create a screenshot set for exactly one App Store, custom product page, or PPO treatment localization. Display types: APP_IPHONE_67, APP_IPAD_PRO_3GEN_129, APP_DESKTOP, etc.",
             inputSchema: .object([
                 "type": .string("object"),
+                "additionalProperties": .bool(false),
+                "minProperties": .int(2),
+                "maxProperties": .int(2),
                 "properties": .object([
                     "localization_id": .object([
                         "type": .string("string"),
@@ -233,6 +236,9 @@ extension ScreenshotsWorker {
             description: "Create an app preview set for exactly one App Store, custom product page, or PPO treatment localization. Preview types: IPHONE_67, IPAD_PRO_3GEN_129, DESKTOP, etc.",
             inputSchema: .object([
                 "type": .string("object"),
+                "additionalProperties": .bool(false),
+                "minProperties": .int(2),
+                "maxProperties": .int(2),
                 "properties": .object([
                     "localization_id": .object([
                         "type": .string("string"),

@@ -206,6 +206,8 @@ extension PricingWorker {
             description: "Create App Store Connect v2 app availability for an app pre-order. Link existing territory availability resources, create inline territory settings, or combine both.",
             inputSchema: .object([
                 "type": .string("object"),
+                "additionalProperties": .bool(false),
+                "minProperties": .int(3),
                 "properties": .object([
                     "app_id": .object([
                         "type": .string("string"),
