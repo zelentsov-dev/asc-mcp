@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.6.0] - 2026-07-20
+
+### Changed
+
+- `subscriptions_pricing_summary` now keeps Apple's `MONTHLY` and `UPFRONT` schedules separate, with an optional `plan_type` filter and complete per-plan summaries.
+- Pricing summaries traverse all Apple pages by default, accept a bounded 1...200 page `limit`, and support an optional 1...100 `max_pages` cap with explicit continuation metadata.
+- Complete summaries expose every effective, scheduled, and undated price in stable order while retaining the existing top-level compatibility fields for an unambiguous single plan.
+
+### Fixed
+
+- Reject malformed pricing-summary inputs, scope-changing continuation URLs, invalid Apple resource linkage, repeated pagination links, and conflicting duplicate price resources before returning a misleading aggregate.
+- Preserve an undated Apple starting price as the current price when no dated effective price exists.
+- Stop treating partial continuation segments or mixed plan types as a complete legacy current-price summary.
+
+### Compatibility
+
+- No public MCP tool or required input was added, removed, or renamed; `plan_type`, `limit`, `max_pages`, and `next_url` are optional additions to `subscriptions_pricing_summary`.
+- Existing `current_price` and `scheduled_prices` fields remain available, but are intentionally null or empty when traversal is partial or multiple plan types make a single legacy summary ambiguous; use `plan_summaries` in those cases.
+- The strict contract pin records 2,154 optional Apple inputs: 730 bound, 6 internally controlled, 1,010 intentionally omitted, and 408 still queued for domain review.
+
 ## [3.5.0] - 2026-07-20
 
 ### Changed
