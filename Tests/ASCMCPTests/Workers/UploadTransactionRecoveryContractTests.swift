@@ -572,6 +572,8 @@ struct UploadTransactionRecoveryContractTests {
         let payload = try uploadRecoveryObject(result.structuredContent)
         #expect(payload["reservationIdKnown"] == .bool(false))
         #expect(payload["retrySafe"] == .bool(false))
+        #expect(payload["sourceFileChecksumReceipt"] == nil)
+        #expect(uploadRecoveryText(result).contains("checksum receipt") == false)
     }
 
     @Test("unreadable reservation response is not deleted or retried")

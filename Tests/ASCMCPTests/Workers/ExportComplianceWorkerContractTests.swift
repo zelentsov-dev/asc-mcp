@@ -496,6 +496,53 @@ struct ExportComplianceWorkerContractTests {
         }
     }
 
+    @Test("document create rejects conflicting reservation checksum bindings before transfer")
+    func createDocumentChecksumBindingConflict() async throws {
+        let fileURL = try exportComplianceFile(Data("hello".utf8))
+        defer { try? FileManager.default.removeItem(at: fileURL) }
+
+        for storedChecksum in ["7d793037a0760186574b0282f2f435e7", "INVALID"] {
+            let apiTransport = TestHTTPTransport(responses: [
+                .init(statusCode: 200, body: exportComplianceDeclarationResponse(id: "declaration-1", state: "CREATED")),
+                .init(statusCode: 404, body: exportComplianceAPIError(404)),
+                .init(
+                    statusCode: 201,
+                    body: exportComplianceDocumentResponse(
+                        id: "document-1",
+                        fileName: fileURL.lastPathComponent,
+                        state: "AWAITING_UPLOAD",
+                        uploadOperations: true,
+                        includeSecrets: true,
+                        sourceFileChecksum: storedChecksum
+                    )
+                )
+            ])
+            let uploadTransport = TestHTTPTransport(responses: [])
+            let worker = try await exportComplianceWorker(
+                apiTransport: apiTransport,
+                uploadTransport: uploadTransport
+            )
+            let result = try await worker.handleTool(.init(
+                name: "export_compliance_create_document",
+                arguments: [
+                    "declaration_id": .string("declaration-1"),
+                    "file_path": .string(fileURL.path)
+                ]
+            ))
+
+            #expect(result.isError == true)
+            #expect(await apiTransport.recordedRequests().map(\.httpMethod) == ["GET", "GET", "POST"])
+            #expect(await uploadTransport.requestCount() == 0)
+            let payload = try exportComplianceObject(result.structuredContent)
+            #expect(payload["retrySafe"] == .bool(false))
+            #expect(payload["checksumBindingConflict"] == .bool(true))
+            #expect(payload["sourceFileChecksumReceipt"] == nil)
+            #expect(payload["nextAction"] == nil)
+            #expect(payload["inspection"] != nil)
+            exportComplianceExpectNoSecrets(result)
+        }
+    }
+
     @Test("document read redacts download and upload secrets")
     func getDocumentRedaction() async throws {
         let transport = TestHTTPTransport(responses: [
@@ -827,10 +874,10 @@ struct ExportComplianceWorkerContractTests {
         #expect(await apiTransport.recordedRequests().map(\.httpMethod) == ["GET"])
         #expect(await uploadTransport.requestCount() == 0)
         let payload = try exportComplianceObject(result.structuredContent)
-        #expect(payload["sourceFileChecksumReceipt"] == .string(exportComplianceHelloMD5))
-        let nextAction = try exportComplianceValueObject(payload["nextAction"])
-        let arguments = try exportComplianceValueObject(nextAction["arguments"])
-        #expect(arguments["source_file_checksum"] == .string(exportComplianceHelloMD5))
+        #expect(payload["checksumBindingConflict"] == .bool(true))
+        #expect(payload["sourceFileChecksumReceipt"] == nil)
+        #expect(payload["nextAction"] == nil)
+        #expect(payload["inspection"] != nil)
     }
 
     @Test("document upload fails closed for an invalid checksum stored by Apple")
@@ -864,10 +911,12 @@ struct ExportComplianceWorkerContractTests {
         #expect(await apiTransport.recordedRequests().map(\.httpMethod) == ["GET"])
         #expect(await uploadTransport.requestCount() == 0)
         let payload = try exportComplianceObject(result.structuredContent)
-        #expect(payload["retrySafe"] == .bool(false))
-        #expect(payload["sourceFileChecksumReceipt"] == nil)
-        #expect(payload["nextAction"] == nil)
-        #expect(payload["inspection"] != nil)
+        let details = try exportComplianceErrorDetails(result)
+        #expect(details["retrySafe"] == .bool(false))
+        #expect(details["sourceFileChecksumReceipt"] == nil)
+        #expect(details["nextAction"] == nil)
+        #expect(details["inspection"] != nil)
+        #expect(payload["details"] != nil)
     }
 
     @Test("missing upload operations retain reservation without DELETE")

@@ -876,15 +876,6 @@ extension ExportComplianceWorker {
                             "file name and byte size must match the existing reservation"
                         )
                     }
-                    if let storedChecksum = document.attributes?.sourceFileChecksum {
-                        guard exportComplianceIsLowercaseMD5(storedChecksum),
-                              storedChecksum == snapshot.md5Checksum,
-                              expectedChecksum == nil || storedChecksum == expectedChecksum else {
-                            throw ExportComplianceInputError(
-                                "snapshot bytes and source_file_checksum must match the checksum already stored by Apple"
-                            )
-                        }
-                    }
                 }
                 if let expectedChecksum,
                    snapshot.md5Checksum != expectedChecksum {
@@ -899,6 +890,15 @@ extension ExportComplianceWorker {
                     throw ExportComplianceInputError(
                         "reservation file name and byte size must match the immutable snapshot"
                     )
+                }
+                if let storedChecksum = document.attributes?.sourceFileChecksum {
+                    guard exportComplianceIsLowercaseMD5(storedChecksum),
+                          storedChecksum == snapshot.md5Checksum,
+                          expectedChecksum == nil || storedChecksum == expectedChecksum else {
+                        throw ExportComplianceInputError(
+                            "immutable snapshot and source_file_checksum must match the checksum already stored by Apple"
+                        )
+                    }
                 }
                 guard document.attributes?.assetDeliveryState?.state == "AWAITING_UPLOAD" else {
                     throw ExportComplianceInputError(
@@ -1264,16 +1264,32 @@ private func exportComplianceUploadResult(
         )
     }
 
-    let retainedAwaitingUpload: Bool
-    if case .preCommitFailure(_, let document, _, _) = outcome {
-        retainedAwaitingUpload = document.attributes?.assetDeliveryState?.state == "AWAITING_UPLOAD"
+    let retainedDocument: ASCExportComplianceDocument?
+    if case .preCommitFailure(_, let document, _, _) = outcome,
+       document.attributes?.assetDeliveryState?.state == "AWAITING_UPLOAD" {
+        retainedDocument = document
     } else {
-        retainedAwaitingUpload = false
+        retainedDocument = nil
     }
-    if retainedAwaitingUpload,
+    if let retainedDocument,
        payload["reservationDeleted"] as? Bool == false,
        let documentID = payload["document_id"] as? String {
-        let checksum = authoritativeChecksum ?? payload["sourceFileChecksumReceipt"] as? String
+        let snapshotChecksum = payload["sourceFileChecksumReceipt"] as? String
+        let storedChecksum = retainedDocument.attributes?.sourceFileChecksum
+        let checksumBindingConflict = storedChecksum.map {
+            !exportComplianceIsLowercaseMD5($0) || $0 != snapshotChecksum
+        } ?? false
+        if checksumBindingConflict {
+            payload.removeValue(forKey: "sourceFileChecksumReceipt")
+            payload["checksumBindingConflict"] = true
+            payload["inspection"] = [
+                "tool": descriptor.inspectionTool,
+                "arguments": descriptor.inspectionArguments
+            ]
+        }
+        let checksum = checksumBindingConflict
+            ? nil
+            : (storedChecksum ?? authoritativeChecksum ?? snapshotChecksum)
         if let checksum {
             payload["sourceFileChecksumReceipt"] = checksum
             payload["nextAction"] = [

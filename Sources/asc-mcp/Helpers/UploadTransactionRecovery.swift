@@ -791,13 +791,17 @@ enum UploadTransactionRecovery {
                 "retrySafe": false,
                 "inspection": inspectionGuidance(descriptor)
             ]
+            let receiptPublished: Bool
             if let checksumReceiptKey = descriptor.checksumReceiptKey,
                let checksumReceipt {
                 value[checksumReceiptKey] = checksumReceipt
+                receiptPublished = true
+            } else {
+                receiptPublished = false
             }
-            let recoveryInstruction = checksumReceipt == nil
-                ? "Inspect the parent collection before retrying to avoid a duplicate."
-                : "Preserve the checksum receipt and inspect the parent collection before retrying to avoid a duplicate."
+            let recoveryInstruction = receiptPublished
+                ? "Preserve the checksum receipt and inspect the parent collection before retrying to avoid a duplicate."
+                : "Inspect the parent collection before retrying to avoid a duplicate."
             return (
                 value,
                 "Error: \(safeMessage) The reservation id is unavailable. \(recoveryInstruction)",

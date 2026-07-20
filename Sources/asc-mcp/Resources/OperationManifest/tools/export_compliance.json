@@ -459,7 +459,8 @@
         ],
         "fields": [
           { "outputField": "document", "localRole": "Latest safe resource projection after commit, reconciliation, or bounded delivery polling." },
-          { "outputField": "sourceFileChecksumReceipt", "localRole": "When reservation creation is ambiguous or a known precommit reservation is retained, return the lowercase MD5 of the immutable snapshot so later inspection and resume can require the exact same bytes." },
+          { "outputField": "sourceFileChecksumReceipt", "localRole": "When reservation creation is ambiguous, or a known precommit reservation has no conflicting Apple checksum binding, return the lowercase MD5 of the immutable snapshot so later inspection and resume can require the exact same bytes." },
+          { "outputField": "checksumBindingConflict", "localRole": "True when Apple returns an invalid or different checksum on a confirmed retained reservation; omit the resume receipt and require inspection instead of suggesting another transfer." },
           { "outputField": "retrySafe", "localRole": "True only before reservation or after a deterministic reservation rejection; false for retained, ambiguous, committed, pending, or failed outcomes." },
           { "outputField": "inspection", "localRole": "When reservation identity or commit state is unresolved, inspect the declaration or retained document before any retry." }
         ]
@@ -819,7 +820,8 @@
         ],
         "fields": [
           { "outputField": "document", "localRole": "Latest safe resource projection after commit or reconciliation." },
-          { "outputField": "sourceFileChecksumReceipt", "localRole": "Return the authoritative lowercase MD5 receipt again on retained AWAITING_UPLOAD recovery." },
+          { "outputField": "sourceFileChecksumReceipt", "localRole": "Return the authoritative lowercase MD5 receipt again only when it matches both the immutable snapshot and any checksum already stored by Apple." },
+          { "outputField": "checksumBindingConflict", "localRole": "True when Apple returns an invalid or different checksum binding; omit automatic resume guidance and require inspection." },
           { "outputField": "retrySafe", "localRole": "False for every post-reservation unresolved, pending, or failed outcome." },
           { "outputField": "cleanup", "localRole": "Explicit unavailable status because OpenAPI 4.4.1 exposes no document DELETE operation." }
         ]
