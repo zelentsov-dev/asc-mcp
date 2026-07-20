@@ -10,24 +10,21 @@ extension InAppPurchasesWorker {
 
         do {
             let response: PassthroughAPIResponse
+            var query = iapPricePointQuery(limit: clampedIAPLimit(arguments["limit"]?.intValue, defaultValue: 50, max: 8000))
+            if let territoryId = arguments["territory_id"]?.stringValue ?? arguments["territory"]?.stringValue {
+                query["filter[territory]"] = territoryId
+            }
+
             if let nextUrl = try paginationURL(from: arguments["next_url"]) {
-                var requiredParameters: [String: String] = [:]
-                if let territoryId = arguments["territory_id"]?.stringValue ?? arguments["territory"]?.stringValue {
-                    requiredParameters["filter[territory]"] = territoryId
-                }
                 response = try await httpClient.getPage(
                     nextUrl,
-                    scope: PaginationScope(
+                    scope: iapCommercePaginationScope(
                         path: "/v2/inAppPurchases/\(try ASCPathSegment.encode(iapId))/pricePoints",
-                        requiredParameters: requiredParameters
+                        query: query
                     ),
                     as: PassthroughAPIResponse.self
                 )
             } else {
-                var query = iapPricePointQuery(limit: clampedIAPLimit(arguments["limit"]?.intValue, defaultValue: 50, max: 8000))
-                if let territoryId = arguments["territory_id"]?.stringValue ?? arguments["territory"]?.stringValue {
-                    query["filter[territory]"] = territoryId
-                }
                 response = try await httpClient.get(
                     "/v2/inAppPurchases/\(try ASCPathSegment.encode(iapId))/pricePoints",
                     parameters: query,
@@ -57,30 +54,24 @@ extension InAppPurchasesWorker {
 
         do {
             let response: PassthroughAPIResponse
+            var query = iapPricePointQuery(limit: clampedIAPLimit(arguments["limit"]?.intValue, defaultValue: 25, max: 8000))
+            if let iapId = arguments["iap_id"]?.stringValue {
+                query["filter[inAppPurchaseV2]"] = iapId
+            }
+            if let territoryId = arguments["territory_id"]?.stringValue {
+                query["filter[territory]"] = territoryId
+            }
+
             if let nextUrl = try paginationURL(from: arguments["next_url"]) {
-                var requiredParameters: [String: String] = [:]
-                if let iapId = arguments["iap_id"]?.stringValue {
-                    requiredParameters["filter[inAppPurchaseV2]"] = iapId
-                }
-                if let territoryId = arguments["territory_id"]?.stringValue {
-                    requiredParameters["filter[territory]"] = territoryId
-                }
                 response = try await httpClient.getPage(
                     nextUrl,
-                    scope: PaginationScope(
+                    scope: iapCommercePaginationScope(
                         path: "/v1/inAppPurchasePricePoints/\(try ASCPathSegment.encode(pricePointId))/equalizations",
-                        requiredParameters: requiredParameters
+                        query: query
                     ),
                     as: PassthroughAPIResponse.self
                 )
             } else {
-                var query = iapPricePointQuery(limit: clampedIAPLimit(arguments["limit"]?.intValue, defaultValue: 25, max: 8000))
-                if let iapId = arguments["iap_id"]?.stringValue {
-                    query["filter[inAppPurchaseV2]"] = iapId
-                }
-                if let territoryId = arguments["territory_id"]?.stringValue {
-                    query["filter[territory]"] = territoryId
-                }
                 response = try await httpClient.get(
                     "/v1/inAppPurchasePricePoints/\(try ASCPathSegment.encode(pricePointId))/equalizations",
                     parameters: query,
@@ -344,7 +335,8 @@ extension InAppPurchasesWorker {
                 "limit[oneTimeUseCodes]": "50",
                 "limit[customCodes]": "50",
                 "limit[prices]": "50"
-            ]
+            ],
+            requireFullPaginationQuery: true
         )
     }
 
@@ -435,24 +427,21 @@ extension InAppPurchasesWorker {
 
         do {
             let response: PassthroughAPIResponse
+            var query = iapOfferPriceQuery(limit: clampedIAPLimit(arguments["limit"]?.intValue, defaultValue: 25, max: 200))
+            if let territoryId = arguments["territory_id"]?.stringValue {
+                query["filter[territory]"] = territoryId
+            }
+
             if let nextUrl = try paginationURL(from: arguments["next_url"]) {
-                var requiredParameters: [String: String] = [:]
-                if let territoryId = arguments["territory_id"]?.stringValue {
-                    requiredParameters["filter[territory]"] = territoryId
-                }
                 response = try await httpClient.getPage(
                     nextUrl,
-                    scope: PaginationScope(
+                    scope: iapCommercePaginationScope(
                         path: "/v1/inAppPurchaseOfferCodes/\(try ASCPathSegment.encode(offerCodeId))/prices",
-                        requiredParameters: requiredParameters
+                        query: query
                     ),
                     as: PassthroughAPIResponse.self
                 )
             } else {
-                var query = iapOfferPriceQuery(limit: clampedIAPLimit(arguments["limit"]?.intValue, defaultValue: 25, max: 200))
-                if let territoryId = arguments["territory_id"]?.stringValue {
-                    query["filter[territory]"] = territoryId
-                }
                 response = try await httpClient.get(
                     "/v1/inAppPurchaseOfferCodes/\(try ASCPathSegment.encode(offerCodeId))/prices",
                     parameters: query,
@@ -629,23 +618,27 @@ extension InAppPurchasesWorker {
         defaultQuery: [String: String],
         extraResult: [String: Any] = [:],
         preserveIncluded: Bool = false,
-        includePaginationState: Bool = false
+        includePaginationState: Bool = false,
+        requireFullPaginationQuery: Bool = false
     ) async throws -> CallTool.Result {
         do {
             let response: PassthroughAPIResponse
+            var query = defaultQuery
+            query["limit"] = String(clampedIAPLimit(params.arguments?["limit"]?.intValue, defaultValue: 25, max: 200))
             if let nextUrl = try paginationURL(from: params.arguments?["next_url"]) {
                 var requiredParameters: [String: String] = [:]
-                for (key, value) in defaultQuery where preserveIncluded || key.hasPrefix("filter[") {
-                    requiredParameters[key] = value
+                if requireFullPaginationQuery {
+                    requiredParameters = query
+                } else {
+                    for (key, value) in defaultQuery where preserveIncluded || key.hasPrefix("filter[") {
+                        requiredParameters[key] = value
+                    }
                 }
-                response = try await httpClient.getPage(
-                    nextUrl,
-                    scope: PaginationScope(path: endpoint, requiredParameters: requiredParameters),
-                    as: PassthroughAPIResponse.self
-                )
+                let scope = requireFullPaginationQuery
+                    ? iapCommercePaginationScope(path: endpoint, query: query)
+                    : PaginationScope(path: endpoint, requiredParameters: requiredParameters)
+                response = try await httpClient.getPage(nextUrl, scope: scope, as: PassthroughAPIResponse.self)
             } else {
-                var query = defaultQuery
-                query["limit"] = String(clampedIAPLimit(params.arguments?["limit"]?.intValue, defaultValue: 25, max: 200))
                 response = try await httpClient.get(endpoint, parameters: query, as: PassthroughAPIResponse.self)
             }
             let data = response.data.arrayValue ?? []
@@ -713,6 +706,14 @@ extension InAppPurchasesWorker {
             "fields[territories]": "currency",
             "limit": String(limit)
         ]
+    }
+
+    private func iapCommercePaginationScope(path: String, query: [String: String]) -> PaginationScope {
+        PaginationScope(
+            path: path,
+            requiredParameters: query,
+            allowedParameters: Set(query.keys).union(Set(["cursor"]))
+        )
     }
 
     private func iapPriceQuery(territoryId: String) -> [String: String] {

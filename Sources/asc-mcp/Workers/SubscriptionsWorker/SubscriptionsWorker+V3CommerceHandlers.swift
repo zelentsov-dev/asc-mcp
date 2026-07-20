@@ -22,7 +22,7 @@ extension SubscriptionsWorker {
             if let nextUrl = try paginationURL(from: arguments["next_url"]) {
                 response = try await httpClient.getPage(
                     nextUrl,
-                    scope: PaginationScope(path: endpoint, requiredParameters: paginationFilters(from: query)),
+                    scope: commercePaginationScope(path: endpoint, query: query),
                     as: PassthroughAPIResponse.self
                 )
             } else {
@@ -69,7 +69,7 @@ extension SubscriptionsWorker {
             if let nextUrl = try paginationURL(from: arguments["next_url"]) {
                 response = try await httpClient.getPage(
                     nextUrl,
-                    scope: PaginationScope(path: endpoint, requiredParameters: paginationFilters(from: query)),
+                    scope: commercePaginationScope(path: endpoint, query: query),
                     as: PassthroughAPIResponse.self
                 )
             } else {
@@ -220,7 +220,7 @@ extension SubscriptionsWorker {
             if let nextUrl = try paginationURL(from: arguments["next_url"]) {
                 response = try await httpClient.getPage(
                     nextUrl,
-                    scope: PaginationScope(path: endpoint, requiredParameters: paginationFilters(from: query)),
+                    scope: commercePaginationScope(path: endpoint, query: query),
                     as: PassthroughAPIResponse.self
                 )
             } else {
@@ -1142,6 +1142,14 @@ extension SubscriptionsWorker {
             filters[name] = value
         }
         return filters
+    }
+
+    private func commercePaginationScope(path: String, query: [String: String]) -> PaginationScope {
+        PaginationScope(
+            path: path,
+            requiredParameters: query,
+            allowedParameters: Set(query.keys).union(Set(["cursor"]))
+        )
     }
 
     private func clampedLimit(_ value: Int?, defaultValue: Int, max: Int) -> Int {

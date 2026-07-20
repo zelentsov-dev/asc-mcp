@@ -1782,7 +1782,7 @@
               "location": "query",
               "appleName": "include",
               "disposition": "internalControl",
-              "reason": "The handler fixes this query control on the initial request; it is not exposed as a direct public input.",
+              "reason": "The handler fixes this query control and requires the same value on every continuation; it is not exposed as a direct public input.",
               "reviewAtSpec": "4.4.1"
             }
           ]
@@ -1813,7 +1813,7 @@
         {
           "toolField": "next_url",
           "sourceKind": "local",
-          "localRole": "Validated Apple pagination URL override."
+          "localRole": "Validated Apple pagination URL bound to the concrete parent path and full originating query projection."
         }
       ],
       "response": {
@@ -1850,28 +1850,28 @@
               "location": "query",
               "appleName": "include",
               "disposition": "internalControl",
-              "reason": "The handler fixes this query control on the initial request; it is not exposed as a direct public input.",
+              "reason": "The handler fixes this query control and requires the same value on every continuation; it is not exposed as a direct public input.",
               "reviewAtSpec": "4.4.1"
             },
             {
               "location": "query",
               "appleName": "limit[customCodes]",
               "disposition": "internalControl",
-              "reason": "The handler fixes this query control on the initial request; it is not exposed as a direct public input.",
+              "reason": "The handler fixes this query control and requires the same value on every continuation; it is not exposed as a direct public input.",
               "reviewAtSpec": "4.4.1"
             },
             {
               "location": "query",
               "appleName": "limit[oneTimeUseCodes]",
               "disposition": "internalControl",
-              "reason": "The handler fixes this query control on the initial request; it is not exposed as a direct public input.",
+              "reason": "The handler fixes this query control and requires the same value on every continuation; it is not exposed as a direct public input.",
               "reviewAtSpec": "4.4.1"
             },
             {
               "location": "query",
               "appleName": "limit[prices]",
               "disposition": "internalControl",
-              "reason": "The handler fixes this query control on the initial request; it is not exposed as a direct public input.",
+              "reason": "The handler fixes this query control and requires the same value on every continuation; it is not exposed as a direct public input.",
               "reviewAtSpec": "4.4.1"
             }
           ]
@@ -1895,7 +1895,7 @@
         {
           "toolField": "next_url",
           "sourceKind": "local",
-          "localRole": "Validated Apple pagination URL override."
+          "localRole": "Validated Apple pagination URL bound to the concrete parent path and full originating query projection."
         }
       ],
       "response": {
@@ -1979,7 +1979,7 @@
               "location": "query",
               "appleName": "include",
               "disposition": "internalControl",
-              "reason": "The handler fixes this query control on the initial request; it is not exposed as a direct public input.",
+              "reason": "The handler fixes this query control and requires the same value on every continuation; it is not exposed as a direct public input.",
               "reviewAtSpec": "4.4.1"
             }
           ]
@@ -2017,7 +2017,7 @@
         {
           "toolField": "next_url",
           "sourceKind": "local",
-          "localRole": "Validated Apple pagination URL override."
+          "localRole": "Validated Apple pagination URL bound to the concrete parent path and full originating query projection."
         }
       ],
       "response": {
@@ -2048,7 +2048,7 @@
               "location": "query",
               "appleName": "include",
               "disposition": "internalControl",
-              "reason": "The handler fixes this query control on the initial request; it is not exposed as a direct public input.",
+              "reason": "The handler fixes this query control and requires the same value on every continuation; it is not exposed as a direct public input.",
               "reviewAtSpec": "4.4.1"
             }
           ]
@@ -2090,7 +2090,7 @@
         {
           "toolField": "next_url",
           "sourceKind": "local",
-          "localRole": "Validated Apple pagination URL override."
+          "localRole": "Validated Apple pagination URL bound to the concrete parent path and full originating query projection."
         }
       ],
       "response": {
