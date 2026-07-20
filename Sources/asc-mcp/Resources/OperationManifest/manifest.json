@@ -1690,7 +1690,7 @@
       "id": "deferred.apps_betaAppLocalizations_getToManyRelationship",
       "operationId": "apps_betaAppLocalizations_getToManyRelationship",
       "disposition": "deferred",
-      "reason": "The `apps` resource-group capability is not yet exposed by asc-mcp.",
+      "reason": "The related BetaAppLocalization resource list is exposed; the raw app-to-localizations linkage collection is not exposed.",
       "owner": "asc-mcp",
       "reviewAtSpec": "4.4.1"
     },
@@ -1698,7 +1698,7 @@
       "id": "deferred.apps_betaAppReviewDetail_getToOneRelationship",
       "operationId": "apps_betaAppReviewDetail_getToOneRelationship",
       "disposition": "deferred",
-      "reason": "The `apps` resource-group capability is not yet exposed by asc-mcp.",
+      "reason": "The related BetaAppReviewDetail resource is exposed; the raw app-to-review-detail linkage endpoint is not exposed.",
       "owner": "asc-mcp",
       "reviewAtSpec": "4.4.1"
     },
@@ -2090,7 +2090,7 @@
       "id": "deferred.betaAppLocalizations_getCollection",
       "operationId": "betaAppLocalizations_getCollection",
       "disposition": "deferred",
-      "reason": "The `betaAppLocalizations` resource-group capability is not yet exposed by asc-mcp.",
+      "reason": "The app-scoped related-resource list is exposed; the direct BetaAppLocalization collection and its app filter are not exposed.",
       "owner": "asc-mcp",
       "reviewAtSpec": "4.4.1"
     },
@@ -2098,7 +2098,7 @@
       "id": "deferred.betaAppLocalizations_app_getToOneRelated",
       "operationId": "betaAppLocalizations_app_getToOneRelated",
       "disposition": "deferred",
-      "reason": "The `betaAppLocalizations` resource-group capability is not yet exposed by asc-mcp.",
+      "reason": "BetaAppLocalization resources are exposed, but the dedicated related App resource endpoint is not exposed.",
       "owner": "asc-mcp",
       "reviewAtSpec": "4.4.1"
     },
@@ -2106,7 +2106,7 @@
       "id": "deferred.betaAppLocalizations_app_getToOneRelationship",
       "operationId": "betaAppLocalizations_app_getToOneRelationship",
       "disposition": "deferred",
-      "reason": "The `betaAppLocalizations` resource-group capability is not yet exposed by asc-mcp.",
+      "reason": "BetaAppLocalization resources are exposed, but the raw App relationship-linkage endpoint is not exposed.",
       "owner": "asc-mcp",
       "reviewAtSpec": "4.4.1"
     },
@@ -2114,7 +2114,7 @@
       "id": "deferred.betaAppReviewDetails_getCollection",
       "operationId": "betaAppReviewDetails_getCollection",
       "disposition": "deferred",
-      "reason": "The `betaAppReviewDetails` resource-group capability is not yet exposed by asc-mcp.",
+      "reason": "The app-scoped related review detail is exposed; the direct BetaAppReviewDetail collection is not exposed.",
       "owner": "asc-mcp",
       "reviewAtSpec": "4.4.1"
     },
@@ -2122,7 +2122,7 @@
       "id": "deferred.betaAppReviewDetails_getInstance",
       "operationId": "betaAppReviewDetails_getInstance",
       "disposition": "deferred",
-      "reason": "The `betaAppReviewDetails` resource-group capability is not yet exposed by asc-mcp.",
+      "reason": "The app-scoped related review detail is exposed; direct BetaAppReviewDetail lookup by detail ID is not exposed.",
       "owner": "asc-mcp",
       "reviewAtSpec": "4.4.1"
     },
@@ -2130,7 +2130,7 @@
       "id": "deferred.betaAppReviewDetails_app_getToOneRelated",
       "operationId": "betaAppReviewDetails_app_getToOneRelated",
       "disposition": "deferred",
-      "reason": "The `betaAppReviewDetails` resource-group capability is not yet exposed by asc-mcp.",
+      "reason": "BetaAppReviewDetail resources are exposed, but the dedicated related App resource endpoint is not exposed.",
       "owner": "asc-mcp",
       "reviewAtSpec": "4.4.1"
     },
@@ -2138,7 +2138,7 @@
       "id": "deferred.betaAppReviewDetails_app_getToOneRelationship",
       "operationId": "betaAppReviewDetails_app_getToOneRelationship",
       "disposition": "deferred",
-      "reason": "The `betaAppReviewDetails` resource-group capability is not yet exposed by asc-mcp.",
+      "reason": "BetaAppReviewDetail resources are exposed, but the raw App relationship-linkage endpoint is not exposed.",
       "owner": "asc-mcp",
       "reviewAtSpec": "4.4.1"
     },
@@ -2146,7 +2146,7 @@
       "id": "deferred.betaAppReviewSubmissions_build_getToOneRelated",
       "operationId": "betaAppReviewSubmissions_build_getToOneRelated",
       "disposition": "deferred",
-      "reason": "The `betaAppReviewSubmissions` resource-group capability is not yet exposed by asc-mcp.",
+      "reason": "Submission tools expand Build resources with include=build; the dedicated related Build resource endpoint is not exposed.",
       "owner": "asc-mcp",
       "reviewAtSpec": "4.4.1"
     },
@@ -2154,7 +2154,7 @@
       "id": "deferred.betaAppReviewSubmissions_build_getToOneRelationship",
       "operationId": "betaAppReviewSubmissions_build_getToOneRelationship",
       "disposition": "deferred",
-      "reason": "The `betaAppReviewSubmissions` resource-group capability is not yet exposed by asc-mcp.",
+      "reason": "Submission tools preserve Build relationship linkage; the raw Build relationship-linkage endpoint is not exposed.",
       "owner": "asc-mcp",
       "reviewAtSpec": "4.4.1"
     },

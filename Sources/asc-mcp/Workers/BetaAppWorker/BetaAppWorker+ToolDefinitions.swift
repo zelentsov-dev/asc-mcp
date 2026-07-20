@@ -21,6 +21,7 @@ extension BetaAppWorker {
                         "type": .string("integer"),
                         "minimum": .int(1),
                         "maximum": .int(200),
+                        "default": .int(25),
                         "description": .string("Max results (default: 25, max: 200)")
                     ]),
                     "next_url": .object([
@@ -168,7 +169,7 @@ extension BetaAppWorker {
     func listSubmissionsTool() -> Tool {
         return Tool(
             name: "beta_app_list_submissions",
-            description: "List beta app review submissions for a build. Can also filter by review state.",
+            description: "List beta app review submissions for one or more builds, with optional review-state filtering and included Build status",
             inputSchema: .object([
                 "type": .string("object"),
                 "properties": .object([
@@ -206,6 +207,7 @@ extension BetaAppWorker {
                         "type": .string("integer"),
                         "minimum": .int(1),
                         "maximum": .int(200),
+                        "default": .int(25),
                         "description": .string("Max results (default: 25, max: 200)")
                     ]),
                     "next_url": .object([

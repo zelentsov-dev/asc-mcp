@@ -19,6 +19,7 @@ public struct ASCBetaAppLocalization: Codable, Sendable {
     public let type: String
     public let id: String
     public let attributes: BetaAppLocalizationAttributes?
+    public let links: ASCResourceLinks?
 }
 
 /// Beta app localization attributes
@@ -85,6 +86,7 @@ public struct UpdateBetaAppLocalizationRequest: Codable, Sendable {
 /// Beta app review submissions list response
 public struct ASCBetaAppReviewSubmissionsResponse: Codable, Sendable {
     public let data: [ASCBetaAppReviewSubmission]
+    public let included: [ASCBetaAppReviewIncludedBuild]?
     public let links: ASCPagedDocumentLinks?
     public let meta: ASCPagingInformation?
 }
@@ -92,6 +94,7 @@ public struct ASCBetaAppReviewSubmissionsResponse: Codable, Sendable {
 /// Beta app review submission single response
 public struct ASCBetaAppReviewSubmissionResponse: Codable, Sendable {
     public let data: ASCBetaAppReviewSubmission
+    public let included: [ASCBetaAppReviewIncludedBuild]?
 }
 
 /// Beta app review submission resource
@@ -100,6 +103,7 @@ public struct ASCBetaAppReviewSubmission: Codable, Sendable {
     public let id: String
     public let attributes: BetaAppReviewSubmissionAttributes?
     public let relationships: Relationships?
+    public let links: ASCResourceLinks?
 
     public struct Relationships: Codable, Sendable {
         public let build: ASCRelationship?
@@ -110,6 +114,20 @@ public struct ASCBetaAppReviewSubmission: Codable, Sendable {
 public struct BetaAppReviewSubmissionAttributes: Codable, Sendable {
     public let betaReviewState: String?
     public let submittedDate: String?
+}
+
+/// Build projection expanded from a beta review submission.
+public struct ASCBetaAppReviewIncludedBuild: Codable, Sendable {
+    public let type: String
+    public let id: String
+    public let attributes: Attributes?
+    public let links: ASCResourceLinks?
+
+    public struct Attributes: Codable, Sendable {
+        public let version: String?
+        public let uploadedDate: String?
+        public let processingState: String?
+    }
 }
 
 // MARK: - Beta App Review Submission Request Models
@@ -144,6 +162,7 @@ public struct ASCBetaAppReviewDetail: Codable, Sendable {
     public let type: String
     public let id: String
     public let attributes: BetaAppReviewDetailAttributes?
+    public let links: ASCResourceLinks?
 }
 
 /// Beta app review detail attributes

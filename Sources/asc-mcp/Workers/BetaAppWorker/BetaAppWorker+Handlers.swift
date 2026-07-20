@@ -17,24 +17,30 @@ extension BetaAppWorker {
             )
         }
 
+        let effectiveLimit: Int
+        do {
+            effectiveLimit = try boundedListLimit(arguments["limit"])
+        } catch {
+            return MCPResult.error(error.localizedDescription)
+        }
+
         do {
             let response: ASCBetaAppLocalizationsResponse
+            let queryParams = [
+                "fields[betaAppLocalizations]": Self.localizationFields,
+                "limit": String(effectiveLimit)
+            ]
 
             if let nextUrl = try paginationURL(from: arguments["next_url"]) {
                 response = try await httpClient.getPage(
                     nextUrl,
-                    scope: PaginationScope(path: "/v1/apps/\(try ASCPathSegment.encode(appId))/betaAppLocalizations"),
+                    scope: PaginationScope(
+                        path: "/v1/apps/\(try ASCPathSegment.encode(appId))/betaAppLocalizations",
+                        requiredParameters: queryParams
+                    ),
                     as: ASCBetaAppLocalizationsResponse.self
                 )
             } else {
-                var queryParams: [String: String] = [:]
-
-                if let limit = arguments["limit"]?.intValue {
-                    queryParams["limit"] = String(min(max(limit, 1), 200))
-                } else {
-                    queryParams["limit"] = "25"
-                }
-
                 response = try await httpClient.get(
                     "/v1/apps/\(try ASCPathSegment.encode(appId))/betaAppLocalizations",
                     parameters: queryParams,
@@ -149,7 +155,7 @@ extension BetaAppWorker {
         do {
             let response: ASCBetaAppLocalizationResponse = try await httpClient.get(
                 "/v1/betaAppLocalizations/\(try ASCPathSegment.encode(localizationId))",
-                parameters: [:],
+                parameters: ["fields[betaAppLocalizations]": Self.localizationFields],
                 as: ASCBetaAppLocalizationResponse.self
             )
 
@@ -295,7 +301,10 @@ extension BetaAppWorker {
                 as: ASCBetaAppReviewSubmissionResponse.self
             )
 
-            let submission = formatBetaReviewSubmission(response.data)
+            let submission = formatBetaReviewSubmission(
+                response.data,
+                requestFallbackBuildID: buildId
+            )
 
             let result = [
                 "success": true,
@@ -323,12 +332,13 @@ extension BetaAppWorker {
             )
         }
 
-        let buildIDs: String
-        let reviewStates: String?
+        let buildIDs: [String]
+        let reviewStates: [String]?
+        let effectiveLimit: Int
         do {
-            buildIDs = try commaSeparatedStrings(buildValue, field: "build_id")
+            buildIDs = try stringList(buildValue, field: "build_id")
             if let reviewStateValue = arguments["review_state"] {
-                reviewStates = try commaSeparatedStrings(
+                reviewStates = try stringList(
                     reviewStateValue,
                     field: "review_state",
                     allowedValues: Self.betaReviewStates
@@ -336,6 +346,7 @@ extension BetaAppWorker {
             } else {
                 reviewStates = nil
             }
+            effectiveLimit = try boundedListLimit(arguments["limit"])
         } catch {
             return MCPResult.error(error.localizedDescription)
         }
@@ -343,26 +354,23 @@ extension BetaAppWorker {
         do {
             let response: ASCBetaAppReviewSubmissionsResponse
             var queryParams: [String: String] = [
-                "filter[build]": buildIDs
+                "filter[build]": buildIDs.joined(separator: ","),
+                "fields[betaAppReviewSubmissions]": Self.reviewSubmissionFields,
+                "fields[builds]": Self.includedBuildFields,
+                "include": "build",
+                "limit": String(effectiveLimit)
             ]
 
             if let reviewStates {
-                queryParams["filter[betaReviewState]"] = reviewStates
-            }
-            if let limit = arguments["limit"]?.intValue {
-                queryParams["limit"] = String(min(max(limit, 1), 200))
-            } else {
-                queryParams["limit"] = "25"
+                queryParams["filter[betaReviewState]"] = reviewStates.joined(separator: ",")
             }
 
             if let nextUrl = try paginationURL(from: arguments["next_url"]) {
-                var requiredParameters = queryParams
-                requiredParameters.removeValue(forKey: "limit")
                 response = try await httpClient.getPage(
                     nextUrl,
                     scope: PaginationScope(
                         path: "/v1/betaAppReviewSubmissions",
-                        requiredParameters: requiredParameters
+                        requiredParameters: queryParams
                     ),
                     as: ASCBetaAppReviewSubmissionsResponse.self
                 )
@@ -374,7 +382,18 @@ extension BetaAppWorker {
                 )
             }
 
-            let submissions = response.data.map { formatBetaReviewSubmission($0) }
+            let soleIncludedBuildID = response.data.count == 1 && response.included?.count == 1
+                ? response.included?.first?.id
+                : nil
+            let includedFallbackBuildID = soleIncludedBuildID.flatMap { buildIDs.contains($0) ? $0 : nil }
+            let filterFallbackBuildID = buildIDs.count == 1 ? buildIDs[0] : nil
+            let submissions = response.data.map {
+                formatBetaReviewSubmission(
+                    $0,
+                    includedFallbackBuildID: includedFallbackBuildID,
+                    filterFallbackBuildID: filterFallbackBuildID
+                )
+            }
 
             var result: [String: Any] = [
                 "success": true,
@@ -387,6 +406,7 @@ extension BetaAppWorker {
             if let next = response.links?.next {
                 result["next_url"] = next
             }
+            appendIncludedBuilds(response.included, to: &result)
 
             return MCPResult.jsonObject(result)
 
@@ -412,16 +432,24 @@ extension BetaAppWorker {
         do {
             let response: ASCBetaAppReviewSubmissionResponse = try await httpClient.get(
                 "/v1/betaAppReviewSubmissions/\(try ASCPathSegment.encode(submissionId))",
-                parameters: [:],
+                parameters: [
+                    "fields[betaAppReviewSubmissions]": Self.reviewSubmissionFields,
+                    "fields[builds]": Self.includedBuildFields,
+                    "include": "build"
+                ],
                 as: ASCBetaAppReviewSubmissionResponse.self
             )
 
-            let submission = formatBetaReviewSubmission(response.data)
+            let submission = formatBetaReviewSubmission(
+                response.data,
+                includedFallbackBuildID: response.included?.count == 1 ? response.included?.first?.id : nil
+            )
 
-            let result = [
+            var result = [
                 "success": true,
                 "submission": submission
             ] as [String: Any]
+            appendIncludedBuilds(response.included, to: &result)
 
             return MCPResult.jsonObject(result)
 
@@ -449,7 +477,7 @@ extension BetaAppWorker {
         do {
             let response: ASCBetaAppReviewDetailResponse = try await httpClient.get(
                 "/v1/apps/\(try ASCPathSegment.encode(appId))/betaAppReviewDetail",
-                parameters: [:],
+                parameters: ["fields[betaAppReviewDetails]": Self.reviewDetailFields],
                 as: ASCBetaAppReviewDetailResponse.self
             )
 
@@ -549,23 +577,65 @@ extension BetaAppWorker {
             "marketingUrl": (localization.attributes?.marketingUrl).jsonSafe,
             "privacyPolicyUrl": (localization.attributes?.privacyPolicyUrl).jsonSafe,
             "tvOsPrivacyPolicy": (localization.attributes?.tvOsPrivacyPolicy).jsonSafe,
-            "description": (localization.attributes?.description).jsonSafe
+            "description": (localization.attributes?.description).jsonSafe,
+            "selfURL": (localization.links?.self).jsonSafe
         ]
     }
 
-    private func formatBetaReviewSubmission(_ submission: ASCBetaAppReviewSubmission) -> [String: Any] {
+    private func formatBetaReviewSubmission(
+        _ submission: ASCBetaAppReviewSubmission,
+        includedFallbackBuildID: String? = nil,
+        requestFallbackBuildID: String? = nil,
+        filterFallbackBuildID: String? = nil
+    ) -> [String: Any] {
+        let relationshipBuildID = submission.relationships?.build?.data?.id
+        let resolvedBuild: (id: String?, source: String?)
+        if let relationshipBuildID {
+            resolvedBuild = (relationshipBuildID, "relationship")
+        } else if let includedFallbackBuildID {
+            resolvedBuild = (includedFallbackBuildID, "included")
+        } else if let requestFallbackBuildID {
+            resolvedBuild = (requestFallbackBuildID, "request")
+        } else if let filterFallbackBuildID {
+            resolvedBuild = (filterFallbackBuildID, "filter")
+        } else {
+            resolvedBuild = (nil, nil)
+        }
+
         return [
             "id": submission.id,
             "type": submission.type,
             "betaReviewState": (submission.attributes?.betaReviewState).jsonSafe,
             "submittedDate": (submission.attributes?.submittedDate).jsonSafe,
-            "buildId": (submission.relationships?.build?.data?.id).jsonSafe,
-            "buildRelatedURL": (submission.relationships?.build?.links?.related).jsonSafe
+            "buildId": resolvedBuild.id.jsonSafe,
+            "buildIdSource": resolvedBuild.source.jsonSafe,
+            "relationshipBuildId": relationshipBuildID.jsonSafe,
+            "buildRelatedURL": (submission.relationships?.build?.links?.related).jsonSafe,
+            "selfURL": (submission.links?.self).jsonSafe
         ]
     }
 
+    private func appendIncludedBuilds(
+        _ builds: [ASCBetaAppReviewIncludedBuild]?,
+        to result: inout [String: Any]
+    ) {
+        guard let builds else {
+            return
+        }
+        result["includedBuilds"] = builds.map { build in
+            [
+                "id": build.id,
+                "type": build.type,
+                "version": (build.attributes?.version).jsonSafe,
+                "uploadedDate": (build.attributes?.uploadedDate).jsonSafe,
+                "processingState": (build.attributes?.processingState).jsonSafe,
+                "selfURL": (build.links?.self).jsonSafe
+            ] as [String: Any]
+        }
+    }
+
     private func formatBetaReviewDetail(_ detail: ASCBetaAppReviewDetail) -> [String: Any] {
-        return [
+        var result: [String: Any] = [
             "id": detail.id,
             "type": detail.type,
             "contactFirstName": (detail.attributes?.contactFirstName).jsonSafe,
@@ -573,10 +643,14 @@ extension BetaAppWorker {
             "contactPhone": (detail.attributes?.contactPhone).jsonSafe,
             "contactEmail": (detail.attributes?.contactEmail).jsonSafe,
             "demoAccountName": (detail.attributes?.demoAccountName).jsonSafe,
-            "demoAccountPassword": (detail.attributes?.demoAccountPassword).jsonSafe,
             "demoAccountRequired": (detail.attributes?.demoAccountRequired).jsonSafe,
-            "notes": (detail.attributes?.notes).jsonSafe
+            "notes": (detail.attributes?.notes).jsonSafe,
+            "selfURL": (detail.links?.self).jsonSafe
         ]
+        if detail.attributes?.demoAccountPassword != nil {
+            result["demoAccountPassword"] = "[REDACTED]"
+        }
+        return result
     }
 
     private func strictOptionalString(_ name: String, from arguments: [String: Value]) throws -> String? {
@@ -615,11 +689,11 @@ extension BetaAppWorker {
         return .bool(bool)
     }
 
-    private func commaSeparatedStrings(
+    private func stringList(
         _ value: Value,
         field: String,
         allowedValues: Set<String>? = nil
-    ) throws -> String {
+    ) throws -> [String] {
         let values: [String]
         if let string = value.stringValue {
             values = [string]
@@ -641,8 +715,23 @@ extension BetaAppWorker {
            let invalid = values.first(where: { !allowedValues.contains($0) }) {
             throw BetaAppArgumentError("\(field) contains unsupported value '\(invalid)'")
         }
-        return values.joined(separator: ",")
+        return values
     }
+
+    private func boundedListLimit(_ value: Value?) throws -> Int {
+        guard let value else {
+            return 25
+        }
+        guard let limit = value.intValue else {
+            throw BetaAppArgumentError("limit must be an integer")
+        }
+        return min(max(limit, 1), 200)
+    }
+
+    private static let localizationFields = "feedbackEmail,marketingUrl,privacyPolicyUrl,tvOsPrivacyPolicy,description,locale"
+    private static let reviewDetailFields = "contactFirstName,contactLastName,contactPhone,contactEmail,demoAccountName,demoAccountPassword,demoAccountRequired,notes"
+    private static let reviewSubmissionFields = "betaReviewState,submittedDate,build"
+    private static let includedBuildFields = "version,uploadedDate,processingState"
 
     private static let betaReviewStates: Set<String> = [
         "WAITING_FOR_REVIEW",

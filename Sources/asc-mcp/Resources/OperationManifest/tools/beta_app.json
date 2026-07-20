@@ -85,10 +85,19 @@
             "outputField": "localization",
             "operationId": "betaAppLocalizations_createInstance",
             "jsonPointer": "/data"
+          },
+          {
+            "outputField": "localization.selfURL",
+            "operationId": "betaAppLocalizations_createInstance",
+            "jsonPointer": "/data/links/self"
+          },
+          {
+            "outputField": "success",
+            "localRole": "True after Apple's 201 response is decoded."
           }
         ]
       },
-      "note": "All public fields map to the current BetaAppLocalizationCreateRequest; handler validation remains limited."
+      "note": "All public fields map to the current BetaAppLocalizationCreateRequest. Provided optional metadata must be non-null strings; omission leaves the Apple attribute absent."
     },
     {
       "tool": "beta_app_delete_localization",
@@ -143,6 +152,14 @@
           "method": "get",
           "path": "/v1/betaAppLocalizations/{id}",
           "role": "primary",
+          "inputs": [
+            {
+              "sourceKind": "fixed",
+              "location": "query",
+              "appleName": "fields[betaAppLocalizations]",
+              "fixedValue": ["feedbackEmail", "marketingUrl", "privacyPolicyUrl", "tvOsPrivacyPolicy", "description", "locale"]
+            }
+          ],
           "optionalParameterClassifications": [
             {
               "location": "query",
@@ -177,6 +194,15 @@
             "outputField": "localization",
             "operationId": "betaAppLocalizations_getInstance",
             "jsonPointer": "/data"
+          },
+          {
+            "outputField": "localization.selfURL",
+            "operationId": "betaAppLocalizations_getInstance",
+            "jsonPointer": "/data/links/self"
+          },
+          {
+            "outputField": "success",
+            "localRole": "True after Apple's 200 response is decoded."
           }
         ]
       },
@@ -193,7 +219,15 @@
           "operationId": "apps_betaAppReviewDetail_getToOneRelated",
           "method": "get",
           "path": "/v1/apps/{id}/betaAppReviewDetail",
-          "role": "primary"
+          "role": "primary",
+          "inputs": [
+            {
+              "sourceKind": "fixed",
+              "location": "query",
+              "appleName": "fields[betaAppReviewDetails]",
+              "fixedValue": ["contactFirstName", "contactLastName", "contactPhone", "contactEmail", "demoAccountName", "demoAccountPassword", "demoAccountRequired", "notes"]
+            }
+          ]
         }
       ],
       "fields": [
@@ -219,10 +253,25 @@
             "outputField": "review_detail",
             "operationId": "apps_betaAppReviewDetail_getToOneRelated",
             "jsonPointer": "/data"
+          },
+          {
+            "outputField": "review_detail.selfURL",
+            "operationId": "apps_betaAppReviewDetail_getToOneRelated",
+            "jsonPointer": "/data/links/self"
+          },
+          {
+            "outputField": "review_detail.demoAccountPassword",
+            "operationId": "apps_betaAppReviewDetail_getToOneRelated",
+            "jsonPointer": "/data/attributes/demoAccountPassword",
+            "localRole": "Included as [REDACTED] only when Apple returns a non-null password; omitted when Apple returns null or omits the attribute."
+          },
+          {
+            "outputField": "success",
+            "localRole": "True after Apple's 200 response is decoded."
           }
         ]
       },
-      "note": "Exact app-related review-detail read; direct collection and instance reads are not exposed. MCP result sanitization always redacts demoAccountPassword in the returned projection."
+      "note": "Exact app-related review-detail read; direct collection and instance reads are not exposed. A non-null demoAccountPassword is emitted only as [REDACTED]; a null or absent password key is omitted so the global sanitizer cannot invent password presence."
     },
     {
       "tool": "beta_app_get_submission",
@@ -236,13 +285,24 @@
           "method": "get",
           "path": "/v1/betaAppReviewSubmissions/{id}",
           "role": "primary",
-          "optionalParameterClassifications": [
+          "inputs": [
             {
+              "sourceKind": "fixed",
               "location": "query",
               "appleName": "include",
-              "disposition": "intentionallyOmitted",
-              "reason": "The submission tool projects the build relationship linkage without expanding the full Build resource.",
-              "reviewAtSpec": "4.4.1"
+              "fixedValue": ["build"]
+            },
+            {
+              "sourceKind": "fixed",
+              "location": "query",
+              "appleName": "fields[betaAppReviewSubmissions]",
+              "fixedValue": ["betaReviewState", "submittedDate", "build"]
+            },
+            {
+              "sourceKind": "fixed",
+              "location": "query",
+              "appleName": "fields[builds]",
+              "fixedValue": ["version", "uploadedDate", "processingState"]
             }
           ]
         }
@@ -270,10 +330,79 @@
             "outputField": "submission",
             "operationId": "betaAppReviewSubmissions_getInstance",
             "jsonPointer": "/data"
+          },
+          {
+            "outputField": "submission.betaReviewState",
+            "operationId": "betaAppReviewSubmissions_getInstance",
+            "jsonPointer": "/data/attributes/betaReviewState"
+          },
+          {
+            "outputField": "submission.submittedDate",
+            "operationId": "betaAppReviewSubmissions_getInstance",
+            "jsonPointer": "/data/attributes/submittedDate"
+          },
+          {
+            "outputField": "submission.relationshipBuildId",
+            "operationId": "betaAppReviewSubmissions_getInstance",
+            "jsonPointer": "/data/relationships/build/data/id"
+          },
+          {
+            "outputField": "submission.buildId",
+            "operationId": "betaAppReviewSubmissions_getInstance",
+            "jsonPointer": "/data/relationships/build/data/id",
+            "localRole": "Use the relationship linkage first; when it is absent, use the only included Build ID if exactly one Build was returned."
+          },
+          {
+            "outputField": "submission.buildIdSource",
+            "localRole": "Reports whether buildId came from the response relationship or an unambiguous included Build."
+          },
+          {
+            "outputField": "submission.buildRelatedURL",
+            "operationId": "betaAppReviewSubmissions_getInstance",
+            "jsonPointer": "/data/relationships/build/links/related"
+          },
+          {
+            "outputField": "submission.selfURL",
+            "operationId": "betaAppReviewSubmissions_getInstance",
+            "jsonPointer": "/data/links/self"
+          },
+          {
+            "outputField": "includedBuilds",
+            "operationId": "betaAppReviewSubmissions_getInstance",
+            "jsonPointer": "/included/*"
+          },
+          {
+            "outputField": "includedBuilds[].id",
+            "operationId": "betaAppReviewSubmissions_getInstance",
+            "jsonPointer": "/included/*/id"
+          },
+          {
+            "outputField": "includedBuilds[].version",
+            "operationId": "betaAppReviewSubmissions_getInstance",
+            "jsonPointer": "/included/*/attributes/version"
+          },
+          {
+            "outputField": "includedBuilds[].uploadedDate",
+            "operationId": "betaAppReviewSubmissions_getInstance",
+            "jsonPointer": "/included/*/attributes/uploadedDate"
+          },
+          {
+            "outputField": "includedBuilds[].processingState",
+            "operationId": "betaAppReviewSubmissions_getInstance",
+            "jsonPointer": "/included/*/attributes/processingState"
+          },
+          {
+            "outputField": "includedBuilds[].selfURL",
+            "operationId": "betaAppReviewSubmissions_getInstance",
+            "jsonPointer": "/included/*/links/self"
+          },
+          {
+            "outputField": "success",
+            "localRole": "True after Apple's 200 response is decoded."
           }
         ]
       },
-      "note": "Projects the documented build relationship ID and related URL without expanding the full Build resource."
+      "note": "Binds include=build and sparse submission/build fields. The response keeps relationship linkage separate from the included Build projection and never chooses among multiple included builds."
     },
     {
       "tool": "beta_app_list_localizations",
@@ -286,7 +415,15 @@
           "operationId": "apps_betaAppLocalizations_getToManyRelated",
           "method": "get",
           "path": "/v1/apps/{id}/betaAppLocalizations",
-          "role": "primary"
+          "role": "primary",
+          "inputs": [
+            {
+              "sourceKind": "fixed",
+              "location": "query",
+              "appleName": "fields[betaAppLocalizations]",
+              "fixedValue": ["feedbackEmail", "marketingUrl", "privacyPolicyUrl", "tvOsPrivacyPolicy", "description", "locale"]
+            }
+          ]
         }
       ],
       "fields": [
@@ -326,6 +463,11 @@
             "jsonPointer": "/data"
           },
           {
+            "outputField": "localizations[].selfURL",
+            "operationId": "apps_betaAppLocalizations_getToManyRelated",
+            "jsonPointer": "/data/*/links/self"
+          },
+          {
             "outputField": "next_url",
             "operationId": "apps_betaAppLocalizations_getToManyRelated",
             "jsonPointer": "/links/next"
@@ -338,10 +480,14 @@
           {
             "outputField": "count",
             "localRole": "Count of localizations in the current page."
+          },
+          {
+            "outputField": "success",
+            "localRole": "True after Apple's 200 response is decoded."
           }
         ]
       },
-      "note": "Exact app-related localization list; locale filtering and sparse fields are not exposed."
+      "note": "Exact app-related localization list with a fixed complete sparse-field projection and pagination that preserves the effective limit."
     },
     {
       "tool": "beta_app_list_submissions",
@@ -355,13 +501,24 @@
           "method": "get",
           "path": "/v1/betaAppReviewSubmissions",
           "role": "primary",
-          "optionalParameterClassifications": [
+          "inputs": [
             {
+              "sourceKind": "fixed",
               "location": "query",
               "appleName": "include",
-              "disposition": "intentionallyOmitted",
-              "reason": "Each submission projects its build linkage; full Build expansion remains available through the builds worker.",
-              "reviewAtSpec": "4.4.1"
+              "fixedValue": ["build"]
+            },
+            {
+              "sourceKind": "fixed",
+              "location": "query",
+              "appleName": "fields[betaAppReviewSubmissions]",
+              "fixedValue": ["betaReviewState", "submittedDate", "build"]
+            },
+            {
+              "sourceKind": "fixed",
+              "location": "query",
+              "appleName": "fields[builds]",
+              "fixedValue": ["version", "uploadedDate", "processingState"]
             }
           ]
         }
@@ -410,6 +567,71 @@
             "jsonPointer": "/data"
           },
           {
+            "outputField": "submissions[].betaReviewState",
+            "operationId": "betaAppReviewSubmissions_getCollection",
+            "jsonPointer": "/data/*/attributes/betaReviewState"
+          },
+          {
+            "outputField": "submissions[].submittedDate",
+            "operationId": "betaAppReviewSubmissions_getCollection",
+            "jsonPointer": "/data/*/attributes/submittedDate"
+          },
+          {
+            "outputField": "submissions[].relationshipBuildId",
+            "operationId": "betaAppReviewSubmissions_getCollection",
+            "jsonPointer": "/data/*/relationships/build/data/id"
+          },
+          {
+            "outputField": "submissions[].buildId",
+            "operationId": "betaAppReviewSubmissions_getCollection",
+            "jsonPointer": "/data/*/relationships/build/data/id",
+            "localRole": "Use each response relationship first, then only an unambiguous included Build or single validated build filter fallback."
+          },
+          {
+            "outputField": "submissions[].buildIdSource",
+            "localRole": "Reports relationship, included, or filter lineage for each resolved buildId."
+          },
+          {
+            "outputField": "submissions[].buildRelatedURL",
+            "operationId": "betaAppReviewSubmissions_getCollection",
+            "jsonPointer": "/data/*/relationships/build/links/related"
+          },
+          {
+            "outputField": "submissions[].selfURL",
+            "operationId": "betaAppReviewSubmissions_getCollection",
+            "jsonPointer": "/data/*/links/self"
+          },
+          {
+            "outputField": "includedBuilds",
+            "operationId": "betaAppReviewSubmissions_getCollection",
+            "jsonPointer": "/included/*"
+          },
+          {
+            "outputField": "includedBuilds[].id",
+            "operationId": "betaAppReviewSubmissions_getCollection",
+            "jsonPointer": "/included/*/id"
+          },
+          {
+            "outputField": "includedBuilds[].version",
+            "operationId": "betaAppReviewSubmissions_getCollection",
+            "jsonPointer": "/included/*/attributes/version"
+          },
+          {
+            "outputField": "includedBuilds[].uploadedDate",
+            "operationId": "betaAppReviewSubmissions_getCollection",
+            "jsonPointer": "/included/*/attributes/uploadedDate"
+          },
+          {
+            "outputField": "includedBuilds[].processingState",
+            "operationId": "betaAppReviewSubmissions_getCollection",
+            "jsonPointer": "/included/*/attributes/processingState"
+          },
+          {
+            "outputField": "includedBuilds[].selfURL",
+            "operationId": "betaAppReviewSubmissions_getCollection",
+            "jsonPointer": "/included/*/links/self"
+          },
+          {
             "outputField": "next_url",
             "operationId": "betaAppReviewSubmissions_getCollection",
             "jsonPointer": "/links/next"
@@ -422,10 +644,14 @@
           {
             "outputField": "count",
             "localRole": "Count of submissions in the current page."
+          },
+          {
+            "outputField": "success",
+            "localRole": "True after Apple's 200 response is decoded."
           }
         ]
       },
-      "note": "Supports Apple scalar-or-array build and review-state filters and projects each submission's build linkage."
+      "note": "Supports Apple explode=false scalar-or-array build and review-state filters, binds include=build with sparse fields, and preserves all filters plus the effective limit across pagination."
     },
     {
       "tool": "beta_app_submit_for_review",
@@ -475,10 +701,49 @@
             "outputField": "submission",
             "operationId": "betaAppReviewSubmissions_createInstance",
             "jsonPointer": "/data"
+          },
+          {
+            "outputField": "submission.betaReviewState",
+            "operationId": "betaAppReviewSubmissions_createInstance",
+            "jsonPointer": "/data/attributes/betaReviewState"
+          },
+          {
+            "outputField": "submission.submittedDate",
+            "operationId": "betaAppReviewSubmissions_createInstance",
+            "jsonPointer": "/data/attributes/submittedDate"
+          },
+          {
+            "outputField": "submission.relationshipBuildId",
+            "operationId": "betaAppReviewSubmissions_createInstance",
+            "jsonPointer": "/data/relationships/build/data/id"
+          },
+          {
+            "outputField": "submission.buildId",
+            "operationId": "betaAppReviewSubmissions_createInstance",
+            "jsonPointer": "/data/relationships/build/data/id",
+            "localRole": "Use Apple's response relationship first; if it is absent, preserve the validated build_id request relationship."
+          },
+          {
+            "outputField": "submission.buildIdSource",
+            "localRole": "Reports whether buildId came from Apple's response relationship or the validated create request."
+          },
+          {
+            "outputField": "submission.buildRelatedURL",
+            "operationId": "betaAppReviewSubmissions_createInstance",
+            "jsonPointer": "/data/relationships/build/links/related"
+          },
+          {
+            "outputField": "submission.selfURL",
+            "operationId": "betaAppReviewSubmissions_createInstance",
+            "jsonPointer": "/data/links/self"
+          },
+          {
+            "outputField": "success",
+            "localRole": "True after Apple's 201 response is decoded."
           }
         ]
       },
-      "note": "Exact external beta-review submission operation with returned build relationship linkage."
+      "note": "Exact external beta-review submission operation. Build lineage prefers Apple's response relationship and otherwise preserves the validated request relationship without fabricating response data."
     },
     {
       "tool": "beta_app_update_localization",
@@ -562,6 +827,15 @@
             "outputField": "localization",
             "operationId": "betaAppLocalizations_updateInstance",
             "jsonPointer": "/data"
+          },
+          {
+            "outputField": "localization.selfURL",
+            "operationId": "betaAppLocalizations_updateInstance",
+            "jsonPointer": "/data/links/self"
+          },
+          {
+            "outputField": "success",
+            "localRole": "True after Apple's 200 response is decoded."
           }
         ]
       },
@@ -667,10 +941,25 @@
             "outputField": "review_detail",
             "operationId": "betaAppReviewDetails_updateInstance",
             "jsonPointer": "/data"
+          },
+          {
+            "outputField": "review_detail.selfURL",
+            "operationId": "betaAppReviewDetails_updateInstance",
+            "jsonPointer": "/data/links/self"
+          },
+          {
+            "outputField": "review_detail.demoAccountPassword",
+            "operationId": "betaAppReviewDetails_updateInstance",
+            "jsonPointer": "/data/attributes/demoAccountPassword",
+            "localRole": "Included as [REDACTED] only when Apple returns a non-null password; omitted when Apple returns null or omits the attribute."
+          },
+          {
+            "outputField": "success",
+            "localRole": "True after Apple's 200 response is decoded."
           }
         ]
       },
-      "note": "All public fields preserve Apple value, explicit-null, and omission semantics; empty or malformed PATCH requests fail pre-network. MCP result sanitization always redacts demoAccountPassword in the returned projection."
+      "note": "All writable fields preserve Apple value, explicit-null, and omission semantics; empty or malformed PATCH requests fail pre-network. A non-null response password is emitted only as [REDACTED], while a null or absent response password key is omitted."
     }
   ],
   "implementationAliases": []
