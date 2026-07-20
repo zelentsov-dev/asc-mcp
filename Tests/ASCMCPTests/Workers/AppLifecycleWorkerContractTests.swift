@@ -673,7 +673,11 @@ struct AppLifecycleWorkerContractTests {
         ))
 
         #expect(result.isError == true)
-        #expect(contractText(result).contains("without required pagination links"))
+        guard case .text(let message, _, _) = result.content.first else {
+            Issue.record("Expected an explicit missing-links error")
+            return
+        }
+        #expect(message.contains("without required pagination links"))
         #expect(await transport.requestCount() == 2)
         #expect(await transport.recordedRequests().allSatisfy { $0.httpMethod == "GET" })
     }
