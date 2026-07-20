@@ -7,6 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.14.0] - 2026-07-20
+
+### Added
+
+- Added 11 `export_compliance_*` tools for encryption declarations, document reservations and uploads, build linkage, and export-compliance readiness checks.
+- Added an isolated `export_compliance` worker filter so clients can load the new release-gate surface without enabling unrelated domains.
+
+### Changed
+
+- Export document uploads use a stable local snapshot, preserve Apple's multipart receipt metadata, redact signed delivery credentials, and expose deterministic inspection and recovery guidance.
+- Build readiness distinguishes exempt encryption from non-exempt declarations and reports only the export-compliance gate; other App Store release requirements remain explicitly not determined.
+- Build assignment uses Apple's supported build update operation and verifies the resulting declaration relationship.
+
+### Fixed
+
+- Treat declaration and document creation network, timeout, server, malformed-success, and post-create inspection failures as unsafe to retry until the resource is reconciled.
+- Preserve non-default pagination limits in validated declaration continuation links and reject cross-app, cross-query, empty-cursor, or unexpected continuation data.
+- Retain committed or uncertain document reservations instead of suggesting an unsupported child-document delete.
+
+### Compatibility
+
+- The public surface grows from 390 to 401 tools and from 32 to 33 worker filter keys; no existing tool or required input was removed or renamed.
+- The operation manifest maps 374 Apple operations, explicitly defers 526, and scopes out 363; all 1,263 pinned Apple 4.4.1 operations remain accounted for without overlap.
+- The optional-input pin is fully classified at 2,216 total: 829 bound, 40 internally controlled, 1,347 intentionally omitted, and 0 unclassified.
+
 ## [3.13.0] - 2026-07-20
 
 ### Changed
