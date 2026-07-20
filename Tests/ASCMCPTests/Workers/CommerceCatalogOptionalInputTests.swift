@@ -44,6 +44,21 @@ struct CommerceCatalogOptionalInputTests {
             #expect(limit["minimum"] == .int(1))
             #expect(limit["maximum"] == .int(200))
         }
+
+        for (tools, toolName, fields) in [
+            (iapTools, "iap_list", ["filter_name", "filter_product_id"]),
+            (iapTools, "iap_list_subscriptions", ["filter_reference_name"]),
+            (subscriptionTools, "subscriptions_list", ["filter_name", "filter_product_id"]),
+            (subscriptionTools, "subscriptions_list_groups", ["filter_reference_name"])
+        ] {
+            let properties = try commerceProperties(try #require(tools[toolName]))
+            for field in fields {
+                let alternatives = try commerceArray(try commerceObject(properties[field])["oneOf"])
+                #expect(try commerceObject(alternatives[0])["pattern"] == .string("^[^,]+$"))
+                let arraySchema = try commerceObject(alternatives[1])
+                #expect(try commerceObject(arraySchema["items"])["pattern"] == .string("^[^,]+$"))
+            }
+        }
     }
 
     @Test("IAP list sends scalar-or-array discovery controls with Apple names")
@@ -221,6 +236,89 @@ struct CommerceCatalogOptionalInputTests {
         #expect(await subscriptionTransport.requestCount() == 0)
     }
 
+    @Test("comma-containing catalog values fail before network access")
+    func commaContainingValuesFailLocally() async throws {
+        let iapTransport = TestHTTPTransport(responses: [])
+        let subscriptionTransport = TestHTTPTransport(responses: [])
+        let iap = try await commerceIAPWorker(iapTransport)
+        let subscriptions = try await commerceSubscriptionsWorker(subscriptionTransport)
+
+        let iapResult = try await iap.handleTool(.init(
+            name: "iap_list",
+            arguments: ["app_id": .string("app-1"), "filter_name": .string("Coins, Pro")]
+        ))
+        let subscriptionResult = try await subscriptions.handleTool(.init(
+            name: "subscriptions_list_groups",
+            arguments: [
+                "app_id": .string("app-1"),
+                "filter_reference_name": .array([.string("Primary"), .string("Legacy, Plus")])
+            ]
+        ))
+
+        #expect(iapResult.isError == true)
+        #expect(subscriptionResult.isError == true)
+        #expect(await iapTransport.requestCount() == 0)
+        #expect(await subscriptionTransport.requestCount() == 0)
+    }
+
+    @Test("catalog continuations preserve the full query and a non-empty cursor")
+    func catalogContinuationsPreserveFullQuery() async throws {
+        for fixture in commerceCatalogPaginationFixtures() {
+            let validTransport = TestHTTPTransport(responses: [
+                .init(statusCode: 200, body: #"{"data":[],"included":[]}"#)
+            ])
+            var validArguments = fixture.arguments
+            var validQuery = fixture.requiredQuery
+            validQuery["cursor"] = "next"
+            validArguments["next_url"] = .string(commerceCatalogPaginationURL(
+                path: fixture.path,
+                query: validQuery
+            ))
+
+            let validResult = try await invokeCommerceCatalogPaginationFixture(
+                fixture,
+                arguments: validArguments,
+                transport: validTransport
+            )
+            #expect(validResult.isError != true, "Expected valid continuation for \(fixture.toolName)")
+            #expect(await validTransport.requestCount() == 1)
+
+            var invalidQueries: [[String: String]] = []
+            var changedLimit = fixture.requiredQuery
+            changedLimit["limit"] = "1"
+            changedLimit["cursor"] = "next"
+            invalidQueries.append(changedLimit)
+
+            var unexpectedFilter = fixture.requiredQuery
+            unexpectedFilter["filter[unexpected]"] = "value"
+            unexpectedFilter["cursor"] = "next"
+            invalidQueries.append(unexpectedFilter)
+
+            invalidQueries.append(fixture.requiredQuery)
+
+            var emptyCursor = fixture.requiredQuery
+            emptyCursor["cursor"] = ""
+            invalidQueries.append(emptyCursor)
+
+            for query in invalidQueries {
+                let transport = TestHTTPTransport(responses: [])
+                var arguments = fixture.arguments
+                arguments["next_url"] = .string(commerceCatalogPaginationURL(
+                    path: fixture.path,
+                    query: query
+                ))
+
+                let result = try await invokeCommerceCatalogPaginationFixture(
+                    fixture,
+                    arguments: arguments,
+                    transport: transport
+                )
+                #expect(result.isError == true, "Expected strict continuation for \(fixture.toolName)")
+                #expect(await transport.requestCount() == 0)
+            }
+        }
+    }
+
     @Test("catalog pagination rejects repeated filter drift before network access")
     func catalogPaginationRejectsFilterDrift() async throws {
         let transport = TestHTTPTransport(responses: [])
@@ -287,6 +385,141 @@ struct CommerceCatalogOptionalInputTests {
         #expect(classifications.filter { $0.disposition == .intentionallyOmitted }.count == 116)
         #expect(classifications.allSatisfy { $0.reviewAtSpec == "4.4.1" && !$0.reason.isEmpty })
     }
+}
+
+private enum CommerceCatalogPaginationWorker {
+    case iap
+    case subscriptions
+}
+
+private struct CommerceCatalogPaginationFixture {
+    let worker: CommerceCatalogPaginationWorker
+    let toolName: String
+    let arguments: [String: Value]
+    let path: String
+    let requiredQuery: [String: String]
+}
+
+private func commerceCatalogPaginationFixtures() -> [CommerceCatalogPaginationFixture] {
+    [
+        .init(
+            worker: .iap,
+            toolName: "iap_list",
+            arguments: [
+                "app_id": .string("app-1"),
+                "filter_name": .string("Coins"),
+                "limit": .int(200)
+            ],
+            path: "/v1/apps/app-1/inAppPurchasesV2",
+            requiredQuery: ["filter[name]": "Coins", "limit": "200"]
+        ),
+        .init(
+            worker: .iap,
+            toolName: "iap_inventory",
+            arguments: [
+                "app_id": .string("app-1"),
+                "filter_type": .string("NON_CONSUMABLE"),
+                "limit": .int(200)
+            ],
+            path: "/v1/apps/app-1/inAppPurchasesV2",
+            requiredQuery: [
+                "include": "inAppPurchaseLocalizations,iapPriceSchedule,inAppPurchaseAvailability,promotedPurchase,offerCodes",
+                "fields[inAppPurchases]": "name,productId,inAppPurchaseType,state,reviewNote,familySharable,contentHosting,inAppPurchaseLocalizations,promotedPurchase,iapPriceSchedule,inAppPurchaseAvailability,offerCodes",
+                "fields[inAppPurchaseLocalizations]": "name,locale,description,state",
+                "fields[inAppPurchasePriceSchedules]": "baseTerritory,manualPrices,automaticPrices",
+                "fields[inAppPurchaseAvailabilities]": "availableInNewTerritories,availableTerritories",
+                "fields[promotedPurchases]": "visibleForAllUsers,enabled,state",
+                "filter[inAppPurchaseType]": "NON_CONSUMABLE",
+                "limit": "200"
+            ]
+        ),
+        .init(
+            worker: .iap,
+            toolName: "iap_list_subscriptions",
+            arguments: [
+                "app_id": .string("app-1"),
+                "filter_reference_name": .string("Primary"),
+                "limit": .int(200)
+            ],
+            path: "/v1/apps/app-1/subscriptionGroups",
+            requiredQuery: ["filter[referenceName]": "Primary", "limit": "200"]
+        ),
+        .init(
+            worker: .subscriptions,
+            toolName: "subscriptions_list",
+            arguments: [
+                "group_id": .string("group-1"),
+                "filter_name": .string("Premium"),
+                "limit": .int(200)
+            ],
+            path: "/v1/subscriptionGroups/group-1/subscriptions",
+            requiredQuery: ["filter[name]": "Premium", "limit": "200"]
+        ),
+        .init(
+            worker: .subscriptions,
+            toolName: "subscriptions_list_groups",
+            arguments: [
+                "app_id": .string("app-1"),
+                "filter_reference_name": .string("Primary"),
+                "limit": .int(200)
+            ],
+            path: "/v1/apps/app-1/subscriptionGroups",
+            requiredQuery: [
+                "include": "subscriptions,subscriptionGroupLocalizations",
+                "filter[referenceName]": "Primary",
+                "limit": "200"
+            ]
+        ),
+        .init(
+            worker: .iap,
+            toolName: "iap_list_localizations",
+            arguments: ["iap_id": .string("iap-1"), "limit": .int(200)],
+            path: "/v2/inAppPurchases/iap-1/inAppPurchaseLocalizations",
+            requiredQuery: ["limit": "200"]
+        ),
+        .init(
+            worker: .subscriptions,
+            toolName: "subscriptions_list_localizations",
+            arguments: ["subscription_id": .string("sub-1"), "limit": .int(200)],
+            path: "/v1/subscriptions/sub-1/subscriptionLocalizations",
+            requiredQuery: ["limit": "200"]
+        )
+    ]
+}
+
+private func invokeCommerceCatalogPaginationFixture(
+    _ fixture: CommerceCatalogPaginationFixture,
+    arguments: [String: Value],
+    transport: TestHTTPTransport
+) async throws -> CallTool.Result {
+    switch fixture.worker {
+    case .iap:
+        let worker = try await commerceIAPWorker(transport)
+        return try await worker.handleTool(.init(
+            name: fixture.toolName,
+            arguments: arguments
+        ))
+    case .subscriptions:
+        let worker = try await commerceSubscriptionsWorker(transport)
+        return try await worker.handleTool(.init(
+            name: fixture.toolName,
+            arguments: arguments
+        ))
+    }
+}
+
+private func commerceCatalogPaginationURL(path: String, query: [String: String]) -> String {
+    var components = URLComponents()
+    components.scheme = "https"
+    components.host = "api.example.test"
+    components.path = path
+    components.queryItems = query.sorted { $0.key < $1.key }.map {
+        URLQueryItem(name: $0.key, value: $0.value)
+    }
+    guard let url = components.url else {
+        preconditionFailure("Unable to construct catalog pagination test URL")
+    }
+    return url.absoluteString
 }
 
 private func commerceIAPWorker(_ transport: TestHTTPTransport) async throws -> InAppPurchasesWorker {

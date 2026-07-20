@@ -307,7 +307,8 @@ extension InAppPurchasesWorker {
                 key: "in_app_purchases",
                 defaultQuery: query,
                 extraResult: ["app_id": appId],
-                preserveIncluded: true
+                preserveIncluded: true,
+                requireFullPaginationQuery: true
             )
         } catch {
             return MCPResult.error("Failed to list in_app_purchases: \(error.localizedDescription)")
@@ -706,14 +707,6 @@ extension InAppPurchasesWorker {
             "fields[territories]": "currency",
             "limit": String(limit)
         ]
-    }
-
-    private func iapCommercePaginationScope(path: String, query: [String: String]) -> PaginationScope {
-        PaginationScope(
-            path: path,
-            requiredParameters: query,
-            allowedParameters: Set(query.keys).union(Set(["cursor"]))
-        )
     }
 
     private func iapPriceQuery(territoryId: String) -> [String: String] {

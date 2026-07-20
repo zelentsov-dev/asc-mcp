@@ -67,21 +67,16 @@ extension SubscriptionsWorker {
                 selection["sort"] = value
             }
 
+            var queryParams = selection
+            queryParams["limit"] = String(min(max(arguments["limit"]?.intValue ?? 25, 1), 200))
+
             if let nextUrl = try paginationURL(from: arguments["next_url"]) {
                 response = try await httpClient.getPage(
                     nextUrl,
-                    scope: PaginationScope(path: endpoint, requiredParameters: selection),
+                    scope: subscriptionCommercePaginationScope(path: endpoint, query: queryParams),
                     as: ASCSubscriptionsResponse.self
                 )
             } else {
-                var queryParams = selection
-
-                if let limit = arguments["limit"]?.intValue {
-                    queryParams["limit"] = String(min(max(limit, 1), 200))
-                } else {
-                    queryParams["limit"] = "25"
-                }
-
                 response = try await httpClient.get(
                     endpoint,
                     parameters: queryParams,
@@ -291,19 +286,20 @@ extension SubscriptionsWorker {
             let response: ASCSubscriptionLocalizationsResponse
 
             let endpoint = "/v1/subscriptions/\(try ASCPathSegment.encode(subscriptionId))/subscriptionLocalizations"
+            let query = [
+                "limit": String(min(max(arguments["limit"]?.intValue ?? 25, 1), 200))
+            ]
 
             if let nextUrl = try paginationURL(from: arguments["next_url"]) {
                 response = try await httpClient.getPage(
                     nextUrl,
-                    scope: PaginationScope(path: endpoint),
+                    scope: subscriptionCommercePaginationScope(path: endpoint, query: query),
                     as: ASCSubscriptionLocalizationsResponse.self
                 )
             } else {
                 response = try await httpClient.get(
                     endpoint,
-                    parameters: [
-                        "limit": String(min(max(arguments["limit"]?.intValue ?? 25, 1), 200))
-                    ],
+                    parameters: query,
                     as: ASCSubscriptionLocalizationsResponse.self
                 )
             }
@@ -1321,6 +1317,9 @@ extension SubscriptionsWorker {
         }) else {
             throw ASCError.parsing("'\(field)' must contain only non-empty strings without surrounding whitespace")
         }
+        guard values.allSatisfy({ !$0.contains(",") }) else {
+            throw ASCError.parsing("'\(field)' values must not contain commas")
+        }
         guard Set(values).count == values.count else {
             throw ASCError.parsing("'\(field)' must not contain duplicate values")
         }
@@ -1332,6 +1331,15 @@ extension SubscriptionsWorker {
         }
 
         return values.joined(separator: ",")
+    }
+
+    func subscriptionCommercePaginationScope(path: String, query: [String: String]) -> PaginationScope {
+        PaginationScope(
+            path: path,
+            requiredParameters: query,
+            allowedParameters: Set(query.keys).union(["cursor"]),
+            requiredNonEmptyParameters: ["cursor"]
+        )
     }
 
     // MARK: - Formatting

@@ -22,7 +22,7 @@ extension SubscriptionsWorker {
             if let nextUrl = try paginationURL(from: arguments["next_url"]) {
                 response = try await httpClient.getPage(
                     nextUrl,
-                    scope: commercePaginationScope(path: endpoint, query: query),
+                    scope: subscriptionCommercePaginationScope(path: endpoint, query: query),
                     as: PassthroughAPIResponse.self
                 )
             } else {
@@ -69,7 +69,7 @@ extension SubscriptionsWorker {
             if let nextUrl = try paginationURL(from: arguments["next_url"]) {
                 response = try await httpClient.getPage(
                     nextUrl,
-                    scope: commercePaginationScope(path: endpoint, query: query),
+                    scope: subscriptionCommercePaginationScope(path: endpoint, query: query),
                     as: PassthroughAPIResponse.self
                 )
             } else {
@@ -123,7 +123,7 @@ extension SubscriptionsWorker {
                 endpoint: "/v1/apps/\(try ASCPathSegment.encode(appId))/subscriptionGroups",
                 key: "groups",
                 defaultQuery: query,
-                paginationRequiredParameters: query
+                requireFullPaginationQuery: true
             )
         } catch {
             return MCPResult.error("Failed to list groups: \(error.localizedDescription)")
@@ -220,7 +220,7 @@ extension SubscriptionsWorker {
             if let nextUrl = try paginationURL(from: arguments["next_url"]) {
                 response = try await httpClient.getPage(
                     nextUrl,
-                    scope: commercePaginationScope(path: endpoint, query: query),
+                    scope: subscriptionCommercePaginationScope(path: endpoint, query: query),
                     as: PassthroughAPIResponse.self
                 )
             } else {
@@ -1032,7 +1032,7 @@ extension SubscriptionsWorker {
         endpoint: String,
         key: String,
         defaultQuery: [String: String],
-        paginationRequiredParameters: [String: String]? = nil
+        requireFullPaginationQuery: Bool = false
     ) async throws -> CallTool.Result {
         do {
             let response: PassthroughAPIResponse
@@ -1040,12 +1040,12 @@ extension SubscriptionsWorker {
             query["limit"] = String(clampedLimit(params.arguments?["limit"]?.intValue, defaultValue: 25, max: 200))
 
             if let nextUrl = try paginationURL(from: params.arguments?["next_url"]) {
+                let scope = requireFullPaginationQuery
+                    ? subscriptionCommercePaginationScope(path: endpoint, query: query)
+                    : PaginationScope(path: endpoint, requiredParameters: paginationFilters(from: query))
                 response = try await httpClient.getPage(
                     nextUrl,
-                    scope: PaginationScope(
-                        path: endpoint,
-                        requiredParameters: paginationRequiredParameters ?? paginationFilters(from: query)
-                    ),
+                    scope: scope,
                     as: PassthroughAPIResponse.self
                 )
             } else {
@@ -1142,14 +1142,6 @@ extension SubscriptionsWorker {
             filters[name] = value
         }
         return filters
-    }
-
-    private func commercePaginationScope(path: String, query: [String: String]) -> PaginationScope {
-        PaginationScope(
-            path: path,
-            requiredParameters: query,
-            allowedParameters: Set(query.keys).union(Set(["cursor"]))
-        )
     }
 
     private func clampedLimit(_ value: Int?, defaultValue: Int, max: Int) -> Int {

@@ -178,17 +178,19 @@ extension SubscriptionsWorker {
 
     func subscriptionStringListSchema(_ description: String) -> Value {
         .object([
-            "description": .string(description),
+            "description": .string("\(description); individual values cannot contain commas"),
             "oneOf": .array([
                 .object([
                     "type": .string("string"),
-                    "minLength": .int(1)
+                    "minLength": .int(1),
+                    "pattern": .string("^[^,]+$")
                 ]),
                 .object([
                     "type": .string("array"),
                     "items": .object([
                         "type": .string("string"),
-                        "minLength": .int(1)
+                        "minLength": .int(1),
+                        "pattern": .string("^[^,]+$")
                     ]),
                     "minItems": .int(1),
                     "uniqueItems": .bool(true)

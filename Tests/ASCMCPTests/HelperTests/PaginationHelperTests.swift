@@ -187,6 +187,26 @@ struct PaginationHelperTests {
         }
     }
 
+    @Test(arguments: [
+        "https://api.appstoreconnect.apple.com/v1/apps?limit=25",
+        "https://api.appstoreconnect.apple.com/v1/apps?limit=25&cursor=",
+        "https://api.appstoreconnect.apple.com/v1/apps?limit=25&cursor=%20"
+    ])
+    func rejectsMissingOrEmptyRequiredQueryValue(_ nextURL: String) {
+        #expect(throws: ASCError.self) {
+            try validatedPaginationRequest(
+                nextURL,
+                baseURL: baseURL,
+                scope: PaginationScope(
+                    path: "/v1/apps",
+                    requiredParameters: ["limit": "25"],
+                    allowedParameters: ["limit", "cursor"],
+                    requiredNonEmptyParameters: ["cursor"]
+                )
+            )
+        }
+    }
+
     @Test func acceptsConfiguredOrigin() throws {
         let request = try validatedPaginationRequest(
             "https://proxy.example.test/v1/apps?cursor=abc",

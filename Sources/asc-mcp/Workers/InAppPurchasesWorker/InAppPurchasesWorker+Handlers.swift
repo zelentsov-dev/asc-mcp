@@ -74,27 +74,19 @@ extension InAppPurchasesWorker {
                 selection["sort"] = value
             }
 
+            var queryParams = selection
+            queryParams["limit"] = String(min(max(arguments["limit"]?.intValue ?? 25, 1), 200))
+            let endpoint = "/v1/apps/\(try ASCPathSegment.encode(appId))/inAppPurchasesV2"
+
             if let nextUrl = try paginationURL(from: arguments["next_url"]) {
                 response = try await httpClient.getPage(
                     nextUrl,
-                    scope: PaginationScope(
-                        path: "/v1/apps/\(try ASCPathSegment.encode(appId))/inAppPurchasesV2",
-                        requiredParameters: selection
-                    ),
+                    scope: iapCommercePaginationScope(path: endpoint, query: queryParams),
                     as: ASCInAppPurchasesV2Response.self
                 )
             } else {
-                var queryParams = selection
-
-                if let limitValue = arguments["limit"],
-                   let limit = limitValue.intValue {
-                    queryParams["limit"] = String(min(max(limit, 1), 200))
-                } else {
-                    queryParams["limit"] = "25"
-                }
-
                 response = try await httpClient.get(
-                    "/v1/apps/\(try ASCPathSegment.encode(appId))/inAppPurchasesV2",
+                    endpoint,
                     parameters: queryParams,
                     as: ASCInAppPurchasesV2Response.self
                 )
@@ -310,19 +302,21 @@ extension InAppPurchasesWorker {
 
         do {
             let response: ASCInAppPurchaseLocalizationsResponse
+            let endpoint = "/v2/inAppPurchases/\(try ASCPathSegment.encode(iapId))/inAppPurchaseLocalizations"
+            let query = [
+                "limit": String(min(max(arguments["limit"]?.intValue ?? 25, 1), 200))
+            ]
 
             if let nextUrl = try paginationURL(from: arguments["next_url"]) {
                 response = try await httpClient.getPage(
                     nextUrl,
-                    scope: PaginationScope(path: "/v2/inAppPurchases/\(try ASCPathSegment.encode(iapId))/inAppPurchaseLocalizations"),
+                    scope: iapCommercePaginationScope(path: endpoint, query: query),
                     as: ASCInAppPurchaseLocalizationsResponse.self
                 )
             } else {
                 response = try await httpClient.get(
-                    "/v2/inAppPurchases/\(try ASCPathSegment.encode(iapId))/inAppPurchaseLocalizations",
-                    parameters: [
-                        "limit": String(min(max(arguments["limit"]?.intValue ?? 25, 1), 200))
-                    ],
+                    endpoint,
+                    parameters: query,
                     as: ASCInAppPurchaseLocalizationsResponse.self
                 )
             }
@@ -382,27 +376,19 @@ extension InAppPurchasesWorker {
                 selection["sort"] = value
             }
 
+            var queryParams = selection
+            queryParams["limit"] = String(min(max(arguments["limit"]?.intValue ?? 25, 1), 200))
+            let endpoint = "/v1/apps/\(try ASCPathSegment.encode(appId))/subscriptionGroups"
+
             if let nextUrl = try paginationURL(from: arguments["next_url"]) {
                 response = try await httpClient.getPage(
                     nextUrl,
-                    scope: PaginationScope(
-                        path: "/v1/apps/\(try ASCPathSegment.encode(appId))/subscriptionGroups",
-                        requiredParameters: selection
-                    ),
+                    scope: iapCommercePaginationScope(path: endpoint, query: queryParams),
                     as: ASCSubscriptionGroupsResponse.self
                 )
             } else {
-                var queryParams = selection
-
-                if let limitValue = arguments["limit"],
-                   let limit = limitValue.intValue {
-                    queryParams["limit"] = String(min(max(limit, 1), 200))
-                } else {
-                    queryParams["limit"] = "25"
-                }
-
                 response = try await httpClient.get(
-                    "/v1/apps/\(try ASCPathSegment.encode(appId))/subscriptionGroups",
+                    endpoint,
                     parameters: queryParams,
                     as: ASCSubscriptionGroupsResponse.self
                 )
@@ -1428,6 +1414,9 @@ extension InAppPurchasesWorker {
         }) else {
             throw ASCError.parsing("'\(field)' must contain only non-empty strings without surrounding whitespace")
         }
+        guard values.allSatisfy({ !$0.contains(",") }) else {
+            throw ASCError.parsing("'\(field)' values must not contain commas")
+        }
         guard Set(values).count == values.count else {
             throw ASCError.parsing("'\(field)' must not contain duplicate values")
         }
@@ -1439,6 +1428,15 @@ extension InAppPurchasesWorker {
         }
 
         return values.joined(separator: ",")
+    }
+
+    func iapCommercePaginationScope(path: String, query: [String: String]) -> PaginationScope {
+        PaginationScope(
+            path: path,
+            requiredParameters: query,
+            allowedParameters: Set(query.keys).union(["cursor"]),
+            requiredNonEmptyParameters: ["cursor"]
+        )
     }
 
     private static let supportedIAPTypes: Set<String> = [

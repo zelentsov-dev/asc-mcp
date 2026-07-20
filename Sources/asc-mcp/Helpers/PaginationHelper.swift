@@ -5,20 +5,24 @@ public struct PaginationScope: Sendable, Equatable {
     public let path: String
     public let requiredParameters: [String: String]
     public let allowedParameters: Set<String>?
+    public let requiredNonEmptyParameters: Set<String>
 
     /// Defines the exact collection and query invariants a pagination link must preserve.
     /// - Parameters:
     ///   - path: Absolute API collection path, including concrete parent identifiers.
     ///   - requiredParameters: Query parameters whose values must remain unchanged across pages.
     ///   - allowedParameters: Optional strict query-name allowlist. Nil preserves forward-compatible Apple parameters.
+    ///   - requiredNonEmptyParameters: Query parameters that must be present with a non-empty value.
     public init(
         path: String,
         requiredParameters: [String: String] = [:],
-        allowedParameters: Set<String>? = nil
+        allowedParameters: Set<String>? = nil,
+        requiredNonEmptyParameters: Set<String> = []
     ) {
         self.path = path
         self.requiredParameters = requiredParameters
         self.allowedParameters = allowedParameters
+        self.requiredNonEmptyParameters = requiredNonEmptyParameters
     }
 }
 
@@ -83,6 +87,13 @@ func validatedPaginationRequest(
     for (name, value) in scope.requiredParameters {
         guard parameters[name] == value else {
             throw invalidPaginationURL("does not preserve required query parameter '\(name)'")
+        }
+    }
+
+    for name in scope.requiredNonEmptyParameters {
+        guard let value = parameters[name],
+              !value.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            throw invalidPaginationURL("does not contain a non-empty query parameter '\(name)'")
         }
     }
 

@@ -32,6 +32,30 @@ struct CommercePaginationHardeningTests {
         }
     }
 
+    @Test("legacy commerce lists reject missing and empty cursors before network access")
+    func rejectsMissingOrEmptyCursors() async throws {
+        for fixture in commercePaginationFixtures() {
+            for cursor in [String?.none, String?.some("")] {
+                let transport = TestHTTPTransport(responses: [])
+                var arguments = fixture.arguments
+                var query = fixture.requiredQuery
+                if let cursor {
+                    query["cursor"] = cursor
+                }
+                arguments["next_url"] = .string(commercePaginationURL(path: fixture.path, query: query))
+
+                let result = try await invokeCommercePaginationFixture(
+                    fixture,
+                    arguments: arguments,
+                    transport: transport
+                )
+
+                #expect(result.isError == true, "Expected cursor validation for \(fixture.toolName)")
+                #expect(await transport.requestCount() == 0)
+            }
+        }
+    }
+
     @Test("legacy commerce lists reject missing fixed controls before network access")
     func rejectsMissingFixedControls() async throws {
         for fixture in commercePaginationFixtures() {
