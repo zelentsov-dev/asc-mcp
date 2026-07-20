@@ -183,6 +183,106 @@ struct AppLifecycleWorkerHardeningTests {
         #expect(payload["meta"]?.objectValue?["paging"]?.objectValue?["nextCursor"] == .string("page-2"))
     }
 
+    @Test("version list rejects malformed or mismatched JSON API resources")
+    func versionListRejectsInvalidResourceIdentity() async throws {
+        let responses = [
+            #"{"data":{"type":"appStoreVersions","id":"ver-1"}}"#,
+            #"{"data":[{"type":"apps","id":"ver-1"}]}"#,
+            #"{"data":[{"type":"appStoreVersions","id":""}]}"#,
+            #"{"data":[{"type":"appStoreVersions","id":"ver-1"}],"included":[{"type":"users","id":"user-1"}]}"#,
+            #"{"data":[{"type":"appStoreVersions","id":"ver-1","relationships":{"build":{"data":{"type":"apps","id":"build-1"}}}}]}"#,
+            #"{"data":[{"type":"appStoreVersions","id":"ver-1","relationships":{"build":{"data":{"type":"builds","id":"build-1"}}}}]}"#,
+            #"{"data":[{"type":"appStoreVersions","id":"ver-1"}],"included":[{"type":"builds","id":"build-1"}]}"#,
+            #"{"data":[{"type":"appStoreVersions","id":"ver-1"},{"type":"appStoreVersions","id":"ver-1"}]}"#
+        ]
+
+        for response in responses {
+            let transport = TestHTTPTransport(responses: [.init(statusCode: 200, body: response)])
+            let worker = try await makeWorker(transport: transport)
+            let result = try await worker.handleTool(.init(
+                name: "app_versions_list",
+                arguments: ["app_id": .string("app-1")]
+            ))
+
+            #expect(result.isError == true)
+            #expect(await transport.requestCount() == 1)
+        }
+    }
+
+    @Test("version list rejects resources outside the requested ID filter")
+    func versionListRejectsUnexpectedFilteredIdentity() async throws {
+        let transport = TestHTTPTransport(responses: [
+            .init(statusCode: 200, body: #"{"data":[{"type":"appStoreVersions","id":"ver-other"}]}"#)
+        ])
+        let worker = try await makeWorker(transport: transport)
+        let result = try await worker.handleTool(.init(
+            name: "app_versions_list",
+            arguments: [
+                "app_id": .string("app-1"),
+                "version_ids": .array([.string("ver-1")])
+            ]
+        ))
+
+        #expect(result.isError == true)
+        #expect(await transport.requestCount() == 1)
+    }
+
+    @Test("version list accepts included resources linked from the primary version")
+    func versionListAcceptsLinkedIncludedResources() async throws {
+        let transport = TestHTTPTransport(responses: [
+            .init(statusCode: 200, body: #"{"data":[{"type":"appStoreVersions","id":"ver-1","relationships":{"build":{"data":{"type":"builds","id":"build-1"}},"appStoreVersionPhasedRelease":{"data":{"type":"appStoreVersionPhasedReleases","id":"phase-1"}}}}],"included":[{"type":"builds","id":"build-1"},{"type":"appStoreVersionPhasedReleases","id":"phase-1"}]}"#)
+        ])
+        let worker = try await makeWorker(transport: transport)
+        let result = try await worker.handleTool(.init(
+            name: "app_versions_list",
+            arguments: ["app_id": .string("app-1")]
+        ))
+
+        #expect(result.isError != true)
+        #expect(await transport.requestCount() == 1)
+    }
+
+    @Test("version list accepts schema-valid links-only version relationships")
+    func versionListAcceptsLinksOnlyRelationships() async throws {
+        let transport = TestHTTPTransport(responses: [
+            .init(statusCode: 200, body: #"{"data":[{"type":"appStoreVersions","id":"ver-1","relationships":{"build":{"links":{"related":"https://api.example.test/v1/appStoreVersions/ver-1/build"}}}}]}"#)
+        ])
+        let worker = try await makeWorker(transport: transport)
+        let result = try await worker.handleTool(.init(
+            name: "app_versions_list",
+            arguments: ["app_id": .string("app-1")]
+        ))
+
+        #expect(result.isError != true)
+        #expect(await transport.requestCount() == 1)
+    }
+
+    @Test("version detail rejects malformed type and exact ID mismatches")
+    func versionDetailRejectsInvalidResourceIdentity() async throws {
+        let responses = [
+            #"{"data":[]}"#,
+            #"{"data":{"type":"apps","id":"ver-1"}}"#,
+            #"{"data":{"type":"appStoreVersions","id":"ver-other"}}"#,
+            #"{"data":{"type":"appStoreVersions","id":" "}}"#,
+            #"{"data":{"type":"appStoreVersions","id":"ver-1"},"included":[{"type":"users","id":"user-1"}]}"#,
+            #"{"data":{"type":"appStoreVersions","id":"ver-1","relationships":{"build":{"data":{"type":"builds","id":"build-1"}}}}}"#,
+            #"{"data":{"type":"appStoreVersions","id":"ver-1"},"included":[{"type":"builds","id":"build-1"}]}"#,
+            #"{"data":{"type":"appStoreVersions","id":"ver-1"},"included":[{"type":"builds","id":"build-1"},{"type":"builds","id":"build-1"}]}"#
+        ]
+
+        for response in responses {
+            let transport = TestHTTPTransport(responses: [.init(statusCode: 200, body: response)])
+            let worker = try await makeWorker(transport: transport)
+            let result = try await worker.handleTool(.init(
+                name: "app_versions_get",
+                arguments: ["version_id": .string("ver-1")]
+            ))
+
+            #expect(result.isError == true)
+            #expect(await transport.requestCount() == 1)
+        }
+    }
+
     @Test(
         "invalid version list controls fail before network access",
         arguments: [
@@ -329,6 +429,83 @@ struct AppLifecycleWorkerHardeningTests {
         }
     }
 
+    @Test("successful lifecycle mutations with invalid resource identities are committed unverified")
+    func lifecycleMutationsRejectInvalidSuccessIdentities() async throws {
+        let cases: [(String, [String: Value], Int, String, String)] = [
+            (
+                "app_versions_create",
+                ["app_id": .string("app-1"), "platform": .string("IOS"), "version_string": .string("3.0")],
+                201,
+                #"{"data":{"type":"apps","id":"ver-1"}}"#,
+                "POST"
+            ),
+            (
+                "app_versions_update",
+                ["version_id": .string("ver-1"), "copyright": .string("2026 Example")],
+                200,
+                #"{"data":{"type":"appStoreVersions","id":"ver-other"}}"#,
+                "PATCH"
+            ),
+            (
+                "app_versions_cancel_review",
+                ["review_submission_id": .string("sub-1")],
+                200,
+                #"{"data":{"type":"reviewSubmissions","id":"sub-other"}}"#,
+                "PATCH"
+            ),
+            (
+                "app_versions_create_phased_release",
+                ["version_id": .string("ver-1")],
+                201,
+                #"{"data":{"type":"appStoreVersionPhasedReleases","id":"phase/1"}}"#,
+                "POST"
+            ),
+            (
+                "app_versions_update_phased_release",
+                ["phased_release_id": .string("phase-1"), "phased_release_state": .string("PAUSED")],
+                200,
+                #"{"data":{"type":"appStoreVersionPhasedReleases","id":"phase-other"}}"#,
+                "PATCH"
+            )
+        ]
+
+        for (tool, arguments, statusCode, response, method) in cases {
+            let transport = TestHTTPTransport(responses: [.init(statusCode: statusCode, body: response)])
+            let worker = try await makeWorker(transport: transport)
+            let result = try await worker.handleTool(.init(name: tool, arguments: arguments))
+
+            #expect(result.isError == true)
+            let payload = try object(result.structuredContent)
+            #expect(payload["operationCommitState"] == .string("committed_unverified"))
+            #expect(payload["operationCommitted"] == .bool(true))
+            #expect(payload["retrySafe"] == .bool(false))
+            let requests = await transport.recordedRequests()
+            #expect(requests.count == 1)
+            #expect(requests.first?.httpMethod == method)
+        }
+    }
+
+    @Test("phased release read rejects malformed resource identity")
+    func phasedReleaseReadRejectsInvalidIdentity() async throws {
+        let responses = [
+            #"{"data":[]}"#,
+            #"{"data":{"type":"appStoreVersions","id":"phase-1"}}"#,
+            #"{"data":{"type":"appStoreVersionPhasedReleases","id":"phase/1"}}"#
+        ]
+
+        for response in responses {
+            let transport = TestHTTPTransport(responses: [.init(statusCode: 200, body: response)])
+            let worker = try await makeWorker(transport: transport)
+            let result = try await worker.handleTool(.init(
+                name: "app_versions_get_phased_release",
+                arguments: ["version_id": .string("ver-1")]
+            ))
+
+            #expect(result.isError == true)
+            #expect(await transport.requestCount() == 1)
+        }
+    }
+
     @Test("submit for review exposes submission id after item creation failure")
     func submitForReviewExposesSubmissionIdAfterItemFailure() async throws {
         let transport = TestHTTPTransport(responses: [
@@ -381,6 +558,126 @@ struct AppLifecycleWorkerHardeningTests {
         #expect(payload["partial_success"] == .bool(true))
         #expect(payload["submission_id"] == .string("sub-2"))
         #expect(payload["failed_step"] == .string("confirm_review_submission"))
+    }
+
+    @Test("submit preflight rejects mismatched resource identities before mutation")
+    func submitForReviewRejectsMismatchedPreflightIdentity() async throws {
+        let responses = [
+            submissionVersionBody(type: "apps", appId: "app-1"),
+            submissionVersionBody(id: "ver-other", appId: "app-1"),
+            submissionVersionBody(appType: "users", appId: "app-1"),
+            submissionVersionBody(appId: " ")
+        ]
+
+        for response in responses {
+            let transport = TestHTTPTransport(responses: [.init(statusCode: 200, body: response)])
+            let worker = try await makeWorker(transport: transport)
+            let result = try await worker.handleTool(.init(
+                name: "app_versions_submit_for_review",
+                arguments: ["version_id": .string("ver-1"), "app_id": .string("app-1")]
+            ))
+
+            #expect(result.isError == true)
+            let requests = await transport.recordedRequests()
+            #expect(requests.count == 1)
+            #expect(requests.allSatisfy { $0.httpMethod == "GET" })
+        }
+    }
+
+    @Test("submit create response must identify a review submission before downstream mutation")
+    func submitForReviewRejectsInvalidCreateIdentity() async throws {
+        let createResponses = [
+            #"{"data":42}"#,
+            #"{"data":{"type":"reviewSubmissionItems","id":"sub-1"}}"#,
+            #"{"data":{"type":"reviewSubmissions","id":""}}"#,
+            #"{"data":{"type":"reviewSubmissions","id":"sub-1","relationships":{"app":{"data":{"type":"apps","id":"app-other"}}}}}"#
+        ]
+
+        for createResponse in createResponses {
+            let transport = TestHTTPTransport(responses: [
+                .init(statusCode: 200, body: submissionVersionBody(appId: "app-1")),
+                .init(statusCode: 201, body: createResponse)
+            ])
+            let worker = try await makeWorker(transport: transport)
+            let result = try await worker.handleTool(.init(
+                name: "app_versions_submit_for_review",
+                arguments: ["version_id": .string("ver-1"), "app_id": .string("app-1")]
+            ))
+
+            #expect(result.isError == true)
+            let payload = try object(result.structuredContent)
+            #expect(payload["operationCommitState"] == .string("committed_unverified"))
+            #expect(payload["retrySafe"] == .bool(false))
+            let requests = await transport.recordedRequests()
+            #expect(requests.map(\.httpMethod) == ["GET", "POST"])
+            #expect(requests.last?.url?.path == "/v1/reviewSubmissions")
+        }
+    }
+
+    @Test("submit item response must identify the version item before confirmation")
+    func submitForReviewRejectsInvalidItemIdentity() async throws {
+        let itemResponses = [
+            #"{"data":42}"#,
+            #"{"data":{"type":"reviewSubmissions","id":"item-1"}}"#,
+            #"{"data":{"type":"reviewSubmissionItems","id":"item/1"}}"#,
+            #"{"data":{"type":"reviewSubmissionItems","id":"item-1","relationships":{"appStoreVersion":{"data":{"type":"appStoreVersions","id":"ver-other"}}}}}"#,
+            #"{"data":{"type":"reviewSubmissionItems","id":"item-1","relationships":{"reviewSubmission":{"data":{"type":"reviewSubmissions","id":"sub-other"}}}}}"#
+        ]
+
+        for itemResponse in itemResponses {
+            let transport = TestHTTPTransport(responses: [
+                .init(statusCode: 200, body: submissionVersionBody(appId: "app-1")),
+                .init(statusCode: 201, body: #"{"data":{"type":"reviewSubmissions","id":"sub-1"}}"#),
+                .init(statusCode: 201, body: itemResponse)
+            ])
+            let worker = try await makeWorker(transport: transport)
+            let result = try await worker.handleTool(.init(
+                name: "app_versions_submit_for_review",
+                arguments: ["version_id": .string("ver-1"), "app_id": .string("app-1")]
+            ))
+
+            #expect(result.isError == true)
+            let payload = try object(result.structuredContent)
+            #expect(payload["operationCommitState"] == .string("committed_unverified"))
+            #expect(payload["retrySafe"] == .bool(false))
+            #expect(payload["submission_id"] == .string("sub-1"))
+            #expect(payload["failed_step"] == .string("create_review_submission_item"))
+            let requests = await transport.recordedRequests()
+            #expect(requests.map(\.httpMethod) == ["GET", "POST", "POST"])
+            #expect(requests.last?.url?.path == "/v1/reviewSubmissionItems")
+        }
+    }
+
+    @Test("submit confirmation response must preserve the created submission identity")
+    func submitForReviewRejectsMismatchedConfirmationIdentity() async throws {
+        let confirmationResponses = [
+            #"{"data":42}"#,
+            #"{"data":{"type":"reviewSubmissions","id":"sub-other"}}"#,
+            #"{"data":{"type":"reviewSubmissions","id":"sub-1","relationships":{"app":{"data":{"type":"apps","id":"app-other"}}}}}"#
+        ]
+
+        for confirmationResponse in confirmationResponses {
+            let transport = TestHTTPTransport(responses: [
+                .init(statusCode: 200, body: submissionVersionBody(appId: "app-1")),
+                .init(statusCode: 201, body: #"{"data":{"type":"reviewSubmissions","id":"sub-1"}}"#),
+                .init(statusCode: 201, body: #"{"data":{"type":"reviewSubmissionItems","id":"item-1"}}"#),
+                .init(statusCode: 200, body: confirmationResponse)
+            ])
+            let worker = try await makeWorker(transport: transport)
+
+            let result = try await worker.handleTool(.init(
+                name: "app_versions_submit_for_review",
+                arguments: ["version_id": .string("ver-1"), "app_id": .string("app-1")]
+            ))
+
+            #expect(result.isError == true)
+            let payload = try object(result.structuredContent)
+            #expect(payload["operationCommitState"] == .string("committed_unverified"))
+            #expect(payload["retrySafe"] == .bool(false))
+            #expect(payload["submission_id"] == .string("sub-1"))
+            #expect(payload["failed_step"] == .string("confirm_review_submission"))
+            #expect(await transport.requestCount() == 4)
+        }
     }
 
     @Test("release without confirmation returns preflight and does not post")
@@ -469,6 +766,61 @@ struct AppLifecycleWorkerHardeningTests {
         #expect(query.first(where: { $0.name == "fields[appStoreVersions]" })?.value == "platform,versionString,appVersionState")
     }
 
+    @Test("release preflight rejects mismatched version identity before mutation")
+    func releaseRejectsMismatchedVersionIdentity() async throws {
+        let responses = [
+            appVersionBody(type: "apps", state: "PENDING_DEVELOPER_RELEASE", version: "2.5.0"),
+            appVersionBody(id: "ver-other", state: "PENDING_DEVELOPER_RELEASE", version: "2.5.0")
+        ]
+
+        for response in responses {
+            let transport = TestHTTPTransport(responses: [.init(statusCode: 200, body: response)])
+            let worker = try await makeWorker(transport: transport)
+            let result = try await worker.handleTool(.init(
+                name: "app_versions_release",
+                arguments: [
+                    "version_id": .string("ver-1"),
+                    "confirm_version_string": .string("2.5.0")
+                ]
+            ))
+
+            #expect(result.isError == true)
+            let requests = await transport.recordedRequests()
+            #expect(requests.count == 1)
+            #expect(requests.allSatisfy { $0.httpMethod == "GET" })
+        }
+    }
+
+    @Test("release request response must identify a created release request")
+    func releaseRejectsInvalidCreateResponseIdentity() async throws {
+        let responses = [
+            #"{"data":42}"#,
+            #"{"data":{"type":"appStoreVersions","id":"release-1"}}"#,
+            #"{"data":{"type":"appStoreVersionReleaseRequests","id":""}}"#
+        ]
+
+        for response in responses {
+            let transport = TestHTTPTransport(responses: [
+                .init(statusCode: 200, body: appVersionBody(state: "PENDING_DEVELOPER_RELEASE", version: "2.5.0")),
+                .init(statusCode: 201, body: response)
+            ])
+            let worker = try await makeWorker(transport: transport)
+            let result = try await worker.handleTool(.init(
+                name: "app_versions_release",
+                arguments: [
+                    "version_id": .string("ver-1"),
+                    "confirm_version_string": .string("2.5.0")
+                ]
+            ))
+
+            #expect(result.isError == true)
+            let payload = try object(result.structuredContent)
+            #expect(payload["operationCommitState"] == .string("committed_unverified"))
+            #expect(payload["retrySafe"] == .bool(false))
+            #expect(await transport.requestCount() == 2)
+        }
+    }
+
     @Test("review submission create request omits platform unless explicitly provided")
     func reviewSubmissionCreateRequestOmitsPlatformByDefault() async throws {
         let transport = TestHTTPTransport(responses: [
@@ -507,12 +859,17 @@ private func makeWorker(transport: TestHTTPTransport) async throws -> AppLifecyc
     return AppLifecycleWorker(httpClient: client)
 }
 
-private func appVersionBody(state: String, version: String) -> String {
+private func appVersionBody(
+    type: String = "appStoreVersions",
+    id: String = "ver-1",
+    state: String,
+    version: String
+) -> String {
     """
     {
       "data": {
-        "type": "appStoreVersions",
-        "id": "ver-1",
+        "type": "\(type)",
+        "id": "\(id)",
         "attributes": {
           "platform": "IOS",
           "versionString": "\(version)",
@@ -523,8 +880,13 @@ private func appVersionBody(state: String, version: String) -> String {
     """
 }
 
-private func submissionVersionBody(appId: String) -> String {
-    #"{"data":{"type":"appStoreVersions","id":"ver-1","attributes":{"platform":"IOS","versionString":"1.0","appVersionState":"READY_FOR_REVIEW"},"relationships":{"app":{"data":{"type":"apps","id":"\#(appId)"}}}}}"#
+private func submissionVersionBody(
+    type: String = "appStoreVersions",
+    id: String = "ver-1",
+    appType: String = "apps",
+    appId: String
+) -> String {
+    #"{"data":{"type":"\#(type)","id":"\#(id)","attributes":{"platform":"IOS","versionString":"1.0","appVersionState":"READY_FOR_REVIEW"},"relationships":{"app":{"data":{"type":"\#(appType)","id":"\#(appId)"}}}}}"#
 }
 
 private func object(_ value: Value?) throws -> [String: Value] {

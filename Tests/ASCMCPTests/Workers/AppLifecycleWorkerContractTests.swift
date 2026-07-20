@@ -94,7 +94,7 @@ struct AppLifecycleWorkerContractTests {
     @Test("review details update resolves the related resource and omits unsupported attachment attributes")
     func reviewDetailsUpdateUsesRelatedResource() async throws {
         let transport = TestHTTPTransport(responses: [
-            .init(statusCode: 200, body: #"{"data":{"type":"appStoreReviewDetails","id":"review-1"}}"#),
+            .init(statusCode: 200, body: reviewDetailBody(id: "review-1", versionId: "ver-1")),
             .init(statusCode: 200, body: #"{"data":{"type":"appStoreReviewDetails","id":"review-1","attributes":{"notes":"Updated"}}}"#)
         ])
         let worker = try await makeContractWorker(transport: transport)
@@ -111,6 +111,8 @@ struct AppLifecycleWorkerContractTests {
         let requests = await transport.recordedRequests()
         #expect(requests.map { $0.httpMethod ?? "" } == ["GET", "PATCH"])
         #expect(requests[0].url?.path == "/v1/appStoreVersions/ver-1/appStoreReviewDetail")
+        #expect(URLComponents(url: try #require(requests[0].url), resolvingAgainstBaseURL: false)?
+            .queryItems?.first(where: { $0.name == "fields[appStoreReviewDetails]" })?.value == "appStoreVersion")
         #expect(requests[1].url?.path == "/v1/appStoreReviewDetails/review-1")
         let body = try #require(await transport.recordedBodyStrings().last)
         #expect(body.contains(#""notes":"Updated""#))
@@ -120,7 +122,7 @@ struct AppLifecycleWorkerContractTests {
     @Test("review detail update preserves omitted value and explicit null fields")
     func reviewDetailsUpdatePreservesTriStateAttributes() async throws {
         let transport = TestHTTPTransport(responses: [
-            .init(statusCode: 200, body: #"{"data":{"type":"appStoreReviewDetails","id":"review-1"}}"#),
+            .init(statusCode: 200, body: reviewDetailBody(id: "review-1", versionId: "ver-1")),
             .init(statusCode: 200, body: #"{"data":{"type":"appStoreReviewDetails","id":"review-1"}}"#)
         ])
         let worker = try await makeContractWorker(transport: transport)
@@ -245,6 +247,105 @@ struct AppLifecycleWorkerContractTests {
         #expect(requests.allSatisfy { $0.httpMethod == "GET" })
     }
 
+    @Test("review detail lookup validates target identity and exact parent before mutation")
+    func reviewDetailsRejectMismatchedRelatedIdentity() async throws {
+        let responses = [
+            reviewDetailBody(type: "apps", id: "review-1", versionId: "ver-1"),
+            reviewDetailBody(id: " ", versionId: "ver-1"),
+            reviewDetailBody(id: "review-1", versionType: "builds", versionId: "ver-1"),
+            reviewDetailBody(id: "review-1", versionId: "ver-other"),
+            #"{"data":{"type":"appStoreReviewDetails","id":"review-1"}}"#
+        ]
+
+        for response in responses {
+            let transport = TestHTTPTransport(responses: [.init(statusCode: 200, body: response)])
+            let worker = try await makeContractWorker(transport: transport)
+            let result = try await worker.handleTool(.init(
+                name: "app_versions_set_review_details",
+                arguments: ["version_id": .string("ver-1"), "notes": .string("Do not mutate")]
+            ))
+
+            #expect(result.isError == true)
+            let requests = await transport.recordedRequests()
+            #expect(requests.count == 1)
+            #expect(requests.allSatisfy { $0.httpMethod == "GET" })
+        }
+    }
+
+    @Test("review detail 404 validates the exact parent version before create")
+    func reviewDetailsRejectMismatchedParentAfterNotFound() async throws {
+        let parentResponses = [
+            #"{"data":{"type":"apps","id":"ver-1"}}"#,
+            #"{"data":{"type":"appStoreVersions","id":"ver-other"}}"#
+        ]
+
+        for parentResponse in parentResponses {
+            let transport = TestHTTPTransport(responses: [
+                .init(statusCode: 404, body: #"{"errors":[{"status":"404","detail":"No review detail"}]}"#),
+                .init(statusCode: 200, body: parentResponse)
+            ])
+            let worker = try await makeContractWorker(transport: transport)
+            let result = try await worker.handleTool(.init(
+                name: "app_versions_set_review_details",
+                arguments: ["version_id": .string("ver-1"), "notes": .string("Do not create")]
+            ))
+
+            #expect(result.isError == true)
+            let requests = await transport.recordedRequests()
+            #expect(requests.map(\.httpMethod) == ["GET", "GET"])
+        }
+    }
+
+    @Test("invalid successful review detail mutations are committed unverified")
+    func reviewDetailsRejectInvalidMutationResponses() async throws {
+        let updateResponses = [
+            #"{"data":{"type":"appStoreReviewDetails","id":"review-other"}}"#,
+            reviewDetailBody(id: "review-1", versionId: "ver-other")
+        ]
+        for updateResponse in updateResponses {
+            let updateTransport = TestHTTPTransport(responses: [
+                .init(statusCode: 200, body: reviewDetailBody(id: "review-1", versionId: "ver-1")),
+                .init(statusCode: 200, body: updateResponse)
+            ])
+            let updateWorker = try await makeContractWorker(transport: updateTransport)
+            let updateResult = try await updateWorker.handleTool(.init(
+                name: "app_versions_set_review_details",
+                arguments: ["version_id": .string("ver-1"), "notes": .string("Updated")]
+            ))
+
+            #expect(updateResult.isError == true)
+            let updatePayload = try contractObject(updateResult.structuredContent)
+            #expect(updatePayload["operationCommitState"] == .string("committed_unverified"))
+            #expect(updatePayload["retrySafe"] == .bool(false))
+            let updateRequests = await updateTransport.recordedRequests()
+            #expect(updateRequests.map(\.httpMethod) == ["GET", "PATCH"])
+        }
+
+        let createResponses = [
+            #"{"data":{"type":"appStoreVersions","id":"review-1"}}"#,
+            reviewDetailBody(id: "review-1", versionId: "ver-other")
+        ]
+        for createResponse in createResponses {
+            let createTransport = TestHTTPTransport(responses: [
+                .init(statusCode: 404, body: #"{"errors":[{"status":"404","detail":"No review detail"}]}"#),
+                .init(statusCode: 200, body: #"{"data":{"type":"appStoreVersions","id":"ver-1"}}"#),
+                .init(statusCode: 201, body: createResponse)
+            ])
+            let createWorker = try await makeContractWorker(transport: createTransport)
+            let createResult = try await createWorker.handleTool(.init(
+                name: "app_versions_set_review_details",
+                arguments: ["version_id": .string("ver-1"), "notes": .string("Created")]
+            ))
+
+            #expect(createResult.isError == true)
+            let createPayload = try contractObject(createResult.structuredContent)
+            #expect(createPayload["operationCommitState"] == .string("committed_unverified"))
+            #expect(createPayload["retrySafe"] == .bool(false))
+            let createRequests = await createTransport.recordedRequests()
+            #expect(createRequests.map(\.httpMethod) == ["GET", "GET", "POST"])
+        }
+    }
+
     @Test("legacy review attachment parameter fails before network mutation")
     func reviewAttachmentParameterFailsBeforeNetworkMutation() async throws {
         let transport = TestHTTPTransport(responses: [])
@@ -318,11 +419,11 @@ struct AppLifecycleWorkerContractTests {
     @Test("legacy version lookup rejects one incompatible App Info")
     func ageRatingRejectsSingleIncompatibleAppInfo() async throws {
         let transport = TestHTTPTransport(responses: [
-            .init(statusCode: 200, body: versionWithAppBody(state: "REPLACED_WITH_NEW_VERSION")),
+            .init(statusCode: 200, body: versionWithAppBody(id: "ver-old", state: "REPLACED_WITH_NEW_VERSION")),
             .init(statusCode: 200, body: """
             {
               "data": [
-                { "type": "appInfos", "id": "info-current", "attributes": { "state": "ACCEPTED" } }
+                { "type": "appInfos", "id": "info-current", "attributes": { "state": "ACCEPTED" }, "relationships": { "app": { "data": { "type": "apps", "id": "app-1" } } } }
               ]
             }
             """)
@@ -345,7 +446,7 @@ struct AppLifecycleWorkerContractTests {
     @Test("legacy invalid binary version requires an explicit App Info ID")
     func ageRatingRejectsInvalidBinaryVersionLookup() async throws {
         let transport = TestHTTPTransport(responses: [
-            .init(statusCode: 200, body: versionWithAppBody(state: "INVALID_BINARY"))
+            .init(statusCode: 200, body: versionWithAppBody(id: "ver-invalid", state: "INVALID_BINARY"))
         ])
         let worker = try await makeContractWorker(transport: transport)
 
@@ -372,11 +473,11 @@ struct AppLifecycleWorkerContractTests {
     @Test("legacy pending version state maps only to pending App Info")
     func ageRatingMapsPendingVersionState() async throws {
         let transport = TestHTTPTransport(responses: [
-            .init(statusCode: 200, body: versionWithAppBody(state: "PENDING_DEVELOPER_RELEASE")),
+            .init(statusCode: 200, body: versionWithAppBody(id: "ver-next", state: "PENDING_DEVELOPER_RELEASE")),
             .init(statusCode: 200, body: """
             {
               "data": [
-                { "type": "appInfos", "id": "info-pending", "attributes": { "state": "PENDING_RELEASE" } }
+                { "type": "appInfos", "id": "info-pending", "attributes": { "state": "PENDING_RELEASE" }, "relationships": { "app": { "data": { "type": "apps", "id": "app-1" } } } }
               ]
             }
             """),
@@ -406,12 +507,12 @@ struct AppLifecycleWorkerContractTests {
     @Test("age rating resolves editable App Info and patches the existing declaration")
     func ageRatingUsesEditableAppInfo() async throws {
         let transport = TestHTTPTransport(responses: [
-            .init(statusCode: 200, body: versionWithAppBody(state: "PREPARE_FOR_SUBMISSION")),
+            .init(statusCode: 200, body: versionWithAppBody(id: "ver-1", state: "PREPARE_FOR_SUBMISSION")),
             .init(statusCode: 200, body: """
             {
               "data": [
-                { "type": "appInfos", "id": "info-live", "attributes": { "state": "ACCEPTED" } },
-                { "type": "appInfos", "id": "info-next", "attributes": { "state": "PREPARE_FOR_SUBMISSION" } }
+                { "type": "appInfos", "id": "info-live", "attributes": { "state": "ACCEPTED" }, "relationships": { "app": { "data": { "type": "apps", "id": "app-1" } } } },
+                { "type": "appInfos", "id": "info-next", "attributes": { "state": "PREPARE_FOR_SUBMISSION" }, "relationships": { "app": { "data": { "type": "apps", "id": "app-1" } } } }
               ],
               "links": { "self": "https://api.example.test/v1/apps/app-1/appInfos" }
             }
@@ -440,6 +541,8 @@ struct AppLifecycleWorkerContractTests {
             "/v1/appInfos/info-next/ageRatingDeclaration",
             "/v1/ageRatingDeclarations/age-1"
         ])
+        #expect(URLComponents(url: try #require(requests[1].url), resolvingAgainstBaseURL: false)?
+            .queryItems?.first(where: { $0.name == "fields[appInfos]" })?.value == "state,app")
         let patchBody = try #require(await transport.recordedBodyStrings().last)
         #expect(patchBody.contains(#""id":"age-1""#))
         #expect(patchBody.contains(#""socialMedia":true"#))
@@ -454,12 +557,12 @@ struct AppLifecycleWorkerContractTests {
     @Test("age rating stops before mutation when App Info selection is ambiguous")
     func ageRatingStopsOnAmbiguousAppInfo() async throws {
         let transport = TestHTTPTransport(responses: [
-            .init(statusCode: 200, body: versionWithAppBody(state: "ACCEPTED")),
+            .init(statusCode: 200, body: versionWithAppBody(id: "ver-1", state: "ACCEPTED")),
             .init(statusCode: 200, body: """
             {
               "data": [
-                { "type": "appInfos", "id": "info-accepted", "attributes": { "state": "ACCEPTED" } },
-                { "type": "appInfos", "id": "info-accepted-2", "attributes": { "state": "ACCEPTED" } }
+                { "type": "appInfos", "id": "info-accepted", "attributes": { "state": "ACCEPTED" }, "relationships": { "app": { "data": { "type": "apps", "id": "app-1" } } } },
+                { "type": "appInfos", "id": "info-accepted-2", "attributes": { "state": "ACCEPTED" }, "relationships": { "app": { "data": { "type": "apps", "id": "app-1" } } } }
               ],
               "links": { "self": "https://api.example.test/v1/apps/app-1/appInfos" }
             }
@@ -478,6 +581,103 @@ struct AppLifecycleWorkerContractTests {
         #expect(result.isError == true)
         #expect(await transport.requestCount() == 2)
         #expect(await transport.recordedRequests().allSatisfy { $0.httpMethod == "GET" })
+    }
+
+    @Test("legacy age rating rejects mismatched version and app identities before mutation")
+    func ageRatingRejectsMismatchedVersionAndAppIdentity() async throws {
+        let versionResponses = [
+            versionWithAppBody(type: "apps", id: "ver-1", state: "PREPARE_FOR_SUBMISSION"),
+            versionWithAppBody(id: "ver-other", state: "PREPARE_FOR_SUBMISSION"),
+            versionWithAppBody(id: "ver-1", state: "PREPARE_FOR_SUBMISSION", appType: "users"),
+            versionWithAppBody(id: "ver-1", state: "PREPARE_FOR_SUBMISSION", appId: " ")
+        ]
+
+        for response in versionResponses {
+            let transport = TestHTTPTransport(responses: [.init(statusCode: 200, body: response)])
+            let worker = try await makeContractWorker(transport: transport)
+            let result = try await worker.handleTool(.init(
+                name: "app_versions_update_age_rating",
+                arguments: ["version_id": .string("ver-1"), "advertising": .bool(false)]
+            ))
+
+            #expect(result.isError == true)
+            let requests = await transport.recordedRequests()
+            #expect(requests.count == 1)
+            #expect(requests.allSatisfy { $0.httpMethod == "GET" })
+        }
+    }
+
+    @Test("legacy age rating rejects malformed App Info identities before declaration lookup")
+    func ageRatingRejectsInvalidAppInfoIdentity() async throws {
+        let appInfoResponses = [
+            #"{"data":[{"type":"apps","id":"info-1","attributes":{"state":"PREPARE_FOR_SUBMISSION"}}]}"#,
+            #"{"data":[{"type":"appInfos","id":"","attributes":{"state":"PREPARE_FOR_SUBMISSION"}}]}"#,
+            #"{"data":[{"type":"appInfos","id":"info-1","attributes":{"state":"PREPARE_FOR_SUBMISSION"},"relationships":{"app":{"data":{"type":"apps","id":"app-other"}}}}]}"#,
+            #"{"data":[{"type":"appInfos","id":"info-1","attributes":{"state":"ACCEPTED"},"relationships":{"app":{"data":{"type":"apps","id":"app-1"}}}},{"type":"appInfos","id":"info-1","attributes":{"state":"PREPARE_FOR_SUBMISSION"},"relationships":{"app":{"data":{"type":"apps","id":"app-1"}}}}]}"#
+        ]
+
+        for appInfoResponse in appInfoResponses {
+            let transport = TestHTTPTransport(responses: [
+                .init(statusCode: 200, body: versionWithAppBody(id: "ver-1", state: "PREPARE_FOR_SUBMISSION")),
+                .init(statusCode: 200, body: appInfoResponse)
+            ])
+            let worker = try await makeContractWorker(transport: transport)
+            let result = try await worker.handleTool(.init(
+                name: "app_versions_update_age_rating",
+                arguments: ["version_id": .string("ver-1"), "advertising": .bool(false)]
+            ))
+
+            #expect(result.isError == true)
+            let requests = await transport.recordedRequests()
+            #expect(requests.map(\.httpMethod) == ["GET", "GET"])
+        }
+    }
+
+    @Test("legacy age rating validates the declaration identity before patch")
+    func ageRatingRejectsInvalidDeclarationIdentity() async throws {
+        let declarationResponses = [
+            #"{"data":{"type":"appInfos","id":"age-1"}}"#,
+            #"{"data":{"type":"ageRatingDeclarations","id":" "}}"#
+        ]
+
+        for declarationResponse in declarationResponses {
+            let transport = TestHTTPTransport(responses: [
+                .init(statusCode: 200, body: versionWithAppBody(id: "ver-1", state: "PREPARE_FOR_SUBMISSION")),
+                .init(statusCode: 200, body: #"{"data":[{"type":"appInfos","id":"info-1","attributes":{"state":"PREPARE_FOR_SUBMISSION"},"relationships":{"app":{"data":{"type":"apps","id":"app-1"}}}}]}"#),
+                .init(statusCode: 200, body: declarationResponse)
+            ])
+            let worker = try await makeContractWorker(transport: transport)
+            let result = try await worker.handleTool(.init(
+                name: "app_versions_update_age_rating",
+                arguments: ["version_id": .string("ver-1"), "advertising": .bool(false)]
+            ))
+
+            #expect(result.isError == true)
+            let requests = await transport.recordedRequests()
+            #expect(requests.count == 3)
+            #expect(requests.allSatisfy { $0.httpMethod == "GET" })
+        }
+    }
+
+    @Test("invalid successful age rating update is committed unverified")
+    func ageRatingRejectsInvalidUpdateResponseIdentity() async throws {
+        let transport = TestHTTPTransport(responses: [
+            .init(statusCode: 200, body: #"{"data":{"type":"ageRatingDeclarations","id":"age-1"}}"#),
+            .init(statusCode: 200, body: #"{"data":{"type":"ageRatingDeclarations","id":"age-other"}}"#)
+        ])
+        let worker = try await makeContractWorker(transport: transport)
+
+        let result = try await worker.handleTool(.init(
+            name: "app_versions_update_age_rating",
+            arguments: ["app_info_id": .string("info-1"), "advertising": .bool(false)]
+        ))
+
+        #expect(result.isError == true)
+        let payload = try contractObject(result.structuredContent)
+        #expect(payload["operationCommitState"] == .string("committed_unverified"))
+        #expect(payload["retrySafe"] == .bool(false))
+        let requests = await transport.recordedRequests()
+        #expect(requests.map(\.httpMethod) == ["GET", "PATCH"])
     }
 
     @Test("age rating declaration read uses the App Info relationship")
@@ -499,6 +699,28 @@ struct AppLifecycleWorkerContractTests {
         let payload = try contractObject(result.structuredContent)
         #expect(payload["app_info_id"] == .string("info-1"))
         #expect(payload["age_rating_declaration"]?.objectValue?["id"] == .string("age-1"))
+    }
+
+    @Test("age rating declaration read rejects malformed and wrong resource types")
+    func ageRatingDeclarationReadRejectsInvalidIdentity() async throws {
+        let responses = [
+            #"{"data":42}"#,
+            #"{"data":[]}"#,
+            #"{"data":{"type":"appInfos","id":"age-1"}}"#,
+            #"{"data":{"type":"ageRatingDeclarations","id":" "}}"#
+        ]
+
+        for response in responses {
+            let transport = TestHTTPTransport(responses: [.init(statusCode: 200, body: response)])
+            let worker = try await makeContractWorker(transport: transport)
+            let result = try await worker.handleTool(.init(
+                name: "app_versions_get_age_rating_declaration",
+                arguments: ["app_info_id": .string("info-1")]
+            ))
+
+            #expect(result.isError == true)
+            #expect(await transport.requestCount() == 1)
+        }
     }
 
     @Test("territory age ratings return calculated ratings territories and paging metadata")
@@ -549,6 +771,31 @@ struct AppLifecycleWorkerContractTests {
         #expect(payload["meta"]?.objectValue?["paging"]?.objectValue?["nextCursor"] == .string("next"))
     }
 
+    @Test("territory age rating read validates every rating and included territory")
+    func territoryAgeRatingsRejectInvalidResourceIdentities() async throws {
+        let responses = [
+            #"{"data":{"type":"territoryAgeRatings","id":"rating-1"}}"#,
+            #"{"data":[{"type":"apps","id":"rating-1"}]}"#,
+            #"{"data":[{"type":"territoryAgeRatings","id":""}]}"#,
+            #"{"data":[{"type":"territoryAgeRatings","id":"rating-1","relationships":{"territory":{"data":{"type":"apps","id":"VNM"}}}}],"included":[{"type":"territories","id":"VNM"}]}"#,
+            #"{"data":[{"type":"territoryAgeRatings","id":"rating-1","relationships":{"territory":{"data":{"type":"territories","id":"VNM"}}}}],"included":[{"type":"apps","id":"VNM"}]}"#,
+            #"{"data":[{"type":"territoryAgeRatings","id":"rating-1","relationships":{"territory":{"data":{"type":"territories","id":"VNM"}}}}],"included":[{"type":"territories","id":" "}]}"#,
+            #"{"data":[{"type":"territoryAgeRatings","id":"rating-1","relationships":{"territory":{"data":{"type":"territories","id":"VNM"}}}}],"included":[{"type":"territories","id":"KOR"}]}"#
+        ]
+
+        for response in responses {
+            let transport = TestHTTPTransport(responses: [.init(statusCode: 200, body: response)])
+            let worker = try await makeContractWorker(transport: transport)
+            let result = try await worker.handleTool(.init(
+                name: "app_versions_list_territory_age_ratings",
+                arguments: ["app_info_id": .string("info-1")]
+            ))
+
+            #expect(result.isError == true)
+            #expect(await transport.requestCount() == 1)
+        }
+    }
+
     @Test("age rating developer information URL rejects non-absolute values")
     func ageRatingRejectsRelativeDeveloperURL() async throws {
         let transport = TestHTTPTransport(responses: [])
@@ -577,19 +824,34 @@ private func makeContractWorker(transport: TestHTTPTransport) async throws -> Ap
     return AppLifecycleWorker(httpClient: client)
 }
 
-private func versionWithAppBody(state: String) -> String {
+private func versionWithAppBody(
+    type: String = "appStoreVersions",
+    id: String,
+    state: String,
+    appType: String = "apps",
+    appId: String = "app-1"
+) -> String {
     """
     {
       "data": {
-        "type": "appStoreVersions",
-        "id": "ver-1",
+        "type": "\(type)",
+        "id": "\(id)",
         "attributes": { "appVersionState": "\(state)" },
         "relationships": {
-          "app": { "data": { "type": "apps", "id": "app-1" } }
+          "app": { "data": { "type": "\(appType)", "id": "\(appId)" } }
         }
       }
     }
     """
+}
+
+private func reviewDetailBody(
+    type: String = "appStoreReviewDetails",
+    id: String,
+    versionType: String = "appStoreVersions",
+    versionId: String
+) -> String {
+    #"{"data":{"type":"\#(type)","id":"\#(id)","relationships":{"appStoreVersion":{"data":{"type":"\#(versionType)","id":"\#(versionId)"}}}}}"#
 }
 
 private func contractObject(_ value: Value?) throws -> [String: Value] {

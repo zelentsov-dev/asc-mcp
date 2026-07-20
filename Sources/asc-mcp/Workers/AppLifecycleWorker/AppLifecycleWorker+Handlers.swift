@@ -84,11 +84,43 @@ extension AppLifecycleWorker {
                 appId: appId
             )
 
-            let response = try await httpClient.post(
-                "/v1/appStoreVersions",
-                body: request,
-                as: PassthroughAPIResponse.self
-            )
+            let requestBody = try JSONEncoder().encode(request)
+            let responseData = try await httpClient.post("/v1/appStoreVersions", body: requestBody)
+            let response: PassthroughAPIResponse
+            do {
+                response = try JSONDecoder().decode(PassthroughAPIResponse.self, from: responseData)
+                let createdVersion = try validatedJSONResource(
+                    response.data,
+                    expectedType: "appStoreVersions",
+                    context: "app version create response"
+                )
+                _ = try validatedOptionalSingleRelationshipID(
+                    createdVersion["relationships"],
+                    name: "app",
+                    expectedType: "apps",
+                    expectedID: appId,
+                    context: "created app version parent linkage"
+                )
+            } catch {
+                return committedUnverifiedMutationFailure(
+                    action: "app version creation",
+                    reason: error.localizedDescription,
+                    details: [
+                        "app_id": appId,
+                        "version_string": versionString,
+                        "platform": platform,
+                        "version_id_known": false
+                    ],
+                    inspection: [
+                        "tool": "app_versions_list",
+                        "arguments": [
+                            "app_id": appId,
+                            "version_strings": [versionString],
+                            "platforms": [platform]
+                        ]
+                    ]
+                )
+            }
 
             let result: [String: Any] = [
                 "success": true,
@@ -185,9 +217,32 @@ extension AppLifecycleWorker {
             }
 
             let response = try JSONDecoder().decode(PassthroughAPIResponse.self, from: responseData)
-            guard let versions = response.data.arrayValue else {
-                throw AppLifecycleQueryArgumentError("Apple returned a non-array app version collection")
+            let versions = try validatedJSONResourceCollection(
+                response.data,
+                expectedType: "appStoreVersions",
+                context: "app version collection"
+            )
+            if let versionIDs {
+                let requestedIDs = Set(versionIDs)
+                for version in versions {
+                    let versionObject = try validatedJSONResource(
+                        version,
+                        expectedType: "appStoreVersions",
+                        context: "app version collection"
+                    )
+                    guard case .string(let returnedID)? = versionObject["id"],
+                          requestedIDs.contains(returnedID) else {
+                        throw AppLifecycleQueryArgumentError(
+                            "Apple returned an app version outside the requested version_ids filter"
+                        )
+                    }
+                }
             }
+            try validateVersionIncludedResources(
+                versions: versions,
+                included: response.included,
+                context: "app version collection"
+            )
 
             var result: [String: Any] = [
                 "success": true,
@@ -243,6 +298,17 @@ extension AppLifecycleWorker {
                 parameters: queryParams,
                 as: PassthroughAPIResponse.self
             )
+            _ = try validatedJSONResource(
+                response.data,
+                expectedType: "appStoreVersions",
+                expectedID: versionId,
+                context: "app version detail"
+            )
+            try validateVersionIncludedResources(
+                versions: [response.data],
+                included: response.included,
+                context: "app version detail"
+            )
 
             var result: [String: Any] = [
                 "success": true,
@@ -277,6 +343,11 @@ extension AppLifecycleWorker {
                 "/v1/appInfos/\(try ASCPathSegment.encode(appInfoId))/ageRatingDeclaration",
                 parameters: [:],
                 as: PassthroughAPIResponse.self
+            )
+            _ = try validatedJSONResource(
+                response.data,
+                expectedType: "ageRatingDeclarations",
+                context: "age rating declaration"
             )
 
             return MCPResult.jsonObject([
@@ -328,8 +399,35 @@ extension AppLifecycleWorker {
                 )
             }
 
-            guard let ratings = response.data.arrayValue else {
-                throw AppLifecycleQueryArgumentError("Apple returned a non-array territory age rating collection")
+            let ratings = try validatedJSONResourceCollection(
+                response.data,
+                expectedType: "territoryAgeRatings",
+                context: "territory age rating collection"
+            )
+            let referencedTerritoryIDs = try Set(ratings.map { rating in
+                let ratingObject = try validatedJSONResource(
+                    rating,
+                    expectedType: "territoryAgeRatings",
+                    context: "territory age rating collection"
+                )
+                guard let relationships = ratingObject["relationships"] else {
+                    throw AppLifecycleQueryArgumentError("Apple returned a territory age rating without territory linkage")
+                }
+                let territoryID = try validatedSingleRelationshipID(
+                    relationships,
+                    name: "territory",
+                    expectedType: "territories",
+                    context: "territory age rating linkage"
+                )
+                return "territories:\(territoryID)"
+            })
+            let includedTerritoryIDs = try validateIncludedResources(
+                response.included,
+                allowedTypes: ["territories"],
+                context: "included territories"
+            )
+            guard referencedTerritoryIDs == includedTerritoryIDs else {
+                throw AppLifecycleQueryArgumentError("Apple returned territory age ratings with incomplete or unrelated included territories")
             }
 
             var result: [String: Any] = [
@@ -405,11 +503,30 @@ extension AppLifecycleWorker {
                 usesIdfa: usesIdfa
             )
 
-            let response = try await httpClient.patch(
+            let requestBody = try JSONEncoder().encode(request)
+            let responseData = try await httpClient.patch(
                 "/v1/appStoreVersions/\(try ASCPathSegment.encode(versionId))",
-                body: request,
-                as: ASCAppStoreVersionResponse.self
+                body: requestBody
             )
+            let response: ASCAppStoreVersionResponse
+            do {
+                response = try JSONDecoder().decode(ASCAppStoreVersionResponse.self, from: responseData)
+                try validateVersionResource(
+                    response.data,
+                    expectedID: versionId,
+                    context: "app version update response"
+                )
+            } catch {
+                return committedUnverifiedMutationFailure(
+                    action: "app version update",
+                    reason: error.localizedDescription,
+                    details: ["version_id": versionId],
+                    inspection: [
+                        "tool": "app_versions_get",
+                        "arguments": ["version_id": versionId]
+                    ]
+                )
+            }
 
             let v = response.data
             let result: [String: Any] = [
@@ -502,9 +619,15 @@ extension AppLifecycleWorker {
                 parameters: ["fields[appStoreVersions]": "app,platform,versionString,appVersionState"],
                 as: ASCAppStoreVersionResponse.self
             )
+            try validateVersionResource(
+                versionResponse.data,
+                expectedID: versionId,
+                context: "review submission preflight"
+            )
             guard let appData = versionResponse.data.relationships?.app?.data,
                   case .single(let appRef) = appData,
-                  appRef.type == "apps" else {
+                  appRef.type == "apps",
+                  isCanonicalResourceID(appRef.id) else {
                 return MCPResult.error("Could not resolve app ownership from version '\(versionId)'.")
             }
             let appId = appRef.id
@@ -521,11 +644,36 @@ extension AppLifecycleWorker {
 
             // Step 1: Create review submission
             let submissionRequest = CreateReviewSubmissionRequest(platform: platform, appId: appId)
-            let submissionResponse = try await httpClient.post(
-                "/v1/reviewSubmissions",
-                body: submissionRequest,
-                as: SingleResourceResponse.self
-            )
+            let submissionBody = try JSONEncoder().encode(submissionRequest)
+            let submissionData = try await httpClient.post("/v1/reviewSubmissions", body: submissionBody)
+            let submissionResponse: SingleResourceResponse
+            do {
+                submissionResponse = try JSONDecoder().decode(SingleResourceResponse.self, from: submissionData)
+                try validateSingleResource(
+                    submissionResponse.data,
+                    expectedType: "reviewSubmissions",
+                    context: "review submission create response"
+                )
+                _ = try validatedOptionalSingleRelationshipID(
+                    submissionResponse.data.relationships,
+                    name: "app",
+                    expectedType: "apps",
+                    expectedID: appId,
+                    context: "review submission app linkage"
+                )
+            } catch {
+                return committedUnverifiedMutationFailure(
+                    action: "review submission creation",
+                    reason: error.localizedDescription,
+                    details: [
+                        "version_id": versionId,
+                        "submission_id_known": false
+                    ],
+                    inspection: [
+                        "instruction": "Inspect Review Submissions for this app and platform in App Store Connect before retrying."
+                    ]
+                )
+            }
             submissionId = submissionResponse.data.id
 
             // Step 2: Add version as review submission item
@@ -535,16 +683,86 @@ extension AppLifecycleWorker {
             }
             let itemRequest = CreateReviewSubmissionItemRequest(submissionId: createdSubmissionId, versionId: versionId)
             let itemBodyData = try JSONEncoder().encode(itemRequest)
-            _ = try await httpClient.post("/v1/reviewSubmissionItems", body: itemBodyData)
+            let itemResponseData = try await httpClient.post("/v1/reviewSubmissionItems", body: itemBodyData)
+            do {
+                let itemResponse = try JSONDecoder().decode(PassthroughAPIResponse.self, from: itemResponseData)
+                let item = try validatedJSONResource(
+                    itemResponse.data,
+                    expectedType: "reviewSubmissionItems",
+                    context: "review submission item create response"
+                )
+                _ = try validatedOptionalSingleRelationshipID(
+                    item["relationships"],
+                    name: "appStoreVersion",
+                    expectedType: "appStoreVersions",
+                    expectedID: versionId,
+                    context: "review submission item version linkage"
+                )
+                _ = try validatedOptionalSingleRelationshipID(
+                    item["relationships"],
+                    name: "reviewSubmission",
+                    expectedType: "reviewSubmissions",
+                    expectedID: createdSubmissionId,
+                    context: "review submission item parent linkage"
+                )
+            } catch {
+                return committedUnverifiedMutationFailure(
+                    action: "review submission item creation",
+                    reason: error.localizedDescription,
+                    details: [
+                        "version_id": versionId,
+                        "submission_id": createdSubmissionId,
+                        "submission_id_known": true,
+                        "failed_step": failedStep,
+                        "recovery_tools": ["app_versions_cancel_review"]
+                    ],
+                    inspection: [
+                        "tool": "app_versions_cancel_review",
+                        "arguments": ["review_submission_id": createdSubmissionId],
+                        "instruction": "Inspect the submission in App Store Connect and cancel it before retrying when it remains open."
+                    ]
+                )
+            }
 
             // Step 3: Confirm the submission
             failedStep = "confirm_review_submission"
             let confirmRequest = ConfirmReviewSubmissionRequest(submissionId: createdSubmissionId)
-            let confirmResponse = try await httpClient.patch(
+            let confirmBody = try JSONEncoder().encode(confirmRequest)
+            let confirmData = try await httpClient.patch(
                 "/v1/reviewSubmissions/\(try ASCPathSegment.encode(createdSubmissionId))",
-                body: confirmRequest,
-                as: PassthroughAPIResponse.self
+                body: confirmBody
             )
+            let confirmResponse: PassthroughAPIResponse
+            do {
+                confirmResponse = try JSONDecoder().decode(PassthroughAPIResponse.self, from: confirmData)
+                let confirmedSubmission = try validatedJSONResource(
+                    confirmResponse.data,
+                    expectedType: "reviewSubmissions",
+                    expectedID: createdSubmissionId,
+                    context: "review submission confirmation response"
+                )
+                _ = try validatedOptionalSingleRelationshipID(
+                    confirmedSubmission["relationships"],
+                    name: "app",
+                    expectedType: "apps",
+                    expectedID: appId,
+                    context: "confirmed review submission app linkage"
+                )
+            } catch {
+                return committedUnverifiedMutationFailure(
+                    action: "review submission confirmation",
+                    reason: error.localizedDescription,
+                    details: [
+                        "version_id": versionId,
+                        "submission_id": createdSubmissionId,
+                        "submission_id_known": true,
+                        "failed_step": failedStep
+                    ],
+                    inspection: [
+                        "instruction": "Inspect review submission '\(createdSubmissionId)' in App Store Connect before canceling or retrying."
+                    ]
+                )
+            }
 
             let result: [String: Any] = [
                 "success": true,
@@ -602,11 +820,30 @@ extension AppLifecycleWorker {
 
         do {
             let request = CancelReviewSubmissionRequest(submissionId: submissionId)
-            let response = try await httpClient.patch(
+            let requestBody = try JSONEncoder().encode(request)
+            let responseData = try await httpClient.patch(
                 "/v1/reviewSubmissions/\(try ASCPathSegment.encode(submissionId))",
-                body: request,
-                as: PassthroughAPIResponse.self
+                body: requestBody
             )
+            let response: PassthroughAPIResponse
+            do {
+                response = try JSONDecoder().decode(PassthroughAPIResponse.self, from: responseData)
+                _ = try validatedJSONResource(
+                    response.data,
+                    expectedType: "reviewSubmissions",
+                    expectedID: submissionId,
+                    context: "review submission cancellation response"
+                )
+            } catch {
+                return committedUnverifiedMutationFailure(
+                    action: "review submission cancellation",
+                    reason: error.localizedDescription,
+                    details: ["review_submission_id": submissionId],
+                    inspection: [
+                        "instruction": "Inspect review submission '\(submissionId)' in App Store Connect before another cancellation attempt."
+                    ]
+                )
+            }
 
             let result: [String: Any] = [
                 "success": true,
@@ -650,11 +887,30 @@ extension AppLifecycleWorker {
             }
 
             let request = CreatePhasedReleaseRequest(versionId: versionId, state: state)
-            let response = try await httpClient.post(
+            let requestBody = try JSONEncoder().encode(request)
+            let responseData = try await httpClient.post(
                 "/v1/appStoreVersionPhasedReleases",
-                body: request,
-                as: PassthroughAPIResponse.self
+                body: requestBody
             )
+            let response: PassthroughAPIResponse
+            do {
+                response = try JSONDecoder().decode(PassthroughAPIResponse.self, from: responseData)
+                _ = try validatedJSONResource(
+                    response.data,
+                    expectedType: "appStoreVersionPhasedReleases",
+                    context: "phased release create response"
+                )
+            } catch {
+                return committedUnverifiedMutationFailure(
+                    action: "phased release creation",
+                    reason: error.localizedDescription,
+                    details: ["version_id": versionId, "phased_release_id_known": false],
+                    inspection: [
+                        "tool": "app_versions_get_phased_release",
+                        "arguments": ["version_id": versionId]
+                    ]
+                )
+            }
 
             let result: [String: Any] = [
                 "success": true,
@@ -689,6 +945,11 @@ extension AppLifecycleWorker {
                 "/v1/appStoreVersions/\(try ASCPathSegment.encode(versionId))/appStoreVersionPhasedRelease",
                 parameters: [:],
                 as: PassthroughAPIResponse.self
+            )
+            _ = try validatedJSONResource(
+                response.data,
+                expectedType: "appStoreVersionPhasedReleases",
+                context: "phased release detail"
             )
 
             let result: [String: Any] = [
@@ -735,11 +996,30 @@ extension AppLifecycleWorker {
             }
 
             let request = UpdatePhasedReleaseRequest(phasedReleaseId: phasedReleaseId, state: state)
-            let response = try await httpClient.patch(
+            let requestBody = try JSONEncoder().encode(request)
+            let responseData = try await httpClient.patch(
                 "/v1/appStoreVersionPhasedReleases/\(try ASCPathSegment.encode(phasedReleaseId))",
-                body: request,
-                as: PassthroughAPIResponse.self
+                body: requestBody
             )
+            let response: PassthroughAPIResponse
+            do {
+                response = try JSONDecoder().decode(PassthroughAPIResponse.self, from: responseData)
+                _ = try validatedJSONResource(
+                    response.data,
+                    expectedType: "appStoreVersionPhasedReleases",
+                    expectedID: phasedReleaseId,
+                    context: "phased release update response"
+                )
+            } catch {
+                return committedUnverifiedMutationFailure(
+                    action: "phased release update",
+                    reason: error.localizedDescription,
+                    details: ["phased_release_id": phasedReleaseId],
+                    inspection: [
+                        "instruction": "Inspect phased release '\(phasedReleaseId)' in App Store Connect before another state transition."
+                    ]
+                )
+            }
 
             let result: [String: Any] = [
                 "success": true,
@@ -830,6 +1110,11 @@ extension AppLifecycleWorker {
                 parameters: ["fields[appStoreVersions]": "platform,versionString,appVersionState"],
                 as: ASCAppStoreVersionResponse.self
             )
+            try validateVersionResource(
+                versionResponse.data,
+                expectedID: versionId,
+                context: "release preflight"
+            )
             let attributes = versionResponse.data.attributes
             let versionString = attributes?.versionString
             let appVersionState = attributes?.appVersionState
@@ -881,11 +1166,31 @@ extension AppLifecycleWorker {
             }
 
             let request = CreateReleaseRequest(versionId: versionId)
-            let response = try await httpClient.post(
+            let requestBody = try JSONEncoder().encode(request)
+            let responseData = try await httpClient.post(
                 "/v1/appStoreVersionReleaseRequests",
-                body: request,
-                as: PassthroughAPIResponse.self
+                body: requestBody
             )
+            let response: PassthroughAPIResponse
+            do {
+                response = try JSONDecoder().decode(PassthroughAPIResponse.self, from: responseData)
+                _ = try validatedJSONResource(
+                    response.data,
+                    expectedType: "appStoreVersionReleaseRequests",
+                    context: "release request create response"
+                )
+            } catch {
+                return committedUnverifiedMutationFailure(
+                    action: "release request creation",
+                    reason: error.localizedDescription,
+                    details: ["version_id": versionId],
+                    inspection: [
+                        "tool": "app_versions_get",
+                        "arguments": ["version_id": versionId],
+                        "instruction": "Inspect the exact version state before any further release attempt."
+                    ]
+                )
+            }
 
             let result: [String: Any] = [
                 "success": true,
@@ -969,7 +1274,7 @@ extension AppLifecycleWorker {
         do {
             let existingReviewDetailId = try await resolveReviewDetailId(versionId: versionId)
 
-            let responseData: Data
+            let response: PassthroughAPIResponse
             let message: String
 
             if let reviewDetailId = existingReviewDetailId {
@@ -987,11 +1292,39 @@ extension AppLifecycleWorker {
                         notes: attrs.notes
                     )
                 )
-                let bodyData = try JSONEncoder().encode(request)
-                responseData = try await httpClient.patch(
+                let requestBody = try JSONEncoder().encode(request)
+                let responseData = try await httpClient.patch(
                     "/v1/appStoreReviewDetails/\(try ASCPathSegment.encode(reviewDetailId))",
-                    body: bodyData
+                    body: requestBody
                 )
+                do {
+                    response = try JSONDecoder().decode(PassthroughAPIResponse.self, from: responseData)
+                    let updatedReviewDetail = try validatedJSONResource(
+                        response.data,
+                        expectedType: "appStoreReviewDetails",
+                        expectedID: reviewDetailId,
+                        context: "review detail update response"
+                    )
+                    _ = try validatedOptionalSingleRelationshipID(
+                        updatedReviewDetail["relationships"],
+                        name: "appStoreVersion",
+                        expectedType: "appStoreVersions",
+                        expectedID: versionId,
+                        context: "updated review detail parent linkage"
+                    )
+                } catch {
+                    return committedUnverifiedMutationFailure(
+                        action: "review detail update",
+                        reason: error.localizedDescription,
+                        details: [
+                            "version_id": versionId,
+                            "review_detail_id": reviewDetailId
+                        ],
+                        inspection: [
+                            "instruction": "Inspect the review information for version '\(versionId)' in App Store Connect before retrying."
+                        ]
+                    )
+                }
                 message = "Review details updated successfully"
             } else {
                 // Review details don't exist - create new with POST
@@ -1008,15 +1341,40 @@ extension AppLifecycleWorker {
                         notes: attrs.notes
                     )
                 )
-                let bodyData = try JSONEncoder().encode(request)
-                responseData = try await httpClient.post(
+                let requestBody = try JSONEncoder().encode(request)
+                let responseData = try await httpClient.post(
                     "/v1/appStoreReviewDetails",
-                    body: bodyData
+                    body: requestBody
                 )
+                do {
+                    response = try JSONDecoder().decode(PassthroughAPIResponse.self, from: responseData)
+                    let createdReviewDetail = try validatedJSONResource(
+                        response.data,
+                        expectedType: "appStoreReviewDetails",
+                        context: "review detail create response"
+                    )
+                    _ = try validatedOptionalSingleRelationshipID(
+                        createdReviewDetail["relationships"],
+                        name: "appStoreVersion",
+                        expectedType: "appStoreVersions",
+                        expectedID: versionId,
+                        context: "created review detail parent linkage"
+                    )
+                } catch {
+                    return committedUnverifiedMutationFailure(
+                        action: "review detail creation",
+                        reason: error.localizedDescription,
+                        details: [
+                            "version_id": versionId,
+                            "review_detail_id_known": false
+                        ],
+                        inspection: [
+                            "instruction": "Inspect the review information for version '\(versionId)' in App Store Connect before retrying."
+                        ]
+                    )
+                }
                 message = "Review details created successfully"
             }
-
-            let response = try JSONDecoder().decode(PassthroughAPIResponse.self, from: responseData)
 
             let result: [String: Any] = [
                 "success": true,
@@ -1142,9 +1500,16 @@ extension AppLifecycleWorker {
                     parameters: ["fields[appStoreVersions]": "app,appVersionState"],
                     as: ASCAppStoreVersionResponse.self
                 )
+                try validateVersionResource(
+                    versionResponse.data,
+                    expectedID: versionId,
+                    context: "age rating version lookup"
+                )
 
                 guard let appRelationship = versionResponse.data.relationships?.app?.data,
-                      case .single(let app) = appRelationship else {
+                      case .single(let app) = appRelationship,
+                      app.type == "apps",
+                      isCanonicalResourceID(app.id) else {
                     return MCPResult.error("Could not resolve the owning app from version \(versionId). Provide app_info_id from app_info_list.")
                 }
 
@@ -1156,11 +1521,35 @@ extension AppLifecycleWorker {
                 let appInfos = try await httpClient.get(
                     "/v1/apps/\(try ASCPathSegment.encode(app.id))/appInfos",
                     parameters: [
-                        "fields[appInfos]": "state",
+                        "fields[appInfos]": "state,app",
                         "limit": "200"
                     ],
                     as: ASCAppInfosResponse.self
                 )
+                var appInfoIdentities = Set<String>()
+                for appInfo in appInfos.data {
+                    try validateResourceIdentity(
+                        type: appInfo.type,
+                        id: appInfo.id,
+                        expectedType: "appInfos",
+                        context: "App Info collection item"
+                    )
+                    guard appInfoIdentities.insert("\(appInfo.type):\(appInfo.id)").inserted else {
+                        throw AppLifecycleQueryArgumentError(
+                            "Apple returned duplicate App Info resource identity"
+                        )
+                    }
+                    guard let appRelationship = appInfo.relationships?.app?.data else {
+                        throw AppLifecycleQueryArgumentError("Apple returned an App Info without owning app linkage")
+                    }
+                    try validateResourceIdentity(
+                        type: appRelationship.type,
+                        id: appRelationship.id,
+                        expectedType: "apps",
+                        expectedID: app.id,
+                        context: "App Info parent linkage"
+                    )
+                }
 
                 guard let appInfo = selectAppInfo(
                     from: appInfos.data,
@@ -1181,17 +1570,45 @@ extension AppLifecycleWorker {
                 parameters: [:],
                 as: SingleResourceResponse.self
             )
+            try validateSingleResource(
+                ageRatingResponse.data,
+                expectedType: "ageRatingDeclarations",
+                context: "age rating declaration lookup"
+            )
             let ageRatingId = ageRatingResponse.data.id
 
             let request = UpdateAgeRatingDeclarationRequest(
                 ageRatingId: ageRatingId,
                 attributes: attributes
             )
-            let response = try await httpClient.patch(
+            let requestBody = try JSONEncoder().encode(request)
+            let responseData = try await httpClient.patch(
                 "/v1/ageRatingDeclarations/\(try ASCPathSegment.encode(ageRatingId))",
-                body: request,
-                as: PassthroughAPIResponse.self
+                body: requestBody
             )
+            let response: PassthroughAPIResponse
+            do {
+                response = try JSONDecoder().decode(PassthroughAPIResponse.self, from: responseData)
+                _ = try validatedJSONResource(
+                    response.data,
+                    expectedType: "ageRatingDeclarations",
+                    expectedID: ageRatingId,
+                    context: "age rating declaration update response"
+                )
+            } catch {
+                return committedUnverifiedMutationFailure(
+                    action: "age rating declaration update",
+                    reason: error.localizedDescription,
+                    details: [
+                        "app_info_id": appInfoId,
+                        "age_rating_declaration_id": ageRatingId
+                    ],
+                    inspection: [
+                        "tool": "app_versions_get_age_rating_declaration",
+                        "arguments": ["app_info_id": appInfoId]
+                    ]
+                )
+            }
 
             let result: [String: Any] = [
                 "success": true,
@@ -1286,17 +1703,34 @@ private extension AppLifecycleWorker {
         do {
             let response = try await httpClient.get(
                 "/v1/appStoreVersions/\(try ASCPathSegment.encode(versionId))/appStoreReviewDetail",
-                parameters: [:],
+                parameters: ["fields[appStoreReviewDetails]": "appStoreVersion"],
                 as: SingleResourceResponse.self
+            )
+            try validateSingleResource(
+                response.data,
+                expectedType: "appStoreReviewDetails",
+                context: "review detail lookup"
+            )
+            _ = try validatedSingleRelationshipID(
+                response.data.relationships,
+                name: "appStoreVersion",
+                expectedType: "appStoreVersions",
+                expectedID: versionId,
+                context: "review detail parent linkage"
             )
             return response.data.id
         } catch let error as ASCError {
             switch error {
             case .api(_, 404), .apiResponse(_, 404):
-                _ = try await httpClient.get(
+                let versionResponse = try await httpClient.get(
                     "/v1/appStoreVersions/\(try ASCPathSegment.encode(versionId))",
                     parameters: ["fields[appStoreVersions]": "versionString"],
                     as: ASCAppStoreVersionResponse.self
+                )
+                try validateVersionResource(
+                    versionResponse.data,
+                    expectedID: versionId,
+                    context: "review detail parent lookup"
                 )
                 return nil
             default:
@@ -1311,6 +1745,299 @@ private extension AppLifecycleWorker {
         }
         let exactMatches = appInfos.filter { $0.attributes?.state == targetState }
         return exactMatches.count == 1 ? exactMatches[0] : nil
+    }
+
+    func validateVersionResource(
+        _ version: ASCAppStoreVersion,
+        expectedID: String,
+        context: String
+    ) throws {
+        try validateResourceIdentity(
+            type: version.type,
+            id: version.id,
+            expectedType: "appStoreVersions",
+            expectedID: expectedID,
+            context: context
+        )
+    }
+
+    func validateSingleResource(
+        _ resource: SingleResourceResponse.ResourceData,
+        expectedType: String,
+        expectedID: String? = nil,
+        context: String
+    ) throws {
+        try validateResourceIdentity(
+            type: resource.type,
+            id: resource.id,
+            expectedType: expectedType,
+            expectedID: expectedID,
+            context: context
+        )
+    }
+
+    func validateResourceIdentity(
+        type: String,
+        id: String,
+        expectedType: String,
+        expectedID: String? = nil,
+        context: String
+    ) throws {
+        guard type == expectedType else {
+            throw AppLifecycleQueryArgumentError(
+                "Apple returned unexpected resource type '\(type)' for \(context); expected '\(expectedType)'"
+            )
+        }
+        guard isCanonicalResourceID(id) else {
+            throw AppLifecycleQueryArgumentError("Apple returned an empty or malformed resource ID for \(context)")
+        }
+        if let expectedID, id != expectedID {
+            throw AppLifecycleQueryArgumentError(
+                "Apple returned resource ID '\(id)' for \(context); expected '\(expectedID)'"
+            )
+        }
+    }
+
+    func validatedJSONResource(
+        _ value: JSONValue,
+        expectedType: String,
+        expectedID: String? = nil,
+        context: String
+    ) throws -> [String: JSONValue] {
+        guard case .object(let object) = value,
+              case .string(let type)? = object["type"],
+              case .string(let id)? = object["id"] else {
+            throw AppLifecycleQueryArgumentError("Apple returned malformed JSON:API data for \(context)")
+        }
+        try validateResourceIdentity(
+            type: type,
+            id: id,
+            expectedType: expectedType,
+            expectedID: expectedID,
+            context: context
+        )
+        return object
+    }
+
+    func validatedJSONResourceCollection(
+        _ value: JSONValue,
+        expectedType: String,
+        context: String
+    ) throws -> [JSONValue] {
+        guard case .array(let resources) = value else {
+            throw AppLifecycleQueryArgumentError("Apple returned non-array JSON:API data for \(context)")
+        }
+        var identities = Set<String>()
+        for resource in resources {
+            let object = try validatedJSONResource(
+                resource,
+                expectedType: expectedType,
+                context: context
+            )
+            guard case .string(let id)? = object["id"],
+                  identities.insert("\(expectedType):\(id)").inserted else {
+                throw AppLifecycleQueryArgumentError("Apple returned duplicate resource identity in \(context)")
+            }
+        }
+        return resources
+    }
+
+    func validatedSingleRelationshipID(
+        _ relationships: JSONValue,
+        name: String,
+        expectedType: String,
+        expectedID: String? = nil,
+        context: String
+    ) throws -> String {
+        guard case .object(let relationshipObject) = relationships,
+              case .object(let relationship)? = relationshipObject[name],
+              let data = relationship["data"] else {
+            throw AppLifecycleQueryArgumentError("Apple returned malformed or missing \(context)")
+        }
+        let resource = try validatedJSONResource(
+            data,
+            expectedType: expectedType,
+            expectedID: expectedID,
+            context: context
+        )
+        guard case .string(let id)? = resource["id"] else {
+            throw AppLifecycleQueryArgumentError("Apple returned malformed or missing \(context)")
+        }
+        return id
+    }
+
+    func validatedSingleRelationshipID(
+        _ relationships: JSONValue?,
+        name: String,
+        expectedType: String,
+        expectedID: String? = nil,
+        context: String
+    ) throws -> String {
+        guard let relationships else {
+            throw AppLifecycleQueryArgumentError("Apple returned malformed or missing \(context)")
+        }
+        return try validatedSingleRelationshipID(
+            relationships,
+            name: name,
+            expectedType: expectedType,
+            expectedID: expectedID,
+            context: context
+        )
+    }
+
+    func validatedOptionalSingleRelationshipID(
+        _ relationships: JSONValue?,
+        name: String,
+        expectedType: String,
+        expectedID: String? = nil,
+        context: String
+    ) throws -> String? {
+        guard let relationships else {
+            return nil
+        }
+        guard case .object(let relationshipObject) = relationships else {
+            throw AppLifecycleQueryArgumentError("Apple returned malformed relationships for \(context)")
+        }
+        guard let relationshipValue = relationshipObject[name] else {
+            return nil
+        }
+        guard case .object(let relationship) = relationshipValue else {
+            throw AppLifecycleQueryArgumentError("Apple returned malformed \(context)")
+        }
+        guard let data = relationship["data"] else {
+            return nil
+        }
+        if case .null = data {
+            return nil
+        }
+        let resource = try validatedJSONResource(
+            data,
+            expectedType: expectedType,
+            expectedID: expectedID,
+            context: context
+        )
+        guard case .string(let id)? = resource["id"] else {
+            throw AppLifecycleQueryArgumentError("Apple returned malformed \(context)")
+        }
+        return id
+    }
+
+    func validateVersionIncludedResources(
+        versions: [JSONValue],
+        included: [JSONValue]?,
+        context: String
+    ) throws {
+        let relationshipTypes = [
+            "build": "builds",
+            "appStoreVersionPhasedRelease": "appStoreVersionPhasedReleases"
+        ]
+        var referencedIdentities = Set<String>()
+
+        for version in versions {
+            let versionObject = try validatedJSONResource(
+                version,
+                expectedType: "appStoreVersions",
+                context: context
+            )
+            guard let relationships = versionObject["relationships"] else {
+                continue
+            }
+            guard case .object(let relationshipObject) = relationships else {
+                throw AppLifecycleQueryArgumentError("Apple returned malformed version relationships in \(context)")
+            }
+            for (name, expectedType) in relationshipTypes {
+                guard let relationshipValue = relationshipObject[name] else {
+                    continue
+                }
+                guard case .object(let relationship) = relationshipValue else {
+                    throw AppLifecycleQueryArgumentError(
+                        "Apple returned malformed \(name) linkage in \(context)"
+                    )
+                }
+                guard let data = relationship["data"] else {
+                    continue
+                }
+                if case .null = data {
+                    continue
+                }
+                let linkedResource = try validatedJSONResource(
+                    data,
+                    expectedType: expectedType,
+                    context: "\(context) \(name) linkage"
+                )
+                guard case .string(let id)? = linkedResource["id"] else {
+                    throw AppLifecycleQueryArgumentError(
+                        "Apple returned malformed \(name) linkage in \(context)"
+                    )
+                }
+                referencedIdentities.insert("\(expectedType):\(id)")
+            }
+        }
+
+        let includedIdentities = try validateIncludedResources(
+            included,
+            allowedTypes: Set(relationshipTypes.values),
+            context: "\(context) included resources"
+        )
+        guard referencedIdentities == includedIdentities else {
+            throw AppLifecycleQueryArgumentError(
+                "Apple returned incomplete or unrelated included resources in \(context)"
+            )
+        }
+    }
+
+    func validateIncludedResources(
+        _ resources: [JSONValue]?,
+        allowedTypes: Set<String>,
+        context: String
+    ) throws -> Set<String> {
+        var identities = Set<String>()
+        for resource in resources ?? [] {
+            guard case .object(let object) = resource,
+                  case .string(let type)? = object["type"],
+                  allowedTypes.contains(type),
+                  case .string(let id)? = object["id"] else {
+                throw AppLifecycleQueryArgumentError("Apple returned malformed or unexpected resource in \(context)")
+            }
+            try validateResourceIdentity(
+                type: type,
+                id: id,
+                expectedType: type,
+                context: context
+            )
+            guard identities.insert("\(type):\(id)").inserted else {
+                throw AppLifecycleQueryArgumentError("Apple returned duplicate resource identity in \(context)")
+            }
+        }
+        return identities
+    }
+
+    func isCanonicalResourceID(_ id: String) -> Bool {
+        guard !id.isEmpty,
+              id == id.trimmingCharacters(in: .whitespacesAndNewlines) else {
+            return false
+        }
+        return (try? ASCPathSegment.encode(id)) != nil
+    }
+
+    func committedUnverifiedMutationFailure(
+        action: String,
+        reason: String,
+        details: [String: Any],
+        inspection: [String: Any]
+    ) -> CallTool.Result {
+        var payload = details
+        payload["success"] = false
+        payload["operationCommitState"] = "committed_unverified"
+        payload["operationCommitted"] = true
+        payload["retrySafe"] = false
+        payload["error"] = Redactor.redact(reason)
+        payload["inspection"] = inspection
+        return MCPResult.jsonObject(
+            payload,
+            text: "Error: Apple accepted the \(action), but the returned resource identity could not be verified. Inspect the existing resource before retrying.",
+            isError: true
+        )
     }
 
     func appInfoState(for versionState: String?) -> String? {

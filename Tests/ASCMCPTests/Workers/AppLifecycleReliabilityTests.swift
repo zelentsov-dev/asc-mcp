@@ -40,6 +40,22 @@ struct AppLifecycleReliabilityTests {
         ) == .array([
             .string("platform"), .string("versionString"), .string("appVersionState")
         ]))
+        #expect(try lifecycleReliabilityFixedQuery(
+            manifest,
+            tool: "app_versions_set_review_details",
+            operationID: "appStoreVersions_appStoreReviewDetail_getToOneRelated",
+            appleName: "fields[appStoreReviewDetails]"
+        ) == .array([
+            .string("appStoreVersion")
+        ]))
+        #expect(try lifecycleReliabilityFixedQuery(
+            manifest,
+            tool: "app_versions_update_age_rating",
+            operationID: "apps_appInfos_getToManyRelated",
+            appleName: "fields[appInfos]"
+        ) == .array([
+            .string("state"), .string("app")
+        ]))
     }
 
     @Test("schemas expose current lifecycle fields and phased release delete")

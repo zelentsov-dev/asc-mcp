@@ -743,8 +743,16 @@
           "role": "supporting",
           "condition": "Determines whether to create review details or update the existing resource.",
           "optionalParameterClassifications": [
-            { "location": "query", "appleName": "include", "disposition": "intentionallyOmitted", "reason": "The existence lookup needs only the review-detail resource identifier and does not expand relationships.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "include", "disposition": "intentionallyOmitted", "reason": "The lookup requests relationship linkage through a sparse fieldset and does not expand the parent version resource.", "reviewAtSpec": "4.4.1" },
             { "location": "query", "appleName": "limit[appStoreReviewAttachments]", "disposition": "intentionallyOmitted", "reason": "Review attachments are managed by ReviewAttachmentsWorker and are not included in this existence lookup.", "reviewAtSpec": "4.4.1" }
+          ],
+          "inputs": [
+            {
+              "sourceKind": "fixed",
+              "location": "query",
+              "appleName": "fields[appStoreReviewDetails]",
+              "fixedValue": ["appStoreVersion"]
+            }
           ]
         },
         {
@@ -953,7 +961,7 @@
         ],
         "fields": []
       },
-      "note": "The handler uses the dedicated related-resource GET, confirms parent existence after a 404 before creating, and never emits attachmentFileId, which is absent from Apple 4.4.1. Every nullable attribute preserves omitted versus explicit MCP null semantics in both create and update payloads."
+      "note": "The handler uses the dedicated related-resource GET with an appStoreVersion sparse fieldset, validates the returned review-detail identity and exact parent linkage before updating, and confirms the exact parent version identity after a 404 before creating. It never emits attachmentFileId, which is absent from Apple 4.4.1. Every nullable attribute preserves omitted versus explicit MCP null semantics in both create and update payloads."
     },
     {
       "tool": "app_versions_submit_for_review",
@@ -1128,7 +1136,7 @@
         ],
         "fields": []
       },
-      "note": "Submission validates app ownership before the three-operation Review Submissions workflow; partial failures expose only the available cancel recovery tool."
+      "note": "Submission validates the exact App Store version identity and app ownership before the three-operation Review Submissions workflow. Created and confirmed review-submission responses must preserve their expected JSON:API identity; partial failures expose only the available cancel recovery tool."
     },
     {
       "tool": "app_versions_update",
@@ -1279,7 +1287,7 @@
               "sourceKind": "fixed",
               "location": "query",
               "appleName": "fields[appInfos]",
-              "fixedValue": ["state"]
+              "fixedValue": ["state", "app"]
             },
             {
               "sourceKind": "fixed",
@@ -1536,7 +1544,7 @@
         ],
         "fields": []
       },
-      "note": "Apple 4.4.1 owns age ratings under AppInfo, not AppStoreVersion. app_info_id is authoritative; version_id is a compatibility fallback that never mutates without a unique compatible state match. Every nullable questionnaire field preserves omission versus explicit MCP null, and deprecated intensity values remain legacy-only compatibility inputs."
+      "note": "Apple 4.4.1 owns age ratings under AppInfo, not AppStoreVersion. app_info_id is authoritative; version_id is a compatibility fallback that validates the exact version, owning app, App Info identities and parent linkages, and declaration identity before mutation, then requires a unique compatible state match. Every nullable questionnaire field preserves omission versus explicit MCP null, and deprecated intensity values remain legacy-only compatibility inputs."
     },
     {
       "tool": "app_versions_update_phased_release",
