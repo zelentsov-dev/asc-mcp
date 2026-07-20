@@ -63,6 +63,7 @@ enum UploadCleanupOutcome: Sendable {
     case deleted
     case alreadyAbsent
     case unavailable(String)
+    case commitUnknown(String)
     case failed(String)
 
     var status: String {
@@ -73,6 +74,8 @@ enum UploadCleanupOutcome: Sendable {
             return "already_absent"
         case .unavailable:
             return "unavailable"
+        case .commitUnknown:
+            return "commit_unknown"
         case .failed:
             return "failed"
         }
@@ -82,9 +85,16 @@ enum UploadCleanupOutcome: Sendable {
         switch self {
         case .deleted, .alreadyAbsent:
             return true
-        case .unavailable, .failed:
+        case .unavailable, .commitUnknown, .failed:
             return false
         }
+    }
+
+    var outcomeUnknown: Bool {
+        if case .commitUnknown = self {
+            return true
+        }
+        return false
     }
 }
 
@@ -712,8 +722,14 @@ enum UploadTransactionRecovery {
             do {
                 _ = try await httpClient.delete(endpoint)
                 return .deleted
-            } catch let error as ASCError where error.uploadRecoveryHTTPStatusCode == 404 {
-                return .alreadyAbsent
+            } catch let error as ASCError {
+                if case .deleteOutcomeUnknown = error {
+                    return .commitUnknown(Redactor.redact(error.localizedDescription))
+                }
+                if error.uploadRecoveryHTTPStatusCode == 404 {
+                    return .alreadyAbsent
+                }
+                return .failed(Redactor.redact(error.localizedDescription))
             } catch {
                 return .failed(Redactor.redact(error.localizedDescription))
             }
@@ -827,6 +843,8 @@ enum UploadTransactionRecovery {
             let manualGuidance: String
             if cleanup.reservationDeleted {
                 manualGuidance = ""
+            } else if cleanup.outcomeUnknown {
+                manualGuidance = " Inspect the exact reservation before another cleanup attempt."
             } else if let deleteTool = descriptor.deleteTool {
                 manualGuidance = " Use \(deleteTool) with \(descriptor.idArgument) '\(resource.id)' to retry cleanup."
             } else {
@@ -845,6 +863,10 @@ enum UploadTransactionRecovery {
             if let checksumReceiptKey = descriptor.checksumReceiptKey,
                let checksumReceipt {
                 value[checksumReceiptKey] = checksumReceipt
+            }
+            if cleanup.outcomeUnknown {
+                value["operationCommitState"] = "unknown"
+                value["outcomeUnknown"] = true
             }
             return (
                 value,
@@ -929,6 +951,15 @@ enum UploadTransactionRecovery {
                 value["tool"] = deleteTool
                 value["arguments"] = [descriptor.idArgument: resourceID]
             }
+        }
+        if case .commitUnknown(let reason) = cleanup {
+            value["reason"] = reason
+            value["operationCommitState"] = "unknown"
+            value["outcomeUnknown"] = true
+            value["retrySafe"] = false
+            value["inspectTool"] = descriptor.getTool ?? descriptor.inspectionTool
+            value["inspectArguments"] = descriptor.getIDArgument.map { [$0: resourceID] }
+                ?? descriptor.inspectionArguments
         }
         if case .unavailable(let reason) = cleanup {
             value["reason"] = reason
@@ -1058,6 +1089,8 @@ private extension ASCError {
         switch self {
         case .api(_, let statusCode), .apiResponse(_, let statusCode):
             return statusCode
+        case .deleteOutcomeUnknown(let cause):
+            return cause.uploadRecoveryHTTPStatusCode
         default:
             return nil
         }

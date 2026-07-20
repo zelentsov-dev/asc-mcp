@@ -7,6 +7,7 @@ public enum ASCError: LocalizedError, Sendable {
     case api(String, Int)
     case apiResponse(ASCAPIErrorResponse, Int)
     case network(String)
+    indirect case deleteOutcomeUnknown(ASCError)
     case authentication(String)
     case parsing(String)
     
@@ -21,6 +22,8 @@ public enum ASCError: LocalizedError, Sendable {
             return "API error (\(code)): \(message)"
         case .network(let message):
             return "Network error: \(message)"
+        case .deleteOutcomeUnknown(let cause):
+            return "DELETE outcome is unknown: \(cause.localizedDescription) Inspect the exact target before another delete attempt."
         case .authentication(let message):
             return "Authentication error: \(message)"
         case .parsing(let message):
@@ -42,6 +45,15 @@ public enum ASCError: LocalizedError, Sendable {
             ])
         case .network(let message):
             return structuredError(type: "network", message: message)
+        case .deleteOutcomeUnknown(let cause):
+            return .object([
+                "type": .string("delete_unknown"),
+                "method": .string("DELETE"),
+                "operationCommitState": .string("unknown"),
+                "outcomeUnknown": .bool(true),
+                "retrySafe": .bool(false),
+                "cause": cause.structuredValue
+            ])
         case .authentication(let message):
             return structuredError(type: "authentication", message: message)
         case .parsing(let message):

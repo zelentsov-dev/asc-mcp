@@ -72,6 +72,44 @@ struct AccessibilityWorkerTests {
         #expect(emptyUpdate.isError == true)
     }
 
+    @Test("ambiguous DELETE exposes typed retry safety")
+    func ambiguousDeleteExposesTypedRetrySafety() async throws {
+        let transport = TestHTTPTransport(responses: [
+            .init(
+                statusCode: 503,
+                body: #"{"errors":[{"status":"503","code":"SERVICE_UNAVAILABLE","detail":"Try later"}]}"#
+            )
+        ])
+        let client = await HTTPClient(
+            jwtService: try TestFactory.makeJWTService(),
+            baseURL: "https://api.example.test",
+            transport: transport,
+            maxRetries: 3
+        )
+        let worker = AccessibilityWorker(httpClient: client)
+
+        let result = try await worker.handleTool(CallTool.Parameters(
+            name: "accessibility_delete",
+            arguments: ["declaration_id": .string("decl-1")]
+        ))
+
+        guard case .object(let payload)? = result.structuredContent,
+              case .object(let details)? = payload["details"],
+              case .object(let cause)? = details["cause"] else {
+            Issue.record("Expected a typed unknown DELETE result")
+            return
+        }
+        #expect(result.isError == true)
+        #expect(payload["operationCommitState"] == .string("unknown"))
+        #expect(payload["outcomeUnknown"] == .bool(true))
+        #expect(payload["retrySafe"] == .bool(false))
+        #expect(details["type"] == .string("delete_unknown"))
+        #expect(details["method"] == .string("DELETE"))
+        #expect(cause["type"] == .string("api"))
+        #expect(cause["statusCode"] == .int(503))
+        #expect(await transport.requestCount() == 1)
+    }
+
     @Test("request models encode Apple OpenAPI JSON API shape")
     func requestModelsEncodeAppleShape() throws {
         let create = ASCAccessibilityDeclarationCreateRequest(

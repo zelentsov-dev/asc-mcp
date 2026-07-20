@@ -1398,13 +1398,15 @@ private extension AppLifecycleWorker {
 
     func isAmbiguousDeletionFailure(_ error: Error) -> Bool {
         guard let error = error as? ASCError else {
-            return true
+            return false
         }
         switch error {
-        case .network:
+        case .deleteOutcomeUnknown:
             return true
+        case .network:
+            return false
         case .api(_, let statusCode), .apiResponse(_, let statusCode):
-            return statusCode == 408 || (500...599).contains(statusCode)
+            return false
         case .authentication, .configuration, .parsing:
             return false
         }

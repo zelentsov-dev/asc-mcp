@@ -170,7 +170,7 @@ extension AccessibilityWorker {
                 "message": "Accessibility declaration '\(declarationID)' deleted"
             ])
         } catch {
-            return MCPResult.error("Failed to delete accessibility declaration: \(error.localizedDescription)")
+            return MCPResult.error(error, prefix: "Failed to delete accessibility declaration")
         }
     }
 

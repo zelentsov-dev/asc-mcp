@@ -339,10 +339,7 @@ extension AppEventsWorker {
             return MCPResult.jsonObject(result)
 
         } catch {
-            return CallTool.Result(
-                content: [MCPContent.text("Failed to delete app event: \(error.localizedDescription)")],
-                isError: true
-            )
+            return MCPResult.error(error, prefix: "Failed to delete app event")
         }
     }
 
@@ -576,10 +573,7 @@ extension AppEventsWorker {
             return MCPResult.jsonObject(result)
 
         } catch {
-            return CallTool.Result(
-                content: [MCPContent.text("Failed to delete app event localization: \(error.localizedDescription)")],
-                isError: true
-            )
+            return MCPResult.error(error, prefix: "Failed to delete app event localization")
         }
     }
 

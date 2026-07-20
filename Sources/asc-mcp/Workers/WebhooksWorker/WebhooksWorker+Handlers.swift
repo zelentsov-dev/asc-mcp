@@ -183,7 +183,7 @@ extension WebhooksWorker {
                 "message": "Webhook '\(webhookID)' deleted"
             ])
         } catch {
-            return MCPResult.error("Failed to delete webhook: \(error.localizedDescription)")
+            return MCPResult.error(error, prefix: "Failed to delete webhook")
         }
     }
 

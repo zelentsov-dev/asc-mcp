@@ -523,7 +523,7 @@ public actor WorkerManager {
                     convertErrorsToResults: true
                 )
             } catch {
-                return MCPResult.error(error.localizedDescription)
+                return MCPResult.error(error)
             }
         }
     }
@@ -620,10 +620,7 @@ public actor WorkerManager {
     }
 
     private nonisolated func errorResult(_ error: Error) -> CallTool.Result {
-        if let ascError = error as? ASCError {
-            return MCPResult.error(ascError.localizedDescription, details: ascError.structuredValue)
-        }
-        return MCPResult.error(error.localizedDescription)
+        MCPResult.error(error)
     }
     
     private func switchCompanyTransactionally(_ params: CallTool.Parameters) async throws -> CallTool.Result {

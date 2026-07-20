@@ -1047,10 +1047,7 @@ extension AppsWorker {
             return MCPResult.jsonObject(result)
 
         } catch {
-            return CallTool.Result(
-                content: [MCPContent.text("Error: Failed to delete localization: \(error.localizedDescription)")],
-                isError: true
-            )
+            return MCPResult.error(error, prefix: "Failed to delete localization")
         }
     }
 

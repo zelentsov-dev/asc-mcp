@@ -246,10 +246,7 @@ extension ReviewAttachmentsWorker {
             return MCPResult.jsonObject(result)
 
         } catch {
-            return CallTool.Result(
-                content: [MCPContent.text("Error: Failed to delete review attachment: \(error.localizedDescription)")],
-                isError: true
-            )
+            return MCPResult.error(error, prefix: "Failed to delete review attachment")
         }
     }
 
@@ -536,8 +533,14 @@ extension ReviewAttachmentsWorker {
             do {
                 _ = try await client.delete("/v1/appStoreReviewAttachments/\(try ASCPathSegment.encode(attachmentId))")
                 return .deleted
-            } catch let error as ASCError where error.httpStatusCode == 404 {
-                return .alreadyAbsent
+            } catch let error as ASCError {
+                if case .deleteOutcomeUnknown = error {
+                    return .commitUnknown(Redactor.redact(error.localizedDescription))
+                }
+                if error.httpStatusCode == 404 {
+                    return .alreadyAbsent
+                }
+                return .failed(Redactor.redact(error.localizedDescription))
             } catch {
                 return .failed(Redactor.redact(error.localizedDescription))
             }
@@ -588,11 +591,15 @@ extension ReviewAttachmentsWorker {
     ) -> CallTool.Result {
         let safeMessage = Redactor.redact(message)
         let cleanupValue = cleanup.structuredValue(attachmentId: attachment.id)
-        let manualGuidance = cleanup.reservationDeleted
-            ? ""
-            : " Use review_attachments_delete with attachment_id '\(attachment.id)' to retry cleanup."
-        return MCPResult.jsonObject(
-            [
+        let manualGuidance: String
+        if cleanup.reservationDeleted {
+            manualGuidance = ""
+        } else if cleanup.outcomeUnknown {
+            manualGuidance = " Inspect this exact attachment before another cleanup attempt."
+        } else {
+            manualGuidance = " Use review_attachments_delete with attachment_id '\(attachment.id)' to retry cleanup."
+        }
+        var value: [String: Any] = [
                 "success": false,
                 "error": safeMessage,
                 "attachmentId": attachment.id,
@@ -600,7 +607,13 @@ extension ReviewAttachmentsWorker {
                 "cleanup": cleanupValue,
                 "reservationDeleted": cleanup.reservationDeleted,
                 "retrySafe": cleanup.reservationDeleted
-            ],
+            ]
+        if cleanup.outcomeUnknown {
+            value["operationCommitState"] = "unknown"
+            value["outcomeUnknown"] = true
+        }
+        return MCPResult.jsonObject(
+            value,
             text: "Error: \(safeMessage) Cleanup status: \(cleanup.status).\(manualGuidance)",
             isError: true
         )
@@ -695,6 +708,7 @@ extension ReviewAttachmentsWorker {
 private enum ReviewAttachmentCleanupOutcome: Sendable {
     case deleted
     case alreadyAbsent
+    case commitUnknown(String)
     case failed(String)
 
     var status: String {
@@ -703,6 +717,8 @@ private enum ReviewAttachmentCleanupOutcome: Sendable {
             return "deleted"
         case .alreadyAbsent:
             return "already_absent"
+        case .commitUnknown:
+            return "commit_unknown"
         case .failed:
             return "failed"
         }
@@ -712,9 +728,16 @@ private enum ReviewAttachmentCleanupOutcome: Sendable {
         switch self {
         case .deleted, .alreadyAbsent:
             return true
-        case .failed:
+        case .commitUnknown, .failed:
             return false
         }
+    }
+
+    var outcomeUnknown: Bool {
+        if case .commitUnknown = self {
+            return true
+        }
+        return false
     }
 
     func structuredValue(attachmentId: String) -> [String: Any] {
@@ -727,6 +750,14 @@ private enum ReviewAttachmentCleanupOutcome: Sendable {
             value["tool"] = "review_attachments_delete"
             value["arguments"] = ["attachment_id": attachmentId]
         }
+        if case .commitUnknown(let reason) = self {
+            value["reason"] = reason
+            value["operationCommitState"] = "unknown"
+            value["outcomeUnknown"] = true
+            value["retrySafe"] = false
+            value["inspectTool"] = "review_attachments_get"
+            value["inspectArguments"] = ["attachment_id": attachmentId]
+        }
         return value
     }
 }
@@ -736,6 +767,8 @@ private extension ASCError {
         switch self {
         case .api(_, let statusCode), .apiResponse(_, let statusCode):
             return statusCode
+        case .deleteOutcomeUnknown(let cause):
+            return cause.httpStatusCode
         default:
             return nil
         }

@@ -573,10 +573,7 @@ extension BuildBetaDetailsWorker {
             return MCPResult.jsonObject(result)
 
         } catch {
-            return CallTool.Result(
-                content: [MCPContent.text("Error: Failed to remove individual testers: \(error.localizedDescription)")],
-                isError: true
-            )
+            return MCPResult.error(error, prefix: "Failed to remove individual testers")
         }
     }
 

@@ -123,7 +123,7 @@ extension BetaFeedbackWorker {
                 "message": "Beta feedback crash submission '\(submissionID)' deleted"
             ])
         } catch {
-            return MCPResult.error("Failed to delete beta feedback crash submission: \(error.localizedDescription)")
+            return MCPResult.error(error, prefix: "Failed to delete beta feedback crash submission")
         }
     }
 
@@ -216,7 +216,7 @@ extension BetaFeedbackWorker {
                 "message": "Beta feedback screenshot submission '\(submissionID)' deleted"
             ])
         } catch {
-            return MCPResult.error("Failed to delete beta feedback screenshot submission: \(error.localizedDescription)")
+            return MCPResult.error(error, prefix: "Failed to delete beta feedback screenshot submission")
         }
     }
 

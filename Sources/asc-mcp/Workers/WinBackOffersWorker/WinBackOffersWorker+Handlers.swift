@@ -380,10 +380,7 @@ extension WinBackOffersWorker {
             return MCPResult.jsonObject(result)
 
         } catch {
-            return CallTool.Result(
-                content: [MCPContent.text("Error: Failed to delete win-back offer: \(error.localizedDescription)")],
-                isError: true
-            )
+            return MCPResult.error(error, prefix: "Failed to delete win-back offer")
         }
     }
 

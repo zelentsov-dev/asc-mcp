@@ -201,10 +201,7 @@ extension ProvisioningWorker {
             return MCPResult.jsonObject(result)
 
         } catch {
-            return CallTool.Result(
-                content: [MCPContent.text("Error: Failed to delete bundle ID: \(error.localizedDescription)")],
-                isError: true
-            )
+            return MCPResult.error(error, prefix: "Failed to delete bundle ID")
         }
     }
 
@@ -619,10 +616,7 @@ extension ProvisioningWorker {
             return MCPResult.jsonObject(result)
 
         } catch {
-            return CallTool.Result(
-                content: [MCPContent.text("Error: Failed to revoke certificate: \(error.localizedDescription)")],
-                isError: true
-            )
+            return MCPResult.error(error, prefix: "Failed to revoke certificate")
         }
     }
 
@@ -686,10 +680,7 @@ extension ProvisioningWorker {
             return MCPResult.jsonObject(result)
 
         } catch {
-            return CallTool.Result(
-                content: [MCPContent.text("Error: Failed to delete profile: \(error.localizedDescription)")],
-                isError: true
-            )
+            return MCPResult.error(error, prefix: "Failed to delete profile")
         }
     }
 
@@ -943,10 +934,7 @@ extension ProvisioningWorker {
             return MCPResult.jsonObject(result)
 
         } catch {
-            return CallTool.Result(
-                content: [MCPContent.text("Error: Failed to disable capability: \(error.localizedDescription)")],
-                isError: true
-            )
+            return MCPResult.error(error, prefix: "Failed to disable capability")
         }
     }
 

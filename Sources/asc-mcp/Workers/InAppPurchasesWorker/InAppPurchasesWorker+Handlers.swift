@@ -281,10 +281,7 @@ extension InAppPurchasesWorker {
             return MCPResult.jsonObject(result)
 
         } catch {
-            return CallTool.Result(
-                content: [MCPContent.text("Error: Failed to delete IAP: \(error.localizedDescription)")],
-                isError: true
-            )
+            return MCPResult.error(error, prefix: "Failed to delete IAP")
         }
     }
 
@@ -585,10 +582,7 @@ extension InAppPurchasesWorker {
             return MCPResult.jsonObject(result)
 
         } catch {
-            return CallTool.Result(
-                content: [MCPContent.text("Failed to delete IAP localization: \(error.localizedDescription)")],
-                isError: true
-            )
+            return MCPResult.error(error, prefix: "Failed to delete IAP localization")
         }
     }
 
@@ -1134,10 +1128,7 @@ extension InAppPurchasesWorker {
             return MCPResult.jsonObject(result)
 
         } catch {
-            return CallTool.Result(
-                content: [MCPContent.text("Error: Failed to delete IAP review screenshot: \(error.localizedDescription)")],
-                isError: true
-            )
+            return MCPResult.error(error, prefix: "Failed to delete IAP review screenshot")
         }
     }
 
@@ -1268,10 +1259,7 @@ extension InAppPurchasesWorker {
             return MCPResult.jsonObject(result)
 
         } catch {
-            return CallTool.Result(
-                content: [MCPContent.text("Error: Failed to delete IAP image: \(error.localizedDescription)")],
-                isError: true
-            )
+            return MCPResult.error(error, prefix: "Failed to delete IAP image")
         }
     }
 

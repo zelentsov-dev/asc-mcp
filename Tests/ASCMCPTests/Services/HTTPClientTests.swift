@@ -93,12 +93,17 @@ struct HTTPClientTests {
             _ = try await client.delete("/v1/resources/resource-1")
             Issue.record("Expected an ambiguous network error")
         } catch let error as ASCError {
-            guard case .network(let message) = error else {
-                Issue.record("Expected a network error, got \(error)")
+            guard case .deleteOutcomeUnknown(let cause) = error else {
+                Issue.record("Expected an unknown mutation outcome, got \(error)")
                 return
             }
-            #expect(message.contains("DELETE outcome is unknown"))
-            #expect(message.contains("Inspect the exact target"))
+            guard case .network(let message) = cause else {
+                Issue.record("Expected an underlying network error, got \(cause)")
+                return
+            }
+            #expect(message.contains("HTTP request failed"))
+            #expect(error.localizedDescription.contains("DELETE outcome is unknown"))
+            #expect(error.localizedDescription.contains("Inspect the exact target"))
         }
 
         #expect(await transport.requestCount() == 1)
@@ -126,13 +131,15 @@ struct HTTPClientTests {
                 _ = try await client.delete("/v1/resources/resource-1")
                 Issue.record("Expected an API error for \(expectedStatusCode)")
             } catch let error as ASCError {
-                guard case .api(let message, let statusCode) = error else {
+                guard case .deleteOutcomeUnknown(let cause) = error,
+                      case .apiResponse(let response, let statusCode) = cause else {
                     Issue.record("Expected an unknown-outcome API error, got \(error)")
                     return
                 }
                 #expect(statusCode == expectedStatusCode)
-                #expect(message.contains("DELETE outcome is unknown"))
-                #expect(message.contains("Inspect the exact target"))
+                #expect(response.errors.first?.safeDescription.contains("failed") == true)
+                #expect(error.localizedDescription.contains("DELETE outcome is unknown"))
+                #expect(error.localizedDescription.contains("Inspect the exact target"))
             }
 
             #expect(await transport.requestCount() == 1)
@@ -181,6 +188,47 @@ struct HTTPClientTests {
         _ = try await client.delete("/v1/resources/resource-1")
 
         #expect(await transport.requestCount() == 2)
+    }
+
+    @Test("DELETE cancellation during a definite retry delay stays cancellation")
+    func deleteCancellationDuringDefiniteRetryDelayStaysCancellation() async throws {
+        for statusCode in [401, 429] {
+            let headers = statusCode == 429 ? ["Retry-After": "30"] : [:]
+            let transport = ScriptedHTTPTransport(steps: [
+                .response(
+                    statusCode: statusCode,
+                    headers: headers,
+                    body: #"{"errors":[{"status":"\#(statusCode)","detail":"rejected"}]}"#
+                ),
+                .response(statusCode: 204, headers: [:], body: "")
+            ])
+            let client = await HTTPClient(
+                jwtService: try TestFactory.makeJWTService(),
+                baseURL: "https://api.example.test",
+                transport: transport,
+                maxRetries: 2
+            )
+            let task = Task {
+                try await client.delete("/v1/resources/resource-1")
+            }
+
+            while await transport.requestCount() == 0 {
+                await Task.yield()
+            }
+            for _ in 0..<100 {
+                await Task.yield()
+            }
+            task.cancel()
+
+            do {
+                _ = try await task.value
+                Issue.record("Expected cancellation after HTTP \(statusCode)")
+            } catch is CancellationError {
+            } catch {
+                Issue.record("Expected CancellationError after HTTP \(statusCode), got \(error)")
+            }
+            #expect(await transport.requestCount() == 1)
+        }
     }
 
     @Test("PUT retains retry behavior for a transient server failure")

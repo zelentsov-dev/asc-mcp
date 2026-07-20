@@ -59,6 +59,36 @@ enum MCPResult {
         return json(structured, text: "Error: \(redactedMessage)", isError: true, _meta: _meta)
     }
 
+    static func error(
+        _ error: Error,
+        prefix: String? = nil,
+        _meta: Metadata? = nil
+    ) -> CallTool.Result {
+        let message = prefix.map { "\($0): \(error.localizedDescription)" }
+            ?? error.localizedDescription
+
+        guard let ascError = error as? ASCError else {
+            return self.error(message, _meta: _meta)
+        }
+
+        var object: [String: Value] = [
+            "success": .bool(false),
+            "error": .string(Redactor.redact(message)),
+            "details": ascError.structuredValue
+        ]
+        if case .deleteOutcomeUnknown = ascError {
+            object["operationCommitState"] = .string("unknown")
+            object["outcomeUnknown"] = .bool(true)
+            object["retrySafe"] = .bool(false)
+        }
+        return json(
+            .object(object),
+            text: "Error: \(Redactor.redact(message))",
+            isError: true,
+            _meta: _meta
+        )
+    }
+
     static func normalizeForTransport(_ result: CallTool.Result) -> CallTool.Result {
         guard result.isError == true else { return result }
 
@@ -79,10 +109,7 @@ enum MCPResult {
             return text
         }.first
         let message = errorMessage(from: originalStructured, humanText: humanText)
-        let candidate = enrichAmbiguousDelete(
-            canonicalError(from: originalStructured, message: message),
-            message: message
-        )
+        let candidate = canonicalError(from: originalStructured, message: message)
         let (structuredContent, mirror) = encodedError(candidate, message: message)
         let mirrorCandidates = originalMirrors + [structuredContent]
 
@@ -156,34 +183,6 @@ enum MCPResult {
         if object["details"] == nil {
             object["details"] = .null
         }
-        return MCPValueSanitizer.sanitizeError(.object(object))
-    }
-
-    private static func enrichAmbiguousDelete(_ value: Value, message: String) -> Value {
-        guard message.localizedCaseInsensitiveContains("DELETE outcome is unknown"),
-              case .object(var object) = value else {
-            return value
-        }
-
-        var details: [String: Value]
-        switch object["details"] {
-        case .object(let existing)?:
-            details = existing
-        case .null?, nil:
-            details = [:]
-        case let existing?:
-            details = ["upstreamDetails": existing]
-        }
-
-        object["operationCommitState"] = .string("unknown")
-        object["outcomeUnknown"] = .bool(true)
-        object["retrySafe"] = .bool(false)
-        details["type"] = .string("mutation_outcome_unknown")
-        details["method"] = .string("DELETE")
-        details["operationCommitState"] = .string("unknown")
-        details["outcomeUnknown"] = .bool(true)
-        details["retrySafe"] = .bool(false)
-        object["details"] = .object(details)
         return MCPValueSanitizer.sanitizeError(.object(object))
     }
 

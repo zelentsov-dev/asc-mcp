@@ -333,10 +333,7 @@ extension BetaTestersWorker {
             return MCPResult.jsonObject(result)
 
         } catch {
-            return CallTool.Result(
-                content: [MCPContent.text("Failed to delete beta tester: \(error.localizedDescription)")],
-                isError: true
-            )
+            return MCPResult.error(error, prefix: "Failed to delete beta tester")
         }
     }
 
@@ -540,10 +537,7 @@ extension BetaTestersWorker {
             return MCPResult.jsonObject(result)
 
         } catch {
-            return CallTool.Result(
-                content: [MCPContent.text("Failed to remove tester from groups: \(error.localizedDescription)")],
-                isError: true
-            )
+            return MCPResult.error(error, prefix: "Failed to remove tester from groups")
         }
     }
 
@@ -636,10 +630,7 @@ extension BetaTestersWorker {
             return MCPResult.jsonObject(result)
 
         } catch {
-            return CallTool.Result(
-                content: [MCPContent.text("Failed to remove builds from tester: \(error.localizedDescription)")],
-                isError: true
-            )
+            return MCPResult.error(error, prefix: "Failed to remove builds from tester")
         }
     }
 
@@ -676,10 +667,7 @@ extension BetaTestersWorker {
             return MCPResult.jsonObject(result)
 
         } catch {
-            return CallTool.Result(
-                content: [MCPContent.text("Failed to remove tester from app: \(error.localizedDescription)")],
-                isError: true
-            )
+            return MCPResult.error(error, prefix: "Failed to remove tester from app")
         }
     }
 

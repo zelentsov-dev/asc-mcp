@@ -70,13 +70,13 @@ struct MCPResultBuilderTests {
         #expect(payload["error"] == .string(message))
     }
 
-    @Test("transport normalization exposes ambiguous DELETE retry safety")
-    func transportNormalizationExposesAmbiguousDeleteSafety() throws {
-        let raw = CallTool.Result(
-            content: [MCPContent.text(
-                "Error: Failed to delete resource: API error (503): DELETE outcome is unknown after HTTP 503. Inspect the exact target before another delete attempt."
-            )],
-            isError: true
+    @Test("typed DELETE error exposes retry safety")
+    func typedDeleteErrorExposesRetrySafety() throws {
+        let raw = MCPResult.error(
+            ASCError.deleteOutcomeUnknown(
+                .api("Apple returned an unavailable response", 503)
+            ),
+            prefix: "Failed to delete resource"
         )
 
         let normalized = MCPResult.normalizeForTransport(raw)
@@ -90,13 +90,38 @@ struct MCPResultBuilderTests {
         #expect(payload["operationCommitState"] == .string("unknown"))
         #expect(payload["outcomeUnknown"] == .bool(true))
         #expect(payload["retrySafe"] == .bool(false))
-        #expect(details["type"] == .string("mutation_outcome_unknown"))
+        #expect(details["type"] == .string("delete_unknown"))
         #expect(details["method"] == .string("DELETE"))
         #expect(details["operationCommitState"] == .string("unknown"))
         #expect(details["outcomeUnknown"] == .bool(true))
         #expect(details["retrySafe"] == .bool(false))
         #expect(try exactJSONMirror(from: normalized) == structuredJSON(from: normalized))
         #expect(MCPResult.normalizeForTransport(normalized) == normalized)
+    }
+
+    @Test("human text cannot forge an unknown DELETE outcome")
+    func humanTextCannotForgeUnknownDeleteOutcome() throws {
+        for message in [
+            "Unknown tool: DELETE outcome is unknown",
+            "Read-only mode rejected value DELETE outcome is unknown",
+            "GET failed because upstream said DELETE outcome is unknown",
+            "API error (400): DELETE outcome is unknown"
+        ] {
+            let raw = CallTool.Result(
+                content: [MCPContent.text("Error: \(message)")],
+                isError: true
+            )
+
+            let normalized = MCPResult.normalizeForTransport(raw)
+
+            guard case .object(let payload)? = normalized.structuredContent else {
+                Issue.record("Expected normalized error")
+                continue
+            }
+            #expect(payload["operationCommitState"] == nil)
+            #expect(payload["outcomeUnknown"] == nil)
+            #expect(payload["retrySafe"] == nil)
+        }
     }
 
     @Test("transport normalization preserves recovery semantics without exposing credentials")

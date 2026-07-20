@@ -480,10 +480,7 @@ extension AppInfoWorker {
             return MCPResult.jsonObject(result)
 
         } catch {
-            return CallTool.Result(
-                content: [MCPContent.text("Failed to delete app info localization: \(error.localizedDescription)")],
-                isError: true
-            )
+            return MCPResult.error(error, prefix: "Failed to delete app info localization")
         }
     }
 

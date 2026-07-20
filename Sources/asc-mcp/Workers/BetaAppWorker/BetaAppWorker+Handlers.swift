@@ -276,10 +276,7 @@ extension BetaAppWorker {
             return MCPResult.jsonObject(result)
 
         } catch {
-            return CallTool.Result(
-                content: [MCPContent.text("Error: Failed to delete beta app localization: \(error.localizedDescription)")],
-                isError: true
-            )
+            return MCPResult.error(error, prefix: "Failed to delete beta app localization")
         }
     }
 
@@ -328,6 +325,8 @@ extension BetaAppWorker {
         } catch let error as ASCError {
             let ambiguousOutcome: Bool
             switch error {
+            case .deleteOutcomeUnknown:
+                ambiguousOutcome = true
             case .network:
                 ambiguousOutcome = true
             case .api(_, let statusCode), .apiResponse(_, let statusCode):

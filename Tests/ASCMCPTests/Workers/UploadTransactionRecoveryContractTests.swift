@@ -383,8 +383,8 @@ struct UploadTransactionRecoveryContractTests {
         #expect(payload["screenshot_id"] == .string("asset-1"))
     }
 
-    @Test("rollback failure preserves id and manual cleanup tool")
-    func rollbackFailurePreservesCleanupContext() async throws {
+    @Test("ambiguous rollback preserves id and requires inspection")
+    func ambiguousRollbackPreservesCleanupContext() async throws {
         let fileURL = try uploadRecoveryFile(Data("hello".utf8))
         defer { try? FileManager.default.removeItem(at: fileURL) }
         let flow = UploadFlow.screenshot
@@ -410,16 +410,79 @@ struct UploadTransactionRecoveryContractTests {
         #expect(payload["resourceId"] == .string(resourceID))
         #expect(payload["screenshot_id"] == .string(resourceID))
         #expect(payload["reservationDeleted"] == .bool(false))
+        #expect(payload["operationCommitState"] == .string("unknown"))
+        #expect(payload["outcomeUnknown"] == .bool(true))
+        #expect(payload["retrySafe"] == .bool(false))
         let cleanup = try uploadRecoveryValueObject(payload["cleanup"])
-        #expect(cleanup["status"] == .string("failed"))
-        #expect(cleanup["tool"] == .string("screenshots_delete"))
-        let arguments = try uploadRecoveryValueObject(cleanup["arguments"])
-        #expect(arguments["screenshot_id"] == .string(resourceID))
+        #expect(cleanup["status"] == .string("commit_unknown"))
+        #expect(cleanup["operationCommitState"] == .string("unknown"))
+        #expect(cleanup["outcomeUnknown"] == .bool(true))
+        #expect(cleanup["retrySafe"] == .bool(false))
+        #expect(cleanup["tool"] == nil)
+        #expect(cleanup["arguments"] == nil)
+        #expect(cleanup["inspectTool"] == .string("screenshots_get"))
+        let inspectArguments = try uploadRecoveryValueObject(cleanup["inspectArguments"])
+        #expect(inspectArguments["screenshot_id"] == .string(resourceID))
         guard case .text(let humanText, _, _) = result.content.first else {
             Issue.record("Expected human-readable recovery guidance")
             return
         }
         #expect(humanText.contains(resourceID))
+        #expect(humanText.contains("Inspect the exact reservation"))
+        #expect(humanText.contains("to retry cleanup") == false)
+    }
+
+    @Test("network loss during rollback is commit unknown")
+    func networkLossDuringRollbackIsCommitUnknown() async throws {
+        let fileURL = try uploadRecoveryFile(Data("hello".utf8))
+        defer { try? FileManager.default.removeItem(at: fileURL) }
+        let flow = UploadFlow.screenshot
+        let apiTransport = UploadRecoveryScriptTransport(steps: [
+            .response(statusCode: 201, body: uploadRecoveryResponse(flow: flow, state: flow.pendingState)),
+            .rawNetworkFailure
+        ])
+
+        let result = try await invokeUpload(
+            flow,
+            fileURL: fileURL,
+            apiTransport: apiTransport,
+            uploadTransport: TestHTTPTransport(responses: [])
+        )
+
+        let payload = try uploadRecoveryObject(result.structuredContent)
+        #expect(payload["operationCommitState"] == .string("unknown"))
+        #expect(payload["outcomeUnknown"] == .bool(true))
+        #expect(payload["retrySafe"] == .bool(false))
+        let cleanup = try uploadRecoveryValueObject(payload["cleanup"])
+        #expect(cleanup["status"] == .string("commit_unknown"))
+        #expect(await apiTransport.recordedRequests().map(\.httpMethod) == ["POST", "DELETE"])
+    }
+
+    @Test("definite rollback rejection remains a failed cleanup")
+    func definiteRollbackRejectionRemainsFailedCleanup() async throws {
+        let fileURL = try uploadRecoveryFile(Data("hello".utf8))
+        defer { try? FileManager.default.removeItem(at: fileURL) }
+        let flow = UploadFlow.screenshot
+        let apiTransport = TestHTTPTransport(responses: [
+            .init(statusCode: 201, body: uploadRecoveryResponse(flow: flow, state: flow.pendingState)),
+            .init(statusCode: 403, body: uploadRecoveryAPIError(status: 403))
+        ])
+
+        let result = try await invokeUpload(
+            flow,
+            fileURL: fileURL,
+            apiTransport: apiTransport,
+            uploadTransport: TestHTTPTransport(responses: [])
+        )
+
+        let payload = try uploadRecoveryObject(result.structuredContent)
+        #expect(payload["outcomeUnknown"] == nil)
+        #expect(payload["retrySafe"] == .bool(false))
+        let cleanup = try uploadRecoveryValueObject(payload["cleanup"])
+        #expect(cleanup["status"] == .string("failed"))
+        #expect(cleanup["outcomeUnknown"] == nil)
+        #expect(cleanup["tool"] == .string("screenshots_delete"))
+        #expect(uploadRecoveryText(result).contains("to retry cleanup"))
     }
 
     @Test("rollback 404 is treated as an already absent reservation")

@@ -265,10 +265,7 @@ extension PromotedPurchasesWorker {
             return MCPResult.jsonObject(result)
 
         } catch {
-            return CallTool.Result(
-                content: [MCPContent.text("Error: Failed to delete promoted purchase: \(error.localizedDescription)")],
-                isError: true
-            )
+            return MCPResult.error(error, prefix: "Failed to delete promoted purchase")
         }
     }
 

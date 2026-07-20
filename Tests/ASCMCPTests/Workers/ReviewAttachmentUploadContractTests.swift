@@ -464,8 +464,8 @@ struct ReviewAttachmentUploadContractTests {
         #expect(text.contains("header-secret") == false)
     }
 
-    @Test("rollback failure includes manual cleanup guidance")
-    func rollbackFailureIncludesGuidance() async throws {
+    @Test("ambiguous rollback requires inspection before cleanup")
+    func ambiguousRollbackRequiresInspection() async throws {
         let fileURL = try reviewAttachmentFile(Data("hello".utf8))
         defer { try? FileManager.default.removeItem(at: fileURL) }
         let apiTransport = TestHTTPTransport(responses: [
@@ -480,17 +480,76 @@ struct ReviewAttachmentUploadContractTests {
         let result = try await worker.handleTool(reviewAttachmentUploadParameters(fileURL: fileURL))
 
         #expect(result.isError == true)
-        try assertCleanup(result, status: "failed", reservationDeleted: false)
+        try assertCleanup(result, status: "commit_unknown", reservationDeleted: false)
         let payload = try reviewAttachmentObject(result.structuredContent)
+        #expect(payload["operationCommitState"] == .string("unknown"))
+        #expect(payload["outcomeUnknown"] == .bool(true))
+        #expect(payload["retrySafe"] == .bool(false))
         let cleanup = try reviewAttachmentValueObject(payload["cleanup"])
-        #expect(cleanup["tool"] == .string("review_attachments_delete"))
+        #expect(cleanup["operationCommitState"] == .string("unknown"))
+        #expect(cleanup["outcomeUnknown"] == .bool(true))
+        #expect(cleanup["retrySafe"] == .bool(false))
+        #expect(cleanup["tool"] == nil)
+        #expect(cleanup["arguments"] == nil)
+        #expect(cleanup["inspectTool"] == .string("review_attachments_get"))
         guard case .string(let reason) = cleanup["reason"] else {
             Issue.record("Expected redacted cleanup failure reason")
             return
         }
         #expect(reason.isEmpty == false)
-        let arguments = try reviewAttachmentValueObject(cleanup["arguments"])
-        #expect(arguments["attachment_id"] == .string("attachment-1"))
+        let inspectArguments = try reviewAttachmentValueObject(cleanup["inspectArguments"])
+        #expect(inspectArguments["attachment_id"] == .string("attachment-1"))
+        let text = reviewAttachmentText(result)
+        #expect(text.contains("Inspect this exact attachment"))
+        #expect(text.contains("to retry cleanup") == false)
+    }
+
+    @Test("network loss during rollback is commit unknown")
+    func networkLossDuringRollbackIsCommitUnknown() async throws {
+        let fileURL = try reviewAttachmentFile(Data("hello".utf8))
+        defer { try? FileManager.default.removeItem(at: fileURL) }
+        let apiTransport = ReviewAttachmentScriptTransport(steps: [
+            .response(statusCode: 201, body: reviewAttachmentResponse(state: "AWAITING_UPLOAD")),
+            .rawNetworkFailure
+        ])
+        let worker = try await makeReviewAttachmentWorker(
+            apiTransport: apiTransport,
+            uploadTransport: TestHTTPTransport(responses: [])
+        )
+
+        let result = try await worker.handleTool(reviewAttachmentUploadParameters(fileURL: fileURL))
+
+        try assertCleanup(result, status: "commit_unknown", reservationDeleted: false)
+        let payload = try reviewAttachmentObject(result.structuredContent)
+        #expect(payload["operationCommitState"] == .string("unknown"))
+        #expect(payload["outcomeUnknown"] == .bool(true))
+        #expect(payload["retrySafe"] == .bool(false))
+        #expect(await apiTransport.recordedRequests().map(\.httpMethod) == ["POST", "DELETE"])
+    }
+
+    @Test("definite rollback rejection remains a failed cleanup")
+    func definiteRollbackRejectionRemainsFailedCleanup() async throws {
+        let fileURL = try reviewAttachmentFile(Data("hello".utf8))
+        defer { try? FileManager.default.removeItem(at: fileURL) }
+        let apiTransport = TestHTTPTransport(responses: [
+            .init(statusCode: 201, body: reviewAttachmentResponse(state: "AWAITING_UPLOAD")),
+            .init(statusCode: 403, body: reviewAttachmentAPIError(status: 403, code: "FORBIDDEN"))
+        ])
+        let worker = try await makeReviewAttachmentWorker(
+            apiTransport: apiTransport,
+            uploadTransport: TestHTTPTransport(responses: [])
+        )
+
+        let result = try await worker.handleTool(reviewAttachmentUploadParameters(fileURL: fileURL))
+
+        try assertCleanup(result, status: "failed", reservationDeleted: false)
+        let payload = try reviewAttachmentObject(result.structuredContent)
+        #expect(payload["outcomeUnknown"] == nil)
+        #expect(payload["retrySafe"] == .bool(false))
+        let cleanup = try reviewAttachmentValueObject(payload["cleanup"])
+        #expect(cleanup["outcomeUnknown"] == nil)
+        #expect(cleanup["tool"] == .string("review_attachments_delete"))
+        #expect(reviewAttachmentText(result).contains("to retry cleanup"))
     }
 }
 

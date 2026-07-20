@@ -128,60 +128,13 @@ public actor HTTPClient {
             let token = try await jwtService.getToken()
             request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
 
+            logger.debug("[\(method.rawValue)] \(url.absoluteString) - Attempt \(attempt + 1)/\(maxAttempts)")
+
+            let startTime = Date()
+            let data: Data
+            let httpResponse: HTTPURLResponse
             do {
-                // Log request
-                logger.debug("[\(method.rawValue)] \(url.absoluteString) - Attempt \(attempt + 1)/\(maxAttempts)")
-
-                let startTime = Date()
-                let (data, httpResponse) = try await transport.data(for: request)
-                let duration = Date().timeIntervalSince(startTime)
-
-                updateRateLimitInfo(from: httpResponse)
-
-                logger.debug("Response: \(httpResponse.statusCode) in \(String(format: "%.2f", duration))s")
-
-                // Successful response
-                if 200...299 ~= httpResponse.statusCode {
-                    return data
-                }
-
-                // Error handling
-                let apiErrorResponse = decodeAPIErrorResponse(from: data)
-                let errorMessage = apiErrorResponse?.errors.map(\.safeDescription).joined(separator: "; ")
-                    ?? "Unknown App Store Connect API error"
-
-                // Handle 401 Unauthorized: refresh token and retry
-                if httpResponse.statusCode == 401 && attempt < maxAttempts - 1 {
-                    logger.warning("401 Unauthorized, refreshing JWT token and retrying")
-                    _ = try await jwtService.refreshToken()
-                    try await Task.sleep(nanoseconds: 500_000_000)
-                    continue
-                }
-
-                // Check if this error is retryable
-                if attempt < maxAttempts - 1 {
-                    let isRetryable: Bool
-                    if retriesAmbiguousFailures {
-                        isRetryable = retryableStatusCodes.contains(httpResponse.statusCode)
-                    } else {
-                        isRetryable = httpResponse.statusCode == 429
-                    }
-
-                    if isRetryable {
-                        let delay = calculateRetryDelay(attempt: attempt, response: httpResponse)
-                        logger.warning("Retryable error \(httpResponse.statusCode), waiting \(delay)s before retry")
-                        try await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
-                        continue
-                    }
-                }
-
-                // Final error
-                logger.error("HTTP error \(httpResponse.statusCode): \(Redactor.redact(errorMessage))")
-                if let apiErrorResponse {
-                    throw ASCError.apiResponse(apiErrorResponse, httpResponse.statusCode)
-                }
-                throw ASCError.api(errorMessage, httpResponse.statusCode)
-
+                (data, httpResponse) = try await transport.data(for: request)
             } catch let error as ASCError {
                 if method == .DELETE,
                    let outcomeUnknown = Self.deleteOutcomeUnknownError(from: error) {
@@ -189,6 +142,9 @@ public actor HTTPClient {
                 }
                 throw error
             } catch {
+                if error is CancellationError, method != .DELETE {
+                    throw CancellationError()
+                }
                 if attempt < maxAttempts - 1 && retriesAmbiguousFailures {
                     let delay = calculateRetryDelay(attempt: attempt, response: nil)
                     logger.warning("Network error: \(error.localizedDescription), retrying in \(delay)s")
@@ -204,33 +160,73 @@ public actor HTTPClient {
                 }
                 throw networkError
             }
+
+            let duration = Date().timeIntervalSince(startTime)
+            updateRateLimitInfo(from: httpResponse)
+            logger.debug("Response: \(httpResponse.statusCode) in \(String(format: "%.2f", duration))s")
+
+            if 200...299 ~= httpResponse.statusCode {
+                return data
+            }
+
+            let apiErrorResponse = decodeAPIErrorResponse(from: data)
+            let errorMessage = apiErrorResponse?.errors.map(\.safeDescription).joined(separator: "; ")
+                ?? "Unknown App Store Connect API error"
+
+            if httpResponse.statusCode == 401 && attempt < maxAttempts - 1 {
+                logger.warning("401 Unauthorized, refreshing JWT token and retrying")
+                _ = try await jwtService.refreshToken()
+                try await Task.sleep(nanoseconds: 500_000_000)
+                continue
+            }
+
+            if attempt < maxAttempts - 1 {
+                let isRetryable: Bool
+                if retriesAmbiguousFailures {
+                    isRetryable = retryableStatusCodes.contains(httpResponse.statusCode)
+                } else {
+                    isRetryable = httpResponse.statusCode == 429
+                }
+
+                if isRetryable {
+                    let delay = calculateRetryDelay(attempt: attempt, response: httpResponse)
+                    logger.warning("Retryable error \(httpResponse.statusCode), waiting \(delay)s before retry")
+                    try await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
+                    continue
+                }
+            }
+
+            logger.error("HTTP error \(httpResponse.statusCode): \(Redactor.redact(errorMessage))")
+            let responseError: ASCError
+            if let apiErrorResponse {
+                responseError = .apiResponse(apiErrorResponse, httpResponse.statusCode)
+            } else {
+                responseError = .api(errorMessage, httpResponse.statusCode)
+            }
+            if method == .DELETE,
+               let outcomeUnknown = Self.deleteOutcomeUnknownError(from: responseError) {
+                throw outcomeUnknown
+            }
+            throw responseError
         }
 
-        let exhaustedError = ASCError.network("Maximum retry attempts exceeded")
-        if method == .DELETE,
-           let outcomeUnknown = Self.deleteOutcomeUnknownError(from: exhaustedError) {
-            throw outcomeUnknown
-        }
-        throw exhaustedError
+        throw ASCError.network("Maximum retry attempts exceeded before a request was sent")
     }
 
     private static func deleteOutcomeUnknownError(from error: ASCError) -> ASCError? {
-        let marker = "DELETE outcome is unknown"
-        if error.localizedDescription.localizedCaseInsensitiveContains(marker) {
+        if case .deleteOutcomeUnknown = error {
             return nil
         }
 
-        let guidance = "Inspect the exact target before another delete attempt."
         switch error {
         case .network(let message):
-            return .network("\(marker) after a network failure: \(message) \(guidance)")
+            return .deleteOutcomeUnknown(.network(message))
         case .api(let message, let statusCode)
             where statusCode == 408 || (500...599).contains(statusCode):
-            return .api("\(marker) after HTTP \(statusCode): \(message) \(guidance)", statusCode)
-        case .apiResponse(let response, let statusCode)
+            return .deleteOutcomeUnknown(.api(message, statusCode))
+        case .apiResponse(_, let statusCode)
             where statusCode == 408 || (500...599).contains(statusCode):
-            let message = response.errors.map(\.safeDescription).joined(separator: "; ")
-            return .api("\(marker) after HTTP \(statusCode): \(message) \(guidance)", statusCode)
+            return .deleteOutcomeUnknown(error)
         default:
             return nil
         }
