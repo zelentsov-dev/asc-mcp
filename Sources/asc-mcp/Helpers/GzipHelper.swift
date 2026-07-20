@@ -221,9 +221,9 @@ extension Data {
             let previousSourceCount = stream.avail_in
             let remainingAdvertisedBytes = expectedByteCount - output.count
             let destinationCount = Swift.min(
-                outputBuffer.count,
-                Swift.max(remainingAdvertisedBytes + 1, 1)
-            )
+                remainingAdvertisedBytes,
+                outputBuffer.count - 1
+            ) + 1
 
             let status = outputBuffer.withUnsafeMutableBytes { destination -> Int32 in
                 guard let destinationBaseAddress = destination.bindMemory(to: UInt8.self).baseAddress else {
