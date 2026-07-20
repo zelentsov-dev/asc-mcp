@@ -62,6 +62,26 @@ struct ScreenshotsOptionalInputsContractTests {
         let previewTypes = try screenshotsValueObject(previewProperties["preview_types"])
         let previewItems = try screenshotsValueObject(previewTypes["items"])
         #expect(try screenshotsValueArray(previewItems["enum"]).contains(.string("APPLE_VISION_PRO")))
+
+        let createScreenshotTool = try #require(tools.first { $0.name == "screenshots_create_set" })
+        let createScreenshotProperties = try screenshotsValueObject(
+            try screenshotsValueObject(createScreenshotTool.inputSchema)["properties"]
+        )
+        let displayType = try screenshotsValueObject(createScreenshotProperties["display_type"])
+        #expect(
+            try screenshotsValueArray(displayType["enum"]) ==
+                ScreenshotsWorker.screenshotDisplayTypes.map(Value.string)
+        )
+
+        let createPreviewTool = try #require(tools.first { $0.name == "screenshots_create_preview_set" })
+        let createPreviewProperties = try screenshotsValueObject(
+            try screenshotsValueObject(createPreviewTool.inputSchema)["properties"]
+        )
+        let previewType = try screenshotsValueObject(createPreviewProperties["preview_type"])
+        #expect(
+            try screenshotsValueArray(previewType["enum"]) ==
+                ScreenshotsWorker.previewTypes.map(Value.string)
+        )
     }
 
     @Test("media set filters reject invalid arrays before transport")
@@ -89,6 +109,34 @@ struct ScreenshotsOptionalInputsContractTests {
 
         #expect(duplicate.isError == true)
         #expect(unsupported.isError == true)
+        #expect(await transport.requestCount() == 0)
+    }
+
+    @Test("media set creates reject unsupported Apple media types before transport")
+    func mediaSetCreateTypeValidation() async throws {
+        let transport = TestHTTPTransport(responses: [])
+        let worker = ScreenshotsWorker(
+            httpClient: try await screenshotsClient(transport),
+            uploadService: UploadService()
+        )
+
+        let screenshotResult = try await worker.handleTool(CallTool.Parameters(
+            name: "screenshots_create_set",
+            arguments: [
+                "localization_id": .string("version-loc-1"),
+                "display_type": .string("APP_IPHONE_FUTURE")
+            ]
+        ))
+        let previewResult = try await worker.handleTool(CallTool.Parameters(
+            name: "screenshots_create_preview_set",
+            arguments: [
+                "localization_id": .string("version-loc-1"),
+                "preview_type": .string("IPHONE_FUTURE")
+            ]
+        ))
+
+        #expect(screenshotResult.isError == true)
+        #expect(previewResult.isError == true)
         #expect(await transport.requestCount() == 0)
     }
 

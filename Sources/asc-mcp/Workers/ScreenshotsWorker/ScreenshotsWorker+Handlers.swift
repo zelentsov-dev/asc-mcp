@@ -48,11 +48,9 @@ extension ScreenshotsWorker {
             )
 
             if let nextUrl = try paginationURL(from: arguments["next_url"]) {
-                var requiredParameters = queryParams
-                requiredParameters.removeValue(forKey: "limit")
                 response = try await httpClient.getPage(
                     nextUrl,
-                    scope: PaginationScope(path: endpoint, requiredParameters: requiredParameters),
+                    scope: mediaPaginationScope(path: endpoint, query: queryParams),
                     as: ASCScreenshotSetsResponse.self
                 )
             } else {
@@ -92,6 +90,13 @@ extension ScreenshotsWorker {
               let displayType = displayTypeValue.stringValue else {
             return CallTool.Result(
                 content: [MCPContent.text("Error: Required parameter 'display_type' is missing")],
+                isError: true
+            )
+        }
+
+        guard Set(Self.screenshotDisplayTypes).contains(displayType) else {
+            return CallTool.Result(
+                content: [MCPContent.text("Error: Unsupported value for 'display_type': \(displayType)")],
                 isError: true
             )
         }
@@ -200,25 +205,19 @@ extension ScreenshotsWorker {
 
         do {
             let response: ASCScreenshotsResponse
+            let endpoint = "/v1/appScreenshotSets/\(try ASCPathSegment.encode(setId))/appScreenshots"
+            let limit = arguments["limit"]?.intValue ?? 25
+            let queryParams = ["limit": String(min(max(limit, 1), 200))]
 
             if let nextUrl = try paginationURL(from: arguments["next_url"]) {
                 response = try await httpClient.getPage(
                     nextUrl,
-                    scope: PaginationScope(path: "/v1/appScreenshotSets/\(try ASCPathSegment.encode(setId))/appScreenshots"),
+                    scope: mediaPaginationScope(path: endpoint, query: queryParams),
                     as: ASCScreenshotsResponse.self
                 )
             } else {
-                var queryParams: [String: String] = [:]
-
-                if let limitValue = arguments["limit"],
-                   let limit = limitValue.intValue {
-                    queryParams["limit"] = String(min(max(limit, 1), 200))
-                } else {
-                    queryParams["limit"] = "25"
-                }
-
                 response = try await httpClient.get(
-                    "/v1/appScreenshotSets/\(try ASCPathSegment.encode(setId))/appScreenshots",
+                    endpoint,
                     parameters: queryParams,
                     as: ASCScreenshotsResponse.self
                 )
@@ -593,11 +592,9 @@ extension ScreenshotsWorker {
             )
 
             if let nextUrl = try paginationURL(from: arguments["next_url"]) {
-                var requiredParameters = queryParams
-                requiredParameters.removeValue(forKey: "limit")
                 response = try await httpClient.getPage(
                     nextUrl,
-                    scope: PaginationScope(path: endpoint, requiredParameters: requiredParameters),
+                    scope: mediaPaginationScope(path: endpoint, query: queryParams),
                     as: ASCPreviewSetsResponse.self
                 )
             } else {
@@ -637,6 +634,13 @@ extension ScreenshotsWorker {
               let previewType = previewTypeValue.stringValue else {
             return CallTool.Result(
                 content: [MCPContent.text("Error: Required parameter 'preview_type' is missing")],
+                isError: true
+            )
+        }
+
+        guard Set(Self.previewTypes).contains(previewType) else {
+            return CallTool.Result(
+                content: [MCPContent.text("Error: Unsupported value for 'preview_type': \(previewType)")],
                 isError: true
             )
         }
@@ -864,24 +868,19 @@ extension ScreenshotsWorker {
 
         do {
             let response: ASCPreviewsResponse
+            let endpoint = "/v1/appPreviewSets/\(try ASCPathSegment.encode(setId))/appPreviews"
+            let limit = arguments["limit"]?.intValue ?? 25
+            let queryParams = ["limit": String(min(max(limit, 1), 200))]
 
             if let nextUrl = try paginationURL(from: arguments["next_url"]) {
                 response = try await httpClient.getPage(
                     nextUrl,
-                    scope: PaginationScope(path: "/v1/appPreviewSets/\(try ASCPathSegment.encode(setId))/appPreviews"),
+                    scope: mediaPaginationScope(path: endpoint, query: queryParams),
                     as: ASCPreviewsResponse.self
                 )
             } else {
-                var queryParams: [String: String] = [:]
-
-                if let limit = arguments["limit"]?.intValue {
-                    queryParams["limit"] = String(min(max(limit, 1), 200))
-                } else {
-                    queryParams["limit"] = "25"
-                }
-
                 response = try await httpClient.get(
-                    "/v1/appPreviewSets/\(try ASCPathSegment.encode(setId))/appPreviews",
+                    endpoint,
                     parameters: queryParams,
                     as: ASCPreviewsResponse.self
                 )
@@ -1118,6 +1117,15 @@ extension ScreenshotsWorker {
             }
         }
         query[appleName] = values.joined(separator: ",")
+    }
+
+    private func mediaPaginationScope(path: String, query: [String: String]) -> PaginationScope {
+        PaginationScope(
+            path: path,
+            requiredParameters: query,
+            allowedParameters: Set(query.keys).union(["cursor"]),
+            requiredNonEmptyParameters: ["cursor"]
+        )
     }
 
     private func optionalNonemptyString(_ value: Value?, fieldName: String) throws -> String? {

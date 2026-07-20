@@ -64,7 +64,8 @@ extension ScreenshotsWorker {
                     ]),
                     "display_type": .object([
                         "type": .string("string"),
-                        "description": .string("Screenshot display type (e.g. APP_IPHONE_67, APP_IPAD_PRO_3GEN_129, APP_DESKTOP)")
+                        "description": .string("Screenshot display type (e.g. APP_IPHONE_67, APP_IPAD_PRO_3GEN_129, APP_DESKTOP)"),
+                        "enum": .array(Self.screenshotDisplayTypes.map(Value.string))
                     ])
                 ]),
                 "required": .array([.string("display_type")]),
@@ -251,7 +252,8 @@ extension ScreenshotsWorker {
                     ]),
                     "preview_type": .object([
                         "type": .string("string"),
-                        "description": .string("Preview type (e.g. IPHONE_67, IPAD_PRO_3GEN_129, DESKTOP)")
+                        "description": .string("Preview type (e.g. IPHONE_67, IPAD_PRO_3GEN_129, DESKTOP)"),
+                        "enum": .array(Self.previewTypes.map(Value.string))
                     ])
                 ]),
                 "required": .array([.string("preview_type")]),
