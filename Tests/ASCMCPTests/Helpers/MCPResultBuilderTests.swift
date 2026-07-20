@@ -350,7 +350,7 @@ struct MCPResultBuilderTests {
                 MCPContent.text(rawMirror),
                 MCPContent.text("Error: Bad input")
             ],
-            structuredContent: rawPayload,
+            structuredContent: Optional.some(rawPayload),
             isError: true
         )
 
