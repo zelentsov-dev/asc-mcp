@@ -146,7 +146,7 @@ extension AppLifecycleWorker {
                     ]),
                     "next_url": .object([
                         "type": .string("string"),
-                        "description": .string("Pagination URL from previous response to get next page")
+                        "description": .string("Apple continuation URL from the previous response. Repeat the originating filters, platform, and effective limit with next_url; the full query and cursor are validated.")
                     ])
                 ]),
                 "required": .array([.string("app_id")])

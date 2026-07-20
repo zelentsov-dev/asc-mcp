@@ -276,9 +276,9 @@ extension ReviewAttachmentsWorker {
             if let nextUrl = try paginationURL(from: arguments["next_url"]) {
                 response = try await httpClient.getPage(
                     nextUrl,
-                    scope: PaginationScope(
+                    scope: PaginationScope.strict(
                         path: path,
-                        requiredParameters: queryParams
+                        query: queryParams
                     ),
                     as: ASCReviewAttachmentsResponse.self
                 )

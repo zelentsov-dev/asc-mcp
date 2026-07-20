@@ -260,7 +260,7 @@ extension AppsWorker {
                 try addAppCollectionFilters(from: arguments, to: &requiredParameters)
                 response = try await httpClient.getPage(
                     nextUrl,
-                    scope: PaginationScope(path: "/v1/apps", requiredParameters: requiredParameters),
+                    scope: PaginationScope.strict(path: "/v1/apps", query: requiredParameters),
                     as: ASCAppsResponse.self
                 )
             } else {
@@ -476,9 +476,9 @@ extension AppsWorker {
             if let nextUrl = try paginationURL(from: arguments["next_url"]) {
                 response = try await httpClient.getPage(
                     nextUrl,
-                    scope: PaginationScope(
+                    scope: PaginationScope.strict(
                         path: "/v1/apps/\(try ASCPathSegment.encode(appId))/appStoreVersions",
-                        requiredParameters: queryParameters
+                        query: queryParameters
                     ),
                     as: ASCAppStoreVersionsResponse.self
                 )
@@ -1148,9 +1148,9 @@ extension AppsWorker {
             if let nextUrl = try paginationURL(from: arguments["next_url"]) {
                 localizationsResponse = try await httpClient.getPage(
                     nextUrl,
-                    scope: PaginationScope(
+                    scope: PaginationScope.strict(
                         path: "/v1/appStoreVersions/\(try ASCPathSegment.encode(versionId))/appStoreVersionLocalizations",
-                        requiredParameters: localizationParameters
+                        query: localizationParameters
                     ),
                     as: ASCAppStoreVersionLocalizationsResponse.self
                 )

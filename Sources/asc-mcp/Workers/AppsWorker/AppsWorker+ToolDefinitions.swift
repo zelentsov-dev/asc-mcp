@@ -82,7 +82,7 @@ extension AppsWorker {
                     ]),
                     "next_url": .object([
                         "type": .string("string"),
-                        "description": .string("Next page URL from previous response (next_url field)")
+                        "description": .string("Apple continuation URL from the previous response. Repeat the originating filters, sort, and effective limit with next_url; the full query and cursor are validated.")
                     ])
                 ]),
                 "required": .array([])
@@ -152,7 +152,7 @@ extension AppsWorker {
                     ),
                     "next_url": .object([
                         "type": .string("string"),
-                        "description": .string("Next page URL from previous response (next_url field)")
+                        "description": .string("Apple continuation URL from the previous response. Repeat the originating version filters with next_url; the full query and cursor are validated.")
                     ])
                 ]),
                 "required": .array([.string("app_id")])
@@ -347,7 +347,7 @@ extension AppsWorker {
                     ]),
                     "next_url": .object([
                         "type": .string("string"),
-                        "description": .string("Next page URL from previous response (next_url field)")
+                        "description": .string("Apple continuation URL from the previous response. Repeat the originating locales and effective limit with next_url; the full query and cursor are validated.")
                     ])
                 ]),
                 "required": .array([.string("app_id"), .string("version_id")])

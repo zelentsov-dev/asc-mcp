@@ -121,9 +121,9 @@ extension AppLifecycleWorker {
                 requiredParameters["limit"] = String(effectiveLimit)
                 responseData = try await httpClient.getPage(
                     nextUrl,
-                    scope: PaginationScope(
+                    scope: PaginationScope.strict(
                         path: "/v1/apps/\(try ASCPathSegment.encode(appId))/appStoreVersions",
-                        requiredParameters: requiredParameters
+                        query: requiredParameters
                     )
                 )
             } else {

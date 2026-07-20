@@ -24,6 +24,20 @@ public struct PaginationScope: Sendable, Equatable {
         self.allowedParameters = allowedParameters
         self.requiredNonEmptyParameters = requiredNonEmptyParameters
     }
+
+    /// Creates a continuation scope bound to the complete originating query.
+    /// - Parameters:
+    ///   - path: Absolute API collection path, including concrete parent identifiers.
+    ///   - query: Complete effective query used for the originating collection request.
+    /// - Returns: A scope that permits only the originating query keys and a non-empty cursor.
+    public static func strict(path: String, query: [String: String]) -> PaginationScope {
+        PaginationScope(
+            path: path,
+            requiredParameters: query,
+            allowedParameters: Set(query.keys).union(["cursor"]),
+            requiredNonEmptyParameters: ["cursor"]
+        )
+    }
 }
 
 struct PaginationRequest: Sendable, Equatable {

@@ -79,7 +79,7 @@ extension ReviewAttachmentsWorker {
                     ]),
                     "next_url": .object([
                         "type": .string("string"),
-                        "description": .string("Pagination URL from the previous response. When the first page used a non-default limit, pass the same limit again with next_url.")
+                        "description": .string("Apple continuation URL from the previous response. When the first page used a non-default limit, pass the same limit again with next_url; the full query and cursor are validated.")
                     ])
                 ]),
                 "required": .array([.string("review_detail_id")])
