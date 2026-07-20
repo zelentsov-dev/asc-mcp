@@ -578,7 +578,7 @@ extension BetaAppWorker {
             "privacyPolicyUrl": (localization.attributes?.privacyPolicyUrl).jsonSafe,
             "tvOsPrivacyPolicy": (localization.attributes?.tvOsPrivacyPolicy).jsonSafe,
             "description": (localization.attributes?.description).jsonSafe,
-            "selfURL": (localization.links?.self).jsonSafe
+            "selfURL": (localization.links?.`self`).jsonSafe
         ]
     }
 
@@ -611,7 +611,7 @@ extension BetaAppWorker {
             "buildIdSource": resolvedBuild.source.jsonSafe,
             "relationshipBuildId": relationshipBuildID.jsonSafe,
             "buildRelatedURL": (submission.relationships?.build?.links?.related).jsonSafe,
-            "selfURL": (submission.links?.self).jsonSafe
+            "selfURL": (submission.links?.`self`).jsonSafe
         ]
     }
 
@@ -629,7 +629,7 @@ extension BetaAppWorker {
                 "version": (build.attributes?.version).jsonSafe,
                 "uploadedDate": (build.attributes?.uploadedDate).jsonSafe,
                 "processingState": (build.attributes?.processingState).jsonSafe,
-                "selfURL": (build.links?.self).jsonSafe
+                "selfURL": (build.links?.`self`).jsonSafe
             ] as [String: Any]
         }
     }
@@ -645,7 +645,7 @@ extension BetaAppWorker {
             "demoAccountName": (detail.attributes?.demoAccountName).jsonSafe,
             "demoAccountRequired": (detail.attributes?.demoAccountRequired).jsonSafe,
             "notes": (detail.attributes?.notes).jsonSafe,
-            "selfURL": (detail.links?.self).jsonSafe
+            "selfURL": (detail.links?.`self`).jsonSafe
         ]
         if detail.attributes?.demoAccountPassword != nil {
             result["demoAccountPassword"] = "[REDACTED]"
