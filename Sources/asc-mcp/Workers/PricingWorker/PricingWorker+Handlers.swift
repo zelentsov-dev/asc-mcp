@@ -68,7 +68,7 @@ extension PricingWorker {
     // MARK: - Get App Availability
 
     /// Gets app availability configuration
-    /// - Returns: JSON with availability info (whether available in new territories)
+    /// - Returns: JSON with availability info and optional territory availability resources
     func getAppAvailability(_ params: CallTool.Parameters) async throws -> CallTool.Result {
         guard let arguments = params.arguments,
               let appIdValue = arguments["app_id"],
@@ -80,18 +80,16 @@ extension PricingWorker {
         }
 
         do {
+            let query = try appAvailabilityQuery(arguments)
             let response: ASCAppAvailabilityV2Response = try await httpClient.get(
                 "/v1/apps/\(try ASCPathSegment.encode(appId))/appAvailabilityV2",
+                parameters: query,
                 as: ASCAppAvailabilityV2Response.self
             )
 
             let result: [String: Any] = [
                 "success": true,
-                "availability": [
-                    "id": response.data.id,
-                    "type": response.data.type,
-                    "availableInNewTerritories": (response.data.attributes?.availableInNewTerritories).jsonSafe
-                ] as [String: Any]
+                "availability": formatAppAvailability(response)
             ]
 
             return MCPResult.jsonObject(result)
@@ -122,7 +120,9 @@ extension PricingWorker {
             let response: ASCAppPricePointsV3Response
 
             let endpoint = "/v1/apps/\(try ASCPathSegment.encode(appId))/appPricePoints"
-            var requiredParameters: [String: String] = [:]
+            var requiredParameters: [String: String] = [
+                "include": "territory"
+            ]
             if let territoryId = arguments["territory_id"]?.stringValue {
                 requiredParameters["filter[territory]"] = territoryId
             }
@@ -202,18 +202,24 @@ extension PricingWorker {
         }
 
         do {
+            let manualPricesLimit = min(max(arguments["manual_prices_limit"]?.intValue ?? 50, 1), 50)
+            let automaticPricesLimit = min(max(arguments["automatic_prices_limit"]?.intValue ?? 50, 1), 50)
             let response: ASCAppPriceScheduleResponse = try await httpClient.get(
                 "/v1/apps/\(try ASCPathSegment.encode(appId))/appPriceSchedule",
                 parameters: [
-                    "include": "manualPrices,automaticPrices,baseTerritory"
+                    "include": "manualPrices,automaticPrices,baseTerritory",
+                    "limit[manualPrices]": String(manualPricesLimit),
+                    "limit[automaticPrices]": String(automaticPricesLimit)
                 ],
                 as: ASCAppPriceScheduleResponse.self
             )
 
-            // Parse included resources
+            let relationships = response.data.relationships
+            let manualPriceIds = relationships?.manualPrices?.data?.map(\.id) ?? []
+            let automaticPriceIds = relationships?.automaticPrices?.data?.map(\.id) ?? []
+
             var territories: [[String: Any]] = []
-            var manualPrices: [[String: Any]] = []
-            var automaticPrices: [[String: Any]] = []
+            var includedPrices: [ASCAppPrice] = []
 
             if let included = response.included {
                 for resource in included {
@@ -221,36 +227,67 @@ extension PricingWorker {
                     case .territory(let territory):
                         territories.append(formatTerritory(territory))
                     case .appPrice(let price):
-                        let formatted = formatAppPrice(price)
-                        if price.attributes?.manual == true {
-                            manualPrices.append(formatted)
-                        } else {
-                            automaticPrices.append(formatted)
-                        }
-                    case .appPricePoint:
+                        includedPrices.append(price)
+                    case .app, .appPricePoint:
                         break
                     }
                 }
             }
 
+            var includedPriceMap: [String: ASCAppPrice] = [:]
+            for price in includedPrices {
+                includedPriceMap[price.id] = price
+            }
+            let linkedIds = Set(manualPriceIds + automaticPriceIds)
+            var manualPrices = manualPriceIds.compactMap { id in
+                includedPriceMap[id].map { formatAppPrice($0) }
+            }
+            var automaticPrices = automaticPriceIds.compactMap { id in
+                includedPriceMap[id].map { formatAppPrice($0) }
+            }
+            for price in includedPrices where !linkedIds.contains(price.id) {
+                if price.attributes?.manual == true {
+                    manualPrices.append(formatAppPrice(price))
+                } else {
+                    automaticPrices.append(formatAppPrice(price))
+                }
+            }
+
             var schedule: [String: Any] = [
                 "id": response.data.id,
-                "type": response.data.type
+                "type": response.data.type,
+                "manual_prices": manualPrices,
+                "automatic_prices": automaticPrices,
+                "territories": territories,
+                "manual_price_ids": manualPriceIds,
+                "automatic_price_ids": automaticPriceIds,
+                "manual_prices_included_count": manualPrices.count,
+                "automatic_prices_included_count": automaticPrices.count
             ]
 
-            if let baseTerritoryData = response.data.relationships?.baseTerritory?.data {
+            if let baseTerritoryData = relationships?.baseTerritory?.data {
                 schedule["base_territory_id"] = baseTerritoryData.id
+                if let baseTerritory = territories.first(where: { $0["id"] as? String == baseTerritoryData.id }) {
+                    schedule["base_territory"] = baseTerritory
+                }
             }
 
-            if !manualPrices.isEmpty {
-                schedule["manual_prices"] = manualPrices
-            }
-            if !automaticPrices.isEmpty {
-                schedule["automatic_prices"] = automaticPrices
-            }
-            if !territories.isEmpty {
-                schedule["territories"] = territories
-            }
+            appendRelationshipPaging(
+                prefix: "manual_prices",
+                relationship: relationships?.manualPrices,
+                meta: relationships?.manualPricesMeta,
+                includedCount: manualPrices.count,
+                requestedLimit: manualPricesLimit,
+                to: &schedule
+            )
+            appendRelationshipPaging(
+                prefix: "automatic_prices",
+                relationship: relationships?.automaticPrices,
+                meta: relationships?.automaticPricesMeta,
+                includedCount: automaticPrices.count,
+                requestedLimit: automaticPricesLimit,
+                to: &schedule
+            )
 
             let result: [String: Any] = [
                 "success": true,
@@ -276,17 +313,38 @@ extension PricingWorker {
               let appIdValue = arguments["app_id"],
               let appId = appIdValue.stringValue,
               let baseTerritoryValue = arguments["base_territory_id"],
-              let baseTerritoryId = baseTerritoryValue.stringValue,
-              let pricePointIdValue = arguments["price_point_id"],
-              let pricePointId = pricePointIdValue.stringValue else {
+              let baseTerritoryId = baseTerritoryValue.stringValue else {
             return CallTool.Result(
-                content: [MCPContent.text("Required parameters: app_id, base_territory_id, price_point_id")],
+                content: [MCPContent.text("Required parameters: app_id, base_territory_id, and exactly one of price_point_id or manual_prices")],
+                isError: true
+            )
+        }
+
+        let manualPriceInputs: [PriceScheduleInput]
+        do {
+            manualPriceInputs = try priceScheduleInputs(arguments)
+        } catch {
+            return CallTool.Result(
+                content: [MCPContent.text(error.localizedDescription)],
                 isError: true
             )
         }
 
         do {
-            let inlinePriceId = "${price1}"
+            let inlinePrices = manualPriceInputs.enumerated().map { index, input in
+                CreateAppPriceInlineRequest(
+                    id: "${price-\(index)}",
+                    attributes: CreateAppPriceInlineRequest.Attributes(
+                        startDate: input.startDate,
+                        endDate: input.endDate
+                    ),
+                    relationships: CreateAppPriceInlineRequest.CreateAppPriceInlineRelationships(
+                        appPricePoint: CreateAppPriceInlineRequest.AppPricePointRelationship(
+                            data: ASCResourceIdentifier(type: "appPricePoints", id: input.pricePointId)
+                        )
+                    )
+                )
+            }
 
             let request = CreateAppPriceScheduleRequest(
                 data: CreateAppPriceScheduleRequest.CreateAppPriceScheduleData(
@@ -298,20 +356,13 @@ extension PricingWorker {
                             data: ASCResourceIdentifier(type: "territories", id: baseTerritoryId)
                         ),
                         manualPrices: CreateAppPriceScheduleRequest.ManualPricesRelationship(
-                            data: [ASCResourceIdentifier(type: "appPrices", id: inlinePriceId)]
+                            data: inlinePrices.map {
+                                ASCResourceIdentifier(type: "appPrices", id: $0.id)
+                            }
                         )
                     )
                 ),
-                included: [
-                    CreateAppPriceInlineRequest(
-                        id: inlinePriceId,
-                        relationships: CreateAppPriceInlineRequest.CreateAppPriceInlineRelationships(
-                            appPricePoint: CreateAppPriceInlineRequest.AppPricePointRelationship(
-                                data: ASCResourceIdentifier(type: "appPricePoints", id: pricePointId)
-                            )
-                        )
-                    )
-                ]
+                included: inlinePrices
             )
 
             let response: ASCAppPriceScheduleResponse = try await httpClient.post(
@@ -322,7 +373,8 @@ extension PricingWorker {
 
             var schedule: [String: Any] = [
                 "id": response.data.id,
-                "type": response.data.type
+                "type": response.data.type,
+                "submitted_manual_prices_count": manualPriceInputs.count
             ]
 
             if let baseTerritoryData = response.data.relationships?.baseTerritory?.data {
@@ -369,7 +421,10 @@ extension PricingWorker {
             if let nextUrl = try paginationURL(from: arguments["next_url"]) {
                 response = try await httpClient.getPage(
                     nextUrl,
-                    scope: PaginationScope(path: endpoint),
+                    scope: PaginationScope(
+                        path: endpoint,
+                        requiredParameters: ["include": "territory"]
+                    ),
                     as: ASCTerritoryAvailabilitiesResponse.self
                 )
             } else {
@@ -377,12 +432,21 @@ extension PricingWorker {
 
                 response = try await httpClient.get(
                     endpoint,
-                    parameters: ["limit": String(limit)],
+                    parameters: [
+                        "include": "territory",
+                        "limit": String(limit)
+                    ],
                     as: ASCTerritoryAvailabilitiesResponse.self
                 )
             }
 
-            let availabilities = response.data.map { formatTerritoryAvailability($0) }
+            var territoryMap: [String: ASCTerritory] = [:]
+            for territory in response.included ?? [] {
+                territoryMap[territory.id] = territory
+            }
+            let availabilities = response.data.map {
+                formatTerritoryAvailability($0, territoryMap: territoryMap)
+            }
             var result: [String: Any] = [
                 "success": true,
                 "territory_availabilities": availabilities,
@@ -390,6 +454,9 @@ extension PricingWorker {
             ]
             if let next = response.links?.next {
                 result["next_url"] = next
+            }
+            if let total = response.meta?.paging?.total {
+                result["total"] = total
             }
 
             return MCPResult.jsonObject(result)
@@ -412,33 +479,45 @@ extension PricingWorker {
               let appId = arguments["app_id"]?.stringValue,
               let availableInNew = arguments["available_in_new_territories"]?.boolValue else {
             return CallTool.Result(
-                content: [MCPContent.text("Required parameters: app_id, available_in_new_territories, territory_ids")],
+                content: [MCPContent.text("Required parameters: app_id, available_in_new_territories, and territory_ids or territory_availabilities")],
                 isError: true
             )
         }
 
-        // Parse territory_ids array
-        guard let territoryIdsValue = arguments["territory_ids"],
-              case .array(let territoryArray) = territoryIdsValue else {
+        let territoryIds: [String]
+        let inlineTerritories: [TerritoryAvailabilityInput]
+        do {
+            territoryIds = try existingTerritoryAvailabilityIds(arguments["territory_ids"])
+            inlineTerritories = try territoryAvailabilityInputs(arguments["territory_availabilities"])
+            guard !territoryIds.isEmpty || !inlineTerritories.isEmpty else {
+                throw PricingArgumentError(
+                    "Provide at least one existing 'territory_ids' relationship or one inline 'territory_availabilities' entry"
+                )
+            }
+        } catch {
             return CallTool.Result(
-                content: [MCPContent.text("Required parameter 'territory_ids' must be an array of strings")],
-                isError: true
-            )
-        }
-
-        let territoryIds = territoryArray.compactMap { value -> String? in
-            if case .string(let s) = value { return s }
-            return nil
-        }
-
-        guard !territoryIds.isEmpty else {
-            return CallTool.Result(
-                content: [MCPContent.text("Required parameter 'territory_ids' must contain at least one territory ID")],
+                content: [MCPContent.text(error.localizedDescription)],
                 isError: true
             )
         }
 
         do {
+            let inlineResources = inlineTerritories.enumerated().map { index, input in
+                TerritoryAvailabilityInlineCreate(
+                    id: "${territoryAvailability-\(index)}",
+                    attributes: TerritoryAvailabilityInlineCreate.Attributes(
+                        available: input.available,
+                        releaseDate: input.releaseDate,
+                        preOrderEnabled: input.preOrderEnabled
+                    ),
+                    relationships: TerritoryAvailabilityInlineCreate.Relationships(
+                        territory: TerritoryAvailabilityInlineCreate.TerritoryRelationship(
+                            data: ASCResourceIdentifier(type: "territories", id: input.territoryId)
+                        )
+                    )
+                )
+            }
+            let relationshipIds = territoryIds + inlineResources.map(\.id)
             let request = CreateAppAvailabilityV2Request(
                 data: CreateAppAvailabilityV2Request.CreateData(
                     attributes: CreateAppAvailabilityV2Request.Attributes(
@@ -449,10 +528,13 @@ extension PricingWorker {
                             data: ASCResourceIdentifier(type: "apps", id: appId)
                         ),
                         territoryAvailabilities: CreateAppAvailabilityV2Request.TerritoryAvailabilitiesRelationship(
-                            data: territoryIds.map { ASCResourceIdentifier(type: "territoryAvailabilities", id: $0) }
+                            data: relationshipIds.map {
+                                ASCResourceIdentifier(type: "territoryAvailabilities", id: $0)
+                            }
                         )
                     )
-                )
+                ),
+                included: inlineResources.isEmpty ? nil : inlineResources
             )
 
             let response: ASCAppAvailabilityV2Response = try await httpClient.post(
@@ -463,11 +545,9 @@ extension PricingWorker {
 
             let result: [String: Any] = [
                 "success": true,
-                "availability": [
-                    "id": response.data.id,
-                    "type": response.data.type,
-                    "availableInNewTerritories": (response.data.attributes?.availableInNewTerritories).jsonSafe
-                ] as [String: Any]
+                "availability": formatAppAvailability(response),
+                "submitted_existing_territory_availability_count": territoryIds.count,
+                "submitted_inline_territory_availability_count": inlineTerritories.count
             ]
 
             return MCPResult.jsonObject(result)
@@ -493,18 +573,16 @@ extension PricingWorker {
         }
 
         do {
+            let query = try appAvailabilityQuery(arguments)
             let response: ASCAppAvailabilityV2Response = try await httpClient.get(
                 "/v2/appAvailabilities/\(try ASCPathSegment.encode(availabilityId))",
+                parameters: query,
                 as: ASCAppAvailabilityV2Response.self
             )
 
             let result: [String: Any] = [
                 "success": true,
-                "availability": [
-                    "id": response.data.id,
-                    "type": response.data.type,
-                    "availableInNewTerritories": (response.data.attributes?.availableInNewTerritories).jsonSafe
-                ] as [String: Any]
+                "availability": formatAppAvailability(response)
             ]
 
             return MCPResult.jsonObject(result)
@@ -537,11 +615,16 @@ extension PricingWorker {
             if let nextUrl = try paginationURL(from: arguments["next_url"]) {
                 response = try await httpClient.getPage(
                     nextUrl,
-                    scope: PaginationScope(path: endpoint),
+                    scope: PaginationScope(
+                        path: endpoint,
+                        requiredParameters: ["include": "territory"]
+                    ),
                     as: ASCTerritoryAvailabilitiesResponse.self
                 )
             } else {
-                var queryParams: [String: String] = [:]
+                var queryParams: [String: String] = [
+                    "include": "territory"
+                ]
 
                 if let limit = arguments["limit"]?.intValue {
                     queryParams["limit"] = String(min(max(limit, 1), 200))
@@ -556,7 +639,13 @@ extension PricingWorker {
                 )
             }
 
-            let availabilities = response.data.map { formatTerritoryAvailability($0) }
+            var territoryMap: [String: ASCTerritory] = [:]
+            for territory in response.included ?? [] {
+                territoryMap[territory.id] = territory
+            }
+            let availabilities = response.data.map {
+                formatTerritoryAvailability($0, territoryMap: territoryMap)
+            }
 
             var result: [String: Any] = [
                 "success": true,
@@ -565,6 +654,9 @@ extension PricingWorker {
             ]
             if let next = response.links?.next {
                 result["next_url"] = next
+            }
+            if let total = response.meta?.paging?.total {
+                result["total"] = total
             }
 
             return MCPResult.jsonObject(result)
@@ -579,7 +671,6 @@ extension PricingWorker {
 
     // MARK: - Formatting
 
-    /// Format territory as a dictionary for JSON output
     private func formatTerritory(_ territory: ASCTerritory) -> [String: Any] {
         return [
             "id": territory.id,
@@ -588,7 +679,6 @@ extension PricingWorker {
         ]
     }
 
-    /// Format price point as a dictionary for JSON output
     private func formatPricePoint(_ pricePoint: ASCAppPricePointV3, territoryMap: [String: ASCTerritory]) -> [String: Any] {
         var result: [String: Any] = [
             "id": pricePoint.id,
@@ -608,7 +698,6 @@ extension PricingWorker {
         return result
     }
 
-    /// Format app price as a dictionary for JSON output
     private func formatAppPrice(_ price: ASCAppPrice) -> [String: Any] {
         var result: [String: Any] = [
             "id": price.id,
@@ -628,8 +717,250 @@ extension PricingWorker {
         return result
     }
 
-    /// Format territory availability as a dictionary for JSON output
-    private func formatTerritoryAvailability(_ availability: ASCTerritoryAvailability) -> [String: Any] {
+    private func formatAppAvailability(_ response: ASCAppAvailabilityV2Response) -> [String: Any] {
+        let relationship = response.data.relationships?.territoryAvailabilities
+        let included = response.included?.map { formatTerritoryAvailability($0, territoryMap: [:]) } ?? []
+        var result: [String: Any] = [
+            "id": response.data.id,
+            "type": response.data.type,
+            "availableInNewTerritories": (response.data.attributes?.availableInNewTerritories).jsonSafe,
+            "territory_availability_ids": relationship?.data?.map(\.id) ?? [],
+            "territory_availabilities": included,
+            "territory_availabilities_included_count": included.count
+        ]
+
+        if let total = relationship?.meta?.paging?.total {
+            result["territory_availabilities_total"] = total
+            result["territory_availabilities_truncated"] = total > included.count
+        } else {
+            result["territory_availabilities_truncated"] = NSNull()
+        }
+        if let limit = relationship?.meta?.paging?.limit {
+            result["territory_availabilities_limit"] = limit
+        }
+        if let related = relationship?.links?.related {
+            result["territory_availabilities_related_url"] = related
+        }
+        if let relationshipURL = relationship?.links?.self {
+            result["territory_availabilities_relationship_url"] = relationshipURL
+        }
+
+        return result
+    }
+
+    private func appAvailabilityQuery(_ arguments: [String: Value]) throws -> [String: String] {
+        let include = arguments["include_territory_availabilities"]?.boolValue
+        let hasNestedLimit = arguments["territory_availabilities_limit"] != nil
+
+        if include == false && hasNestedLimit {
+            throw PricingArgumentError(
+                "'territory_availabilities_limit' requires 'include_territory_availabilities' to be true or omitted"
+            )
+        }
+
+        guard include == true || hasNestedLimit else {
+            return [:]
+        }
+
+        let limit = min(max(arguments["territory_availabilities_limit"]?.intValue ?? 50, 1), 50)
+        return [
+            "include": "territoryAvailabilities",
+            "limit[territoryAvailabilities]": String(limit)
+        ]
+    }
+
+    private func existingTerritoryAvailabilityIds(_ value: Value?) throws -> [String] {
+        guard let value, !value.isNull else { return [] }
+        guard let values = value.arrayValue else {
+            throw PricingArgumentError("'territory_ids' must be an array of strings")
+        }
+        let ids = values.compactMap(\.stringValue).map {
+            $0.trimmingCharacters(in: .whitespacesAndNewlines)
+        }
+        guard ids.count == values.count, ids.allSatisfy({ !$0.isEmpty }) else {
+            throw PricingArgumentError("'territory_ids' must contain only non-empty strings")
+        }
+        guard Set(ids).count == ids.count else {
+            throw PricingArgumentError("'territory_ids' must not contain duplicate IDs")
+        }
+        return ids
+    }
+
+    private func territoryAvailabilityInputs(_ value: Value?) throws -> [TerritoryAvailabilityInput] {
+        guard let value, !value.isNull else { return [] }
+        guard let values = value.arrayValue, !values.isEmpty else {
+            throw PricingArgumentError("'territory_availabilities' must be a non-empty array of objects")
+        }
+
+        let inputs = try values.enumerated().map { index, value in
+            guard let object = value.objectValue else {
+                throw PricingArgumentError("territory_availabilities[\(index)] must be an object")
+            }
+            let allowedKeys: Set<String> = [
+                "territory_id", "available", "release_date", "pre_order_enabled"
+            ]
+            if let unsupported = object.keys.first(where: { !allowedKeys.contains($0) }) {
+                throw PricingArgumentError(
+                    "territory_availabilities[\(index)] contains unsupported field '\(unsupported)'"
+                )
+            }
+            guard let rawTerritoryId = object["territory_id"]?.stringValue else {
+                throw PricingArgumentError("territory_availabilities[\(index)].territory_id is required")
+            }
+            let territoryId = rawTerritoryId.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !territoryId.isEmpty else {
+                throw PricingArgumentError("territory_availabilities[\(index)].territory_id must be non-empty")
+            }
+
+            return TerritoryAvailabilityInput(
+                territoryId: territoryId,
+                available: try nullablePricingBool(
+                    object["available"],
+                    field: "territory_availabilities[\(index)].available"
+                ),
+                releaseDate: try pricingDate(
+                    object["release_date"],
+                    field: "territory_availabilities[\(index)].release_date"
+                ),
+                preOrderEnabled: try nullablePricingBool(
+                    object["pre_order_enabled"],
+                    field: "territory_availabilities[\(index)].pre_order_enabled"
+                )
+            )
+        }
+
+        guard Set(inputs.map(\.territoryId)).count == inputs.count else {
+            throw PricingArgumentError("'territory_availabilities' must not contain duplicate territory_id values")
+        }
+        return inputs
+    }
+
+    private func nullablePricingBool(_ value: Value?, field: String) throws -> Bool? {
+        guard let value, !value.isNull else { return nil }
+        guard let boolean = value.boolValue else {
+            throw PricingArgumentError("'\(field)' must be a boolean or null")
+        }
+        return boolean
+    }
+
+    private func priceScheduleInputs(_ arguments: [String: Value]) throws -> [PriceScheduleInput] {
+        let legacyPricePointId = arguments["price_point_id"]?.stringValue
+        let manualPricesValue = arguments["manual_prices"]
+
+        guard (legacyPricePointId == nil) != (manualPricesValue == nil) else {
+            throw PricingArgumentError("Provide exactly one of 'price_point_id' or 'manual_prices'")
+        }
+
+        if let legacyPricePointId {
+            let pricePointId = legacyPricePointId.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !pricePointId.isEmpty else {
+                throw PricingArgumentError("'price_point_id' must be a non-empty string")
+            }
+            return [
+                PriceScheduleInput(
+                    pricePointId: pricePointId,
+                    startDate: try pricingDate(arguments["start_date"], field: "start_date"),
+                    endDate: try pricingDate(arguments["end_date"], field: "end_date")
+                ).validated()
+            ]
+        }
+
+        guard arguments["start_date"] == nil, arguments["end_date"] == nil else {
+            throw PricingArgumentError("Top-level 'start_date' and 'end_date' can only be used with legacy 'price_point_id'")
+        }
+        guard let values = manualPricesValue?.arrayValue, !values.isEmpty else {
+            throw PricingArgumentError("'manual_prices' must be a non-empty array of price objects")
+        }
+
+        return try values.enumerated().map { index, value in
+            guard let object = value.objectValue else {
+                throw PricingArgumentError("manual_prices[\(index)] must be an object")
+            }
+            let allowedKeys: Set<String> = ["price_point_id", "start_date", "end_date"]
+            if let unsupported = object.keys.first(where: { !allowedKeys.contains($0) }) {
+                throw PricingArgumentError("manual_prices[\(index)] contains unsupported field '\(unsupported)'")
+            }
+            guard let rawPricePointId = object["price_point_id"]?.stringValue else {
+                throw PricingArgumentError("manual_prices[\(index)].price_point_id is required")
+            }
+            let pricePointId = rawPricePointId.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !pricePointId.isEmpty else {
+                throw PricingArgumentError("manual_prices[\(index)].price_point_id must be non-empty")
+            }
+            return try PriceScheduleInput(
+                pricePointId: pricePointId,
+                startDate: pricingDate(object["start_date"], field: "manual_prices[\(index)].start_date"),
+                endDate: pricingDate(object["end_date"], field: "manual_prices[\(index)].end_date")
+            ).validated()
+        }
+    }
+
+    private func pricingDate(_ value: Value?, field: String) throws -> String? {
+        guard let value, !value.isNull else { return nil }
+        guard let string = value.stringValue, isValidPricingDate(string) else {
+            throw PricingArgumentError("'\(field)' must be a valid date in YYYY-MM-DD format or null")
+        }
+        return string
+    }
+
+    private func isValidPricingDate(_ value: String) -> Bool {
+        let parts = value.split(separator: "-", omittingEmptySubsequences: false)
+        guard parts.count == 3,
+              parts[0].count == 4,
+              parts[1].count == 2,
+              parts[2].count == 2,
+              parts.allSatisfy({ $0.allSatisfy(\.isNumber) }),
+              let year = Int(parts[0]),
+              year >= 1,
+              let month = Int(parts[1]),
+              let day = Int(parts[2]) else {
+            return false
+        }
+
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 0)!
+        let components = DateComponents(
+            calendar: calendar,
+            timeZone: calendar.timeZone,
+            year: year,
+            month: month,
+            day: day
+        )
+        guard let date = calendar.date(from: components) else { return false }
+        let resolved = calendar.dateComponents([.year, .month, .day], from: date)
+        return resolved.year == year && resolved.month == month && resolved.day == day
+    }
+
+    private func appendRelationshipPaging(
+        prefix: String,
+        relationship: ASCRelationshipMultiple?,
+        meta: ASCPagingInformation?,
+        includedCount: Int,
+        requestedLimit: Int,
+        to result: inout [String: Any]
+    ) {
+        result["\(prefix)_requested_limit"] = requestedLimit
+        if let total = meta?.paging?.total {
+            result["\(prefix)_total"] = total
+            result["\(prefix)_truncated"] = total > includedCount
+        } else {
+            result["\(prefix)_truncated"] = NSNull()
+        }
+        if let limit = meta?.paging?.limit {
+            result["\(prefix)_relationship_limit"] = limit
+        }
+        if let related = relationship?.links?.related {
+            result["\(prefix)_related_url"] = related
+        }
+        if let relationshipURL = relationship?.links?.self {
+            result["\(prefix)_relationship_url"] = relationshipURL
+        }
+    }
+
+    private func formatTerritoryAvailability(
+        _ availability: ASCTerritoryAvailability,
+        territoryMap: [String: ASCTerritory]
+    ) -> [String: Any] {
         var result: [String: Any] = [
             "id": availability.id,
             "type": availability.type,
@@ -645,9 +976,42 @@ extension PricingWorker {
 
         if let territoryData = availability.relationships?.territory?.data {
             result["territory_id"] = territoryData.id
+            if let territory = territoryMap[territoryData.id] {
+                result["currency"] = (territory.attributes?.currency).jsonSafe
+            }
         }
 
         return result
     }
 
+}
+
+private struct PriceScheduleInput {
+    let pricePointId: String
+    let startDate: String?
+    let endDate: String?
+
+    func validated() throws -> PriceScheduleInput {
+        if let startDate, let endDate, startDate > endDate {
+            throw PricingArgumentError("Price schedule start_date must not be later than end_date")
+        }
+        return self
+    }
+}
+
+private struct TerritoryAvailabilityInput {
+    let territoryId: String
+    let available: Bool?
+    let releaseDate: String?
+    let preOrderEnabled: Bool?
+}
+
+private struct PricingArgumentError: LocalizedError {
+    let message: String
+
+    init(_ message: String) {
+        self.message = message
+    }
+
+    var errorDescription: String? { message }
 }

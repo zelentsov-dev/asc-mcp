@@ -61,4 +61,17 @@ struct PricingModelTests {
             Issue.record("Expected appPrice")
         }
     }
+
+    @Test func pricingIncludedResourceApp() throws {
+        let json = """
+        {"type":"apps","id":"app-1","attributes":{"name":"Example"}}
+        """.data(using: .utf8)!
+        let included = try JSONDecoder().decode(ASCPricingIncludedResource.self, from: json)
+        if case .app(let app) = included {
+            #expect(app.id == "app-1")
+            #expect(app.attributes?.name == "Example")
+        } else {
+            Issue.record("Expected app")
+        }
+    }
 }

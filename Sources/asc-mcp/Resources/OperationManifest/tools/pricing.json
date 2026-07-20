@@ -16,7 +16,21 @@
           "inputs": [
             { "sourceKind": "fixed", "jsonPointer": "/data/type", "fixedValue": "appAvailabilities" },
             { "sourceKind": "fixed", "jsonPointer": "/data/relationships/app/data/type", "fixedValue": "apps" },
-            { "sourceKind": "fixed", "jsonPointer": "/data/relationships/territoryAvailabilities/data/*/type", "fixedValue": "territoryAvailabilities" }
+            { "sourceKind": "fixed", "jsonPointer": "/data/relationships/territoryAvailabilities/data/*/type", "fixedValue": "territoryAvailabilities" },
+            {
+              "sourceKind": "derived",
+              "jsonPointer": "/data/relationships/territoryAvailabilities/data/*/id",
+              "derivedFrom": ["local:inlineTerritoryAvailabilityId"],
+              "localRole": "appendGeneratedInlineTerritoryAvailabilityIdentifiers"
+            },
+            { "sourceKind": "fixed", "jsonPointer": "/included/*/type", "fixedValue": "territoryAvailabilities" },
+            {
+              "sourceKind": "derived",
+              "jsonPointer": "/included/*/id",
+              "derivedFrom": ["local:inlineTerritoryAvailabilityId"],
+              "localRole": "reuseGeneratedInlineTerritoryAvailabilityIdentifier"
+            },
+            { "sourceKind": "fixed", "jsonPointer": "/included/*/relationships/territory/data/type", "fixedValue": "territories" }
           ]
         }
       ],
@@ -37,8 +51,43 @@
           "toolField": "territory_ids",
           "sourceKind": "requestBody",
           "operationId": "appAvailabilitiesV2_createInstance",
-          "jsonPointer": "/data/relationships/territoryAvailabilities/data",
+          "jsonPointer": "/data/relationships/territoryAvailabilities/data/*/id",
           "localRole": "Map each supplied ID to a territoryAvailabilities resource identifier."
+        },
+        {
+          "toolField": "territory_availabilities",
+          "sourceKind": "requestBody",
+          "operationId": "appAvailabilitiesV2_createInstance",
+          "jsonPointer": "/included",
+          "localRole": "Create inline territoryAvailabilities resources with generated linkage IDs."
+        },
+        {
+          "toolField": "territory_availabilities",
+          "sourceKind": "requestBody",
+          "operationId": "appAvailabilitiesV2_createInstance",
+          "jsonPointer": "/included/*/relationships/territory/data/id",
+          "localRole": "Map territory_id to the inline territory relationship."
+        },
+        {
+          "toolField": "territory_availabilities",
+          "sourceKind": "requestBody",
+          "operationId": "appAvailabilitiesV2_createInstance",
+          "jsonPointer": "/included/*/attributes/available",
+          "localRole": "Map each nullable available value; omission and explicit null both encode as JSON null."
+        },
+        {
+          "toolField": "territory_availabilities",
+          "sourceKind": "requestBody",
+          "operationId": "appAvailabilitiesV2_createInstance",
+          "jsonPointer": "/included/*/attributes/releaseDate",
+          "localRole": "Map each nullable release_date value after strict date validation; omission and explicit null both encode as JSON null."
+        },
+        {
+          "toolField": "territory_availabilities",
+          "sourceKind": "requestBody",
+          "operationId": "appAvailabilitiesV2_createInstance",
+          "jsonPointer": "/included/*/attributes/preOrderEnabled",
+          "localRole": "Map each nullable pre_order_enabled value; omission and explicit null both encode as JSON null."
         }
       ],
       "response": {
@@ -69,10 +118,28 @@
             "outputField": "availability.availableInNewTerritories",
             "operationId": "appAvailabilitiesV2_createInstance",
             "jsonPointer": "/data/attributes/availableInNewTerritories"
+          },
+          {
+            "outputField": "availability.territory_availability_ids",
+            "operationId": "appAvailabilitiesV2_createInstance",
+            "jsonPointer": "/data/relationships/territoryAvailabilities/data/*/id"
+          },
+          {
+            "outputField": "availability.territory_availabilities",
+            "operationId": "appAvailabilitiesV2_createInstance",
+            "jsonPointer": "/included"
+          },
+          {
+            "outputField": "submitted_existing_territory_availability_count",
+            "localRole": "Count the validated existing relationship IDs submitted to Apple."
+          },
+          {
+            "outputField": "submitted_inline_territory_availability_count",
+            "localRole": "Count the validated inline territory availability resources submitted to Apple."
           }
         ]
       },
-      "note": "The direct Apple operation is current. Mapping remains partial because the MCP tool has no outputSchema and exposes only relationship IDs, not Apple's optional inline TerritoryAvailabilityInlineCreate resources."
+      "note": "The Apple v2 create operation is exposed with both existing territory availability relationship IDs and optional inline TerritoryAvailabilityInlineCreate resources. The contract remains partial only because the MCP tool has no outputSchema."
     },
     {
       "tool": "pricing_get_availability",
@@ -95,6 +162,22 @@
           "operationId": "apps_appAvailabilityV2_getToOneRelated",
           "location": "path",
           "appleName": "id"
+        },
+        {
+          "toolField": "include_territory_availabilities",
+          "sourceKind": "parameter",
+          "operationId": "apps_appAvailabilityV2_getToOneRelated",
+          "location": "query",
+          "appleName": "include",
+          "localRole": "true emits territoryAvailabilities; false or omission emits no include parameter"
+        },
+        {
+          "toolField": "territory_availabilities_limit",
+          "sourceKind": "parameter",
+          "operationId": "apps_appAvailabilityV2_getToOneRelated",
+          "location": "query",
+          "appleName": "limit[territoryAvailabilities]",
+          "localRole": "clamped to Apple's maximum of 50 and enables the matching include when supplied"
         }
       ],
       "response": {
@@ -125,10 +208,44 @@
             "outputField": "availability.availableInNewTerritories",
             "operationId": "apps_appAvailabilityV2_getToOneRelated",
             "jsonPointer": "/data/attributes/availableInNewTerritories"
+          },
+          {
+            "outputField": "availability.territory_availability_ids",
+            "operationId": "apps_appAvailabilityV2_getToOneRelated",
+            "jsonPointer": "/data/relationships/territoryAvailabilities/data/*/id"
+          },
+          {
+            "outputField": "availability.territory_availabilities",
+            "operationId": "apps_appAvailabilityV2_getToOneRelated",
+            "jsonPointer": "/included"
+          },
+          {
+            "outputField": "availability.territory_availabilities_total",
+            "operationId": "apps_appAvailabilityV2_getToOneRelated",
+            "jsonPointer": "/data/relationships/territoryAvailabilities/meta/paging/total"
+          },
+          {
+            "outputField": "availability.territory_availabilities_limit",
+            "operationId": "apps_appAvailabilityV2_getToOneRelated",
+            "jsonPointer": "/data/relationships/territoryAvailabilities/meta/paging/limit"
+          },
+          {
+            "outputField": "availability.territory_availabilities_related_url",
+            "operationId": "apps_appAvailabilityV2_getToOneRelated",
+            "jsonPointer": "/data/relationships/territoryAvailabilities/links/related"
+          },
+          {
+            "outputField": "availability.territory_availabilities_relationship_url",
+            "operationId": "apps_appAvailabilityV2_getToOneRelated",
+            "jsonPointer": "/data/relationships/territoryAvailabilities/links/self"
+          },
+          {
+            "outputField": "availability.territory_availabilities_truncated",
+            "localRole": "Compare Apple's relationship total with the included resource count; emit null when Apple omits paging total."
           }
         ]
       },
-      "note": "Current direct relationship read; partial because the MCP projection omits relationships and has no outputSchema."
+      "note": "The direct relationship read optionally includes up to 50 territory availability resources and exposes relationship IDs, paging completeness, and related URLs. The contract remains partial because the MCP projection has no outputSchema."
     },
     {
       "tool": "pricing_get_availability_v2",
@@ -151,6 +268,22 @@
           "operationId": "appAvailabilitiesV2_getInstance",
           "location": "path",
           "appleName": "id"
+        },
+        {
+          "toolField": "include_territory_availabilities",
+          "sourceKind": "parameter",
+          "operationId": "appAvailabilitiesV2_getInstance",
+          "location": "query",
+          "appleName": "include",
+          "localRole": "true emits territoryAvailabilities; false or omission emits no include parameter"
+        },
+        {
+          "toolField": "territory_availabilities_limit",
+          "sourceKind": "parameter",
+          "operationId": "appAvailabilitiesV2_getInstance",
+          "location": "query",
+          "appleName": "limit[territoryAvailabilities]",
+          "localRole": "clamped to Apple's maximum of 50 and enables the matching include when supplied"
         }
       ],
       "response": {
@@ -181,10 +314,44 @@
             "outputField": "availability.availableInNewTerritories",
             "operationId": "appAvailabilitiesV2_getInstance",
             "jsonPointer": "/data/attributes/availableInNewTerritories"
+          },
+          {
+            "outputField": "availability.territory_availability_ids",
+            "operationId": "appAvailabilitiesV2_getInstance",
+            "jsonPointer": "/data/relationships/territoryAvailabilities/data/*/id"
+          },
+          {
+            "outputField": "availability.territory_availabilities",
+            "operationId": "appAvailabilitiesV2_getInstance",
+            "jsonPointer": "/included"
+          },
+          {
+            "outputField": "availability.territory_availabilities_total",
+            "operationId": "appAvailabilitiesV2_getInstance",
+            "jsonPointer": "/data/relationships/territoryAvailabilities/meta/paging/total"
+          },
+          {
+            "outputField": "availability.territory_availabilities_limit",
+            "operationId": "appAvailabilitiesV2_getInstance",
+            "jsonPointer": "/data/relationships/territoryAvailabilities/meta/paging/limit"
+          },
+          {
+            "outputField": "availability.territory_availabilities_related_url",
+            "operationId": "appAvailabilitiesV2_getInstance",
+            "jsonPointer": "/data/relationships/territoryAvailabilities/links/related"
+          },
+          {
+            "outputField": "availability.territory_availabilities_relationship_url",
+            "operationId": "appAvailabilitiesV2_getInstance",
+            "jsonPointer": "/data/relationships/territoryAvailabilities/links/self"
+          },
+          {
+            "outputField": "availability.territory_availabilities_truncated",
+            "localRole": "Compare Apple's relationship total with the included resource count; emit null when Apple omits paging total."
           }
         ]
       },
-      "note": "Current direct V2 read; partial because the MCP projection omits relationships and has no outputSchema."
+      "note": "The direct V2 read optionally includes up to 50 territory availability resources and exposes relationship IDs, paging completeness, and related URLs. The contract remains partial because the MCP projection has no outputSchema."
     },
     {
       "tool": "pricing_get_price_schedule",
@@ -197,7 +364,15 @@
           "operationId": "apps_appPriceSchedule_getToOneRelated",
           "method": "get",
           "path": "/v1/apps/{id}/appPriceSchedule",
-          "role": "primary"
+          "role": "primary",
+          "inputs": [
+            {
+              "sourceKind": "fixed",
+              "location": "query",
+              "appleName": "include",
+              "fixedValue": ["manualPrices", "automaticPrices", "baseTerritory"]
+            }
+          ]
         }
       ],
       "fields": [
@@ -207,6 +382,20 @@
           "operationId": "apps_appPriceSchedule_getToOneRelated",
           "location": "path",
           "appleName": "id"
+        },
+        {
+          "toolField": "manual_prices_limit",
+          "sourceKind": "parameter",
+          "operationId": "apps_appPriceSchedule_getToOneRelated",
+          "location": "query",
+          "appleName": "limit[manualPrices]"
+        },
+        {
+          "toolField": "automatic_prices_limit",
+          "sourceKind": "parameter",
+          "operationId": "apps_appPriceSchedule_getToOneRelated",
+          "location": "query",
+          "appleName": "limit[automaticPrices]"
         }
       ],
       "response": {
@@ -242,23 +431,97 @@
             "outputField": "price_schedule.manual_prices",
             "operationId": "apps_appPriceSchedule_getToOneRelated",
             "jsonPointer": "/included",
-            "localRole": "Project included appPrices whose manual attribute is true."
+            "localRole": "Classify included appPrices by the manualPrices relationship linkage IDs, with the manual attribute used only as a compatibility fallback."
           },
           {
             "outputField": "price_schedule.automatic_prices",
             "operationId": "apps_appPriceSchedule_getToOneRelated",
             "jsonPointer": "/included",
-            "localRole": "Project included appPrices whose manual attribute is not true."
+            "localRole": "Classify included appPrices by the automaticPrices relationship linkage IDs, with the manual attribute used only as a compatibility fallback."
           },
           {
             "outputField": "price_schedule.territories",
             "operationId": "apps_appPriceSchedule_getToOneRelated",
             "jsonPointer": "/included",
             "localRole": "Project included territory resources."
+          },
+          {
+            "outputField": "price_schedule.manual_price_ids",
+            "operationId": "apps_appPriceSchedule_getToOneRelated",
+            "jsonPointer": "/data/relationships/manualPrices/data/*/id"
+          },
+          {
+            "outputField": "price_schedule.automatic_price_ids",
+            "operationId": "apps_appPriceSchedule_getToOneRelated",
+            "jsonPointer": "/data/relationships/automaticPrices/data/*/id"
+          },
+          {
+            "outputField": "price_schedule.manual_prices_total",
+            "operationId": "apps_appPriceSchedule_getToOneRelated",
+            "jsonPointer": "/data/relationships/manualPrices/meta/paging/total"
+          },
+          {
+            "outputField": "price_schedule.automatic_prices_total",
+            "operationId": "apps_appPriceSchedule_getToOneRelated",
+            "jsonPointer": "/data/relationships/automaticPrices/meta/paging/total"
+          },
+          {
+            "outputField": "price_schedule.manual_prices_relationship_limit",
+            "operationId": "apps_appPriceSchedule_getToOneRelated",
+            "jsonPointer": "/data/relationships/manualPrices/meta/paging/limit"
+          },
+          {
+            "outputField": "price_schedule.automatic_prices_relationship_limit",
+            "operationId": "apps_appPriceSchedule_getToOneRelated",
+            "jsonPointer": "/data/relationships/automaticPrices/meta/paging/limit"
+          },
+          {
+            "outputField": "price_schedule.manual_prices_related_url",
+            "operationId": "apps_appPriceSchedule_getToOneRelated",
+            "jsonPointer": "/data/relationships/manualPrices/links/related"
+          },
+          {
+            "outputField": "price_schedule.automatic_prices_related_url",
+            "operationId": "apps_appPriceSchedule_getToOneRelated",
+            "jsonPointer": "/data/relationships/automaticPrices/links/related"
+          },
+          {
+            "outputField": "price_schedule.manual_prices_relationship_url",
+            "operationId": "apps_appPriceSchedule_getToOneRelated",
+            "jsonPointer": "/data/relationships/manualPrices/links/self"
+          },
+          {
+            "outputField": "price_schedule.automatic_prices_relationship_url",
+            "operationId": "apps_appPriceSchedule_getToOneRelated",
+            "jsonPointer": "/data/relationships/automaticPrices/links/self"
+          },
+          {
+            "outputField": "price_schedule.manual_prices_requested_limit",
+            "localRole": "Echo the validated nested manual price limit sent to Apple."
+          },
+          {
+            "outputField": "price_schedule.automatic_prices_requested_limit",
+            "localRole": "Echo the validated nested automatic price limit sent to Apple."
+          },
+          {
+            "outputField": "price_schedule.manual_prices_included_count",
+            "localRole": "Count included resources classified through manualPrices linkage."
+          },
+          {
+            "outputField": "price_schedule.automatic_prices_included_count",
+            "localRole": "Count included resources classified through automaticPrices linkage."
+          },
+          {
+            "outputField": "price_schedule.manual_prices_truncated",
+            "localRole": "Compare the manual relationship total with the included manual price count; emit null when Apple omits paging total."
+          },
+          {
+            "outputField": "price_schedule.automatic_prices_truncated",
+            "localRole": "Compare the automatic relationship total with the included automatic price count; emit null when Apple omits paging total."
           }
         ]
       },
-      "note": "Handler fixes include=manualPrices,automaticPrices,baseTerritory but does not expose nested relationship limits; partial because included collections may truncate and the tool has no outputSchema."
+      "note": "The handler fixes include to manualPrices, automaticPrices, and baseTerritory, exposes both Apple nested limits, and reports relationship totals, truncation, linkage IDs, and related URLs. The contract remains partial because the MCP projection has no outputSchema."
     },
     {
       "tool": "pricing_list_price_points",
@@ -271,7 +534,15 @@
           "operationId": "apps_appPricePoints_getToManyRelated",
           "method": "get",
           "path": "/v1/apps/{id}/appPricePoints",
-          "role": "primary"
+          "role": "primary",
+          "inputs": [
+            {
+              "sourceKind": "fixed",
+              "location": "query",
+              "appleName": "include",
+              "fixedValue": ["territory"]
+            }
+          ]
         }
       ],
       "fields": [
@@ -329,7 +600,7 @@
           }
         ]
       },
-      "note": "Current collection operation with working pagination; partial because the MCP projection and output shape are not declared by outputSchema."
+      "note": "The collection fixes include=territory on every page, validates that pagination preserves this projection, and returns each price point with its territory ID and included currency. The contract remains partial because the MCP projection has no outputSchema."
     },
     {
       "tool": "pricing_list_territories",
@@ -402,7 +673,15 @@
           "operationId": "appAvailabilitiesV2_territoryAvailabilities_getToManyRelated",
           "method": "get",
           "path": "/v2/appAvailabilities/{id}/territoryAvailabilities",
-          "role": "primary"
+          "role": "primary",
+          "inputs": [
+            {
+              "sourceKind": "fixed",
+              "location": "query",
+              "appleName": "include",
+              "fixedValue": ["territory"]
+            }
+          ]
         }
       ],
       "fields": [
@@ -453,10 +732,21 @@
             "outputField": "next_url",
             "operationId": "appAvailabilitiesV2_territoryAvailabilities_getToManyRelated",
             "jsonPointer": "/links/next"
+          },
+          {
+            "outputField": "total",
+            "operationId": "appAvailabilitiesV2_territoryAvailabilities_getToManyRelated",
+            "jsonPointer": "/meta/paging/total"
+          },
+          {
+            "outputField": "territory_availabilities[].currency",
+            "operationId": "appAvailabilitiesV2_territoryAvailabilities_getToManyRelated",
+            "jsonPointer": "/included",
+            "localRole": "Join each territory relationship ID to the included territory currency."
           }
         ]
       },
-      "note": "Current V2 related collection operation with working pagination; partial because the MCP output has no outputSchema."
+      "note": "The V2 related collection fixes include=territory on every page, validates the pagination projection, and exposes included territory currency plus Apple paging total. The contract remains partial because the MCP output has no outputSchema."
     },
     {
       "tool": "pricing_list_territory_availability",
@@ -470,7 +760,23 @@
           "method": "get",
           "path": "/v1/apps/{id}/appAvailabilityV2",
           "role": "conditional",
-          "condition": "Resolve the app availability ID for app_id before every first-page or continuation request."
+          "condition": "Resolve the app availability ID for app_id before every first-page or continuation request.",
+          "optionalParameterClassifications": [
+            {
+              "location": "query",
+              "appleName": "include",
+              "disposition": "internalControl",
+              "reason": "The resolver needs only the authoritative availability ID; the primary operation fetches the complete paginated territory collection with included territories.",
+              "reviewAtSpec": "4.4.1"
+            },
+            {
+              "location": "query",
+              "appleName": "limit[territoryAvailabilities]",
+              "disposition": "internalControl",
+              "reason": "The resolver does not include territoryAvailabilities because the primary related-collection operation provides independent pagination up to 200 resources.",
+              "reviewAtSpec": "4.4.1"
+            }
+          ]
         },
         {
           "operationId": "appAvailabilitiesV2_territoryAvailabilities_getToManyRelated",
@@ -485,6 +791,12 @@
               "appleName": "id",
               "derivedFrom": ["apps_appAvailabilityV2_getToOneRelated:/data/id"],
               "localRole": "useResolvedAppAvailabilityIdentifier"
+            },
+            {
+              "sourceKind": "fixed",
+              "location": "query",
+              "appleName": "include",
+              "fixedValue": ["territory"]
             }
           ]
         }
@@ -534,10 +846,21 @@
             "outputField": "next_url",
             "operationId": "appAvailabilitiesV2_territoryAvailabilities_getToManyRelated",
             "jsonPointer": "/links/next"
+          },
+          {
+            "outputField": "total",
+            "operationId": "appAvailabilitiesV2_territoryAvailabilities_getToManyRelated",
+            "jsonPointer": "/meta/paging/total"
+          },
+          {
+            "outputField": "territory_availabilities[].currency",
+            "operationId": "appAvailabilitiesV2_territoryAvailabilities_getToManyRelated",
+            "jsonPointer": "/included",
+            "localRole": "Join each territory relationship ID to the included territory currency."
           }
         ]
       },
-      "note": "The handler resolves the app availability ID for every request, lists its territory availability collection with the requested limit, projects Apple's preOrderPublishDate attribute, and accepts continuation links only for the exact resolved related-collection route."
+      "note": "The handler resolves the app availability ID for every request, lists the authoritative territory collection with include=territory, exposes currency and paging total, and accepts continuation links only when they preserve the exact resolved route and include projection."
     },
     {
       "tool": "pricing_set_price_schedule",
@@ -559,22 +882,22 @@
             {
               "sourceKind": "derived",
               "jsonPointer": "/data/relationships/manualPrices/data/*/id",
-              "derivedFrom": ["local:inlinePriceId"],
-              "localRole": "reuseGeneratedInlinePriceIdentifier"
+              "derivedFrom": ["local:inlinePriceIds"],
+              "localRole": "reuseGeneratedInlinePriceIdentifiers"
             },
             { "sourceKind": "fixed", "jsonPointer": "/included/*/type", "fixedValue": "appPrices" },
             {
               "sourceKind": "derived",
               "jsonPointer": "/included/*/id",
-              "derivedFrom": ["local:inlinePriceId"],
-              "localRole": "reuseGeneratedInlinePriceIdentifier"
+              "derivedFrom": ["local:inlinePriceIds"],
+              "localRole": "reuseGeneratedInlinePriceIdentifiers"
             },
             { "sourceKind": "fixed", "jsonPointer": "/included/*/relationships/appPricePoint/data/type", "fixedValue": "appPricePoints" },
             {
               "sourceKind": "derived",
               "jsonPointer": "/included/*/relationships/appPricePoint/data/id",
-              "derivedFrom": ["price_point_id"],
-              "localRole": "embedSelectedAppPricePointIdentifier"
+              "derivedFrom": ["price_point_id", "manual_prices/*/price_point_id"],
+              "localRole": "embedSelectedAppPricePointIdentifiers"
             }
           ]
         }
@@ -596,8 +919,50 @@
           "toolField": "price_point_id",
           "sourceKind": "requestBody",
           "operationId": "appPriceSchedules_createInstance",
+          "jsonPointer": "/included/*/relationships/appPricePoint/data/id",
+          "localRole": "Backward-compatible single price point mode; build one inline appPrices resource."
+        },
+        {
+          "toolField": "start_date",
+          "sourceKind": "requestBody",
+          "operationId": "appPriceSchedules_createInstance",
+          "jsonPointer": "/included/*/attributes/startDate",
+          "localRole": "Backward-compatible single price start boundary; encode null when omitted."
+        },
+        {
+          "toolField": "end_date",
+          "sourceKind": "requestBody",
+          "operationId": "appPriceSchedules_createInstance",
+          "jsonPointer": "/included/*/attributes/endDate",
+          "localRole": "Backward-compatible single price end boundary; encode null when omitted."
+        },
+        {
+          "toolField": "manual_prices",
+          "sourceKind": "requestBody",
+          "operationId": "appPriceSchedules_createInstance",
           "jsonPointer": "/included",
-          "localRole": "Build one inline appPrices resource and link it from data.relationships.manualPrices."
+          "localRole": "Build one inline appPrices resource per price point and optional validated date range, then link every generated ID from manualPrices."
+        },
+        {
+          "toolField": "manual_prices",
+          "sourceKind": "requestBody",
+          "operationId": "appPriceSchedules_createInstance",
+          "jsonPointer": "/included/*/relationships/appPricePoint/data/id",
+          "localRole": "Map each price_point_id to its inline appPricePoint relationship."
+        },
+        {
+          "toolField": "manual_prices",
+          "sourceKind": "requestBody",
+          "operationId": "appPriceSchedules_createInstance",
+          "jsonPointer": "/included/*/attributes/startDate",
+          "localRole": "Map each optional nullable start_date boundary."
+        },
+        {
+          "toolField": "manual_prices",
+          "sourceKind": "requestBody",
+          "operationId": "appPriceSchedules_createInstance",
+          "jsonPointer": "/included/*/attributes/endDate",
+          "localRole": "Map each optional nullable end_date boundary."
         }
       ],
       "response": {
@@ -628,10 +993,14 @@
             "outputField": "price_schedule.base_territory_id",
             "operationId": "appPriceSchedules_createInstance",
             "jsonPointer": "/data/relationships/baseTerritory/data/id"
+          },
+          {
+            "outputField": "price_schedule.submitted_manual_prices_count",
+            "localRole": "Count the validated inline manual prices submitted to Apple."
           }
         ]
       },
-      "note": "Current create operation is valid, but the tool cannot express AppPriceV2InlineCreate startDate/endDate or multiple manual prices and has no outputSchema."
+      "note": "The current Apple create operation supports the legacy single-price call and a complete multi-entry manual schedule with nullable startDate/endDate boundaries. The contract remains partial because the MCP result has no outputSchema."
     }
   ],
   "implementationAliases": []

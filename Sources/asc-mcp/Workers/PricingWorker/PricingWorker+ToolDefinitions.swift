@@ -37,13 +37,23 @@ extension PricingWorker {
     func getAppAvailabilityTool() -> Tool {
         return Tool(
             name: "pricing_get_availability",
-            description: "Get app availability configuration (whether app is available in new territories automatically)",
+            description: "Get app availability configuration and optionally include its per-territory availability resources",
             inputSchema: .object([
                 "type": .string("object"),
                 "properties": .object([
                     "app_id": .object([
                         "type": .string("string"),
                         "description": .string("App Store Connect app ID")
+                    ]),
+                    "include_territory_availabilities": .object([
+                        "type": .string("boolean"),
+                        "description": .string("Include territory availability resources in the response (default: false)")
+                    ]),
+                    "territory_availabilities_limit": .object([
+                        "type": .string("integer"),
+                        "description": .string("Maximum included territory availability resources (default: 50, max: 50). Supplying this parameter enables the include."),
+                        "minimum": .int(1),
+                        "maximum": .int(50)
                     ])
                 ]),
                 "required": .array([.string("app_id")])
@@ -92,6 +102,18 @@ extension PricingWorker {
                     "app_id": .object([
                         "type": .string("string"),
                         "description": .string("App Store Connect app ID")
+                    ]),
+                    "manual_prices_limit": .object([
+                        "type": .string("integer"),
+                        "description": .string("Maximum included manual prices (default: 50, max: 50). Completeness metadata and the related collection URL are returned."),
+                        "minimum": .int(1),
+                        "maximum": .int(50)
+                    ]),
+                    "automatic_prices_limit": .object([
+                        "type": .string("integer"),
+                        "description": .string("Maximum included automatic prices (default: 50, max: 50). Completeness metadata and the related collection URL are returned."),
+                        "minimum": .int(1),
+                        "maximum": .int(50)
                     ])
                 ]),
                 "required": .array([.string("app_id")])
@@ -103,7 +125,7 @@ extension PricingWorker {
     func setAppPriceScheduleTool() -> Tool {
         return Tool(
             name: "pricing_set_price_schedule",
-            description: "Set or update the price schedule for an app. Requires base territory and price point ID (get from pricing_list_price_points).",
+            description: "Submit an app price schedule with one legacy price point or multiple dated manual prices. This Apple endpoint updates the app's schedule, so include every manual price change that should remain scheduled.",
             inputSchema: .object([
                 "type": .string("object"),
                 "properties": .object([
@@ -117,10 +139,34 @@ extension PricingWorker {
                     ]),
                     "price_point_id": .object([
                         "type": .string("string"),
-                        "description": .string("Price point resource ID from pricing_list_price_points")
+                        "description": .string("Legacy single price point resource ID from pricing_list_price_points. Mutually exclusive with manual_prices.")
+                    ]),
+                    "start_date": nullablePriceDateSchema("Legacy price start date in YYYY-MM-DD format; null or omission means no lower boundary"),
+                    "end_date": nullablePriceDateSchema("Legacy price end date in YYYY-MM-DD format; null or omission means no upper boundary"),
+                    "manual_prices": .object([
+                        "type": .string("array"),
+                        "description": .string("Complete manual price schedule. Each entry links an app price point and optional date boundaries. Mutually exclusive with price_point_id."),
+                        "minItems": .int(1),
+                        "items": .object([
+                            "type": .string("object"),
+                            "properties": .object([
+                                "price_point_id": .object([
+                                    "type": .string("string"),
+                                    "description": .string("Price point resource ID from pricing_list_price_points")
+                                ]),
+                                "start_date": nullablePriceDateSchema("Start date in YYYY-MM-DD format; null or omission means no lower boundary"),
+                                "end_date": nullablePriceDateSchema("End date in YYYY-MM-DD format; null or omission means no upper boundary")
+                            ]),
+                            "required": .array([.string("price_point_id")]),
+                            "additionalProperties": .bool(false)
+                        ])
                     ])
                 ]),
-                "required": .array([.string("app_id"), .string("base_territory_id"), .string("price_point_id")])
+                "required": .array([.string("app_id"), .string("base_territory_id")]),
+                "oneOf": .array([
+                    .object(["required": .array([.string("price_point_id")])]),
+                    .object(["required": .array([.string("manual_prices")])])
+                ])
             ])
         )
     }
@@ -157,7 +203,7 @@ extension PricingWorker {
     func createAvailabilityV2Tool() -> Tool {
         return Tool(
             name: "pricing_create_availability",
-            description: "Create app availability configuration (v2). Sets which territories the app is available in and whether it auto-publishes to new territories.",
+            description: "Create App Store Connect v2 app availability for an app pre-order. Link existing territory availability resources, create inline territory settings, or combine both.",
             inputSchema: .object([
                 "type": .string("object"),
                 "properties": .object([
@@ -171,13 +217,38 @@ extension PricingWorker {
                     ]),
                     "territory_ids": .object([
                         "type": .string("array"),
-                        "description": .string("Array of territory availability IDs to include"),
+                        "description": .string("Non-empty array of unique territoryAvailabilities resource IDs. These are relationship IDs, not ISO territory codes."),
+                        "minItems": .int(1),
+                        "uniqueItems": .bool(true),
                         "items": .object([
                             "type": .string("string")
                         ])
+                    ]),
+                    "territory_availabilities": .object([
+                        "type": .string("array"),
+                        "description": .string("Inline territory availability resources to create. Use ISO 3166-1 alpha-3 territory IDs from pricing_list_territories."),
+                        "minItems": .int(1),
+                        "items": .object([
+                            "type": .string("object"),
+                            "properties": .object([
+                                "territory_id": .object([
+                                    "type": .string("string"),
+                                    "description": .string("ISO 3166-1 alpha-3 territory resource ID, such as USA")
+                                ]),
+                                "available": nullablePricingBooleanSchema("Whether the app is available in this territory; null or omission encodes no value"),
+                                "release_date": nullablePriceDateSchema("Release date in YYYY-MM-DD format; null or omission encodes no value"),
+                                "pre_order_enabled": nullablePricingBooleanSchema("Whether pre-order is enabled in this territory; null or omission encodes no value")
+                            ]),
+                            "required": .array([.string("territory_id")]),
+                            "additionalProperties": .bool(false)
+                        ])
                     ])
                 ]),
-                "required": .array([.string("app_id"), .string("available_in_new_territories"), .string("territory_ids")])
+                "required": .array([.string("app_id"), .string("available_in_new_territories")]),
+                "anyOf": .array([
+                    .object(["required": .array([.string("territory_ids")])]),
+                    .object(["required": .array([.string("territory_availabilities")])])
+                ])
             ])
         )
     }
@@ -193,6 +264,16 @@ extension PricingWorker {
                     "availability_id": .object([
                         "type": .string("string"),
                         "description": .string("App availability resource ID")
+                    ]),
+                    "include_territory_availabilities": .object([
+                        "type": .string("boolean"),
+                        "description": .string("Include territory availability resources in the response (default: false)")
+                    ]),
+                    "territory_availabilities_limit": .object([
+                        "type": .string("integer"),
+                        "description": .string("Maximum included territory availability resources (default: 50, max: 50). Supplying this parameter enables the include."),
+                        "minimum": .int(1),
+                        "maximum": .int(50)
                     ])
                 ]),
                 "required": .array([.string("availability_id")])
@@ -224,5 +305,20 @@ extension PricingWorker {
                 "required": .array([.string("availability_id")])
             ])
         )
+    }
+
+    private func nullablePriceDateSchema(_ description: String) -> Value {
+        .object([
+            "type": .array([.string("string"), .string("null")]),
+            "format": .string("date"),
+            "description": .string(description)
+        ])
+    }
+
+    private func nullablePricingBooleanSchema(_ description: String) -> Value {
+        .object([
+            "type": .array([.string("boolean"), .string("null")]),
+            "description": .string(description)
+        ])
     }
 }

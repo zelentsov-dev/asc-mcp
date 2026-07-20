@@ -7,7 +7,7 @@ import Testing
 struct PricingTerritoryAvailabilityContractTests {
     @Test("app availability is resolved before its paginated territory collection is listed")
     func resolvesThenListsWithRequestedLimit() async throws {
-        let nextURL = "https://api.example.test/v2/appAvailabilities/availability-1/territoryAvailabilities?cursor=next-page"
+        let nextURL = "https://api.example.test/v2/appAvailabilities/availability-1/territoryAvailabilities?cursor=next-page&include=territory"
         let transport = TestHTTPTransport(responses: [
             .init(statusCode: 200, body: #"{"data":{"type":"appAvailabilities","id":"availability-1","attributes":{"availableInNewTerritories":true}},"links":{"self":"https://api.example.test/v1/apps/app-1/appAvailabilityV2"}}"#),
             .init(statusCode: 200, body: territoryAvailabilitiesBody(nextURL: nextURL))
@@ -30,6 +30,7 @@ struct PricingTerritoryAvailabilityContractTests {
         #expect(resolveRequest.url?.path == "/v1/apps/app-1/appAvailabilityV2")
         #expect(listRequest.url?.path == "/v2/appAvailabilities/availability-1/territoryAvailabilities")
         #expect(try queryItems(listRequest)["limit"] == "125")
+        #expect(try queryItems(listRequest)["include"] == "territory")
         #expect(try queryItems(listRequest)["limit[territoryAvailabilities]"] == nil)
 
         let payload = try pricingObject(result.structuredContent)
@@ -38,16 +39,18 @@ struct PricingTerritoryAvailabilityContractTests {
         let availability = try pricingObject(try pricingArray(payload["territory_availabilities"]).first)
         #expect(availability["id"] == .string("territory-availability-1"))
         #expect(availability["territory_id"] == .string("USA"))
+        #expect(availability["currency"] == .string("USD"))
         #expect(availability["preOrderPublishDate"] == .string("2026-07-18"))
         #expect(availability["contentStatuses"] == .array([.string("AVAILABLE")]))
+        #expect(payload["total"] == .int(1))
     }
 
     @Test("next URL is bound to the freshly resolved app availability")
     func nextURLUsesFreshlyResolvedAvailability() async throws {
-        let nextURL = "https://api.example.test/v2/appAvailabilities/availability-1/territoryAvailabilities?cursor=next-page&limit=25"
+        let nextURL = "https://api.example.test/v2/appAvailabilities/availability-1/territoryAvailabilities?cursor=next-page&limit=25&include=territory"
         let transport = TestHTTPTransport(responses: [
             .init(statusCode: 200, body: appAvailabilityBody(id: "availability-1")),
-            .init(statusCode: 200, body: #"{"data":[],"links":{"self":"https://api.example.test/v2/appAvailabilities/availability-1/territoryAvailabilities?cursor=next-page&limit=25"}}"#)
+            .init(statusCode: 200, body: #"{"data":[],"links":{"self":"https://api.example.test/v2/appAvailabilities/availability-1/territoryAvailabilities?cursor=next-page&limit=25&include=territory"}}"#)
         ])
         let worker = try await makePricingWorker(transport: transport)
 
@@ -68,6 +71,7 @@ struct PricingTerritoryAvailabilityContractTests {
         #expect(request.url?.path == "/v2/appAvailabilities/availability-1/territoryAvailabilities")
         #expect(try queryItems(request)["cursor"] == "next-page")
         #expect(try queryItems(request)["limit"] == "25")
+        #expect(try queryItems(request)["include"] == "territory")
     }
 
     @Test("foreign pagination URL is rejected after authoritative availability resolution")
@@ -160,9 +164,19 @@ private func territoryAvailabilitiesBody(nextURL: String) -> String {
         }
       ],
       "links": {
-        "self": "https://api.example.test/v2/appAvailabilities/availability-1/territoryAvailabilities?limit=125",
+        "self": "https://api.example.test/v2/appAvailabilities/availability-1/territoryAvailabilities?limit=125&include=territory",
         "next": "\(nextURL)"
-      }
+      },
+      "meta": {
+        "paging": {"total": 1, "limit": 125}
+      },
+      "included": [
+        {
+          "type": "territories",
+          "id": "USA",
+          "attributes": {"currency": "USD"}
+        }
+      ]
     }
     """
 }
