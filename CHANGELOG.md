@@ -24,6 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Reject malformed or mismatched version, review-submission, review-detail, App Info, age-rating, and territory resources before mutation or misleading read success.
+- Reject schema-invalid App Info pages that omit Apple's required pagination links instead of treating an incomplete collection as final during age-rating resolution.
 - Require the exact target ID before deleting an app store version or an eligible planned phased rollout.
 - Stop automatically repeating DELETE requests after ambiguous network, timeout, or server failures while preserving safe authorization-refresh and rate-limit retries.
 - Return typed, structured unknown outcomes with `retrySafe=false` when any DELETE may already have succeeded; lifecycle deletions and upload cleanup add target-specific inspection guidance.

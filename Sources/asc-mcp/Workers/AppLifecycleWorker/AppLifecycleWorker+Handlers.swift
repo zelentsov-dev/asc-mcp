@@ -1536,7 +1536,12 @@ extension AppLifecycleWorker {
                 var seenAppInfoNextURLs: Set<String> = []
                 while let page = appInfoPage {
                     allAppInfos.append(contentsOf: page.data)
-                    if let next = page.links?.next {
+                    guard let links = page.links else {
+                        throw AppLifecycleQueryArgumentError(
+                            "Apple returned an App Info page without required pagination links"
+                        )
+                    }
+                    if let next = links.next {
                         guard seenAppInfoNextURLs.insert(next).inserted else {
                             throw AppLifecycleQueryArgumentError(
                                 "Apple returned a repeated App Info continuation URL"

@@ -424,7 +424,8 @@ struct AppLifecycleWorkerContractTests {
             {
               "data": [
                 { "type": "appInfos", "id": "info-current", "attributes": { "state": "ACCEPTED" }, "relationships": { "app": { "data": { "type": "apps", "id": "app-1" } } } }
-              ]
+              ],
+              "links": { "self": "https://api.example.test/v1/apps/app-1/appInfos" }
             }
             """)
         ])
@@ -478,7 +479,8 @@ struct AppLifecycleWorkerContractTests {
             {
               "data": [
                 { "type": "appInfos", "id": "info-pending", "attributes": { "state": "PENDING_RELEASE" }, "relationships": { "app": { "data": { "type": "apps", "id": "app-1" } } } }
-              ]
+              ],
+              "links": { "self": "https://api.example.test/v1/apps/app-1/appInfos" }
             }
             """),
             .init(statusCode: 200, body: #"{"data":{"type":"ageRatingDeclarations","id":"age-pending"}}"#),
@@ -574,7 +576,10 @@ struct AppLifecycleWorkerContractTests {
             {
               "data": [
                 { "type": "appInfos", "id": "info-next", "attributes": { "state": "PREPARE_FOR_SUBMISSION" }, "relationships": { "app": { "data": { "type": "apps", "id": "app-1" } } } }
-              ]
+              ],
+              "links": {
+                "self": "https://api.example.test/v1/apps/app-1/appInfos?fields%5BappInfos%5D=state%2Capp&limit=200&cursor=page-2"
+              }
             }
             """),
             .init(statusCode: 200, body: #"{"data":{"type":"ageRatingDeclarations","id":"age-1"}}"#),
@@ -623,7 +628,10 @@ struct AppLifecycleWorkerContractTests {
             {
               "data": [
                 { "type": "appInfos", "id": "info-accepted-2", "attributes": { "state": "ACCEPTED" }, "relationships": { "app": { "data": { "type": "apps", "id": "app-1" } } } }
-              ]
+              ],
+              "links": {
+                "self": "https://api.example.test/v1/apps/app-1/appInfos?fields%5BappInfos%5D=state%2Capp&limit=200&cursor=page-2"
+              }
             }
             """)
         ])
@@ -639,6 +647,34 @@ struct AppLifecycleWorkerContractTests {
 
         #expect(result.isError == true)
         #expect(await transport.requestCount() == 3)
+        #expect(await transport.recordedRequests().allSatisfy { $0.httpMethod == "GET" })
+    }
+
+    @Test("legacy age rating rejects an App Info page without required links")
+    func ageRatingRejectsAppInfoPageWithoutLinks() async throws {
+        let transport = TestHTTPTransport(responses: [
+            .init(statusCode: 200, body: versionWithAppBody(id: "ver-1", state: "PREPARE_FOR_SUBMISSION")),
+            .init(statusCode: 200, body: """
+            {
+              "data": [
+                { "type": "appInfos", "id": "info-next", "attributes": { "state": "PREPARE_FOR_SUBMISSION" }, "relationships": { "app": { "data": { "type": "apps", "id": "app-1" } } } }
+              ]
+            }
+            """)
+        ])
+        let worker = try await makeContractWorker(transport: transport)
+
+        let result = try await worker.handleTool(CallTool.Parameters(
+            name: "app_versions_update_age_rating",
+            arguments: [
+                "version_id": .string("ver-1"),
+                "advertising": .bool(false)
+            ]
+        ))
+
+        #expect(result.isError == true)
+        #expect(contractText(result).contains("without required pagination links"))
+        #expect(await transport.requestCount() == 2)
         #expect(await transport.recordedRequests().allSatisfy { $0.httpMethod == "GET" })
     }
 
@@ -698,10 +734,10 @@ struct AppLifecycleWorkerContractTests {
     @Test("legacy age rating rejects malformed App Info identities before declaration lookup")
     func ageRatingRejectsInvalidAppInfoIdentity() async throws {
         let appInfoResponses = [
-            #"{"data":[{"type":"apps","id":"info-1","attributes":{"state":"PREPARE_FOR_SUBMISSION"}}]}"#,
-            #"{"data":[{"type":"appInfos","id":"","attributes":{"state":"PREPARE_FOR_SUBMISSION"}}]}"#,
-            #"{"data":[{"type":"appInfos","id":"info-1","attributes":{"state":"PREPARE_FOR_SUBMISSION"},"relationships":{"app":{"data":{"type":"apps","id":"app-other"}}}}]}"#,
-            #"{"data":[{"type":"appInfos","id":"info-1","attributes":{"state":"ACCEPTED"},"relationships":{"app":{"data":{"type":"apps","id":"app-1"}}}},{"type":"appInfos","id":"info-1","attributes":{"state":"PREPARE_FOR_SUBMISSION"},"relationships":{"app":{"data":{"type":"apps","id":"app-1"}}}}]}"#
+            #"{"data":[{"type":"apps","id":"info-1","attributes":{"state":"PREPARE_FOR_SUBMISSION"}}],"links":{"self":"https://api.example.test/v1/apps/app-1/appInfos"}}"#,
+            #"{"data":[{"type":"appInfos","id":"","attributes":{"state":"PREPARE_FOR_SUBMISSION"}}],"links":{"self":"https://api.example.test/v1/apps/app-1/appInfos"}}"#,
+            #"{"data":[{"type":"appInfos","id":"info-1","attributes":{"state":"PREPARE_FOR_SUBMISSION"},"relationships":{"app":{"data":{"type":"apps","id":"app-other"}}}}],"links":{"self":"https://api.example.test/v1/apps/app-1/appInfos"}}"#,
+            #"{"data":[{"type":"appInfos","id":"info-1","attributes":{"state":"ACCEPTED"},"relationships":{"app":{"data":{"type":"apps","id":"app-1"}}}},{"type":"appInfos","id":"info-1","attributes":{"state":"PREPARE_FOR_SUBMISSION"},"relationships":{"app":{"data":{"type":"apps","id":"app-1"}}}}],"links":{"self":"https://api.example.test/v1/apps/app-1/appInfos"}}"#
         ]
 
         for appInfoResponse in appInfoResponses {
@@ -731,7 +767,7 @@ struct AppLifecycleWorkerContractTests {
         for declarationResponse in declarationResponses {
             let transport = TestHTTPTransport(responses: [
                 .init(statusCode: 200, body: versionWithAppBody(id: "ver-1", state: "PREPARE_FOR_SUBMISSION")),
-                .init(statusCode: 200, body: #"{"data":[{"type":"appInfos","id":"info-1","attributes":{"state":"PREPARE_FOR_SUBMISSION"},"relationships":{"app":{"data":{"type":"apps","id":"app-1"}}}}]}"#),
+                .init(statusCode: 200, body: #"{"data":[{"type":"appInfos","id":"info-1","attributes":{"state":"PREPARE_FOR_SUBMISSION"},"relationships":{"app":{"data":{"type":"apps","id":"app-1"}}}}],"links":{"self":"https://api.example.test/v1/apps/app-1/appInfos"}}"#),
                 .init(statusCode: 200, body: declarationResponse)
             ])
             let worker = try await makeContractWorker(transport: transport)

@@ -1268,7 +1268,7 @@
           "method": "get",
           "path": "/v1/apps/{id}/appInfos",
           "role": "supporting",
-          "condition": "Used only for legacy version_id resolution; strictly paginates the complete App Info collection and selects exactly one AppInfo whose state equals the version state or an explicit documented state mapping.",
+          "condition": "Used only for legacy version_id resolution; requires Apple's page links, strictly paginates the complete App Info collection, and selects exactly one AppInfo whose state equals the version state or an explicit documented state mapping.",
           "optionalParameterClassifications": [
             { "location": "query", "appleName": "include", "disposition": "intentionallyOmitted", "reason": "Legacy resolution reads only App Info state and does not expand relationships.", "reviewAtSpec": "4.4.1" },
             { "location": "query", "appleName": "limit[appInfoLocalizations]", "disposition": "intentionallyOmitted", "reason": "App Info localizations are not included during age-rating declaration resolution.", "reviewAtSpec": "4.4.1" }
