@@ -338,7 +338,7 @@ struct SubscriptionVersionsContractTests {
         SubscriptionV4InvalidList(tool: "subscriptions_list_versions", parent: "subscription_id", arguments: ["next_url": .string("https://api.example.test/v1/subscriptions/subscription-1/versions?limit=50&cursor=next")]),
         SubscriptionV4InvalidList(tool: "subscriptions_list_versions", parent: "subscription_id", arguments: ["next_url": .string("https://api.example.test/v1/subscriptions/subscription-1/versions?limit=25&cursor=a&cursor=b")])
     ])
-    func versionListsRejectInvalidArguments(_ testCase: SubscriptionV4InvalidList) async throws {
+    fileprivate func versionListsRejectInvalidArguments(_ testCase: SubscriptionV4InvalidList) async throws {
         let transport = TestHTTPTransport(responses: [])
         let worker = try await subscriptionV4Worker(transport)
         var arguments = testCase.arguments

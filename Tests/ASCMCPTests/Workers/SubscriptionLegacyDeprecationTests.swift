@@ -26,7 +26,7 @@ struct SubscriptionLegacyDeprecationTests {
     }
 
     @Test("legacy non-upload tools preserve exact Apple operations and add warnings only on success", arguments: SubscriptionLegacyCase.allCases)
-    func nonUploadToolsPreserveOperations(_ testCase: SubscriptionLegacyCase) async throws {
+    fileprivate func nonUploadToolsPreserveOperations(_ testCase: SubscriptionLegacyCase) async throws {
         let transport = TestHTTPTransport(responses: [
             .init(statusCode: testCase.statusCode, body: testCase.responseBody)
         ])
