@@ -9,7 +9,7 @@ struct ToolMetadataPolicyTests {
     func allToolsReceiveAnnotationsAndMeta() async throws {
         let tools = try await TestFactory.collectAllWorkerTools().map(ToolMetadataPolicy.apply)
 
-        #expect(tools.count == 390)
+        #expect(tools.count == 401)
         for tool in tools {
             #expect(tool.annotations.isEmpty == false)
             #expect(tool.annotations.openWorldHint == true)
@@ -52,6 +52,11 @@ struct ToolMetadataPolicyTests {
         let webhookTriage = ToolMetadataPolicy.apply(to: Self.sampleTool(named: "webhooks_triage_event"))
         #expect(webhookTriage.annotations.readOnlyHint == true)
         #expect(webhookTriage.annotations.idempotentHint == true)
+
+        let exportInspect = ToolMetadataPolicy.apply(to: Self.sampleTool(named: "export_compliance_inspect_document"))
+        #expect(exportInspect.annotations.readOnlyHint == true)
+        #expect(exportInspect.annotations.destructiveHint == false)
+        #expect(exportInspect.annotations.idempotentHint == true)
 
         let accessibilityList = ToolMetadataPolicy.apply(to: Self.sampleTool(named: "accessibility_list"))
         #expect(accessibilityList.annotations.readOnlyHint == true)

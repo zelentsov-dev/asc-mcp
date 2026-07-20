@@ -155,6 +155,29 @@ struct WorkerToolDefinitionsTests {
         #expect(names.contains("builds_check_readiness"))
     }
 
+    // MARK: - ExportComplianceWorker (11 tools)
+
+    @Test("ExportComplianceWorker returns 11 tools with correct names")
+    func exportComplianceWorkerTools() async throws {
+        let client = try await TestFactory.makeHTTPClient()
+        let worker = ExportComplianceWorker(httpClient: client, uploadService: UploadService())
+        let tools = await worker.getTools()
+        #expect(tools.count == 11)
+        #expect(Set(tools.map(\.name)) == [
+            "export_compliance_list_declarations",
+            "export_compliance_get_declaration",
+            "export_compliance_create_declaration",
+            "export_compliance_create_document",
+            "export_compliance_get_document",
+            "export_compliance_update_document",
+            "export_compliance_upload_document",
+            "export_compliance_inspect_document",
+            "export_compliance_get_build_declaration",
+            "export_compliance_attach_build_declaration",
+            "export_compliance_check_release_readiness"
+        ])
+    }
+
     // MARK: - BuildBetaDetailsWorker (11 tools)
 
     @Test("BuildBetaDetailsWorker returns 11 tools with correct names")
@@ -757,6 +780,7 @@ struct WorkerToolDefinitionsTests {
         allNames += (await WebhooksWorker(httpClient: client).getTools()).map(\.name)
         allNames += (await BuildsWorker(httpClient: client).getTools()).map(\.name)
         allNames += (await BuildProcessingWorker(httpClient: client).getTools()).map(\.name)
+        allNames += (await ExportComplianceWorker(httpClient: client, uploadService: UploadService()).getTools()).map(\.name)
         allNames += (await BuildBetaDetailsWorker(httpClient: client).getTools()).map(\.name)
         allNames += (await AppLifecycleWorker(httpClient: client).getTools()).map(\.name)
         allNames += (await ReviewsWorker(httpClient: client).getTools()).map(\.name)
@@ -801,6 +825,7 @@ struct WorkerToolDefinitionsTests {
             tools += await WebhooksWorker(httpClient: client).getTools()
             tools += await BuildsWorker(httpClient: client).getTools()
             tools += await BuildProcessingWorker(httpClient: client).getTools()
+            tools += await ExportComplianceWorker(httpClient: client, uploadService: UploadService()).getTools()
             tools += await BuildBetaDetailsWorker(httpClient: client).getTools()
             tools += await AppLifecycleWorker(httpClient: client).getTools()
             tools += await ReviewsWorker(httpClient: client).getTools()
@@ -848,6 +873,7 @@ struct WorkerToolDefinitionsTests {
             tools += await WebhooksWorker(httpClient: client).getTools()
             tools += await BuildsWorker(httpClient: client).getTools()
             tools += await BuildProcessingWorker(httpClient: client).getTools()
+            tools += await ExportComplianceWorker(httpClient: client, uploadService: UploadService()).getTools()
             tools += await BuildBetaDetailsWorker(httpClient: client).getTools()
             tools += await AppLifecycleWorker(httpClient: client).getTools()
             tools += await ReviewsWorker(httpClient: client).getTools()

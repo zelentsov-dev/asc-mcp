@@ -33,6 +33,45 @@ struct WorkerRoutingTests {
         #expect(attachment.isError == true)
     }
 
+    @Test("WorkerManager routes and filters export compliance independently")
+    func workerManagerRoutesExportCompliance() async throws {
+        let enabled = try await TestFactory.makeWorkerManager(enabledWorkers: ["export_compliance"])
+        let routed = try await enabled.routeTool(CallTool.Parameters(
+            name: "export_compliance_get_document",
+            arguments: nil
+        ))
+        #expect(routed.isError == true)
+        guard case .object(let routedPayload)? = routed.structuredContent else {
+            Issue.record("Expected structured export-compliance validation error")
+            return
+        }
+        #expect(routedPayload["error"] != .string("Worker 'export_compliance' is disabled. Enable it with --workers export_compliance"))
+
+        let disabled = try await TestFactory.makeWorkerManager(enabledWorkers: ["builds"])
+        let blocked = try await disabled.routeTool(CallTool.Parameters(
+            name: "export_compliance_get_document",
+            arguments: nil
+        ))
+        #expect(blocked.isError == true)
+        guard case .object(let blockedPayload)? = blocked.structuredContent else {
+            Issue.record("Expected structured disabled-worker error")
+            return
+        }
+        #expect(blockedPayload["error"] == .string("Worker 'export_compliance' is disabled. Enable it with --workers export_compliance"))
+    }
+
+    @Test("WorkerManager read-only mode blocks export compliance attachment")
+    func workerManagerReadOnlyBlocksExportComplianceAttachment() async throws {
+        let manager = try await TestFactory.makeWorkerManager(readOnlyMode: true)
+        let result = try await manager.routeTool(CallTool.Parameters(
+            name: "export_compliance_attach_build_declaration",
+            arguments: nil
+        ))
+        #expect(result.isError == true)
+        #expect(result._meta?.fields["asc/readOnlyMode"] == .bool(true))
+        #expect(result._meta?.fields["asc/blockedTool"] == .string("export_compliance_attach_build_declaration"))
+    }
+
     @Test("WorkerManager read-only mode blocks mutation tools before handler execution")
     func workerManagerReadOnlyBlocksMutationTools() async throws {
         let manager = try await TestFactory.makeWorkerManager(readOnlyMode: true)
@@ -202,6 +241,18 @@ struct WorkerRoutingTests {
         let client = try await TestFactory.makeHTTPClient()
         let worker = BuildProcessingWorker(httpClient: client)
         let params = CallTool.Parameters(name: "builds_nonexistent_processing", arguments: nil)
+        await #expect(throws: MCPError.self) {
+            _ = try await worker.handleTool(params)
+        }
+    }
+
+    // MARK: - ExportComplianceWorker
+
+    @Test("ExportComplianceWorker throws MCPError.methodNotFound for unknown tool")
+    func exportComplianceWorkerUnknownTool() async throws {
+        let client = try await TestFactory.makeHTTPClient()
+        let worker = ExportComplianceWorker(httpClient: client, uploadService: UploadService())
+        let params = CallTool.Parameters(name: "export_compliance_nonexistent", arguments: nil)
         await #expect(throws: MCPError.self) {
             _ = try await worker.handleTool(params)
         }

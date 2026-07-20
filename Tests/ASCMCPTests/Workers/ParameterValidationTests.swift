@@ -102,6 +102,28 @@ struct ParameterValidationTests {
         #expect(result.isError == true)
     }
 
+    // MARK: - ExportComplianceWorker
+
+    @Test("export compliance tools reject missing required parameters", arguments: [
+        "export_compliance_list_declarations",
+        "export_compliance_get_declaration",
+        "export_compliance_create_declaration",
+        "export_compliance_create_document",
+        "export_compliance_get_document",
+        "export_compliance_update_document",
+        "export_compliance_upload_document",
+        "export_compliance_inspect_document",
+        "export_compliance_get_build_declaration",
+        "export_compliance_attach_build_declaration",
+        "export_compliance_check_release_readiness"
+    ])
+    func exportComplianceMissingParameters(_ toolName: String) async throws {
+        let client = try await TestFactory.makeHTTPClient()
+        let worker = ExportComplianceWorker(httpClient: client, uploadService: UploadService())
+        let result = try await worker.handleTool(CallTool.Parameters(name: toolName, arguments: nil))
+        #expect(result.isError == true)
+    }
+
     // MARK: - BuildBetaDetailsWorker
 
     @Test("builds_get_beta_detail without build_id returns isError")
