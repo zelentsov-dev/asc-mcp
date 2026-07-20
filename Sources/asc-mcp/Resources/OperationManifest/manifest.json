@@ -8,11 +8,11 @@
   },
   "optionalInputCoveragePin": {
     "total": 2154,
-    "bound": 788,
-    "internalControl": 38,
-    "intentionallyOmitted": 1265,
-    "unclassified": 63,
-    "identitySHA256": "bc9b43247751ea537f6a2dc0d8c30f00e28fd621cc4ee805623cda018f495e6a"
+    "bound": 809,
+    "internalControl": 40,
+    "intentionallyOmitted": 1305,
+    "unclassified": 0,
+    "identitySHA256": "d8e572dd0af31e8bc40077a5db93b3d19be5283c35298b4f42e29a8b553d3d3b"
   },
   "optionalParameterFamilyRules": [
     {

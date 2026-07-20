@@ -7,6 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.11.0] - 2026-07-20
+
+### Changed
+
+- Custom Product Pages now expose visibility, version-state, and locale filters, the custom-page template relationship, and nullable version deep links.
+- Product Page Optimization exposes experiment-state and treatment-locale filters; screenshot and preview collections expose Apple's display-type and owning-localization filters.
+- App preview uploads preserve Apple's nullable poster-frame and MIME attributes, including explicit nulls, while retaining the existing `video/mp4` default when `mime_type` is omitted.
+- Subscription writes preserve nullable introductory-offer dates and target plan type, price plan type and preservation state, and subscription period; introductory-offer listings also return the target plan type.
+- Bound or explicitly classified all 63 remaining optional Apple 4.4.1 query and request-body inputs: 21 bound, 2 internally controlled, and 40 intentionally omitted with reviewed reasons.
+
+### Fixed
+
+- Validate every `next_url` across the 11 affected Custom Product Page, Product Page Optimization, promoted-purchase, screenshot, and preview collections against its concrete parent, non-empty cursor, and complete originating query.
+- Reject missing or changed continuation controls, unexpected or duplicate query names, comma-injected relationship IDs, unsupported Apple media types, malformed dates, invalid plan or period values, and whitespace-normalized filters before network access.
+- Preserve value, explicit null, and omission as distinct states for nullable preview and subscription inputs, and retain `deepLink`, linked-product, and target-plan response data in public results.
+
+### Compatibility
+
+- No public MCP tool or required input was added, removed, or renamed; this release adds optional inputs and widens existing nullable inputs without invalidating existing first-page calls.
+- Existing app preview uploads that omit `mime_type` continue to send `video/mp4`; callers may now pass null to let Apple infer the value.
+- Continuation calls for the affected collections must preserve the complete originating query and Apple's non-empty cursor in `next_url`.
+- The strict contract pin records all 2,154 optional Apple inputs: 809 bound, 40 internally controlled, 1,305 intentionally omitted, and 0 unclassified.
+
 ## [3.10.0] - 2026-07-20
 
 ### Changed
