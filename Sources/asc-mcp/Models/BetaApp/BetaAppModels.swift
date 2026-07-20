@@ -97,6 +97,11 @@ public struct ASCBetaAppReviewSubmissionResponse: Codable, Sendable {
     public let included: [ASCBetaAppReviewIncludedBuild]?
 }
 
+/// Beta app review submission Build relationship response
+public struct ASCBetaAppReviewSubmissionBuildLinkageResponse: Codable, Sendable {
+    public let data: ASCResourceIdentifier
+}
+
 /// Beta app review submission resource
 public struct ASCBetaAppReviewSubmission: Codable, Sendable {
     public let type: String

@@ -43,10 +43,12 @@ extension BetaAppWorker {
                 "properties": .object([
                     "app_id": .object([
                         "type": .string("string"),
+                        "minLength": .int(1),
                         "description": .string("App ID")
                     ]),
                     "locale": .object([
                         "type": .string("string"),
+                        "minLength": .int(1),
                         "description": .string("Locale code (e.g. en-US, de-DE)")
                     ]),
                     "feedback_email": .object([
@@ -84,6 +86,7 @@ extension BetaAppWorker {
                 "properties": .object([
                     "localization_id": .object([
                         "type": .string("string"),
+                        "minLength": .int(1),
                         "description": .string("Beta app localization ID")
                     ])
                 ]),
@@ -102,6 +105,7 @@ extension BetaAppWorker {
                 "properties": .object([
                     "localization_id": .object([
                         "type": .string("string"),
+                        "minLength": .int(1),
                         "description": .string("Beta app localization ID")
                     ]),
                     "feedback_email": .object([
@@ -139,6 +143,7 @@ extension BetaAppWorker {
                 "properties": .object([
                     "localization_id": .object([
                         "type": .string("string"),
+                        "minLength": .int(1),
                         "description": .string("Beta app localization ID to delete")
                     ])
                 ]),
@@ -158,6 +163,7 @@ extension BetaAppWorker {
                 "properties": .object([
                     "build_id": .object([
                         "type": .string("string"),
+                        "minLength": .int(1),
                         "description": .string("Build ID to submit for beta review")
                     ])
                 ]),
@@ -266,6 +272,7 @@ extension BetaAppWorker {
                 "properties": .object([
                     "review_detail_id": .object([
                         "type": .string("string"),
+                        "minLength": .int(1),
                         "description": .string("Beta app review detail ID")
                     ]),
                     "contact_first_name": .object([
