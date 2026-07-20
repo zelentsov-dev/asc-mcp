@@ -183,7 +183,10 @@ public actor HTTPClient {
                 throw ASCError.api(errorMessage, httpResponse.statusCode)
 
             } catch let error as ASCError {
-                // Propagate ASCError
+                if method == .DELETE,
+                   let outcomeUnknown = Self.deleteOutcomeUnknownError(from: error) {
+                    throw outcomeUnknown
+                }
                 throw error
             } catch {
                 if attempt < maxAttempts - 1 && retriesAmbiguousFailures {
@@ -194,12 +197,43 @@ public actor HTTPClient {
                 }
 
                 logger.error("Network request failed: \(error.localizedDescription)")
-                throw ASCError.network("HTTP request failed: \(error.localizedDescription)")
+                let networkError = ASCError.network("HTTP request failed: \(error.localizedDescription)")
+                if method == .DELETE,
+                   let outcomeUnknown = Self.deleteOutcomeUnknownError(from: networkError) {
+                    throw outcomeUnknown
+                }
+                throw networkError
             }
         }
 
-        // Should not reach here, but for safety
-        throw ASCError.network("Maximum retry attempts exceeded")
+        let exhaustedError = ASCError.network("Maximum retry attempts exceeded")
+        if method == .DELETE,
+           let outcomeUnknown = Self.deleteOutcomeUnknownError(from: exhaustedError) {
+            throw outcomeUnknown
+        }
+        throw exhaustedError
+    }
+
+    private static func deleteOutcomeUnknownError(from error: ASCError) -> ASCError? {
+        let marker = "DELETE outcome is unknown"
+        if error.localizedDescription.localizedCaseInsensitiveContains(marker) {
+            return nil
+        }
+
+        let guidance = "Inspect the exact target before another delete attempt."
+        switch error {
+        case .network(let message):
+            return .network("\(marker) after a network failure: \(message) \(guidance)")
+        case .api(let message, let statusCode)
+            where statusCode == 408 || (500...599).contains(statusCode):
+            return .api("\(marker) after HTTP \(statusCode): \(message) \(guidance)", statusCode)
+        case .apiResponse(let response, let statusCode)
+            where statusCode == 408 || (500...599).contains(statusCode):
+            let message = response.errors.map(\.safeDescription).joined(separator: "; ")
+            return .api("\(marker) after HTTP \(statusCode): \(message) \(guidance)", statusCode)
+        default:
+            return nil
+        }
     }
 
     /// Calculates retry delay with exponential backoff

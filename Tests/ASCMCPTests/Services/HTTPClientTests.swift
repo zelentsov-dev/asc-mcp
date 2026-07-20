@@ -93,10 +93,12 @@ struct HTTPClientTests {
             _ = try await client.delete("/v1/resources/resource-1")
             Issue.record("Expected an ambiguous network error")
         } catch let error as ASCError {
-            guard case .network = error else {
+            guard case .network(let message) = error else {
                 Issue.record("Expected a network error, got \(error)")
                 return
             }
+            #expect(message.contains("DELETE outcome is unknown"))
+            #expect(message.contains("Inspect the exact target"))
         }
 
         #expect(await transport.requestCount() == 1)
@@ -124,11 +126,13 @@ struct HTTPClientTests {
                 _ = try await client.delete("/v1/resources/resource-1")
                 Issue.record("Expected an API error for \(expectedStatusCode)")
             } catch let error as ASCError {
-                guard case .apiResponse(_, let statusCode) = error else {
-                    Issue.record("Expected an API response error, got \(error)")
+                guard case .api(let message, let statusCode) = error else {
+                    Issue.record("Expected an unknown-outcome API error, got \(error)")
                     return
                 }
                 #expect(statusCode == expectedStatusCode)
+                #expect(message.contains("DELETE outcome is unknown"))
+                #expect(message.contains("Inspect the exact target"))
             }
 
             #expect(await transport.requestCount() == 1)

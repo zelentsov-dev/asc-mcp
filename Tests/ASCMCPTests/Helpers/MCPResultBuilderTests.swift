@@ -70,6 +70,35 @@ struct MCPResultBuilderTests {
         #expect(payload["error"] == .string(message))
     }
 
+    @Test("transport normalization exposes ambiguous DELETE retry safety")
+    func transportNormalizationExposesAmbiguousDeleteSafety() throws {
+        let raw = CallTool.Result(
+            content: [MCPContent.text(
+                "Error: Failed to delete resource: API error (503): DELETE outcome is unknown after HTTP 503. Inspect the exact target before another delete attempt."
+            )],
+            isError: true
+        )
+
+        let normalized = MCPResult.normalizeForTransport(raw)
+
+        guard case .object(let payload)? = normalized.structuredContent,
+              case .object(let details)? = payload["details"] else {
+            Issue.record("Expected structured unknown DELETE outcome")
+            return
+        }
+
+        #expect(payload["operationCommitState"] == .string("unknown"))
+        #expect(payload["outcomeUnknown"] == .bool(true))
+        #expect(payload["retrySafe"] == .bool(false))
+        #expect(details["type"] == .string("mutation_outcome_unknown"))
+        #expect(details["method"] == .string("DELETE"))
+        #expect(details["operationCommitState"] == .string("unknown"))
+        #expect(details["outcomeUnknown"] == .bool(true))
+        #expect(details["retrySafe"] == .bool(false))
+        #expect(try exactJSONMirror(from: normalized) == structuredJSON(from: normalized))
+        #expect(MCPResult.normalizeForTransport(normalized) == normalized)
+    }
+
     @Test("transport normalization preserves recovery semantics without exposing credentials")
     func transportNormalizationPreservesRecoverySemantics() throws {
         let opaqueDetail = "plain_abcdefghijklmnopqrstuvwxyz012345"
