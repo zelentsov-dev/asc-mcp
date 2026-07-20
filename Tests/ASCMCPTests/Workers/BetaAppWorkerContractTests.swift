@@ -550,6 +550,45 @@ struct BetaAppWorkerContractTests {
         #expect(await transport.requestCount() == 1)
     }
 
+    @Test("submission create preserves committed state when a successful response is malformed")
+    func submissionCreatePreservesCommittedStateForMalformedSuccess() async throws {
+        let transport = TestHTTPTransport(responses: [
+            .init(statusCode: 201, body: #"{"data":"#)
+        ])
+        let worker = BetaAppWorker(httpClient: try await makeBetaAppContractClient(transport))
+
+        let result = try await worker.handleTool(CallTool.Parameters(
+            name: "beta_app_submit_for_review",
+            arguments: ["build_id": .string("build-1")]
+        ))
+
+        #expect(result.isError == true)
+        let root = try betaAppContractObject(result.structuredContent)
+        #expect(root["operationCommitted"] == .bool(true))
+        #expect(root["retrySafe"] == .bool(false))
+        #expect(root["submissionIdKnown"] == .bool(false))
+        #expect(root["requestedBuildId"] == .string("build-1"))
+        #expect(await transport.requestCount() == 1)
+    }
+
+    @Test("submission create marks a network outcome unknown and unsafe to retry")
+    func submissionCreateMarksNetworkOutcomeUnknown() async throws {
+        let transport = TestHTTPTransport(responses: [])
+        let worker = BetaAppWorker(httpClient: try await makeBetaAppContractClient(transport))
+
+        let result = try await worker.handleTool(CallTool.Parameters(
+            name: "beta_app_submit_for_review",
+            arguments: ["build_id": .string("build-1")]
+        ))
+
+        #expect(result.isError == true)
+        let root = try betaAppContractObject(result.structuredContent)
+        #expect(root["operationCommitState"] == .string("unknown"))
+        #expect(root["retrySafe"] == .bool(false))
+        #expect(root["submissionIdKnown"] == .bool(false))
+        #expect(await transport.requestCount() == 1)
+    }
+
     @Test("submission filters accept scalars and use a single filter as deterministic lineage")
     func submissionFiltersAcceptScalars() async throws {
         let transport = TestHTTPTransport(responses: [
@@ -576,6 +615,41 @@ struct BetaAppWorkerContractTests {
         #expect(submission["buildId"] == .string("build-1"))
         #expect(submission["buildIdSource"] == .string("filter"))
         #expect(submission["relationshipFallbackBuildId"] == nil)
+    }
+
+    @Test("one Build filter resolves multiple submissions with matching included evidence")
+    func submissionListUsesSingleFilterForMultipleSubmissions() async throws {
+        let transport = TestHTTPTransport(responses: [
+            .init(statusCode: 200, body: """
+            {
+              "data": [
+                {"type":"betaAppReviewSubmissions","id":"submission-1","attributes":{"betaReviewState":"APPROVED"}},
+                {"type":"betaAppReviewSubmissions","id":"submission-2","attributes":{"betaReviewState":"APPROVED"}}
+              ],
+              "included": [
+                {"type":"builds","id":"build-1","attributes":{"processingState":"VALID"}}
+              ],
+              "meta":{"paging":{"total":2,"limit":25}}
+            }
+            """)
+        ])
+        let worker = BetaAppWorker(httpClient: try await makeBetaAppContractClient(transport))
+
+        let result = try await worker.handleTool(CallTool.Parameters(
+            name: "beta_app_list_submissions",
+            arguments: ["build_id": .string("build-1")]
+        ))
+
+        #expect(result.isError != true)
+        let root = try betaAppContractObject(result.structuredContent)
+        let submissions = try betaAppContractArray(root["submissions"])
+        #expect(submissions.count == 2)
+        for value in submissions {
+            let submission = try betaAppContractObject(value)
+            #expect(submission["buildId"] == .string("build-1"))
+            #expect(submission["buildIdSource"] == .string("filter"))
+        }
+        #expect(await transport.requestCount() == 1)
     }
 
     @Test("single included build is a deterministic get fallback")

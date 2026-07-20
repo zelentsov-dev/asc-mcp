@@ -425,11 +425,11 @@
           },
           {
             "outputField": "success",
-        "localRole": "True after Apple's 200 response identity and Build lineage are validated."
+            "localRole": "True after Apple's 200 response identity and Build lineage are validated."
           }
         ]
       },
-  "note": "Binds include=build and sparse submission/build fields. A successful response guarantees buildId: primary relationship and a single validated included Build are preferred, missing include linkage uses the official relationship endpoint, and contradictory or ambiguous evidence is rejected."
+      "note": "Binds include=build and sparse submission/build fields. A successful response guarantees buildId: primary relationship and a single validated included Build are preferred, missing include linkage uses the official relationship endpoint, and contradictory or ambiguous evidence is rejected."
     },
     {
       "tool": "beta_app_list_localizations",
@@ -510,7 +510,7 @@
           },
           {
             "outputField": "success",
-        "localRole": "True after Apple's 200 response identities and Build lineage are validated."
+            "localRole": "True after Apple's 200 response is decoded."
           }
         ]
       },
@@ -701,11 +701,11 @@
           },
           {
             "outputField": "success",
-            "localRole": "True after Apple's 200 response is decoded."
+            "localRole": "True after Apple's 200 response identities and Build lineage are validated."
           }
         ]
       },
-  "note": "Supports Apple explode=false scalar-or-array build and review-state filters, binds include=build with sparse fields, preserves all continuation scope, rejects contradictory included resources, and guarantees every successful submission projection has a filter-consistent buildId."
+      "note": "Supports Apple explode=false scalar-or-array build and review-state filters, binds include=build with sparse fields, preserves all continuation scope, rejects contradictory included resources, and guarantees every successful submission projection has a filter-consistent buildId."
     },
     {
       "tool": "beta_app_submit_for_review",
@@ -793,11 +793,11 @@
           },
           {
             "outputField": "success",
-        "localRole": "True after Apple's 201 response identity and Build lineage are validated. Post-commit validation failures are explicitly non-retryable until the existing submission is inspected."
+            "localRole": "True after Apple's 201 response identity and Build lineage are validated. Successful responses that cannot be decoded or validated are explicitly non-retryable until the existing submission is inspected."
           }
         ]
       },
-  "note": "Exact external beta-review submission operation. Build lineage prefers Apple's response relationship and otherwise preserves the validated request relationship; contradictory included evidence produces an operationCommitted, retrySafe=false recovery result."
+      "note": "Exact external beta-review submission operation. Build lineage prefers Apple's response relationship and otherwise preserves the validated request relationship; malformed successful responses or contradictory included evidence produce an operationCommitted, retrySafe=false recovery result."
     },
     {
       "tool": "beta_app_update_localization",

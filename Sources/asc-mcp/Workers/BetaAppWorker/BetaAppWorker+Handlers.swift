@@ -312,15 +312,33 @@ extension BetaAppWorker {
             )
         )
 
+        let requestData: Data
+        do {
+            requestData = try JSONEncoder().encode(request)
+        } catch {
+            return MCPResult.error("Failed to encode beta review submission request: \(error.localizedDescription)")
+        }
+
+        let responseData: Data
+        do {
+            responseData = try await httpClient.post(
+                "/v1/betaAppReviewSubmissions",
+                body: requestData
+            )
+        } catch let error as ASCError {
+            if case .network = error {
+                return unknownSubmissionCommitFailure(error.localizedDescription, requestedBuildID: buildId)
+            }
+            return MCPResult.error("Failed to submit build for beta review: \(error.localizedDescription)")
+        } catch {
+            return unknownSubmissionCommitFailure(error.localizedDescription, requestedBuildID: buildId)
+        }
+
         let response: ASCBetaAppReviewSubmissionResponse
         do {
-            response = try await httpClient.post(
-                "/v1/betaAppReviewSubmissions",
-                body: request,
-                as: ASCBetaAppReviewSubmissionResponse.self
-            )
+            response = try JSONDecoder().decode(ASCBetaAppReviewSubmissionResponse.self, from: responseData)
         } catch {
-            return MCPResult.error("Failed to submit build for beta review: \(error.localizedDescription)")
+            return committedSubmissionDecodeFailure(error.localizedDescription, requestedBuildID: buildId)
         }
 
         do {
@@ -728,8 +746,9 @@ extension BetaAppWorker {
             )
         }
         if let filterFallbackBuildID {
-            guard observedIncludedBuildIDs.isEmpty else {
-                throw ASCError.parsing("Beta app review submission '\(submission.id)' returned ambiguous included Build linkage")
+            if !observedIncludedBuildIDs.isEmpty,
+               observedIncludedBuildIDs != Set([filterFallbackBuildID]) {
+                throw ASCError.parsing("Beta app review submission '\(submission.id)' returned contradictory included Build linkage")
             }
             return BetaAppBuildResolution(
                 id: filterFallbackBuildID,
@@ -811,14 +830,58 @@ extension BetaAppWorker {
                 "retrySafe": false,
                 "submissionId": submission.id,
                 "requestedBuildId": requestedBuildID,
-                "inspection": [
-                    "tool": "beta_app_list_submissions",
-                    "arguments": ["build_id": requestedBuildID]
-                ]
+                "inspection": submissionInspection(for: requestedBuildID)
             ],
             text: "Error: Apple created beta app review submission '\(submission.id)', but its returned Build lineage could not be verified. Inspect the existing submission before retrying.",
             isError: true
         )
+    }
+
+    private func committedSubmissionDecodeFailure(
+        _ message: String,
+        requestedBuildID: String
+    ) -> CallTool.Result {
+        let safeMessage = Redactor.redact(message)
+        return MCPResult.jsonObject(
+            [
+                "success": false,
+                "error": safeMessage,
+                "operationCommitted": true,
+                "retrySafe": false,
+                "submissionIdKnown": false,
+                "requestedBuildId": requestedBuildID,
+                "inspection": submissionInspection(for: requestedBuildID)
+            ],
+            text: "Error: Apple accepted the beta review submission, but its response could not be decoded. Inspect the existing submission before retrying.",
+            isError: true
+        )
+    }
+
+    private func unknownSubmissionCommitFailure(
+        _ message: String,
+        requestedBuildID: String
+    ) -> CallTool.Result {
+        let safeMessage = Redactor.redact(message)
+        return MCPResult.jsonObject(
+            [
+                "success": false,
+                "error": safeMessage,
+                "operationCommitState": "unknown",
+                "retrySafe": false,
+                "submissionIdKnown": false,
+                "requestedBuildId": requestedBuildID,
+                "inspection": submissionInspection(for: requestedBuildID)
+            ],
+            text: "Error: The beta review submission request outcome is unknown. Inspect existing submissions before retrying.",
+            isError: true
+        )
+    }
+
+    private func submissionInspection(for buildID: String) -> [String: Any] {
+        [
+            "tool": "beta_app_list_submissions",
+            "arguments": ["build_id": buildID]
+        ]
     }
 
     private func formatBetaReviewDetail(_ detail: ASCBetaAppReviewDetail) -> [String: Any] {
