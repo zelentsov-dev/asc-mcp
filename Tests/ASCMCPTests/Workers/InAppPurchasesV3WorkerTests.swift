@@ -274,7 +274,9 @@ struct InAppPurchasesV3WorkerTests {
         #expect(result.isError != true)
         let request = try #require(await transport.recordedRequests().first)
         #expect(request.httpMethod == "GET")
-        #expect(request.url?.percentEncodedPath == "/v1/inAppPurchaseOfferCodeOneTimeUseCodes/batch%3A1/values")
+        let requestURL = try #require(request.url)
+        let components = try #require(URLComponents(url: requestURL, resolvingAgainstBaseURL: false))
+        #expect(components.percentEncodedPath == "/v1/inAppPurchaseOfferCodeOneTimeUseCodes/batch%3A1/values")
         #expect(request.url?.query == nil)
         #expect(request.value(forHTTPHeaderField: "Accept") == "text/csv")
 
