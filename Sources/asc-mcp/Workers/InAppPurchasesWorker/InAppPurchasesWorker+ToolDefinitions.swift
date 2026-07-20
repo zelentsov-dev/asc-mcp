@@ -17,21 +17,38 @@ extension InAppPurchasesWorker {
                     ]),
                     "limit": .object([
                         "type": .string("integer"),
-                        "description": .string("Max results (default: 25, max: 200)")
+                        "description": .string("Max results (default: 25, max: 200)"),
+                        "minimum": .int(1),
+                        "maximum": .int(200)
                     ]),
                     "filter_state": .object([
-                        "type": .string("string"),
-                        "description": .string("Filter by state (e.g. APPROVED, DEVELOPER_ACTION_NEEDED)")
-                    ]),
-                    "filter_type": .object([
-                        "type": .string("string"),
-                        "description": .string("Filter by in-app purchase type"),
-                        "enum": .array([
-                            .string("CONSUMABLE"),
-                            .string("NON_CONSUMABLE"),
-                            .string("NON_RENEWING_SUBSCRIPTION")
+                        "description": .string("Filter by one or more App Store states"),
+                        "oneOf": .array([
+                            .object([
+                                "type": .string("string"),
+                                "enum": .array(Self.iapCatalogStates.map(Value.string))
+                            ]),
+                            .object([
+                                "type": .string("array"),
+                                "items": .object([
+                                    "type": .string("string"),
+                                    "enum": .array(Self.iapCatalogStates.map(Value.string))
+                                ]),
+                                "minItems": .int(1),
+                                "uniqueItems": .bool(true)
+                            ])
                         ])
                     ]),
+                    "filter_type": iapEnumListSchema(
+                        "Filter by one or more in-app purchase types",
+                        values: Self.iapCatalogTypes
+                    ),
+                    "filter_name": iapStringListSchema("Filter by one or more exact reference names"),
+                    "filter_product_id": iapStringListSchema("Filter by one or more exact product identifiers"),
+                    "sort": iapEnumListSchema(
+                        "Sort by reference name or in-app purchase type; prefix with - for descending order",
+                        values: Self.iapCatalogSortValues
+                    ),
                     "next_url": .object([
                         "type": .string("string"),
                         "description": .string("Pagination URL from previous response to fetch next page")
@@ -158,6 +175,12 @@ extension InAppPurchasesWorker {
                         "type": .string("string"),
                         "description": .string("In-app purchase ID")
                     ]),
+                    "limit": .object([
+                        "type": .string("integer"),
+                        "description": .string("Max results (default: 25, max: 200)"),
+                        "minimum": .int(1),
+                        "maximum": .int(200)
+                    ]),
                     "next_url": .object([
                         "type": .string("string"),
                         "description": .string("Pagination URL from previous response to fetch next page")
@@ -183,6 +206,15 @@ extension InAppPurchasesWorker {
                         "type": .string("integer"),
                         "description": .string("Max results (default: 25, max: 200)")
                     ]),
+                    "filter_reference_name": iapStringListSchema("Filter by one or more exact group reference names"),
+                    "filter_subscription_state": iapEnumListSchema(
+                        "Filter groups by one or more related subscription states",
+                        values: Self.subscriptionCatalogStates
+                    ),
+                    "sort": iapEnumListSchema(
+                        "Sort by group reference name; prefix with - for descending order",
+                        values: Self.subscriptionGroupSortValues
+                    ),
                     "next_url": .object([
                         "type": .string("string"),
                         "description": .string("Pagination URL from previous response to fetch next page")
@@ -191,6 +223,48 @@ extension InAppPurchasesWorker {
                 "required": .array([.string("app_id")])
             ])
         )
+    }
+
+    func iapStringListSchema(_ description: String) -> Value {
+        .object([
+            "description": .string(description),
+            "oneOf": .array([
+                .object([
+                    "type": .string("string"),
+                    "minLength": .int(1)
+                ]),
+                .object([
+                    "type": .string("array"),
+                    "items": .object([
+                        "type": .string("string"),
+                        "minLength": .int(1)
+                    ]),
+                    "minItems": .int(1),
+                    "uniqueItems": .bool(true)
+                ])
+            ])
+        ])
+    }
+
+    func iapEnumListSchema(_ description: String, values: [String]) -> Value {
+        .object([
+            "description": .string(description),
+            "oneOf": .array([
+                .object([
+                    "type": .string("string"),
+                    "enum": .array(values.map(Value.string))
+                ]),
+                .object([
+                    "type": .string("array"),
+                    "items": .object([
+                        "type": .string("string"),
+                        "enum": .array(values.map(Value.string))
+                    ]),
+                    "minItems": .int(1),
+                    "uniqueItems": .bool(true)
+                ])
+            ])
+        ])
     }
 
     func createIAPLocalizationTool() -> Tool {

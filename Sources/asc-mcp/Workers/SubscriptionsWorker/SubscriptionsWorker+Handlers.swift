@@ -45,14 +45,36 @@ extension SubscriptionsWorker {
 
             let endpoint = "/v1/subscriptionGroups/\(try ASCPathSegment.encode(groupId))/subscriptions"
 
+            var selection: [String: String] = [:]
+            if let value = try subscriptionCatalogQueryValue(arguments["filter_name"], field: "filter_name") {
+                selection["filter[name]"] = value
+            }
+            if let value = try subscriptionCatalogQueryValue(arguments["filter_product_id"], field: "filter_product_id") {
+                selection["filter[productId]"] = value
+            }
+            if let value = try subscriptionCatalogQueryValue(
+                arguments["filter_state"],
+                field: "filter_state",
+                allowedValues: Set(Self.subscriptionCatalogStates)
+            ) {
+                selection["filter[state]"] = value
+            }
+            if let value = try subscriptionCatalogQueryValue(
+                arguments["sort"],
+                field: "sort",
+                allowedValues: Set(Self.subscriptionCatalogSortValues)
+            ) {
+                selection["sort"] = value
+            }
+
             if let nextUrl = try paginationURL(from: arguments["next_url"]) {
                 response = try await httpClient.getPage(
                     nextUrl,
-                    scope: PaginationScope(path: endpoint),
+                    scope: PaginationScope(path: endpoint, requiredParameters: selection),
                     as: ASCSubscriptionsResponse.self
                 )
             } else {
-                var queryParams: [String: String] = [:]
+                var queryParams = selection
 
                 if let limit = arguments["limit"]?.intValue {
                     queryParams["limit"] = String(min(max(limit, 1), 200))
@@ -279,7 +301,9 @@ extension SubscriptionsWorker {
             } else {
                 response = try await httpClient.get(
                     endpoint,
-                    parameters: [:],
+                    parameters: [
+                        "limit": String(min(max(arguments["limit"]?.intValue ?? 25, 1), 200))
+                    ],
                     as: ASCSubscriptionLocalizationsResponse.self
                 )
             }
@@ -1264,6 +1288,50 @@ extension SubscriptionsWorker {
         }
 
         return result
+    }
+
+    func subscriptionCatalogQueryValue(
+        _ value: Value?,
+        field: String,
+        allowedValues: Set<String>? = nil
+    ) throws -> String? {
+        guard let value else {
+            return nil
+        }
+
+        let values: [String]
+        if let string = value.stringValue {
+            values = [string]
+        } else if let array = value.arrayValue {
+            let strings = array.compactMap(\.stringValue)
+            guard strings.count == array.count else {
+                throw ASCError.parsing("'\(field)' must be a string or an array of strings")
+            }
+            values = strings
+        } else {
+            throw ASCError.parsing("'\(field)' must be a string or an array of strings")
+        }
+
+        guard !values.isEmpty else {
+            throw ASCError.parsing("'\(field)' must contain at least one value")
+        }
+        guard values.allSatisfy({ value in
+            let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+            return !trimmed.isEmpty && trimmed == value
+        }) else {
+            throw ASCError.parsing("'\(field)' must contain only non-empty strings without surrounding whitespace")
+        }
+        guard Set(values).count == values.count else {
+            throw ASCError.parsing("'\(field)' must not contain duplicate values")
+        }
+        if let allowedValues {
+            let unsupported = values.filter { !allowedValues.contains($0) }
+            guard unsupported.isEmpty else {
+                throw ASCError.parsing("Unsupported value(s) for '\(field)': \(unsupported.joined(separator: ", "))")
+            }
+        }
+
+        return values.joined(separator: ",")
     }
 
     // MARK: - Formatting

@@ -274,21 +274,53 @@ extension InAppPurchasesWorker {
               let appId = arguments["app_id"]?.stringValue else {
             return MCPResult.error("Required parameter 'app_id' is missing")
         }
-        return try await listIAPPassthroughResources(
-            params,
-            endpoint: "/v1/apps/\(try ASCPathSegment.encode(appId))/inAppPurchasesV2",
-            key: "in_app_purchases",
-            defaultQuery: [
+        do {
+            var query = [
                 "include": "inAppPurchaseLocalizations,iapPriceSchedule,inAppPurchaseAvailability,promotedPurchase,offerCodes",
                 "fields[inAppPurchases]": "name,productId,inAppPurchaseType,state,reviewNote,familySharable,contentHosting,inAppPurchaseLocalizations,promotedPurchase,iapPriceSchedule,inAppPurchaseAvailability,offerCodes",
                 "fields[inAppPurchaseLocalizations]": "name,locale,description,state",
                 "fields[inAppPurchasePriceSchedules]": "baseTerritory,manualPrices,automaticPrices",
                 "fields[inAppPurchaseAvailabilities]": "availableInNewTerritories,availableTerritories",
                 "fields[promotedPurchases]": "visibleForAllUsers,enabled,state"
-            ],
-            extraResult: ["app_id": appId],
-            preserveIncluded: true
-        )
+            ]
+            if let value = try iapCatalogQueryValue(arguments["filter_name"], field: "filter_name") {
+                query["filter[name]"] = value
+            }
+            if let value = try iapCatalogQueryValue(arguments["filter_product_id"], field: "filter_product_id") {
+                query["filter[productId]"] = value
+            }
+            if let value = try iapCatalogQueryValue(
+                arguments["filter_state"],
+                field: "filter_state",
+                allowedValues: Set(Self.iapCatalogStates)
+            ) {
+                query["filter[state]"] = value
+            }
+            if let value = try iapCatalogQueryValue(
+                arguments["filter_type"],
+                field: "filter_type",
+                allowedValues: Set(Self.iapCatalogTypes)
+            ) {
+                query["filter[inAppPurchaseType]"] = value
+            }
+            if let value = try iapCatalogQueryValue(
+                arguments["sort"],
+                field: "sort",
+                allowedValues: Set(Self.iapCatalogSortValues)
+            ) {
+                query["sort"] = value
+            }
+            return try await listIAPPassthroughResources(
+                params,
+                endpoint: "/v1/apps/\(try ASCPathSegment.encode(appId))/inAppPurchasesV2",
+                key: "in_app_purchases",
+                defaultQuery: query,
+                extraResult: ["app_id": appId],
+                preserveIncluded: true
+            )
+        } catch {
+            return MCPResult.error("Failed to list in_app_purchases: \(error.localizedDescription)")
+        }
     }
 
     func getIAPPromotedPurchase(_ params: CallTool.Parameters) async throws -> CallTool.Result {

@@ -17,8 +17,20 @@ extension SubscriptionsWorker {
                     ]),
                     "limit": .object([
                         "type": .string("integer"),
-                        "description": .string("Max results (default: 25, max: 200)")
+                        "description": .string("Max results (default: 25, max: 200)"),
+                        "minimum": .int(1),
+                        "maximum": .int(200)
                     ]),
+                    "filter_name": subscriptionStringListSchema("Filter by one or more exact reference names"),
+                    "filter_product_id": subscriptionStringListSchema("Filter by one or more exact product identifiers"),
+                    "filter_state": subscriptionEnumListSchema(
+                        "Filter by one or more App Store states",
+                        values: Self.subscriptionCatalogStates
+                    ),
+                    "sort": subscriptionEnumListSchema(
+                        "Sort by reference name; prefix with - for descending order",
+                        values: Self.subscriptionCatalogSortValues
+                    ),
                     "next_url": .object([
                         "type": .string("string"),
                         "description": .string("Pagination URL from previous response to fetch next page")
@@ -148,6 +160,12 @@ extension SubscriptionsWorker {
                         "type": .string("string"),
                         "description": .string("Subscription ID")
                     ]),
+                    "limit": .object([
+                        "type": .string("integer"),
+                        "description": .string("Max results (default: 25, max: 200)"),
+                        "minimum": .int(1),
+                        "maximum": .int(200)
+                    ]),
                     "next_url": .object([
                         "type": .string("string"),
                         "description": .string("Pagination URL from previous response to fetch next page")
@@ -156,6 +174,48 @@ extension SubscriptionsWorker {
                 "required": .array([.string("subscription_id")])
             ])
         )
+    }
+
+    func subscriptionStringListSchema(_ description: String) -> Value {
+        .object([
+            "description": .string(description),
+            "oneOf": .array([
+                .object([
+                    "type": .string("string"),
+                    "minLength": .int(1)
+                ]),
+                .object([
+                    "type": .string("array"),
+                    "items": .object([
+                        "type": .string("string"),
+                        "minLength": .int(1)
+                    ]),
+                    "minItems": .int(1),
+                    "uniqueItems": .bool(true)
+                ])
+            ])
+        ])
+    }
+
+    func subscriptionEnumListSchema(_ description: String, values: [String]) -> Value {
+        .object([
+            "description": .string(description),
+            "oneOf": .array([
+                .object([
+                    "type": .string("string"),
+                    "enum": .array(values.map(Value.string))
+                ]),
+                .object([
+                    "type": .string("array"),
+                    "items": .object([
+                        "type": .string("string"),
+                        "enum": .array(values.map(Value.string))
+                    ]),
+                    "minItems": .int(1),
+                    "uniqueItems": .bool(true)
+                ])
+            ])
+        ])
     }
 
     func createSubscriptionLocalizationTool() -> Tool {

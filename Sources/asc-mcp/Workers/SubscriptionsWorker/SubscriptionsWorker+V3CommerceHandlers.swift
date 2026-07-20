@@ -99,12 +99,35 @@ extension SubscriptionsWorker {
               let appId = arguments["app_id"]?.stringValue else {
             return MCPResult.error("Required parameter 'app_id' is missing")
         }
-        return try await listResources(
-            params,
-            endpoint: "/v1/apps/\(try ASCPathSegment.encode(appId))/subscriptionGroups",
-            key: "groups",
-            defaultQuery: ["include": "subscriptions,subscriptionGroupLocalizations"]
-        )
+        do {
+            var query = ["include": "subscriptions,subscriptionGroupLocalizations"]
+            if let value = try subscriptionCatalogQueryValue(arguments["filter_reference_name"], field: "filter_reference_name") {
+                query["filter[referenceName]"] = value
+            }
+            if let value = try subscriptionCatalogQueryValue(
+                arguments["filter_subscription_state"],
+                field: "filter_subscription_state",
+                allowedValues: Set(Self.subscriptionCatalogStates)
+            ) {
+                query["filter[subscriptions.state]"] = value
+            }
+            if let value = try subscriptionCatalogQueryValue(
+                arguments["sort"],
+                field: "sort",
+                allowedValues: Set(Self.subscriptionGroupSortValues)
+            ) {
+                query["sort"] = value
+            }
+            return try await listResources(
+                params,
+                endpoint: "/v1/apps/\(try ASCPathSegment.encode(appId))/subscriptionGroups",
+                key: "groups",
+                defaultQuery: query,
+                paginationRequiredParameters: query
+            )
+        } catch {
+            return MCPResult.error("Failed to list groups: \(error.localizedDescription)")
+        }
     }
 
     func getSubscriptionGroup(_ params: CallTool.Parameters) async throws -> CallTool.Result {
@@ -1004,7 +1027,13 @@ extension SubscriptionsWorker {
         return try await getResource(endpoint: "/v1/winBackOffers/\(try ASCPathSegment.encode(winbackOfferId))", key: "win_back_offer")
     }
 
-    private func listResources(_ params: CallTool.Parameters, endpoint: String, key: String, defaultQuery: [String: String]) async throws -> CallTool.Result {
+    private func listResources(
+        _ params: CallTool.Parameters,
+        endpoint: String,
+        key: String,
+        defaultQuery: [String: String],
+        paginationRequiredParameters: [String: String]? = nil
+    ) async throws -> CallTool.Result {
         do {
             let response: PassthroughAPIResponse
             var query = defaultQuery
@@ -1013,7 +1042,10 @@ extension SubscriptionsWorker {
             if let nextUrl = try paginationURL(from: params.arguments?["next_url"]) {
                 response = try await httpClient.getPage(
                     nextUrl,
-                    scope: PaginationScope(path: endpoint, requiredParameters: paginationFilters(from: query)),
+                    scope: PaginationScope(
+                        path: endpoint,
+                        requiredParameters: paginationRequiredParameters ?? paginationFilters(from: query)
+                    ),
                     as: PassthroughAPIResponse.self
                 )
             } else {

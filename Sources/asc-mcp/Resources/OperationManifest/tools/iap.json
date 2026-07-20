@@ -648,7 +648,51 @@
           "method": "get",
           "path": "/v2/inAppPurchases/{id}",
           "role": "primary",
-          "condition": null
+          "condition": null,
+          "optionalParameterClassifications": [
+            {
+              "location": "query",
+              "appleName": "include",
+              "disposition": "intentionallyOmitted",
+              "reason": "The public tool returns its stable base projection instead of arbitrary relationship expansion; dedicated commerce tools cover related resources.",
+              "reviewAtSpec": "4.4.1"
+            },
+            {
+              "location": "query",
+              "appleName": "limit[images]",
+              "disposition": "intentionallyOmitted",
+              "reason": "The corresponding embedded relationship is not caller-configurable; dedicated relationship tools provide paginated access where supported.",
+              "reviewAtSpec": "4.4.1"
+            },
+            {
+              "location": "query",
+              "appleName": "limit[inAppPurchaseLocalizations]",
+              "disposition": "intentionallyOmitted",
+              "reason": "The corresponding embedded relationship is not caller-configurable; dedicated relationship tools provide paginated access where supported.",
+              "reviewAtSpec": "4.4.1"
+            },
+            {
+              "location": "query",
+              "appleName": "limit[offerCodes]",
+              "disposition": "intentionallyOmitted",
+              "reason": "The corresponding embedded relationship is not caller-configurable; dedicated relationship tools provide paginated access where supported.",
+              "reviewAtSpec": "4.4.1"
+            },
+            {
+              "location": "query",
+              "appleName": "limit[pricePoints]",
+              "disposition": "intentionallyOmitted",
+              "reason": "The corresponding embedded relationship is not caller-configurable; dedicated relationship tools provide paginated access where supported.",
+              "reviewAtSpec": "4.4.1"
+            },
+            {
+              "location": "query",
+              "appleName": "limit[versions]",
+              "disposition": "intentionallyOmitted",
+              "reason": "The corresponding embedded relationship is not caller-configurable; dedicated relationship tools provide paginated access where supported.",
+              "reviewAtSpec": "4.4.1"
+            }
+          ]
         }
       ],
       "fields": [
@@ -692,6 +736,29 @@
         }
       ],
       "fields": [
+        {
+          "toolField": "include_territories",
+          "sourceKind": "derived",
+          "operationId": "inAppPurchaseAvailabilities_getInstance",
+          "location": "query",
+          "appleName": "include",
+          "derivedFrom": [
+            "include_territories"
+          ],
+          "localRole": "Maps true to include=availableTerritories and false to omission for the availability-ID path."
+        },
+        {
+          "toolField": "territory_limit",
+          "sourceKind": "derived",
+          "operationId": "inAppPurchaseAvailabilities_getInstance",
+          "location": "query",
+          "appleName": "limit[availableTerritories]",
+          "derivedFrom": [
+            "territory_limit",
+            "include_territories"
+          ],
+          "localRole": "Emitted only when include_territories is true for the availability-ID path."
+        },
         {
           "toolField": "availability_id",
           "sourceKind": "parameter",
@@ -785,7 +852,16 @@
           "method": "get",
           "path": "/v1/inAppPurchaseOfferCodeCustomCodes/{id}",
           "role": "primary",
-          "condition": null
+          "condition": null,
+          "optionalParameterClassifications": [
+            {
+              "location": "query",
+              "appleName": "include",
+              "disposition": "intentionallyOmitted",
+              "reason": "The public tool returns its stable base projection instead of arbitrary relationship expansion; dedicated commerce tools cover related resources.",
+              "reviewAtSpec": "4.4.1"
+            }
+          ]
         }
       ],
       "fields": [
@@ -818,7 +894,16 @@
           "method": "get",
           "path": "/v1/inAppPurchaseImages/{id}",
           "role": "primary",
-          "condition": null
+          "condition": null,
+          "optionalParameterClassifications": [
+            {
+              "location": "query",
+              "appleName": "include",
+              "disposition": "intentionallyOmitted",
+              "reason": "The public tool returns its stable base projection instead of arbitrary relationship expansion; dedicated commerce tools cover related resources.",
+              "reviewAtSpec": "4.4.1"
+            }
+          ]
         }
       ],
       "fields": [
@@ -851,7 +936,37 @@
           "method": "get",
           "path": "/v1/inAppPurchaseOfferCodes/{id}",
           "role": "primary",
-          "condition": null
+          "condition": null,
+          "optionalParameterClassifications": [
+            {
+              "location": "query",
+              "appleName": "include",
+              "disposition": "intentionallyOmitted",
+              "reason": "The public tool returns its stable base projection instead of arbitrary relationship expansion; dedicated commerce tools cover related resources.",
+              "reviewAtSpec": "4.4.1"
+            },
+            {
+              "location": "query",
+              "appleName": "limit[customCodes]",
+              "disposition": "intentionallyOmitted",
+              "reason": "The corresponding embedded relationship is not caller-configurable; dedicated relationship tools provide paginated access where supported.",
+              "reviewAtSpec": "4.4.1"
+            },
+            {
+              "location": "query",
+              "appleName": "limit[oneTimeUseCodes]",
+              "disposition": "intentionallyOmitted",
+              "reason": "The corresponding embedded relationship is not caller-configurable; dedicated relationship tools provide paginated access where supported.",
+              "reviewAtSpec": "4.4.1"
+            },
+            {
+              "location": "query",
+              "appleName": "limit[prices]",
+              "disposition": "intentionallyOmitted",
+              "reason": "The corresponding embedded relationship is not caller-configurable; dedicated relationship tools provide paginated access where supported.",
+              "reviewAtSpec": "4.4.1"
+            }
+          ]
         }
       ],
       "fields": [
@@ -884,7 +999,16 @@
           "method": "get",
           "path": "/v1/inAppPurchaseOfferCodeOneTimeUseCodes/{id}",
           "role": "primary",
-          "condition": null
+          "condition": null,
+          "optionalParameterClassifications": [
+            {
+              "location": "query",
+              "appleName": "include",
+              "disposition": "intentionallyOmitted",
+              "reason": "The public tool returns its stable base projection instead of arbitrary relationship expansion; dedicated commerce tools cover related resources.",
+              "reviewAtSpec": "4.4.1"
+            }
+          ]
         }
       ],
       "fields": [
@@ -979,7 +1103,30 @@
           "method": "get",
           "path": "/v2/inAppPurchases/{id}/iapPriceSchedule",
           "role": "primary",
-          "condition": null
+          "condition": null,
+          "optionalParameterClassifications": [
+            {
+              "location": "query",
+              "appleName": "include",
+              "disposition": "intentionallyOmitted",
+              "reason": "The public tool returns its stable base projection instead of arbitrary relationship expansion; dedicated commerce tools cover related resources.",
+              "reviewAtSpec": "4.4.1"
+            },
+            {
+              "location": "query",
+              "appleName": "limit[automaticPrices]",
+              "disposition": "intentionallyOmitted",
+              "reason": "The corresponding embedded relationship is not caller-configurable; dedicated relationship tools provide paginated access where supported.",
+              "reviewAtSpec": "4.4.1"
+            },
+            {
+              "location": "query",
+              "appleName": "limit[manualPrices]",
+              "disposition": "intentionallyOmitted",
+              "reason": "The corresponding embedded relationship is not caller-configurable; dedicated relationship tools provide paginated access where supported.",
+              "reviewAtSpec": "4.4.1"
+            }
+          ]
         }
       ],
       "fields": [
@@ -1012,7 +1159,16 @@
           "method": "get",
           "path": "/v2/inAppPurchases/{id}/promotedPurchase",
           "role": "primary",
-          "condition": null
+          "condition": null,
+          "optionalParameterClassifications": [
+            {
+              "location": "query",
+              "appleName": "include",
+              "disposition": "intentionallyOmitted",
+              "reason": "The public tool returns its stable base projection instead of arbitrary relationship expansion; dedicated commerce tools cover related resources.",
+              "reviewAtSpec": "4.4.1"
+            }
+          ]
         }
       ],
       "fields": [
@@ -1045,7 +1201,16 @@
           "method": "get",
           "path": "/v2/inAppPurchases/{id}/appStoreReviewScreenshot",
           "role": "primary",
-          "condition": null
+          "condition": null,
+          "optionalParameterClassifications": [
+            {
+              "location": "query",
+              "appleName": "include",
+              "disposition": "intentionallyOmitted",
+              "reason": "The public tool returns its stable base projection instead of arbitrary relationship expansion; dedicated commerce tools cover related resources.",
+              "reviewAtSpec": "4.4.1"
+            }
+          ]
         }
       ],
       "fields": [
@@ -1078,7 +1243,30 @@
           "method": "get",
           "path": "/v1/subscriptionGroups/{id}",
           "role": "primary",
-          "condition": null
+          "condition": null,
+          "optionalParameterClassifications": [
+            {
+              "location": "query",
+              "appleName": "limit[subscriptionGroupLocalizations]",
+              "disposition": "intentionallyOmitted",
+              "reason": "The corresponding embedded relationship is not caller-configurable; dedicated relationship tools provide paginated access where supported.",
+              "reviewAtSpec": "4.4.1"
+            },
+            {
+              "location": "query",
+              "appleName": "limit[subscriptions]",
+              "disposition": "intentionallyOmitted",
+              "reason": "The corresponding embedded relationship is not caller-configurable; dedicated relationship tools provide paginated access where supported.",
+              "reviewAtSpec": "4.4.1"
+            },
+            {
+              "location": "query",
+              "appleName": "limit[versions]",
+              "disposition": "intentionallyOmitted",
+              "reason": "The corresponding embedded relationship is not caller-configurable; dedicated relationship tools provide paginated access where supported.",
+              "reviewAtSpec": "4.4.1"
+            }
+          ]
         }
       ],
       "fields": [
@@ -1145,10 +1333,82 @@
           "method": "get",
           "path": "/v1/apps/{id}/inAppPurchasesV2",
           "role": "primary",
-          "condition": null
+          "condition": null,
+          "optionalParameterClassifications": [
+            {
+              "location": "query",
+              "appleName": "include",
+              "disposition": "internalControl",
+              "reason": "The handler fixes this query control on the initial request; it is not exposed as a direct public input.",
+              "reviewAtSpec": "4.4.1"
+            },
+            {
+              "location": "query",
+              "appleName": "limit[images]",
+              "disposition": "intentionallyOmitted",
+              "reason": "The corresponding embedded relationship is not caller-configurable; dedicated relationship tools provide paginated access where supported.",
+              "reviewAtSpec": "4.4.1"
+            },
+            {
+              "location": "query",
+              "appleName": "limit[inAppPurchaseLocalizations]",
+              "disposition": "intentionallyOmitted",
+              "reason": "The corresponding embedded relationship is not caller-configurable; dedicated relationship tools provide paginated access where supported.",
+              "reviewAtSpec": "4.4.1"
+            },
+            {
+              "location": "query",
+              "appleName": "limit[offerCodes]",
+              "disposition": "intentionallyOmitted",
+              "reason": "The corresponding embedded relationship is not caller-configurable; dedicated relationship tools provide paginated access where supported.",
+              "reviewAtSpec": "4.4.1"
+            },
+            {
+              "location": "query",
+              "appleName": "limit[versions]",
+              "disposition": "intentionallyOmitted",
+              "reason": "The corresponding embedded relationship is not caller-configurable; dedicated relationship tools provide paginated access where supported.",
+              "reviewAtSpec": "4.4.1"
+            }
+          ]
         }
       ],
       "fields": [
+        {
+          "toolField": "filter_type",
+          "sourceKind": "parameter",
+          "operationId": "apps_inAppPurchasesV2_getToManyRelated",
+          "location": "query",
+          "appleName": "filter[inAppPurchaseType]"
+        },
+        {
+          "toolField": "filter_name",
+          "sourceKind": "parameter",
+          "operationId": "apps_inAppPurchasesV2_getToManyRelated",
+          "location": "query",
+          "appleName": "filter[name]"
+        },
+        {
+          "toolField": "filter_product_id",
+          "sourceKind": "parameter",
+          "operationId": "apps_inAppPurchasesV2_getToManyRelated",
+          "location": "query",
+          "appleName": "filter[productId]"
+        },
+        {
+          "toolField": "filter_state",
+          "sourceKind": "parameter",
+          "operationId": "apps_inAppPurchasesV2_getToManyRelated",
+          "location": "query",
+          "appleName": "filter[state]"
+        },
+        {
+          "toolField": "sort",
+          "sourceKind": "parameter",
+          "operationId": "apps_inAppPurchasesV2_getToManyRelated",
+          "location": "query",
+          "appleName": "sort"
+        },
         {
           "toolField": "app_id",
           "sourceKind": "parameter",
@@ -1223,10 +1483,68 @@
           "method": "get",
           "path": "/v1/apps/{id}/inAppPurchasesV2",
           "role": "primary",
-          "condition": null
+          "condition": null,
+          "optionalParameterClassifications": [
+            {
+              "location": "query",
+              "appleName": "include",
+              "disposition": "intentionallyOmitted",
+              "reason": "The public tool returns its stable base projection instead of arbitrary relationship expansion; dedicated commerce tools cover related resources.",
+              "reviewAtSpec": "4.4.1"
+            },
+            {
+              "location": "query",
+              "appleName": "limit[images]",
+              "disposition": "intentionallyOmitted",
+              "reason": "The corresponding embedded relationship is not caller-configurable; dedicated relationship tools provide paginated access where supported.",
+              "reviewAtSpec": "4.4.1"
+            },
+            {
+              "location": "query",
+              "appleName": "limit[inAppPurchaseLocalizations]",
+              "disposition": "intentionallyOmitted",
+              "reason": "The corresponding embedded relationship is not caller-configurable; dedicated relationship tools provide paginated access where supported.",
+              "reviewAtSpec": "4.4.1"
+            },
+            {
+              "location": "query",
+              "appleName": "limit[offerCodes]",
+              "disposition": "intentionallyOmitted",
+              "reason": "The corresponding embedded relationship is not caller-configurable; dedicated relationship tools provide paginated access where supported.",
+              "reviewAtSpec": "4.4.1"
+            },
+            {
+              "location": "query",
+              "appleName": "limit[versions]",
+              "disposition": "intentionallyOmitted",
+              "reason": "The corresponding embedded relationship is not caller-configurable; dedicated relationship tools provide paginated access where supported.",
+              "reviewAtSpec": "4.4.1"
+            }
+          ]
         }
       ],
       "fields": [
+        {
+          "toolField": "filter_name",
+          "sourceKind": "parameter",
+          "operationId": "apps_inAppPurchasesV2_getToManyRelated",
+          "location": "query",
+          "appleName": "filter[name]"
+        },
+        {
+          "toolField": "filter_product_id",
+          "sourceKind": "parameter",
+          "operationId": "apps_inAppPurchasesV2_getToManyRelated",
+          "location": "query",
+          "appleName": "filter[productId]"
+        },
+        {
+          "toolField": "sort",
+          "sourceKind": "parameter",
+          "operationId": "apps_inAppPurchasesV2_getToManyRelated",
+          "location": "query",
+          "appleName": "sort"
+        },
         {
           "toolField": "app_id",
           "sourceKind": "parameter",
@@ -1350,7 +1668,16 @@
           "method": "get",
           "path": "/v2/inAppPurchases/{id}/images",
           "role": "primary",
-          "condition": null
+          "condition": null,
+          "optionalParameterClassifications": [
+            {
+              "location": "query",
+              "appleName": "include",
+              "disposition": "intentionallyOmitted",
+              "reason": "The public tool returns its stable base projection instead of arbitrary relationship expansion; dedicated commerce tools cover related resources.",
+              "reviewAtSpec": "4.4.1"
+            }
+          ]
         }
       ],
       "fields": [
@@ -1395,10 +1722,26 @@
           "method": "get",
           "path": "/v2/inAppPurchases/{id}/inAppPurchaseLocalizations",
           "role": "primary",
-          "condition": null
+          "condition": null,
+          "optionalParameterClassifications": [
+            {
+              "location": "query",
+              "appleName": "include",
+              "disposition": "intentionallyOmitted",
+              "reason": "The public tool returns its stable base projection instead of arbitrary relationship expansion; dedicated commerce tools cover related resources.",
+              "reviewAtSpec": "4.4.1"
+            }
+          ]
         }
       ],
       "fields": [
+        {
+          "toolField": "limit",
+          "sourceKind": "parameter",
+          "operationId": "inAppPurchasesV2_inAppPurchaseLocalizations_getToManyRelated",
+          "location": "query",
+          "appleName": "limit"
+        },
         {
           "toolField": "iap_id",
           "sourceKind": "parameter",
@@ -1433,7 +1776,16 @@
           "method": "get",
           "path": "/v1/inAppPurchaseOfferCodes/{id}/prices",
           "role": "primary",
-          "condition": null
+          "condition": null,
+          "optionalParameterClassifications": [
+            {
+              "location": "query",
+              "appleName": "include",
+              "disposition": "internalControl",
+              "reason": "The handler fixes this query control on the initial request; it is not exposed as a direct public input.",
+              "reviewAtSpec": "4.4.1"
+            }
+          ]
         }
       ],
       "fields": [
@@ -1485,7 +1837,44 @@
           "method": "get",
           "path": "/v2/inAppPurchases/{id}/offerCodes",
           "role": "primary",
-          "condition": null
+          "condition": null,
+          "optionalParameterClassifications": [
+            {
+              "location": "query",
+              "appleName": "filter[territory]",
+              "disposition": "intentionallyOmitted",
+              "reason": "Offer-code discovery stays product-scoped; territory selection is available on the dedicated offer-price listing.",
+              "reviewAtSpec": "4.4.1"
+            },
+            {
+              "location": "query",
+              "appleName": "include",
+              "disposition": "internalControl",
+              "reason": "The handler fixes this query control on the initial request; it is not exposed as a direct public input.",
+              "reviewAtSpec": "4.4.1"
+            },
+            {
+              "location": "query",
+              "appleName": "limit[customCodes]",
+              "disposition": "internalControl",
+              "reason": "The handler fixes this query control on the initial request; it is not exposed as a direct public input.",
+              "reviewAtSpec": "4.4.1"
+            },
+            {
+              "location": "query",
+              "appleName": "limit[oneTimeUseCodes]",
+              "disposition": "internalControl",
+              "reason": "The handler fixes this query control on the initial request; it is not exposed as a direct public input.",
+              "reviewAtSpec": "4.4.1"
+            },
+            {
+              "location": "query",
+              "appleName": "limit[prices]",
+              "disposition": "internalControl",
+              "reason": "The handler fixes this query control on the initial request; it is not exposed as a direct public input.",
+              "reviewAtSpec": "4.4.1"
+            }
+          ]
         }
       ],
       "fields": [
@@ -1530,7 +1919,16 @@
           "method": "get",
           "path": "/v1/inAppPurchaseOfferCodes/{id}/oneTimeUseCodes",
           "role": "primary",
-          "condition": null
+          "condition": null,
+          "optionalParameterClassifications": [
+            {
+              "location": "query",
+              "appleName": "include",
+              "disposition": "intentionallyOmitted",
+              "reason": "The public tool returns its stable base projection instead of arbitrary relationship expansion; dedicated commerce tools cover related resources.",
+              "reviewAtSpec": "4.4.1"
+            }
+          ]
         }
       ],
       "fields": [
@@ -1575,7 +1973,16 @@
           "method": "get",
           "path": "/v1/inAppPurchasePricePoints/{id}/equalizations",
           "role": "primary",
-          "condition": null
+          "condition": null,
+          "optionalParameterClassifications": [
+            {
+              "location": "query",
+              "appleName": "include",
+              "disposition": "internalControl",
+              "reason": "The handler fixes this query control on the initial request; it is not exposed as a direct public input.",
+              "reviewAtSpec": "4.4.1"
+            }
+          ]
         }
       ],
       "fields": [
@@ -1635,7 +2042,16 @@
           "method": "get",
           "path": "/v2/inAppPurchases/{id}/pricePoints",
           "role": "primary",
-          "condition": null
+          "condition": null,
+          "optionalParameterClassifications": [
+            {
+              "location": "query",
+              "appleName": "include",
+              "disposition": "internalControl",
+              "reason": "The handler fixes this query control on the initial request; it is not exposed as a direct public input.",
+              "reviewAtSpec": "4.4.1"
+            }
+          ]
         }
       ],
       "fields": [
@@ -1699,10 +2115,61 @@
           "method": "get",
           "path": "/v1/apps/{id}/subscriptionGroups",
           "role": "primary",
-          "condition": null
+          "condition": null,
+          "optionalParameterClassifications": [
+            {
+              "location": "query",
+              "appleName": "include",
+              "disposition": "intentionallyOmitted",
+              "reason": "The public tool returns its stable base projection instead of arbitrary relationship expansion; dedicated commerce tools cover related resources.",
+              "reviewAtSpec": "4.4.1"
+            },
+            {
+              "location": "query",
+              "appleName": "limit[subscriptionGroupLocalizations]",
+              "disposition": "intentionallyOmitted",
+              "reason": "The corresponding embedded relationship is not caller-configurable; dedicated relationship tools provide paginated access where supported.",
+              "reviewAtSpec": "4.4.1"
+            },
+            {
+              "location": "query",
+              "appleName": "limit[subscriptions]",
+              "disposition": "intentionallyOmitted",
+              "reason": "The corresponding embedded relationship is not caller-configurable; dedicated relationship tools provide paginated access where supported.",
+              "reviewAtSpec": "4.4.1"
+            },
+            {
+              "location": "query",
+              "appleName": "limit[versions]",
+              "disposition": "intentionallyOmitted",
+              "reason": "The corresponding embedded relationship is not caller-configurable; dedicated relationship tools provide paginated access where supported.",
+              "reviewAtSpec": "4.4.1"
+            }
+          ]
         }
       ],
       "fields": [
+        {
+          "toolField": "filter_reference_name",
+          "sourceKind": "parameter",
+          "operationId": "apps_subscriptionGroups_getToManyRelated",
+          "location": "query",
+          "appleName": "filter[referenceName]"
+        },
+        {
+          "toolField": "filter_subscription_state",
+          "sourceKind": "parameter",
+          "operationId": "apps_subscriptionGroups_getToManyRelated",
+          "location": "query",
+          "appleName": "filter[subscriptions.state]"
+        },
+        {
+          "toolField": "sort",
+          "sourceKind": "parameter",
+          "operationId": "apps_subscriptionGroups_getToManyRelated",
+          "location": "query",
+          "appleName": "sort"
+        },
         {
           "toolField": "app_id",
           "sourceKind": "parameter",
@@ -1744,7 +2211,23 @@
           "method": "get",
           "path": "/v2/inAppPurchases/{id}/pricePoints",
           "role": "primary",
-          "condition": null
+          "condition": null,
+          "optionalParameterClassifications": [
+            {
+              "location": "query",
+              "appleName": "include",
+              "disposition": "internalControl",
+              "reason": "The handler fixes this query control on the initial request; it is not exposed as a direct public input.",
+              "reviewAtSpec": "4.4.1"
+            },
+            {
+              "location": "query",
+              "appleName": "limit",
+              "disposition": "internalControl",
+              "reason": "The handler fixes this query control on the initial request; it is not exposed as a direct public input.",
+              "reviewAtSpec": "4.4.1"
+            }
+          ]
         }
       ],
       "fields": [
@@ -1790,7 +2273,30 @@
           "method": "get",
           "path": "/v2/inAppPurchases/{id}/iapPriceSchedule",
           "role": "primary",
-          "condition": null
+          "condition": null,
+          "optionalParameterClassifications": [
+            {
+              "location": "query",
+              "appleName": "include",
+              "disposition": "intentionallyOmitted",
+              "reason": "The public tool returns its stable base projection instead of arbitrary relationship expansion; dedicated commerce tools cover related resources.",
+              "reviewAtSpec": "4.4.1"
+            },
+            {
+              "location": "query",
+              "appleName": "limit[automaticPrices]",
+              "disposition": "intentionallyOmitted",
+              "reason": "The corresponding embedded relationship is not caller-configurable; dedicated relationship tools provide paginated access where supported.",
+              "reviewAtSpec": "4.4.1"
+            },
+            {
+              "location": "query",
+              "appleName": "limit[manualPrices]",
+              "disposition": "intentionallyOmitted",
+              "reason": "The corresponding embedded relationship is not caller-configurable; dedicated relationship tools provide paginated access where supported.",
+              "reviewAtSpec": "4.4.1"
+            }
+          ]
         },
         {
           "operationId": "inAppPurchasePriceSchedules_manualPrices_getToManyRelated",
@@ -1807,6 +2313,22 @@
                 "inAppPurchasesV2_iapPriceSchedule_getToOneRelated:/data/id"
               ],
               "localRole": "Use the price-schedule ID returned by the primary schedule lookup."
+            }
+          ],
+          "optionalParameterClassifications": [
+            {
+              "location": "query",
+              "appleName": "include",
+              "disposition": "internalControl",
+              "reason": "The handler fixes this query control on the initial request; it is not exposed as a direct public input.",
+              "reviewAtSpec": "4.4.1"
+            },
+            {
+              "location": "query",
+              "appleName": "limit",
+              "disposition": "internalControl",
+              "reason": "The handler fixes this query control on the initial request; it is not exposed as a direct public input.",
+              "reviewAtSpec": "4.4.1"
             }
           ]
         },
@@ -1825,6 +2347,22 @@
                 "inAppPurchasesV2_iapPriceSchedule_getToOneRelated:/data/id"
               ],
               "localRole": "Use the price-schedule ID returned by the primary schedule lookup."
+            }
+          ],
+          "optionalParameterClassifications": [
+            {
+              "location": "query",
+              "appleName": "include",
+              "disposition": "internalControl",
+              "reason": "The handler fixes this query control on the initial request; it is not exposed as a direct public input.",
+              "reviewAtSpec": "4.4.1"
+            },
+            {
+              "location": "query",
+              "appleName": "limit",
+              "disposition": "internalControl",
+              "reason": "The handler fixes this query control on the initial request; it is not exposed as a direct public input.",
+              "reviewAtSpec": "4.4.1"
             }
           ]
         }
@@ -2443,6 +2981,15 @@
               ],
               "localRole": "Inspect the exact image created by the reservation operation."
             }
+          ],
+          "optionalParameterClassifications": [
+            {
+              "location": "query",
+              "appleName": "include",
+              "disposition": "intentionallyOmitted",
+              "reason": "The public tool returns its stable base projection instead of arbitrary relationship expansion; dedicated commerce tools cover related resources.",
+              "reviewAtSpec": "4.4.1"
+            }
           ]
         },
         {
@@ -2579,6 +3126,15 @@
                 "inAppPurchaseAppStoreReviewScreenshots_createInstance:/data/id"
               ],
               "localRole": "Inspect the exact review screenshot created by the reservation operation."
+            }
+          ],
+          "optionalParameterClassifications": [
+            {
+              "location": "query",
+              "appleName": "include",
+              "disposition": "intentionallyOmitted",
+              "reason": "The public tool returns its stable base projection instead of arbitrary relationship expansion; dedicated commerce tools cover related resources.",
+              "reviewAtSpec": "4.4.1"
             }
           ]
         },

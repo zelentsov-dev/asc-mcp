@@ -7,7 +7,7 @@ extension InAppPurchasesWorker {
             iapSimpleTool("iap_list_price_point_equalizations", "List IAP price point equalizations", ["price_point_id": "IAP price point ID", "iap_id": "Optional IAP ID filter", "territory_id": "Optional territory filter", "limit": "Max results", "next_url": "Pagination URL"], ["price_point_id"]),
             iapSimpleTool("iap_pricing_summary", "Summarize current and scheduled IAP prices for one territory", ["iap_id": "In-app purchase ID", "territory_id": "Territory ID"], ["iap_id", "territory_id"]),
             iapSimpleTool("iap_prepare_offer_prices", "Find IAP price point candidates for offer-code creation", ["iap_id": "In-app purchase ID", "territory_id": "Territory ID", "customer_price": "Optional exact customer price"], ["iap_id", "territory_id"]),
-            iapSimpleTool("iap_inventory", "List AI-friendly IAP inventory for an app", ["app_id": "App Store Connect app ID", "limit": "Max results", "next_url": "Pagination URL"], ["app_id"]),
+            iapSimpleTool("iap_inventory", "List AI-friendly IAP inventory for an app", ["app_id": "App Store Connect app ID", "filter_name": "Filter by one or more exact reference names", "filter_product_id": "Filter by one or more exact product identifiers", "filter_state": "Filter by one or more App Store states", "filter_type": "Filter by one or more in-app purchase types", "sort": "Sort by reference name or in-app purchase type; prefix with - for descending order", "limit": "Max results", "next_url": "Pagination URL"], ["app_id"]),
             iapSimpleTool("iap_get_promoted_purchase", "Get promoted purchase state for an IAP", ["iap_id": "In-app purchase ID"], ["iap_id"]),
             iapSimpleTool("iap_list_available_territories", "List territories for an IAP availability resource", ["availability_id": "IAP availability ID", "limit": "Max results", "next_url": "Pagination URL"], ["availability_id"]),
             iapSimpleTool("iap_list_offer_codes", "List IAP offer codes", ["iap_id": "In-app purchase ID", "limit": "Max results", "next_url": "Pagination URL"], ["iap_id"]),
@@ -31,6 +31,18 @@ extension InAppPurchasesWorker {
 
     private func iapSimpleTool(_ name: String, _ description: String, _ properties: [String: String], _ required: [String]) -> Tool {
         let schemaProperties = Dictionary(uniqueKeysWithValues: properties.map { key, description in
+            if key == "filter_name" || key == "filter_product_id" {
+                return (key, iapStringListSchema(description))
+            }
+            if key == "filter_state" {
+                return (key, iapEnumListSchema(description, values: Self.iapCatalogStates))
+            }
+            if key == "filter_type" {
+                return (key, iapEnumListSchema(description, values: Self.iapCatalogTypes))
+            }
+            if key == "sort" {
+                return (key, iapEnumListSchema(description, values: Self.iapCatalogSortValues))
+            }
             let type: String
             if key.hasSuffix("_ids") || key == "customer_eligibilities" {
                 type = "array"

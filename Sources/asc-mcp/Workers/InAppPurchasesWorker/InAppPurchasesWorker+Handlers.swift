@@ -45,45 +45,52 @@ extension InAppPurchasesWorker {
         do {
             let response: ASCInAppPurchasesV2Response
 
-            if let type = arguments["filter_type"]?.stringValue,
-               !Self.supportedIAPTypes.contains(type) {
-                return MCPResult.error("filter_type must be one of: \(Self.supportedIAPTypes.sorted().joined(separator: ", "))")
+            var selection: [String: String] = [:]
+            if let value = try iapCatalogQueryValue(arguments["filter_name"], field: "filter_name") {
+                selection["filter[name]"] = value
+            }
+            if let value = try iapCatalogQueryValue(arguments["filter_product_id"], field: "filter_product_id") {
+                selection["filter[productId]"] = value
+            }
+            if let value = try iapCatalogQueryValue(
+                arguments["filter_state"],
+                field: "filter_state",
+                allowedValues: Set(Self.iapCatalogStates)
+            ) {
+                selection["filter[state]"] = value
+            }
+            if let value = try iapCatalogQueryValue(
+                arguments["filter_type"],
+                field: "filter_type",
+                allowedValues: Set(Self.iapCatalogTypes)
+            ) {
+                selection["filter[inAppPurchaseType]"] = value
+            }
+            if let value = try iapCatalogQueryValue(
+                arguments["sort"],
+                field: "sort",
+                allowedValues: Set(Self.iapCatalogSortValues)
+            ) {
+                selection["sort"] = value
             }
 
             if let nextUrl = try paginationURL(from: arguments["next_url"]) {
-                var requiredParameters: [String: String] = [:]
-                if let state = arguments["filter_state"]?.stringValue {
-                    requiredParameters["filter[state]"] = state
-                }
-                if let type = arguments["filter_type"]?.stringValue {
-                    requiredParameters["filter[inAppPurchaseType]"] = type
-                }
                 response = try await httpClient.getPage(
                     nextUrl,
                     scope: PaginationScope(
                         path: "/v1/apps/\(try ASCPathSegment.encode(appId))/inAppPurchasesV2",
-                        requiredParameters: requiredParameters
+                        requiredParameters: selection
                     ),
                     as: ASCInAppPurchasesV2Response.self
                 )
             } else {
-                var queryParams: [String: String] = [:]
+                var queryParams = selection
 
                 if let limitValue = arguments["limit"],
                    let limit = limitValue.intValue {
                     queryParams["limit"] = String(min(max(limit, 1), 200))
                 } else {
                     queryParams["limit"] = "25"
-                }
-
-                if let stateValue = arguments["filter_state"],
-                   let state = stateValue.stringValue {
-                    queryParams["filter[state]"] = state
-                }
-
-                if let typeValue = arguments["filter_type"],
-                   let type = typeValue.stringValue {
-                    queryParams["filter[inAppPurchaseType]"] = type
                 }
 
                 response = try await httpClient.get(
@@ -313,7 +320,9 @@ extension InAppPurchasesWorker {
             } else {
                 response = try await httpClient.get(
                     "/v2/inAppPurchases/\(try ASCPathSegment.encode(iapId))/inAppPurchaseLocalizations",
-                    parameters: [:],
+                    parameters: [
+                        "limit": String(min(max(arguments["limit"]?.intValue ?? 25, 1), 200))
+                    ],
                     as: ASCInAppPurchaseLocalizationsResponse.self
                 )
             }
@@ -354,14 +363,36 @@ extension InAppPurchasesWorker {
         do {
             let response: ASCSubscriptionGroupsResponse
 
+            var selection: [String: String] = [:]
+            if let value = try iapCatalogQueryValue(arguments["filter_reference_name"], field: "filter_reference_name") {
+                selection["filter[referenceName]"] = value
+            }
+            if let value = try iapCatalogQueryValue(
+                arguments["filter_subscription_state"],
+                field: "filter_subscription_state",
+                allowedValues: Set(Self.subscriptionCatalogStates)
+            ) {
+                selection["filter[subscriptions.state]"] = value
+            }
+            if let value = try iapCatalogQueryValue(
+                arguments["sort"],
+                field: "sort",
+                allowedValues: Set(Self.subscriptionGroupSortValues)
+            ) {
+                selection["sort"] = value
+            }
+
             if let nextUrl = try paginationURL(from: arguments["next_url"]) {
                 response = try await httpClient.getPage(
                     nextUrl,
-                    scope: PaginationScope(path: "/v1/apps/\(try ASCPathSegment.encode(appId))/subscriptionGroups"),
+                    scope: PaginationScope(
+                        path: "/v1/apps/\(try ASCPathSegment.encode(appId))/subscriptionGroups",
+                        requiredParameters: selection
+                    ),
                     as: ASCSubscriptionGroupsResponse.self
                 )
             } else {
-                var queryParams: [String: String] = [:]
+                var queryParams = selection
 
                 if let limitValue = arguments["limit"],
                    let limit = limitValue.intValue {
@@ -1364,6 +1395,50 @@ extension InAppPurchasesWorker {
             "familySharable": iap.attributes.familySharable.jsonSafe,
             "contentHosting": iap.attributes.contentHosting.jsonSafe
         ]
+    }
+
+    func iapCatalogQueryValue(
+        _ value: Value?,
+        field: String,
+        allowedValues: Set<String>? = nil
+    ) throws -> String? {
+        guard let value else {
+            return nil
+        }
+
+        let values: [String]
+        if let string = value.stringValue {
+            values = [string]
+        } else if let array = value.arrayValue {
+            let strings = array.compactMap(\.stringValue)
+            guard strings.count == array.count else {
+                throw ASCError.parsing("'\(field)' must be a string or an array of strings")
+            }
+            values = strings
+        } else {
+            throw ASCError.parsing("'\(field)' must be a string or an array of strings")
+        }
+
+        guard !values.isEmpty else {
+            throw ASCError.parsing("'\(field)' must contain at least one value")
+        }
+        guard values.allSatisfy({ value in
+            let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+            return !trimmed.isEmpty && trimmed == value
+        }) else {
+            throw ASCError.parsing("'\(field)' must contain only non-empty strings without surrounding whitespace")
+        }
+        guard Set(values).count == values.count else {
+            throw ASCError.parsing("'\(field)' must not contain duplicate values")
+        }
+        if let allowedValues {
+            let unsupported = values.filter { !allowedValues.contains($0) }
+            guard unsupported.isEmpty else {
+                throw ASCError.parsing("Unsupported value(s) for '\(field)': \(unsupported.joined(separator: ", "))")
+            }
+        }
+
+        return values.joined(separator: ",")
     }
 
     private static let supportedIAPTypes: Set<String> = [

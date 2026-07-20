@@ -3,6 +3,40 @@ import MCP
 
 /// InAppPurchasesWorker manages IAP and subscriptions in App Store Connect
 public final class InAppPurchasesWorker: Sendable {
+    static let iapCatalogStates = [
+        "MISSING_METADATA",
+        "WAITING_FOR_UPLOAD",
+        "PROCESSING_CONTENT",
+        "READY_TO_SUBMIT",
+        "WAITING_FOR_REVIEW",
+        "IN_REVIEW",
+        "DEVELOPER_ACTION_NEEDED",
+        "PENDING_BINARY_APPROVAL",
+        "APPROVED",
+        "DEVELOPER_REMOVED_FROM_SALE",
+        "REMOVED_FROM_SALE",
+        "REJECTED"
+    ]
+    static let iapCatalogTypes = [
+        "CONSUMABLE",
+        "NON_CONSUMABLE",
+        "NON_RENEWING_SUBSCRIPTION"
+    ]
+    static let iapCatalogSortValues = ["name", "-name", "inAppPurchaseType", "-inAppPurchaseType"]
+    static let subscriptionCatalogStates = [
+        "MISSING_METADATA",
+        "READY_TO_SUBMIT",
+        "WAITING_FOR_REVIEW",
+        "IN_REVIEW",
+        "DEVELOPER_ACTION_NEEDED",
+        "PENDING_BINARY_APPROVAL",
+        "APPROVED",
+        "DEVELOPER_REMOVED_FROM_SALE",
+        "REMOVED_FROM_SALE",
+        "REJECTED"
+    ]
+    static let subscriptionGroupSortValues = ["referenceName", "-referenceName"]
+
     let httpClient: HTTPClient
     let uploadService: UploadService
     let deliveryPollAttempts: Int

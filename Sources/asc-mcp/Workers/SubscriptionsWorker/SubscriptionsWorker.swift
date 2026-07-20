@@ -4,6 +4,21 @@ import MCP
 /// SubscriptionsWorker manages auto-renewable subscriptions, subscription groups,
 /// localizations, prices, and submission in App Store Connect
 public final class SubscriptionsWorker: Sendable {
+    static let subscriptionCatalogStates = [
+        "MISSING_METADATA",
+        "READY_TO_SUBMIT",
+        "WAITING_FOR_REVIEW",
+        "IN_REVIEW",
+        "DEVELOPER_ACTION_NEEDED",
+        "PENDING_BINARY_APPROVAL",
+        "APPROVED",
+        "DEVELOPER_REMOVED_FROM_SALE",
+        "REMOVED_FROM_SALE",
+        "REJECTED"
+    ]
+    static let subscriptionCatalogSortValues = ["name", "-name"]
+    static let subscriptionGroupSortValues = ["referenceName", "-referenceName"]
+
     let httpClient: HTTPClient
     let uploadService: UploadService
     let deliveryPollAttempts: Int

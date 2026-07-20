@@ -4,7 +4,7 @@ import MCP
 extension SubscriptionsWorker {
     func v3CommerceTools() -> [Tool] {
         [
-            simpleTool("subscriptions_list_groups", "List subscription groups for an app", ["app_id": "App Store Connect app ID", "limit": "Max results", "next_url": "Pagination URL"], ["app_id"]),
+            simpleTool("subscriptions_list_groups", "List subscription groups for an app", ["app_id": "App Store Connect app ID", "filter_reference_name": "Filter by one or more exact group reference names", "filter_subscription_state": "Filter groups by one or more related subscription states", "sort": "Sort by group reference name; prefix with - for descending order", "limit": "Max results", "next_url": "Pagination URL"], ["app_id"]),
             simpleTool("subscriptions_get_group", "Get a subscription group", ["group_id": "Subscription group ID"], ["group_id"]),
             simpleTool("subscriptions_submit_group", "Submit a subscription group for review", ["group_id": "Subscription group ID"], ["group_id"]),
             simpleTool("subscriptions_get_localization", "Get a subscription localization", ["localization_id": "Subscription localization ID"], ["localization_id"]),
@@ -106,7 +106,16 @@ extension SubscriptionsWorker {
             inputSchema: .object([
                 "type": .string("object"),
                 "properties": .object(Dictionary(uniqueKeysWithValues: properties.map { key, fieldDescription in
-                    (key, propertySchema(toolName: name, key: key, description: fieldDescription))
+                    if key == "filter_reference_name" {
+                        return (key, subscriptionStringListSchema(fieldDescription))
+                    }
+                    if key == "filter_subscription_state" {
+                        return (key, subscriptionEnumListSchema(fieldDescription, values: Self.subscriptionCatalogStates))
+                    }
+                    if key == "sort", name == "subscriptions_list_groups" {
+                        return (key, subscriptionEnumListSchema(fieldDescription, values: Self.subscriptionGroupSortValues))
+                    }
+                    return (key, propertySchema(toolName: name, key: key, description: fieldDescription))
                 })),
                 "required": .array(required.map { .string($0) })
             ])
