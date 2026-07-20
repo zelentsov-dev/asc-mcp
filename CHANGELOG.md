@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.8.0] - 2026-07-20
+
+### Changed
+
+- `apps_list` now exposes App ID, SKU, related App Store version, version-state, review-submission, platform, and Game Center existence filters from Apple API 4.4.1.
+- `apps_list_versions`, `apps_list_localizations`, and `app_versions_list` now expose their remaining collection ID, version-string, state, platform, locale, and page-size controls while preserving them across `next_url` requests.
+- `app_versions_create` and `app_versions_update` now preserve omission, explicit null, and Boolean values for Apple's deprecated `usesIdfa` attribute; deprecated Apple inputs are marked in the MCP schemas.
+
+### Fixed
+
+- Reject empty or malformed collection-filter arrays before network access instead of silently dropping invalid values.
+- Bound or explicitly classified all 145 previously unclassified optional Apple inputs associated with Apps and App Lifecycle workflows, including related-resource limits, expansion controls, review-item relationships, and legacy age-rating fields.
+- Limit exact-locale metadata update lookups to one matching localization while retaining the fixed ownership projection.
+
+### Compatibility
+
+- No public MCP tool or required input was added, removed, or renamed; this release adds 20 optional inputs across six existing tools.
+- Existing calls remain valid. Continuation calls that use the new collection filters must repeat the same filter values and effective page size with Apple's returned `next_url`.
+- The strict contract pin records 2,154 optional Apple inputs: 750 bound, 7 internally controlled, 1,134 intentionally omitted, and 263 still queued for domain review.
+
 ## [3.7.0] - 2026-07-20
 
 ### Changed
