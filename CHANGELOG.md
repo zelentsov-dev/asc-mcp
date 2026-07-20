@@ -11,27 +11,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Added `app_versions_delete_phased_release` for removing an App Store phased-release configuration, bringing the public surface to 390 tools without removing an existing tool.
 - Added schema-v2 accounting for optional Apple query and request-body inputs, including exact reviewed classifications and a strict count-and-identity coverage pin that blocks silent regressions during phased remediation.
-- Added contract and MCP regression coverage for nullable accessibility updates, App Event validation, analytics pagination, review-response lookup behavior, metrics filters, pricing schedules and availability, provisioning settings, and core TestFlight workflows.
+- Added contract and MCP regression coverage across metadata, app lifecycle, analytics, reviews, metrics, provisioning, pricing, TestFlight, commerce, marketing, webhooks, and Xcode Cloud workflows.
 
 ### Changed
 
-- Aligned App Info, accessibility declarations, App Events, analytics, reviews, users, webhooks, provisioning, metrics, pricing, builds, beta details, beta groups, beta testers, and pre-release versions with Apple App Store Connect API 4.4.1.
-- Expanded supported Apple filters, includes, relationship pagination, response lineage, and scalar-or-array inputs where the official API accepts multiple values.
-- Extended price-schedule and availability workflows to preserve multiple manual prices, effective dates, inline territory availability, relationship links, and included App resources.
+- Hardened Apps and App Store version workflows against Apple 4.4.1 with current states and platforms, ownership validation, deterministic pagination, nullable metadata updates, included relationships, and complete media traversal.
+- Aligned TestFlight administration, beta feedback, build processing, pre-release versions, and Xcode Cloud request and response contracts with the mapped Apple operations.
+- Corrected IAP, subscription, offer-code, price-schedule, and territory-availability workflows, including inline manual prices, relationship pagination, truncation metadata, environment-aware one-time codes, and lossless CSV values.
+- Expanded analytics, reviews, users, webhooks, metrics, provisioning, App Info, accessibility, and App Events with Apple's current filters, includes, limits, relationships, and response fields.
+- Corrected custom product page templates, screenshot and preview parent relationships, promoted-purchase targeting, and Product Page Optimization projections including visionOS.
 
 ### Fixed
 
-- Preserved omission, explicit value, and explicit `null` as distinct accessibility update operations.
+- Preserved omission, explicit values, and explicit `null` across supported nullable updates while rejecting malformed and no-op writes before network access.
 - Corrected customer-review response lookup so a relationship `404` is reported as no response only after the parent review is confirmed to exist.
-- Rejected invalid App Event deep links, purchase requirements, provisioning settings, and pricing dates before issuing an App Store Connect request.
-- Corrected metrics filter cardinality, pricing included-resource decoding, and TestFlight query propagation found by the live Apple 4.4.1 contract audit.
+- Prevented app/version ownership mismatches, pagination-scope drift, incomplete metadata selection, and swallowed screenshot or preview errors.
+- Corrected subscription and IAP one-time-code endpoints and media types, Xcode Cloud provider and test-result projections, webhook signature output nullability, custom-page state projection, and sandbox-tester relationship typing.
+- Fixed Swift 6 compilation regressions in the Apps and IAP contract handlers and made encoded-path regression coverage portable across the release toolchain.
 
 ### Compatibility
 
 - No public MCP tool was removed. Several list and metrics filters now accept either one value or an array; existing scalar calls remain valid.
+- `app_versions_list.states` remains available as a deprecated compatibility filter; use `app_version_states` for Apple's current `appVersionState`.
+- One-time-code values now return Apple's non-paginated CSV losslessly through `values_csv`, `media_type`, and `byte_count`; unsupported pagination inputs are no longer exposed.
 - `app_events_create` and `app_events_update` now require an absolute `deep_link` and accept only Apple's documented purchase-requirement values.
+- IAP types follow Apple's current `CONSUMABLE`, `NON_CONSUMABLE`, and `NON_RENEWING_SUBSCRIPTION` values; auto-renewable products belong to the subscription tools.
+- Unsupported App Event values, noncanonical IAP types, ambiguous Xcode Cloud run selectors, ambiguous promoted-purchase product targets, malformed arrays, and empty updates now fail locally instead of issuing an invalid Apple request.
 - The strict contract pin currently records 2,154 optional Apple inputs: 706 bound, 6 internally controlled, 965 intentionally omitted, and 477 still queued for domain review. Future phases must update this pin explicitly and cannot increase the unreviewed surface silently.
+- The manifest maps 365 Apple operations; 382 tools remain `partial` for full type, enum, or response completeness, and 8 deprecated tools remain registered with migration guidance.
 
 ## [3.1.0] - 2026-07-20
 
