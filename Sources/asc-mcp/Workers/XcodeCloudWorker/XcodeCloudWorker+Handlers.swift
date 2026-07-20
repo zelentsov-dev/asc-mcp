@@ -139,21 +139,30 @@ extension XcodeCloudWorker {
     }
 
     /// Starts an Xcode Cloud build run.
-    /// - Parameter params: Tool parameters containing either `workflow_id` or `build_run_id`.
+    /// - Parameter params: Tool parameters containing exactly one of `workflow_id` or `build_run_id`.
     /// - Returns: JSON object containing the created build run resource.
     /// - Throws: Networking, decoding, or API errors from App Store Connect.
     func startBuildRun(_ params: CallTool.Parameters) async throws -> CallTool.Result {
         guard let arguments = params.arguments else {
-            return MCPResult.error("Required parameters: workflow_id or build_run_id")
+            return MCPResult.error("Provide exactly one of 'workflow_id' or 'build_run_id'")
         }
 
-        let workflowID = arguments["workflow_id"]?.stringValue
-        let buildRunID = arguments["build_run_id"]?.stringValue
-        let sourceBranchOrTagID = arguments["source_branch_or_tag_id"]?.stringValue
-        let pullRequestID = arguments["pull_request_id"]?.stringValue
+        let workflowID = arguments["workflow_id"]?.stringValue?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let buildRunID = arguments["build_run_id"]?.stringValue?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let sourceBranchOrTagID = arguments["source_branch_or_tag_id"]?.stringValue?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let pullRequestID = arguments["pull_request_id"]?.stringValue?.trimmingCharacters(in: .whitespacesAndNewlines)
 
-        guard workflowID != nil || buildRunID != nil else {
-            return MCPResult.error("Provide 'workflow_id' to start a workflow build or 'build_run_id' to rebuild an existing run")
+        for (name, value) in [
+            ("workflow_id", workflowID),
+            ("build_run_id", buildRunID),
+            ("source_branch_or_tag_id", sourceBranchOrTagID),
+            ("pull_request_id", pullRequestID)
+        ] where arguments[name] != nil && (value?.isEmpty != false) {
+            return MCPResult.error("Parameter '\(name)' must be a non-empty string")
+        }
+
+        guard (workflowID == nil) != (buildRunID == nil) else {
+            return MCPResult.error("Provide exactly one of 'workflow_id' or 'build_run_id'")
         }
         guard !(sourceBranchOrTagID != nil && pullRequestID != nil) else {
             return MCPResult.error("Use only one source selector: source_branch_or_tag_id or pull_request_id")
@@ -853,8 +862,12 @@ extension XcodeCloudWorker {
         relationship?.data?.id ?? NSNull()
     }
 
-    private func relationshipIDs(_ relationship: ASCRelationshipMultiple?) -> [String] {
-        relationship?.data?.map(\.id) ?? []
+    private func relationshipIDs(_ relationship: ASCRelationshipMultiple?) -> Any {
+        relationship?.data?.map(\.id) ?? NSNull()
+    }
+
+    private func relationshipURL(_ links: ASCRelationshipLinks?) -> Any {
+        links?.related ?? NSNull()
     }
 
     private func formatProduct(_ product: ASCCIProduct) -> [String: Any] {
@@ -865,11 +878,16 @@ extension XcodeCloudWorker {
             "createdDate": (product.attributes?.createdDate).jsonSafe,
             "productType": (product.attributes?.productType).jsonSafe,
             "appId": relationshipID(product.relationships?.app),
+            "appUrl": relationshipURL(product.relationships?.app?.links),
             "bundleIdResourceId": relationshipID(product.relationships?.bundleId),
             "workflowIds": relationshipIDs(product.relationships?.workflows),
+            "workflowsUrl": relationshipURL(product.relationships?.workflows?.links),
             "primaryRepositoryIds": relationshipIDs(product.relationships?.primaryRepositories),
+            "primaryRepositoriesUrl": relationshipURL(product.relationships?.primaryRepositories?.links),
             "additionalRepositoryIds": relationshipIDs(product.relationships?.additionalRepositories),
-            "buildRunIds": relationshipIDs(product.relationships?.buildRuns)
+            "additionalRepositoriesUrl": relationshipURL(product.relationships?.additionalRepositories?.links),
+            "buildRunIds": relationshipIDs(product.relationships?.buildRuns),
+            "buildRunsUrl": relationshipURL(product.relationships?.buildRuns?.links)
         ]
     }
 
@@ -897,9 +915,11 @@ extension XcodeCloudWorker {
             ],
             "productId": relationshipID(workflow.relationships?.product),
             "repositoryId": relationshipID(workflow.relationships?.repository),
+            "repositoryUrl": relationshipURL(workflow.relationships?.repository?.links),
             "xcodeVersionId": relationshipID(workflow.relationships?.xcodeVersion),
             "macOSVersionId": relationshipID(workflow.relationships?.macOsVersion),
-            "buildRunIds": relationshipIDs(workflow.relationships?.buildRuns)
+            "buildRunIds": relationshipIDs(workflow.relationships?.buildRuns),
+            "buildRunsUrl": relationshipURL(workflow.relationships?.buildRuns?.links)
         ]
     }
 
@@ -921,11 +941,13 @@ extension XcodeCloudWorker {
             "startReason": (attrs?.startReason).jsonSafe,
             "cancelReason": (attrs?.cancelReason).jsonSafe,
             "buildIds": relationshipIDs(buildRun.relationships?.builds),
+            "buildsUrl": relationshipURL(buildRun.relationships?.builds?.links),
             "workflowId": relationshipID(buildRun.relationships?.workflow),
             "productId": relationshipID(buildRun.relationships?.product),
             "sourceBranchOrTagId": relationshipID(buildRun.relationships?.sourceBranchOrTag),
             "destinationBranchId": relationshipID(buildRun.relationships?.destinationBranch),
             "actionIds": relationshipIDs(buildRun.relationships?.actions),
+            "actionsUrl": relationshipURL(buildRun.relationships?.actions?.links),
             "pullRequestId": relationshipID(buildRun.relationships?.pullRequest)
         ]
     }
@@ -944,9 +966,13 @@ extension XcodeCloudWorker {
             "completionStatus": (attrs?.completionStatus).jsonSafe,
             "isRequiredToPass": (attrs?.isRequiredToPass).jsonSafe,
             "buildRunId": relationshipID(action.relationships?.buildRun),
+            "buildRunUrl": relationshipURL(action.relationships?.buildRun?.links),
             "artifactIds": relationshipIDs(action.relationships?.artifacts),
+            "artifactsUrl": relationshipURL(action.relationships?.artifacts?.links),
             "issueIds": relationshipIDs(action.relationships?.issues),
-            "testResultIds": relationshipIDs(action.relationships?.testResults)
+            "issuesUrl": relationshipURL(action.relationships?.issues?.links),
+            "testResultIds": relationshipIDs(action.relationships?.testResults),
+            "testResultsUrl": relationshipURL(action.relationships?.testResults?.links)
         ]
     }
 
@@ -992,7 +1018,8 @@ extension XcodeCloudWorker {
             "version": (version.attributes?.version).jsonSafe,
             "name": (version.attributes?.name).jsonSafe,
             "testDestinations": version.attributes?.testDestinations?.map(formatTestDestination) ?? [],
-            "macOSVersionIds": relationshipIDs(version.relationships?.macOsVersions)
+            "macOSVersionIds": relationshipIDs(version.relationships?.macOsVersions),
+            "macOSVersionsUrl": relationshipURL(version.relationships?.macOsVersions?.links)
         ]
     }
 
@@ -1002,17 +1029,22 @@ extension XcodeCloudWorker {
             "type": version.type,
             "version": (version.attributes?.version).jsonSafe,
             "name": (version.attributes?.name).jsonSafe,
-            "xcodeVersionIds": relationshipIDs(version.relationships?.xcodeVersions)
+            "xcodeVersionIds": relationshipIDs(version.relationships?.xcodeVersions),
+            "xcodeVersionsUrl": relationshipURL(version.relationships?.xcodeVersions?.links)
         ]
     }
 
     private func formatScmProvider(_ provider: ASCScmProvider) -> [String: Any] {
-        [
+        let providerType = provider.attributes?.scmProviderType
+        return [
             "id": provider.id,
             "type": provider.type,
-            "scmProviderType": (provider.attributes?.scmProviderType).jsonSafe,
+            "scmProviderType": (providerType?.kind).jsonSafe,
+            "scmProviderDisplayName": (providerType?.displayName).jsonSafe,
+            "isOnPremise": (providerType?.isOnPremise).jsonSafe,
             "url": (provider.attributes?.url).jsonSafe,
-            "repositoryIds": relationshipIDs(provider.relationships?.repositories)
+            "repositoryIds": relationshipIDs(provider.relationships?.repositories),
+            "repositoriesUrl": relationshipURL(provider.relationships?.repositories?.links)
         ]
     }
 
@@ -1028,7 +1060,9 @@ extension XcodeCloudWorker {
             "providerId": relationshipID(repository.relationships?.scmProvider),
             "defaultBranchId": relationshipID(repository.relationships?.defaultBranch),
             "gitReferenceIds": relationshipIDs(repository.relationships?.gitReferences),
-            "pullRequestIds": relationshipIDs(repository.relationships?.pullRequests)
+            "gitReferencesUrl": relationshipURL(repository.relationships?.gitReferences?.links),
+            "pullRequestIds": relationshipIDs(repository.relationships?.pullRequests),
+            "pullRequestsUrl": relationshipURL(repository.relationships?.pullRequests?.links)
         ]
     }
 
@@ -1063,45 +1097,57 @@ extension XcodeCloudWorker {
         ]
     }
 
-    private func formatCommit(_ commit: ASCCIBuildRun.Commit?) -> [String: Any] {
-        [
-            "commitSha": (commit?.commitSha).jsonSafe,
-            "message": (commit?.message).jsonSafe,
-            "author": formatGitUser(commit?.author),
-            "committer": formatGitUser(commit?.committer),
-            "webUrl": (commit?.webUrl).jsonSafe
+    private func formatCommit(_ commit: ASCCIBuildRun.Commit?) -> Any {
+        guard let commit else {
+            return NSNull()
+        }
+        return [
+            "commitSha": (commit.commitSha).jsonSafe,
+            "message": (commit.message).jsonSafe,
+            "author": formatGitUser(commit.author),
+            "committer": formatGitUser(commit.committer),
+            "webUrl": (commit.webUrl).jsonSafe
         ]
     }
 
-    private func formatGitUser(_ user: ASCCIBuildRun.GitUser?) -> [String: Any] {
-        [
-            "displayName": (user?.displayName).jsonSafe,
-            "email": (user?.email).jsonSafe
+    private func formatGitUser(_ user: ASCCIBuildRun.GitUser?) -> Any {
+        guard let user else {
+            return NSNull()
+        }
+        return [
+            "displayName": (user.displayName).jsonSafe,
+            "avatarUrl": (user.avatarUrl).jsonSafe
         ]
     }
 
-    private func formatIssueCounts(_ counts: ASCCIBuildRun.IssueCounts?) -> [String: Any] {
-        [
-            "analyzerWarnings": (counts?.analyzerWarnings).jsonSafe,
-            "errors": (counts?.errors).jsonSafe,
-            "testFailures": (counts?.testFailures).jsonSafe,
-            "warnings": (counts?.warnings).jsonSafe
+    private func formatIssueCounts(_ counts: ASCCIBuildRun.IssueCounts?) -> Any {
+        guard let counts else {
+            return NSNull()
+        }
+        return [
+            "analyzerWarnings": (counts.analyzerWarnings).jsonSafe,
+            "errors": (counts.errors).jsonSafe,
+            "testFailures": (counts.testFailures).jsonSafe,
+            "warnings": (counts.warnings).jsonSafe
         ]
     }
 
-    private func formatFileSource(_ source: ASCCIIssue.FileSource?) -> [String: Any] {
-        [
-            "fileName": (source?.fileName).jsonSafe,
-            "lineNumber": (source?.lineNumber).jsonSafe
+    private func formatFileSource(_ source: ASCCIIssue.FileSource?) -> Any {
+        guard let source else {
+            return NSNull()
+        }
+        return [
+            "path": (source.path).jsonSafe,
+            "lineNumber": (source.lineNumber).jsonSafe
         ]
     }
 
     private func formatDestinationTestResult(_ result: ASCCITestResult.DestinationTestResult) -> [String: Any] {
         [
+            "uuid": (result.uuid).jsonSafe,
             "deviceName": (result.deviceName).jsonSafe,
             "osVersion": (result.osVersion).jsonSafe,
             "status": (result.status).jsonSafe,
-            "message": (result.message).jsonSafe,
             "duration": (result.duration).jsonSafe
         ]
     }

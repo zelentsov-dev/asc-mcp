@@ -106,16 +106,8 @@ extension XcodeCloudWorker {
     func buildRunsStartTool() -> Tool {
         Tool(
             name: "xcode_cloud_build_runs_start",
-            description: "Start an Xcode Cloud build. Provide workflow_id for a new run or build_run_id for a rebuild; optional source_branch_or_tag_id and pull_request_id choose the source.",
-            inputSchema: baseSchema(
-                properties: [
-                    "workflow_id": stringSchema("Workflow ID to start"),
-                    "build_run_id": stringSchema("Existing build run ID to rebuild"),
-                    "source_branch_or_tag_id": stringSchema("SCM git reference ID to build"),
-                    "pull_request_id": stringSchema("SCM pull request ID to build"),
-                    "clean": boolSchema("Whether Xcode Cloud should perform a clean build")
-                ]
-            )
+            description: "Start an Xcode Cloud build. Provide exactly one of workflow_id for a new run or build_run_id for a rebuild; optional source_branch_or_tag_id and pull_request_id choose the source.",
+            inputSchema: buildRunStartSchema()
         )
     }
 
@@ -425,6 +417,26 @@ extension XcodeCloudWorker {
             schema["required"] = .array(required.map(Value.string))
         }
         return .object(schema)
+    }
+
+    private func buildRunStartSchema() -> Value {
+        baseSchema(
+            properties: [
+                "workflow_id": nonEmptyStringSchema("Workflow ID to start"),
+                "build_run_id": nonEmptyStringSchema("Existing build run ID to rebuild"),
+                "source_branch_or_tag_id": nonEmptyStringSchema("SCM git reference ID to build"),
+                "pull_request_id": nonEmptyStringSchema("SCM pull request ID to build"),
+                "clean": boolSchema("Whether Xcode Cloud should perform a clean build")
+            ]
+        )
+    }
+
+    private func nonEmptyStringSchema(_ description: String) -> Value {
+        .object([
+            "type": .string("string"),
+            "description": .string(description),
+            "minLength": .int(1)
+        ])
     }
 
     private func stringSchema(_ description: String) -> Value {

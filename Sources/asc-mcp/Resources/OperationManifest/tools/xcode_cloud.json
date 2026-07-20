@@ -53,7 +53,7 @@
           { "outputField": "total", "operationId": "ciBuildActions_issues_getToManyRelated", "jsonPointer": "/meta/paging/total" }
         ]
       },
-      "note": "Sparse fields are omitted. Known Apple 4.4.1 response loss: FileLocation uses path, while the current model expects fileName, so issue source paths decode as nil."
+      "note": "Sparse fields are omitted; the selected projection preserves Apple FileLocation.path and emits JSON null when fileSource is absent."
     },
     {
       "tool": "xcode_cloud_action_test_results_list",
@@ -80,7 +80,7 @@
           { "outputField": "total", "operationId": "ciBuildActions_testResults_getToManyRelated", "jsonPointer": "/meta/paging/total" }
         ]
       },
-      "note": "Sparse fields are omitted. FileLocation.path is lost because the model expects fileName, and destinationTestResults.uuid is not modeled; the model also declares a destination message field absent from Apple 4.4.1."
+      "note": "Sparse fields are omitted; the selected projection preserves FileLocation.path and destinationTestResults.uuid and exposes only Apple 4.4.1 destination fields."
     },
     {
       "tool": "xcode_cloud_actions_get",
@@ -224,18 +224,18 @@
           "role": "primary",
           "inputs": [
             { "sourceKind": "fixed", "jsonPointer": "/data/type", "fixedValue": "ciBuildRuns" },
-            { "sourceKind": "fixed", "jsonPointer": "/data/relationships/workflow/data/type", "fixedValue": "ciWorkflows" },
-            { "sourceKind": "fixed", "jsonPointer": "/data/relationships/buildRun/data/type", "fixedValue": "ciBuildRuns" },
-            { "sourceKind": "fixed", "jsonPointer": "/data/relationships/sourceBranchOrTag/data/type", "fixedValue": "scmGitReferences" },
-            { "sourceKind": "fixed", "jsonPointer": "/data/relationships/pullRequest/data/type", "fixedValue": "scmPullRequests" }
+            { "sourceKind": "fixed", "jsonPointer": "/data/relationships/workflow/data/type", "fixedValue": "ciWorkflows", "localRole": "presentOnlyWithWorkflowId" },
+            { "sourceKind": "fixed", "jsonPointer": "/data/relationships/buildRun/data/type", "fixedValue": "ciBuildRuns", "localRole": "presentOnlyWithBuildRunId" },
+            { "sourceKind": "fixed", "jsonPointer": "/data/relationships/sourceBranchOrTag/data/type", "fixedValue": "scmGitReferences", "localRole": "presentOnlyWithSourceBranchOrTagId" },
+            { "sourceKind": "fixed", "jsonPointer": "/data/relationships/pullRequest/data/type", "fixedValue": "scmPullRequests", "localRole": "presentOnlyWithPullRequestId" }
           ]
         }
       ],
       "fields": [
-        { "toolField": "workflow_id", "sourceKind": "requestBody", "operationId": "ciBuildRuns_createInstance", "jsonPointer": "/data/relationships/workflow/data/id" },
-        { "toolField": "build_run_id", "sourceKind": "requestBody", "operationId": "ciBuildRuns_createInstance", "jsonPointer": "/data/relationships/buildRun/data/id" },
-        { "toolField": "source_branch_or_tag_id", "sourceKind": "requestBody", "operationId": "ciBuildRuns_createInstance", "jsonPointer": "/data/relationships/sourceBranchOrTag/data/id" },
-        { "toolField": "pull_request_id", "sourceKind": "requestBody", "operationId": "ciBuildRuns_createInstance", "jsonPointer": "/data/relationships/pullRequest/data/id" },
+        { "toolField": "workflow_id", "sourceKind": "requestBody", "operationId": "ciBuildRuns_createInstance", "jsonPointer": "/data/relationships/workflow/data/id", "localRole": "exactlyOneRunSelector" },
+        { "toolField": "build_run_id", "sourceKind": "requestBody", "operationId": "ciBuildRuns_createInstance", "jsonPointer": "/data/relationships/buildRun/data/id", "localRole": "exactlyOneRunSelector" },
+        { "toolField": "source_branch_or_tag_id", "sourceKind": "requestBody", "operationId": "ciBuildRuns_createInstance", "jsonPointer": "/data/relationships/sourceBranchOrTag/data/id", "localRole": "atMostOneSourceSelector" },
+        { "toolField": "pull_request_id", "sourceKind": "requestBody", "operationId": "ciBuildRuns_createInstance", "jsonPointer": "/data/relationships/pullRequest/data/id", "localRole": "atMostOneSourceSelector" },
         { "toolField": "clean", "sourceKind": "requestBody", "operationId": "ciBuildRuns_createInstance", "jsonPointer": "/data/attributes/clean" }
       ],
       "response": {
@@ -247,7 +247,7 @@
           { "outputField": "buildRun", "operationId": "ciBuildRuns_createInstance", "jsonPointer": "/data" }
         ]
       },
-      "note": "Exact Apple request fields. Runtime validation enforces one source selector but only requires at least one of workflow_id/build_run_id, so supplying both run selectors is not rejected locally and is left to Apple."
+      "note": "Exact Apple request fields. Runtime preflight requires exactly one of workflow_id and build_run_id; source_branch_or_tag_id and pull_request_id remain mutually exclusive. Conditional JSON Schema keywords are intentionally omitted for broad MCP client compatibility."
     },
     {
       "tool": "xcode_cloud_issues_get",
@@ -270,7 +270,7 @@
           { "outputField": "issue", "operationId": "ciIssues_getInstance", "jsonPointer": "/data" }
         ]
       },
-      "note": "Sparse fields are omitted. Known response loss: Apple FileLocation.path is not decoded because the current model expects fileName."
+      "note": "Sparse fields are omitted; the selected projection preserves Apple FileLocation.path and emits JSON null when fileSource is absent."
     },
     {
       "tool": "xcode_cloud_macos_versions_get",
@@ -515,7 +515,7 @@
           { "outputField": "provider", "operationId": "scmProviders_getInstance", "jsonPointer": "/data" }
         ]
       },
-      "note": "Apple sparse provider fields are not exposed; the handler returns a selected projection."
+      "note": "The selected projection keeps scmProviderType.kind as the stable scalar and also exposes displayName and isOnPremise; links-only repositories remain available through repositoriesUrl."
     },
     {
       "tool": "xcode_cloud_scm_providers_list",
@@ -541,7 +541,7 @@
           { "outputField": "total", "operationId": "scmProviders_getCollection", "jsonPointer": "/meta/paging/total" }
         ]
       },
-      "note": "Apple sparse provider fields are not exposed; limit and pagination map exactly."
+      "note": "The selected projection keeps scmProviderType.kind as the stable scalar, exposes displayName and isOnPremise, and preserves links-only repositoriesUrl; limit and pagination map exactly."
     },
     {
       "tool": "xcode_cloud_scm_pull_requests_get",
@@ -701,7 +701,7 @@
           { "outputField": "testResult", "operationId": "ciTestResults_getInstance", "jsonPointer": "/data" }
         ]
       },
-      "note": "Sparse fields are omitted. FileLocation.path is lost because the model expects fileName, and destinationTestResults.uuid is not modeled; a nonexistent destination message field is declared locally."
+      "note": "Sparse fields are omitted; the selected projection preserves FileLocation.path and destinationTestResults.uuid and exposes only Apple 4.4.1 destination fields."
     },
     {
       "tool": "xcode_cloud_workflow_build_runs_list",

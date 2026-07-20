@@ -262,7 +262,7 @@ public struct ASCCIBuildRun: Codable, Sendable {
 
     public struct GitUser: Codable, Sendable {
         public let displayName: String?
-        public let email: String?
+        public let avatarUrl: String?
     }
 
     public struct IssueCounts: Codable, Sendable {
@@ -353,17 +353,17 @@ public struct ASCCITestResult: Codable, Sendable {
     }
 
     public struct DestinationTestResult: Codable, Sendable {
+        public let uuid: String?
         public let deviceName: String?
         public let osVersion: String?
         public let status: String?
-        public let message: String?
         public let duration: Double?
     }
 }
 
 extension ASCCIIssue {
     public struct FileSource: Codable, Sendable {
-        public let fileName: String?
+        public let path: String?
         public let lineNumber: Int?
     }
 }
@@ -425,8 +425,14 @@ public struct ASCScmProvider: Codable, Sendable {
     public let links: ASCResourceLinks?
 
     public struct Attributes: Codable, Sendable {
-        public let scmProviderType: String?
+        public let scmProviderType: ScmProviderType?
         public let url: String?
+    }
+
+    public struct ScmProviderType: Codable, Sendable {
+        public let kind: String?
+        public let displayName: String?
+        public let isOnPremise: Bool?
     }
 
     public struct Relationships: Codable, Sendable {

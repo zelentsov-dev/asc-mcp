@@ -44,6 +44,52 @@ struct XcodeCloudWorkerTests {
         #expect(conflicting.isError == true)
     }
 
+    @Test("start build enforces exactly one run selector at runtime")
+    func startBuildRequiresExactlyOneRunSelector() async throws {
+        let transport = XcodeCloudMockTransport(body: "{}")
+        let client = await HTTPClient(
+            jwtService: try TestFactory.makeJWTService(),
+            baseURL: "https://api.example.test",
+            transport: transport,
+            maxRetries: 1
+        )
+        let worker = XcodeCloudWorker(httpClient: client)
+        let tools = await worker.getTools()
+        let tool = ToolMetadataPolicy.apply(
+            to: try #require(tools.first { $0.name == "xcode_cloud_build_runs_start" })
+        )
+
+        guard case .object(let schema) = tool.inputSchema else {
+            Issue.record("Expected object input schema")
+            return
+        }
+        #expect(schema["if"] == nil)
+        #expect(schema["then"] == nil)
+        #expect(schema["else"] == nil)
+        #expect(schema["not"] == nil)
+
+        let neither = try await worker.handleTool(CallTool.Parameters(
+            name: "xcode_cloud_build_runs_start",
+            arguments: [:]
+        ))
+        let both = try await worker.handleTool(CallTool.Parameters(
+            name: "xcode_cloud_build_runs_start",
+            arguments: [
+                "workflow_id": .string("workflow-1"),
+                "build_run_id": .string("run-1")
+            ]
+        ))
+        let empty = try await worker.handleTool(CallTool.Parameters(
+            name: "xcode_cloud_build_runs_start",
+            arguments: ["workflow_id": .string("   ")]
+        ))
+
+        #expect(neither.isError == true)
+        #expect(both.isError == true)
+        #expect(empty.isError == true)
+        #expect(await transport.requestCount() == 0)
+    }
+
     @Test("start build sends workflow relationship and returns structured build run")
     func startBuildSendsWorkflowRelationship() async throws {
         let transport = XcodeCloudMockTransport(body: """
@@ -54,7 +100,14 @@ struct XcodeCloudWorkerTests {
             "attributes": {
               "number": 42,
               "executionProgress": "PENDING",
-              "startReason": "MANUAL"
+              "startReason": "MANUAL",
+              "sourceCommit": {
+                "commitSha": "abc123",
+                "author": {
+                  "displayName": "A. Developer",
+                  "avatarUrl": "https://example.test/avatar.png"
+                }
+              }
             },
             "relationships": {
               "workflow": { "data": { "type": "ciWorkflows", "id": "workflow-1" } }
@@ -88,6 +141,7 @@ struct XcodeCloudWorkerTests {
         #expect(body.contains("\"workflow\""))
         #expect(body.contains("\"ciWorkflows\""))
         #expect(body.contains("\"clean\":true"))
+        #expect(!body.contains("\"buildRun\""))
 
         guard case .object(let root)? = result.structuredContent,
               case .object(let buildRun)? = root["buildRun"] else {
@@ -97,6 +151,54 @@ struct XcodeCloudWorkerTests {
         #expect(buildRun["id"] == .string("run-1"))
         #expect(buildRun["number"] == .int(42))
         #expect(buildRun["workflowId"] == .string("workflow-1"))
+        guard case .object(let sourceCommit)? = buildRun["sourceCommit"],
+              case .object(let author)? = sourceCommit["author"] else {
+            Issue.record("Expected projected source commit author")
+            return
+        }
+        #expect(author["avatarUrl"] == .string("https://example.test/avatar.png"))
+        #expect(author["email"] == nil)
+        #expect(buildRun["destinationCommit"] == .null)
+        #expect(buildRun["issueCounts"] == .null)
+    }
+
+    @Test("start build sends only the build run relationship for rebuilds")
+    func startBuildSendsBuildRunRelationship() async throws {
+        let transport = XcodeCloudMockTransport(body: """
+        {
+          "data": {
+            "type": "ciBuildRuns",
+            "id": "run-2",
+            "relationships": {
+              "buildRun": { "data": { "type": "ciBuildRuns", "id": "run-1" } }
+            }
+          }
+        }
+        """)
+        let client = await HTTPClient(
+            jwtService: try TestFactory.makeJWTService(),
+            baseURL: "https://api.example.test",
+            transport: transport,
+            maxRetries: 1
+        )
+        let worker = XcodeCloudWorker(httpClient: client)
+
+        let result = try await worker.handleTool(CallTool.Parameters(
+            name: "xcode_cloud_build_runs_start",
+            arguments: ["build_run_id": .string("run-1")]
+        ))
+
+        #expect(result.isError == nil)
+        let bodyString = await transport.lastBodyString()
+        let body = Data(bodyString.utf8)
+        let root = try #require(JSONSerialization.jsonObject(with: body) as? [String: Any])
+        let data = try #require(root["data"] as? [String: Any])
+        let relationships = try #require(data["relationships"] as? [String: Any])
+        let buildRun = try #require(relationships["buildRun"] as? [String: Any])
+        let linkage = try #require(buildRun["data"] as? [String: Any])
+        #expect(linkage["type"] as? String == "ciBuildRuns")
+        #expect(linkage["id"] as? String == "run-1")
+        #expect(relationships["workflow"] == nil)
     }
 
     @Test("list products supports filters, include, and pagination result")
@@ -113,7 +215,10 @@ struct XcodeCloudWorkerTests {
             },
             "relationships": {
               "app": { "data": { "type": "apps", "id": "app-1" } },
-              "primaryRepositories": { "data": [{ "type": "scmRepositories", "id": "repo-1" }] }
+              "workflows": {
+                "links": { "related": "https://api.example.test/v1/ciProducts/product-1/workflows" }
+              },
+              "primaryRepositories": { "data": [] }
             }
           }],
           "links": {
@@ -160,6 +265,9 @@ struct XcodeCloudWorkerTests {
         #expect(root["total"] == .int(12))
         #expect(product["id"] == .string("product-1"))
         #expect(product["appId"] == .string("app-1"))
+        #expect(product["workflowIds"] == .null)
+        #expect(product["workflowsUrl"] == .string("https://api.example.test/v1/ciProducts/product-1/workflows"))
+        #expect(product["primaryRepositoryIds"] == .array([]))
     }
 
     @Test("workflow pagination rejects another product parent before transport")
@@ -264,6 +372,148 @@ struct XcodeCloudWorkerTests {
         let repository = try JSONDecoder().decode(ASCScmRepositoryResponse.self, from: repositoryJSON)
         #expect(repository.data.attributes?.ownerName == "develotex")
         #expect(repository.data.attributes?.repositoryName == "ios-app")
+
+        let providerJSON = Data("""
+        {
+          "data": {
+            "type": "scmProviders",
+            "id": "provider-1",
+            "attributes": {
+              "scmProviderType": {
+                "kind": "GITHUB_CLOUD",
+                "displayName": "GitHub",
+                "isOnPremise": false
+              },
+              "url": "https://github.com"
+            },
+            "relationships": {
+              "repositories": {
+                "links": { "related": "https://api.example.test/v1/scmProviders/provider-1/repositories" }
+              }
+            }
+          }
+        }
+        """.utf8)
+        let provider = try JSONDecoder().decode(ASCScmProviderResponse.self, from: providerJSON)
+        #expect(provider.data.attributes?.scmProviderType?.kind == "GITHUB_CLOUD")
+        #expect(provider.data.attributes?.scmProviderType?.displayName == "GitHub")
+        #expect(provider.data.attributes?.scmProviderType?.isOnPremise == false)
+        #expect(provider.data.relationships?.repositories?.data == nil)
+        #expect(provider.data.relationships?.repositories?.links?.related == "https://api.example.test/v1/scmProviders/provider-1/repositories")
+    }
+
+    @Test("provider and test result projections follow Apple 4.4.1")
+    func providerAndTestResultProjections() async throws {
+        let providerTransport = XcodeCloudMockTransport(body: """
+        {
+          "data": {
+            "type": "scmProviders",
+            "id": "provider-1",
+            "attributes": {
+              "scmProviderType": {
+                "kind": "GITHUB_ENTERPRISE",
+                "displayName": "GitHub Enterprise",
+                "isOnPremise": true
+              },
+              "url": "https://git.example.test"
+            },
+            "relationships": {
+              "repositories": {
+                "links": { "related": "https://api.example.test/v1/scmProviders/provider-1/repositories" }
+              }
+            }
+          }
+        }
+        """)
+        let providerClient = await HTTPClient(
+            jwtService: try TestFactory.makeJWTService(),
+            baseURL: "https://api.example.test",
+            transport: providerTransport,
+            maxRetries: 1
+        )
+        let providerResult = try await XcodeCloudWorker(httpClient: providerClient).handleTool(
+            CallTool.Parameters(
+                name: "xcode_cloud_scm_providers_get",
+                arguments: ["provider_id": .string("provider-1")]
+            )
+        )
+        guard case .object(let providerRoot)? = providerResult.structuredContent,
+              case .object(let provider)? = providerRoot["provider"] else {
+            Issue.record("Expected structured provider object")
+            return
+        }
+        #expect(provider["scmProviderType"] == .string("GITHUB_ENTERPRISE"))
+        #expect(provider["scmProviderDisplayName"] == .string("GitHub Enterprise"))
+        #expect(provider["isOnPremise"] == .bool(true))
+        #expect(provider["repositoryIds"] == .null)
+        #expect(provider["repositoriesUrl"] == .string("https://api.example.test/v1/scmProviders/provider-1/repositories"))
+
+        let testResultTransport = XcodeCloudMockTransport(body: """
+        {
+          "data": {
+            "type": "ciTestResults",
+            "id": "test-1",
+            "attributes": {
+              "name": "testExample",
+              "fileSource": { "path": "Tests/AppTests.swift", "lineNumber": 17 },
+              "destinationTestResults": [{
+                "uuid": "destination-1",
+                "deviceName": "iPhone 17 Pro",
+                "osVersion": "26.0",
+                "status": "PASSED",
+                "duration": 1.25
+              }]
+            }
+          }
+        }
+        """)
+        let testResultClient = await HTTPClient(
+            jwtService: try TestFactory.makeJWTService(),
+            baseURL: "https://api.example.test",
+            transport: testResultTransport,
+            maxRetries: 1
+        )
+        let testResult = try await XcodeCloudWorker(httpClient: testResultClient).handleTool(
+            CallTool.Parameters(
+                name: "xcode_cloud_test_results_get",
+                arguments: ["test_result_id": .string("test-1")]
+            )
+        )
+        guard case .object(let resultRoot)? = testResult.structuredContent,
+              case .object(let result)? = resultRoot["testResult"],
+              case .object(let fileSource)? = result["fileSource"],
+              case .array(let destinations)? = result["destinationTestResults"],
+              case .object(let destination)? = destinations.first else {
+            Issue.record("Expected structured test result object")
+            return
+        }
+        #expect(fileSource["path"] == .string("Tests/AppTests.swift"))
+        #expect(fileSource["fileName"] == nil)
+        #expect(destination["uuid"] == .string("destination-1"))
+        #expect(destination["message"] == nil)
+    }
+
+    @Test("Xcode Cloud manifest records conditional build start branches")
+    func buildStartManifestConditions() throws {
+        let manifest = try ASCOperationManifestBundle.loadBundled()
+        let mapping = try #require(manifest.mapping(for: "xcode_cloud_build_runs_start"))
+        let inputs = try #require(mapping.operations.first?.inputs)
+        let byPointer = Dictionary(uniqueKeysWithValues: inputs.compactMap { input in
+            input.jsonPointer.map { ($0, input.localRole ?? "") }
+        })
+
+        #expect(byPointer["/data/relationships/workflow/data/type"] == "presentOnlyWithWorkflowId")
+        #expect(byPointer["/data/relationships/buildRun/data/type"] == "presentOnlyWithBuildRunId")
+        #expect(byPointer["/data/relationships/sourceBranchOrTag/data/type"] == "presentOnlyWithSourceBranchOrTagId")
+        #expect(byPointer["/data/relationships/pullRequest/data/type"] == "presentOnlyWithPullRequestId")
+        let fieldRoles = Dictionary(uniqueKeysWithValues: mapping.fields.map {
+            ($0.toolField, $0.localRole ?? "")
+        })
+        #expect(fieldRoles["workflow_id"] == "exactlyOneRunSelector")
+        #expect(fieldRoles["build_run_id"] == "exactlyOneRunSelector")
+        #expect(fieldRoles["source_branch_or_tag_id"] == "atMostOneSourceSelector")
+        #expect(fieldRoles["pull_request_id"] == "atMostOneSourceSelector")
+        #expect(mapping.note?.contains("exactly one of workflow_id and build_run_id") == true)
     }
 }
 
@@ -306,5 +556,9 @@ private actor XcodeCloudMockTransport: HTTPTransport {
         return Dictionary(uniqueKeysWithValues: (components.queryItems ?? []).compactMap { item in
             item.value.map { (item.name, $0) }
         })
+    }
+
+    func requestCount() -> Int {
+        request == nil ? 0 : 1
     }
 }
