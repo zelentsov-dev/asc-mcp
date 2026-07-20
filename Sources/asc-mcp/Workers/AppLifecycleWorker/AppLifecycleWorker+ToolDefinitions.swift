@@ -66,14 +66,14 @@ extension AppLifecycleWorker {
                     ]),
                     "version_ids": .object([
                         "type": .string("array"),
-                        "items": .object(["type": .string("string")]),
+                        "items": .object(["type": .string("string"), "minLength": .int(1)]),
                         "description": .string("Filter by App Store version IDs"),
                         "minItems": .int(1),
                         "uniqueItems": .bool(true)
                     ]),
                     "version_strings": .object([
                         "type": .string("array"),
-                        "items": .object(["type": .string("string")]),
+                        "items": .object(["type": .string("string"), "minLength": .int(1)]),
                         "description": .string("Filter by version strings"),
                         "minItems": .int(1),
                         "uniqueItems": .bool(true)
@@ -106,6 +106,8 @@ extension AppLifecycleWorker {
                             ])
                         ]),
                         "description": .string("Deprecated compatibility filter mapped to Apple's filter[appStoreState]"),
+                        "minItems": .int(1),
+                        "uniqueItems": .bool(true),
                         "deprecated": .bool(true)
                     ]),
                     "app_version_states": .object([
@@ -130,7 +132,9 @@ extension AppLifecycleWorker {
                                 .string("WAITING_FOR_REVIEW")
                             ])
                         ]),
-                        "description": .string("Current version-state filter mapped to Apple's filter[appVersionState]")
+                        "description": .string("Current version-state filter mapped to Apple's filter[appVersionState]"),
+                        "minItems": .int(1),
+                        "uniqueItems": .bool(true)
                     ]),
                     "platform": .object([
                         "type": .string("string"),

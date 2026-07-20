@@ -53,7 +53,11 @@ struct AppLifecycleReliabilityTests {
 
         #expect(list["states"] != nil)
         #expect(list["states"]?.objectValue?["deprecated"]?.boolValue == true)
+        #expect(list["states"]?.objectValue?["minItems"]?.intValue == 1)
+        #expect(list["states"]?.objectValue?["uniqueItems"]?.boolValue == true)
         #expect(list["app_version_states"] != nil)
+        #expect(list["app_version_states"]?.objectValue?["minItems"]?.intValue == 1)
+        #expect(list["app_version_states"]?.objectValue?["uniqueItems"]?.boolValue == true)
         #expect(list["platform"]?.objectValue?["deprecated"]?.boolValue == true)
         #expect(list["platforms"]?.objectValue?["type"]?.stringValue == "array")
         #expect(list["limit"]?.objectValue?["minimum"]?.intValue == 1)
