@@ -231,7 +231,82 @@ extension XcodeCloudWorker {
 
         do {
             let response: ASCBuildsResponse
-            let query = listQuery(arguments)
+            var query = listQuery(arguments)
+            try applyStringList(arguments["version"], field: "version", appleName: "filter[version]", to: &query)
+            try applyBooleanList(arguments["expired"], field: "expired", appleName: "filter[expired]", to: &query)
+            try applyStringList(
+                arguments["processing_state"],
+                field: "processing_state",
+                allowedValues: Set(["PROCESSING", "FAILED", "INVALID", "VALID"]),
+                appleName: "filter[processingState]",
+                to: &query
+            )
+            try applyStringList(
+                arguments["beta_review_states"],
+                field: "beta_review_states",
+                allowedValues: Set(["WAITING_FOR_REVIEW", "IN_REVIEW", "REJECTED", "APPROVED"]),
+                appleName: "filter[betaAppReviewSubmission.betaReviewState]",
+                to: &query
+            )
+            try applyBooleanList(
+                arguments["uses_non_exempt_encryption"],
+                field: "uses_non_exempt_encryption",
+                appleName: "filter[usesNonExemptEncryption]",
+                to: &query
+            )
+            try applyStringList(
+                arguments["pre_release_versions"],
+                field: "pre_release_versions",
+                appleName: "filter[preReleaseVersion.version]",
+                to: &query
+            )
+            try applyStringList(
+                arguments["pre_release_platforms"],
+                field: "pre_release_platforms",
+                allowedValues: Set(["IOS", "MAC_OS", "TV_OS", "VISION_OS"]),
+                appleName: "filter[preReleaseVersion.platform]",
+                to: &query
+            )
+            try applyStringList(
+                arguments["build_audience_types"],
+                field: "build_audience_types",
+                allowedValues: Set(["INTERNAL_ONLY", "APP_STORE_ELIGIBLE"]),
+                appleName: "filter[buildAudienceType]",
+                to: &query
+            )
+            try applyStringList(
+                arguments["pre_release_version_ids"],
+                field: "pre_release_version_ids",
+                appleName: "filter[preReleaseVersion]",
+                to: &query
+            )
+            try applyStringList(arguments["app_ids"], field: "app_ids", appleName: "filter[app]", to: &query)
+            try applyStringList(
+                arguments["beta_group_ids"],
+                field: "beta_group_ids",
+                appleName: "filter[betaGroups]",
+                to: &query
+            )
+            try applyStringList(
+                arguments["app_store_version_ids"],
+                field: "app_store_version_ids",
+                appleName: "filter[appStoreVersion]",
+                to: &query
+            )
+            try applyStringList(arguments["build_ids"], field: "build_ids", appleName: "filter[id]", to: &query)
+            if let encryptionSet = arguments["uses_non_exempt_encryption_set"] {
+                guard let value = encryptionSet.boolValue else {
+                    throw XcodeCloudArgumentError("uses_non_exempt_encryption_set must be a boolean")
+                }
+                query["exists[usesNonExemptEncryption]"] = value ? "true" : "false"
+            }
+            try applyStringList(
+                arguments["sort"],
+                field: "sort",
+                allowedValues: Set(["version", "-version", "uploadedDate", "-uploadedDate", "preReleaseVersion", "-preReleaseVersion"]),
+                appleName: "sort",
+                to: &query
+            )
             let endpoint = "/v1/ciBuildRuns/\(try ASCPathSegment.encode(buildRunID))/builds"
             if let nextURL = try paginationURL(from: arguments["next_url"]) {
                 response = try await httpClient.getPage(
@@ -248,7 +323,7 @@ extension XcodeCloudWorker {
                 "builds": response.data.map(formatASCBuild),
                 "count": response.data.count
             ]
-            appendPaging(response.links, nil, to: &result)
+            appendPaging(response.links, response.meta, to: &result)
             return MCPResult.jsonObject(result)
         } catch {
             return MCPResult.error("Failed to list App Store Connect builds for Xcode Cloud run: \(error.localizedDescription)")
@@ -649,9 +724,7 @@ extension XcodeCloudWorker {
         do {
             let response: ASCCIBuildRunsResponse
             var query = listQuery(arguments)
-            if let buildID = arguments["build_id"]?.stringValue {
-                query["filter[builds]"] = buildID
-            }
+            try applyStringList(arguments["build_id"], field: "build_id", appleName: "filter[builds]", to: &query)
             if let sort = arguments["sort"]?.stringValue {
                 query["sort"] = sort
             }
@@ -831,6 +904,62 @@ extension XcodeCloudWorker {
             return value
         }
         return argument?.arrayValue?.compactMap(\.stringValue).joined(separator: ",")
+    }
+
+    private func applyStringList(
+        _ value: Value?,
+        field: String,
+        allowedValues: Set<String>? = nil,
+        appleName: String,
+        to query: inout [String: String]
+    ) throws {
+        guard let value else {
+            return
+        }
+        let values: [String]
+        if let string = value.stringValue {
+            values = [string]
+        } else if let array = value.arrayValue,
+                  !array.isEmpty,
+                  array.allSatisfy({ $0.stringValue != nil }) {
+            values = array.compactMap(\.stringValue)
+        } else {
+            throw XcodeCloudArgumentError("\(field) must be a non-empty string or array of strings")
+        }
+        guard values.allSatisfy({ !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }) else {
+            throw XcodeCloudArgumentError("\(field) must contain only non-empty strings")
+        }
+        guard Set(values).count == values.count,
+              values.allSatisfy({ !$0.contains(",") }) else {
+            throw XcodeCloudArgumentError("\(field) must contain unique values without commas")
+        }
+        if let allowedValues,
+           let invalid = values.first(where: { !allowedValues.contains($0) }) {
+            throw XcodeCloudArgumentError("\(field) contains unsupported value '\(invalid)'")
+        }
+        query[appleName] = values.joined(separator: ",")
+    }
+
+    private func applyBooleanList(
+        _ value: Value?,
+        field: String,
+        appleName: String,
+        to query: inout [String: String]
+    ) throws {
+        guard let value else {
+            return
+        }
+        let values: [Bool]
+        if let boolean = value.boolValue {
+            values = [boolean]
+        } else if let array = value.arrayValue,
+                  !array.isEmpty,
+                  array.allSatisfy({ $0.boolValue != nil }) {
+            values = array.compactMap(\.boolValue)
+        } else {
+            throw XcodeCloudArgumentError("\(field) must be a boolean or non-empty array of booleans")
+        }
+        query[appleName] = values.map { $0 ? "true" : "false" }.joined(separator: ",")
     }
 
     private func listResult(_ key: String, _ values: [[String: Any]], links: ASCPagedDocumentLinks?, meta: ASCPagingInformation?) -> [String: Any] {
@@ -1181,5 +1310,13 @@ extension XcodeCloudWorker {
             "preReleaseVersionId": relationshipID(build.relationships?.preReleaseVersion),
             "appStoreVersionId": relationshipID(build.relationships?.appStoreVersion)
         ]
+    }
+}
+
+private struct XcodeCloudArgumentError: LocalizedError {
+    let errorDescription: String?
+
+    init(_ message: String) {
+        errorDescription = message
     }
 }

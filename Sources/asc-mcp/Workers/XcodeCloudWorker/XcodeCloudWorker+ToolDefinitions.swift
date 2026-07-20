@@ -51,6 +51,7 @@ extension XcodeCloudWorker {
             inputSchema: baseSchema(
                 properties: listProperties([
                     "product_id": stringSchema("Xcode Cloud product ID"),
+                    "build_id": stringListSchema("Filter by one or more related App Store Connect build IDs"),
                     "sort": enumSchema("Sort by build number", values: ["number", "-number"]),
                     "include": includeSchema("Related resources to include", values: ["builds", "workflow", "product", "sourceBranchOrTag", "destinationBranch", "pullRequest"])
                 ]),
@@ -80,7 +81,7 @@ extension XcodeCloudWorker {
             inputSchema: baseSchema(
                 properties: listProperties([
                     "workflow_id": stringSchema("Xcode Cloud workflow ID"),
-                    "build_id": stringSchema("Filter by related App Store Connect build ID"),
+                    "build_id": stringListSchema("Filter by one or more related App Store Connect build IDs"),
                     "sort": enumSchema("Sort by build number", values: ["number", "-number"]),
                     "include": includeSchema("Related resources to include", values: ["builds", "workflow", "product", "sourceBranchOrTag", "destinationBranch", "pullRequest"])
                 ]),
@@ -131,7 +132,37 @@ extension XcodeCloudWorker {
             description: "List App Store Connect/TestFlight builds created by an Xcode Cloud build run.",
             inputSchema: baseSchema(
                 properties: listProperties([
-                    "build_run_id": stringSchema("Xcode Cloud build run ID")
+                    "build_run_id": stringSchema("Xcode Cloud build run ID"),
+                    "version": stringListSchema("Filter by one or more build numbers"),
+                    "expired": booleanListSchema("Filter by one or more expiration values"),
+                    "processing_state": enumListSchema(
+                        "Filter by one or more processing states",
+                        values: ["PROCESSING", "FAILED", "INVALID", "VALID"]
+                    ),
+                    "beta_review_states": enumListSchema(
+                        "Filter by one or more TestFlight beta review states",
+                        values: ["WAITING_FOR_REVIEW", "IN_REVIEW", "REJECTED", "APPROVED"]
+                    ),
+                    "uses_non_exempt_encryption": booleanListSchema("Filter by one or more non-exempt encryption values"),
+                    "pre_release_versions": stringListSchema("Filter by one or more pre-release version strings"),
+                    "pre_release_platforms": enumListSchema(
+                        "Filter by one or more pre-release platforms",
+                        values: ["IOS", "MAC_OS", "TV_OS", "VISION_OS"]
+                    ),
+                    "build_audience_types": enumListSchema(
+                        "Filter by one or more build audience types",
+                        values: ["INTERNAL_ONLY", "APP_STORE_ELIGIBLE"]
+                    ),
+                    "pre_release_version_ids": stringListSchema("Filter by one or more pre-release version IDs"),
+                    "app_ids": stringListSchema("Filter by one or more App Store Connect app IDs"),
+                    "beta_group_ids": stringListSchema("Filter by one or more beta group IDs"),
+                    "app_store_version_ids": stringListSchema("Filter by one or more App Store version IDs"),
+                    "build_ids": stringListSchema("Filter by one or more build IDs"),
+                    "uses_non_exempt_encryption_set": boolSchema("Filter by whether the encryption declaration exists"),
+                    "sort": enumListSchema(
+                        "Sort by one or more supported build fields",
+                        values: ["version", "-version", "uploadedDate", "-uploadedDate", "preReleaseVersion", "-preReleaseVersion"]
+                    )
                 ]),
                 required: ["build_run_id"]
             )
@@ -457,6 +488,39 @@ extension XcodeCloudWorker {
         .object([
             "type": .string("boolean"),
             "description": .string(description)
+        ])
+    }
+
+    private func stringListSchema(_ description: String) -> Value {
+        listSchema(description: description, item: .object(["type": .string("string"), "minLength": .int(1)]))
+    }
+
+    private func enumListSchema(_ description: String, values: [String]) -> Value {
+        listSchema(
+            description: description,
+            item: .object([
+                "type": .string("string"),
+                "enum": .array(values.map(Value.string))
+            ])
+        )
+    }
+
+    private func booleanListSchema(_ description: String) -> Value {
+        listSchema(description: description, item: .object(["type": .string("boolean")]))
+    }
+
+    private func listSchema(description: String, item: Value) -> Value {
+        .object([
+            "description": .string(description),
+            "oneOf": .array([
+                item,
+                .object([
+                    "type": .string("array"),
+                    "items": item,
+                    "minItems": .int(1),
+                    "uniqueItems": .bool(true)
+                ])
+            ])
         ])
     }
 

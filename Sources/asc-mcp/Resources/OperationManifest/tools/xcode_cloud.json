@@ -166,11 +166,39 @@
       "effect": "read",
       "implementationState": "asBuilt",
       "operations": [
-        { "operationId": "ciBuildRuns_builds_getToManyRelated", "method": "get", "path": "/v1/ciBuildRuns/{id}/builds", "role": "primary" }
+        {
+          "operationId": "ciBuildRuns_builds_getToManyRelated",
+          "method": "get",
+          "path": "/v1/ciBuildRuns/{id}/builds",
+          "role": "primary",
+          "optionalParameterClassifications": [
+            { "location": "query", "appleName": "include", "disposition": "intentionallyOmitted", "reason": "The compact build decoder does not support every Apple resource type allowed by this include parameter, so exposing it would turn valid responses into decoding failures.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[individualTesters]", "disposition": "intentionallyOmitted", "reason": "The individualTesters relationship is not included by this compact projection, so its nested expansion limit is inapplicable.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[betaGroups]", "disposition": "intentionallyOmitted", "reason": "The betaGroups relationship is not included by this compact projection, so its nested expansion limit is inapplicable.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[betaBuildLocalizations]", "disposition": "intentionallyOmitted", "reason": "The betaBuildLocalizations relationship is not included by this compact projection, so its nested expansion limit is inapplicable.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[icons]", "disposition": "intentionallyOmitted", "reason": "The icons relationship is not included by this compact projection, so its nested expansion limit is inapplicable.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[buildBundles]", "disposition": "intentionallyOmitted", "reason": "The buildBundles relationship is not included by this compact projection, so its nested expansion limit is inapplicable.", "reviewAtSpec": "4.4.1" }
+          ]
+        }
       ],
       "fields": [
         { "toolField": "build_run_id", "sourceKind": "parameter", "operationId": "ciBuildRuns_builds_getToManyRelated", "location": "path", "appleName": "id" },
         { "toolField": "limit", "sourceKind": "parameter", "operationId": "ciBuildRuns_builds_getToManyRelated", "location": "query", "appleName": "limit" },
+        { "toolField": "version", "sourceKind": "parameter", "operationId": "ciBuildRuns_builds_getToManyRelated", "location": "query", "appleName": "filter[version]" },
+        { "toolField": "expired", "sourceKind": "parameter", "operationId": "ciBuildRuns_builds_getToManyRelated", "location": "query", "appleName": "filter[expired]" },
+        { "toolField": "processing_state", "sourceKind": "parameter", "operationId": "ciBuildRuns_builds_getToManyRelated", "location": "query", "appleName": "filter[processingState]" },
+        { "toolField": "beta_review_states", "sourceKind": "parameter", "operationId": "ciBuildRuns_builds_getToManyRelated", "location": "query", "appleName": "filter[betaAppReviewSubmission.betaReviewState]" },
+        { "toolField": "uses_non_exempt_encryption", "sourceKind": "parameter", "operationId": "ciBuildRuns_builds_getToManyRelated", "location": "query", "appleName": "filter[usesNonExemptEncryption]" },
+        { "toolField": "pre_release_versions", "sourceKind": "parameter", "operationId": "ciBuildRuns_builds_getToManyRelated", "location": "query", "appleName": "filter[preReleaseVersion.version]" },
+        { "toolField": "pre_release_platforms", "sourceKind": "parameter", "operationId": "ciBuildRuns_builds_getToManyRelated", "location": "query", "appleName": "filter[preReleaseVersion.platform]" },
+        { "toolField": "build_audience_types", "sourceKind": "parameter", "operationId": "ciBuildRuns_builds_getToManyRelated", "location": "query", "appleName": "filter[buildAudienceType]" },
+        { "toolField": "pre_release_version_ids", "sourceKind": "parameter", "operationId": "ciBuildRuns_builds_getToManyRelated", "location": "query", "appleName": "filter[preReleaseVersion]" },
+        { "toolField": "app_ids", "sourceKind": "parameter", "operationId": "ciBuildRuns_builds_getToManyRelated", "location": "query", "appleName": "filter[app]" },
+        { "toolField": "beta_group_ids", "sourceKind": "parameter", "operationId": "ciBuildRuns_builds_getToManyRelated", "location": "query", "appleName": "filter[betaGroups]" },
+        { "toolField": "app_store_version_ids", "sourceKind": "parameter", "operationId": "ciBuildRuns_builds_getToManyRelated", "location": "query", "appleName": "filter[appStoreVersion]" },
+        { "toolField": "build_ids", "sourceKind": "parameter", "operationId": "ciBuildRuns_builds_getToManyRelated", "location": "query", "appleName": "filter[id]" },
+        { "toolField": "uses_non_exempt_encryption_set", "sourceKind": "parameter", "operationId": "ciBuildRuns_builds_getToManyRelated", "location": "query", "appleName": "exists[usesNonExemptEncryption]" },
+        { "toolField": "sort", "sourceKind": "parameter", "operationId": "ciBuildRuns_builds_getToManyRelated", "location": "query", "appleName": "sort" },
         { "toolField": "next_url", "sourceKind": "local", "localRole": "paginationContinuation" }
       ],
       "response": {
@@ -180,10 +208,11 @@
         ],
         "fields": [
           { "outputField": "builds", "operationId": "ciBuildRuns_builds_getToManyRelated", "jsonPointer": "/data" },
-          { "outputField": "next_url", "operationId": "ciBuildRuns_builds_getToManyRelated", "jsonPointer": "/links/next" }
+          { "outputField": "next_url", "operationId": "ciBuildRuns_builds_getToManyRelated", "jsonPointer": "/links/next" },
+          { "outputField": "total", "operationId": "ciBuildRuns_builds_getToManyRelated", "jsonPointer": "/meta/paging/total" }
         ]
       },
-      "note": "Only limit and continuation are exposed although Apple 4.4.1 provides extensive build filters, sorting, sparse fields, includes, and nested limits. The handler returns a compact build projection."
+      "note": "Apple 4.4.1 build filters, sort expressions, top-level limit, total, and continuation are exposed. Sparse fields follow the global policy; include and its dependent nested limits remain explicitly omitted because the compact decoder does not support every allowed included resource type."
     },
     {
       "tool": "xcode_cloud_build_runs_get",
@@ -192,7 +221,15 @@
       "effect": "read",
       "implementationState": "asBuilt",
       "operations": [
-        { "operationId": "ciBuildRuns_getInstance", "method": "get", "path": "/v1/ciBuildRuns/{id}", "role": "primary" }
+        {
+          "operationId": "ciBuildRuns_getInstance",
+          "method": "get",
+          "path": "/v1/ciBuildRuns/{id}",
+          "role": "primary",
+          "optionalParameterClassifications": [
+            { "location": "query", "appleName": "limit[builds]", "disposition": "intentionallyOmitted", "reason": "Embedded build cardinality is not a substitute for pagination; callers can enumerate the full relationship with xcode_cloud_build_run_builds_list.", "reviewAtSpec": "4.4.1" }
+          ]
+        }
       ],
       "fields": [
         { "toolField": "build_run_id", "sourceKind": "parameter", "operationId": "ciBuildRuns_getInstance", "location": "path", "appleName": "id" },
@@ -208,7 +245,7 @@
           { "outputField": "included", "operationId": "ciBuildRuns_getInstance", "jsonPointer": "/included" }
         ]
       },
-      "note": "The include mapping is exact; sparse fields and limit[builds] are omitted, and the response is reformatted."
+      "note": "The include mapping is exact; sparse fields are omitted, and callers use the dedicated paginated relationship tool instead of tuning an embedded build limit."
     },
     {
       "tool": "xcode_cloud_build_runs_start",
@@ -279,7 +316,15 @@
       "effect": "read",
       "implementationState": "asBuilt",
       "operations": [
-        { "operationId": "ciMacOsVersions_getInstance", "method": "get", "path": "/v1/ciMacOsVersions/{id}", "role": "primary" }
+        {
+          "operationId": "ciMacOsVersions_getInstance",
+          "method": "get",
+          "path": "/v1/ciMacOsVersions/{id}",
+          "role": "primary",
+          "optionalParameterClassifications": [
+            { "location": "query", "appleName": "limit[xcodeVersions]", "disposition": "intentionallyOmitted", "reason": "The projection exposes Xcode version relationship IDs and URL; callers use the Xcode versions list/get tools instead of tuning an embedded relationship limit.", "reviewAtSpec": "4.4.1" }
+          ]
+        }
       ],
       "fields": [
         { "toolField": "macos_version_id", "sourceKind": "parameter", "operationId": "ciMacOsVersions_getInstance", "location": "path", "appleName": "id" },
@@ -295,7 +340,7 @@
           { "outputField": "included", "operationId": "ciMacOsVersions_getInstance", "jsonPointer": "/included" }
         ]
       },
-      "note": "The include mapping is exact; sparse fields and limit[xcodeVersions] are omitted."
+      "note": "The include mapping is exact; sparse fields are omitted and related Xcode versions remain available through their list/get tools."
     },
     {
       "tool": "xcode_cloud_macos_versions_list",
@@ -304,7 +349,15 @@
       "effect": "read",
       "implementationState": "asBuilt",
       "operations": [
-        { "operationId": "ciMacOsVersions_getCollection", "method": "get", "path": "/v1/ciMacOsVersions", "role": "primary" }
+        {
+          "operationId": "ciMacOsVersions_getCollection",
+          "method": "get",
+          "path": "/v1/ciMacOsVersions",
+          "role": "primary",
+          "optionalParameterClassifications": [
+            { "location": "query", "appleName": "limit[xcodeVersions]", "disposition": "intentionallyOmitted", "reason": "The projection exposes Xcode version relationship IDs and URL; callers use the Xcode versions list/get tools instead of tuning an embedded relationship limit.", "reviewAtSpec": "4.4.1" }
+          ]
+        }
       ],
       "fields": [
         { "toolField": "limit", "sourceKind": "parameter", "operationId": "ciMacOsVersions_getCollection", "location": "query", "appleName": "limit" },
@@ -323,7 +376,7 @@
           { "outputField": "total", "operationId": "ciMacOsVersions_getCollection", "jsonPointer": "/meta/paging/total" }
         ]
       },
-      "note": "The include/limit mapping is exact; sparse fields and limit[xcodeVersions] are omitted."
+      "note": "The top-level limit and include map exactly; sparse fields are omitted and related Xcode versions remain available through their list/get tools."
     },
     {
       "tool": "xcode_cloud_product_build_runs_list",
@@ -332,10 +385,19 @@
       "effect": "read",
       "implementationState": "asBuilt",
       "operations": [
-        { "operationId": "ciProducts_buildRuns_getToManyRelated", "method": "get", "path": "/v1/ciProducts/{id}/buildRuns", "role": "primary" }
+        {
+          "operationId": "ciProducts_buildRuns_getToManyRelated",
+          "method": "get",
+          "path": "/v1/ciProducts/{id}/buildRuns",
+          "role": "primary",
+          "optionalParameterClassifications": [
+            { "location": "query", "appleName": "limit[builds]", "disposition": "intentionallyOmitted", "reason": "Embedded build cardinality is not a substitute for paginating build runs and their build relationship; the projection preserves relationship IDs and URLs.", "reviewAtSpec": "4.4.1" }
+          ]
+        }
       ],
       "fields": [
         { "toolField": "product_id", "sourceKind": "parameter", "operationId": "ciProducts_buildRuns_getToManyRelated", "location": "path", "appleName": "id" },
+        { "toolField": "build_id", "sourceKind": "parameter", "operationId": "ciProducts_buildRuns_getToManyRelated", "location": "query", "appleName": "filter[builds]" },
         { "toolField": "sort", "sourceKind": "parameter", "operationId": "ciProducts_buildRuns_getToManyRelated", "location": "query", "appleName": "sort" },
         { "toolField": "include", "sourceKind": "parameter", "operationId": "ciProducts_buildRuns_getToManyRelated", "location": "query", "appleName": "include" },
         { "toolField": "limit", "sourceKind": "parameter", "operationId": "ciProducts_buildRuns_getToManyRelated", "location": "query", "appleName": "limit" },
@@ -353,7 +415,7 @@
           { "outputField": "total", "operationId": "ciProducts_buildRuns_getToManyRelated", "jsonPointer": "/meta/paging/total" }
         ]
       },
-      "note": "The public schema omits Apple's filter[builds], sparse fields, and limit[builds]. The shared handler could send filter[builds], but this tool has no build_id input, so that filter is unreachable here."
+      "note": "The build filter, sort, include, and top-level limit map exactly; sparse fields and the embedded builds limit are intentionally omitted."
     },
     {
       "tool": "xcode_cloud_product_workflows_list",
@@ -391,7 +453,15 @@
       "effect": "read",
       "implementationState": "asBuilt",
       "operations": [
-        { "operationId": "ciProducts_getInstance", "method": "get", "path": "/v1/ciProducts/{id}", "role": "primary" }
+        {
+          "operationId": "ciProducts_getInstance",
+          "method": "get",
+          "path": "/v1/ciProducts/{id}",
+          "role": "primary",
+          "optionalParameterClassifications": [
+            { "location": "query", "appleName": "limit[primaryRepositories]", "disposition": "intentionallyOmitted", "reason": "The projection preserves primary repository IDs and URL; callers use SCM repository tools instead of tuning a partial embedded relationship.", "reviewAtSpec": "4.4.1" }
+          ]
+        }
       ],
       "fields": [
         { "toolField": "product_id", "sourceKind": "parameter", "operationId": "ciProducts_getInstance", "location": "path", "appleName": "id" },
@@ -407,7 +477,7 @@
           { "outputField": "included", "operationId": "ciProducts_getInstance", "jsonPointer": "/included" }
         ]
       },
-      "note": "The include mapping is exact; sparse fields and limit[primaryRepositories] are omitted."
+      "note": "The include mapping is exact; sparse fields and the embedded primary repositories limit are intentionally omitted."
     },
     {
       "tool": "xcode_cloud_products_list",
@@ -416,7 +486,15 @@
       "effect": "read",
       "implementationState": "asBuilt",
       "operations": [
-        { "operationId": "ciProducts_getCollection", "method": "get", "path": "/v1/ciProducts", "role": "primary" }
+        {
+          "operationId": "ciProducts_getCollection",
+          "method": "get",
+          "path": "/v1/ciProducts",
+          "role": "primary",
+          "optionalParameterClassifications": [
+            { "location": "query", "appleName": "limit[primaryRepositories]", "disposition": "intentionallyOmitted", "reason": "The projection preserves primary repository IDs and URL; callers use SCM repository tools instead of tuning a partial embedded relationship.", "reviewAtSpec": "4.4.1" }
+          ]
+        }
       ],
       "fields": [
         { "toolField": "product_type", "sourceKind": "parameter", "operationId": "ciProducts_getCollection", "location": "query", "appleName": "filter[productType]" },
@@ -437,7 +515,7 @@
           { "outputField": "total", "operationId": "ciProducts_getCollection", "jsonPointer": "/meta/paging/total" }
         ]
       },
-      "note": "The exposed filters/include/limit map exactly; sparse fields and limit[primaryRepositories] are omitted, and Apple product deletion has no public tool."
+      "note": "The exposed filters, include, and top-level limit map exactly; sparse fields and the embedded primary repositories limit are intentionally omitted, and Apple product deletion has no public tool."
     },
     {
       "tool": "xcode_cloud_scm_git_references_get",
@@ -710,7 +788,15 @@
       "effect": "read",
       "implementationState": "asBuilt",
       "operations": [
-        { "operationId": "ciWorkflows_buildRuns_getToManyRelated", "method": "get", "path": "/v1/ciWorkflows/{id}/buildRuns", "role": "primary" }
+        {
+          "operationId": "ciWorkflows_buildRuns_getToManyRelated",
+          "method": "get",
+          "path": "/v1/ciWorkflows/{id}/buildRuns",
+          "role": "primary",
+          "optionalParameterClassifications": [
+            { "location": "query", "appleName": "limit[builds]", "disposition": "intentionallyOmitted", "reason": "Embedded build cardinality is not a substitute for paginating build runs and their build relationship; the projection preserves relationship IDs and URLs.", "reviewAtSpec": "4.4.1" }
+          ]
+        }
       ],
       "fields": [
         { "toolField": "workflow_id", "sourceKind": "parameter", "operationId": "ciWorkflows_buildRuns_getToManyRelated", "location": "path", "appleName": "id" },
@@ -732,7 +818,7 @@
           { "outputField": "total", "operationId": "ciWorkflows_buildRuns_getToManyRelated", "jsonPointer": "/meta/paging/total" }
         ]
       },
-      "note": "The exposed build filter/sort/include/limit map exactly; sparse fields and limit[builds] are omitted."
+      "note": "The exposed build filter, sort, include, and top-level limit map exactly; sparse fields and the embedded builds limit are intentionally omitted."
     },
     {
       "tool": "xcode_cloud_workflows_get",
@@ -766,7 +852,15 @@
       "effect": "read",
       "implementationState": "asBuilt",
       "operations": [
-        { "operationId": "ciXcodeVersions_getInstance", "method": "get", "path": "/v1/ciXcodeVersions/{id}", "role": "primary" }
+        {
+          "operationId": "ciXcodeVersions_getInstance",
+          "method": "get",
+          "path": "/v1/ciXcodeVersions/{id}",
+          "role": "primary",
+          "optionalParameterClassifications": [
+            { "location": "query", "appleName": "limit[macOsVersions]", "disposition": "intentionallyOmitted", "reason": "The projection exposes macOS version relationship IDs and URL; callers use the macOS versions list/get tools instead of tuning an embedded relationship limit.", "reviewAtSpec": "4.4.1" }
+          ]
+        }
       ],
       "fields": [
         { "toolField": "xcode_version_id", "sourceKind": "parameter", "operationId": "ciXcodeVersions_getInstance", "location": "path", "appleName": "id" },
@@ -782,7 +876,7 @@
           { "outputField": "included", "operationId": "ciXcodeVersions_getInstance", "jsonPointer": "/included" }
         ]
       },
-      "note": "The include mapping is exact; sparse fields and limit[macOsVersions] are omitted."
+      "note": "The include mapping is exact; sparse fields are omitted and related macOS versions remain available through their list/get tools."
     },
     {
       "tool": "xcode_cloud_xcode_versions_list",
@@ -791,7 +885,15 @@
       "effect": "read",
       "implementationState": "asBuilt",
       "operations": [
-        { "operationId": "ciXcodeVersions_getCollection", "method": "get", "path": "/v1/ciXcodeVersions", "role": "primary" }
+        {
+          "operationId": "ciXcodeVersions_getCollection",
+          "method": "get",
+          "path": "/v1/ciXcodeVersions",
+          "role": "primary",
+          "optionalParameterClassifications": [
+            { "location": "query", "appleName": "limit[macOsVersions]", "disposition": "intentionallyOmitted", "reason": "The projection exposes macOS version relationship IDs and URL; callers use the macOS versions list/get tools instead of tuning an embedded relationship limit.", "reviewAtSpec": "4.4.1" }
+          ]
+        }
       ],
       "fields": [
         { "toolField": "limit", "sourceKind": "parameter", "operationId": "ciXcodeVersions_getCollection", "location": "query", "appleName": "limit" },
@@ -810,7 +912,7 @@
           { "outputField": "total", "operationId": "ciXcodeVersions_getCollection", "jsonPointer": "/meta/paging/total" }
         ]
       },
-      "note": "The include/limit mapping is exact; sparse fields and limit[macOsVersions] are omitted."
+      "note": "The top-level limit and include map exactly; sparse fields are omitted and related macOS versions remain available through their list/get tools."
     }
   ],
   "implementationAliases": []
