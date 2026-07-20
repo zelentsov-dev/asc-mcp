@@ -368,7 +368,15 @@ struct SubscriptionVersionsContractTests {
 
         #expect(result.isError != true)
         let request = try #require(await transport.recordedRequests().first)
-        #expect(request.url?.absoluteString == "https://api.example.test/v1/subscriptions/subscription-1/versions?filter%5Bstate%5D=REJECTED&limit=25&cursor=next")
+        let requestURL = try #require(request.url)
+        #expect(requestURL.scheme == "https")
+        #expect(requestURL.host == "api.example.test")
+        #expect(requestURL.path == "/v1/subscriptions/subscription-1/versions")
+        #expect(subscriptionV4Query(request) == [
+            "filter[state]": "REJECTED",
+            "limit": "25",
+            "cursor": "next"
+        ])
     }
 
     @Test("subscription localization v2 create update get and delete preserve nullable semantics")
