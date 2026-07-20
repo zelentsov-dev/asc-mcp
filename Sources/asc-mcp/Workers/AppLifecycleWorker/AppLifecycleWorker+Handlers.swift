@@ -2194,7 +2194,7 @@ private extension AppLifecycleWorker {
             return .commitUnknown
         case .network:
             return .rejected
-        case .api(_, let statusCode), .apiResponse(_, let statusCode):
+        case .api(_, _), .apiResponse(_, _):
             return .rejected
         case .authentication, .configuration, .parsing:
             return .rejected
