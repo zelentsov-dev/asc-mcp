@@ -35,6 +35,51 @@ extension AppsWorker {
                         "type": .string("string"),
                         "description": .string("Filter by app name")
                     ]),
+                    "app_ids": stringArrayProperty("Filter by App Store Connect app IDs"),
+                    "skus": stringArrayProperty("Filter by SKU values"),
+                    "app_store_version_ids": stringArrayProperty("Filter by related App Store version IDs"),
+                    "app_store_states": stringArrayProperty(
+                        "Filter by legacy App Store version states",
+                        allowedValues: [
+                            "ACCEPTED", "DEVELOPER_REMOVED_FROM_SALE", "DEVELOPER_REJECTED", "IN_REVIEW",
+                            "INVALID_BINARY", "METADATA_REJECTED", "PENDING_APPLE_RELEASE", "PENDING_CONTRACT",
+                            "PENDING_DEVELOPER_RELEASE", "PREPARE_FOR_SUBMISSION", "PREORDER_READY_FOR_SALE",
+                            "PROCESSING_FOR_APP_STORE", "READY_FOR_REVIEW", "READY_FOR_SALE", "REJECTED",
+                            "REMOVED_FROM_SALE", "WAITING_FOR_EXPORT_COMPLIANCE", "WAITING_FOR_REVIEW",
+                            "REPLACED_WITH_NEW_VERSION", "NOT_APPLICABLE"
+                        ],
+                        deprecated: true
+                    ),
+                    "platforms": stringArrayProperty(
+                        "Filter by related App Store version platforms",
+                        allowedValues: ["IOS", "MAC_OS", "TV_OS", "VISION_OS"]
+                    ),
+                    "app_version_states": stringArrayProperty(
+                        "Filter by current App Store version states",
+                        allowedValues: [
+                            "ACCEPTED", "DEVELOPER_REJECTED", "IN_REVIEW", "INVALID_BINARY",
+                            "METADATA_REJECTED", "PENDING_APPLE_RELEASE", "PENDING_DEVELOPER_RELEASE",
+                            "PREPARE_FOR_SUBMISSION", "PROCESSING_FOR_DISTRIBUTION", "READY_FOR_DISTRIBUTION",
+                            "READY_FOR_REVIEW", "REJECTED", "REPLACED_WITH_NEW_VERSION",
+                            "WAITING_FOR_EXPORT_COMPLIANCE", "WAITING_FOR_REVIEW"
+                        ]
+                    ),
+                    "review_submission_states": stringArrayProperty(
+                        "Filter by review submission states",
+                        allowedValues: [
+                            "READY_FOR_REVIEW", "WAITING_FOR_REVIEW", "IN_REVIEW", "UNRESOLVED_ISSUES",
+                            "CANCELING", "COMPLETING", "COMPLETE"
+                        ]
+                    ),
+                    "review_submission_platforms": stringArrayProperty(
+                        "Filter by review submission platforms",
+                        allowedValues: ["IOS", "MAC_OS", "TV_OS", "VISION_OS"]
+                    ),
+                    "has_game_center_enabled_versions": .object([
+                        "type": .string("boolean"),
+                        "description": .string("Filter by whether the app has Game Center-enabled versions"),
+                        "deprecated": .bool(true)
+                    ]),
                     "next_url": .object([
                         "type": .string("string"),
                         "description": .string("Next page URL from previous response (next_url field)")
@@ -77,6 +122,34 @@ extension AppsWorker {
                         "type": .string("string"),
                         "description": .string("App Store Connect app ID")
                     ]),
+                    "version_ids": stringArrayProperty("Filter by App Store version IDs"),
+                    "version_strings": stringArrayProperty("Filter by version strings"),
+                    "app_store_states": stringArrayProperty(
+                        "Filter by legacy App Store version states",
+                        allowedValues: [
+                            "ACCEPTED", "DEVELOPER_REMOVED_FROM_SALE", "DEVELOPER_REJECTED", "IN_REVIEW",
+                            "INVALID_BINARY", "METADATA_REJECTED", "PENDING_APPLE_RELEASE", "PENDING_CONTRACT",
+                            "PENDING_DEVELOPER_RELEASE", "PREPARE_FOR_SUBMISSION", "PREORDER_READY_FOR_SALE",
+                            "PROCESSING_FOR_APP_STORE", "READY_FOR_REVIEW", "READY_FOR_SALE", "REJECTED",
+                            "REMOVED_FROM_SALE", "WAITING_FOR_EXPORT_COMPLIANCE", "WAITING_FOR_REVIEW",
+                            "REPLACED_WITH_NEW_VERSION", "NOT_APPLICABLE"
+                        ],
+                        deprecated: true
+                    ),
+                    "app_version_states": stringArrayProperty(
+                        "Filter by current App Store version states",
+                        allowedValues: [
+                            "ACCEPTED", "DEVELOPER_REJECTED", "IN_REVIEW", "INVALID_BINARY",
+                            "METADATA_REJECTED", "PENDING_APPLE_RELEASE", "PENDING_DEVELOPER_RELEASE",
+                            "PREPARE_FOR_SUBMISSION", "PROCESSING_FOR_DISTRIBUTION", "READY_FOR_DISTRIBUTION",
+                            "READY_FOR_REVIEW", "REJECTED", "REPLACED_WITH_NEW_VERSION",
+                            "WAITING_FOR_EXPORT_COMPLIANCE", "WAITING_FOR_REVIEW"
+                        ]
+                    ),
+                    "platforms": stringArrayProperty(
+                        "Filter by platform",
+                        allowedValues: ["IOS", "MAC_OS", "TV_OS", "VISION_OS"]
+                    ),
                     "next_url": .object([
                         "type": .string("string"),
                         "description": .string("Next page URL from previous response (next_url field)")
@@ -264,6 +337,14 @@ extension AppsWorker {
                         "type": .string("string"),
                         "description": .string("App version ID")
                     ]),
+                    "locales": stringArrayProperty("Filter by locale codes"),
+                    "limit": .object([
+                        "type": .string("integer"),
+                        "description": .string("Maximum number of localizations (default 200)"),
+                        "minimum": .int(1),
+                        "maximum": .int(200),
+                        "default": .int(200)
+                    ]),
                     "next_url": .object([
                         "type": .string("string"),
                         "description": .string("Next page URL from previous response (next_url field)")
@@ -272,5 +353,27 @@ extension AppsWorker {
                 "required": .array([.string("app_id"), .string("version_id")])
             ]
         )
+    }
+
+    private func stringArrayProperty(
+        _ description: String,
+        allowedValues: [String]? = nil,
+        deprecated: Bool = false
+    ) -> Value {
+        var itemSchema: [String: Value] = ["type": .string("string")]
+        if let allowedValues {
+            itemSchema["enum"] = .array(allowedValues.map(Value.string))
+        }
+        var schema: [String: Value] = [
+            "type": .string("array"),
+            "items": .object(itemSchema),
+            "description": .string(description),
+            "minItems": .int(1),
+            "uniqueItems": .bool(true)
+        ]
+        if deprecated {
+            schema["deprecated"] = .bool(true)
+        }
+        return .object(schema)
     }
 }

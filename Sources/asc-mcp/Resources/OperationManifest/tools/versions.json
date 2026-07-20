@@ -58,6 +58,10 @@
           "method": "patch",
           "path": "/v1/reviewSubmissions/{id}",
           "role": "primary",
+          "optionalParameterClassifications": [
+            { "location": "body", "appleName": "/data/attributes/platform", "disposition": "intentionallyOmitted", "reason": "Cancellation targets an existing submission and does not change its platform.", "reviewAtSpec": "4.4.1" },
+            { "location": "body", "appleName": "/data/attributes/submitted", "disposition": "intentionallyOmitted", "reason": "Cancellation fixes canceled=true and never combines cancellation with the distinct submit transition.", "reviewAtSpec": "4.4.1" }
+          ],
           "inputs": [
             {
               "sourceKind": "derived",
@@ -114,6 +118,10 @@
           "method": "post",
           "path": "/v1/appStoreVersions",
           "role": "primary",
+          "optionalParameterClassifications": [
+            { "location": "body", "appleName": "/data/relationships/appStoreVersionLocalizations", "disposition": "intentionallyOmitted", "reason": "Version creation and localization creation are separate MCP operations with independent validation and recovery.", "reviewAtSpec": "4.4.1" },
+            { "location": "body", "appleName": "/data/relationships/build", "disposition": "intentionallyOmitted", "reason": "Build attachment is intentionally handled by app_versions_attach_build after version creation.", "reviewAtSpec": "4.4.1" }
+          ],
           "inputs": [
             {
               "sourceKind": "fixed",
@@ -170,6 +178,12 @@
           "sourceKind": "requestBody",
           "operationId": "appStoreVersions_createInstance",
           "jsonPointer": "/data/attributes/reviewType"
+        },
+        {
+          "toolField": "uses_idfa",
+          "sourceKind": "requestBody",
+          "operationId": "appStoreVersions_createInstance",
+          "jsonPointer": "/data/attributes/usesIdfa"
         }
       ],
       "response": {
@@ -312,6 +326,11 @@
           "method": "get",
           "path": "/v1/appStoreVersions/{id}",
           "role": "primary",
+          "optionalParameterClassifications": [
+            { "location": "query", "appleName": "limit[appStoreVersionExperiments]", "disposition": "intentionallyOmitted", "reason": "Legacy experiments are not included by the fixed version detail projection.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[appStoreVersionExperimentsV2]", "disposition": "intentionallyOmitted", "reason": "V2 experiments are not included by the fixed version detail projection.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[appStoreVersionLocalizations]", "disposition": "intentionallyOmitted", "reason": "Localizations are not included by the fixed version detail projection.", "reviewAtSpec": "4.4.1" }
+          ],
           "inputs": [
             {
               "sourceKind": "fixed",
@@ -391,6 +410,11 @@
           "method": "get",
           "path": "/v1/apps/{id}/appStoreVersions",
           "role": "primary",
+          "optionalParameterClassifications": [
+            { "location": "query", "appleName": "limit[appStoreVersionExperiments]", "disposition": "intentionallyOmitted", "reason": "Legacy experiments are not among the fixed included relationships for the version list.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[appStoreVersionExperimentsV2]", "disposition": "intentionallyOmitted", "reason": "V2 experiments are not among the fixed included relationships for the version list.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[appStoreVersionLocalizations]", "disposition": "intentionallyOmitted", "reason": "Localizations are not among the fixed included relationships for the version list.", "reviewAtSpec": "4.4.1" }
+          ],
           "inputs": [
             {
               "sourceKind": "fixed",
@@ -415,6 +439,20 @@
           "operationId": "apps_appStoreVersions_getToManyRelated",
           "location": "query",
           "appleName": "filter[appStoreState]"
+        },
+        {
+          "toolField": "version_ids",
+          "sourceKind": "parameter",
+          "operationId": "apps_appStoreVersions_getToManyRelated",
+          "location": "query",
+          "appleName": "filter[id]"
+        },
+        {
+          "toolField": "version_strings",
+          "sourceKind": "parameter",
+          "operationId": "apps_appStoreVersions_getToManyRelated",
+          "location": "query",
+          "appleName": "filter[versionString]"
         },
         {
           "toolField": "app_version_states",
@@ -469,6 +507,12 @@
           "path": "/v1/appStoreVersions/{id}",
           "role": "supporting",
           "condition": "Always used to validate versionString and releasable state before the irreversible request.",
+          "optionalParameterClassifications": [
+            { "location": "query", "appleName": "include", "disposition": "intentionallyOmitted", "reason": "The irreversible-action preflight reads only fixed version attributes and does not expand relationships.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[appStoreVersionExperiments]", "disposition": "intentionallyOmitted", "reason": "Legacy experiments are not included by the release preflight.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[appStoreVersionExperimentsV2]", "disposition": "intentionallyOmitted", "reason": "V2 experiments are not included by the release preflight.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[appStoreVersionLocalizations]", "disposition": "intentionallyOmitted", "reason": "Localizations are not included by the release preflight.", "reviewAtSpec": "4.4.1" }
+          ],
           "inputs": [
             {
               "sourceKind": "fixed",
@@ -538,7 +582,11 @@
           "method": "get",
           "path": "/v1/appStoreVersions/{id}/appStoreReviewDetail",
           "role": "supporting",
-          "condition": "Determines whether to create review details or update the existing resource."
+          "condition": "Determines whether to create review details or update the existing resource.",
+          "optionalParameterClassifications": [
+            { "location": "query", "appleName": "include", "disposition": "intentionallyOmitted", "reason": "The existence lookup needs only the review-detail resource identifier and does not expand relationships.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[appStoreReviewAttachments]", "disposition": "intentionallyOmitted", "reason": "Review attachments are managed by ReviewAttachmentsWorker and are not included in this existence lookup.", "reviewAtSpec": "4.4.1" }
+          ]
         },
         {
           "operationId": "appStoreReviewDetails_createInstance",
@@ -732,6 +780,12 @@
           "path": "/v1/appStoreVersions/{id}",
           "role": "supporting",
           "condition": "Always validates the version's owning app before creating a review submission.",
+          "optionalParameterClassifications": [
+            { "location": "query", "appleName": "include", "disposition": "intentionallyOmitted", "reason": "The submission preflight uses a fixed sparse version projection and does not expand relationships.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[appStoreVersionExperiments]", "disposition": "intentionallyOmitted", "reason": "Legacy experiments are not included by the submission preflight.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[appStoreVersionExperimentsV2]", "disposition": "intentionallyOmitted", "reason": "V2 experiments are not included by the submission preflight.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[appStoreVersionLocalizations]", "disposition": "intentionallyOmitted", "reason": "Localizations are not included by the submission preflight.", "reviewAtSpec": "4.4.1" }
+          ],
           "inputs": [
             {
               "sourceKind": "fixed",
@@ -764,6 +818,21 @@
           "method": "post",
           "path": "/v1/reviewSubmissionItems",
           "role": "supporting",
+          "optionalParameterClassifications": [
+            { "location": "body", "appleName": "/data/relationships/appCustomProductPageVersion", "disposition": "intentionallyOmitted", "reason": "This tool submits exactly one App Store version; custom product page versions require a separate review-item workflow.", "reviewAtSpec": "4.4.1" },
+            { "location": "body", "appleName": "/data/relationships/appEvent", "disposition": "intentionallyOmitted", "reason": "This tool submits exactly one App Store version; in-app events require a separate review-item workflow.", "reviewAtSpec": "4.4.1" },
+            { "location": "body", "appleName": "/data/relationships/appStoreVersionExperiment", "disposition": "intentionallyOmitted", "reason": "This tool submits exactly one App Store version; product-page experiments require a separate review-item workflow.", "reviewAtSpec": "4.4.1" },
+            { "location": "body", "appleName": "/data/relationships/appStoreVersionExperimentV2", "disposition": "intentionallyOmitted", "reason": "This tool submits exactly one App Store version; V2 experiments require a separate review-item workflow.", "reviewAtSpec": "4.4.1" },
+            { "location": "body", "appleName": "/data/relationships/backgroundAssetVersion", "disposition": "intentionallyOmitted", "reason": "This tool submits exactly one App Store version; background asset versions require a separate review-item workflow.", "reviewAtSpec": "4.4.1" },
+            { "location": "body", "appleName": "/data/relationships/gameCenterAchievementVersion", "disposition": "intentionallyOmitted", "reason": "This tool submits exactly one App Store version; Game Center content requires a separate review-item workflow.", "reviewAtSpec": "4.4.1" },
+            { "location": "body", "appleName": "/data/relationships/gameCenterActivityVersion", "disposition": "intentionallyOmitted", "reason": "This tool submits exactly one App Store version; Game Center content requires a separate review-item workflow.", "reviewAtSpec": "4.4.1" },
+            { "location": "body", "appleName": "/data/relationships/gameCenterChallengeVersion", "disposition": "intentionallyOmitted", "reason": "This tool submits exactly one App Store version; Game Center content requires a separate review-item workflow.", "reviewAtSpec": "4.4.1" },
+            { "location": "body", "appleName": "/data/relationships/gameCenterLeaderboardSetVersion", "disposition": "intentionallyOmitted", "reason": "This tool submits exactly one App Store version; Game Center content requires a separate review-item workflow.", "reviewAtSpec": "4.4.1" },
+            { "location": "body", "appleName": "/data/relationships/gameCenterLeaderboardVersion", "disposition": "intentionallyOmitted", "reason": "This tool submits exactly one App Store version; Game Center content requires a separate review-item workflow.", "reviewAtSpec": "4.4.1" },
+            { "location": "body", "appleName": "/data/relationships/inAppPurchaseVersion", "disposition": "intentionallyOmitted", "reason": "This tool submits exactly one App Store version; in-app purchase versions require a separate review-item workflow.", "reviewAtSpec": "4.4.1" },
+            { "location": "body", "appleName": "/data/relationships/subscriptionGroupVersion", "disposition": "intentionallyOmitted", "reason": "This tool submits exactly one App Store version; subscription group versions require a separate review-item workflow.", "reviewAtSpec": "4.4.1" },
+            { "location": "body", "appleName": "/data/relationships/subscriptionVersion", "disposition": "intentionallyOmitted", "reason": "This tool submits exactly one App Store version; subscription versions require a separate review-item workflow.", "reviewAtSpec": "4.4.1" }
+          ],
           "inputs": [
             {
               "sourceKind": "fixed",
@@ -796,6 +865,10 @@
           "path": "/v1/reviewSubmissions/{id}",
           "role": "primary",
           "condition": "Marks the assembled review submission as submitted.",
+          "optionalParameterClassifications": [
+            { "location": "body", "appleName": "/data/attributes/canceled", "disposition": "intentionallyOmitted", "reason": "Submission fixes submitted=true and never combines submission with the distinct cancellation transition.", "reviewAtSpec": "4.4.1" },
+            { "location": "body", "appleName": "/data/attributes/platform", "disposition": "intentionallyOmitted", "reason": "The platform is set when the review submission is created and is not changed during confirmation.", "reviewAtSpec": "4.4.1" }
+          ],
           "inputs": [
             {
               "sourceKind": "derived",
@@ -881,6 +954,10 @@
           "method": "patch",
           "path": "/v1/appStoreVersions/{id}",
           "role": "primary",
+          "optionalParameterClassifications": [
+            { "location": "body", "appleName": "/data/relationships/appClipDefaultExperience", "disposition": "intentionallyOmitted", "reason": "App Clip default-experience relationship management is outside the version-attribute update contract.", "reviewAtSpec": "4.4.1" },
+            { "location": "body", "appleName": "/data/relationships/build", "disposition": "intentionallyOmitted", "reason": "Build relationship updates are handled by app_versions_attach_build.", "reviewAtSpec": "4.4.1" }
+          ],
           "inputs": [
             {
               "sourceKind": "derived",
@@ -941,6 +1018,12 @@
           "sourceKind": "requestBody",
           "operationId": "appStoreVersions_updateInstance",
           "jsonPointer": "/data/attributes/downloadable"
+        },
+        {
+          "toolField": "uses_idfa",
+          "sourceKind": "requestBody",
+          "operationId": "appStoreVersions_updateInstance",
+          "jsonPointer": "/data/attributes/usesIdfa"
         }
       ],
       "response": {
@@ -969,6 +1052,12 @@
           "path": "/v1/appStoreVersions/{id}",
           "role": "supporting",
           "condition": "Used only when app_info_id is omitted; resolves the owning app and current appVersionState from legacy version_id.",
+          "optionalParameterClassifications": [
+            { "location": "query", "appleName": "include", "disposition": "intentionallyOmitted", "reason": "Legacy resolution uses a fixed sparse version projection and does not expand relationships.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[appStoreVersionExperiments]", "disposition": "intentionallyOmitted", "reason": "Legacy experiments are not included during App Info resolution.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[appStoreVersionExperimentsV2]", "disposition": "intentionallyOmitted", "reason": "V2 experiments are not included during App Info resolution.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[appStoreVersionLocalizations]", "disposition": "intentionallyOmitted", "reason": "Localizations are not included during App Info resolution.", "reviewAtSpec": "4.4.1" }
+          ],
           "inputs": [
             {
               "sourceKind": "fixed",
@@ -984,6 +1073,10 @@
           "path": "/v1/apps/{id}/appInfos",
           "role": "supporting",
           "condition": "Used only for legacy version_id resolution; selects exactly one AppInfo whose state equals the version state or an explicit documented state mapping.",
+          "optionalParameterClassifications": [
+            { "location": "query", "appleName": "include", "disposition": "intentionallyOmitted", "reason": "Legacy resolution reads only App Info state and does not expand relationships.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[appInfoLocalizations]", "disposition": "intentionallyOmitted", "reason": "App Info localizations are not included during age-rating declaration resolution.", "reviewAtSpec": "4.4.1" }
+          ],
           "inputs": [
             {
               "sourceKind": "derived",
@@ -1032,6 +1125,9 @@
           "method": "patch",
           "path": "/v1/ageRatingDeclarations/{id}",
           "role": "primary",
+          "optionalParameterClassifications": [
+            { "location": "body", "appleName": "/data/attributes/ageRatingOverride", "disposition": "intentionallyOmitted", "reason": "Apple 4.4.1 exposes the current ageRatingOverrideV2 field separately; the MCP age_rating_override input targets that current field.", "reviewAtSpec": "4.4.1" }
+          ],
           "inputs": [
             {
               "sourceKind": "derived",

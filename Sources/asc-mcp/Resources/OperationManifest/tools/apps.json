@@ -81,7 +81,27 @@
           "operationId": "apps_getInstance",
           "method": "get",
           "path": "/v1/apps/{id}",
-          "role": "primary"
+          "role": "primary",
+          "optionalParameterClassifications": [
+            { "location": "query", "appleName": "limit[androidToIosAppMappingDetails]", "disposition": "intentionallyOmitted", "reason": "The detail projection does not promise complete embedded to-many collections; use resource-specific tools for independently paginated data.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[appClips]", "disposition": "intentionallyOmitted", "reason": "The detail projection does not promise complete embedded to-many collections; use resource-specific tools for independently paginated data.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[appCustomProductPages]", "disposition": "intentionallyOmitted", "reason": "The detail projection does not promise complete embedded to-many collections; use resource-specific tools for independently paginated data.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[appEncryptionDeclarations]", "disposition": "intentionallyOmitted", "reason": "The detail projection does not promise complete embedded to-many collections; use resource-specific tools for independently paginated data.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[appEvents]", "disposition": "intentionallyOmitted", "reason": "The detail projection does not promise complete embedded to-many collections; use resource-specific tools for independently paginated data.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[appInfos]", "disposition": "intentionallyOmitted", "reason": "The detail projection does not promise complete embedded to-many collections; use resource-specific tools for independently paginated data.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[appStoreVersionExperimentsV2]", "disposition": "intentionallyOmitted", "reason": "The detail projection does not promise complete embedded to-many collections; use resource-specific tools for independently paginated data.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[appStoreVersions]", "disposition": "intentionallyOmitted", "reason": "The detail projection does not promise complete embedded to-many collections; use resource-specific tools for independently paginated data.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[betaAppLocalizations]", "disposition": "intentionallyOmitted", "reason": "The detail projection does not promise complete embedded to-many collections; use resource-specific tools for independently paginated data.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[betaGroups]", "disposition": "intentionallyOmitted", "reason": "The detail projection does not promise complete embedded to-many collections; use resource-specific tools for independently paginated data.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[builds]", "disposition": "intentionallyOmitted", "reason": "The detail projection does not promise complete embedded to-many collections; use resource-specific tools for independently paginated data.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[gameCenterEnabledVersions]", "disposition": "intentionallyOmitted", "reason": "The detail projection does not promise complete embedded to-many collections; use resource-specific tools for independently paginated data.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[inAppPurchases]", "disposition": "intentionallyOmitted", "reason": "The detail projection does not promise complete embedded to-many collections; use resource-specific tools for independently paginated data.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[inAppPurchasesV2]", "disposition": "intentionallyOmitted", "reason": "The detail projection does not promise complete embedded to-many collections; use resource-specific tools for independently paginated data.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[preReleaseVersions]", "disposition": "intentionallyOmitted", "reason": "The detail projection does not promise complete embedded to-many collections; use resource-specific tools for independently paginated data.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[promotedPurchases]", "disposition": "intentionallyOmitted", "reason": "The detail projection does not promise complete embedded to-many collections; use resource-specific tools for independently paginated data.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[reviewSubmissions]", "disposition": "intentionallyOmitted", "reason": "The detail projection does not promise complete embedded to-many collections; use resource-specific tools for independently paginated data.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[subscriptionGroups]", "disposition": "intentionallyOmitted", "reason": "The detail projection does not promise complete embedded to-many collections; use resource-specific tools for independently paginated data.", "reviewAtSpec": "4.4.1" }
+          ]
         }
       ],
       "fields": [
@@ -114,6 +134,12 @@
           "path": "/v1/appStoreVersions/{id}",
           "role": "supporting",
           "condition": "version_id is supplied",
+          "optionalParameterClassifications": [
+            { "location": "query", "appleName": "include", "disposition": "intentionallyOmitted", "reason": "The ownership and selection check uses a fixed sparse App Store version projection and does not consume included relationships.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[appStoreVersionExperiments]", "disposition": "intentionallyOmitted", "reason": "App Store version experiments are not included by this metadata lookup.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[appStoreVersionExperimentsV2]", "disposition": "intentionallyOmitted", "reason": "App Store version experiments are not included by this metadata lookup.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[appStoreVersionLocalizations]", "disposition": "intentionallyOmitted", "reason": "Localizations are fetched through their dedicated paginated related-resource operation.", "reviewAtSpec": "4.4.1" }
+          ],
           "inputs": [
             {
               "sourceKind": "fixed",
@@ -129,6 +155,17 @@
           "path": "/v1/apps/{id}/appStoreVersions",
           "role": "supporting",
           "condition": "version_id is omitted",
+          "optionalParameterClassifications": [
+            { "location": "query", "appleName": "filter[appStoreState]", "disposition": "intentionallyOmitted", "reason": "The tool traverses all version pages and applies legacy state fallback locally so selection semantics remain deterministic.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "filter[appVersionState]", "disposition": "intentionallyOmitted", "reason": "The tool traverses all version pages and selects current version state locally so state fallback remains deterministic.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "filter[id]", "disposition": "intentionallyOmitted", "reason": "Explicit version selection uses version_id and the instance operation instead of filtering the auto-selection collection.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "filter[platform]", "disposition": "intentionallyOmitted", "reason": "Platform selection is applied locally after complete traversal to preserve the documented preference order.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "filter[versionString]", "disposition": "intentionallyOmitted", "reason": "The metadata workflow selects by state and platform, not by version string.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "include", "disposition": "intentionallyOmitted", "reason": "Auto-selection consumes only the fixed sparse App Store version projection and does not expand relationships.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[appStoreVersionExperiments]", "disposition": "intentionallyOmitted", "reason": "App Store version experiments are not included during auto-selection.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[appStoreVersionExperimentsV2]", "disposition": "intentionallyOmitted", "reason": "App Store version experiments are not included during auto-selection.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[appStoreVersionLocalizations]", "disposition": "intentionallyOmitted", "reason": "Localizations are fetched through their dedicated paginated related-resource operation.", "reviewAtSpec": "4.4.1" }
+          ],
           "inputs": [
             {
               "sourceKind": "fixed",
@@ -149,6 +186,12 @@
           "method": "get",
           "path": "/v1/appStoreVersions/{id}/appStoreVersionLocalizations",
           "role": "primary",
+          "optionalParameterClassifications": [
+            { "location": "query", "appleName": "include", "disposition": "intentionallyOmitted", "reason": "The metadata aggregate reads base localizations and loads media through dedicated paginated operations.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[appPreviewSets]", "disposition": "intentionallyOmitted", "reason": "Preview sets are loaded through their dedicated paginated related-resource operation.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[appScreenshotSets]", "disposition": "intentionallyOmitted", "reason": "Screenshot sets are loaded through their dedicated paginated related-resource operation.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[searchKeywords]", "disposition": "intentionallyOmitted", "reason": "Search keyword relationships are outside the metadata aggregate response.", "reviewAtSpec": "4.4.1" }
+          ],
           "inputs": [
             {
               "sourceKind": "derived",
@@ -180,6 +223,11 @@
           "path": "/v1/appStoreVersionLocalizations/{id}/appPreviewSets",
           "role": "conditional",
           "condition": "include_media is true and locale is supplied",
+          "optionalParameterClassifications": [
+            { "location": "query", "appleName": "filter[previewType]", "disposition": "intentionallyOmitted", "reason": "The media aggregate returns every preview set for the selected localization so callers can choose display types from one response.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "filter[appCustomProductPageLocalization]", "disposition": "intentionallyOmitted", "reason": "This workflow addresses an App Store version localization, not a custom product page localization.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "filter[appStoreVersionExperimentTreatmentLocalization]", "disposition": "intentionallyOmitted", "reason": "This workflow addresses an App Store version localization, not an experiment treatment localization.", "reviewAtSpec": "4.4.1" }
+          ],
           "inputs": [
             {
               "sourceKind": "derived",
@@ -214,6 +262,11 @@
           "path": "/v1/appStoreVersionLocalizations/{id}/appScreenshotSets",
           "role": "conditional",
           "condition": "include_media is true and locale is supplied",
+          "optionalParameterClassifications": [
+            { "location": "query", "appleName": "filter[screenshotDisplayType]", "disposition": "intentionallyOmitted", "reason": "The media aggregate returns every screenshot set for the selected localization so callers can choose display types from one response.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "filter[appCustomProductPageLocalization]", "disposition": "intentionallyOmitted", "reason": "This workflow addresses an App Store version localization, not a custom product page localization.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "filter[appStoreVersionExperimentTreatmentLocalization]", "disposition": "intentionallyOmitted", "reason": "This workflow addresses an App Store version localization, not an experiment treatment localization.", "reviewAtSpec": "4.4.1" }
+          ],
           "inputs": [
             {
               "sourceKind": "derived",
@@ -281,7 +334,28 @@
           "operationId": "apps_getCollection",
           "method": "get",
           "path": "/v1/apps",
-          "role": "primary"
+          "role": "primary",
+          "optionalParameterClassifications": [
+            { "location": "query", "appleName": "include", "disposition": "intentionallyOmitted", "reason": "The collection tool returns an App projection without included resources; use apps_get_details or resource-specific tools for relationships.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[androidToIosAppMappingDetails]", "disposition": "intentionallyOmitted", "reason": "No relationships are included by the App collection projection, so this related-resource limit is inapplicable.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[appClips]", "disposition": "intentionallyOmitted", "reason": "No relationships are included by the App collection projection, so this related-resource limit is inapplicable.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[appCustomProductPages]", "disposition": "intentionallyOmitted", "reason": "No relationships are included by the App collection projection, so this related-resource limit is inapplicable.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[appEncryptionDeclarations]", "disposition": "intentionallyOmitted", "reason": "No relationships are included by the App collection projection, so this related-resource limit is inapplicable.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[appEvents]", "disposition": "intentionallyOmitted", "reason": "No relationships are included by the App collection projection, so this related-resource limit is inapplicable.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[appInfos]", "disposition": "intentionallyOmitted", "reason": "No relationships are included by the App collection projection, so this related-resource limit is inapplicable.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[appStoreVersionExperimentsV2]", "disposition": "intentionallyOmitted", "reason": "No relationships are included by the App collection projection, so this related-resource limit is inapplicable.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[appStoreVersions]", "disposition": "intentionallyOmitted", "reason": "No relationships are included by the App collection projection, so this related-resource limit is inapplicable.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[betaAppLocalizations]", "disposition": "intentionallyOmitted", "reason": "No relationships are included by the App collection projection, so this related-resource limit is inapplicable.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[betaGroups]", "disposition": "intentionallyOmitted", "reason": "No relationships are included by the App collection projection, so this related-resource limit is inapplicable.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[builds]", "disposition": "intentionallyOmitted", "reason": "No relationships are included by the App collection projection, so this related-resource limit is inapplicable.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[gameCenterEnabledVersions]", "disposition": "intentionallyOmitted", "reason": "No relationships are included by the App collection projection, so this related-resource limit is inapplicable.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[inAppPurchases]", "disposition": "intentionallyOmitted", "reason": "No relationships are included by the App collection projection, so this related-resource limit is inapplicable.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[inAppPurchasesV2]", "disposition": "intentionallyOmitted", "reason": "No relationships are included by the App collection projection, so this related-resource limit is inapplicable.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[preReleaseVersions]", "disposition": "intentionallyOmitted", "reason": "No relationships are included by the App collection projection, so this related-resource limit is inapplicable.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[promotedPurchases]", "disposition": "intentionallyOmitted", "reason": "No relationships are included by the App collection projection, so this related-resource limit is inapplicable.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[reviewSubmissions]", "disposition": "intentionallyOmitted", "reason": "No relationships are included by the App collection projection, so this related-resource limit is inapplicable.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[subscriptionGroups]", "disposition": "intentionallyOmitted", "reason": "No relationships are included by the App collection projection, so this related-resource limit is inapplicable.", "reviewAtSpec": "4.4.1" }
+          ]
         }
       ],
       "fields": [
@@ -289,6 +363,15 @@
         { "toolField": "sort", "sourceKind": "parameter", "operationId": "apps_getCollection", "location": "query", "appleName": "sort" },
         { "toolField": "bundle_id", "sourceKind": "parameter", "operationId": "apps_getCollection", "location": "query", "appleName": "filter[bundleId]" },
         { "toolField": "name", "sourceKind": "parameter", "operationId": "apps_getCollection", "location": "query", "appleName": "filter[name]" },
+        { "toolField": "app_ids", "sourceKind": "parameter", "operationId": "apps_getCollection", "location": "query", "appleName": "filter[id]" },
+        { "toolField": "skus", "sourceKind": "parameter", "operationId": "apps_getCollection", "location": "query", "appleName": "filter[sku]" },
+        { "toolField": "app_store_version_ids", "sourceKind": "parameter", "operationId": "apps_getCollection", "location": "query", "appleName": "filter[appStoreVersions]" },
+        { "toolField": "app_store_states", "sourceKind": "parameter", "operationId": "apps_getCollection", "location": "query", "appleName": "filter[appStoreVersions.appStoreState]" },
+        { "toolField": "platforms", "sourceKind": "parameter", "operationId": "apps_getCollection", "location": "query", "appleName": "filter[appStoreVersions.platform]" },
+        { "toolField": "app_version_states", "sourceKind": "parameter", "operationId": "apps_getCollection", "location": "query", "appleName": "filter[appStoreVersions.appVersionState]" },
+        { "toolField": "review_submission_states", "sourceKind": "parameter", "operationId": "apps_getCollection", "location": "query", "appleName": "filter[reviewSubmissions.state]" },
+        { "toolField": "review_submission_platforms", "sourceKind": "parameter", "operationId": "apps_getCollection", "location": "query", "appleName": "filter[reviewSubmissions.platform]" },
+        { "toolField": "has_game_center_enabled_versions", "sourceKind": "parameter", "operationId": "apps_getCollection", "location": "query", "appleName": "exists[gameCenterEnabledVersions]" },
         { "toolField": "next_url", "sourceKind": "local", "localRole": "paginationContinuationPreservingFiltersSortAndEffectiveLimit" }
       ],
       "response": {
@@ -316,6 +399,12 @@
           "method": "get",
           "path": "/v1/appStoreVersions/{id}",
           "role": "supporting",
+          "optionalParameterClassifications": [
+            { "location": "query", "appleName": "include", "disposition": "intentionallyOmitted", "reason": "The ownership check reads only the fixed App relationship projection.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[appStoreVersionExperiments]", "disposition": "intentionallyOmitted", "reason": "App Store version experiments are not included in the ownership check.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[appStoreVersionExperimentsV2]", "disposition": "intentionallyOmitted", "reason": "App Store version experiments are not included in the ownership check.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[appStoreVersionLocalizations]", "disposition": "intentionallyOmitted", "reason": "Localizations are fetched by the dedicated primary operation.", "reviewAtSpec": "4.4.1" }
+          ],
           "inputs": [
             {
               "sourceKind": "fixed",
@@ -330,6 +419,12 @@
           "method": "get",
           "path": "/v1/appStoreVersions/{id}/appStoreVersionLocalizations",
           "role": "primary",
+          "optionalParameterClassifications": [
+            { "location": "query", "appleName": "include", "disposition": "intentionallyOmitted", "reason": "The list returns the base localization projection and does not expand relationships.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[appPreviewSets]", "disposition": "intentionallyOmitted", "reason": "Preview sets are not included by the localization list.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[appScreenshotSets]", "disposition": "intentionallyOmitted", "reason": "Screenshot sets are not included by the localization list.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[searchKeywords]", "disposition": "intentionallyOmitted", "reason": "Search keywords are not included by the localization list.", "reviewAtSpec": "4.4.1" }
+          ],
           "inputs": [
             {
               "sourceKind": "fixed",
@@ -344,7 +439,9 @@
         { "toolField": "app_id", "sourceKind": "local", "localRole": "validateVersionOwnershipFromAppRelationship", "derivedFrom": ["appStoreVersions_getInstance:/data/relationships/app/data/id"] },
         { "toolField": "version_id", "sourceKind": "parameter", "operationId": "appStoreVersions_getInstance", "location": "path", "appleName": "id" },
         { "toolField": "version_id", "sourceKind": "parameter", "operationId": "appStoreVersions_appStoreVersionLocalizations_getToManyRelated", "location": "path", "appleName": "id" },
-        { "toolField": "next_url", "sourceKind": "local", "localRole": "paginationContinuation" }
+        { "toolField": "locales", "sourceKind": "parameter", "operationId": "appStoreVersions_appStoreVersionLocalizations_getToManyRelated", "location": "query", "appleName": "filter[locale]" },
+        { "toolField": "limit", "sourceKind": "parameter", "operationId": "appStoreVersions_appStoreVersionLocalizations_getToManyRelated", "location": "query", "appleName": "limit" },
+        { "toolField": "next_url", "sourceKind": "local", "localRole": "paginationContinuationPreservingFiltersAndFixedProjection" }
       ],
       "response": {
         "mode": "projection",
@@ -372,6 +469,12 @@
           "method": "get",
           "path": "/v1/apps/{id}/appStoreVersions",
           "role": "primary",
+          "optionalParameterClassifications": [
+            { "location": "query", "appleName": "include", "disposition": "intentionallyOmitted", "reason": "The lightweight version list returns a fixed base projection and does not expand relationships.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[appStoreVersionExperiments]", "disposition": "intentionallyOmitted", "reason": "App Store version experiments are not included by the lightweight list.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[appStoreVersionExperimentsV2]", "disposition": "intentionallyOmitted", "reason": "App Store version experiments are not included by the lightweight list.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[appStoreVersionLocalizations]", "disposition": "intentionallyOmitted", "reason": "Localizations are not included by the lightweight list.", "reviewAtSpec": "4.4.1" }
+          ],
           "inputs": [
             {
               "sourceKind": "fixed",
@@ -390,6 +493,11 @@
       ],
       "fields": [
         { "toolField": "app_id", "sourceKind": "parameter", "operationId": "apps_appStoreVersions_getToManyRelated", "location": "path", "appleName": "id" },
+        { "toolField": "version_ids", "sourceKind": "parameter", "operationId": "apps_appStoreVersions_getToManyRelated", "location": "query", "appleName": "filter[id]" },
+        { "toolField": "version_strings", "sourceKind": "parameter", "operationId": "apps_appStoreVersions_getToManyRelated", "location": "query", "appleName": "filter[versionString]" },
+        { "toolField": "app_store_states", "sourceKind": "parameter", "operationId": "apps_appStoreVersions_getToManyRelated", "location": "query", "appleName": "filter[appStoreState]" },
+        { "toolField": "app_version_states", "sourceKind": "parameter", "operationId": "apps_appStoreVersions_getToManyRelated", "location": "query", "appleName": "filter[appVersionState]" },
+        { "toolField": "platforms", "sourceKind": "parameter", "operationId": "apps_appStoreVersions_getToManyRelated", "location": "query", "appleName": "filter[platform]" },
         { "toolField": "next_url", "sourceKind": "local", "localRole": "paginationContinuation" }
       ],
       "response": {
@@ -403,7 +511,7 @@
           { "outputField": "next_url", "operationId": "apps_appStoreVersions_getToManyRelated", "jsonPointer": "/links/next" }
         ]
       },
-      "note": "Partial because the handler requests a fixed 200-item projection containing platform, current appVersionState, deprecated appStoreState, versionString, and createdDate; it exposes no public platform/state filters and returns next_url for caller-driven pagination."
+      "note": "Partial because the handler requests a fixed 200-item projection containing platform, current appVersionState, deprecated appStoreState, versionString, and createdDate; public ID, version-string, platform, and state filters are preserved across next_url pagination."
     },
     {
       "tool": "apps_search",
@@ -555,6 +663,12 @@
           "method": "get",
           "path": "/v1/appStoreVersions/{id}",
           "role": "supporting",
+          "optionalParameterClassifications": [
+            { "location": "query", "appleName": "include", "disposition": "intentionallyOmitted", "reason": "The write preflight reads only the fixed version ownership and state projection.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[appStoreVersionExperiments]", "disposition": "intentionallyOmitted", "reason": "App Store version experiments are not included in the write preflight.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[appStoreVersionExperimentsV2]", "disposition": "intentionallyOmitted", "reason": "App Store version experiments are not included in the write preflight.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[appStoreVersionLocalizations]", "disposition": "intentionallyOmitted", "reason": "The target localization is resolved through the dedicated filtered operation.", "reviewAtSpec": "4.4.1" }
+          ],
           "inputs": [
             {
               "sourceKind": "fixed",
@@ -569,6 +683,13 @@
           "method": "get",
           "path": "/v1/appStoreVersions/{id}/appStoreVersionLocalizations",
           "role": "supporting",
+          "optionalParameterClassifications": [
+            { "location": "query", "appleName": "limit", "disposition": "internalControl", "reason": "The exact-locale write lookup fixes the page size to one before patching the resolved localization.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "include", "disposition": "intentionallyOmitted", "reason": "The exact-locale write lookup uses a fixed base localization projection and does not expand relationships.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[appPreviewSets]", "disposition": "intentionallyOmitted", "reason": "Preview sets are not included in the write lookup.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[appScreenshotSets]", "disposition": "intentionallyOmitted", "reason": "Screenshot sets are not included in the write lookup.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[searchKeywords]", "disposition": "intentionallyOmitted", "reason": "Search keywords are not included in the write lookup.", "reviewAtSpec": "4.4.1" }
+          ],
           "inputs": [
             {
               "sourceKind": "fixed",

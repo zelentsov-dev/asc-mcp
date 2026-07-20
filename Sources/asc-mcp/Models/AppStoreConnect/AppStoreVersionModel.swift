@@ -19,6 +19,7 @@ public struct ASCAppStoreVersion: Codable, Sendable {
         public let releaseType: String?
         public let earliestReleaseDate: String?
         public let downloadable: Bool?
+        public let usesIdfa: Bool?
         public let createdDate: String?
     }
     

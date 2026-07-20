@@ -200,6 +200,7 @@ struct AppsWorkerReliabilityTests {
         #expect(appsReliabilityQueryValue(requests[0], "limit") == "200")
         #expect(appsReliabilityQueryValue(requests[1], "fields[appStoreVersions]") == "app")
         #expect(appsReliabilityQueryValue(requests[2], "fields[appStoreVersionLocalizations]") == "locale,description,whatsNew,keywords,promotionalText,supportUrl,marketingUrl,appStoreVersion")
+        #expect(appsReliabilityQueryValue(requests[2], "limit") == "200")
     }
 
     @Test("version list pagination rejects a changed fixed projection")
@@ -449,6 +450,8 @@ struct AppsWorkerReliabilityTests {
         let requests = await transport.recordedRequests()
         #expect(appsReliabilityQueryValue(requests[0], "fields[appStoreVersions]") == "app,platform,versionString,appVersionState,appStoreState")
         #expect(appsReliabilityQueryValue(requests[1], "fields[appStoreVersionLocalizations]") == "locale,appStoreVersion")
+        #expect(appsReliabilityQueryValue(requests[1], "filter[locale]") == "en-US")
+        #expect(appsReliabilityQueryValue(requests[1], "limit") == "1")
     }
 
     @Test("metadata update rejects app ownership mismatch before localization lookup")

@@ -41,6 +41,11 @@ extension AppLifecycleWorker {
                         "type": .string("string"),
                         "description": .string("Review flow type"),
                         "enum": .array([.string("APP_STORE"), .string("NOTARIZATION")])
+                    ]),
+                    "uses_idfa": .object([
+                        "type": .array([.string("boolean"), .string("null")]),
+                        "description": .string("Deprecated Apple usesIdfa declaration. Pass null to leave it unset."),
+                        "deprecated": .bool(true)
                     ])
                 ]),
                 "required": .array([.string("app_id"), .string("platform"), .string("version_string")])
@@ -58,6 +63,20 @@ extension AppLifecycleWorker {
                     "app_id": .object([
                         "type": .string("string"),
                         "description": .string("App ID in App Store Connect")
+                    ]),
+                    "version_ids": .object([
+                        "type": .string("array"),
+                        "items": .object(["type": .string("string")]),
+                        "description": .string("Filter by App Store version IDs"),
+                        "minItems": .int(1),
+                        "uniqueItems": .bool(true)
+                    ]),
+                    "version_strings": .object([
+                        "type": .string("array"),
+                        "items": .object(["type": .string("string")]),
+                        "description": .string("Filter by version strings"),
+                        "minItems": .int(1),
+                        "uniqueItems": .bool(true)
                     ]),
                     "states": .object([
                         "type": .string("array"),
@@ -188,6 +207,11 @@ extension AppLifecycleWorker {
                     "downloadable": .object([
                         "type": .array([.string("boolean"), .string("null")]),
                         "description": .string("Whether the version remains downloadable")
+                    ]),
+                    "uses_idfa": .object([
+                        "type": .array([.string("boolean"), .string("null")]),
+                        "description": .string("Deprecated Apple usesIdfa declaration. Pass null to clear it."),
+                        "deprecated": .bool(true)
                     ])
                 ]),
                 "required": .array([.string("version_id")])

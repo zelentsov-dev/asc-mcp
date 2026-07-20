@@ -182,6 +182,58 @@ extension AppsWorker {
         return fields
     }
 
+    private func stringListQueryValue(_ name: String, from arguments: [String: Value]) throws -> String? {
+        guard let value = arguments[name] else {
+            return nil
+        }
+        guard let items = value.arrayValue, !items.isEmpty else {
+            throw AppsMetadataArgumentError("\(name) must be a non-empty array of strings")
+        }
+        let strings = try items.map { item in
+            guard let string = item.stringValue,
+                  !string.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+                throw AppsMetadataArgumentError("\(name) must contain only non-empty strings")
+            }
+            return string
+        }
+        return strings.joined(separator: ",")
+    }
+
+    private func addStringListQueryArguments(
+        _ mappings: [(toolField: String, appleName: String)],
+        from arguments: [String: Value],
+        to parameters: inout [String: String]
+    ) throws {
+        for mapping in mappings {
+            if let value = try stringListQueryValue(mapping.toolField, from: arguments) {
+                parameters[mapping.appleName] = value
+            }
+        }
+    }
+
+    private func addAppCollectionFilters(
+        from arguments: [String: Value],
+        to parameters: inout [String: String]
+    ) throws {
+        try addStringListQueryArguments([
+            ("app_ids", "filter[id]"),
+            ("skus", "filter[sku]"),
+            ("app_store_version_ids", "filter[appStoreVersions]"),
+            ("app_store_states", "filter[appStoreVersions.appStoreState]"),
+            ("platforms", "filter[appStoreVersions.platform]"),
+            ("app_version_states", "filter[appStoreVersions.appVersionState]"),
+            ("review_submission_states", "filter[reviewSubmissions.state]"),
+            ("review_submission_platforms", "filter[reviewSubmissions.platform]")
+        ], from: arguments, to: &parameters)
+
+        if let value = arguments["has_game_center_enabled_versions"] {
+            guard let exists = value.boolValue else {
+                throw AppsMetadataArgumentError("has_game_center_enabled_versions must be a boolean")
+            }
+            parameters["exists[gameCenterEnabledVersions]"] = String(exists)
+        }
+    }
+
     
     /// Lists all apps from App Store Connect with optional filtering
     /// - Returns: JSON array of apps with their IDs, names, bundle IDs, and metadata
@@ -205,6 +257,7 @@ extension AppsWorker {
                 if let name = arguments["name"]?.stringValue {
                     requiredParameters["filter[name]"] = name
                 }
+                try addAppCollectionFilters(from: arguments, to: &requiredParameters)
                 response = try await httpClient.getPage(
                     nextUrl,
                     scope: PaginationScope(path: "/v1/apps", requiredParameters: requiredParameters),
@@ -222,6 +275,7 @@ extension AppsWorker {
                 if let name = arguments["name"]?.stringValue {
                     queryParams["filter[name]"] = name
                 }
+                try addAppCollectionFilters(from: arguments, to: &queryParams)
 
                 response = try await httpClient.get("/v1/apps", parameters: queryParams, as: ASCAppsResponse.self)
             }
@@ -406,6 +460,17 @@ extension AppsWorker {
         do {
             let response: ASCAppStoreVersionsResponse
             let versionFields = "platform,versionString,appVersionState,appStoreState,createdDate"
+            var queryParameters = [
+                "fields[appStoreVersions]": versionFields,
+                "limit": "200"
+            ]
+            try addStringListQueryArguments([
+                ("version_ids", "filter[id]"),
+                ("version_strings", "filter[versionString]"),
+                ("app_store_states", "filter[appStoreState]"),
+                ("app_version_states", "filter[appVersionState]"),
+                ("platforms", "filter[platform]")
+            ], from: arguments, to: &queryParameters)
 
             // Check for pagination next_url
             if let nextUrl = try paginationURL(from: arguments["next_url"]) {
@@ -413,20 +478,14 @@ extension AppsWorker {
                     nextUrl,
                     scope: PaginationScope(
                         path: "/v1/apps/\(try ASCPathSegment.encode(appId))/appStoreVersions",
-                        requiredParameters: [
-                            "fields[appStoreVersions]": versionFields,
-                            "limit": "200"
-                        ]
+                        requiredParameters: queryParameters
                     ),
                     as: ASCAppStoreVersionsResponse.self
                 )
             } else {
                 response = try await httpClient.get(
                     "/v1/apps/\(try ASCPathSegment.encode(appId))/appStoreVersions",
-                    parameters: [
-                        "limit": "200",
-                        "fields[appStoreVersions]": versionFields
-                    ],
+                    parameters: queryParameters,
                     as: ASCAppStoreVersionsResponse.self
                 )
             }
@@ -815,7 +874,8 @@ extension AppsWorker {
                 "/v1/appStoreVersions/\(try ASCPathSegment.encode(versionId))/appStoreVersionLocalizations",
                 parameters: [
                     "filter[locale]": locale,
-                    "fields[appStoreVersionLocalizations]": "locale,appStoreVersion"
+                    "fields[appStoreVersionLocalizations]": "locale,appStoreVersion",
+                    "limit": "1"
                 ],
                 as: ASCAppStoreVersionLocalizationsResponse.self
             )
@@ -1065,6 +1125,14 @@ extension AppsWorker {
 
         do {
             let localizationFields = "locale,description,whatsNew,keywords,promotionalText,supportUrl,marketingUrl,appStoreVersion"
+            let effectiveLimit = min(max(arguments["limit"]?.intValue ?? 200, 1), 200)
+            var localizationParameters = [
+                "fields[appStoreVersionLocalizations]": localizationFields,
+                "limit": String(effectiveLimit)
+            ]
+            if let locales = try stringListQueryValue("locales", from: arguments) {
+                localizationParameters["filter[locale]"] = locales
+            }
             let versionResponse: ASCAppStoreVersionResponse = try await httpClient.get(
                 "/v1/appStoreVersions/\(try ASCPathSegment.encode(versionId))",
                 parameters: ["fields[appStoreVersions]": "app"],
@@ -1082,14 +1150,14 @@ extension AppsWorker {
                     nextUrl,
                     scope: PaginationScope(
                         path: "/v1/appStoreVersions/\(try ASCPathSegment.encode(versionId))/appStoreVersionLocalizations",
-                        requiredParameters: ["fields[appStoreVersionLocalizations]": localizationFields]
+                        requiredParameters: localizationParameters
                     ),
                     as: ASCAppStoreVersionLocalizationsResponse.self
                 )
             } else {
                 localizationsResponse = try await httpClient.get(
                     "/v1/appStoreVersions/\(try ASCPathSegment.encode(versionId))/appStoreVersionLocalizations",
-                    parameters: ["fields[appStoreVersionLocalizations]": localizationFields],
+                    parameters: localizationParameters,
                     as: ASCAppStoreVersionLocalizationsResponse.self
                 )
             }

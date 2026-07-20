@@ -27,6 +27,7 @@ struct CreateAppStoreVersionRequest: Codable, Sendable {
             let reviewType: String?
             let releaseType: String?
             let earliestReleaseDate: String?
+            let usesIdfa: NullableAttributeValue?
         }
         struct Relationships: Codable, Sendable {
             let app: RelationshipData
@@ -40,6 +41,7 @@ struct CreateAppStoreVersionRequest: Codable, Sendable {
         reviewType: String? = nil,
         releaseType: String?,
         earliestReleaseDate: String?,
+        usesIdfa: NullableAttributeValue? = nil,
         appId: String
     ) {
         self.data = Data(
@@ -50,7 +52,8 @@ struct CreateAppStoreVersionRequest: Codable, Sendable {
                 copyright: copyright,
                 reviewType: reviewType,
                 releaseType: releaseType,
-                earliestReleaseDate: earliestReleaseDate
+                earliestReleaseDate: earliestReleaseDate,
+                usesIdfa: usesIdfa
             ),
             relationships: Data.Relationships(
                 app: RelationshipData(data: .init(type: "apps", id: appId))
@@ -73,6 +76,7 @@ struct UpdateAppStoreVersionRequest: Codable, Sendable {
             let versionString: NullableAttributeValue?
             let reviewType: NullableAttributeValue?
             let downloadable: NullableAttributeValue?
+            let usesIdfa: NullableAttributeValue?
         }
     }
 
@@ -83,7 +87,8 @@ struct UpdateAppStoreVersionRequest: Codable, Sendable {
         copyright: NullableAttributeValue? = nil,
         versionString: NullableAttributeValue? = nil,
         reviewType: NullableAttributeValue? = nil,
-        downloadable: NullableAttributeValue? = nil
+        downloadable: NullableAttributeValue? = nil,
+        usesIdfa: NullableAttributeValue? = nil
     ) {
         self.data = Data(
             type: "appStoreVersions",
@@ -94,7 +99,8 @@ struct UpdateAppStoreVersionRequest: Codable, Sendable {
                 copyright: copyright,
                 versionString: versionString,
                 reviewType: reviewType,
-                downloadable: downloadable
+                downloadable: downloadable,
+                usesIdfa: usesIdfa
             )
         )
     }

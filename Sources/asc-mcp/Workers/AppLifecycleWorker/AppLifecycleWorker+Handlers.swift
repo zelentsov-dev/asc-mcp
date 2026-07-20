@@ -4,6 +4,23 @@ import MCP
 // MARK: - Tool Handlers
 extension AppLifecycleWorker {
 
+    private func versionFilterValue(_ name: String, from arguments: [String: Value]) throws -> String? {
+        guard let value = arguments[name] else {
+            return nil
+        }
+        guard let items = value.arrayValue, !items.isEmpty else {
+            throw AppLifecycleQueryArgumentError("\(name) must be a non-empty array of strings")
+        }
+        let strings = try items.map { item in
+            guard let string = item.stringValue,
+                  !string.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+                throw AppLifecycleQueryArgumentError("\(name) must contain only non-empty strings")
+            }
+            return string
+        }
+        return strings.joined(separator: ",")
+    }
+
     /// Creates a new app version for release
     /// - Returns: JSON with created version details including ID, version string, platform and state
     /// - Throws: CallTool.Result with error if required parameters missing or API call fails
@@ -23,6 +40,7 @@ extension AppLifecycleWorker {
             let earliestDate = arguments["earliest_release_date"]?.stringValue
             let copyright = arguments["copyright"]?.stringValue
             let reviewType = arguments["review_type"]?.stringValue
+            let usesIdfa = try nullableBool("uses_idfa", from: arguments)
 
             let request = CreateAppStoreVersionRequest(
                 platform: platform,
@@ -31,6 +49,7 @@ extension AppLifecycleWorker {
                 reviewType: reviewType,
                 releaseType: releaseType,
                 earliestReleaseDate: earliestDate,
+                usesIdfa: usesIdfa,
                 appId: appId
             )
 
@@ -93,6 +112,12 @@ extension AppLifecycleWorker {
                 if let platform = arguments["platform"]?.stringValue {
                     requiredParameters["filter[platform]"] = platform
                 }
+                if let versionIDs = try versionFilterValue("version_ids", from: arguments) {
+                    requiredParameters["filter[id]"] = versionIDs
+                }
+                if let versionStrings = try versionFilterValue("version_strings", from: arguments) {
+                    requiredParameters["filter[versionString]"] = versionStrings
+                }
                 requiredParameters["limit"] = String(effectiveLimit)
                 responseData = try await httpClient.getPage(
                     nextUrl,
@@ -124,6 +149,12 @@ extension AppLifecycleWorker {
                 // Add platform filter
                 if let platform = arguments["platform"]?.stringValue {
                     queryParams["filter[platform]"] = platform
+                }
+                if let versionIDs = try versionFilterValue("version_ids", from: arguments) {
+                    queryParams["filter[id]"] = versionIDs
+                }
+                if let versionStrings = try versionFilterValue("version_strings", from: arguments) {
+                    queryParams["filter[versionString]"] = versionStrings
                 }
 
                 queryParams["limit"] = String(effectiveLimit)
@@ -231,8 +262,9 @@ extension AppLifecycleWorker {
                 allowedValues: ["APP_STORE", "NOTARIZATION"]
             )
             let downloadable = try nullableBool("downloadable", from: arguments)
+            let usesIdfa = try nullableBool("uses_idfa", from: arguments)
 
-            guard releaseType != nil || earliestDate != nil || copyright != nil || versionString != nil || reviewType != nil || downloadable != nil else {
+            guard releaseType != nil || earliestDate != nil || copyright != nil || versionString != nil || reviewType != nil || downloadable != nil || usesIdfa != nil else {
                 return CallTool.Result(
                     content: [MCPContent.text("Error: No attributes to update")],
                     isError: true
@@ -246,7 +278,8 @@ extension AppLifecycleWorker {
                 copyright: copyright,
                 versionString: versionString,
                 reviewType: reviewType,
-                downloadable: downloadable
+                downloadable: downloadable,
+                usesIdfa: usesIdfa
             )
 
             let response = try await httpClient.patch(
@@ -269,6 +302,7 @@ extension AppLifecycleWorker {
                     "release_type": (v.attributes?.releaseType).jsonSafe,
                     "review_type": (v.attributes?.reviewType).jsonSafe,
                     "downloadable": (v.attributes?.downloadable).jsonSafe,
+                    "uses_idfa": (v.attributes?.usesIdfa).jsonSafe,
                     "created_date": (v.attributes?.createdDate).jsonSafe
                 ] as [String: Any],
                 "message": "Version updated successfully"
@@ -1021,6 +1055,16 @@ extension AppLifecycleWorker {
             )
         }
     }
+}
+
+private struct AppLifecycleQueryArgumentError: LocalizedError {
+    let message: String
+
+    init(_ message: String) {
+        self.message = message
+    }
+
+    var errorDescription: String? { message }
 }
 
 // MARK: - Private Helpers
