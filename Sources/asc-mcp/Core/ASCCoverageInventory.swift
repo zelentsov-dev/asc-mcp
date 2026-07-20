@@ -68,7 +68,8 @@ enum ASCCoverageInventory {
             priority: .p0,
             workerKeys: [
                 "apps", "accessibility", "versions", "app_info", "pricing", "app_events",
-                "screenshots", "custom_pages", "ppo", "promoted", "review_attachments", "reviews"
+                "screenshots", "custom_pages", "ppo", "promoted", "review_attachments", "reviews",
+                "export_compliance"
             ],
             coveredCapabilities: [
                 "apps, app info, version lifecycle, review responses",
@@ -79,7 +80,8 @@ enum ASCCoverageInventory {
                 "custom product pages",
                 "product page optimization",
                 "promoted purchases",
-                "review attachments"
+                "review attachments",
+                "export-compliance release gate"
             ],
             missingCapabilities: [
                 "App Clips and advanced App Clip experiences",

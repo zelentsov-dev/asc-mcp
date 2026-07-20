@@ -207,76 +207,18 @@ extension ExportComplianceWorker {
             return exportComplianceError("Failed document reservation preflight", error)
         }
 
-        let snapshot: UploadFileSnapshot
-        do {
-            snapshot = try await uploadService.prepareSnapshot(filePath: filePath)
-        } catch {
-            return exportComplianceError("Failed to read encryption document", error)
-        }
-        defer { snapshot.discard() }
-
-        let request = ExportComplianceCreateDocumentRequest(
-            data: .init(
-                attributes: .init(fileSize: snapshot.fileSize, fileName: snapshot.fileName),
-                relationships: .init(
-                    appEncryptionDeclaration: .init(
-                        data: ASCResourceIdentifier(
-                            type: "appEncryptionDeclarations",
-                            id: declarationID
-                        )
-                    )
-                )
-            )
+        let outcome = await performDocumentUpload(
+            filePath: filePath,
+            declarationID: declarationID,
+            existingResource: nil,
+            expectedChecksum: nil
         )
-
-        let body: Data
-        do {
-            body = try JSONEncoder().encode(request)
-        } catch {
-            return exportComplianceError("Failed to prepare document reservation", error)
-        }
-
-        do {
-            let data = try await httpClient.post("/v1/appEncryptionDeclarationDocuments", body: body)
-            let response: ASCExportComplianceDocumentResponse
-            do {
-                response = try JSONDecoder().decode(ASCExportComplianceDocumentResponse.self, from: data)
-            } catch {
-                return exportComplianceDocumentReservationFailure(
-                    declarationID: declarationID,
-                    state: .committedUnverified,
-                    reason: "Apple accepted the document reservation but returned an unreadable response: \(error.localizedDescription)"
-                )
-            }
-            guard response.data.type == "appEncryptionDeclarationDocuments",
-                  exportComplianceHasUsableResourceID(response.data.id) else {
-                return exportComplianceDocumentReservationFailure(
-                    declarationID: declarationID,
-                    state: .committedUnverified,
-                    reason: "Apple returned an unexpected document resource after accepting the reservation request."
-                )
-            }
-            return MCPResult.jsonObject([
-                "success": true,
-                "reservationCreated": true,
-                "reservationState": "confirmed",
-                "commitConfirmed": true,
-                "uploadCommitted": false,
-                "retrySafe": false,
-                "document": exportComplianceDocumentDictionary(response.data),
-                "nextAction": [
-                    "tool": "export_compliance_upload_document",
-                    "arguments": ["document_id": response.data.id],
-                    "instruction": "Reuse the same absolute file path to transfer this reservation."
-                ]
-            ])
-        } catch {
-            return exportComplianceDocumentReservationFailure(
-                declarationID: declarationID,
-                state: exportComplianceMutationState(for: error),
-                reason: "The document reservation request did not return a confirmed resource: \(error.localizedDescription)"
-            )
-        }
+        return exportComplianceUploadResult(
+            outcome,
+            descriptor: exportComplianceUploadDescriptor(declarationID: declarationID),
+            filePath: filePath,
+            authoritativeChecksum: nil
+        )
     }
 
     func getDocument(_ params: CallTool.Parameters) async throws -> CallTool.Result {
@@ -364,10 +306,12 @@ extension ExportComplianceWorker {
     func uploadDocument(_ params: CallTool.Parameters) async throws -> CallTool.Result {
         let documentID: String
         let filePath: String
+        let expectedChecksum: String
         do {
             let arguments = try exportComplianceArguments(params)
             documentID = try exportComplianceString(arguments, "document_id")
             filePath = try exportComplianceFilePath(arguments, "file_path")
+            expectedChecksum = try exportComplianceMD5(arguments, "source_file_checksum")
         } catch {
             return exportComplianceError("Invalid encryption document upload input", error)
         }
@@ -379,14 +323,14 @@ extension ExportComplianceWorker {
             return exportComplianceError("Failed to load the document reservation", error)
         }
 
-        switch reserved.recoveryDeliveryStatus {
-        case .complete:
+        switch reserved.attributes?.assetDeliveryState?.state {
+        case "COMPLETE":
             return MCPResult.jsonObject([
                 "success": true,
                 "alreadyComplete": true,
                 "document": exportComplianceDocumentDictionary(reserved)
             ])
-        case .failed:
+        case "FAILED":
             return MCPResult.error(
                 "Apple reports terminal document delivery state 'FAILED'. Use App Store Connect or Apple Support because this API version exposes no document delete operation.",
                 details: .object([
@@ -395,79 +339,84 @@ extension ExportComplianceWorker {
                     "cleanupAvailable": .bool(false)
                 ])
             )
-        case .pending(let state) where state == "UPLOAD_COMPLETE":
-            return MCPResult.jsonObject([
-                "success": true,
-                "uploadCommitted": true,
-                "processingComplete": false,
-                "deliveryPending": true,
-                "retrySafe": false,
-                "document": exportComplianceDocumentDictionary(reserved),
-                "nextAction": [
-                    "tool": "export_compliance_get_document",
-                    "arguments": ["document_id": documentID]
-                ]
-            ])
-        case .pending:
-            break
-        }
-
-        let outcome: UploadTransactionOutcome<ASCExportComplianceDocument> = await UploadTransactionRecovery.perform(
-            filePath: filePath,
-            resourceName: "encryption document",
-            expectedType: "appEncryptionDeclarationDocuments",
-            reservationEndpoint: "/v1/appEncryptionDeclarationDocuments",
-            httpClient: httpClient,
-            uploadService: uploadService,
-            cleanupPolicy: .retain(exportComplianceNoDeleteReason),
-            existingResource: reserved,
-            validateSnapshot: { document, fileSize, fileName in
-                guard document?.attributes?.fileSize == fileSize,
-                      document?.attributes?.fileName == fileName else {
-                    throw ExportComplianceInputError(
-                        "file name and byte size must match the existing reservation"
+        case "UPLOAD_COMPLETE":
+            do {
+                let current = try await pollCommittedDocument(reserved)
+                switch current.attributes?.assetDeliveryState?.state {
+                case "COMPLETE":
+                    return MCPResult.jsonObject([
+                        "success": true,
+                        "alreadyCommitted": true,
+                        "processingComplete": true,
+                        "document": exportComplianceDocumentDictionary(current)
+                    ])
+                case "FAILED":
+                    return MCPResult.error(
+                        "Apple reports terminal document delivery state 'FAILED'. Use App Store Connect or Apple Support because this API version exposes no document delete operation.",
+                        details: .object([
+                            "document_id": .string(documentID),
+                            "retrySafe": .bool(false),
+                            "cleanupAvailable": .bool(false)
+                        ])
+                    )
+                case "UPLOAD_COMPLETE":
+                    return MCPResult.jsonObject([
+                        "success": true,
+                        "uploadCommitted": true,
+                        "processingComplete": false,
+                        "deliveryPending": true,
+                        "retrySafe": false,
+                        "document": exportComplianceDocumentDictionary(current),
+                        "nextAction": [
+                            "tool": "export_compliance_get_document",
+                            "arguments": ["document_id": documentID]
+                        ]
+                    ])
+                default:
+                    return MCPResult.error(
+                        "Document processing could not be confirmed because Apple returned an unknown delivery state.",
+                        details: .object([
+                            "document_id": .string(documentID),
+                            "deliveryState": current.attributes?.assetDeliveryState?.state.map(Value.string) ?? .null,
+                            "retrySafe": .bool(false),
+                            "inspection": .object([
+                                "tool": .string("export_compliance_get_document"),
+                                "arguments": .object(["document_id": .string(documentID)])
+                            ])
+                        ])
                     )
                 }
-            },
-            deliveryPollAttempts: deliveryPollAttempts,
-            deliveryPollIntervalNanoseconds: deliveryPollIntervalNanoseconds,
-            makeReservationBody: { _, _ in
-                throw ExportComplianceInputError("An existing document reservation is required")
-            },
-            decodeResource: {
-                try JSONDecoder().decode(ASCExportComplianceDocumentResponse.self, from: $0).data
-            },
-            makeCommitBody: { id, checksum in
-                try JSONEncoder().encode(
-                    ExportComplianceUpdateDocumentRequest(
-                        data: .init(
-                            id: id,
-                            attributes: .init(
-                                sourceFileChecksum: .string(checksum),
-                                uploaded: .bool(true)
-                            )
-                        )
-                    )
-                )
-            },
-            resourceEndpoint: {
-                "/v1/appEncryptionDeclarationDocuments/\(try ASCPathSegment.encode($0))"
+            } catch {
+                return exportComplianceError("Failed to inspect the committed encryption document", error)
             }
-        )
+        case "AWAITING_UPLOAD":
+            break
+        case let state:
+            return MCPResult.error(
+                "Document transfer is blocked because Apple returned an unknown delivery state.",
+                details: .object([
+                    "document_id": .string(documentID),
+                    "deliveryState": state.map(Value.string) ?? .null,
+                    "retrySafe": .bool(false),
+                    "inspection": .object([
+                        "tool": .string("export_compliance_get_document"),
+                        "arguments": .object(["document_id": .string(documentID)])
+                    ])
+                ])
+            )
+        }
 
-        return UploadTransactionRecovery.result(
-            for: outcome,
-            descriptor: UploadRecoveryDescriptor(
-                resourceName: "encryption document",
-                successKey: "document",
-                idArgument: "document_id",
-                getTool: "export_compliance_get_document",
-                getIDArgument: "document_id",
-                deleteTool: nil,
-                inspectionTool: "export_compliance_get_document",
-                inspectionArguments: ["document_id": documentID]
-            ),
-            format: exportComplianceDocumentDictionary
+        let outcome = await performDocumentUpload(
+            filePath: filePath,
+            declarationID: nil,
+            existingResource: reserved,
+            expectedChecksum: expectedChecksum
+        )
+        return exportComplianceUploadResult(
+            outcome,
+            descriptor: exportComplianceUploadDescriptor(documentID: documentID),
+            filePath: filePath,
+            authoritativeChecksum: expectedChecksum
         )
     }
 
@@ -475,10 +424,12 @@ extension ExportComplianceWorker {
         do {
             let arguments = try exportComplianceArguments(params)
             let declarationID = try exportComplianceString(arguments, "declaration_id")
+            let declaration = try await fetchDeclaration(declarationID)
             guard let document = try await fetchDocumentForDeclaration(declarationID) else {
                 return MCPResult.jsonObject([
                     "success": true,
                     "declarationId": declarationID,
+                    "declarationState": declaration.attributes?.appEncryptionDeclarationState.jsonSafe,
                     "documentPresent": false,
                     "deliveryStatus": "MISSING",
                     "processingComplete": false
@@ -503,6 +454,7 @@ extension ExportComplianceWorker {
         do {
             let arguments = try exportComplianceArguments(params)
             let buildID = try exportComplianceString(arguments, "build_id")
+            _ = try await fetchBuild(buildID)
             guard let declaration = try await fetchBuildDeclaration(buildID) else {
                 return MCPResult.jsonObject([
                     "success": true,
@@ -631,16 +583,7 @@ extension ExportComplianceWorker {
         do {
             let arguments = try exportComplianceArguments(params)
             let buildID = try exportComplianceString(arguments, "build_id")
-            let buildResponse: ASCBuildResponse = try await httpClient.get(
-                "/v1/builds/\(try ASCPathSegment.encode(buildID))",
-                parameters: ["fields[builds]": exportComplianceBuildFields],
-                as: ASCBuildResponse.self
-            )
-            guard buildResponse.data.id == buildID, buildResponse.data.type == "builds" else {
-                throw ExportComplianceInputError("Apple returned an unexpected build resource")
-            }
-
-            let build = buildResponse.data
+            let build = try await fetchBuild(buildID)
             let appID = build.relationships?.app?.data?.id
             let processingState = build.attributes.processingState
             let expired = build.attributes.expired
@@ -654,26 +597,21 @@ extension ExportComplianceWorker {
 
             switch processingState {
             case "VALID":
-                checks.append(exportComplianceCheck("buildProcessing", "PASS", "Build processing is VALID."))
+                checks.append(exportComplianceCheck("buildProcessing", "INFO", "Build processing is VALID."))
             case "PROCESSING":
-                pending = true
-                checks.append(exportComplianceCheck("buildProcessing", "PENDING", "Build processing is still running."))
+                checks.append(exportComplianceCheck("buildProcessing", "INFO", "Build processing is still running; this does not change export-compliance status."))
             case "FAILED", "INVALID":
-                blocked = true
-                checks.append(exportComplianceCheck("buildProcessing", "FAIL", "Build processing failed."))
+                checks.append(exportComplianceCheck("buildProcessing", "INFO", "Build processing failed; this does not change export-compliance status."))
             default:
-                blocked = true
-                checks.append(exportComplianceCheck("buildProcessing", "UNKNOWN", "Build processing state is unavailable."))
+                checks.append(exportComplianceCheck("buildProcessing", "INFO", "Build processing state is unavailable; this does not change export-compliance status."))
             }
 
             if expired == false {
-                checks.append(exportComplianceCheck("buildExpiration", "PASS", "Build is not expired."))
+                checks.append(exportComplianceCheck("buildExpiration", "INFO", "Build is not expired."))
             } else if expired == true {
-                blocked = true
-                checks.append(exportComplianceCheck("buildExpiration", "FAIL", "Build is expired."))
+                checks.append(exportComplianceCheck("buildExpiration", "INFO", "Build is expired; this does not change export-compliance status."))
             } else {
-                blocked = true
-                checks.append(exportComplianceCheck("buildExpiration", "UNKNOWN", "Build expiration state is unavailable."))
+                checks.append(exportComplianceCheck("buildExpiration", "INFO", "Build expiration state is unavailable; this does not change export-compliance status."))
             }
 
             switch usesNonExemptEncryption {
@@ -692,8 +630,11 @@ extension ExportComplianceWorker {
                 ))
                 actions.append(exportComplianceAction(
                     tool: "builds_update_encryption",
-                    arguments: ["build_id": buildID],
-                    reason: "Set the build encryption answer before release."
+                    arguments: [
+                        "build_id": buildID,
+                        "uses_non_exempt_encryption": "<true-or-false>"
+                    ],
+                    reason: "Choose the accurate encryption answer and set it before evaluating export compliance."
                 ))
             case true:
                 checks.append(exportComplianceCheck(
@@ -787,11 +728,24 @@ extension ExportComplianceWorker {
                         "FAIL",
                         "The attached declaration has no document."
                     ))
-                    actions.append(exportComplianceAction(
-                        tool: "export_compliance_create_document",
-                        arguments: ["declaration_id": declaration.id],
-                        reason: "Reserve and upload the required export-compliance document."
-                    ))
+                    if ["CREATED", "REJECTED"].contains(
+                        declaration.attributes?.appEncryptionDeclarationState ?? ""
+                    ) {
+                        actions.append(exportComplianceAction(
+                            tool: "export_compliance_create_document",
+                            arguments: [
+                                "declaration_id": declaration.id,
+                                "file_path": "<absolute-path-to-document>"
+                            ],
+                            reason: "Create, transfer, commit, and poll the required document from one immutable local snapshot."
+                        ))
+                    } else {
+                        actions.append(exportComplianceAction(
+                            tool: nil,
+                            arguments: [:],
+                            reason: "The declaration state does not allow document creation through this API. Resolve the missing document in App Store Connect or contact Apple Support."
+                        ))
+                    }
                     return exportComplianceReadinessResult(
                         build: build,
                         appID: appID,
@@ -804,10 +758,10 @@ extension ExportComplianceWorker {
                     )
                 }
 
-                let documentState = exportComplianceDocumentClassification(document)
-                if documentState.complete {
+                let documentState = document.attributes?.assetDeliveryState?.state
+                if documentState == "COMPLETE" {
                     checks.append(exportComplianceCheck("documentDelivery", "PASS", "Document delivery is COMPLETE."))
-                } else if documentState.failed {
+                } else if documentState == "FAILED" {
                     blocked = true
                     checks.append(exportComplianceCheck("documentDelivery", "FAIL", "Document delivery FAILED."))
                     actions.append(exportComplianceAction(
@@ -815,17 +769,45 @@ extension ExportComplianceWorker {
                         arguments: [:],
                         reason: "Resolve the failed document in App Store Connect or contact Apple Support; document deletion is unavailable in this API."
                     ))
-                } else {
+                } else if documentState == "AWAITING_UPLOAD" {
+                    blocked = true
+                    checks.append(exportComplianceCheck(
+                        "documentDelivery",
+                        "FAIL",
+                        "Document delivery is AWAITING_UPLOAD."
+                    ))
+                    actions.append(exportComplianceAction(
+                        tool: "export_compliance_upload_document",
+                        arguments: [
+                            "document_id": document.id,
+                            "file_path": "<absolute-path-to-the-exact-reserved-bytes>",
+                            "source_file_checksum": "<lowercase-md5-checksum-receipt>"
+                        ],
+                        reason: "Resume only with the exact immutable bytes and lowercase MD5 receipt returned by the retained precommit recovery."
+                    ))
+                } else if documentState == "UPLOAD_COMPLETE" {
                     pending = true
                     checks.append(exportComplianceCheck(
                         "documentDelivery",
                         "PENDING",
-                        "Document delivery is \(documentState.state)."
+                        "Document upload is committed and Apple is still processing it."
                     ))
                     actions.append(exportComplianceAction(
-                        tool: "export_compliance_get_document",
-                        arguments: ["document_id": document.id],
-                        reason: "Inspect the existing document until delivery completes."
+                        tool: "export_compliance_inspect_document",
+                        arguments: ["declaration_id": declaration.id],
+                        reason: "Poll the existing document until delivery becomes COMPLETE or FAILED."
+                    ))
+                } else {
+                    blocked = true
+                    checks.append(exportComplianceCheck(
+                        "documentDelivery",
+                        "UNKNOWN",
+                        "Document delivery state is unavailable or unsupported."
+                    ))
+                    actions.append(exportComplianceAction(
+                        tool: "export_compliance_inspect_document",
+                        arguments: ["declaration_id": declaration.id],
+                        reason: "Inspect the existing document and resolve an unknown state in App Store Connect or with Apple Support before release."
                     ))
                 }
             }
@@ -846,6 +828,138 @@ extension ExportComplianceWorker {
     }
 
     // MARK: - Requests
+
+    private func performDocumentUpload(
+        filePath: String,
+        declarationID: String?,
+        existingResource: ASCExportComplianceDocument?,
+        expectedChecksum: String?
+    ) async -> UploadTransactionOutcome<ASCExportComplianceDocument> {
+        await UploadTransactionRecovery.perform(
+            filePath: filePath,
+            resourceName: "encryption document",
+            expectedType: "appEncryptionDeclarationDocuments",
+            reservationEndpoint: "/v1/appEncryptionDeclarationDocuments",
+            httpClient: httpClient,
+            uploadService: uploadService,
+            cleanupPolicy: .retain(exportComplianceNoDeleteReason),
+            existingResource: existingResource,
+            validateSnapshot: { document, snapshot in
+                if let document {
+                    guard document.attributes?.fileSize == snapshot.fileSize,
+                          document.attributes?.fileName == snapshot.fileName else {
+                        throw ExportComplianceInputError(
+                            "file name and byte size must match the existing reservation"
+                        )
+                    }
+                }
+                if let expectedChecksum,
+                   snapshot.md5Checksum != expectedChecksum {
+                    throw ExportComplianceInputError(
+                        "snapshot bytes must match source_file_checksum exactly"
+                    )
+                }
+            },
+            validateReservedResource: { document, snapshot in
+                guard document.attributes?.fileSize == snapshot.fileSize,
+                      document.attributes?.fileName == snapshot.fileName else {
+                    throw ExportComplianceInputError(
+                        "reservation file name and byte size must match the immutable snapshot"
+                    )
+                }
+                guard document.attributes?.assetDeliveryState?.state == "AWAITING_UPLOAD" else {
+                    throw ExportComplianceInputError(
+                        "delivery state must be exactly AWAITING_UPLOAD before signed transfer"
+                    )
+                }
+            },
+            reservationFailureDisposition: { error in
+                switch exportComplianceMutationState(for: error) {
+                case .rejected:
+                    return .rejected
+                case .committedUnverified, .commitUnknown:
+                    return .unresolved
+                }
+            },
+            deliveryPollAttempts: deliveryPollAttempts,
+            deliveryPollIntervalNanoseconds: deliveryPollIntervalNanoseconds,
+            makeReservationBody: { fileSize, fileName in
+                guard let declarationID else {
+                    throw ExportComplianceInputError("An existing document reservation is required")
+                }
+                return try JSONEncoder().encode(
+                    ExportComplianceCreateDocumentRequest(
+                        data: .init(
+                            attributes: .init(fileSize: fileSize, fileName: fileName),
+                            relationships: .init(
+                                appEncryptionDeclaration: .init(
+                                    data: ASCResourceIdentifier(
+                                        type: "appEncryptionDeclarations",
+                                        id: declarationID
+                                    )
+                                )
+                            )
+                        )
+                    )
+                )
+            },
+            decodeResource: { data in
+                let document = try JSONDecoder()
+                    .decode(ASCExportComplianceDocumentResponse.self, from: data)
+                    .data
+                guard document.type == "appEncryptionDeclarationDocuments",
+                      exportComplianceHasUsableResourceID(document.id) else {
+                    throw ExportComplianceInputError("Apple returned an unexpected document resource")
+                }
+                return document
+            },
+            makeCommitBody: { id, checksum in
+                try JSONEncoder().encode(
+                    ExportComplianceUpdateDocumentRequest(
+                        data: .init(
+                            id: id,
+                            attributes: .init(
+                                sourceFileChecksum: .string(checksum),
+                                uploaded: .bool(true)
+                            )
+                        )
+                    )
+                )
+            },
+            resourceEndpoint: {
+                "/v1/appEncryptionDeclarationDocuments/\(try ASCPathSegment.encode($0))"
+            }
+        )
+    }
+
+    private func pollCommittedDocument(
+        _ document: ASCExportComplianceDocument
+    ) async throws -> ASCExportComplianceDocument {
+        var current = document
+        for attempt in 0..<deliveryPollAttempts {
+            guard current.attributes?.assetDeliveryState?.state == "UPLOAD_COMPLETE" else {
+                return current
+            }
+            current = try await fetchDocument(current.id, includeUploadOperations: false)
+            if attempt + 1 < deliveryPollAttempts,
+               current.attributes?.assetDeliveryState?.state == "UPLOAD_COMPLETE" {
+                try await Task.sleep(nanoseconds: deliveryPollIntervalNanoseconds)
+            }
+        }
+        return current
+    }
+
+    private func fetchBuild(_ buildID: String) async throws -> ASCBuild {
+        let response: ASCBuildResponse = try await httpClient.get(
+            "/v1/builds/\(try ASCPathSegment.encode(buildID))",
+            parameters: ["fields[builds]": exportComplianceBuildFields],
+            as: ASCBuildResponse.self
+        )
+        guard response.data.id == buildID, response.data.type == "builds" else {
+            throw ExportComplianceInputError("Apple returned an unexpected build resource")
+        }
+        return response.data
+    }
 
     private func fetchDeclaration(_ declarationID: String) async throws -> ASCExportComplianceDeclaration {
         let response: ASCExportComplianceDeclarationResponse = try await httpClient.get(
@@ -944,22 +1058,33 @@ private func exportComplianceDocumentDictionary(
 ) -> [String: Any] {
     let attributes = document.attributes
     let state = attributes?.assetDeliveryState
-    return [
+    var result: [String: Any] = [
         "id": document.id,
         "type": document.type,
         "fileSize": attributes?.fileSize.jsonSafe,
         "fileName": attributes?.fileName.jsonSafe,
         "sourceFileChecksum": attributes?.sourceFileChecksum.jsonSafe,
-        "deliveryState": state?.state.jsonSafe,
-        "deliveryErrors": exportComplianceAssetMessages(state?.errors),
-        "deliveryWarnings": exportComplianceAssetMessages(state?.warnings),
-        "downloadAvailable": attributes?.downloadUrl != nil,
-        "downloadURLRedacted": attributes?.downloadUrl != nil,
-        "assetTokenPresent": attributes?.assetToken != nil,
-        "uploadOperationsAvailable": !(attributes?.uploadOperations?.isEmpty ?? true),
-        "uploadOperationCount": attributes?.uploadOperations?.count ?? 0,
-        "uploadMetadataRedacted": !(attributes?.uploadOperations?.isEmpty ?? true)
+        "deliveryState": state?.state.jsonSafe
     ]
+    if let errors = state?.errors {
+        result["deliveryErrors"] = exportComplianceAssetMessages(errors)
+    }
+    if let warnings = state?.warnings {
+        result["deliveryWarnings"] = exportComplianceAssetMessages(warnings)
+    }
+    if attributes?.downloadUrl != nil {
+        result["downloadAvailable"] = true
+        result["downloadURLRedacted"] = true
+    }
+    if attributes?.assetToken != nil {
+        result["assetTokenPresent"] = true
+    }
+    if let uploadOperations = attributes?.uploadOperations {
+        result["uploadOperationsAvailable"] = !uploadOperations.isEmpty
+        result["uploadOperationCount"] = uploadOperations.count
+        result["uploadMetadataRedacted"] = !uploadOperations.isEmpty
+    }
+    return result
 }
 
 private func exportComplianceAssetMessages(
@@ -1019,7 +1144,7 @@ private func exportComplianceReadinessResult(
         "success": true,
         "scope": "EXPORT_COMPLIANCE_ONLY",
         "status": status,
-        "releaseReady": status == "READY",
+        "exportComplianceReady": status == "READY",
         "appStoreSubmissionStatus": "NOT_DETERMINED",
         "build": [
             "id": build.id,
@@ -1039,6 +1164,99 @@ private func exportComplianceReadinessResult(
             "This gate covers export compliance only. Version metadata, review details, agreements, pricing, availability, and other release requirements are not evaluated."
         ]
     ])
+}
+
+private func exportComplianceUploadDescriptor(
+    documentID: String? = nil,
+    declarationID: String? = nil
+) -> UploadRecoveryDescriptor {
+    let inspectionTool: String
+    let inspectionArguments: [String: String]
+    if let documentID {
+        inspectionTool = "export_compliance_get_document"
+        inspectionArguments = ["document_id": documentID]
+    } else {
+        inspectionTool = "export_compliance_inspect_document"
+        inspectionArguments = ["declaration_id": declarationID ?? ""]
+    }
+    return UploadRecoveryDescriptor(
+        resourceName: "encryption document",
+        successKey: "document",
+        idArgument: "document_id",
+        getTool: "export_compliance_get_document",
+        getIDArgument: "document_id",
+        deleteTool: nil,
+        inspectionTool: inspectionTool,
+        inspectionArguments: inspectionArguments,
+        checksumReceiptKey: "sourceFileChecksumReceipt"
+    )
+}
+
+private func exportComplianceUploadResult(
+    _ outcome: UploadTransactionOutcome<ASCExportComplianceDocument>,
+    descriptor: UploadRecoveryDescriptor,
+    filePath: String,
+    authoritativeChecksum: String?
+) -> CallTool.Result {
+    if case .processingPending(_, let document, _) = outcome,
+       document.attributes?.assetDeliveryState?.state != "UPLOAD_COMPLETE" {
+        let state = document.attributes?.assetDeliveryState?.state
+        return MCPResult.jsonObject(
+            [
+                "success": false,
+                "error": "Apple returned an unknown delivery state after the document commit.",
+                "document_id": document.id,
+                "document": exportComplianceDocumentDictionary(document),
+                "deliveryState": state.jsonSafe,
+                "retrySafe": false,
+                "inspection": [
+                    "tool": "export_compliance_get_document",
+                    "arguments": ["document_id": document.id]
+                ]
+            ],
+            text: "Error: Apple returned an unknown delivery state after the document commit. Inspect the retained document before any retry.",
+            isError: true
+        )
+    }
+
+    guard var payload = UploadTransactionRecovery.failurePayload(
+        for: outcome,
+        descriptor: descriptor,
+        format: exportComplianceDocumentDictionary
+    ) else {
+        return UploadTransactionRecovery.result(
+            for: outcome,
+            descriptor: descriptor,
+            format: exportComplianceDocumentDictionary
+        )
+    }
+
+    let retainedAwaitingUpload: Bool
+    if case .preCommitFailure(_, let document, _, _) = outcome {
+        retainedAwaitingUpload = document.attributes?.assetDeliveryState?.state == "AWAITING_UPLOAD"
+    } else {
+        retainedAwaitingUpload = false
+    }
+    if retainedAwaitingUpload,
+       payload["reservationDeleted"] as? Bool == false,
+       let documentID = payload["document_id"] as? String {
+        let checksum = authoritativeChecksum ?? payload["sourceFileChecksumReceipt"] as? String
+        if let checksum {
+            payload["sourceFileChecksumReceipt"] = checksum
+            payload["nextAction"] = [
+                "tool": "export_compliance_upload_document",
+                "arguments": [
+                    "document_id": documentID,
+                    "file_path": filePath,
+                    "source_file_checksum": checksum
+                ],
+                "instruction": "Resume only with local bytes whose lowercase MD5 exactly matches this receipt."
+            ]
+        }
+    }
+
+    let message = payload["error"] as? String ?? "Encryption document upload failed"
+    return MCPResult.jsonObject(payload, text: "Error: \(message)", isError: true)
 }
 
 private func exportComplianceUnverifiedAttachment(
@@ -1135,27 +1353,6 @@ private func exportComplianceDeclarationCreationFailure(
     )
 }
 
-private func exportComplianceDocumentReservationFailure(
-    declarationID: String,
-    state: ExportComplianceMutationState,
-    reason: String
-) -> CallTool.Result {
-    let safeReason = Redactor.redact(reason)
-    var details: [String: Value] = [
-        "reservationState": .string(state.rawValue),
-        "commitConfirmed": .bool(state.commitConfirmed),
-        "reservationIdKnown": .bool(false),
-        "retrySafe": .bool(state.retrySafe)
-    ]
-    if state.needsInspection {
-        details["inspection"] = .object([
-            "tool": .string("export_compliance_inspect_document"),
-            "arguments": .object(["declaration_id": .string(declarationID)])
-        ])
-    }
-    return MCPResult.error(safeReason, details: .object(details))
-}
-
 private func exportComplianceDocumentUpdateFailure(
     documentID: String,
     state: ExportComplianceMutationState,
@@ -1221,6 +1418,22 @@ private func exportComplianceFilePath(
         throw ExportComplianceInputError("Parameter '\(field)' must be an absolute file path")
     }
     return path
+}
+
+private func exportComplianceMD5(
+    _ arguments: [String: Value],
+    _ field: String
+) throws -> String {
+    let checksum = try exportComplianceString(arguments, field)
+    guard checksum.range(
+        of: #"^[0-9a-f]{32}$"#,
+        options: .regularExpression
+    ) != nil else {
+        throw ExportComplianceInputError(
+            "Parameter '\(field)' must be exactly 32 lowercase hexadecimal MD5 characters"
+        )
+    }
+    return checksum
 }
 
 private func exportComplianceLimit(_ value: Value?) throws -> Int {

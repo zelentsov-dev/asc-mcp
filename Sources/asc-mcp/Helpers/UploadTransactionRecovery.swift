@@ -10,6 +10,29 @@ struct UploadRecoveryDescriptor: Sendable {
     let deleteTool: String?
     let inspectionTool: String
     let inspectionArguments: [String: String]
+    let checksumReceiptKey: String?
+
+    init(
+        resourceName: String,
+        successKey: String,
+        idArgument: String,
+        getTool: String?,
+        getIDArgument: String?,
+        deleteTool: String?,
+        inspectionTool: String,
+        inspectionArguments: [String: String],
+        checksumReceiptKey: String? = nil
+    ) {
+        self.resourceName = resourceName
+        self.successKey = successKey
+        self.idArgument = idArgument
+        self.getTool = getTool
+        self.getIDArgument = getIDArgument
+        self.deleteTool = deleteTool
+        self.inspectionTool = inspectionTool
+        self.inspectionArguments = inspectionArguments
+        self.checksumReceiptKey = checksumReceiptKey
+    }
 }
 
 protocol RecoverableUploadResource: Sendable {
@@ -29,8 +52,9 @@ enum UploadTransactionOutcome<Resource: RecoverableUploadResource>: Sendable {
     case success(Resource, reconciledAfterCommit: Bool)
     case processingPending(String, Resource, reconciledAfterCommit: Bool)
     case beforeReservation(String)
+    case reservationRejected(String)
     case reservationUnresolved(String)
-    case preCommitFailure(String, Resource, UploadCleanupOutcome)
+    case preCommitFailure(String, Resource, UploadCleanupOutcome, checksumReceipt: String?)
     case commitFailed(String, Resource)
     case commitUnresolved(String, Resource)
 }
@@ -69,6 +93,11 @@ enum UploadReservationCleanupPolicy: Sendable {
     case retain(String)
 }
 
+enum UploadReservationFailureDisposition: Sendable, Equatable {
+    case rejected
+    case unresolved
+}
+
 enum UploadTransactionRecovery {
     static func perform<Resource: RecoverableUploadResource>(
         filePath: String,
@@ -79,7 +108,9 @@ enum UploadTransactionRecovery {
         uploadService: UploadService,
         cleanupPolicy: UploadReservationCleanupPolicy = .delete,
         existingResource: Resource? = nil,
-        validateSnapshot: @Sendable (Resource?, Int, String) throws -> Void = { _, _, _ in },
+        validateSnapshot: @Sendable (Resource?, UploadFileSnapshot) throws -> Void = { _, _ in },
+        validateReservedResource: @Sendable (Resource, UploadFileSnapshot) throws -> Void = { _, _ in },
+        reservationFailureDisposition: @Sendable (Error) -> UploadReservationFailureDisposition = { _ in .unresolved },
         deliveryPollAttempts: Int,
         deliveryPollIntervalNanoseconds: UInt64,
         makeReservationBody: @Sendable (Int, String) throws -> Data,
@@ -115,7 +146,8 @@ enum UploadTransactionRecovery {
                 return .preCommitFailure(
                     "The \(resourceName) upload was cancelled before transfer.",
                     existingResource,
-                    cleanup
+                    cleanup,
+                    checksumReceipt: nil
                 )
             }
             return .beforeReservation("The \(resourceName) upload was cancelled before reservation.")
@@ -134,7 +166,8 @@ enum UploadTransactionRecovery {
                 return .preCommitFailure(
                     "Failed to read \(resourceName): \(error.localizedDescription)",
                     existingResource,
-                    cleanup
+                    cleanup,
+                    checksumReceipt: nil
                 )
             }
             return .beforeReservation("Failed to read \(resourceName): \(error.localizedDescription)")
@@ -151,14 +184,15 @@ enum UploadTransactionRecovery {
                 return .preCommitFailure(
                     "The \(resourceName) upload was cancelled before transfer.",
                     existingResource,
-                    cleanup
+                    cleanup,
+                    checksumReceipt: snapshot.md5Checksum
                 )
             }
             return .beforeReservation("The \(resourceName) upload was cancelled before reservation.")
         }
 
         do {
-            try validateSnapshot(existingResource, snapshot.fileSize, snapshot.fileName)
+            try validateSnapshot(existingResource, snapshot)
         } catch {
             if let existingResource, let existingEndpoint {
                 let cleanup = await rollbackReservation(
@@ -169,7 +203,8 @@ enum UploadTransactionRecovery {
                 return .preCommitFailure(
                     "The \(resourceName) file does not match its reservation: \(error.localizedDescription)",
                     existingResource,
-                    cleanup
+                    cleanup,
+                    checksumReceipt: snapshot.md5Checksum
                 )
             }
             return .beforeReservation(
@@ -194,6 +229,11 @@ enum UploadTransactionRecovery {
             do {
                 reservationData = try await httpClient.post(reservationEndpoint, body: reservationBody)
             } catch {
+                if reservationFailureDisposition(error) == .rejected {
+                    return .reservationRejected(
+                        "The \(resourceName) reservation was rejected before creation: \(error.localizedDescription)"
+                    )
+                }
                 return .reservationUnresolved(
                     "The \(resourceName) reservation request did not return a confirmed response: \(error.localizedDescription)"
                 )
@@ -228,6 +268,22 @@ enum UploadTransactionRecovery {
             }
         }
 
+        do {
+            try validateReservedResource(reserved, snapshot)
+        } catch {
+            let cleanup = await rollbackReservation(
+                httpClient: httpClient,
+                endpoint: endpoint,
+                policy: cleanupPolicy
+            )
+            return .preCommitFailure(
+                "The \(resourceName) reservation cannot accept a transfer: \(error.localizedDescription)",
+                reserved,
+                cleanup,
+                checksumReceipt: snapshot.md5Checksum
+            )
+        }
+
         if Task.isCancelled {
             let cleanup = await rollbackReservation(
                 httpClient: httpClient,
@@ -237,7 +293,8 @@ enum UploadTransactionRecovery {
             return .preCommitFailure(
                 "The \(resourceName) upload was cancelled after reservation and before commit.",
                 reserved,
-                cleanup
+                cleanup,
+                checksumReceipt: snapshot.md5Checksum
             )
         }
 
@@ -250,7 +307,8 @@ enum UploadTransactionRecovery {
             return .preCommitFailure(
                 "Apple returned no upload operations for the \(resourceName) reservation.",
                 reserved,
-                cleanup
+                cleanup,
+                checksumReceipt: snapshot.md5Checksum
             )
         }
 
@@ -266,7 +324,8 @@ enum UploadTransactionRecovery {
             return .preCommitFailure(
                 "Failed to transfer \(resourceName) bytes through Apple's upload endpoint.",
                 reserved,
-                cleanup
+                cleanup,
+                checksumReceipt: snapshot.md5Checksum
             )
         }
 
@@ -282,7 +341,8 @@ enum UploadTransactionRecovery {
             return .preCommitFailure(
                 "Failed to prepare the \(resourceName) commit: \(error.localizedDescription)",
                 reserved,
-                cleanup
+                cleanup,
+                checksumReceipt: snapshot.md5Checksum
             )
         }
 
@@ -295,7 +355,8 @@ enum UploadTransactionRecovery {
             return .preCommitFailure(
                 "The \(resourceName) commit was not attempted because the operation was cancelled.",
                 reserved,
-                cleanup
+                cleanup,
+                checksumReceipt: snapshot.md5Checksum
             )
         }
 
@@ -728,7 +789,21 @@ enum UploadTransactionRecovery {
                 true
             )
 
-        case .preCommitFailure(let message, let resource, let cleanup):
+        case .reservationRejected(let message):
+            let safeMessage = Redactor.redact(message)
+            return (
+                [
+                    "success": false,
+                    "error": safeMessage,
+                    "reservationState": "rejected",
+                    "reservationCreated": false,
+                    "retrySafe": true
+                ],
+                "Error: \(safeMessage)",
+                true
+            )
+
+        case .preCommitFailure(let message, let resource, let cleanup, let checksumReceipt):
             let safeMessage = Redactor.redact(message)
             let manualGuidance: String
             if cleanup.reservationDeleted {
@@ -738,8 +813,7 @@ enum UploadTransactionRecovery {
             } else {
                 manualGuidance = " Inspect the retained reservation before retrying."
             }
-            return (
-                [
+            var value: [String: Any] = [
                     "success": false,
                     "error": safeMessage,
                     "resourceId": resource.id,
@@ -748,7 +822,13 @@ enum UploadTransactionRecovery {
                     "cleanup": cleanupGuidance(cleanup, resourceID: resource.id, descriptor: descriptor),
                     "reservationDeleted": cleanup.reservationDeleted,
                     "retrySafe": cleanup.reservationDeleted
-                ],
+                ]
+            if let checksumReceiptKey = descriptor.checksumReceiptKey,
+               let checksumReceipt {
+                value[checksumReceiptKey] = checksumReceipt
+            }
+            return (
+                value,
                 "Error: \(safeMessage) Cleanup status: \(cleanup.status).\(manualGuidance)",
                 true
             )

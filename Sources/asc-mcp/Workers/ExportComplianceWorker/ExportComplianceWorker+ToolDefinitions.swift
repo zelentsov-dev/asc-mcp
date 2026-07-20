@@ -74,7 +74,7 @@ extension ExportComplianceWorker {
     func createDocumentTool() -> Tool {
         Tool(
             name: "export_compliance_create_document",
-            description: "Reserve an encryption-declaration document upload from a local file; signed upload secrets are never returned",
+            description: "Reserve, transfer, commit, and poll an encryption-declaration document from one immutable local snapshot; signed upload secrets are never returned",
             inputSchema: exportComplianceSchema(
                 properties: [
                     "declaration_id": exportComplianceID("Declaration ID"),
@@ -121,13 +121,18 @@ extension ExportComplianceWorker {
     func uploadDocumentTool() -> Tool {
         Tool(
             name: "export_compliance_upload_document",
-            description: "Transfer, commit, and poll an existing document reservation using a stable local file snapshot",
+            description: "Safely resume an AWAITING_UPLOAD reservation using exact bytes bound to a lowercase MD5 checksum receipt",
             inputSchema: exportComplianceSchema(
                 properties: [
                     "document_id": exportComplianceID("Reserved document ID"),
-                    "file_path": exportComplianceFilePath()
+                    "file_path": exportComplianceFilePath(),
+                    "source_file_checksum": .object([
+                        "type": .string("string"),
+                        "pattern": .string("^[0-9a-f]{32}$"),
+                        "description": .string("Exact lowercase MD5 receipt for the immutable bytes originally bound to this retained reservation")
+                    ])
                 ],
-                required: ["document_id", "file_path"]
+                required: ["document_id", "file_path", "source_file_checksum"]
             )
         )
     }

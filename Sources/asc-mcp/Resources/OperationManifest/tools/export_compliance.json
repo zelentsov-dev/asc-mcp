@@ -285,12 +285,13 @@
         ],
         "fields": [
           { "outputField": "status", "localRole": "Derive READY, PENDING, or BLOCKED without treating unknown nullable state as success." },
-          { "outputField": "releaseReady", "localRole": "True only when all export-compliance checks pass." },
+          { "outputField": "exportComplianceReady", "localRole": "True only when the EXPORT_COMPLIANCE_ONLY gate passes; this is not a global release-ready claim." },
           { "outputField": "checks", "localRole": "Actionable build, declaration, and document gate checks." },
+          { "outputField": "actions", "localRole": "State-specific next steps; unknown build encryption includes the required true-or-false selection placeholder, retained uploads include path and checksum-receipt placeholders, and unsupported declaration states route to App Store Connect or Apple Support." },
           { "outputField": "appStoreSubmissionStatus", "localRole": "Always NOT_DETERMINED because non-export release requirements are outside this tool." }
         ]
       },
-      "note": "A false encryption answer needs no declaration. A true answer requires an attached APPROVED non-exempt declaration and COMPLETE document. Missing, nullable, 404, pending, failed, and inconsistent states never become false success."
+      "note": "A false encryption answer needs no declaration. A true answer requires an attached APPROVED non-exempt declaration and COMPLETE document. Build processingState and expired are informational because this tool is scoped only to export compliance. AWAITING_UPLOAD points to checksum-bound resume, UPLOAD_COMPLETE points to inspection, document creation is suggested only for CREATED or REJECTED declarations, and missing, nullable, future, failed, or inconsistent states fail closed."
     },
     {
       "tool": "export_compliance_create_declaration",
@@ -391,6 +392,52 @@
             { "sourceKind": "fixed", "jsonPointer": "/data/type", "fixedValue": "appEncryptionDeclarationDocuments" },
             { "sourceKind": "fixed", "jsonPointer": "/data/relationships/appEncryptionDeclaration/data/type", "fixedValue": "appEncryptionDeclarations" }
           ]
+        },
+        {
+          "operationId": "appEncryptionDeclarationDocuments_updateInstance",
+          "method": "patch",
+          "path": "/v1/appEncryptionDeclarationDocuments/{id}",
+          "role": "supporting",
+          "condition": "Only after the reservation returns exact AWAITING_UPLOAD and every signed transfer of the same immutable snapshot succeeds, commit its checksum with uploaded=true.",
+          "inputs": [
+            {
+              "sourceKind": "derived",
+              "location": "path",
+              "appleName": "id",
+              "derivedFrom": ["appEncryptionDeclarationDocuments_createInstance:/data/id"],
+              "localRole": "Commit only the exact document returned by this reservation operation."
+            },
+            {
+              "sourceKind": "derived",
+              "jsonPointer": "/data/id",
+              "derivedFrom": ["appEncryptionDeclarationDocuments_createInstance:/data/id"],
+              "localRole": "Copy the reservation response ID into the commit resource identifier."
+            },
+            { "sourceKind": "fixed", "jsonPointer": "/data/type", "fixedValue": "appEncryptionDeclarationDocuments" },
+            {
+              "sourceKind": "derived",
+              "jsonPointer": "/data/attributes/sourceFileChecksum",
+              "derivedFrom": ["file_path", "appEncryptionDeclarationDocuments_createInstance:/data/attributes/uploadOperations"],
+              "localRole": "Commit the lowercase MD5 returned after transferring the immutable snapshot through this reservation's signed upload operations."
+            },
+            { "sourceKind": "fixed", "jsonPointer": "/data/attributes/uploaded", "fixedValue": true }
+          ]
+        },
+        {
+          "operationId": "appEncryptionDeclarationDocuments_getInstance",
+          "method": "get",
+          "path": "/v1/appEncryptionDeclarationDocuments/{id}",
+          "role": "supporting",
+          "condition": "Reconcile an ambiguous commit and poll the committed resource until COMPLETE, FAILED, or the bounded poll budget is exhausted.",
+          "inputs": [
+            {
+              "sourceKind": "derived",
+              "location": "path",
+              "appleName": "id",
+              "derivedFrom": ["appEncryptionDeclarationDocuments_createInstance:/data/id"],
+              "localRole": "Inspect only the exact document returned by this reservation operation."
+            }
+          ]
         }
       ],
       "fields": [
@@ -406,25 +453,49 @@
         "sources": [
           { "operationId": "appEncryptionDeclarations_getInstance", "statusCode": "200", "mediaType": "application/json" },
           { "operationId": "appEncryptionDeclarations_appEncryptionDeclarationDocument_getToOneRelated", "statusCode": "200", "mediaType": "application/json" },
-          { "operationId": "appEncryptionDeclarationDocuments_createInstance", "statusCode": "201", "mediaType": "application/json" }
+          { "operationId": "appEncryptionDeclarationDocuments_createInstance", "statusCode": "201", "mediaType": "application/json" },
+          { "operationId": "appEncryptionDeclarationDocuments_updateInstance", "statusCode": "200", "mediaType": "application/json" },
+          { "operationId": "appEncryptionDeclarationDocuments_getInstance", "statusCode": "200", "mediaType": "application/json" }
         ],
         "fields": [
-          { "outputField": "document", "localRole": "Redacted reservation projection with only availability booleans for upload and download metadata." },
-          { "outputField": "reservationState", "localRole": "confirmed for a validated reservation, committed_unverified for a malformed or identity-invalid successful response, commit_unknown for network, 408, or 5xx uncertainty, and rejected for a deterministic rejection." },
-          { "outputField": "commitConfirmed", "localRole": "True for a validated reservation or a successful response whose reservation identity could not be verified." },
-          { "outputField": "retrySafe", "localRole": "False after confirmed, committed-unverified, or commit-unknown outcomes because the API exposes no document DELETE or idempotency key; true only after a deterministic rejection." },
-          { "outputField": "inspection", "localRole": "For committed-unverified or commit-unknown outcomes, call export_compliance_inspect_document with the original declaration_id before any retry." }
+          { "outputField": "document", "localRole": "Latest safe resource projection after commit, reconciliation, or bounded delivery polling." },
+          { "outputField": "sourceFileChecksumReceipt", "localRole": "On a retained precommit reservation, return the lowercase MD5 of the immutable snapshot so resume can require the exact same bytes." },
+          { "outputField": "retrySafe", "localRole": "True only before reservation or after a deterministic reservation rejection; false for retained, ambiguous, committed, pending, or failed outcomes." },
+          { "outputField": "inspection", "localRole": "When reservation identity or commit state is unresolved, inspect the declaration or retained document before any retry." }
         ]
       },
-      "note": "Preflights declaration state and absence of an existing document before reserving. The non-idempotent reservation POST distinguishes committed-but-unverified success, unknown commit state, and deterministic rejection. The tool never exposes assetToken, downloadUrl, upload URL, or request headers."
+      "note": "Preflights declaration state and confirmed absence, then reserves, transfers, commits, and polls using one immutable snapshot. Transfer is allowed only from exact AWAITING_UPLOAD. Deterministic reservation rejection is retryable after input correction; transport, 408, 5xx, malformed-success, invalid-identity, retained precommit, and ambiguous commit outcomes remain unsafe until inspection. The tool never exposes assetToken, downloadUrl, upload URL, or request headers."
     },
     {
       "tool": "export_compliance_get_build_declaration",
-      "kind": "direct",
+      "kind": "compound",
       "status": "partial",
       "effect": "read",
       "implementationState": "asBuilt",
       "operations": [
+        {
+          "operationId": "builds_getInstance",
+          "method": "get",
+          "path": "/v1/builds/{id}",
+          "role": "supporting",
+          "condition": "Confirm that the parent build exists before interpreting a relationship 404 as absence.",
+          "optionalParameterClassifications": [
+            { "location": "query", "appleName": "include", "disposition": "intentionallyOmitted", "reason": "Parent existence confirmation needs only the Build resource.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[betaBuildLocalizations]", "disposition": "intentionallyOmitted", "reason": "Beta localizations are outside parent confirmation.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[betaGroups]", "disposition": "intentionallyOmitted", "reason": "Beta groups are outside parent confirmation.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[buildBundles]", "disposition": "intentionallyOmitted", "reason": "Build bundles are outside parent confirmation.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[icons]", "disposition": "intentionallyOmitted", "reason": "Icons are outside parent confirmation.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[individualTesters]", "disposition": "intentionallyOmitted", "reason": "Individual testers are outside parent confirmation.", "reviewAtSpec": "4.4.1" }
+          ],
+          "inputs": [
+            {
+              "sourceKind": "fixed",
+              "location": "query",
+              "appleName": "fields[builds]",
+              "fixedValue": ["version", "processingState", "expired", "usesNonExemptEncryption", "app"]
+            }
+          ]
+        },
         {
           "operationId": "builds_appEncryptionDeclaration_getToOneRelated",
           "method": "get",
@@ -450,16 +521,22 @@
           ]
         }
       ],
-      "fields": [{ "toolField": "build_id", "sourceKind": "parameter", "operationId": "builds_appEncryptionDeclaration_getToOneRelated", "location": "path", "appleName": "id" }],
+      "fields": [
+        { "toolField": "build_id", "sourceKind": "parameter", "operationId": "builds_getInstance", "location": "path", "appleName": "id" },
+        { "toolField": "build_id", "sourceKind": "parameter", "operationId": "builds_appEncryptionDeclaration_getToOneRelated", "location": "path", "appleName": "id" }
+      ],
       "response": {
-        "mode": "projection",
-        "sources": [{ "operationId": "builds_appEncryptionDeclaration_getToOneRelated", "statusCode": "200", "mediaType": "application/json" }],
+        "mode": "aggregate",
+        "sources": [
+          { "operationId": "builds_getInstance", "statusCode": "200", "mediaType": "application/json" },
+          { "operationId": "builds_appEncryptionDeclaration_getToOneRelated", "statusCode": "200", "mediaType": "application/json" }
+        ],
         "fields": [
           { "outputField": "declarationAttached", "localRole": "False on Apple 404 and true only for a valid declaration resource." },
           { "outputField": "declaration", "operationId": "builds_appEncryptionDeclaration_getToOneRelated", "jsonPointer": "/data" }
         ]
       },
-      "note": "Treats 404 as an explicit absent relationship, while all other failures remain errors."
+      "note": "Confirms the parent build first. Only a subsequent relationship 404 means no declaration is attached; an invalid or inaccessible build remains an error."
     },
     {
       "tool": "export_compliance_get_declaration",
@@ -531,17 +608,46 @@
       "response": {
         "mode": "projection",
         "sources": [{ "operationId": "appEncryptionDeclarationDocuments_getInstance", "statusCode": "200", "mediaType": "application/json" }],
-        "fields": [{ "outputField": "document", "localRole": "Redact downloadUrl and expose only downloadAvailable plus safe delivery metadata." }]
+        "fields": [{ "outputField": "document", "localRole": "Redact downloadUrl and expose download availability only when Apple actually returns a URL; omit asset-token and upload-operation availability claims because those fields were not requested." }]
       },
-      "note": "The public result contains no signed URL, asset token, upload operation URL, or request header."
+      "note": "The public result contains no signed URL, asset token, upload operation URL, or request header, and it does not emit false or zero availability claims for unrequested fields."
     },
     {
       "tool": "export_compliance_inspect_document",
-      "kind": "direct",
+      "kind": "compound",
       "status": "partial",
       "effect": "read",
       "implementationState": "asBuilt",
       "operations": [
+        {
+          "operationId": "appEncryptionDeclarations_getInstance",
+          "method": "get",
+          "path": "/v1/appEncryptionDeclarations/{id}",
+          "role": "supporting",
+          "condition": "Confirm that the parent declaration exists before interpreting a relationship 404 as absence.",
+          "optionalParameterClassifications": [
+            { "location": "query", "appleName": "include", "disposition": "intentionallyOmitted", "reason": "Parent confirmation needs only declaration state.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[builds]", "disposition": "intentionallyOmitted", "reason": "Parent confirmation does not expand deprecated builds.", "reviewAtSpec": "4.4.1" }
+          ],
+          "inputs": [
+            {
+              "sourceKind": "fixed",
+              "location": "query",
+              "appleName": "fields[appEncryptionDeclarations]",
+              "fixedValue": [
+                "appDescription",
+                "createdDate",
+                "exempt",
+                "containsProprietaryCryptography",
+                "containsThirdPartyCryptography",
+                "availableOnFrenchStore",
+                "appEncryptionDeclarationState",
+                "codeValue",
+                "appEncryptionDeclarationDocument"
+              ]
+            }
+          ]
+        },
         {
           "operationId": "appEncryptionDeclarations_appEncryptionDeclarationDocument_getToOneRelated",
           "method": "get",
@@ -557,16 +663,22 @@
           ]
         }
       ],
-      "fields": [{ "toolField": "declaration_id", "sourceKind": "parameter", "operationId": "appEncryptionDeclarations_appEncryptionDeclarationDocument_getToOneRelated", "location": "path", "appleName": "id" }],
+      "fields": [
+        { "toolField": "declaration_id", "sourceKind": "parameter", "operationId": "appEncryptionDeclarations_getInstance", "location": "path", "appleName": "id" },
+        { "toolField": "declaration_id", "sourceKind": "parameter", "operationId": "appEncryptionDeclarations_appEncryptionDeclarationDocument_getToOneRelated", "location": "path", "appleName": "id" }
+      ],
       "response": {
-        "mode": "projection",
-        "sources": [{ "operationId": "appEncryptionDeclarations_appEncryptionDeclarationDocument_getToOneRelated", "statusCode": "200", "mediaType": "application/json" }],
+        "mode": "aggregate",
+        "sources": [
+          { "operationId": "appEncryptionDeclarations_getInstance", "statusCode": "200", "mediaType": "application/json" },
+          { "operationId": "appEncryptionDeclarations_appEncryptionDeclarationDocument_getToOneRelated", "statusCode": "200", "mediaType": "application/json" }
+        ],
         "fields": [
           { "outputField": "documentPresent", "localRole": "False on 404 and true only for a valid related document." },
           { "outputField": "deliveryStatus", "operationId": "appEncryptionDeclarations_appEncryptionDeclarationDocument_getToOneRelated", "jsonPointer": "/data/attributes/assetDeliveryState/state" }
         ]
       },
-      "note": "Classifies MISSING, pending, COMPLETE, and FAILED without leaking document transfer secrets."
+      "note": "Confirms the parent declaration first. Only a subsequent relationship 404 is MISSING; an invalid or inaccessible declaration remains an error. Pending, COMPLETE, and FAILED states are classified without leaking document transfer secrets."
     },
     {
       "tool": "export_compliance_list_declarations",
@@ -670,7 +782,7 @@
           "method": "get",
           "path": "/v1/appEncryptionDeclarationDocuments/{id}",
           "role": "primary",
-          "condition": "Load the exact reservation before transfer and reconcile commit or delivery state afterward.",
+          "condition": "Load the exact reservation. Transfer is allowed only from exact AWAITING_UPLOAD; COMPLETE is idempotent success, UPLOAD_COMPLETE is poll-only, FAILED is terminal, and nullable or future states fail closed.",
           "inputs": [
             {
               "sourceKind": "fixed",
@@ -685,7 +797,7 @@
           "method": "patch",
           "path": "/v1/appEncryptionDeclarationDocuments/{id}",
           "role": "supporting",
-          "condition": "Only after every presigned transfer succeeds, commit the snapshot checksum with uploaded=true.",
+          "condition": "Only after an exact AWAITING_UPLOAD reservation, an exact checksum-receipt match, and successful transfer of the same immutable snapshot, commit its checksum with uploaded=true.",
           "inputs": [
             { "sourceKind": "fixed", "jsonPointer": "/data/type", "fixedValue": "appEncryptionDeclarationDocuments" },
             { "sourceKind": "fixed", "jsonPointer": "/data/attributes/uploaded", "fixedValue": true }
@@ -696,8 +808,8 @@
         { "toolField": "document_id", "sourceKind": "parameter", "operationId": "appEncryptionDeclarationDocuments_getInstance", "location": "path", "appleName": "id" },
         { "toolField": "document_id", "sourceKind": "parameter", "operationId": "appEncryptionDeclarationDocuments_updateInstance", "location": "path", "appleName": "id" },
         { "toolField": "document_id", "sourceKind": "requestBody", "operationId": "appEncryptionDeclarationDocuments_updateInstance", "jsonPointer": "/data/id" },
-        { "toolField": "file_path", "sourceKind": "local", "localRole": "Create one immutable snapshot and verify file name and byte size against the reservation before any signed transfer." },
-        { "toolField": "file_path", "sourceKind": "derived", "operationId": "appEncryptionDeclarationDocuments_updateInstance", "jsonPointer": "/data/attributes/sourceFileChecksum", "derivedFrom": ["file_path"], "localRole": "Commit the MD5 checksum of the exact transferred snapshot bytes." }
+        { "toolField": "file_path", "sourceKind": "local", "localRole": "Create one immutable snapshot and verify file name, byte size, and bytes against the reservation and checksum receipt before any signed transfer." },
+        { "toolField": "source_file_checksum", "sourceKind": "requestBody", "operationId": "appEncryptionDeclarationDocuments_updateInstance", "jsonPointer": "/data/attributes/sourceFileChecksum", "localRole": "Require the exact lowercase MD5 receipt returned for the retained reservation and prove that the snapshot computes to the same checksum before committing it." }
       ],
       "response": {
         "mode": "aggregate",
@@ -707,11 +819,12 @@
         ],
         "fields": [
           { "outputField": "document", "localRole": "Latest safe resource projection after commit or reconciliation." },
+          { "outputField": "sourceFileChecksumReceipt", "localRole": "Return the authoritative lowercase MD5 receipt again on retained AWAITING_UPLOAD recovery." },
           { "outputField": "retrySafe", "localRole": "False for every post-reservation unresolved, pending, or failed outcome." },
           { "outputField": "cleanup", "localRole": "Explicit unavailable status because OpenAPI 4.4.1 exposes no document DELETE operation." }
         ]
       },
-      "note": "Transfers an existing reservation without exposing signed URLs or headers. COMPLETE succeeds, FAILED errors, UPLOAD_COMPLETE is retained pending, ambiguous PATCH is reconciled, and every precommit failure retains the known reservation because no document DELETE exists."
+      "note": "Safely resumes an existing AWAITING_UPLOAD reservation only when the exact snapshot bytes match the required lowercase MD5 receipt. COMPLETE succeeds without transfer, UPLOAD_COMPLETE only polls or inspects, FAILED is terminal, nullable and future states fail closed without transfer, ambiguous PATCH is reconciled, and every precommit failure retains the known reservation because no document DELETE exists. Signed URLs and headers are never exposed."
     }
   ],
   "implementationAliases": []

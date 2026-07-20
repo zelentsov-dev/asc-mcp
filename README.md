@@ -424,7 +424,7 @@ swift run asc-mcp openapi-contract-check \
 
 The manifest is pinned to Apple API 4.4.1 by version, SHA-256, path count, and operation count. It currently maps 374 Apple operations, explicitly defers 526, and scopes out 363, covering all 1,263 operations without overlap. CI fails when the Apple document changes, a mapped operation moves or disappears, a public tool or worker drifts from the manifest, an input field loses its binding, response lineage becomes invalid, or a deferred decision expires. Unexposed optional Apple parameters are warnings so they remain visible in the generated backlog.
 
-Manifest schema v2 also accounts for every optional Apple query and request-body input as publicly bound, internally controlled, intentionally omitted with a reviewed reason, or still unclassified. The checked-in `optionalInputCoveragePin` records the exact current totals and a SHA-256 digest of the sorted input identities and dispositions; `--strict` rejects a missing pin or any count- or identity-level drift. The pin makes phased remediation auditable and regression-safe, but it is not a claim that every optional Apple input is already public. The v3.14.0 pin is 2,216 total: 829 bound, 40 internally controlled, 1,347 intentionally omitted, and 0 unclassified. Its identity SHA-256 is `8b7c50fbd262fd0be523ac33ec37850a646665d4d4fae4af008dc52a2ce42ebd`.
+Manifest schema v2 also accounts for every optional Apple query and request-body input as publicly bound, internally controlled, intentionally omitted with a reviewed reason, or still unclassified. The checked-in `optionalInputCoveragePin` records the exact current totals and a SHA-256 digest of the sorted input identities and dispositions; `--strict` rejects a missing pin or any count- or identity-level drift. The pin makes phased remediation auditable and regression-safe, but it is not a claim that every optional Apple input is already public. The v3.14.0 pin is 2,244 total: 833 bound, 40 internally controlled, 1,371 intentionally omitted, and 0 unclassified. Its identity SHA-256 is `9cb4c74816b296d4bd92f042a81e00c644aeb1116b529e12d2850f7cd9705425`.
 
 `--strict` is the merge- and tag-time release gate. Every declared `target` or `broken` tool remains an error in reports, and a regression test pins their exact state. The current baseline has no `target` or `broken` implementations and no implementation drift, so any implementation that leaves `asBuilt`, any structural contract error, or any optional-input coverage drift blocks both merges and releases. `--structural-strict` remains available only for local phased remediation work.
 
@@ -650,10 +650,10 @@ For 200K-context clients, ~45.5K tokens is about 23% of the window. For clients 
 | `export_compliance_list_declarations` | List an app's encryption declarations with strict pagination |
 | `export_compliance_get_declaration` | Get one declaration without deprecated document URL fields |
 | `export_compliance_create_declaration` | Create an encryption declaration questionnaire for an app |
-| `export_compliance_create_document` | Reserve a document upload from an immutable local file snapshot |
+| `export_compliance_create_document` | Reserve, transfer, commit, and poll a document from one immutable local snapshot |
 | `export_compliance_get_document` | Get safe delivery metadata without signed URLs, tokens, or upload headers |
 | `export_compliance_update_document` | Apply a low-level nullable checksum or uploaded-state patch |
-| `export_compliance_upload_document` | Transfer, commit, and poll an existing document reservation |
+| `export_compliance_upload_document` | Resume an AWAITING_UPLOAD reservation with exact bytes and its lowercase MD5 receipt |
 | `export_compliance_inspect_document` | Inspect document presence and classify its delivery state |
 | `export_compliance_get_build_declaration` | Get the declaration currently attached to a build |
 | `export_compliance_attach_build_declaration` | Attach an approved declaration and verify the relationship |
@@ -1105,6 +1105,7 @@ Sources/asc-mcp/
     ├── XcodeCloudWorker/           #   xcode_cloud_* tools
     ├── BuildsWorker/               #   builds_* tools
     ├── BuildProcessingWorker/      #   builds_*_processing tools
+    ├── ExportComplianceWorker/     #   export_compliance_* tools
     ├── BuildBetaDetailsWorker/     #   builds_*_beta_* tools
     ├── AppLifecycleWorker/         #   app_versions_* tools
     ├── ReviewsWorker/              #   reviews_* tools

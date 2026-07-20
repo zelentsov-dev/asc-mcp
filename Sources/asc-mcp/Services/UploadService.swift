@@ -39,7 +39,8 @@ public actor UploadService {
             return UploadFileSnapshot(
                 url: snapshotURL,
                 fileName: sourceURL.lastPathComponent,
-                fileSize: try fileSize(at: snapshotURL.path)
+                fileSize: try fileSize(at: snapshotURL.path),
+                md5Checksum: try computeMD5(fileURL: snapshotURL)
             )
         } catch {
             try? FileManager.default.removeItem(at: snapshotURL)
@@ -84,6 +85,9 @@ public actor UploadService {
         }
 
         let md5 = try computeMD5(fileURL: snapshot.url)
+        guard md5 == snapshot.md5Checksum else {
+            throw ASCError.network("The immutable upload snapshot changed during transfer")
+        }
         logger.info("Upload complete. MD5: \(md5)")
         return md5
     }
@@ -398,6 +402,7 @@ struct UploadFileSnapshot: Sendable {
     let url: URL
     let fileName: String
     let fileSize: Int
+    let md5Checksum: String
 
     func discard() {
         try? FileManager.default.removeItem(at: url)
