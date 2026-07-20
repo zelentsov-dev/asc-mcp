@@ -507,11 +507,11 @@ struct AppLifecycleWorkerContractTests {
             .init(statusCode: 200, body: """
             {
               "data": [
-                {"type":"territoryAgeRatings","id":"rating-USA","attributes":{"appStoreAgeRating":"THIRTEEN_PLUS"},"relationships":{"territory":{"data":{"type":"territories","id":"USA"}}}},
+                {"type":"territoryAgeRatings","id":"rating-VNM","attributes":{"appStoreAgeRating":"ZERO_ZERO"},"relationships":{"territory":{"data":{"type":"territories","id":"VNM"}}}},
                 {"type":"territoryAgeRatings","id":"rating-KOR","attributes":{"appStoreAgeRating":"FIFTEEN_PLUS"},"relationships":{"territory":{"data":{"type":"territories","id":"KOR"}}}}
               ],
               "included": [
-                {"type":"territories","id":"USA","attributes":{"currency":"USD"}},
+                {"type":"territories","id":"VNM","attributes":{"currency":"VND"}},
                 {"type":"territories","id":"KOR","attributes":{"currency":"KRW"}}
               ],
               "links": {"self":"https://api.example.test/v1/appInfos/info-1/territoryAgeRatings","next":"https://api.example.test/v1/appInfos/info-1/territoryAgeRatings?cursor=next"},
@@ -541,6 +541,10 @@ struct AppLifecycleWorkerContractTests {
         #expect(payload["count"] == .int(2))
         #expect(payload["total"] == .int(175))
         #expect(payload["territory_age_ratings"]?.arrayValue?.count == 2)
+        #expect(
+            payload["territory_age_ratings"]?.arrayValue?.first?.objectValue?["attributes"]?
+                .objectValue?["appStoreAgeRating"] == .string("ZERO_ZERO")
+        )
         #expect(payload["included_territories"]?.arrayValue?.count == 2)
         #expect(payload["meta"]?.objectValue?["paging"]?.objectValue?["nextCursor"] == .string("next"))
     }
