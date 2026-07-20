@@ -8,6 +8,7 @@ public enum ASCError: LocalizedError, Sendable {
     case apiResponse(ASCAPIErrorResponse, Int)
     case network(String)
     indirect case deleteOutcomeUnknown(ASCError)
+    case deleteCommittedUnverified(statusCode: Int)
     case authentication(String)
     case parsing(String)
     
@@ -24,6 +25,8 @@ public enum ASCError: LocalizedError, Sendable {
             return "Network error: \(message)"
         case .deleteOutcomeUnknown(let cause):
             return "DELETE outcome is unknown: \(cause.localizedDescription) Inspect the exact target before another delete attempt."
+        case .deleteCommittedUnverified(let statusCode):
+            return "DELETE was accepted with unexpected HTTP \(statusCode), but completion is unverified. Inspect the exact target before another delete attempt."
         case .authentication(let message):
             return "Authentication error: \(message)"
         case .parsing(let message):
@@ -53,6 +56,16 @@ public enum ASCError: LocalizedError, Sendable {
                 "outcomeUnknown": .bool(true),
                 "retrySafe": .bool(false),
                 "cause": cause.structuredValue
+            ])
+        case .deleteCommittedUnverified(let statusCode):
+            return .object([
+                "type": .string("delete_unverified"),
+                "method": .string("DELETE"),
+                "statusCode": .int(statusCode),
+                "operationCommitState": .string("committed_unverified"),
+                "operationCommitted": .bool(true),
+                "retrySafe": .bool(false),
+                "inspectionRequired": .bool(true)
             ])
         case .authentication(let message):
             return structuredError(type: "authentication", message: message)

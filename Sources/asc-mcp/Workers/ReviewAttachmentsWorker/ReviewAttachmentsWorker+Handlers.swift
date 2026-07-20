@@ -534,6 +534,12 @@ extension ReviewAttachmentsWorker {
                 _ = try await client.delete("/v1/appStoreReviewAttachments/\(try ASCPathSegment.encode(attachmentId))")
                 return .deleted
             } catch let error as ASCError {
+                if case .deleteCommittedUnverified(let statusCode) = error {
+                    return .committedUnverified(
+                        statusCode: statusCode,
+                        reason: Redactor.redact(error.localizedDescription)
+                    )
+                }
                 if case .deleteOutcomeUnknown = error {
                     return .commitUnknown(Redactor.redact(error.localizedDescription))
                 }
@@ -594,7 +600,7 @@ extension ReviewAttachmentsWorker {
         let manualGuidance: String
         if cleanup.reservationDeleted {
             manualGuidance = ""
-        } else if cleanup.outcomeUnknown {
+        } else if cleanup.outcomeUnknown || cleanup.completionUnverified {
             manualGuidance = " Inspect this exact attachment before another cleanup attempt."
         } else {
             manualGuidance = " Use review_attachments_delete with attachment_id '\(attachment.id)' to retry cleanup."
@@ -611,6 +617,11 @@ extension ReviewAttachmentsWorker {
         if cleanup.outcomeUnknown {
             value["operationCommitState"] = "unknown"
             value["outcomeUnknown"] = true
+        }
+        if cleanup.completionUnverified {
+            value["operationCommitState"] = "committed_unverified"
+            value["operationCommitted"] = true
+            value["inspectionRequired"] = true
         }
         return MCPResult.jsonObject(
             value,
@@ -709,6 +720,7 @@ private enum ReviewAttachmentCleanupOutcome: Sendable {
     case deleted
     case alreadyAbsent
     case commitUnknown(String)
+    case committedUnverified(statusCode: Int, reason: String)
     case failed(String)
 
     var status: String {
@@ -719,6 +731,8 @@ private enum ReviewAttachmentCleanupOutcome: Sendable {
             return "already_absent"
         case .commitUnknown:
             return "commit_unknown"
+        case .committedUnverified:
+            return "committed_unverified"
         case .failed:
             return "failed"
         }
@@ -728,13 +742,20 @@ private enum ReviewAttachmentCleanupOutcome: Sendable {
         switch self {
         case .deleted, .alreadyAbsent:
             return true
-        case .commitUnknown, .failed:
+        case .commitUnknown, .committedUnverified, .failed:
             return false
         }
     }
 
     var outcomeUnknown: Bool {
         if case .commitUnknown = self {
+            return true
+        }
+        return false
+    }
+
+    var completionUnverified: Bool {
+        if case .committedUnverified = self {
             return true
         }
         return false
@@ -758,6 +779,16 @@ private enum ReviewAttachmentCleanupOutcome: Sendable {
             value["inspectTool"] = "review_attachments_get"
             value["inspectArguments"] = ["attachment_id": attachmentId]
         }
+        if case .committedUnverified(let statusCode, let reason) = self {
+            value["reason"] = reason
+            value["statusCode"] = statusCode
+            value["operationCommitState"] = "committed_unverified"
+            value["operationCommitted"] = true
+            value["retrySafe"] = false
+            value["inspectionRequired"] = true
+            value["inspectTool"] = "review_attachments_get"
+            value["inspectArguments"] = ["attachment_id": attachmentId]
+        }
         return value
     }
 }
@@ -769,6 +800,8 @@ private extension ASCError {
             return statusCode
         case .deleteOutcomeUnknown(let cause):
             return cause.httpStatusCode
+        case .deleteCommittedUnverified(let statusCode):
+            return statusCode
         default:
             return nil
         }

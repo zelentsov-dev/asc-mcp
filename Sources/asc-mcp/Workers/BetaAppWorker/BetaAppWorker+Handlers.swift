@@ -325,6 +325,11 @@ extension BetaAppWorker {
         } catch let error as ASCError {
             let ambiguousOutcome: Bool
             switch error {
+            case .deleteCommittedUnverified:
+                return MCPResult.error(
+                    error,
+                    prefix: "Failed to submit build for beta review"
+                )
             case .deleteOutcomeUnknown:
                 ambiguousOutcome = true
             case .network:

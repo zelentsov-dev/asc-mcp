@@ -458,6 +458,54 @@ struct UploadTransactionRecoveryContractTests {
         #expect(await apiTransport.recordedRequests().map(\.httpMethod) == ["POST", "DELETE"])
     }
 
+    @Test("unexpected successful rollback requires exact inspection", arguments: [200, 202])
+    func unexpectedSuccessfulRollbackRequiresExactInspection(_ statusCode: Int) async throws {
+        let fileURL = try uploadRecoveryFile(Data("hello".utf8))
+        defer { try? FileManager.default.removeItem(at: fileURL) }
+        let flow = UploadFlow.screenshot
+        let resourceID = "asset-0123456789abcdef0123456789"
+        let apiTransport = TestHTTPTransport(responses: [
+            .init(statusCode: 201, body: uploadRecoveryResponse(
+                flow: flow,
+                state: flow.pendingState,
+                id: resourceID
+            )),
+            .init(statusCode: statusCode, body: "")
+        ])
+
+        let result = try await invokeUpload(
+            flow,
+            fileURL: fileURL,
+            apiTransport: apiTransport,
+            uploadTransport: TestHTTPTransport(responses: [])
+        )
+
+        #expect(result.isError == true)
+        #expect(await apiTransport.recordedRequests().map(\.httpMethod) == ["POST", "DELETE"])
+        let payload = try uploadRecoveryObject(result.structuredContent)
+        #expect(payload["reservationDeleted"] == .bool(false))
+        #expect(payload["operationCommitState"] == .string("committed_unverified"))
+        #expect(payload["operationCommitted"] == .bool(true))
+        #expect(payload["inspectionRequired"] == .bool(true))
+        #expect(payload["outcomeUnknown"] == nil)
+        #expect(payload["retrySafe"] == .bool(false))
+        let cleanup = try uploadRecoveryValueObject(payload["cleanup"])
+        #expect(cleanup["status"] == .string("committed_unverified"))
+        #expect(cleanup["statusCode"] == .int(statusCode))
+        #expect(cleanup["operationCommitState"] == .string("committed_unverified"))
+        #expect(cleanup["operationCommitted"] == .bool(true))
+        #expect(cleanup["inspectionRequired"] == .bool(true))
+        #expect(cleanup["retrySafe"] == .bool(false))
+        #expect(cleanup["tool"] == nil)
+        #expect(cleanup["arguments"] == nil)
+        #expect(cleanup["inspectTool"] == .string("screenshots_get"))
+        let inspectArguments = try uploadRecoveryValueObject(cleanup["inspectArguments"])
+        #expect(inspectArguments["screenshot_id"] == .string(resourceID))
+        let text = uploadRecoveryText(result)
+        #expect(text.contains("Inspect the exact reservation"))
+        #expect(text.contains("to retry cleanup") == false)
+    }
+
     @Test("definite rollback rejection remains a failed cleanup")
     func definiteRollbackRejectionRemainsFailedCleanup() async throws {
         let fileURL = try uploadRecoveryFile(Data("hello".utf8))

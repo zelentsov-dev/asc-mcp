@@ -311,7 +311,7 @@ extension BetaTestersWorker {
     }
 
     /// Deletes a beta tester and removes from all groups
-    /// - Returns: JSON confirmation of deletion
+    /// - Returns: JSON with the confirmed or accepted deletion state
     func deleteBetaTester(_ params: CallTool.Parameters) async throws -> CallTool.Result {
         guard let arguments = params.arguments,
               let testerIdValue = arguments["tester_id"],
@@ -323,14 +323,21 @@ extension BetaTestersWorker {
         }
 
         do {
-            _ = try await httpClient.delete("/v1/betaTesters/\(try ASCPathSegment.encode(testerId))")
-
-            let result: [String: Any] = [
-                "success": true,
-                "message": "Beta tester '\(testerId)' deleted"
-            ]
-
-            return MCPResult.jsonObject(result)
+            let receipt = try await httpClient.deleteReceipt(
+                "/v1/betaTesters/\(try ASCPathSegment.encode(testerId))"
+            )
+            return betaTesterDeleteResult(
+                receipt: receipt,
+                target: ["tester_id": testerId],
+                confirmedMessage: "Beta tester '\(testerId)' deleted",
+                acceptedMessage: "Beta tester '\(testerId)' deletion accepted for processing",
+                operationName: "beta tester deletion",
+                inspection: [
+                    "tool": "beta_testers_get",
+                    "arguments": ["tester_id": testerId],
+                    "instruction": "Inspect this exact tester before another delete attempt. A not-found response confirms deletion; a returned tester means processing is not complete."
+                ]
+            )
 
         } catch {
             return MCPResult.error(error, prefix: "Failed to delete beta tester")
@@ -635,7 +642,7 @@ extension BetaTestersWorker {
     }
 
     /// Removes a beta tester's access to an app entirely
-    /// - Returns: JSON confirmation of the operation
+    /// - Returns: JSON with the confirmed or accepted relationship-deletion state
     func removeFromApp(_ params: CallTool.Parameters) async throws -> CallTool.Result {
         guard let arguments = params.arguments,
               let betaTesterIdValue = arguments["beta_tester_id"],
@@ -654,17 +661,25 @@ extension BetaTestersWorker {
             )
 
             let bodyData = try JSONEncoder().encode(request)
-            _ = try await httpClient.delete(
+            let receipt = try await httpClient.deleteReceipt(
                 "/v1/betaTesters/\(try ASCPathSegment.encode(betaTesterId))/relationships/apps",
                 body: bodyData
             )
-
-            let result: [String: Any] = [
-                "success": true,
-                "message": "Removed tester '\(betaTesterId)' from app '\(appId)'"
-            ]
-
-            return MCPResult.jsonObject(result)
+            return betaTesterDeleteResult(
+                receipt: receipt,
+                target: [
+                    "beta_tester_id": betaTesterId,
+                    "app_id": appId
+                ],
+                confirmedMessage: "Removed tester '\(betaTesterId)' from app '\(appId)'",
+                acceptedMessage: "Removal of tester '\(betaTesterId)' from app '\(appId)' accepted for processing",
+                operationName: "beta tester app-access removal",
+                inspection: [
+                    "tool": "beta_testers_list_apps",
+                    "arguments": ["tester_id": betaTesterId],
+                    "instruction": "Inspect this exact tester and verify that app_id '\(appId)' is absent before another delete attempt."
+                ]
+            )
 
         } catch {
             return MCPResult.error(error, prefix: "Failed to remove tester from app")
@@ -672,6 +687,55 @@ extension BetaTestersWorker {
     }
 
     // MARK: - Formatting
+
+    private func betaTesterDeleteResult(
+        receipt: ASCDeleteReceipt,
+        target: [String: Any],
+        confirmedMessage: String,
+        acceptedMessage: String,
+        operationName: String,
+        inspection: [String: Any]
+    ) -> CallTool.Result {
+        var payload = target
+        payload["statusCode"] = receipt.statusCode
+        payload["retrySafe"] = false
+
+        switch receipt.statusCode {
+        case 204:
+            payload["success"] = true
+            payload["deletionState"] = "confirmed"
+            payload["operationCommitted"] = true
+            payload["processingComplete"] = true
+            payload["outcomeUnknown"] = false
+            payload["message"] = confirmedMessage
+            return MCPResult.jsonObject(payload)
+        case 202:
+            payload["success"] = true
+            payload["deletionState"] = "accepted"
+            payload["operationCommitState"] = "accepted"
+            payload["acceptedForProcessing"] = true
+            payload["processingComplete"] = false
+            payload["outcomeUnknown"] = false
+            payload["inspectionRequired"] = true
+            payload["inspection"] = inspection
+            payload["message"] = acceptedMessage
+            return MCPResult.jsonObject(payload)
+        default:
+            payload["success"] = false
+            payload["deletionState"] = "committed_unverified"
+            payload["operationCommitState"] = "committed_unverified"
+            payload["operationCommitted"] = true
+            payload["processingComplete"] = false
+            payload["inspectionRequired"] = true
+            payload["inspection"] = inspection
+            payload["error"] = "Apple accepted the \(operationName) with unexpected HTTP \(receipt.statusCode), but completion is unverified."
+            return MCPResult.jsonObject(
+                payload,
+                text: "Error: Apple accepted the \(operationName) with unexpected HTTP \(receipt.statusCode), but completion is unverified. Inspect the exact target before another delete attempt.",
+                isError: true
+            )
+        }
+    }
 
     private func formatBetaTester(_ tester: ASCBetaTester) -> [String: Any] {
         var result: [String: Any] = [

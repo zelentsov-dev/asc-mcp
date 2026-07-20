@@ -153,7 +153,7 @@ extension BetaTestersWorker {
     func deleteBetaTesterTool() -> Tool {
         return Tool(
             name: "beta_testers_delete",
-            description: "Remove a beta tester from all beta groups and revoke access",
+            description: "Request removal of a beta tester from all beta groups and report whether Apple completed the deletion or accepted it for asynchronous processing",
             inputSchema: .object([
                 "type": .string("object"),
                 "properties": .object([
@@ -312,7 +312,7 @@ extension BetaTestersWorker {
     func removeFromAppTool() -> Tool {
         return Tool(
             name: "beta_testers_remove_from_app",
-            description: "Remove a beta tester's access to an app entirely",
+            description: "Request removal of a beta tester's app access and report whether Apple completed the relationship deletion or accepted it for asynchronous processing",
             inputSchema: .object([
                 "type": .string("object"),
                 "properties": .object([

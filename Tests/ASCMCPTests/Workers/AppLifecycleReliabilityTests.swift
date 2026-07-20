@@ -272,6 +272,43 @@ struct AppLifecycleReliabilityTests {
         #expect(requests.first?.url?.path == "/v1/appStoreVersions/ver-1")
     }
 
+    @Test("unexpected successful delete statuses stay committed unverified after one attempt")
+    func unexpectedSuccessfulDeleteStatusesStayCommittedUnverified() async throws {
+        for statusCode in [200, 202, 299] {
+            let transport = TestHTTPTransport(responses: [
+                .init(statusCode: statusCode, body: "")
+            ])
+            let worker = try await makeLifecycleReliabilityWorker(transport)
+            let result = try await worker.handleTool(.init(
+                name: "app_versions_delete",
+                arguments: [
+                    "version_id": .string("ver-1"),
+                    "confirm_version_id": .string("ver-1")
+                ]
+            ))
+
+            #expect(result.isError == true)
+            let details = try lifecycleReliabilityErrorDetails(result)
+            #expect(details["deletionState"] == .string("committed_unverified"))
+            #expect(details["operationCommitState"] == .string("committed_unverified"))
+            #expect(details["operationCommitted"] == .bool(true))
+            #expect(details["inspectionRequired"] == .bool(true))
+            #expect(details["outcomeUnknown"] == .bool(false))
+            #expect(details["retrySafe"] == .bool(false))
+            #expect(details["version_id"] == .string("ver-1"))
+            let cause = try lifecycleReliabilityValueObject(details["cause"])
+            #expect(cause["type"] == .string("delete_unverified"))
+            #expect(cause["statusCode"] == .int(statusCode))
+            let inspection = try lifecycleReliabilityValueObject(details["inspection"])
+            #expect(inspection["tool"] == .string("app_versions_get"))
+            let inspectionArguments = try lifecycleReliabilityValueObject(inspection["arguments"])
+            #expect(inspectionArguments["version_id"] == .string("ver-1"))
+            let requests = await transport.recordedRequests()
+            #expect(requests.count == 1)
+            #expect(requests.first?.httpMethod == "DELETE")
+        }
+    }
+
     @Test("ambiguous delete statuses stay commit unknown after one attempt")
     func ambiguousDeleteStatusesStayUnknown() async throws {
         let cases: [(String, [String: Value])] = [

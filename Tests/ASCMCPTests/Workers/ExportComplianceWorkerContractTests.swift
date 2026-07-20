@@ -201,6 +201,20 @@ struct ExportComplianceWorkerContractTests {
         #expect(unknownDetails["retrySafe"] == .bool(false))
         #expect(unknownDetails["inspection"] != nil)
 
+        let committedTransport = ExportComplianceScriptTransport(steps: [
+            .ascError(.deleteCommittedUnverified(statusCode: 202))
+        ])
+        let committedWorker = try await exportComplianceWorker(apiTransport: committedTransport)
+        let committed = try await committedWorker.handleTool(.init(
+            name: "export_compliance_create_declaration",
+            arguments: exportComplianceDeclarationCreateArguments()
+        ))
+        let committedDetails = try exportComplianceErrorDetails(committed)
+        #expect(committedDetails["creationState"] == .string("committed_unverified"))
+        #expect(committedDetails["commitConfirmed"] == .bool(true))
+        #expect(committedDetails["retrySafe"] == .bool(false))
+        #expect(committedDetails["inspection"] != nil)
+
         for statusCode in [408, 500] {
             let statusTransport = TestHTTPTransport(responses: [
                 .init(statusCode: statusCode, body: exportComplianceAPIError(statusCode))
@@ -1911,6 +1925,7 @@ private actor ExportComplianceScriptTransport: HTTPTransport {
     enum Step: Sendable {
         case response(statusCode: Int, body: String)
         case networkFailure
+        case ascError(ASCError)
     }
 
     private var steps: [Step]
@@ -1938,6 +1953,8 @@ private actor ExportComplianceScriptTransport: HTTPTransport {
             )
         case .networkFailure:
             throw URLError(.networkConnectionLost)
+        case .ascError(let error):
+            throw error
         }
     }
 

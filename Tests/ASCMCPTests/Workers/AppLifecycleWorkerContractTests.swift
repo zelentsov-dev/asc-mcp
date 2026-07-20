@@ -554,6 +554,94 @@ struct AppLifecycleWorkerContractTests {
         #expect(payload["action"] == .string("updated"))
     }
 
+    @Test("legacy age rating scans every App Info page before selection")
+    func ageRatingScansEveryAppInfoPage() async throws {
+        let nextURL = "https://api.example.test/v1/apps/app-1/appInfos?fields%5BappInfos%5D=state%2Capp&limit=200&cursor=page-2"
+        let transport = TestHTTPTransport(responses: [
+            .init(statusCode: 200, body: versionWithAppBody(id: "ver-1", state: "PREPARE_FOR_SUBMISSION")),
+            .init(statusCode: 200, body: """
+            {
+              "data": [
+                { "type": "appInfos", "id": "info-live", "attributes": { "state": "ACCEPTED" }, "relationships": { "app": { "data": { "type": "apps", "id": "app-1" } } } }
+              ],
+              "links": {
+                "self": "https://api.example.test/v1/apps/app-1/appInfos?fields%5BappInfos%5D=state%2Capp&limit=200",
+                "next": "\(nextURL)"
+              }
+            }
+            """),
+            .init(statusCode: 200, body: """
+            {
+              "data": [
+                { "type": "appInfos", "id": "info-next", "attributes": { "state": "PREPARE_FOR_SUBMISSION" }, "relationships": { "app": { "data": { "type": "apps", "id": "app-1" } } } }
+              ]
+            }
+            """),
+            .init(statusCode: 200, body: #"{"data":{"type":"ageRatingDeclarations","id":"age-1"}}"#),
+            .init(statusCode: 200, body: #"{"data":{"type":"ageRatingDeclarations","id":"age-1","attributes":{"advertising":false}}}"#)
+        ])
+        let worker = try await makeContractWorker(transport: transport)
+
+        let result = try await worker.handleTool(CallTool.Parameters(
+            name: "app_versions_update_age_rating",
+            arguments: [
+                "version_id": .string("ver-1"),
+                "advertising": .bool(false)
+            ]
+        ))
+
+        #expect(result.isError != true)
+        let requests = await transport.recordedRequests()
+        #expect(requests.map { $0.url?.path ?? "" } == [
+            "/v1/appStoreVersions/ver-1",
+            "/v1/apps/app-1/appInfos",
+            "/v1/apps/app-1/appInfos",
+            "/v1/appInfos/info-next/ageRatingDeclaration",
+            "/v1/ageRatingDeclarations/age-1"
+        ])
+        #expect(URLComponents(url: try #require(requests[2].url), resolvingAgainstBaseURL: false)?
+            .queryItems?.first(where: { $0.name == "cursor" })?.value == "page-2")
+    }
+
+    @Test("legacy age rating rejects ambiguity found on a later App Info page")
+    func ageRatingRejectsLaterPageAmbiguity() async throws {
+        let nextURL = "https://api.example.test/v1/apps/app-1/appInfos?fields%5BappInfos%5D=state%2Capp&limit=200&cursor=page-2"
+        let transport = TestHTTPTransport(responses: [
+            .init(statusCode: 200, body: versionWithAppBody(id: "ver-1", state: "ACCEPTED")),
+            .init(statusCode: 200, body: """
+            {
+              "data": [
+                { "type": "appInfos", "id": "info-accepted", "attributes": { "state": "ACCEPTED" }, "relationships": { "app": { "data": { "type": "apps", "id": "app-1" } } } }
+              ],
+              "links": {
+                "self": "https://api.example.test/v1/apps/app-1/appInfos?fields%5BappInfos%5D=state%2Capp&limit=200",
+                "next": "\(nextURL)"
+              }
+            }
+            """),
+            .init(statusCode: 200, body: """
+            {
+              "data": [
+                { "type": "appInfos", "id": "info-accepted-2", "attributes": { "state": "ACCEPTED" }, "relationships": { "app": { "data": { "type": "apps", "id": "app-1" } } } }
+              ]
+            }
+            """)
+        ])
+        let worker = try await makeContractWorker(transport: transport)
+
+        let result = try await worker.handleTool(CallTool.Parameters(
+            name: "app_versions_update_age_rating",
+            arguments: [
+                "version_id": .string("ver-1"),
+                "advertising": .bool(false)
+            ]
+        ))
+
+        #expect(result.isError == true)
+        #expect(await transport.requestCount() == 3)
+        #expect(await transport.recordedRequests().allSatisfy { $0.httpMethod == "GET" })
+    }
+
     @Test("age rating stops before mutation when App Info selection is ambiguous")
     func ageRatingStopsOnAmbiguousAppInfo() async throws {
         let transport = TestHTTPTransport(responses: [

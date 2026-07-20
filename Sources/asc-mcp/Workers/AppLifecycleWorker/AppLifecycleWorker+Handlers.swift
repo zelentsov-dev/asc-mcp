@@ -1518,16 +1518,41 @@ extension AppLifecycleWorker {
                     return MCPResult.error("Version state \(versionState) cannot be safely mapped to App Info. Provide app_info_id from app_info_list.")
                 }
 
-                let appInfos = try await httpClient.get(
-                    "/v1/apps/\(try ASCPathSegment.encode(app.id))/appInfos",
-                    parameters: [
-                        "fields[appInfos]": "state,app",
-                        "limit": "200"
-                    ],
+                let appInfoPath = "/v1/apps/\(try ASCPathSegment.encode(app.id))/appInfos"
+                let appInfoParameters = [
+                    "fields[appInfos]": "state,app",
+                    "limit": "200"
+                ]
+                let appInfoScope = PaginationScope.strict(
+                    path: appInfoPath,
+                    query: appInfoParameters
+                )
+                var appInfoPage: ASCAppInfosResponse? = try await httpClient.get(
+                    appInfoPath,
+                    parameters: appInfoParameters,
                     as: ASCAppInfosResponse.self
                 )
+                var allAppInfos: [ASCAppInfo] = []
+                var seenAppInfoNextURLs: Set<String> = []
+                while let page = appInfoPage {
+                    allAppInfos.append(contentsOf: page.data)
+                    if let next = page.links?.next {
+                        guard seenAppInfoNextURLs.insert(next).inserted else {
+                            throw AppLifecycleQueryArgumentError(
+                                "Apple returned a repeated App Info continuation URL"
+                            )
+                        }
+                        appInfoPage = try await httpClient.getPage(
+                            next,
+                            scope: appInfoScope,
+                            as: ASCAppInfosResponse.self
+                        )
+                    } else {
+                        appInfoPage = nil
+                    }
+                }
                 var appInfoIdentities = Set<String>()
-                for appInfo in appInfos.data {
+                for appInfo in allAppInfos {
                     try validateResourceIdentity(
                         type: appInfo.type,
                         id: appInfo.id,
@@ -1552,13 +1577,15 @@ extension AppLifecycleWorker {
                 }
 
                 guard let appInfo = selectAppInfo(
-                    from: appInfos.data,
+                    from: allAppInfos,
                     versionState: versionResponse.data.attributes?.appVersionState
                 ) else {
-                    let candidates = appInfos.data.map { info in
+                    let candidates = allAppInfos.prefix(20).map { info in
                         "\(info.id):\(info.attributes?.state ?? "UNKNOWN")"
                     }.joined(separator: ", ")
-                    return MCPResult.error("Could not safely select App Info for version \(versionId). Provide app_info_id from app_info_list. Candidates: \(candidates.isEmpty ? "none" : candidates).")
+                    let remaining = max(0, allAppInfos.count - 20)
+                    let suffix = remaining > 0 ? " (+\(remaining) more)" : ""
+                    return MCPResult.error("Could not safely select App Info for version \(versionId). Provide app_info_id from app_info_list. Candidates: \(candidates.isEmpty ? "none" : candidates)\(suffix).")
                 }
                 appInfoId = appInfo.id
             } else {
@@ -1694,6 +1721,23 @@ private struct AppLifecycleQueryArgumentError: LocalizedError {
     }
 
     var errorDescription: String? { message }
+}
+
+private enum AppLifecycleDeletionFailureState: String {
+    case committedUnverified = "committed_unverified"
+    case commitUnknown = "commit_unknown"
+    case rejected
+
+    var operationCommitState: String {
+        switch self {
+        case .committedUnverified:
+            return "committed_unverified"
+        case .commitUnknown:
+            return "unknown"
+        case .rejected:
+            return "rejected"
+        }
+    }
 }
 
 // MARK: - Private Helpers
@@ -2101,41 +2145,54 @@ private extension AppLifecycleWorker {
         error: Error,
         inspection: Value
     ) -> CallTool.Result {
-        let outcomeUnknown = isAmbiguousDeletionFailure(error)
-        let state = outcomeUnknown ? "commit_unknown" : "rejected"
-        let message = outcomeUnknown
-            ? "The \(resourceName) delete outcome is unknown. Do not retry until the exact target is inspected."
-            : "Failed to delete \(resourceName): \(error.localizedDescription)"
+        let state = deletionFailureState(error)
+        let message: String
+        switch state {
+        case .committedUnverified:
+            message = "Apple accepted the \(resourceName) delete request, but completion is unverified. Do not retry until the exact target is inspected."
+        case .commitUnknown:
+            message = "The \(resourceName) delete outcome is unknown. Do not retry until the exact target is inspected."
+        case .rejected:
+            message = "Failed to delete \(resourceName): \(error.localizedDescription)"
+        }
+
+        var details: [String: Value] = [
+            "deletionState": .string(state.rawValue),
+            "operationCommitState": .string(state.operationCommitState),
+            "outcomeUnknown": .bool(state == .commitUnknown),
+            "retrySafe": .bool(state == .rejected),
+            "mutationAttempted": .bool(true),
+            "targetId": .string(targetID),
+            targetField: .string(targetID),
+            "cause": structuredDeletionError(error),
+            "inspection": inspection
+        ]
+        if state == .committedUnverified {
+            details["operationCommitted"] = .bool(true)
+            details["inspectionRequired"] = .bool(true)
+        }
 
         return MCPResult.error(
             message,
-            details: .object([
-                "deletionState": .string(state),
-                "operationCommitState": .string(outcomeUnknown ? "unknown" : "rejected"),
-                "outcomeUnknown": .bool(outcomeUnknown),
-                "retrySafe": .bool(!outcomeUnknown),
-                "mutationAttempted": .bool(true),
-                "targetId": .string(targetID),
-                targetField: .string(targetID),
-                "cause": structuredDeletionError(error),
-                "inspection": inspection
-            ])
+            details: .object(details)
         )
     }
 
-    func isAmbiguousDeletionFailure(_ error: Error) -> Bool {
+    func deletionFailureState(_ error: Error) -> AppLifecycleDeletionFailureState {
         guard let error = error as? ASCError else {
-            return false
+            return .rejected
         }
         switch error {
+        case .deleteCommittedUnverified:
+            return .committedUnverified
         case .deleteOutcomeUnknown:
-            return true
+            return .commitUnknown
         case .network:
-            return false
+            return .rejected
         case .api(_, let statusCode), .apiResponse(_, let statusCode):
-            return false
+            return .rejected
         case .authentication, .configuration, .parsing:
-            return false
+            return .rejected
         }
     }
 

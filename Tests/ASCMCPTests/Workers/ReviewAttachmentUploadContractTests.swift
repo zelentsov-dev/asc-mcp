@@ -527,6 +527,47 @@ struct ReviewAttachmentUploadContractTests {
         #expect(await apiTransport.recordedRequests().map(\.httpMethod) == ["POST", "DELETE"])
     }
 
+    @Test("unexpected successful rollback requires exact inspection", arguments: [200, 202])
+    func unexpectedSuccessfulRollbackRequiresExactInspection(_ statusCode: Int) async throws {
+        let fileURL = try reviewAttachmentFile(Data("hello".utf8))
+        defer { try? FileManager.default.removeItem(at: fileURL) }
+        let apiTransport = TestHTTPTransport(responses: [
+            .init(statusCode: 201, body: reviewAttachmentResponse(state: "AWAITING_UPLOAD")),
+            .init(statusCode: statusCode, body: "")
+        ])
+        let worker = try await makeReviewAttachmentWorker(
+            apiTransport: apiTransport,
+            uploadTransport: TestHTTPTransport(responses: [])
+        )
+
+        let result = try await worker.handleTool(reviewAttachmentUploadParameters(fileURL: fileURL))
+
+        #expect(result.isError == true)
+        #expect(await apiTransport.recordedRequests().map(\.httpMethod) == ["POST", "DELETE"])
+        let payload = try reviewAttachmentObject(result.structuredContent)
+        #expect(payload["reservationDeleted"] == .bool(false))
+        #expect(payload["operationCommitState"] == .string("committed_unverified"))
+        #expect(payload["operationCommitted"] == .bool(true))
+        #expect(payload["inspectionRequired"] == .bool(true))
+        #expect(payload["outcomeUnknown"] == nil)
+        #expect(payload["retrySafe"] == .bool(false))
+        let cleanup = try reviewAttachmentValueObject(payload["cleanup"])
+        #expect(cleanup["status"] == .string("committed_unverified"))
+        #expect(cleanup["statusCode"] == .int(statusCode))
+        #expect(cleanup["operationCommitState"] == .string("committed_unverified"))
+        #expect(cleanup["operationCommitted"] == .bool(true))
+        #expect(cleanup["inspectionRequired"] == .bool(true))
+        #expect(cleanup["retrySafe"] == .bool(false))
+        #expect(cleanup["tool"] == nil)
+        #expect(cleanup["arguments"] == nil)
+        #expect(cleanup["inspectTool"] == .string("review_attachments_get"))
+        let inspectArguments = try reviewAttachmentValueObject(cleanup["inspectArguments"])
+        #expect(inspectArguments["attachment_id"] == .string("attachment-1"))
+        let text = reviewAttachmentText(result)
+        #expect(text.contains("Inspect this exact attachment"))
+        #expect(text.contains("to retry cleanup") == false)
+    }
+
     @Test("definite rollback rejection remains a failed cleanup")
     func definiteRollbackRejectionRemainsFailedCleanup() async throws {
         let fileURL = try reviewAttachmentFile(Data("hello".utf8))

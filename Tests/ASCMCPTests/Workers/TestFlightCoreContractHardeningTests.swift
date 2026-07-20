@@ -302,6 +302,132 @@ struct TestFlightCoreContractHardeningTests {
         #expect(builds.count == 1)
     }
 
+    @Test("beta tester delete preserves documented acceptance states", arguments: [204, 202, 200])
+    func betaTesterDeletePreservesAcceptanceState(_ statusCode: Int) async throws {
+        let transport = TestHTTPTransport(responses: [
+            .init(statusCode: statusCode, body: "")
+        ])
+        let worker = try await testFlightBetaTestersWorker(transport)
+
+        let result = try await worker.handleTool(CallTool.Parameters(
+            name: "beta_testers_delete",
+            arguments: ["tester_id": .string("tester-1")]
+        ))
+
+        let requests = await transport.recordedRequests()
+        #expect(requests.count == 1)
+        #expect(requests.first?.httpMethod == "DELETE")
+        #expect(requests.first?.url?.path == "/v1/betaTesters/tester-1")
+
+        let payload = try testFlightObject(result.structuredContent)
+        #expect(payload["statusCode"] == .int(statusCode))
+        #expect(payload["tester_id"] == .string("tester-1"))
+        #expect(payload["retrySafe"] == .bool(false))
+
+        switch statusCode {
+        case 204:
+            #expect(result.isError != true)
+            #expect(payload["success"] == .bool(true))
+            #expect(payload["deletionState"] == .string("confirmed"))
+            #expect(payload["operationCommitted"] == .bool(true))
+            #expect(payload["processingComplete"] == .bool(true))
+            #expect(payload["inspection"] == nil)
+        case 202:
+            #expect(result.isError != true)
+            #expect(payload["success"] == .bool(true))
+            #expect(payload["deletionState"] == .string("accepted"))
+            #expect(payload["operationCommitState"] == .string("accepted"))
+            #expect(payload["acceptedForProcessing"] == .bool(true))
+            #expect(payload["processingComplete"] == .bool(false))
+            #expect(payload["outcomeUnknown"] == .bool(false))
+            #expect(payload["inspectionRequired"] == .bool(true))
+            let inspection = try testFlightObject(payload["inspection"])
+            #expect(inspection["tool"] == .string("beta_testers_get"))
+            let arguments = try testFlightObject(inspection["arguments"])
+            #expect(arguments == ["tester_id": .string("tester-1")])
+        default:
+            #expect(result.isError == true)
+            #expect(payload["success"] == .bool(false))
+            #expect(payload["deletionState"] == .string("committed_unverified"))
+            #expect(payload["operationCommitState"] == .string("committed_unverified"))
+            #expect(payload["operationCommitted"] == .bool(true))
+            #expect(payload["processingComplete"] == .bool(false))
+            #expect(payload["inspectionRequired"] == .bool(true))
+            #expect(payload["outcomeUnknown"] == nil)
+            let inspection = try testFlightObject(payload["inspection"])
+            #expect(inspection["tool"] == .string("beta_testers_get"))
+            let arguments = try testFlightObject(inspection["arguments"])
+            #expect(arguments == ["tester_id": .string("tester-1")])
+        }
+    }
+
+    @Test("beta tester app removal preserves documented acceptance states", arguments: [204, 202, 200])
+    func betaTesterAppRemovalPreservesAcceptanceState(_ statusCode: Int) async throws {
+        let transport = TestHTTPTransport(responses: [
+            .init(statusCode: statusCode, body: "")
+        ])
+        let worker = try await testFlightBetaTestersWorker(transport)
+
+        let result = try await worker.handleTool(CallTool.Parameters(
+            name: "beta_testers_remove_from_app",
+            arguments: [
+                "beta_tester_id": .string("tester-1"),
+                "app_id": .string("app-1")
+            ]
+        ))
+
+        let requests = await transport.recordedRequests()
+        #expect(requests.count == 1)
+        #expect(requests.first?.httpMethod == "DELETE")
+        #expect(requests.first?.url?.path == "/v1/betaTesters/tester-1/relationships/apps")
+        let requestBody = try testFlightBody(try #require(requests.first))
+        #expect(try testFlightRelationshipIDs(requestBody) == ["app-1"])
+
+        let payload = try testFlightObject(result.structuredContent)
+        #expect(payload["statusCode"] == .int(statusCode))
+        #expect(payload["beta_tester_id"] == .string("tester-1"))
+        #expect(payload["app_id"] == .string("app-1"))
+        #expect(payload["retrySafe"] == .bool(false))
+
+        switch statusCode {
+        case 204:
+            #expect(result.isError != true)
+            #expect(payload["success"] == .bool(true))
+            #expect(payload["deletionState"] == .string("confirmed"))
+            #expect(payload["operationCommitted"] == .bool(true))
+            #expect(payload["processingComplete"] == .bool(true))
+            #expect(payload["inspection"] == nil)
+        case 202:
+            #expect(result.isError != true)
+            #expect(payload["success"] == .bool(true))
+            #expect(payload["deletionState"] == .string("accepted"))
+            #expect(payload["operationCommitState"] == .string("accepted"))
+            #expect(payload["acceptedForProcessing"] == .bool(true))
+            #expect(payload["processingComplete"] == .bool(false))
+            #expect(payload["outcomeUnknown"] == .bool(false))
+            #expect(payload["inspectionRequired"] == .bool(true))
+            let inspection = try testFlightObject(payload["inspection"])
+            #expect(inspection["tool"] == .string("beta_testers_list_apps"))
+            let arguments = try testFlightObject(inspection["arguments"])
+            #expect(arguments == ["tester_id": .string("tester-1")])
+            #expect(inspection["instruction"] == .string("Inspect this exact tester and verify that app_id 'app-1' is absent before another delete attempt."))
+        default:
+            #expect(result.isError == true)
+            #expect(payload["success"] == .bool(false))
+            #expect(payload["deletionState"] == .string("committed_unverified"))
+            #expect(payload["operationCommitState"] == .string("committed_unverified"))
+            #expect(payload["operationCommitted"] == .bool(true))
+            #expect(payload["processingComplete"] == .bool(false))
+            #expect(payload["inspectionRequired"] == .bool(true))
+            #expect(payload["outcomeUnknown"] == nil)
+            let inspection = try testFlightObject(payload["inspection"])
+            #expect(inspection["tool"] == .string("beta_testers_list_apps"))
+            let arguments = try testFlightObject(inspection["arguments"])
+            #expect(arguments == ["tester_id": .string("tester-1")])
+            #expect(inspection["instruction"] == .string("Inspect this exact tester and verify that app_id 'app-1' is absent before another delete attempt."))
+        }
+    }
+
     @Test("pre-release list forwards related build filters and exposes relationships")
     func preReleaseListForwardsBuildFilters() async throws {
         let transport = TestHTTPTransport(responses: [

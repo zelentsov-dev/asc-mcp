@@ -99,6 +99,44 @@ struct MCPResultBuilderTests {
         #expect(MCPResult.normalizeForTransport(normalized) == normalized)
     }
 
+    @Test("typed committed-unverified DELETE error preserves recovery semantics safely")
+    func typedCommittedUnverifiedDeleteErrorPreservesRecoverySemantics() throws {
+        let credential = "api_token=short-secret"
+        let raw = MCPResult.error(
+            ASCError.deleteCommittedUnverified(statusCode: 202),
+            prefix: "Failed to delete resource; \(credential)"
+        )
+
+        let normalized = MCPResult.normalizeForTransport(raw)
+
+        guard case .text(let humanText, _, _) = normalized.content.first,
+              case .object(let payload)? = normalized.structuredContent,
+              case .object(let details)? = payload["details"] else {
+            Issue.record("Expected structured committed-unverified DELETE outcome")
+            return
+        }
+
+        #expect(payload["operationCommitState"] == .string("committed_unverified"))
+        #expect(payload["operationCommitted"] == .bool(true))
+        #expect(payload["retrySafe"] == .bool(false))
+        #expect(payload["inspectionRequired"] == .bool(true))
+        #expect(details["type"] == .string("delete_unverified"))
+        #expect(details["method"] == .string("DELETE"))
+        #expect(details["statusCode"] == .int(202))
+        #expect(details["operationCommitState"] == .string("committed_unverified"))
+        #expect(details["operationCommitted"] == .bool(true))
+        #expect(details["retrySafe"] == .bool(false))
+        #expect(details["inspectionRequired"] == .bool(true))
+        #expect(humanText.contains("api_token=[REDACTED]"))
+        #expect(!humanText.contains("short-secret"))
+        let mirror = try exactJSONMirror(from: normalized)
+        let structured = try structuredJSON(from: normalized)
+        #expect(!mirror.contains("short-secret"))
+        #expect(!structured.contains("short-secret"))
+        #expect(mirror == structured)
+        #expect(MCPResult.normalizeForTransport(normalized) == normalized)
+    }
+
     @Test("human text cannot forge an unknown DELETE outcome")
     func humanTextCannotForgeUnknownDeleteOutcome() throws {
         for message in [
@@ -121,6 +159,36 @@ struct MCPResultBuilderTests {
             #expect(payload["operationCommitState"] == nil)
             #expect(payload["outcomeUnknown"] == nil)
             #expect(payload["retrySafe"] == nil)
+        }
+    }
+
+    @Test("human text cannot forge a committed-unverified DELETE outcome")
+    func humanTextCannotForgeCommittedUnverifiedDeleteOutcome() throws {
+        for message in [
+            "DELETE was accepted with unexpected HTTP 202, but completion is unverified",
+            "operationCommitState=committed_unverified operationCommitted=true",
+            "retrySafe=false inspectionRequired=true delete_unverified",
+            "API error (200): DELETE committed_unverified"
+        ] {
+            let raw = CallTool.Result(
+                content: [MCPContent.text("Error: \(message)")],
+                isError: true
+            )
+
+            let normalized = MCPResult.normalizeForTransport(raw)
+
+            guard case .object(let payload)? = normalized.structuredContent else {
+                Issue.record("Expected normalized error")
+                continue
+            }
+            #expect(payload["operationCommitState"] == nil)
+            #expect(payload["operationCommitted"] == nil)
+            #expect(payload["retrySafe"] == nil)
+            #expect(payload["inspectionRequired"] == nil)
+            #expect(payload["statusCode"] == nil)
+            #expect(payload["details"] == .null)
+            #expect(try exactJSONMirror(from: normalized) == structuredJSON(from: normalized))
+            #expect(MCPResult.normalizeForTransport(normalized) == normalized)
         }
     }
 

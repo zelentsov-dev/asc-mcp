@@ -209,15 +209,31 @@
         "fields": [
           {
             "outputField": "success",
-            "localRole": "True after Apple's 202 or 204 no-content response."
+            "localRole": "True after Apple's documented 202 or 204 response; false for an unexpected successful status whose completion cannot be verified."
           },
           {
             "outputField": "message",
-            "localRole": "Local deletion confirmation."
+            "localRole": "Local confirmation for HTTP 204 or acceptance message for HTTP 202."
+          },
+          {
+            "outputField": "statusCode",
+            "localRole": "Exact successful HTTP status returned by Apple."
+          },
+          {
+            "outputField": "deletionState",
+            "localRole": "confirmed for HTTP 204, accepted for HTTP 202, or committed_unverified for any unexpected successful status."
+          },
+          {
+            "outputField": "processingComplete",
+            "localRole": "True only when Apple returns HTTP 204; false when asynchronous processing or completion inspection remains."
+          },
+          {
+            "outputField": "inspection",
+            "localRole": "Exact beta_testers_get recovery call when Apple accepts asynchronous processing or returns an unexpected successful status."
           }
         ]
       },
-      "note": "Exact destructive operation; Apple may return 202 or 204 without a response document."
+      "note": "Exact destructive operation; HTTP 202 is accepted for asynchronous processing and requires inspection, while HTTP 204 confirms completion."
     },
     {
       "tool": "beta_testers_get",
@@ -568,15 +584,31 @@
         "fields": [
           {
             "outputField": "success",
-            "localRole": "True after Apple's 202 or 204 no-content response."
+            "localRole": "True after Apple's documented 202 or 204 response; false for an unexpected successful status whose completion cannot be verified."
           },
           {
             "outputField": "message",
-            "localRole": "Local relationship-removal confirmation."
+            "localRole": "Local confirmation for HTTP 204 or acceptance message for HTTP 202."
+          },
+          {
+            "outputField": "statusCode",
+            "localRole": "Exact successful HTTP status returned by Apple."
+          },
+          {
+            "outputField": "deletionState",
+            "localRole": "confirmed for HTTP 204, accepted for HTTP 202, or committed_unverified for any unexpected successful status."
+          },
+          {
+            "outputField": "processingComplete",
+            "localRole": "True only when Apple returns HTTP 204; false when asynchronous processing or completion inspection remains."
+          },
+          {
+            "outputField": "inspection",
+            "localRole": "Exact beta_testers_list_apps recovery call when Apple accepts asynchronous processing or returns an unexpected successful status."
           }
         ]
       },
-      "note": "Exact relationship removal; Apple may return 202 or 204 without a response document."
+      "note": "Exact relationship removal; HTTP 202 is accepted for asynchronous processing and requires inspection, while HTTP 204 confirms completion."
     },
     {
       "tool": "beta_testers_remove_from_builds",

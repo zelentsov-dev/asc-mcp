@@ -1368,6 +1368,8 @@ private func exportComplianceMutationState(for error: Error) -> ExportCompliance
         return .commitUnknown
     }
     switch error {
+    case .deleteCommittedUnverified:
+        return .committedUnverified
     case .deleteOutcomeUnknown:
         return .commitUnknown
     case .network(_):
@@ -1553,6 +1555,8 @@ private func exportComplianceNullableBoolean(
 private func exportComplianceHTTPStatus(_ error: ASCError) -> Int? {
     switch error {
     case .api(_, let statusCode), .apiResponse(_, let statusCode):
+        return statusCode
+    case .deleteCommittedUnverified(let statusCode):
         return statusCode
     case .deleteOutcomeUnknown(let cause):
         return exportComplianceHTTPStatus(cause)

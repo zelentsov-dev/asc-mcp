@@ -81,6 +81,12 @@ enum MCPResult {
             object["outcomeUnknown"] = .bool(true)
             object["retrySafe"] = .bool(false)
         }
+        if case .deleteCommittedUnverified = ascError {
+            object["operationCommitState"] = .string("committed_unverified")
+            object["operationCommitted"] = .bool(true)
+            object["retrySafe"] = .bool(false)
+            object["inspectionRequired"] = .bool(true)
+        }
         return json(
             .object(object),
             text: "Error: \(Redactor.redact(message))",

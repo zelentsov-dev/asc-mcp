@@ -625,6 +625,30 @@ struct BetaAppWorkerContractTests {
         #expect(await transport.requestCount() == 1)
     }
 
+    @Test("submission catch preserves a committed-unverified typed outcome")
+    func submissionCatchPreservesCommittedUnverifiedOutcome() async throws {
+        let transport = BetaAppContractErrorTransport(
+            error: .deleteCommittedUnverified(statusCode: 202)
+        )
+        let worker = BetaAppWorker(httpClient: try await makeBetaAppContractClient(transport))
+
+        let result = try await worker.handleTool(CallTool.Parameters(
+            name: "beta_app_submit_for_review",
+            arguments: ["build_id": .string("build-1")]
+        ))
+
+        #expect(result.isError == true)
+        let root = try betaAppContractObject(result.structuredContent)
+        #expect(root["operationCommitState"] == .string("committed_unverified"))
+        #expect(root["operationCommitted"] == .bool(true))
+        #expect(root["retrySafe"] == .bool(false))
+        #expect(root["inspectionRequired"] == .bool(true))
+        let details = try betaAppContractObject(root["details"])
+        #expect(details["type"] == .string("delete_unverified"))
+        #expect(details["statusCode"] == .int(202))
+        #expect(await transport.requestCount() == 1)
+    }
+
     @Test("submission create marks timeout and server outcomes unknown and unsafe to retry")
     func submissionCreateMarksAmbiguousHTTPOutcomesUnknown() async throws {
         for statusCode in [408, 500, 503] {
@@ -1524,13 +1548,31 @@ struct BetaAppWorkerContractTests {
     }
 }
 
-private func makeBetaAppContractClient(_ transport: TestHTTPTransport) async throws -> HTTPClient {
+private func makeBetaAppContractClient(_ transport: any HTTPTransport) async throws -> HTTPClient {
     await HTTPClient(
         jwtService: try TestFactory.makeJWTService(),
         baseURL: "https://api.example.test",
         transport: transport,
         maxRetries: 1
     )
+}
+
+private actor BetaAppContractErrorTransport: HTTPTransport {
+    private let error: ASCError
+    private var requests = 0
+
+    init(error: ASCError) {
+        self.error = error
+    }
+
+    func data(for request: URLRequest) async throws -> (Data, HTTPURLResponse) {
+        requests += 1
+        throw error
+    }
+
+    func requestCount() -> Int {
+        requests
+    }
 }
 
 private func betaAppContractQuery(_ request: URLRequest) -> [String: String] {

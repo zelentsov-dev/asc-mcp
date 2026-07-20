@@ -64,6 +64,7 @@ enum UploadCleanupOutcome: Sendable {
     case alreadyAbsent
     case unavailable(String)
     case commitUnknown(String)
+    case committedUnverified(statusCode: Int, reason: String)
     case failed(String)
 
     var status: String {
@@ -76,6 +77,8 @@ enum UploadCleanupOutcome: Sendable {
             return "unavailable"
         case .commitUnknown:
             return "commit_unknown"
+        case .committedUnverified:
+            return "committed_unverified"
         case .failed:
             return "failed"
         }
@@ -85,13 +88,20 @@ enum UploadCleanupOutcome: Sendable {
         switch self {
         case .deleted, .alreadyAbsent:
             return true
-        case .unavailable, .commitUnknown, .failed:
+        case .unavailable, .commitUnknown, .committedUnverified, .failed:
             return false
         }
     }
 
     var outcomeUnknown: Bool {
         if case .commitUnknown = self {
+            return true
+        }
+        return false
+    }
+
+    var completionUnverified: Bool {
+        if case .committedUnverified = self {
             return true
         }
         return false
@@ -723,6 +733,12 @@ enum UploadTransactionRecovery {
                 _ = try await httpClient.delete(endpoint)
                 return .deleted
             } catch let error as ASCError {
+                if case .deleteCommittedUnverified(let statusCode) = error {
+                    return .committedUnverified(
+                        statusCode: statusCode,
+                        reason: Redactor.redact(error.localizedDescription)
+                    )
+                }
                 if case .deleteOutcomeUnknown = error {
                     return .commitUnknown(Redactor.redact(error.localizedDescription))
                 }
@@ -843,7 +859,7 @@ enum UploadTransactionRecovery {
             let manualGuidance: String
             if cleanup.reservationDeleted {
                 manualGuidance = ""
-            } else if cleanup.outcomeUnknown {
+            } else if cleanup.outcomeUnknown || cleanup.completionUnverified {
                 manualGuidance = " Inspect the exact reservation before another cleanup attempt."
             } else if let deleteTool = descriptor.deleteTool {
                 manualGuidance = " Use \(deleteTool) with \(descriptor.idArgument) '\(resource.id)' to retry cleanup."
@@ -867,6 +883,11 @@ enum UploadTransactionRecovery {
             if cleanup.outcomeUnknown {
                 value["operationCommitState"] = "unknown"
                 value["outcomeUnknown"] = true
+            }
+            if cleanup.completionUnverified {
+                value["operationCommitState"] = "committed_unverified"
+                value["operationCommitted"] = true
+                value["inspectionRequired"] = true
             }
             return (
                 value,
@@ -957,6 +978,17 @@ enum UploadTransactionRecovery {
             value["operationCommitState"] = "unknown"
             value["outcomeUnknown"] = true
             value["retrySafe"] = false
+            value["inspectTool"] = descriptor.getTool ?? descriptor.inspectionTool
+            value["inspectArguments"] = descriptor.getIDArgument.map { [$0: resourceID] }
+                ?? descriptor.inspectionArguments
+        }
+        if case .committedUnverified(let statusCode, let reason) = cleanup {
+            value["reason"] = reason
+            value["statusCode"] = statusCode
+            value["operationCommitState"] = "committed_unverified"
+            value["operationCommitted"] = true
+            value["retrySafe"] = false
+            value["inspectionRequired"] = true
             value["inspectTool"] = descriptor.getTool ?? descriptor.inspectionTool
             value["inspectArguments"] = descriptor.getIDArgument.map { [$0: resourceID] }
                 ?? descriptor.inspectionArguments
@@ -1091,6 +1123,8 @@ private extension ASCError {
             return statusCode
         case .deleteOutcomeUnknown(let cause):
             return cause.uploadRecoveryHTTPStatusCode
+        case .deleteCommittedUnverified(let statusCode):
+            return statusCode
         default:
             return nil
         }

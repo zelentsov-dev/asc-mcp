@@ -76,6 +76,71 @@ struct HTTPClientTests {
         #expect(await transport.requestCount() == 2)
     }
 
+    @Test("generic DELETE accepts exact 204 with and without a body")
+    func genericDeleteAcceptsExact204() async throws {
+        let transport = ScriptedHTTPTransport(steps: [
+            .response(statusCode: 204, headers: [:], body: ""),
+            .response(statusCode: 204, headers: [:], body: "")
+        ])
+        let client = await HTTPClient(
+            jwtService: try TestFactory.makeJWTService(),
+            baseURL: "https://api.example.test",
+            transport: transport,
+            maxRetries: 2
+        )
+
+        let unqualifiedResult = try await client.delete("/v1/resources/resource-1")
+        let relationshipResult = try await client.delete(
+            "/v1/resources/resource-1/relationships/apps",
+            body: Data(#"{"data":[]}"#.utf8)
+        )
+
+        #expect(unqualifiedResult.isEmpty)
+        #expect(relationshipResult.isEmpty)
+        #expect(await transport.requestCount() == 2)
+    }
+
+    @Test(
+        "generic DELETE treats unexpected successful status as committed but unverified",
+        arguments: [200, 201, 202, 206, 299]
+    )
+    func genericDeleteRejectsUnexpectedSuccessfulStatus(_ expectedStatusCode: Int) async throws {
+        for includesBody in [false, true] {
+            let transport = ScriptedHTTPTransport(steps: [
+                .response(statusCode: expectedStatusCode, headers: [:], body: #"{"accepted":true}"#),
+                .response(statusCode: 204, headers: [:], body: "")
+            ])
+            let client = await HTTPClient(
+                jwtService: try TestFactory.makeJWTService(),
+                baseURL: "https://api.example.test",
+                transport: transport,
+                maxRetries: 2
+            )
+
+            do {
+                if includesBody {
+                    _ = try await client.delete(
+                        "/v1/resources/resource-1/relationships/apps",
+                        body: Data(#"{"data":[]}"#.utf8)
+                    )
+                } else {
+                    _ = try await client.delete("/v1/resources/resource-1")
+                }
+                Issue.record("Expected a committed-unverified DELETE error for HTTP \(expectedStatusCode)")
+            } catch let error as ASCError {
+                guard case .deleteCommittedUnverified(let statusCode) = error else {
+                    Issue.record("Expected deleteCommittedUnverified, got \(error)")
+                    continue
+                }
+                #expect(statusCode == expectedStatusCode)
+                #expect(error.localizedDescription.contains("completion is unverified"))
+                #expect(error.localizedDescription.contains("Inspect the exact target"))
+            }
+
+            #expect(await transport.requestCount() == 1)
+        }
+    }
+
     @Test("DELETE does not retry an ambiguous network failure")
     func deleteDoesNotRetryNetworkFailure() async throws {
         let transport = ScriptedHTTPTransport(steps: [

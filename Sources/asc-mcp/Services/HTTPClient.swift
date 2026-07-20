@@ -1,6 +1,16 @@
 import Foundation
 import os
 
+struct ASCDeleteReceipt: Sendable {
+    let data: Data
+    let statusCode: Int
+}
+
+private struct HTTPResponsePayload: Sendable {
+    let data: Data
+    let statusCode: Int
+}
+
 /// HTTP client for App Store Connect API using URLSession
 public actor HTTPClient {
     private let transport: any HTTPTransport
@@ -49,38 +59,56 @@ public actor HTTPClient {
 
     /// Performs GET request to App Store Connect API
     public func get(_ endpoint: String, parameters: [String: String] = [:]) async throws -> Data {
-        return try await request(.GET, endpoint: endpoint, parameters: parameters)
+        return try await request(.GET, endpoint: endpoint, parameters: parameters).data
     }
 
     /// Performs POST request to App Store Connect API
     public func post(_ endpoint: String, body: Data? = nil) async throws -> Data {
-        return try await request(.POST, endpoint: endpoint, body: body)
+        return try await request(.POST, endpoint: endpoint, body: body).data
     }
 
     /// Performs PATCH request to App Store Connect API
     public func patch(_ endpoint: String, body: Data) async throws -> Data {
-        return try await request(.PATCH, endpoint: endpoint, body: body)
+        return try await request(.PATCH, endpoint: endpoint, body: body).data
     }
 
     /// Performs PUT request to App Store Connect API
     public func put(_ endpoint: String, body: Data) async throws -> Data {
-        return try await request(.PUT, endpoint: endpoint, body: body)
+        return try await request(.PUT, endpoint: endpoint, body: body).data
     }
 
     /// Performs DELETE request to App Store Connect API
     public func delete(_ endpoint: String) async throws -> Data {
-        return try await request(.DELETE, endpoint: endpoint)
+        let receipt = try await deleteReceipt(endpoint)
+        guard receipt.statusCode == 204 else {
+            throw ASCError.deleteCommittedUnverified(statusCode: receipt.statusCode)
+        }
+        return receipt.data
+    }
+
+    func deleteReceipt(_ endpoint: String) async throws -> ASCDeleteReceipt {
+        let response = try await request(.DELETE, endpoint: endpoint)
+        return ASCDeleteReceipt(data: response.data, statusCode: response.statusCode)
     }
 
     /// Performs DELETE request with body (for relationship endpoints)
     public func delete(_ endpoint: String, body: Data) async throws -> Data {
-        return try await request(.DELETE, endpoint: endpoint, body: body)
+        let receipt = try await deleteReceipt(endpoint, body: body)
+        guard receipt.statusCode == 204 else {
+            throw ASCError.deleteCommittedUnverified(statusCode: receipt.statusCode)
+        }
+        return receipt.data
+    }
+
+    func deleteReceipt(_ endpoint: String, body: Data) async throws -> ASCDeleteReceipt {
+        let response = try await request(.DELETE, endpoint: endpoint, body: body)
+        return ASCDeleteReceipt(data: response.data, statusCode: response.statusCode)
     }
 
     /// GET request with custom Accept header (for gzip reports like salesReports/financeReports)
     /// - Returns: Raw response data (may be gzip-compressed)
     public func getRaw(_ endpoint: String, parameters: [String: String] = [:], accept: String) async throws -> Data {
-        return try await request(.GET, endpoint: endpoint, parameters: parameters, acceptHeader: accept)
+        return try await request(.GET, endpoint: endpoint, parameters: parameters, acceptHeader: accept).data
     }
 
     /// Base method for HTTP requests with retry logic
@@ -90,7 +118,7 @@ public actor HTTPClient {
         parameters: [String: String] = [:],
         body: Data? = nil,
         acceptHeader: String = "application/json"
-    ) async throws -> Data {
+    ) async throws -> HTTPResponsePayload {
 
         let endpoint = try validatedASCAPIEndpoint(endpoint)
 
@@ -166,7 +194,7 @@ public actor HTTPClient {
             logger.debug("Response: \(httpResponse.statusCode) in \(String(format: "%.2f", duration))s")
 
             if 200...299 ~= httpResponse.statusCode {
-                return data
+                return HTTPResponsePayload(data: data, statusCode: httpResponse.statusCode)
             }
 
             let apiErrorResponse = decodeAPIErrorResponse(from: data)
@@ -389,7 +417,7 @@ extension HTTPClient {
             throw ASCError.parsing("Failed to encode request body: \(error.localizedDescription)")
         }
 
-        let responseData = try await request(.PATCH, endpoint: endpoint, body: bodyData)
+        let responseData = try await request(.PATCH, endpoint: endpoint, body: bodyData).data
 
         do {
             return try JSONDecoder().decode(responseType, from: responseData)

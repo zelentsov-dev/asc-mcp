@@ -18,7 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `app_versions_list` now supports Apple's array-valued platform and state filters, validates non-empty unique values, and preserves the complete effective query across continuation requests.
 - Phased-release creation now defaults to `INACTIVE`; creating, starting, or resuming an `ACTIVE` rollout and completing a rollout require exact resource-ID confirmation.
-- The version-based age-rating compatibility path now validates the exact version, owning app, App Info collection, and declaration identities before mutation.
+- The version-based age-rating compatibility path now validates the exact version, owning app, every strictly paginated App Info candidate, and declaration identities before mutation.
 - Version reads exclude deprecated submission data and sensitive review details from their default projection.
 
 ### Fixed
@@ -27,12 +27,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Require the exact target ID before deleting an app store version or an eligible planned phased rollout.
 - Stop automatically repeating DELETE requests after ambiguous network, timeout, or server failures while preserving safe authorization-refresh and rate-limit retries.
 - Return typed, structured unknown outcomes with `retrySafe=false` when any DELETE may already have succeeded; lifecycle deletions and upload cleanup add target-specific inspection guidance.
+- Require the documented completion status before confirming generic DELETE calls, and return `committed_unverified` with inspection guidance for any unexpected successful status.
+- Preserve Apple's HTTP 202 accepted state for beta tester and tester-app removals instead of reporting premature completion; HTTP 204 remains the confirmed terminal state.
 
 ### Compatibility
 
 - The public surface grows from 401 to 403 tools; no existing tool was removed or renamed.
 - `app_versions_delete` now requires `confirm_version_id`, and `app_versions_delete_phased_release` requires `confirm_phased_release_id`. Creating an `ACTIVE` phased release requires `confirm_version_id`; changing a phased release to `ACTIVE` or `COMPLETE` requires `confirm_phased_release_id`.
 - After an ambiguous network, timeout, or server failure, DELETE calls stop at the first uncertain outcome and return machine-readable `operationCommitState=unknown`, `outcomeUnknown=true`, and `retrySafe=false` instead of automatically repeating the mutation; safe authorization-refresh and rate-limit retries remain supported.
+- `beta_testers_delete` and `beta_testers_remove_from_app` now expose the exact successful status, deletion state, processing completion, and target-specific inspection call; callers must inspect an HTTP 202 accepted operation before attempting another removal.
 - The operation manifest maps 375 Apple operations, explicitly defers 525, and scopes out 363; all 1,263 pinned Apple 4.4.1 operations remain accounted for without overlap.
 - The optional-input pin is fully classified at 2,265 total: 839 bound, 40 internally controlled, 1,386 intentionally omitted, and 0 unclassified.
 

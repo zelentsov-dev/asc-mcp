@@ -4,10 +4,10 @@ import Testing
 
 @Suite("Internal Pagination Scope Tests")
 struct InternalPaginationScopeTests {
-    @Test("all six internal loops preserve exact continuation context")
+    @Test("all seven internal loops preserve exact continuation context")
     func acceptsExactInternalContinuations() throws {
         let fixtures = internalPaginationFixtures()
-        #expect(fixtures.count == 6)
+        #expect(fixtures.count == 7)
 
         for fixture in fixtures {
             for query in fixture.queries {
@@ -132,7 +132,7 @@ struct InternalPaginationScopeTests {
             }
         }
 
-        #expect(strictScopeCount == 56)
+        #expect(strictScopeCount == 57)
         #expect(permissiveFiles.isEmpty, "Target workers must not construct permissive scopes: \(permissiveFiles)")
     }
 }
@@ -160,6 +160,12 @@ private func internalPaginationFixtures() -> [InternalPaginationFixture] {
             path: "/v1/apps/app-1/appStoreVersions",
             wrongPath: "/v1/apps/app-2/appStoreVersions",
             queries: [["fields[appStoreVersions]": "platform,versionString,appVersionState,appStoreState,createdDate", "limit": "200"]]
+        ),
+        InternalPaginationFixture(
+            name: "app_lifecycle_age_rating_app_infos",
+            path: "/v1/apps/app-1/appInfos",
+            wrongPath: "/v1/apps/app-2/appInfos",
+            queries: [["fields[appInfos]": "state,app", "limit": "200"]]
         ),
         InternalPaginationFixture(
             name: "apps_metadata_previews",
