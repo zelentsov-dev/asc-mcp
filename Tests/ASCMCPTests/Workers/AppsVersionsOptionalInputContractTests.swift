@@ -175,7 +175,7 @@ struct AppsVersionsOptionalInputContractTests {
     func lifecycleVersionListForwardsFilters() async throws {
         let query = [
             "cursor": "page-2",
-            "include": "build,appStoreVersionSubmission,appStoreVersionPhasedRelease",
+            "include": "build,appStoreVersionPhasedRelease",
             "filter[id]": "ver-1,ver-2",
             "filter[versionString]": "3.0,3.1",
             "limit": "25"

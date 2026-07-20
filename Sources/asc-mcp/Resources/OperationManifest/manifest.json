@@ -842,7 +842,7 @@
       "id": "deferred.appInfos_territoryAgeRatings_getToManyRelationship",
       "operationId": "appInfos_territoryAgeRatings_getToManyRelationship",
       "disposition": "deferred",
-      "reason": "The `appInfos` resource-group capability is not yet exposed by asc-mcp.",
+      "reason": "The related-resource collection is exposed and returns both calculated ratings and territory details; this linkage-only endpoint would add IDs without practical rating data.",
       "owner": "asc-mcp",
       "reviewAtSpec": "4.4.1"
     },
@@ -865,14 +865,6 @@
     {
       "id": "deferred.appInfos_secondarySubcategoryTwo_getToOneRelated",
       "operationId": "appInfos_secondarySubcategoryTwo_getToOneRelated",
-      "disposition": "deferred",
-      "reason": "The `appInfos` resource-group capability is not yet exposed by asc-mcp.",
-      "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
-    },
-    {
-      "id": "deferred.appInfos_territoryAgeRatings_getToManyRelated",
-      "operationId": "appInfos_territoryAgeRatings_getToManyRelated",
       "disposition": "deferred",
       "reason": "The `appInfos` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",

@@ -20,6 +20,7 @@ struct CompletePaginationScopeTests {
         #expect(legacyScope.requiredNonEmptyParameters.isEmpty)
         #expect(completePaginationFixtures().map(\.toolName) == [
             "app_versions_list",
+            "app_versions_list_territory_age_ratings",
             "apps_list",
             "apps_list_versions",
             "apps_list_localizations",
@@ -164,7 +165,7 @@ private struct CompletePaginationFixture {
 }
 
 private func completePaginationFixtures() -> [CompletePaginationFixture] {
-    let appVersionInclude = "build,appStoreVersionSubmission,appStoreVersionPhasedRelease"
+    let appVersionInclude = "build,appStoreVersionPhasedRelease"
     let appVersionFields = "platform,versionString,appVersionState,appStoreState,createdDate"
     let localizationFields = "locale,description,whatsNew,keywords,promotionalText,supportUrl,marketingUrl,appStoreVersion"
     let attachmentFields = "fileSize,fileName,sourceFileChecksum,assetDeliveryState,appStoreReviewDetail"
@@ -196,6 +197,32 @@ private func completePaginationFixtures() -> [CompletePaginationFixture] {
                     "filter[platform]": "IOS",
                     "filter[id]": "version-1,version-2",
                     "filter[versionString]": "1.0,1.1",
+                    "limit": "73"
+                ]
+            ),
+            continuationResponse: #"{"data":[]}"#,
+            requiresVersionOwnershipRequest: false
+        ),
+        CompletePaginationFixture(
+            worker: .appLifecycle,
+            toolName: "app_versions_list_territory_age_ratings",
+            path: "/v1/appInfos/info-1/territoryAgeRatings",
+            wrongParentPath: "/v1/appInfos/info-2/territoryAgeRatings",
+            defaultVariant: CompletePaginationVariant(
+                arguments: ["app_info_id": .string("info-1")],
+                requiredQuery: [
+                    "fields[territoryAgeRatings]": "appStoreAgeRating,territory",
+                    "fields[territories]": "currency",
+                    "include": "territory",
+                    "limit": "200"
+                ]
+            ),
+            explicitVariant: CompletePaginationVariant(
+                arguments: ["app_info_id": .string("info-1"), "limit": .int(73)],
+                requiredQuery: [
+                    "fields[territoryAgeRatings]": "appStoreAgeRating,territory",
+                    "fields[territories]": "currency",
+                    "include": "territory",
                     "limit": "73"
                 ]
             ),

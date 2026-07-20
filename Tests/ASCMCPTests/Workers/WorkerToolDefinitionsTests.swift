@@ -193,18 +193,20 @@ struct WorkerToolDefinitionsTests {
         #expect(names.contains("builds_list_beta_localizations"))
     }
 
-    // MARK: - AppLifecycleWorker (15 tools)
+    // MARK: - AppLifecycleWorker (17 tools)
 
-    @Test("AppLifecycleWorker returns 15 tools with correct names")
+    @Test("AppLifecycleWorker returns 17 tools with correct names")
     func appLifecycleWorkerTools() async throws {
         let client = try await TestFactory.makeHTTPClient()
         let worker = AppLifecycleWorker(httpClient: client)
         let tools = await worker.getTools()
-        #expect(tools.count == 15)
+        #expect(tools.count == 17)
         let names = Set(tools.map(\.name))
         #expect(names.contains("app_versions_create"))
         #expect(names.contains("app_versions_list"))
         #expect(names.contains("app_versions_get"))
+        #expect(names.contains("app_versions_get_age_rating_declaration"))
+        #expect(names.contains("app_versions_list_territory_age_ratings"))
         #expect(names.contains("app_versions_update"))
         #expect(names.contains("app_versions_attach_build"))
         #expect(names.contains("app_versions_submit_for_review"))

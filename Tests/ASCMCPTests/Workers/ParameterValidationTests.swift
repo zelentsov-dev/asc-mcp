@@ -164,6 +164,24 @@ struct ParameterValidationTests {
         #expect(result.isError == true)
     }
 
+    @Test("app_versions_get_age_rating_declaration without app_info_id returns isError")
+    func appLifecycleGetAgeRatingDeclarationMissingParams() async throws {
+        let client = try await TestFactory.makeHTTPClient()
+        let worker = AppLifecycleWorker(httpClient: client)
+        let params = CallTool.Parameters(name: "app_versions_get_age_rating_declaration", arguments: nil)
+        let result = try await worker.handleTool(params)
+        #expect(result.isError == true)
+    }
+
+    @Test("app_versions_list_territory_age_ratings without app_info_id returns isError")
+    func appLifecycleListTerritoryAgeRatingsMissingParams() async throws {
+        let client = try await TestFactory.makeHTTPClient()
+        let worker = AppLifecycleWorker(httpClient: client)
+        let params = CallTool.Parameters(name: "app_versions_list_territory_age_ratings", arguments: nil)
+        let result = try await worker.handleTool(params)
+        #expect(result.isError == true)
+    }
+
     @Test("app_versions_attach_build without required params returns isError")
     func appLifecycleAttachBuildMissingParams() async throws {
         let client = try await TestFactory.makeHTTPClient()

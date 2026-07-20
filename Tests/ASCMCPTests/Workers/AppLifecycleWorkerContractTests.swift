@@ -79,8 +79,9 @@ struct AppLifecycleWorkerContractTests {
             .queryItems?
             .first(where: { $0.name == "include" })?
             .value
-        #expect(include == "build,appStoreVersionSubmission,appStoreVersionPhasedRelease,appStoreReviewDetail")
+        #expect(include == "build,appStoreVersionPhasedRelease")
         #expect(include?.contains("ageRatingDeclaration") == false)
+        #expect(include?.contains("appStoreReviewDetail") == false)
         let payload = try contractObject(result.structuredContent)
         let includedValue = try #require(payload["included"])
         guard case .array(let included) = includedValue else {
@@ -167,6 +168,7 @@ struct AppLifecycleWorkerContractTests {
     func reviewDetailsCreateAfterNotFound() async throws {
         let transport = TestHTTPTransport(responses: [
             .init(statusCode: 404, body: #"{"errors":[{"status":"404","detail":"No review detail"}]}"#),
+            .init(statusCode: 200, body: #"{"data":{"type":"appStoreVersions","id":"ver-2","attributes":{"versionString":"4.0"}}}"#),
             .init(statusCode: 201, body: #"{"data":{"type":"appStoreReviewDetails","id":"review-2","attributes":{"contactEmail":"review@example.com"}}}"#)
         ])
         let worker = try await makeContractWorker(transport: transport)
@@ -182,9 +184,10 @@ struct AppLifecycleWorkerContractTests {
 
         #expect(result.isError != true)
         let requests = await transport.recordedRequests()
-        #expect(requests.map { $0.httpMethod ?? "" } == ["GET", "POST"])
+        #expect(requests.map { $0.httpMethod ?? "" } == ["GET", "GET", "POST"])
         #expect(requests[0].url?.path == "/v1/appStoreVersions/ver-2/appStoreReviewDetail")
-        #expect(requests[1].url?.path == "/v1/appStoreReviewDetails")
+        #expect(requests[1].url?.path == "/v1/appStoreVersions/ver-2")
+        #expect(requests[2].url?.path == "/v1/appStoreReviewDetails")
         let body = try #require(await transport.recordedBodyStrings().last)
         let bodyObject = try #require(JSONSerialization.jsonObject(with: Data(body.utf8)) as? [String: Any])
         let data = try #require(bodyObject["data"] as? [String: Any])
@@ -218,6 +221,28 @@ struct AppLifecycleWorkerContractTests {
         #expect(result.isError == true)
         #expect(await transport.requestCount() == 1)
         #expect(await transport.recordedRequests().first?.httpMethod == "GET")
+    }
+
+    @Test("review detail not found never creates for a missing parent version")
+    func reviewDetailsNotFoundConfirmsParentVersion() async throws {
+        let transport = TestHTTPTransport(responses: [
+            .init(statusCode: 404, body: #"{"errors":[{"status":"404","detail":"No review detail"}]}"#),
+            .init(statusCode: 404, body: #"{"errors":[{"status":"404","detail":"No version"}]}"#)
+        ])
+        let worker = try await makeContractWorker(transport: transport)
+
+        let result = try await worker.handleTool(CallTool.Parameters(
+            name: "app_versions_set_review_details",
+            arguments: [
+                "version_id": .string("missing-version"),
+                "notes": .string("Do not create")
+            ]
+        ))
+
+        #expect(result.isError == true)
+        let requests = await transport.recordedRequests()
+        #expect(requests.map { $0.httpMethod ?? "" } == ["GET", "GET"])
+        #expect(requests.allSatisfy { $0.httpMethod == "GET" })
     }
 
     @Test("legacy review attachment parameter fails before network mutation")
@@ -453,6 +478,88 @@ struct AppLifecycleWorkerContractTests {
         #expect(result.isError == true)
         #expect(await transport.requestCount() == 2)
         #expect(await transport.recordedRequests().allSatisfy { $0.httpMethod == "GET" })
+    }
+
+    @Test("age rating declaration read uses the App Info relationship")
+    func ageRatingDeclarationRead() async throws {
+        let transport = TestHTTPTransport(responses: [
+            .init(statusCode: 200, body: #"{"data":{"type":"ageRatingDeclarations","id":"age-1","attributes":{"socialMedia":true,"ageRatingOverrideV2":"THIRTEEN_PLUS"}},"links":{"self":"https://api.example.test/v1/ageRatingDeclarations/age-1"}}"#)
+        ])
+        let worker = try await makeContractWorker(transport: transport)
+
+        let result = try await worker.handleTool(.init(
+            name: "app_versions_get_age_rating_declaration",
+            arguments: ["app_info_id": .string("info-1")]
+        ))
+
+        #expect(result.isError != true)
+        let request = try #require(await transport.recordedRequests().first)
+        #expect(request.url?.path == "/v1/appInfos/info-1/ageRatingDeclaration")
+        #expect(request.url?.query == nil)
+        let payload = try contractObject(result.structuredContent)
+        #expect(payload["app_info_id"] == .string("info-1"))
+        #expect(payload["age_rating_declaration"]?.objectValue?["id"] == .string("age-1"))
+    }
+
+    @Test("territory age ratings return calculated ratings territories and paging metadata")
+    func territoryAgeRatingsRead() async throws {
+        let transport = TestHTTPTransport(responses: [
+            .init(statusCode: 200, body: """
+            {
+              "data": [
+                {"type":"territoryAgeRatings","id":"rating-USA","attributes":{"appStoreAgeRating":"THIRTEEN_PLUS"},"relationships":{"territory":{"data":{"type":"territories","id":"USA"}}}},
+                {"type":"territoryAgeRatings","id":"rating-KOR","attributes":{"appStoreAgeRating":"FIFTEEN_PLUS"},"relationships":{"territory":{"data":{"type":"territories","id":"KOR"}}}}
+              ],
+              "included": [
+                {"type":"territories","id":"USA","attributes":{"currency":"USD"}},
+                {"type":"territories","id":"KOR","attributes":{"currency":"KRW"}}
+              ],
+              "links": {"self":"https://api.example.test/v1/appInfos/info-1/territoryAgeRatings","next":"https://api.example.test/v1/appInfos/info-1/territoryAgeRatings?cursor=next"},
+              "meta": {"paging":{"total":175,"limit":2,"nextCursor":"next"}}
+            }
+            """)
+        ])
+        let worker = try await makeContractWorker(transport: transport)
+
+        let result = try await worker.handleTool(.init(
+            name: "app_versions_list_territory_age_ratings",
+            arguments: ["app_info_id": .string("info-1"), "limit": .int(2)]
+        ))
+
+        #expect(result.isError != true)
+        let request = try #require(await transport.recordedRequests().first)
+        #expect(request.url?.path == "/v1/appInfos/info-1/territoryAgeRatings")
+        let query = Dictionary(uniqueKeysWithValues: (URLComponents(
+            url: try #require(request.url),
+            resolvingAgainstBaseURL: false
+        )?.queryItems ?? []).map { ($0.name, $0.value ?? "") })
+        #expect(query["fields[territoryAgeRatings]"] == "appStoreAgeRating,territory")
+        #expect(query["fields[territories]"] == "currency")
+        #expect(query["include"] == "territory")
+        #expect(query["limit"] == "2")
+        let payload = try contractObject(result.structuredContent)
+        #expect(payload["count"] == .int(2))
+        #expect(payload["total"] == .int(175))
+        #expect(payload["territory_age_ratings"]?.arrayValue?.count == 2)
+        #expect(payload["included_territories"]?.arrayValue?.count == 2)
+        #expect(payload["meta"]?.objectValue?["paging"]?.objectValue?["nextCursor"] == .string("next"))
+    }
+
+    @Test("age rating developer information URL rejects non-absolute values")
+    func ageRatingRejectsRelativeDeveloperURL() async throws {
+        let transport = TestHTTPTransport(responses: [])
+        let worker = try await makeContractWorker(transport: transport)
+
+        let result = try await worker.handleTool(.init(
+            name: "app_versions_update_age_rating",
+            arguments: [
+                "app_info_id": .string("info-1"),
+                "developer_age_rating_info_url": .string("/age-rating")
+            ]
+        ))
+
+        #expect(result.isError == true)
+        #expect(await transport.requestCount() == 0)
     }
 }
 

@@ -22,7 +22,7 @@ struct AppLifecycleReliabilityTests {
             operationID: "apps_appStoreVersions_getToManyRelated",
             appleName: "include"
         ) == .array([
-            .string("build"), .string("appStoreVersionSubmission"), .string("appStoreVersionPhasedRelease")
+            .string("build"), .string("appStoreVersionPhasedRelease")
         ]))
         #expect(try lifecycleReliabilityFixedQuery(
             manifest,
@@ -30,8 +30,7 @@ struct AppLifecycleReliabilityTests {
             operationID: "appStoreVersions_getInstance",
             appleName: "include"
         ) == .array([
-            .string("build"), .string("appStoreVersionSubmission"),
-            .string("appStoreVersionPhasedRelease"), .string("appStoreReviewDetail")
+            .string("build"), .string("appStoreVersionPhasedRelease")
         ]))
         #expect(try lifecycleReliabilityFixedQuery(
             manifest,
@@ -55,6 +54,8 @@ struct AppLifecycleReliabilityTests {
         #expect(list["states"] != nil)
         #expect(list["states"]?.objectValue?["deprecated"]?.boolValue == true)
         #expect(list["app_version_states"] != nil)
+        #expect(list["platform"]?.objectValue?["deprecated"]?.boolValue == true)
+        #expect(list["platforms"]?.objectValue?["type"]?.stringValue == "array")
         #expect(list["limit"]?.objectValue?["minimum"]?.intValue == 1)
         #expect(list["limit"]?.objectValue?["maximum"]?.intValue == 200)
         #expect(list["limit"]?.objectValue?["default"]?.intValue == 25)
@@ -85,7 +86,7 @@ struct AppLifecycleReliabilityTests {
         #expect(result.isError != true)
         let request = try #require(await transport.recordedRequests().first)
         let query = URLComponents(url: try #require(request.url), resolvingAgainstBaseURL: false)?.queryItems ?? []
-        #expect(query.first(where: { $0.name == "include" })?.value == "build,appStoreVersionSubmission,appStoreVersionPhasedRelease")
+        #expect(query.first(where: { $0.name == "include" })?.value == "build,appStoreVersionPhasedRelease")
         #expect(query.first(where: { $0.name == "filter[appStoreState]" })?.value == "READY_FOR_SALE")
         #expect(query.first(where: { $0.name == "filter[appVersionState]" })?.value == "READY_FOR_DISTRIBUTION")
         #expect(query.first(where: { $0.name == "limit" })?.value == "25")
@@ -119,7 +120,7 @@ struct AppLifecycleReliabilityTests {
     func updateVersionPreservesTriStateAndStateOutput() async throws {
         let transport = TestHTTPTransport(responses: [
             .init(statusCode: 200, body: """
-            {"data":{"type":"appStoreVersions","id":"ver-1","attributes":{"versionString":"2.0","appVersionState":"READY_FOR_DISTRIBUTION","appStoreState":"READY_FOR_SALE","reviewType":"NOTARIZATION","downloadable":false}}}
+            {"data":{"type":"appStoreVersions","id":"ver-1","attributes":{"platform":"IOS","versionString":"2.0","appVersionState":"READY_FOR_DISTRIBUTION","appStoreState":"READY_FOR_SALE","copyright":"2026 Example","earliestReleaseDate":"2026-08-01T00:00:00Z","reviewType":"NOTARIZATION","downloadable":false}}}
             """)
         ])
         let worker = try await makeLifecycleReliabilityWorker(transport)
@@ -142,11 +143,14 @@ struct AppLifecycleReliabilityTests {
         #expect(attributes["downloadable"] as? Bool == false)
         let payload = try lifecycleReliabilityObject(result)
         let version = try #require(payload["version"] as? [String: Any])
+        #expect(version["platform"] as? String == "IOS")
         #expect(version["state"] as? String == "READY_FOR_DISTRIBUTION")
         #expect(version["appVersionState"] as? String == "READY_FOR_DISTRIBUTION")
         #expect(version["appStoreState"] as? String == "READY_FOR_SALE")
         #expect(version["app_version_state"] as? String == "READY_FOR_DISTRIBUTION")
         #expect(version["app_store_state"] as? String == "READY_FOR_SALE")
+        #expect(version["copyright"] as? String == "2026 Example")
+        #expect(version["earliest_release_date"] as? String == "2026-08-01T00:00:00Z")
     }
 
     @Test("kids age band preserves explicit null")
@@ -176,7 +180,10 @@ struct AppLifecycleReliabilityTests {
 
         let result = try await worker.handleTool(.init(
             name: "app_versions_delete_phased_release",
-            arguments: ["phased_release_id": .string("phase-1")]
+            arguments: [
+                "phased_release_id": .string("phase-1"),
+                "confirm_phased_release_id": .string("phase-1")
+            ]
         ))
 
         #expect(result.isError != true)

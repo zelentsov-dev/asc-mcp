@@ -236,6 +236,11 @@
           "sourceKind": "requestBody",
           "operationId": "appStoreVersionPhasedReleases_createInstance",
           "jsonPointer": "/data/attributes/phasedReleaseState"
+        },
+        {
+          "toolField": "confirm_version_id",
+          "sourceKind": "local",
+          "localRole": "Exact version ID confirmation required before creating an ACTIVE phased release."
         }
       ],
       "response": {
@@ -248,7 +253,8 @@
           }
         ],
         "fields": []
-      }
+      },
+      "note": "Runtime validation restricts creation to INACTIVE, ACTIVE, or PAUSED. ACTIVE requires exact version-ID confirmation before distribution begins."
     },
     {
       "tool": "app_versions_delete",
@@ -303,6 +309,11 @@
           "operationId": "appStoreVersionPhasedReleases_deleteInstance",
           "location": "path",
           "appleName": "id"
+        },
+        {
+          "toolField": "confirm_phased_release_id",
+          "sourceKind": "local",
+          "localRole": "Exact phased release ID confirmation required before canceling Apple's eligible planned rollout."
         }
       ],
       "response": {
@@ -312,7 +323,7 @@
         ],
         "fields": []
       },
-      "note": "Apple returns 204 without a document; the handler returns the deleted phased release id."
+      "note": "Apple permits deletion only for an eligible planned rollout that has not started and returns 204 without a document. The handler requires exact-ID confirmation and returns the deleted phased release id."
     },
     {
       "tool": "app_versions_get",
@@ -336,7 +347,7 @@
               "sourceKind": "fixed",
               "location": "query",
               "appleName": "include",
-              "fixedValue": ["build", "appStoreVersionSubmission", "appStoreVersionPhasedRelease", "appStoreReviewDetail"]
+              "fixedValue": ["build", "appStoreVersionPhasedRelease"]
             }
           ]
         }
@@ -361,7 +372,47 @@
         ],
         "fields": []
       },
-      "note": "The handler uses only relationships supported by the Apple 4.4.1 appStoreVersions include parameter."
+      "note": "The default detail projection includes build and phased-release data. Deprecated submission data and review-detail credentials are intentionally excluded."
+    },
+    {
+      "tool": "app_versions_get_age_rating_declaration",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "appInfos_ageRatingDeclaration_getToOneRelated",
+          "method": "get",
+          "path": "/v1/appInfos/{id}/ageRatingDeclaration",
+          "role": "primary"
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "app_info_id",
+          "sourceKind": "parameter",
+          "operationId": "appInfos_ageRatingDeclaration_getToOneRelated",
+          "location": "path",
+          "appleName": "id"
+        }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          {
+            "operationId": "appInfos_ageRatingDeclaration_getToOneRelated",
+            "statusCode": "200",
+            "mediaType": "application/json"
+          }
+        ],
+        "fields": [
+          { "outputField": "success", "localRole": "successfulRead" },
+          { "outputField": "app_info_id", "localRole": "Echo the selected App Info ID." },
+          { "outputField": "age_rating_declaration", "operationId": "appInfos_ageRatingDeclaration_getToOneRelated", "jsonPointer": "/data" }
+        ]
+      },
+      "note": "Age rating declarations are owned by App Info, not App Store version resources. The complete questionnaire is returned for review-readiness inspection."
     },
     {
       "tool": "app_versions_get_phased_release",
@@ -420,7 +471,7 @@
               "sourceKind": "fixed",
               "location": "query",
               "appleName": "include",
-              "fixedValue": ["build", "appStoreVersionSubmission", "appStoreVersionPhasedRelease"]
+              "fixedValue": ["build", "appStoreVersionPhasedRelease"]
             }
           ]
         }
@@ -469,6 +520,13 @@
           "appleName": "filter[platform]"
         },
         {
+          "toolField": "platforms",
+          "sourceKind": "parameter",
+          "operationId": "apps_appStoreVersions_getToManyRelated",
+          "location": "query",
+          "appleName": "filter[platform]"
+        },
+        {
           "toolField": "limit",
           "sourceKind": "parameter",
           "operationId": "apps_appStoreVersions_getToManyRelated",
@@ -490,9 +548,95 @@
             "mediaType": "application/json"
           }
         ],
-        "fields": []
+        "fields": [
+          { "outputField": "success", "localRole": "successfulRead" },
+          { "outputField": "app_id", "localRole": "Echo the selected App ID." },
+          { "outputField": "versions", "operationId": "apps_appStoreVersions_getToManyRelated", "jsonPointer": "/data" },
+          { "outputField": "included", "operationId": "apps_appStoreVersions_getToManyRelated", "jsonPointer": "/included" },
+          { "outputField": "next_url", "operationId": "apps_appStoreVersions_getToManyRelated", "jsonPointer": "/links/next" },
+          { "outputField": "meta", "operationId": "apps_appStoreVersions_getToManyRelated", "jsonPointer": "/meta" },
+          { "outputField": "count", "localRole": "Count the returned App Store version resources." },
+          { "outputField": "total", "operationId": "apps_appStoreVersions_getToManyRelated", "jsonPointer": "/meta/paging/total" }
+        ]
       },
-      "note": "states preserves deprecated filter[appStoreState] compatibility; app_version_states exposes current filter[appVersionState]. Pagination preserves all supplied filters, page size, and the fixed included relationships."
+      "note": "states preserves deprecated filter[appStoreState] compatibility; app_version_states exposes current filter[appVersionState]. platforms follows Apple's array contract while platform remains a deprecated scalar alias. Pagination preserves all supplied filters, page size, and fixed non-deprecated included relationships; output preserves count and Apple paging metadata."
+    },
+    {
+      "tool": "app_versions_list_territory_age_ratings",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "appInfos_territoryAgeRatings_getToManyRelated",
+          "method": "get",
+          "path": "/v1/appInfos/{id}/territoryAgeRatings",
+          "role": "primary",
+          "inputs": [
+            {
+              "sourceKind": "fixed",
+              "location": "query",
+              "appleName": "fields[territoryAgeRatings]",
+              "fixedValue": ["appStoreAgeRating", "territory"]
+            },
+            {
+              "sourceKind": "fixed",
+              "location": "query",
+              "appleName": "fields[territories]",
+              "fixedValue": ["currency"]
+            },
+            {
+              "sourceKind": "fixed",
+              "location": "query",
+              "appleName": "include",
+              "fixedValue": ["territory"]
+            }
+          ]
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "app_info_id",
+          "sourceKind": "parameter",
+          "operationId": "appInfos_territoryAgeRatings_getToManyRelated",
+          "location": "path",
+          "appleName": "id"
+        },
+        {
+          "toolField": "limit",
+          "sourceKind": "parameter",
+          "operationId": "appInfos_territoryAgeRatings_getToManyRelated",
+          "location": "query",
+          "appleName": "limit"
+        },
+        {
+          "toolField": "next_url",
+          "sourceKind": "local",
+          "localRole": "Strict Apple continuation URL for this exact collection. The caller must repeat every originating list control, including the effective/default limit, filters, sort, include, fields, and nested limits when supported; the exact query and a non-empty cursor are validated before sending the continuation request."
+        }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          {
+            "operationId": "appInfos_territoryAgeRatings_getToManyRelated",
+            "statusCode": "200",
+            "mediaType": "application/json"
+          }
+        ],
+        "fields": [
+          { "outputField": "success", "localRole": "successfulRead" },
+          { "outputField": "app_info_id", "localRole": "Echo the selected App Info ID." },
+          { "outputField": "territory_age_ratings", "operationId": "appInfos_territoryAgeRatings_getToManyRelated", "jsonPointer": "/data" },
+          { "outputField": "included_territories", "operationId": "appInfos_territoryAgeRatings_getToManyRelated", "jsonPointer": "/included" },
+          { "outputField": "next_url", "operationId": "appInfos_territoryAgeRatings_getToManyRelated", "jsonPointer": "/links/next" },
+          { "outputField": "meta", "operationId": "appInfos_territoryAgeRatings_getToManyRelated", "jsonPointer": "/meta" },
+          { "outputField": "count", "localRole": "Count the returned territory age rating resources." },
+          { "outputField": "total", "operationId": "appInfos_territoryAgeRatings_getToManyRelated", "jsonPointer": "/meta/paging/total" }
+        ]
+      },
+      "note": "Returns Apple's calculated rating per territory with included territory currency data. Rating values remain future-compatible strings, including ZERO_ZERO introduced for Vietnam."
     },
     {
       "tool": "app_versions_release",
@@ -589,6 +733,27 @@
           ]
         },
         {
+          "operationId": "appStoreVersions_getInstance",
+          "method": "get",
+          "path": "/v1/appStoreVersions/{id}",
+          "role": "conditional",
+          "condition": "Used only after a 404 from the related review-detail lookup to prove the parent version exists before creating a child resource.",
+          "optionalParameterClassifications": [
+            { "location": "query", "appleName": "include", "disposition": "intentionallyOmitted", "reason": "The parent-existence check needs only a fixed version field and does not expand relationships.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[appStoreVersionExperiments]", "disposition": "intentionallyOmitted", "reason": "Experiments are not included by the parent-existence check.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[appStoreVersionExperimentsV2]", "disposition": "intentionallyOmitted", "reason": "V2 experiments are not included by the parent-existence check.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[appStoreVersionLocalizations]", "disposition": "intentionallyOmitted", "reason": "Localizations are not included by the parent-existence check.", "reviewAtSpec": "4.4.1" }
+          ],
+          "inputs": [
+            {
+              "sourceKind": "fixed",
+              "location": "query",
+              "appleName": "fields[appStoreVersions]",
+              "fixedValue": ["versionString"]
+            }
+          ]
+        },
+        {
           "operationId": "appStoreReviewDetails_createInstance",
           "method": "post",
           "path": "/v1/appStoreReviewDetails",
@@ -644,6 +809,13 @@
           "toolField": "version_id",
           "sourceKind": "parameter",
           "operationId": "appStoreVersions_appStoreReviewDetail_getToOneRelated",
+          "location": "path",
+          "appleName": "id"
+        },
+        {
+          "toolField": "version_id",
+          "sourceKind": "parameter",
+          "operationId": "appStoreVersions_getInstance",
           "location": "path",
           "appleName": "id"
         },
@@ -761,11 +933,12 @@
         "sources": [
           { "operationId": "appStoreReviewDetails_createInstance", "statusCode": "201", "mediaType": "application/json" },
           { "operationId": "appStoreReviewDetails_updateInstance", "statusCode": "200", "mediaType": "application/json" },
-          { "operationId": "appStoreVersions_appStoreReviewDetail_getToOneRelated", "statusCode": "200", "mediaType": "application/json" }
+          { "operationId": "appStoreVersions_appStoreReviewDetail_getToOneRelated", "statusCode": "200", "mediaType": "application/json" },
+          { "operationId": "appStoreVersions_getInstance", "statusCode": "200", "mediaType": "application/json" }
         ],
         "fields": []
       },
-      "note": "The handler uses the dedicated related-resource GET and never emits attachmentFileId, which is absent from Apple 4.4.1. Every nullable attribute preserves omitted versus explicit MCP null semantics in both create and update payloads."
+      "note": "The handler uses the dedicated related-resource GET, confirms parent existence after a 404 before creating, and never emits attachmentFileId, which is absent from Apple 4.4.1. Every nullable attribute preserves omitted versus explicit MCP null semantics in both create and update payloads."
     },
     {
       "tool": "app_versions_submit_for_review",
@@ -1392,6 +1565,11 @@
           "sourceKind": "requestBody",
           "operationId": "appStoreVersionPhasedReleases_updateInstance",
           "jsonPointer": "/data/attributes/phasedReleaseState"
+        },
+        {
+          "toolField": "confirm_phased_release_id",
+          "sourceKind": "local",
+          "localRole": "Exact phased release ID confirmation required when COMPLETE immediately releases the version to all users."
         }
       ],
       "response": {
@@ -1404,7 +1582,8 @@
           }
         ],
         "fields": []
-      }
+      },
+      "note": "Runtime validation restricts updates to ACTIVE, PAUSED, or COMPLETE. COMPLETE requires exact phased-release-ID confirmation."
     }
   ],
   "implementationAliases": []

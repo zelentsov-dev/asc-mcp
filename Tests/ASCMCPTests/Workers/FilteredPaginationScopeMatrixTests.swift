@@ -165,12 +165,12 @@ struct FilteredPaginationScopeMatrixTests {
         }
     }
 
-    @Test("all 49 public manifest fields publish the strict continuation contract")
+    @Test("all 50 public manifest fields publish the strict continuation contract")
     func manifestDescribesStrictContinuationContract() throws {
         let manifest = try ASCOperationManifestBundle.loadBundled()
         let toolNames = filteredPaginationToolNames + pathOnlyManifestPaginationToolNames + completeManifestPaginationToolNames
-        #expect(toolNames.count == 49)
-        #expect(Set(toolNames).count == 49)
+        #expect(toolNames.count == 50)
+        #expect(Set(toolNames).count == 50)
 
         for toolName in toolNames {
             let mapping = try #require(manifest.mapping(for: toolName))
@@ -578,6 +578,7 @@ private let pathOnlyManifestPaginationToolNames = [
 
 private let completeManifestPaginationToolNames = [
     "app_versions_list",
+    "app_versions_list_territory_age_ratings",
     "apps_list",
     "apps_list_localizations",
     "apps_list_versions",
