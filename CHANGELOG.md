@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.3.0] - 2026-07-20
+
+### Changed
+
+- Hardened all 10 Beta App tools against App Store Connect API 4.4.1 with fixed sparse-field projections, deterministic page scopes, effective limits, resource links, paging totals, and Build relationship lineage.
+- `beta_app_list_submissions` now accepts one or multiple Build IDs and review states while preserving the existing scalar call shape; submission reads include the matching Build projection when Apple provides it.
+- Beta review-detail updates now preserve omission, explicit values, and explicit `null` independently for every writable field.
+
+### Fixed
+
+- Reject malformed Beta App localization and review-detail attributes, empty updates, invalid limits, and unsupported review states before network access.
+- Prevent continuation URLs from dropping or changing Build filters, fixed includes, sparse fields, or the effective page limit.
+- Redact a returned demo-account password only when Apple actually supplied one; an absent password remains absent instead of being invented in the MCP result.
+- Preserve an unambiguous submission-to-Build ID from Apple relationship data, an included Build, the create request, or a single Build filter, while leaving ambiguous linkage explicitly null.
+
+### Compatibility
+
+- No public MCP tool was added, removed, or renamed; the server still exposes 390 tools.
+- Existing scalar `build_id` and `review_state` calls remain valid alongside the new array form.
+- Localization fields cannot be cleared after they are set according to Apple's contract, so explicit `null` is rejected locally for those fields; nullable review-detail fields support explicit clearing.
+- The strict contract pin records 2,154 optional Apple inputs: 715 bound, 6 internally controlled, 956 intentionally omitted, and 477 still queued for domain review.
+
 ## [3.2.0] - 2026-07-20
 
 ### Added
