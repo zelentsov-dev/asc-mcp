@@ -82,7 +82,10 @@ enum ASCNonIdempotentWriteRecovery {
             return .outcomeUnknown
         }
         switch ascError {
-        case .api(_, let statusCode), .apiResponse(_, let statusCode)
+        case .api(_, let statusCode)
+            where (400...499).contains(statusCode) && statusCode != 408:
+            return .rejected
+        case .apiResponse(_, let statusCode)
             where (400...499).contains(statusCode) && statusCode != 408:
             return .rejected
         default:

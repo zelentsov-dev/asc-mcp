@@ -169,7 +169,7 @@ extension SubscriptionsWorker {
                 "success": true,
                 "versions": response.data.map(formatSubscriptionVersion),
                 "count": response.data.count,
-                "total": response.meta?.paging?.total.jsonSafe
+                "total": (response.meta?.paging?.total).jsonSafe
             ]
             if let nextURL = response.links.next {
                 result["next_url"] = nextURL
@@ -232,7 +232,7 @@ extension SubscriptionsWorker {
                 "success": true,
                 "localizations": response.data.map(formatSubscriptionVersionLocalization),
                 "count": response.data.count,
-                "total": response.meta?.paging?.total.jsonSafe
+                "total": (response.meta?.paging?.total).jsonSafe
             ]
             if let nextURL = response.links.next {
                 result["next_url"] = nextURL
@@ -581,7 +581,7 @@ extension SubscriptionsWorker {
                 "success": true,
                 "images": response.data.map(formatSubscriptionVersionImage),
                 "count": response.data.count,
-                "total": response.meta?.paging?.total.jsonSafe
+                "total": (response.meta?.paging?.total).jsonSafe
             ]
             if let nextURL = response.links.next {
                 result["next_url"] = nextURL
@@ -944,7 +944,7 @@ extension SubscriptionsWorker {
                 "success": true,
                 "versions": response.data.map(formatSubscriptionGroupVersion),
                 "count": response.data.count,
-                "total": response.meta?.paging?.total.jsonSafe
+                "total": (response.meta?.paging?.total).jsonSafe
             ]
             if let nextURL = response.links.next {
                 result["next_url"] = nextURL
@@ -1007,7 +1007,7 @@ extension SubscriptionsWorker {
                 "success": true,
                 "localizations": response.data.map(formatSubscriptionGroupVersionLocalization),
                 "count": response.data.count,
-                "total": response.meta?.paging?.total.jsonSafe
+                "total": (response.meta?.paging?.total).jsonSafe
             ]
             if let nextURL = response.links.next {
                 result["next_url"] = nextURL
@@ -1696,10 +1696,10 @@ extension SubscriptionsWorker {
         var result: [String: Any] = [
             "id": version.id,
             "type": version.type,
-            "version": version.attributes?.version.jsonSafe,
-            "state": version.attributes?.state.jsonSafe,
-            "subscription_id": version.relationships?.subscription?.data?.id.jsonSafe,
-            "image_id": version.relationships?.image?.data?.id.jsonSafe,
+            "version": (version.attributes?.version).jsonSafe,
+            "state": (version.attributes?.state).jsonSafe,
+            "subscription_id": (version.relationships?.subscription?.data?.id).jsonSafe,
+            "image_id": (version.relationships?.image?.data?.id).jsonSafe,
             "image_ids": imageIDs.jsonSafe,
             "localization_ids": localizationIDs.jsonSafe
         ]
@@ -1718,10 +1718,10 @@ extension SubscriptionsWorker {
         return [
             "id": localization.id,
             "type": localization.type,
-            "locale": localization.attributes?.locale.jsonSafe,
-            "name": localization.attributes?.name.jsonSafe,
-            "description": localization.attributes?.description.jsonSafe,
-            "version_id": localization.relationships?.version?.data?.id.jsonSafe
+            "locale": (localization.attributes?.locale).jsonSafe,
+            "name": (localization.attributes?.name).jsonSafe,
+            "description": (localization.attributes?.description).jsonSafe,
+            "version_id": (localization.relationships?.version?.data?.id).jsonSafe
         ]
     }
 
@@ -1729,9 +1729,9 @@ extension SubscriptionsWorker {
         var result: [String: Any] = [
             "id": image.id,
             "type": image.type,
-            "file_name": image.attributes?.fileName.jsonSafe,
-            "file_size": image.attributes?.fileSize.jsonSafe,
-            "delivery_state": image.attributes?.assetDeliveryState?.state.jsonSafe
+            "file_name": (image.attributes?.fileName).jsonSafe,
+            "file_size": (image.attributes?.fileSize).jsonSafe,
+            "delivery_state": (image.attributes?.assetDeliveryState?.state).jsonSafe
         ]
         if let asset = image.attributes?.imageAsset {
             result["image_asset"] = [
@@ -1758,9 +1758,9 @@ extension SubscriptionsWorker {
         var result: [String: Any] = [
             "id": version.id,
             "type": version.type,
-            "version": version.attributes?.version.jsonSafe,
-            "state": version.attributes?.state.jsonSafe,
-            "group_id": version.relationships?.subscriptionGroup?.data?.id.jsonSafe,
+            "version": (version.attributes?.version).jsonSafe,
+            "state": (version.attributes?.state).jsonSafe,
+            "group_id": (version.relationships?.subscriptionGroup?.data?.id).jsonSafe,
             "localization_ids": localizationIDs.jsonSafe
         ]
         if let localizations = version.relationships?.localizations {
@@ -1783,7 +1783,7 @@ extension SubscriptionsWorker {
             "ids": ids.jsonSafe,
             "count": count.jsonSafe,
             "total": total.jsonSafe,
-            "limit": relationship.meta?.paging?.limit.jsonSafe,
+            "limit": (relationship.meta?.paging?.limit).jsonSafe,
             "next_cursor": nextCursor.jsonSafe,
             "truncated": truncated.jsonSafe,
             "completeness_known": count != nil && (total != nil || nextCursor != nil)
@@ -1796,10 +1796,10 @@ extension SubscriptionsWorker {
         [
             "id": localization.id,
             "type": localization.type,
-            "locale": localization.attributes?.locale.jsonSafe,
-            "name": localization.attributes?.name.jsonSafe,
-            "custom_app_name": localization.attributes?.customAppName.jsonSafe,
-            "version_id": localization.relationships?.version?.data?.id.jsonSafe
+            "locale": (localization.attributes?.locale).jsonSafe,
+            "name": (localization.attributes?.name).jsonSafe,
+            "custom_app_name": (localization.attributes?.customAppName).jsonSafe,
+            "version_id": (localization.relationships?.version?.data?.id).jsonSafe
         ]
     }
 }

@@ -169,7 +169,7 @@ extension InAppPurchasesWorker {
                 "success": true,
                 "versions": response.data.map(formatIAPVersion),
                 "count": response.data.count,
-                "total": response.meta?.paging.total.jsonSafe
+                "total": (response.meta?.paging.total).jsonSafe
             ]
             if let nextURL = response.links.next {
                 result["next_url"] = nextURL
@@ -230,7 +230,7 @@ extension InAppPurchasesWorker {
                 "success": true,
                 "localizations": response.data.map(formatIAPVersionLocalization),
                 "count": response.data.count,
-                "total": response.meta?.paging.total.jsonSafe
+                "total": (response.meta?.paging.total).jsonSafe
             ]
             if let nextURL = response.links.next {
                 result["next_url"] = nextURL
@@ -593,7 +593,7 @@ extension InAppPurchasesWorker {
                 "success": true,
                 "images": response.data.map(formatIAPVersionImage),
                 "count": response.data.count,
-                "total": response.meta?.paging.total.jsonSafe
+                "total": (response.meta?.paging.total).jsonSafe
             ]
             if let nextURL = response.links.next {
                 result["next_url"] = nextURL
@@ -1314,10 +1314,10 @@ extension InAppPurchasesWorker {
         var result: [String: Any] = [
             "id": version.id,
             "type": version.type,
-            "version": version.attributes?.version.jsonSafe,
-            "state": version.attributes?.state.jsonSafe,
-            "iap_id": version.relationships?.inAppPurchase?.data?.id.jsonSafe,
-            "image_id": version.relationships?.image?.data?.id.jsonSafe
+            "version": (version.attributes?.version).jsonSafe,
+            "state": (version.attributes?.state).jsonSafe,
+            "iap_id": (version.relationships?.inAppPurchase?.data?.id).jsonSafe,
+            "image_id": (version.relationships?.image?.data?.id).jsonSafe
         ]
         if let images = version.relationships?.images {
             if let data = images.data {
@@ -1345,7 +1345,7 @@ extension InAppPurchasesWorker {
         }
         var result: [String: Any] = [
             "total": total.jsonSafe,
-            "limit": relationship.meta?.paging.limit.jsonSafe,
+            "limit": (relationship.meta?.paging.limit).jsonSafe,
             "next_cursor": nextCursor.jsonSafe,
             "truncated": truncated.jsonSafe,
             "data_returned": ids != nil,
@@ -1362,10 +1362,10 @@ extension InAppPurchasesWorker {
         [
             "id": localization.id,
             "type": localization.type,
-            "locale": localization.attributes?.locale.jsonSafe,
-            "name": localization.attributes?.name.jsonSafe,
-            "description": localization.attributes?.description.jsonSafe,
-            "version_id": localization.relationships?.version?.data?.id.jsonSafe
+            "locale": (localization.attributes?.locale).jsonSafe,
+            "name": (localization.attributes?.name).jsonSafe,
+            "description": (localization.attributes?.description).jsonSafe,
+            "version_id": (localization.relationships?.version?.data?.id).jsonSafe
         ]
     }
 
@@ -1373,9 +1373,9 @@ extension InAppPurchasesWorker {
         var result: [String: Any] = [
             "id": image.id,
             "type": image.type,
-            "file_name": image.attributes?.fileName.jsonSafe,
-            "file_size": image.attributes?.fileSize.jsonSafe,
-            "delivery_state": image.attributes?.assetDeliveryState?.state.jsonSafe
+            "file_name": (image.attributes?.fileName).jsonSafe,
+            "file_size": (image.attributes?.fileSize).jsonSafe,
+            "delivery_state": (image.attributes?.assetDeliveryState?.state).jsonSafe
         ]
         if let asset = image.attributes?.imageAsset {
             result["image_asset"] = [

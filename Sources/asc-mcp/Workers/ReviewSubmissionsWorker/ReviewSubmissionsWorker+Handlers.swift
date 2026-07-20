@@ -1324,8 +1324,8 @@ extension ReviewSubmissionsWorker {
         let relationships = submission.relationships
         let includedItems = relationships?.items?.data
         let includedItemCount = includedItems?.count
-        let itemTotal = relationships?.items?.meta?.paging?.total
-        let itemLimit = relationships?.items?.meta?.paging?.limit
+        let itemTotal = relationships?.items?.meta?.paging.total
+        let itemLimit = relationships?.items?.meta?.paging.limit
         let itemNextCursor = relationships?.items?.meta?.paging.nextCursor
         let itemsTruncated: Bool? = if itemNextCursor != nil {
             true
@@ -1341,7 +1341,7 @@ extension ReviewSubmissionsWorker {
             "submitted_date": (submission.attributes?.submittedDate).jsonSafe,
             "state": (submission.attributes?.state?.rawValue).jsonSafe,
             "app_id": (relationships?.app?.data?.id).jsonSafe,
-            "item_ids": includedItems?.map(\.id).jsonSafe,
+            "item_ids": (includedItems?.map(\.id)).jsonSafe,
             "item_included_count": includedItemCount.jsonSafe,
             "item_total": itemTotal.jsonSafe,
             "item_limit": itemLimit.jsonSafe,
@@ -1477,7 +1477,7 @@ extension ReviewSubmissionsWorker {
         if let nextURL = links.next {
             result["next_url"] = nextURL
         }
-        if let total = meta?.paging?.total {
+        if let total = meta?.paging.total {
             result["total"] = total
         }
     }

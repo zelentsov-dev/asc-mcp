@@ -105,6 +105,14 @@ enum ASCReviewSubmissionItemRelation: String, CaseIterable, Sendable {
     }
 }
 
+enum ASCReviewSubmissionResourceType: String, Codable, Sendable {
+    case reviewSubmission = "reviewSubmissions"
+}
+
+enum ASCReviewSubmissionItemResourceType: String, Codable, Sendable {
+    case reviewSubmissionItem = "reviewSubmissionItems"
+}
+
 struct ASCReviewSubmissionCreateRequest: Codable, Sendable {
     let data: ResourceData
 
@@ -113,6 +121,7 @@ struct ASCReviewSubmissionCreateRequest: Codable, Sendable {
         platform: ASCReviewSubmissionNullablePlatform?
     ) {
         data = ResourceData(
+            type: .reviewSubmission,
             attributes: platform.map { Attributes(platform: $0) },
             relationships: Relationships(
                 app: ASCReviewSubmissionRequiredRelationship(
@@ -123,7 +132,7 @@ struct ASCReviewSubmissionCreateRequest: Codable, Sendable {
     }
 
     struct ResourceData: Codable, Sendable {
-        let type = "reviewSubmissions"
+        let type: ASCReviewSubmissionResourceType
         let attributes: Attributes?
         let relationships: Relationships
     }
@@ -147,6 +156,7 @@ struct ASCReviewSubmissionUpdateRequest: Codable, Sendable {
         canceled: ASCReviewSubmissionNullableBool? = nil
     ) {
         data = ResourceData(
+            type: .reviewSubmission,
             id: submissionID,
             attributes: Attributes(
                 platform: platform,
@@ -157,7 +167,7 @@ struct ASCReviewSubmissionUpdateRequest: Codable, Sendable {
     }
 
     struct ResourceData: Codable, Sendable {
-        let type = "reviewSubmissions"
+        let type: ASCReviewSubmissionResourceType
         let id: String
         let attributes: Attributes
     }
@@ -178,6 +188,7 @@ struct ASCReviewSubmissionItemCreateRequest: Codable, Sendable {
         resourceID: String
     ) {
         data = ResourceData(
+            type: .reviewSubmissionItem,
             relationships: Relationships(
                 submissionID: submissionID,
                 relation: relation,
@@ -187,7 +198,7 @@ struct ASCReviewSubmissionItemCreateRequest: Codable, Sendable {
     }
 
     struct ResourceData: Codable, Sendable {
-        let type = "reviewSubmissionItems"
+        let type: ASCReviewSubmissionItemResourceType
         let relationships: Relationships
     }
 
@@ -240,13 +251,14 @@ struct ASCReviewSubmissionItemUpdateRequest: Codable, Sendable {
         removed: ASCReviewSubmissionNullableBool?
     ) {
         data = ResourceData(
+            type: .reviewSubmissionItem,
             id: itemID,
             attributes: Attributes(resolved: resolved, removed: removed)
         )
     }
 
     struct ResourceData: Codable, Sendable {
-        let type = "reviewSubmissionItems"
+        let type: ASCReviewSubmissionItemResourceType
         let id: String
         let attributes: Attributes
     }
