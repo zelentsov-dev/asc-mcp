@@ -217,7 +217,7 @@ enum ASCOperationContractCommand {
     }
 
     private static func coverageDescription(_ coverage: ASCOptionalInputCoverage) -> String {
-        "total=\(coverage.total), bound=\(coverage.bound), internal=\(coverage.internalControl), intentionallyOmitted=\(coverage.intentionallyOmitted), unclassified=\(coverage.unclassified), identitySHA256=\(coverage.identitySHA256 ?? \"missing\")"
+        "total=\(coverage.total), bound=\(coverage.bound), internal=\(coverage.internalControl), intentionallyOmitted=\(coverage.intentionallyOmitted), unclassified=\(coverage.unclassified), identitySHA256=\(coverage.identitySHA256 ?? "missing")"
     }
 
     private static func isCanonicalSHA256(_ value: String) -> Bool {
