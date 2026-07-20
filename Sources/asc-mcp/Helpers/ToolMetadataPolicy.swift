@@ -35,6 +35,9 @@ enum ToolMetadataPolicy {
         if toolName == "company_switch" {
             return false
         }
+        if explicitMutationTools.contains(toolName) {
+            return false
+        }
         if toolName.hasPrefix("auth_") {
             return true
         }
@@ -49,7 +52,7 @@ enum ToolMetadataPolicy {
     }
 
     static func isDestructiveOrHighRisk(_ toolName: String) -> Bool {
-        destructiveMarkers.contains { toolName.contains($0) }
+        explicitMutationTools.contains(toolName) || destructiveMarkers.contains { toolName.contains($0) }
     }
 
     private static let analyticsHeavyTools: Set<String> = [
@@ -60,7 +63,14 @@ enum ToolMetadataPolicy {
     ]
 
     private static let largeResultTools: Set<String> = [
-        "subscriptions_get_one_time_code_values"
+        "subscriptions_get_one_time_code_values",
+        "build_uploads_upload",
+        "build_uploads_upload_file"
+    ]
+
+    private static let explicitMutationTools: Set<String> = [
+        "build_uploads_reserve_file",
+        "build_uploads_commit_file"
     ]
 
     private static let readOnlyMarkers = [

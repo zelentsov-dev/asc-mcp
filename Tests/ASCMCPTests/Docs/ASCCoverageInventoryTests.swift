@@ -9,7 +9,7 @@ struct ASCCoverageInventoryTests {
         let areas = ASCCoverageInventory.areas
         let names = Set(areas.map(\.name))
 
-        #expect(ASCCoverageInventory.snapshotDate == "2026-07-20")
+        #expect(ASCCoverageInventory.snapshotDate == "2026-07-21")
         #expect(ASCCoverageInventory.appleAPIVersionBaseline == "4.4.1")
         #expect(areas.count == names.count)
         #expect(areas.count >= 10)
@@ -68,5 +68,39 @@ struct ASCCoverageInventoryTests {
         for area in ASCCoverageInventory.areas {
             #expect(matrix.contains("| \(area.name) |"))
         }
+    }
+
+    @Test("coverage documents track build upload and export compliance workers")
+    func coverageDocumentsTrackBuildUploadWorkers() throws {
+        let root = FileManager.default.currentDirectoryPath
+        let matrix = try String(
+            contentsOfFile: "\(root)/ASC-COVERAGE-MATRIX-2026-05-05.md",
+            encoding: .utf8
+        )
+        let generated = try String(
+            contentsOfFile: "\(root)/ASC-OPENAPI-COVERAGE-GENERATED.md",
+            encoding: .utf8
+        )
+        let matrixTestFlight = try #require(
+            matrix.split(separator: "\n").first {
+                $0.hasPrefix("| TestFlight builds, testers, groups, and beta app review |")
+            }
+        )
+        let matrixAppStore = try #require(
+            matrix.split(separator: "\n").first {
+                $0.hasPrefix("| App Store app metadata and release operations |")
+            }
+        )
+        let generatedTestFlight = try #require(
+            generated.split(separator: "\n").first {
+                $0.hasPrefix("| TestFlight builds, testers, groups, and beta app review |")
+            }
+        )
+
+        #expect(matrixTestFlight.contains("`build_uploads`"))
+        #expect(matrixTestFlight.contains("`export_compliance`"))
+        #expect(matrixAppStore.contains("`export_compliance`"))
+        #expect(generatedTestFlight.contains("`build_uploads`"))
+        #expect(generatedTestFlight.contains("`export_compliance`"))
     }
 }

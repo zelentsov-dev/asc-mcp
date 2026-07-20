@@ -20,9 +20,16 @@ enum MCPResult {
         _ value: Value,
         text: String? = nil,
         isError: Bool = false,
-        _meta: Metadata? = nil
+        _meta: Metadata? = nil,
+        explicitlySensitivePaths: Set<MCPSensitiveValuePath> = [],
+        explicitlyAllowedSensitivePaths: Set<MCPSensitiveValuePath> = []
     ) -> CallTool.Result {
-        let sanitizedValue = MCPValueSanitizer.sanitize(value)
+        let allowedSensitivePaths = isError ? Set<MCPSensitiveValuePath>() : explicitlyAllowedSensitivePaths
+        let sanitizedValue = MCPValueSanitizer.sanitize(
+            value,
+            explicitlySensitivePaths: explicitlySensitivePaths,
+            explicitlyAllowedSensitivePaths: allowedSensitivePaths
+        )
         let textContent = text ?? (try? MCPValue.prettyJSONString(from: sanitizedValue)) ?? sanitizedValue.description
         return normalizeForTransport(CallTool.Result(
             content: [MCPContent.text(textContent)],
@@ -36,10 +43,19 @@ enum MCPResult {
         _ object: [String: Any],
         text: String? = nil,
         isError: Bool = false,
-        _meta: Metadata? = nil
+        _meta: Metadata? = nil,
+        explicitlySensitivePaths: Set<MCPSensitiveValuePath> = [],
+        explicitlyAllowedSensitivePaths: Set<MCPSensitiveValuePath> = []
     ) -> CallTool.Result {
         do {
-            return json(try MCPValue.fromAny(object), text: text, isError: isError, _meta: _meta)
+            return json(
+                try MCPValue.fromAny(object),
+                text: text,
+                isError: isError,
+                _meta: _meta,
+                explicitlySensitivePaths: explicitlySensitivePaths,
+                explicitlyAllowedSensitivePaths: explicitlyAllowedSensitivePaths
+            )
         } catch {
             return self.text(
                 "Error: Failed to encode structured result: \(error.localizedDescription)",
@@ -245,17 +261,54 @@ enum MCPResult {
     }
 }
 
+struct MCPSensitiveValuePath: Hashable, Sendable {
+    let components: [String]
+
+    init(_ components: String...) {
+        self.components = components
+    }
+
+    func contains(_ path: [String]) -> Bool {
+        guard components.count <= path.count else { return false }
+        return zip(components, path).allSatisfy { expected, actual in
+            expected == "*" || expected == actual
+        }
+    }
+}
+
 enum MCPValueSanitizer {
-    static func sanitize(_ value: Value) -> Value {
+    static func sanitize(
+        _ value: Value,
+        explicitlySensitivePaths: Set<MCPSensitiveValuePath> = [],
+        explicitlyAllowedSensitivePaths: Set<MCPSensitiveValuePath> = [],
+        path: [String] = []
+    ) -> Value {
         switch value {
         case .object(let object):
             var sanitized: [String: Value] = [:]
             for (key, child) in object {
-                sanitized[key] = isSensitiveKey(key) ? .string("[REDACTED]") : sanitize(child)
+                let childPath = path + [key]
+                let isExplicitlySensitive = explicitlySensitivePaths.contains { $0.contains(childPath) }
+                let isAllowed = explicitlyAllowedSensitivePaths.contains { $0.contains(childPath) }
+                sanitized[key] = (isSensitiveKey(key) || isExplicitlySensitive) && !isAllowed
+                    ? .string("[REDACTED]")
+                    : sanitize(
+                        child,
+                        explicitlySensitivePaths: explicitlySensitivePaths,
+                        explicitlyAllowedSensitivePaths: explicitlyAllowedSensitivePaths,
+                        path: childPath
+                    )
             }
             return .object(sanitized)
         case .array(let array):
-            return .array(array.map(sanitize))
+            return .array(array.map {
+                sanitize(
+                    $0,
+                    explicitlySensitivePaths: explicitlySensitivePaths,
+                    explicitlyAllowedSensitivePaths: explicitlyAllowedSensitivePaths,
+                    path: path + ["*"]
+                )
+            })
         default:
             return value
         }
@@ -294,7 +347,8 @@ enum MCPValueSanitizer {
             return false
         }
 
-        return lower.contains("password") ||
+        return normalized == "requestheaders" ||
+            lower.contains("password") ||
             lower.contains("secret") ||
             lower.contains("authorization") ||
             lower.contains("bearer") ||
@@ -308,11 +362,17 @@ enum MCPValueSanitizer {
 
     private static func isIdentifierKey(_ key: String?) -> Bool {
         guard let key else { return false }
+        let lower = key.lowercased()
         return key == "id" ||
+            key == "ids" ||
             key.hasSuffix("Id") ||
             key.hasSuffix("ID") ||
-            key.lowercased().hasSuffix("_id") ||
-            key.lowercased().hasSuffix("-id")
+            key.hasSuffix("Ids") ||
+            key.hasSuffix("IDs") ||
+            lower.hasSuffix("_id") ||
+            lower.hasSuffix("-id") ||
+            lower.hasSuffix("_ids") ||
+            lower.hasSuffix("-ids")
     }
 
     private static func preservesOpaqueIdentifiers(_ key: String?) -> Bool {
@@ -328,6 +388,10 @@ enum MCPValueSanitizer {
         if normalized.hasSuffix("state") ||
             normalized.contains("checksum") ||
             normalized == "filename" ||
+            normalized == "filepath" ||
+            normalized == "expectedmd5" ||
+            normalized == "entitytag" ||
+            normalized == "responseentitytag" ||
             normalized == "fingerprintkey" {
             return true
         }

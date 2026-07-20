@@ -170,7 +170,7 @@
           { "outputField": "signature", "localRole": "optional ASCWebhookSignatureVerifier result" }
         ]
       },
-      "note": "Local receiver helper, not an Apple REST operation. Runtime validation requires exactly one raw-body representation and rejects incomplete secret/signature pairs before parsing. Related-resource extraction does not reliably handle every Apple 4.4.1 payload shape; BUILD_UPLOAD and BUILD_BETA_DETAIL triage currently expect build resource types rather than buildUploads/buildBetaDetails, and direct background-resource relationships are incomplete."
+      "note": "Local receiver helper, not an Apple REST operation. Runtime validation requires exactly one raw-body representation and rejects incomplete secret/signature pairs before parsing. BUILD_UPLOAD triage recognizes buildUploads and calls build_uploads_get with build_upload_id. BUILD_BETA_DETAIL recognizes buildBetaDetails and uses delivery correlation without treating its identifier as a Build identifier. Direct background-resource relationships remain incomplete."
     },
     {
       "tool": "webhooks_ping",
@@ -265,7 +265,7 @@
           { "outputField": "nextSteps", "localRole": "local recovery and lookup guidance" }
         ]
       },
-      "note": "Local policy helper, not an Apple REST operation. Runtime validation requires event_type or one unambiguous raw-body representation. Specialized triage covers only part of the Apple event catalog; BUILD_UPLOAD and BUILD_BETA_DETAIL resource-type assumptions and some background/alternative-distribution relationship shapes are currently incomplete."
+      "note": "Local policy helper, not an Apple REST operation. Runtime validation requires event_type or one unambiguous raw-body representation. BUILD_UPLOAD maps buildUploads to build_uploads_get with build_upload_id. BUILD_BETA_DETAIL treats buildBetaDetails as a distinct identity and recommends delivery correlation instead of passing its identifier to Build tools. Some background/alternative-distribution relationship shapes remain incomplete."
     },
     {
       "tool": "webhooks_update",

@@ -29,7 +29,7 @@
 
 ## Overview
 
-**asc-mcp** is a Swift-based MCP server that bridges [Claude](https://claude.ai) (or any MCP-compatible host) with the [App Store Connect API](https://developer.apple.com/documentation/appstoreconnectapi). It exposes **451 tools** across 32 App Store tool domains + 2 core domains, enabling you to automate your entire iOS/macOS release workflow through natural language.
+**asc-mcp** is a Swift-based MCP server that bridges [Claude](https://claude.ai) (or any MCP-compatible host) with the [App Store Connect API](https://developer.apple.com/documentation/appstoreconnectapi). It exposes **461 tools** across 33 App Store tool domains + 2 core domains, enabling you to automate your entire iOS/macOS release workflow through natural language.
 
 ### Key capabilities
 
@@ -37,6 +37,7 @@
 - **Full release pipeline** — create versions, attach builds, submit for review, phased rollout
 - **TestFlight automation** — beta groups, testers, build distribution, localized What's New
 - **Build management** — track processing, encryption compliance, readiness checks
+- **Build uploads** — create upload parents, reserve and transfer files, inspect recovery state, and monitor processing
 - **Customer reviews** — list, respond, update, delete responses, aggregate statistics
 - **In-app purchases** — CRUD, versioned metadata, price points, availability, offer codes, and review images
 - **Subscriptions** — subscription and group versions, localizations, plan availability, prices, images, offer codes, win-back, intro, and promotional offers
@@ -48,14 +49,14 @@
 - **Analytics & Metrics** — sales/financial reports, analytics reports, performance metrics, diagnostics
 - **Metadata management** — localized descriptions, keywords, What's New across all locales
 - **MCP 2025-11-25 surface** — tool annotations, output schemas for stable tools, structured JSON results, and safe result-size metadata
-- **OpenAPI contract tooling** — compare the live 451-tool worker catalog and semantic manifest with Apple's official App Store Connect OpenAPI specification
+- **OpenAPI contract tooling** — compare the live 461-tool worker catalog and semantic manifest with Apple's official App Store Connect OpenAPI specification
 
 ## Quick Start
 
 ```bash
 # 1. Install via Mint
 brew install mint
-mint install zelentsov-dev/asc-mcp@v3.16.0
+mint install zelentsov-dev/asc-mcp@v3.17.0
 
 # 2. Add to Claude Code with env vars (simplest setup)
 claude mcp add asc-mcp \
@@ -87,7 +88,7 @@ Or use a JSON config file — see [Configuration](#configuration) below.
 brew install mint
 
 # Install asc-mcp from GitHub
-mint install zelentsov-dev/asc-mcp@v3.16.0
+mint install zelentsov-dev/asc-mcp@v3.17.0
 
 # Register in Claude Code
 claude mcp add asc-mcp -- ~/.mint/bin/asc-mcp
@@ -98,13 +99,13 @@ To install a specific branch or tag:
 ```bash
 mint install zelentsov-dev/asc-mcp@main      # main branch
 mint install zelentsov-dev/asc-mcp@develop    # develop branch
-mint install zelentsov-dev/asc-mcp@v3.16.0    # specific tag
+mint install zelentsov-dev/asc-mcp@v3.17.0    # specific tag
 ```
 
 To update to the latest version:
 
 ```bash
-mint install zelentsov-dev/asc-mcp@v3.16.0 --force
+mint install zelentsov-dev/asc-mcp@v3.17.0 --force
 ```
 
 ### Option B: Build from Source
@@ -366,7 +367,7 @@ Add to `~/.codeium/windsurf/mcp_config.json`:
 }
 ```
 
-> **Note:** Windsurf has a 100-tool limit. The server exposes 451 tools by default, so you must use `--workers` to select a subset. See [Worker Filtering](#worker-filtering) below.
+> **Note:** Windsurf has a 100-tool limit. The server exposes 461 tools by default, so you must use `--workers` to select a subset. See [Worker Filtering](#worker-filtering) below.
 
 </details>
 
@@ -375,7 +376,7 @@ Add to `~/.codeium/windsurf/mcp_config.json`:
 
 ### Worker Filtering
 
-The server exposes **451 tools** across 32 App Store tool domains + 2 core domains. Some MCP clients impose a tool limit (e.g., Windsurf caps at 100). Use the 34 `--workers` filter keys to enable only the workers you need:
+The server exposes **461 tools** across 33 App Store tool domains + 2 core domains. Some MCP clients impose a tool limit (e.g., Windsurf caps at 100). Use the 35 `--workers` filter keys to enable only the workers you need:
 
 ```bash
 # Only load apps, builds, and version lifecycle tools
@@ -423,13 +424,13 @@ swift run asc-mcp openapi-contract-check \
   --strict
 ```
 
-The manifest is pinned to Apple API 4.4.1 by version, SHA-256, path count, and operation count. It currently maps 421 Apple operations, explicitly defers 479, and scopes out 363, covering all 1,263 operations without overlap. CI fails when the Apple document changes, a mapped operation moves or disappears, a public tool or worker drifts from the manifest, an input field loses its binding, response lineage becomes invalid, or a deferred decision expires. Unexposed optional Apple parameters are warnings so they remain visible in the generated backlog.
+The manifest is pinned to Apple API 4.4.1 by version, SHA-256, path count, and operation count. It currently maps 429 Apple operations, explicitly defers 471, and scopes out 363, covering all 1,263 operations without overlap. CI fails when the Apple document changes, a mapped operation moves or disappears, a public tool or worker drifts from the manifest, an input field loses its binding, response lineage becomes invalid, or a deferred decision expires. Unexposed optional Apple parameters are warnings so they remain visible in the generated backlog.
 
-Manifest schema v2 also accounts for every optional Apple query and request-body input as publicly bound, internally controlled, intentionally omitted with a reviewed reason, or still unclassified. The checked-in `optionalInputCoveragePin` records the exact current totals and a SHA-256 digest of the sorted input identities and dispositions; `--strict` rejects a missing pin or any count- or identity-level drift. The pin makes phased remediation auditable and regression-safe, but it is not a claim that every optional Apple input is already public. The v3.16.0 pin is 2,428 total: 924 bound, 40 internally controlled, 1,464 intentionally omitted, and 0 unclassified. Its identity SHA-256 is `5bb9c377a13d404e0374945d0016a9739c5cc2c3acd1e851108c24ffea5ba67d`.
+Manifest schema v2 also accounts for every optional Apple query and request-body input as publicly bound, internally controlled, intentionally omitted with a reviewed reason, or still unclassified. The checked-in `optionalInputCoveragePin` records the exact current totals and a SHA-256 digest of the sorted input identities and dispositions; `--strict` rejects a missing pin or any count- or identity-level drift. The pin makes phased remediation auditable and regression-safe, but it is not a claim that every optional Apple input is already public. The v3.17.0 pin is 2,488 total: 968 bound, 40 internally controlled, 1,480 intentionally omitted, and 0 unclassified. Its identity SHA-256 is `b2220715e8a131a9ef49f9c9ce2a931dd18ef79bf3d7371a4273b0164c28119e`.
 
 `--strict` is the merge- and tag-time release gate. Every declared `target` or `broken` tool remains an error in reports, and a regression test pins their exact state. The current baseline has no `target` or `broken` implementations and no implementation drift, so any implementation that leaves `asBuilt`, any structural contract error, or any optional-input coverage drift blocks both merges and releases. `--structural-strict` remains available only for local phased remediation work.
 
-This gate proves operation identity, top-level MCP field ownership, required Apple inputs, typed internal values, and response source/pointer lineage. Full MCP type/enum/range parity and complete typed response schemas remain separate optimization phases; the current mapping status is 418 partial and 33 deprecated.
+This gate proves operation identity, top-level MCP field ownership, required Apple inputs, typed internal values, and response source/pointer lineage. Full MCP type/enum/range parity and complete typed response schemas remain separate optimization phases; the current mapping status is 428 partial and 33 deprecated.
 
 The older `openapi-coverage` command remains available for the high-level domain report in [`ASC-OPENAPI-COVERAGE-GENERATED.md`](ASC-OPENAPI-COVERAGE-GENERATED.md). The operation contract is the authoritative release gate.
 
@@ -444,6 +445,7 @@ The older `openapi-coverage` command remains available for the high-level domain
 | `webhooks` | `webhooks_` | 11 | Webhook notifications, delivery diagnostics, and receiver helpers |
 | `xcode_cloud` | `xcode_cloud_` | 30 | Xcode Cloud products, workflows, build runs, artifacts, issues, test results, and SCM |
 | `builds` | `builds_` | 4 | Build management |
+| `build_uploads` | `build_uploads_` | 10 | Build upload parents, files, safe transfers, and recovery |
 | `build_processing` | `builds_get_processing_*`, `builds_update_encryption`, `builds_check_readiness` | 4 | Build states, encryption |
 | `export_compliance` | `export_compliance_` | 11 | Encryption declarations, document uploads, build linkage, readiness |
 | `build_beta` | `builds_*_beta_*`, individual tester build tools | 11 | TestFlight localizations, notifications |
@@ -478,7 +480,7 @@ When connected to an LLM client, tool definitions consume context tokens. Here's
 
 | Configuration | Tools | ~Tokens |
 |---|---:|---:|
-| All workers (default) | 451 | **~51,500** |
+| All workers (default) | 461 | **~53,000** |
 | Release workflow: `apps,builds,export_compliance,versions,reviews` | ~71 | ~8,800 |
 | Monetization: `apps,iap,subscriptions,pricing` | 183 | ~21,000 |
 | TestFlight: `apps,builds,beta_groups,beta_testers` | ~56 | ~6,000 |
@@ -487,11 +489,11 @@ When connected to an LLM client, tool definitions consume context tokens. Here's
 
 **Heaviest workers:** Subscriptions (99 tools), InAppPurchases (59 tools), Xcode Cloud (30 tools), Provisioning (17 tools), Screenshots (16 tools).
 
-For 200K-context clients, ~51.5K tokens is about 26% of the window. Exact cost depends on the MCP host's serialization and tokenizer. For clients with smaller context windows, use `--workers` to reduce the footprint.
+For 200K-context clients, ~53K tokens is about 27% of the window. Exact cost depends on the MCP host's serialization and tokenizer. For clients with smaller context windows, use `--workers` to reduce the footprint.
 
 ## Available Tools
 
-**451 tools** organized across 32 App Store tool domains + 2 core domains (use the 34 `--workers` filter keys — see [Worker Filtering](#worker-filtering)):
+**461 tools** organized across 33 App Store tool domains + 2 core domains (use the 35 `--workers` filter keys — see [Worker Filtering](#worker-filtering)):
 
 <details>
 <summary><strong>Company Management</strong> — 3 tools</summary>
@@ -629,6 +631,26 @@ For 200K-context clients, ~51.5K tokens is about 26% of the window. Exact cost d
 | `builds_get` | Get detailed build information |
 | `builds_find_by_number` | Find build by version number |
 | `builds_list_for_version` | Get builds for specific app version |
+
+</details>
+
+<details>
+<summary><strong>Build Uploads</strong> — 10 tools</summary>
+
+| Tool | Description |
+|------|-------------|
+| `build_uploads_list` | List an app's Build Upload parents with filters, sparse fields, includes, and strict pagination |
+| `build_uploads_get` | Get one Build Upload with processing diagnostics and optional included resources |
+| `build_uploads_create` | Create a Build Upload parent without replaying an ambiguous POST |
+| `build_uploads_delete` | Delete a Build Upload parent after exact ID confirmation |
+| `build_uploads_list_files` | List file reservations under one Build Upload with strict pagination |
+| `build_uploads_get_file` | Get one Build Upload File and its delivery state |
+| `build_uploads_reserve_file` | Reserve one exact file without replaying an ambiguous POST |
+| `build_uploads_commit_file` | Commit checksum or uploaded-state changes with omission and null preserved separately |
+| `build_uploads_upload_file` | Transfer a new or existing reservation from an immutable local snapshot |
+| `build_uploads_upload` | Run parent creation, reservation, transfer, commit, and processing reconciliation |
+
+Compound uploads retain the same lowercase MD5 fingerprint from reservation through recovery. Explicit resume and recovered-continuation instructions carry `expected_md5`; the next invocation verifies a fresh immutable snapshot against it before any Apple request or transfer. An existing reservation already marked `UPLOAD_COMPLETE` or `COMPLETE` is accepted only when Apple's `sourceFileChecksums.file` MD5 matches that snapshot; missing, unsupported, or mismatched evidence is retained for inspection without another transfer, commit, or delete. Presigned operations retry only when their method is `PUT`; redirects, `POST`, and unknown methods are not replayed. If an ambiguous create is uniquely recovered, the workflow stops and returns its resource ID for explicit continuation. Transfer credentials stay redacted unless `include_sensitive_details` is explicitly enabled on a direct read.
 
 </details>
 
@@ -1139,7 +1161,7 @@ Sources/asc-mcp/
 │   ├── HTTPClient.swift            #   Actor-based HTTP with retry logic
 │   ├── JWTService.swift            #   ES256 JWT token generation
 │   └── CompaniesManager.swift      #   Multi-account management
-└── Workers/                        # MCP tool implementations (38 Swift worker classes + MainWorker router)
+└── Workers/                        # MCP tool implementations (39 Swift worker classes + MainWorker router)
     ├── MainWorker/WorkerManager    #   Central tool registry & routing
     ├── CompaniesWorker/            #   company_* tools
     ├── AuthWorker/                 #   auth_* tools
@@ -1148,6 +1170,7 @@ Sources/asc-mcp/
     ├── WebhooksWorker/             #   webhooks_* tools
     ├── XcodeCloudWorker/           #   xcode_cloud_* tools
     ├── BuildsWorker/               #   builds_* tools
+    ├── BuildUploadsWorker/         #   build_uploads_* tools
     ├── BuildProcessingWorker/      #   builds_*_processing tools
     ├── ExportComplianceWorker/     #   export_compliance_* tools
     ├── BuildBetaDetailsWorker/     #   builds_*_beta_* tools

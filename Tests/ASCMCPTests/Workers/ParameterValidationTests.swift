@@ -73,6 +73,30 @@ struct ParameterValidationTests {
         #expect(result.isError == true)
     }
 
+    // MARK: - BuildUploadsWorker
+
+    @Test("Build Upload tools reject missing required parameters")
+    func buildUploadToolsMissingParameters() async throws {
+        let client = try await TestFactory.makeHTTPClient()
+        let worker = BuildUploadsWorker(httpClient: client, uploadService: UploadService())
+
+        for name in [
+            "build_uploads_list",
+            "build_uploads_get",
+            "build_uploads_create",
+            "build_uploads_delete",
+            "build_uploads_list_files",
+            "build_uploads_get_file",
+            "build_uploads_reserve_file",
+            "build_uploads_commit_file",
+            "build_uploads_upload_file",
+            "build_uploads_upload"
+        ] {
+            let result = try await worker.handleTool(CallTool.Parameters(name: name, arguments: nil))
+            #expect(result.isError == true, "Expected missing parameter error from \(name)")
+        }
+    }
+
     // MARK: - BuildProcessingWorker
 
     @Test("builds_get_processing_state without build_id returns isError")

@@ -103,12 +103,19 @@ extension WebhooksWorker {
     func redeliverTool() -> Tool {
         Tool(
             name: "webhooks_redeliver",
-            description: "Create a redelivery attempt from an existing webhook delivery template.",
+            description: "Mutating, non-idempotent Apple API operation. Creates a new redelivery attempt from an existing webhook delivery template and sends it to the configured receiver.",
             inputSchema: baseSchema(
                 properties: [
                     "delivery_id": stringSchema("Existing webhook delivery ID to redeliver")
                 ],
                 required: ["delivery_id"]
+            ),
+            annotations: Tool.Annotations(
+                title: "Redeliver webhook",
+                readOnlyHint: false,
+                destructiveHint: false,
+                idempotentHint: false,
+                openWorldHint: true
             )
         )
     }
@@ -116,12 +123,19 @@ extension WebhooksWorker {
     func pingTool() -> Tool {
         Tool(
             name: "webhooks_ping",
-            description: "Send a test ping through an existing webhook configuration.",
+            description: "Mutating, non-idempotent Apple API operation. Creates and sends a test ping through an existing webhook configuration.",
             inputSchema: baseSchema(
                 properties: [
                     "webhook_id": stringSchema("Webhook ID to ping")
                 ],
                 required: ["webhook_id"]
+            ),
+            annotations: Tool.Annotations(
+                title: "Ping webhook",
+                readOnlyHint: false,
+                destructiveHint: false,
+                idempotentHint: false,
+                openWorldHint: true
             )
         )
     }
@@ -161,7 +175,7 @@ extension WebhooksWorker {
     func triageEventTool() -> Tool {
         Tool(
             name: "webhooks_triage_event",
-            description: "Turn a webhook event or failed delivery context into an actionable MCP triage plan with recommended read-only lookup tools. Provide `event_type` or exactly one raw body input: `payload` or `payload_base64`.",
+            description: "Turn a webhook event or failed delivery context into a local, read-only triage plan. Recommendations are labeled `read_only` or `mutating`; failed-delivery plans can suggest webhooks_redeliver or webhooks_ping, but this tool never executes them. Provide `event_type` or exactly one raw body input: `payload` or `payload_base64`.",
             inputSchema: baseSchema(
                 properties: [
                     "payload": stringSchema("Optional exact raw UTF-8 webhook request body"),

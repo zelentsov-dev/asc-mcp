@@ -7,6 +7,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.17.0] - 2026-07-21
+
+### Added
+
+- Added a dedicated `build_uploads` worker with 10 tools for Build Upload parents, file reservations, direct resource inspection, resumable file transfer, and a complete build-upload workflow.
+- Added strict App Store Connect API 4.4.1 coverage for 8 Build Upload and Build Upload File operations while retaining explicit local-workflow lineage for the two compound upload tools.
+
+### Changed
+
+- Build uploads preserve one immutable local snapshot and its lowercase MD5 fingerprint across reservation, transfer, commit, and recovery validation. Explicit resume and recovered continuation carry `expected_md5` and verify a fresh immutable snapshot before any Apple request or transfer.
+- Existing Build Upload File reservations in `UPLOAD_COMPLETE` or `COMPLETE` are accepted only when Apple's file-level MD5 matches the immutable snapshot; missing, unsupported, or mismatched checksum evidence now stops safely for inspection without transfer, commit, or automatic deletion.
+- Presigned transfer retries are limited to operations that Apple explicitly describes as idempotent `PUT`; `POST` and unknown methods are never replayed automatically.
+- Compound upload workflows stop after a uniquely recovered ambiguous create and return the recovered resource ID for an explicit continuation instead of starting another mutation.
+- Direct ambiguous create and reservation recovery now fails closed with executable inspection guidance, preserves `unknown` versus `committed_unverified`, and never exposes recovered transfer credentials.
+
+### Fixed
+
+- Require Apple's exact HTTP 200 status for Build Upload reads, 201 for creates, 200 for updates, and 204 for deletes; unexpected successful mutation statuses remain committed but unverified.
+- Confirm every exact 201 identity was absent before the request and is present in a fresh requested-app or requested-parent collection read; subsequent state and presigned operations come only from that scoped projection.
+- Validate every presigned operation expiration before the first transfer and preserve safe ETag and candidate-ID evidence in structured failure receipts without weakening token, bearer, or private-key redaction.
+- Reject present null, non-string, empty, or unsupported upload identity and file-format arguments, plus noncanonical fresh-reservation file names, before snapshot creation or any Apple or presigned network request.
+- Reject redirects during presigned transfer so signed destinations, headers, and credentials cannot be forwarded to a different endpoint.
+- Require an exact `confirm_build_upload_id` match before deleting a Build Upload parent and never imply that Apple exposes a Build Upload File delete operation.
+- Keep webhook crash and screenshot lookup recommendations bound to the exact Apple resource type and canonical ID, and explicitly label redelivery and ping recommendations as mutating non-idempotent actions.
+
+### Compatibility
+
+- The public surface grows from 451 to 461 tools and from 34 to 35 worker filter keys; no existing tool is removed or renamed.
+- The new Build Upload worker is independently selectable with `--workers build_uploads`; enabling `builds` alone does not enable upload mutations.
+- The operation manifest maps 429 Apple operations, explicitly defers 471, and scopes out 363; all 1,263 pinned Apple 4.4.1 operations remain accounted for without overlap.
+- The optional-input pin is fully classified at 2,488 total: 968 bound, 40 internally controlled, 1,480 intentionally omitted, and 0 unclassified; its identity SHA-256 is `b2220715e8a131a9ef49f9c9ce2a931dd18ef79bf3d7371a4273b0164c28119e`.
+
 ## [3.16.0] - 2026-07-20
 
 ### Added

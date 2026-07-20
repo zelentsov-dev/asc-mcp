@@ -265,7 +265,7 @@ struct MCPResultBuilderTests {
     @Test("transport normalization preserves non-secret recovery states and checksums")
     func transportNormalizationPreservesRecoveryStatesAndChecksums() throws {
         let checksum = "5d41402abc4b2a76b9719d911017c592"
-        let snapshotPath = "<absolute-path-to-the-exact-reserved-bytes>"
+        let snapshotPath = "/tmp/asc-mcp-snapshots/0123456789abcdef0123456789abcdef/Example.ipa"
         let result = MCPResult.json(
             .object([
                 "success": .bool(false),
@@ -277,6 +277,7 @@ struct MCPResultBuilderTests {
                     "nextAction": .object([
                         "arguments": .object([
                             "file_path": .string(snapshotPath),
+                            "expected_md5": .string(checksum),
                             "source_file_checksum": .string(checksum)
                         ])
                     ])
@@ -298,8 +299,100 @@ struct MCPResultBuilderTests {
         #expect(details["sourceFileChecksumReceipt"] == .string(checksum))
         #expect(details["credentialChecksum"] == .string("[REDACTED]"))
         #expect(arguments["file_path"] == .string(snapshotPath))
+        #expect(arguments["expected_md5"] == .string(checksum))
         #expect(arguments["source_file_checksum"] == .string(checksum))
         #expect(try exactJSONMirror(from: result) == structuredJSON(from: result))
+    }
+
+    @Test("error normalization preserves forensic ETags and candidate IDs without preserving credentials")
+    func errorNormalizationPreservesForensicIdentifiers() throws {
+        let entityTag = "0123456789abcdef0123456789abcdef"
+        let responseEntityTag = "fedcba9876543210fedcba9876543210"
+        let opaqueCandidateID = "candidate-0123456789abcdef0123456789abcdef"
+        let candidateUUID = "550e8400-e29b-41d4-a716-446655440000"
+        let credential = "api_token_abcdefghijklmnopqrstuvwxyz012345"
+        let bearer = "abc_def-123~+/=="
+        let privateKeyPath = "/tmp/AuthKey_ABC123.p8"
+        let result = MCPResult.json(
+            .object([
+                "success": .bool(false),
+                "error": .string("Upload requires inspection"),
+                "details": .object([
+                    "receipt": .object([
+                        "entityTag": .string(entityTag),
+                        "responseEntityTag": .string(responseEntityTag)
+                    ]),
+                    "candidateIds": .array([
+                        .string(opaqueCandidateID),
+                        .string(candidateUUID),
+                        .string(credential)
+                    ]),
+                    "candidate_ids": .array([
+                        .string(candidateUUID)
+                    ]),
+                    "unsafeReceipt": .object([
+                        "entityTag": .string(credential),
+                        "responseEntityTag": .string(privateKeyPath)
+                    ]),
+                    "bearerReceipt": .object([
+                        "entityTag": .string("Bearer \(bearer)")
+                    ])
+                ])
+            ]),
+            text: "Error: Upload requires inspection",
+            isError: true
+        )
+
+        guard case .object(let payload)? = result.structuredContent,
+              case .object(let details)? = payload["details"],
+              case .object(let receipt)? = details["receipt"],
+              case .array(let candidateIDs)? = details["candidateIds"],
+              case .array(let snakeCaseCandidateIDs)? = details["candidate_ids"],
+              case .object(let unsafeReceipt)? = details["unsafeReceipt"],
+              case .object(let bearerReceipt)? = details["bearerReceipt"] else {
+            Issue.record("Expected normalized forensic details")
+            return
+        }
+
+        #expect(receipt["entityTag"] == .string(entityTag))
+        #expect(receipt["responseEntityTag"] == .string(responseEntityTag))
+        #expect(candidateIDs == [
+            .string(opaqueCandidateID),
+            .string(candidateUUID),
+            .string("[REDACTED]")
+        ])
+        #expect(snakeCaseCandidateIDs == [.string(candidateUUID)])
+        #expect(unsafeReceipt["entityTag"] == .string("[REDACTED]"))
+        #expect(unsafeReceipt["responseEntityTag"] == .string("[REDACTED_PRIVATE_KEY_PATH]"))
+        #expect(bearerReceipt["entityTag"] == .string("Bearer [REDACTED]"))
+        #expect(try exactJSONMirror(from: result) == structuredJSON(from: result))
+    }
+
+    @Test("recovery path preservation still redacts private key paths")
+    func recoveryPathPreservationRedactsPrivateKeys() {
+        let result = MCPResult.json(
+            .object([
+                "success": .bool(false),
+                "error": .string("Continuation required"),
+                "continuation": .object([
+                    "arguments": .object([
+                        "file_path": .string("/tmp/AuthKey_ABC123.p8"),
+                        "expected_md5": .string("5d41402abc4b2a76b9719d911017c592")
+                    ])
+                ])
+            ]),
+            isError: true
+        )
+
+        guard case .object(let payload)? = result.structuredContent,
+              case .object(let continuation)? = payload["continuation"],
+              case .object(let arguments)? = continuation["arguments"] else {
+            Issue.record("Expected normalized continuation")
+            return
+        }
+
+        #expect(arguments["file_path"] == .string("[REDACTED_PRIVATE_KEY_PATH]"))
+        #expect(arguments["expected_md5"] == .string("5d41402abc4b2a76b9719d911017c592"))
     }
 
     @Test("error result still redacts bearer, base64url, and private-key secrets")
@@ -469,6 +562,116 @@ struct MCPResultBuilderTests {
         #expect(!text.contains("super-secret"))
         #expect(!text.contains("token-value"))
         #expect(!text.contains("private-key-value"))
+    }
+
+    @Test("JSON result allows sensitive values only at exact paths")
+    func jsonResultAllowsSensitiveValuesOnlyAtExactPaths() throws {
+        let payload: [String: Any] = [
+            "buildUploadFiles": [
+                [
+                    "attributes": [
+                        "assetToken": "allowed-asset-token",
+                        "uploadOperations": [
+                            [
+                                "url": "https://uploads.example.test/signed",
+                                "requestHeaders": [["name": "X-Upload-Receipt", "value": "allowed-header"]]
+                            ]
+                        ]
+                    ]
+                ]
+            ],
+            "unrelated": [
+                "assetToken": "blocked-asset-token",
+                "uploadOperations": [["url": "https://evil.example.test/signed"]]
+            ]
+        ]
+        let result = MCPResult.jsonObject(
+            payload,
+            explicitlySensitivePaths: [
+                MCPSensitiveValuePath("buildUploadFiles", "*", "attributes", "assetToken"),
+                MCPSensitiveValuePath("buildUploadFiles", "*", "attributes", "uploadOperations"),
+                MCPSensitiveValuePath("unrelated", "assetToken"),
+                MCPSensitiveValuePath("unrelated", "uploadOperations")
+            ],
+            explicitlyAllowedSensitivePaths: [
+                MCPSensitiveValuePath("buildUploadFiles", "*", "attributes", "assetToken"),
+                MCPSensitiveValuePath("buildUploadFiles", "*", "attributes", "uploadOperations")
+            ]
+        )
+
+        guard case .object(let root)? = result.structuredContent,
+              case .array(let files)? = root["buildUploadFiles"],
+              case .object(let file)? = files.first,
+              case .object(let attributes)? = file["attributes"],
+              case .array(let operations)? = attributes["uploadOperations"],
+              case .object(let operation)? = operations.first,
+              case .object(let unrelated)? = root["unrelated"] else {
+            Issue.record("Expected path-scoped sensitive result")
+            return
+        }
+
+        #expect(attributes["assetToken"] == .string("allowed-asset-token"))
+        #expect(operation["url"] == .string("https://uploads.example.test/signed"))
+        #expect(unrelated["assetToken"] == .string("[REDACTED]"))
+        #expect(unrelated["uploadOperations"] == .string("[REDACTED]"))
+    }
+
+    @Test("error results ignore sensitive path allowances")
+    func errorResultsIgnoreSensitivePathAllowances() throws {
+        let result = MCPResult.jsonObject(
+            [
+                "success": false,
+                "error": "Upload failed",
+                "buildUploadFile": [
+                    "attributes": [
+                        "assetToken": "must-stay-redacted",
+                        "uploadOperations": [["url": "https://uploads.example.test/signed"]]
+                    ]
+                ]
+            ],
+            isError: true,
+            explicitlySensitivePaths: [
+                MCPSensitiveValuePath("buildUploadFile", "attributes", "assetToken"),
+                MCPSensitiveValuePath("buildUploadFile", "attributes", "uploadOperations")
+            ],
+            explicitlyAllowedSensitivePaths: [
+                MCPSensitiveValuePath("buildUploadFile", "attributes", "assetToken"),
+                MCPSensitiveValuePath("buildUploadFile", "attributes", "uploadOperations")
+            ]
+        )
+
+        guard case .object(let root)? = result.structuredContent,
+              case .object(let file)? = root["buildUploadFile"],
+              case .object(let attributes)? = file["attributes"] else {
+            Issue.record("Expected normalized structured error")
+            return
+        }
+
+        #expect(attributes["assetToken"] == .string("[REDACTED]"))
+        #expect(attributes["uploadOperations"] == .string("[REDACTED]"))
+        let mirror = try exactJSONMirror(from: result)
+        #expect(!mirror.contains("must-stay-redacted"))
+        #expect(!mirror.contains("uploads.example.test"))
+    }
+
+    @Test("safe upload operation metadata remains visible without sensitive path marking")
+    func safeUploadOperationMetadataRemainsVisible() {
+        let result = MCPResult.jsonObject([
+            "uploadOperations": [
+                ["method": "PUT", "length": 5, "offset": 0]
+            ]
+        ])
+
+        guard case .object(let root)? = result.structuredContent,
+              case .array(let operations)? = root["uploadOperations"],
+              case .object(let operation)? = operations.first else {
+            Issue.record("Expected safe upload operation metadata")
+            return
+        }
+
+        #expect(operation["method"] == .string("PUT"))
+        #expect(operation["length"] == .int(5))
+        #expect(operation["offset"] == .int(0))
     }
 
     @Test("transport normalization preserves rich errors and appends one exact mirror")

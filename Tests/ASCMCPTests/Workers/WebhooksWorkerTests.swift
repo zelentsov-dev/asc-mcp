@@ -602,12 +602,12 @@ struct WebhooksWorkerTests {
         #expect(event["payloadFormat"] == .string("json"))
 
         let related = try #require(event["relatedResource"]?.objectValue)
-        #expect(related["type"] == .string("builds"))
-        #expect(related["id"] == .string("build-1"))
+        #expect(related["type"] == .string("buildUploads"))
+        #expect(related["id"] == .string("upload-1"))
 
         let recommendations = try #require(object["recommendedToolCalls"]?.arrayValue)
         #expect(recommendations.contains { recommendation in
-            recommendation.objectValue?["tool"] == .string("builds_get")
+            recommendation.objectValue?["tool"] == .string("build_uploads_get")
         })
     }
 
@@ -739,9 +739,243 @@ struct WebhooksWorkerTests {
         #expect(recommendations.contains { recommendation in
             recommendation.objectValue?["tool"] == .string("beta_feedback_get_crash")
         })
+        #expect(recommendations.first { recommendation in
+            recommendation.objectValue?["tool"] == .string("beta_feedback_get_crash")
+        }?.objectValue?["effect"] == .string("read_only"))
         #expect(recommendations.contains { recommendation in
             recommendation.objectValue?["tool"] == .string("webhooks_redeliver")
         })
+        #expect(recommendations.first { recommendation in
+            recommendation.objectValue?["tool"] == .string("webhooks_redeliver")
+        }?.objectValue?["effect"] == .string("mutating"))
+    }
+
+    @Test("beta feedback lookups require exact related resource types")
+    func betaFeedbackLookupsRequireExactResourceTypes() throws {
+        let cases = [
+            (
+                eventType: "BETA_FEEDBACK_CRASH_SUBMISSION_CREATED",
+                expectedType: "betaFeedbackCrashSubmissions",
+                lookupTool: "beta_feedback_get_crash"
+            ),
+            (
+                eventType: "BETA_FEEDBACK_SCREENSHOT_SUBMISSION_CREATED",
+                expectedType: "betaFeedbackScreenshotSubmissions",
+                lookupTool: "beta_feedback_get_screenshot"
+            )
+        ]
+
+        for testCase in cases {
+            let matching = ASCWebhookTriagePolicy.recommendations(
+                eventType: testCase.eventType,
+                relatedResource: ASCWebhookRelatedResource(type: testCase.expectedType, id: "submission-1"),
+                delivery: .empty
+            )
+            #expect(matching.contains { $0.tool == testCase.lookupTool })
+
+            for actualType in ["unknown", "builds"] {
+                let mismatched = ASCWebhookTriagePolicy.recommendations(
+                    eventType: testCase.eventType,
+                    relatedResource: ASCWebhookRelatedResource(type: actualType, id: "submission-1"),
+                    delivery: .empty
+                )
+                #expect(!mismatched.contains { $0.tool == testCase.lookupTool })
+
+                let triage = ASCWebhookTriagePolicy.triage(
+                    eventType: testCase.eventType,
+                    relatedResource: ASCWebhookRelatedResource(type: actualType, id: "submission-1"),
+                    delivery: .empty
+                )
+                let nextSteps = try #require(triage["nextSteps"] as? [String])
+                #expect(nextSteps.contains { step in
+                    step.contains("No executable feedback lookup") &&
+                        step.contains(testCase.expectedType) &&
+                        step.contains(actualType)
+                })
+            }
+
+            let missing = ASCWebhookTriagePolicy.triage(
+                eventType: testCase.eventType,
+                relatedResource: nil,
+                delivery: .empty
+            )
+            let missingRecommendations = try #require(
+                missing["recommendedToolCalls"] as? [[String: Any]]
+            )
+            #expect(!missingRecommendations.contains { recommendation in
+                recommendation["tool"] as? String == testCase.lookupTool
+            })
+            let missingNextSteps = try #require(missing["nextSteps"] as? [String])
+            #expect(missingNextSteps.contains { step in
+                step.contains("No executable feedback lookup") &&
+                    step.contains(testCase.expectedType) &&
+                    step.contains("no related resource type")
+            })
+        }
+    }
+
+    @Test("webhook recovery tool definitions expose mutating side effects")
+    func webhookRecoveryToolsExposeSideEffects() async throws {
+        let worker = WebhooksWorker(httpClient: try await TestFactory.makeHTTPClient())
+        let tools = await worker.getTools()
+
+        for name in ["webhooks_redeliver", "webhooks_ping"] {
+            let tool = try #require(tools.first { $0.name == name })
+            #expect(tool.description.contains("Mutating, non-idempotent"))
+            #expect(tool.annotations.readOnlyHint == false)
+            #expect(tool.annotations.idempotentHint == false)
+        }
+
+        let triage = try #require(tools.first { $0.name == "webhooks_triage_event" })
+        #expect(triage.description.contains("Recommendations are labeled `read_only` or `mutating`"))
+        #expect(triage.description.contains("never executes them"))
+    }
+
+    @Test("triage rejects noncanonical recommendation identifiers from payload and direct arguments")
+    func triageRejectsNoncanonicalRecommendationIdentifiers() async throws {
+        let worker = WebhooksWorker(httpClient: try await TestFactory.makeHTTPClient())
+        let parsedPayload = """
+        {"data":{"type":"betaFeedbackCrashSubmissionCreated","id":"event-1","relationships":{"instance":{"data":{"type":"betaFeedbackCrashSubmissions","id":"   "}}}}}
+        """
+        let parsedResult = try await worker.handleTool(
+            CallTool.Parameters(
+                name: "webhooks_triage_event",
+                arguments: ["payload": .string(parsedPayload)]
+            )
+        )
+        let parsedObject = try structuredObject(parsedResult)
+        let parsedRecommendations = try #require(parsedObject["recommendedToolCalls"]?.arrayValue)
+        #expect(!parsedRecommendations.contains { recommendation in
+            recommendation.objectValue?["tool"] == .string("beta_feedback_get_crash") ||
+                recommendation.objectValue?["tool"] == .string("beta_feedback_get_crash_log")
+        })
+        let parsedNextSteps = try #require(parsedObject["nextSteps"]?.arrayValue)
+        #expect(parsedNextSteps.contains { step in
+            step.stringValue?.contains("related resource ID is not canonical") == true
+        })
+
+        for invalidID in ["bad/id", "%2F", ".."] {
+            let invalidPayload = """
+            {"data":{"type":"betaFeedbackCrashSubmissionCreated","id":"event-1","relationships":{"instance":{"data":{"type":"betaFeedbackCrashSubmissions","id":"\(invalidID)"}}}}}
+            """
+            let invalidParsedResult = try await worker.handleTool(
+                CallTool.Parameters(
+                    name: "webhooks_triage_event",
+                    arguments: ["payload": .string(invalidPayload)]
+                )
+            )
+            let invalidParsedObject = try structuredObject(invalidParsedResult)
+            let invalidParsedRecommendations = try #require(
+                invalidParsedObject["recommendedToolCalls"]?.arrayValue
+            )
+            #expect(!invalidParsedRecommendations.contains { recommendation in
+                recommendation.objectValue?["tool"] == .string("beta_feedback_get_crash") ||
+                    recommendation.objectValue?["tool"] == .string("beta_feedback_get_crash_log")
+            })
+            let invalidParsedNextSteps = try #require(invalidParsedObject["nextSteps"]?.arrayValue)
+            #expect(invalidParsedNextSteps.contains { step in
+                step.stringValue?.contains("canonical resource ID") == true
+            })
+        }
+
+        let directResult = try await worker.handleTool(
+            CallTool.Parameters(
+                name: "webhooks_triage_event",
+                arguments: [
+                    "event_type": .string("BUILD_UPLOAD_STATE_UPDATED"),
+                    "resource_type": .string("buildUploads"),
+                    "resource_id": .string(" "),
+                    "delivery_state": .string("FAILED"),
+                    "delivery_id": .string(" delivery-1"),
+                    "webhook_id": .string("webhook\u{0000}1")
+                ]
+            )
+        )
+        let directObject = try structuredObject(directResult)
+        let directRecommendations = try #require(directObject["recommendedToolCalls"]?.arrayValue)
+        #expect(directRecommendations.isEmpty)
+        let directNextSteps = try #require(directObject["nextSteps"]?.arrayValue)
+        #expect(directNextSteps.contains { step in
+            step.stringValue?.contains("related resource ID is not canonical") == true
+        })
+        #expect(directNextSteps.contains { step in
+            step.stringValue?.contains("delivery_id is not canonical") == true
+        })
+        #expect(directNextSteps.contains { step in
+            step.stringValue?.contains("webhook_id is not canonical") == true
+        })
+
+        for invalidID in ["bad/id", "%2F", ".."] {
+            let invalidDirectResult = try await worker.handleTool(
+                CallTool.Parameters(
+                    name: "webhooks_triage_event",
+                    arguments: [
+                        "event_type": .string("BUILD_UPLOAD_STATE_UPDATED"),
+                        "resource_type": .string("buildUploads"),
+                        "resource_id": .string(invalidID),
+                        "delivery_state": .string("FAILED"),
+                        "delivery_id": .string(invalidID),
+                        "webhook_id": .string(invalidID)
+                    ]
+                )
+            )
+            let invalidDirectObject = try structuredObject(invalidDirectResult)
+            let invalidDirectRecommendations = try #require(
+                invalidDirectObject["recommendedToolCalls"]?.arrayValue
+            )
+            #expect(invalidDirectRecommendations.isEmpty)
+            let invalidDirectNextSteps = try #require(invalidDirectObject["nextSteps"]?.arrayValue)
+            #expect(invalidDirectNextSteps.contains { step in
+                step.stringValue?.contains("canonical resource ID") == true
+            })
+            #expect(invalidDirectNextSteps.contains { step in
+                step.stringValue?.contains("canonical delivery ID") == true
+            })
+            #expect(invalidDirectNextSteps.contains { step in
+                step.stringValue?.contains("canonical webhook ID") == true
+            })
+        }
+    }
+
+    @Test("triage never recommends tools without their required identifiers")
+    func triageOmitsUnexecutableRecommendations() {
+        let missingIdentifierCases: [(String, ASCWebhookRelatedResource?)] = [
+            ("BETA_FEEDBACK_CRASH_SUBMISSION_CREATED", nil),
+            ("BETA_FEEDBACK_SCREENSHOT_SUBMISSION_CREATED", nil),
+            ("BUILD_BETA_DETAIL_EXTERNAL_BUILD_STATE_UPDATED", ASCWebhookRelatedResource(
+                type: "buildBetaDetails",
+                id: "detail-1"
+            )),
+            ("BUILD_UPLOAD_STATE_UPDATED", ASCWebhookRelatedResource(
+                type: "builds",
+                id: "build-1"
+            )),
+            ("BACKGROUND_ASSET_UPLOAD_STATE_UPDATED", nil),
+            ("UNSPECIALIZED_EVENT", nil)
+        ]
+
+        for (eventType, relatedResource) in missingIdentifierCases {
+            #expect(ASCWebhookTriagePolicy.recommendations(
+                eventType: eventType,
+                relatedResource: relatedResource,
+                delivery: .empty
+            ).isEmpty)
+        }
+
+        let withWebhook = ASCWebhookTriagePolicy.recommendations(
+            eventType: "UNSPECIALIZED_EVENT",
+            relatedResource: nil,
+            delivery: ASCWebhookDeliveryContext(
+                deliveryID: nil,
+                webhookID: "webhook-1",
+                deliveryState: nil,
+                httpStatusCode: nil,
+                errorMessage: nil
+            )
+        )
+        #expect(withWebhook.count == 1)
+        #expect(withWebhook.first?.tool == "webhooks_list_deliveries")
+        #expect(withWebhook.first?.arguments["webhook_id"] as? String == "webhook-1")
     }
 
     private func jsonObject<T: Encodable>(_ value: T) throws -> [String: Any] {
@@ -773,7 +1007,7 @@ struct WebhooksWorkerTests {
     }
 
     private static let nestedEventPayload = """
-    {"data":{"type":"buildUploadStateUpdated","id":"inner-event-1","version":1,"attributes":{"newValue":"VALID","oldValue":"PROCESSING","timestamp":"2026-05-08T12:00:00Z"},"relationships":{"instance":{"data":{"type":"builds","id":"build-1"}}}}}
+    {"data":{"type":"buildUploadStateUpdated","id":"inner-event-1","version":1,"attributes":{"newState":"COMPLETE"},"relationships":{"instance":{"data":{"type":"buildUploads","id":"upload-1"}}}}}
     """
 
     private static let webhookEnvelopePayload = """

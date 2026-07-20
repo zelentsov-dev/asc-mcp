@@ -237,6 +237,18 @@ struct WorkerRoutingTests {
         }
     }
 
+    // MARK: - BuildUploadsWorker
+
+    @Test("BuildUploadsWorker throws MCPError.methodNotFound for unknown tool")
+    func buildUploadsWorkerUnknownTool() async throws {
+        let client = try await TestFactory.makeHTTPClient()
+        let worker = BuildUploadsWorker(httpClient: client, uploadService: UploadService())
+        let params = CallTool.Parameters(name: "build_uploads_nonexistent", arguments: nil)
+        await #expect(throws: MCPError.self) {
+            _ = try await worker.handleTool(params)
+        }
+    }
+
     // MARK: - BuildProcessingWorker
 
     @Test("BuildProcessingWorker throws MCPError.methodNotFound for unknown tool")

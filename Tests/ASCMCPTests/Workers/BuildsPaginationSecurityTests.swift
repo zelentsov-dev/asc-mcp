@@ -22,7 +22,7 @@ struct BuildsPaginationSecurityTests {
                 "sort": .string("version"),
                 "limit": .int(50),
                 "next_url": .string(
-                    "https://api.example.test/v1/builds?filter%5Bapp%5D=app-1&include=app%2CbuildBetaDetail%2CpreReleaseVersion&sort=version&limit=50&cursor=next"
+                    "https://api.example.test/v1/builds?filter%5Bapp%5D=app-1&include=app%2CbuildBetaDetail%2CpreReleaseVersion%2CbuildUpload&sort=version&limit=50&cursor=next"
                 )
             ]
         ))
@@ -47,7 +47,7 @@ struct BuildsPaginationSecurityTests {
             arguments: [
                 "app_id": .string("app-1"),
                 "next_url": .string(
-                    "https://api.example.test/v1/builds?filter%5Bapp%5D=app-1&include=app%2CbuildBetaDetail%2CpreReleaseVersion&sort=version&limit=25&cursor=next"
+                    "https://api.example.test/v1/builds?filter%5Bapp%5D=app-1&include=app%2CbuildBetaDetail%2CpreReleaseVersion%2CbuildUpload&sort=version&limit=25&cursor=next"
                 )
             ]
         ))
@@ -66,7 +66,7 @@ struct BuildsPaginationSecurityTests {
             arguments: [
                 "app_id": .string("app-1"),
                 "next_url": .string(
-                    "https://api.example.test/v1/builds?filter%5Bapp%5D=app-2&include=app%2CbuildBetaDetail%2CpreReleaseVersion&sort=-uploadedDate&limit=25&cursor=bad"
+                    "https://api.example.test/v1/builds?filter%5Bapp%5D=app-2&include=app%2CbuildBetaDetail%2CpreReleaseVersion%2CbuildUpload&sort=-uploadedDate&limit=25&cursor=bad"
                 )
             ]
         ))
@@ -86,7 +86,7 @@ struct BuildsPaginationSecurityTests {
                 "app_id": .string("app-1"),
                 "processing_state": .string("VALID"),
                 "next_url": .string(
-                    "https://api.example.test/v1/builds?filter%5Bapp%5D=app-1&filter%5BprocessingState%5D=PROCESSING&include=app%2CbuildBetaDetail%2CpreReleaseVersion&sort=-uploadedDate&limit=25&cursor=bad"
+                    "https://api.example.test/v1/builds?filter%5Bapp%5D=app-1&filter%5BprocessingState%5D=PROCESSING&include=app%2CbuildBetaDetail%2CpreReleaseVersion%2CbuildUpload&sort=-uploadedDate&limit=25&cursor=bad"
                 )
             ]
         ))
@@ -105,7 +105,7 @@ struct BuildsPaginationSecurityTests {
             arguments: [
                 "app_id": .string("app-1"),
                 "next_url": .string(
-                    "https://api.example.test/v1/users?filter%5Bapp%5D=app-1&include=app%2CbuildBetaDetail%2CpreReleaseVersion&sort=-uploadedDate&limit=25&cursor=bad"
+                    "https://api.example.test/v1/users?filter%5Bapp%5D=app-1&include=app%2CbuildBetaDetail%2CpreReleaseVersion%2CbuildUpload&sort=-uploadedDate&limit=25&cursor=bad"
                 )
             ]
         ))

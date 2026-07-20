@@ -20,7 +20,12 @@ enum ASCWebhookTriagePolicy {
             "relatedResource": relatedResource?.dictionary ?? NSNull(),
             "delivery": delivery.dictionary,
             "recommendedToolCalls": recommendations.map(\.dictionary),
-            "nextSteps": nextSteps(eventType: eventType, delivery: delivery, hasRelatedResource: relatedResource != nil),
+            "nextSteps": nextSteps(
+                eventType: eventType,
+                relatedResource: relatedResource,
+                delivery: delivery,
+                hasRecommendations: !recommendations.isEmpty
+            ),
             "confidence": eventType == nil ? "low" : "high"
         ]
     }
@@ -31,10 +36,13 @@ enum ASCWebhookTriagePolicy {
         delivery: ASCWebhookDeliveryContext
     ) -> [ASCWebhookToolRecommendation] {
         var recommendations: [ASCWebhookToolRecommendation] = []
+        let relatedResourceID = canonicalRecommendationIdentifier(relatedResource?.id)
+        let deliveryID = canonicalRecommendationIdentifier(delivery.deliveryID)
+        let webhookID = canonicalRecommendationIdentifier(delivery.webhookID)
 
         switch eventType {
         case "APP_STORE_VERSION_APP_VERSION_STATE_UPDATED":
-            if relatedResource?.type == "appStoreVersions", let id = relatedResource?.id {
+            if relatedResource?.type == "appStoreVersions", let id = relatedResourceID {
                 recommendations.append(.init(
                     tool: "app_versions_get",
                     reason: "Read the current App Store version state after the webhook notification.",
@@ -42,34 +50,23 @@ enum ASCWebhookTriagePolicy {
                 ))
             }
         case "BUILD_UPLOAD_STATE_UPDATED":
-            if relatedResource?.type == "builds", let id = relatedResource?.id {
+            if relatedResource?.type == "buildUploads", let id = relatedResourceID {
                 recommendations.append(.init(
-                    tool: "builds_get",
-                    reason: "Inspect the uploaded build state and related beta detail after processing changes.",
-                    arguments: ["build_id": id, "include_beta_detail": true]
-                ))
-            } else {
-                recommendations.append(.init(
-                    tool: "builds_list",
-                    reason: "Find the build affected by the upload state change.",
-                    arguments: [:]
+                    tool: "build_uploads_get",
+                    reason: "Inspect the BuildUpload state reported by the webhook.",
+                    arguments: ["build_upload_id": id]
                 ))
             }
         case "BUILD_BETA_DETAIL_EXTERNAL_BUILD_STATE_UPDATED":
-            if relatedResource?.type == "builds", let id = relatedResource?.id {
+            if relatedResource?.type == "buildBetaDetails", let webhookID {
                 recommendations.append(.init(
-                    tool: "builds_get_beta_detail",
-                    reason: "Inspect external TestFlight state for the affected build.",
-                    arguments: ["build_id": id]
-                ))
-                recommendations.append(.init(
-                    tool: "builds_get",
-                    reason: "Read build metadata alongside the external beta state.",
-                    arguments: ["build_id": id, "include_beta_detail": true]
+                    tool: "webhooks_list_deliveries",
+                    reason: "Correlate the BuildBetaDetail event with delivery payload data; its resource ID is not a Build ID.",
+                    arguments: ["webhook_id": webhookID]
                 ))
             }
         case "BETA_FEEDBACK_CRASH_SUBMISSION_CREATED":
-            if let id = relatedResource?.id {
+            if relatedResource?.type == "betaFeedbackCrashSubmissions", let id = relatedResourceID {
                 recommendations.append(.init(
                     tool: "beta_feedback_get_crash",
                     reason: "Read the new TestFlight crash submission and related build/tester metadata.",
@@ -80,67 +77,63 @@ enum ASCWebhookTriagePolicy {
                     reason: "Fetch the crash log text for diagnosis.",
                     arguments: ["submission_id": id]
                 ))
-            } else {
-                recommendations.append(.init(
-                    tool: "beta_feedback_list_crashes",
-                    reason: "Find the crash submission created by this webhook.",
-                    arguments: [:]
-                ))
             }
         case "BETA_FEEDBACK_SCREENSHOT_SUBMISSION_CREATED":
-            if let id = relatedResource?.id {
+            if relatedResource?.type == "betaFeedbackScreenshotSubmissions", let id = relatedResourceID {
                 recommendations.append(.init(
                     tool: "beta_feedback_get_screenshot",
                     reason: "Read the new TestFlight screenshot feedback submission.",
                     arguments: ["submission_id": id, "include_related": true]
                 ))
-            } else {
-                recommendations.append(.init(
-                    tool: "beta_feedback_list_screenshots",
-                    reason: "Find the screenshot submission created by this webhook.",
-                    arguments: [:]
-                ))
             }
         case .some(let value) where value.hasPrefix("BACKGROUND_ASSET_"):
-            recommendations.append(.init(
-                tool: "webhooks_list_deliveries",
-                reason: "Confirm delivery history; dedicated background asset tools are not yet implemented.",
-                arguments: delivery.webhookID.map { ["webhook_id": $0] } ?? [:]
-            ))
+            if let webhookID {
+                recommendations.append(.init(
+                    tool: "webhooks_list_deliveries",
+                    reason: "Confirm delivery history; dedicated background asset tools are not yet implemented.",
+                    arguments: ["webhook_id": webhookID]
+                ))
+            }
         case .some(let value) where value.hasPrefix("ALTERNATIVE_DISTRIBUTION_"):
-            recommendations.append(.init(
-                tool: "webhooks_list_deliveries",
-                reason: "Confirm delivery history; dedicated alternative distribution tools are not yet implemented.",
-                arguments: delivery.webhookID.map { ["webhook_id": $0] } ?? [:]
-            ))
+            if let webhookID {
+                recommendations.append(.init(
+                    tool: "webhooks_list_deliveries",
+                    reason: "Confirm delivery history; dedicated alternative distribution tools are not yet implemented.",
+                    arguments: ["webhook_id": webhookID]
+                ))
+            }
         default:
-            recommendations.append(.init(
-                tool: "webhooks_list_deliveries",
-                reason: "Use delivery history to correlate this webhook event with App Store Connect state.",
-                arguments: delivery.webhookID.map { ["webhook_id": $0] } ?? [:]
-            ))
+            if let webhookID {
+                recommendations.append(.init(
+                    tool: "webhooks_list_deliveries",
+                    reason: "Use delivery history to correlate this webhook event with App Store Connect state.",
+                    arguments: ["webhook_id": webhookID]
+                ))
+            }
         }
 
-        if recommendations.isEmpty {
+        if recommendations.isEmpty, let webhookID {
             recommendations.append(.init(
                 tool: "webhooks_list_deliveries",
                 reason: "Use delivery history or the raw event payload to identify the affected App Store Connect resource.",
-                arguments: delivery.webhookID.map { ["webhook_id": $0] } ?? [:]
+                arguments: ["webhook_id": webhookID]
             ))
         }
 
-        if delivery.requiresRecovery, let deliveryID = delivery.deliveryID {
+        if delivery.requiresRecovery, let deliveryID {
             recommendations.append(.init(
                 tool: "webhooks_redeliver",
-                reason: "Retry the failed webhook delivery after fixing receiver availability.",
-                arguments: ["delivery_id": deliveryID]
+                reason: "Mutating recovery action: create a new delivery attempt after fixing receiver availability.",
+                arguments: ["delivery_id": deliveryID],
+                effect: .mutating
             ))
         }
-        if delivery.requiresRecovery, let webhookID = delivery.webhookID {
+        if delivery.requiresRecovery, let webhookID {
             recommendations.append(.init(
                 tool: "webhooks_ping",
-                reason: "Send a test ping after receiver changes to verify the endpoint is healthy.",
-                arguments: ["webhook_id": webhookID]
+                reason: "Mutating recovery action: create and send a test ping after receiver changes.",
+                arguments: ["webhook_id": webhookID],
+                effect: .mutating
             ))
         }
 
@@ -158,7 +151,7 @@ enum ASCWebhookTriagePolicy {
         case "BUILD_BETA_DETAIL_EXTERNAL_BUILD_STATE_UPDATED":
             return ("medium", "External TestFlight state changed", "Review external beta readiness and tester availability for the affected build.")
         case "BUILD_UPLOAD_STATE_UPDATED":
-            return ("info", "Build upload state changed", "Inspect the build when processing reaches a terminal state.")
+            return ("info", "Build upload state changed", "Inspect the BuildUpload resource when processing reaches a terminal state.")
         case .some(let value) where value.hasPrefix("BACKGROUND_ASSET_"):
             return ("medium", "Background asset event", "The event belongs to Apple-hosted background assets; this server currently only provides webhook diagnostics for that domain.")
         case .some(let value) where value.hasPrefix("ALTERNATIVE_DISTRIBUTION_"):
@@ -170,21 +163,72 @@ enum ASCWebhookTriagePolicy {
         }
     }
 
-    private static func nextSteps(eventType: String?, delivery: ASCWebhookDeliveryContext, hasRelatedResource: Bool) -> [String] {
+    private static func nextSteps(
+        eventType: String?,
+        relatedResource: ASCWebhookRelatedResource?,
+        delivery: ASCWebhookDeliveryContext,
+        hasRecommendations: Bool
+    ) -> [String] {
         var steps: [String] = []
+        var unavailableLookupExplained = false
         if delivery.requiresRecovery {
             steps.append("Fix receiver availability or response handling, then redeliver the failed delivery.")
         }
         if eventType == nil {
             steps.append("Parse the raw webhook body with webhooks_parse_payload to identify the event type.")
         }
-        if !hasRelatedResource {
+        if let relatedResource,
+           canonicalRecommendationIdentifier(relatedResource.id) == nil {
+            steps.append("No executable resource lookup was recommended because the related resource ID is not canonical: it is empty, changes when trimmed or URL-encoded, contains a separator, percent escape, or control character, or is a dot segment. Inspect the raw event payload and supply a canonical resource ID.")
+            unavailableLookupExplained = true
+        } else if let expectedType = expectedFeedbackResourceType(for: eventType),
+           relatedResource?.type != expectedType {
+            let actualType = relatedResource.map { "'\($0.type)'" } ?? "no related resource type"
+            steps.append("No executable feedback lookup was recommended because this event requires relatedResource.type '\(expectedType)', but the input provided \(actualType). Inspect the raw event payload and supply the exact related resource type and ID.")
+            unavailableLookupExplained = true
+        } else if relatedResource == nil {
             steps.append("Use the event payload or delivery history to identify the affected App Store Connect resource ID.")
+        }
+        if delivery.deliveryID != nil,
+           canonicalRecommendationIdentifier(delivery.deliveryID) == nil {
+            steps.append("webhooks_redeliver was not recommended because delivery_id is not canonical: it is empty, changes when trimmed or URL-encoded, contains a separator, percent escape, or control character, or is a dot segment. Supply the canonical delivery ID before requesting redelivery.")
+            unavailableLookupExplained = true
+        }
+        if delivery.webhookID != nil,
+           canonicalRecommendationIdentifier(delivery.webhookID) == nil {
+            steps.append("Webhook delivery lookup and webhooks_ping were not recommended because webhook_id is not canonical: it is empty, changes when trimmed or URL-encoded, contains a separator, percent escape, or control character, or is a dot segment. Supply the canonical webhook ID first.")
+            unavailableLookupExplained = true
+        }
+        if !hasRecommendations && !unavailableLookupExplained {
+            steps.append("No executable lookup can be derived without the required resource or webhook ID; inspect the raw event payload and supply the missing ID before calling another tool.")
         }
         if steps.isEmpty {
             steps.append("Run the recommended read-only lookup tools and compare the current ASC state with the webhook payload.")
         }
         return steps
+    }
+
+    private static func canonicalRecommendationIdentifier(_ value: String?) -> String? {
+        guard let value,
+              !value.isEmpty,
+              value == value.trimmingCharacters(in: .whitespacesAndNewlines),
+              !value.unicodeScalars.contains(where: { CharacterSet.controlCharacters.contains($0) }),
+              let encoded = try? ASCPathSegment.encode(value),
+              encoded == value else {
+            return nil
+        }
+        return value
+    }
+
+    private static func expectedFeedbackResourceType(for eventType: String?) -> String? {
+        switch eventType {
+        case "BETA_FEEDBACK_CRASH_SUBMISSION_CREATED":
+            return "betaFeedbackCrashSubmissions"
+        case "BETA_FEEDBACK_SCREENSHOT_SUBMISSION_CREATED":
+            return "betaFeedbackScreenshotSubmissions"
+        default:
+            return nil
+        }
     }
 
     private static func strongestSeverity(_ lhs: String, _ rhs: String) -> String {
@@ -244,12 +288,31 @@ struct ASCWebhookToolRecommendation {
     let tool: String
     let reason: String
     let arguments: [String: Any]
+    let effect: ASCWebhookRecommendationEffect
+
+    init(
+        tool: String,
+        reason: String,
+        arguments: [String: Any],
+        effect: ASCWebhookRecommendationEffect = .readOnly
+    ) {
+        self.tool = tool
+        self.reason = reason
+        self.arguments = arguments
+        self.effect = effect
+    }
 
     var dictionary: [String: Any] {
         [
             "tool": tool,
             "reason": reason,
-            "arguments": arguments
+            "arguments": arguments,
+            "effect": effect.rawValue
         ]
     }
+}
+
+enum ASCWebhookRecommendationEffect: String, Sendable {
+    case readOnly = "read_only"
+    case mutating
 }

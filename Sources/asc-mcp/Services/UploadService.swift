@@ -2,6 +2,63 @@ import Foundation
 import CryptoKit
 import os
 
+private enum UploadChunkOutcome: Sendable {
+    case success(Int, UploadPartReceipt)
+    case failure(Int, String)
+    case cancelled
+}
+
+final class PresignedUploadRedirectDelegate: NSObject, URLSessionTaskDelegate, @unchecked Sendable {
+    func redirectedRequest(_ request: URLRequest) -> URLRequest? {
+        nil
+    }
+
+    func urlSession(
+        _ session: URLSession,
+        task: URLSessionTask,
+        willPerformHTTPRedirection response: HTTPURLResponse,
+        newRequest request: URLRequest,
+        completionHandler: @escaping @Sendable (URLRequest?) -> Void
+    ) {
+        completionHandler(redirectedRequest(request))
+    }
+}
+
+final class PresignedUploadURLSessionTransport: HTTPTransport, @unchecked Sendable {
+    private let redirectDelegate: PresignedUploadRedirectDelegate
+    private let urlSession: URLSession
+
+    init(configuration: URLSessionConfiguration) {
+        let redirectDelegate = PresignedUploadRedirectDelegate()
+        self.redirectDelegate = redirectDelegate
+        self.urlSession = URLSession(configuration: configuration)
+    }
+
+    deinit {
+        urlSession.invalidateAndCancel()
+    }
+
+    func data(for request: URLRequest) async throws -> (Data, HTTPURLResponse) {
+        let (data, response) = try await urlSession.data(for: request, delegate: redirectDelegate)
+        guard let response = response as? HTTPURLResponse else {
+            throw ASCError.network("Invalid response format")
+        }
+        return (data, response)
+    }
+
+    func upload(for request: URLRequest, fromFile fileURL: URL) async throws -> (Data, HTTPURLResponse) {
+        let (data, response) = try await urlSession.upload(
+            for: request,
+            fromFile: fileURL,
+            delegate: redirectDelegate
+        )
+        guard let response = response as? HTTPURLResponse else {
+            throw ASCError.network("Invalid response format")
+        }
+        return (data, response)
+    }
+}
+
 /// Service for uploading assets to App Store Connect
 /// Transfers immutable file snapshots with bounded memory after validating HTTPS targets and exact byte coverage.
 public actor UploadService {
@@ -10,10 +67,15 @@ public actor UploadService {
     private let logger = Logger(subsystem: "com.asc-mcp", category: "UploadService")
 
     public init(transport: (any HTTPTransport)? = nil, batchSize: Int = 3) {
-        let config = URLSessionConfiguration.default
+        let config = URLSessionConfiguration.ephemeral
         config.timeoutIntervalForRequest = 120
         config.timeoutIntervalForResource = 300
-        self.transport = transport ?? URLSessionTransport(configuration: config)
+        config.httpCookieStorage = nil
+        config.httpShouldSetCookies = false
+        config.urlCredentialStorage = nil
+        config.urlCache = nil
+        config.requestCachePolicy = .reloadIgnoringLocalCacheData
+        self.transport = transport ?? PresignedUploadURLSessionTransport(configuration: config)
         self.batchSize = max(1, batchSize)
     }
 
@@ -56,40 +118,128 @@ public actor UploadService {
         snapshot: UploadFileSnapshot,
         uploadOperations: [ASCUploadOperation]
     ) async throws -> String {
+        do {
+            let result = try await uploadFileWithReceipts(
+                snapshot: snapshot,
+                uploadOperations: uploadOperations,
+                maxAttemptsPerPart: 1,
+                retryDelayNanoseconds: 0
+            )
+            return result.fileMD5
+        } catch let failure as UploadTransferFailure {
+            throw ASCError.network(failure.message)
+        }
+    }
+
+    func uploadFileWithReceipts(
+        snapshot: UploadFileSnapshot,
+        uploadOperations: [ASCUploadOperation],
+        maxAttemptsPerPart: Int = 3,
+        retryDelayNanoseconds: UInt64 = 250_000_000
+    ) async throws -> UploadTransferResult {
         let size = snapshot.fileSize
-        try validateUploadOperations(uploadOperations, fileSize: size)
+        try Task.checkCancellation()
+        let expirationReferenceDate = Date()
+        try validateUploadOperations(
+            uploadOperations,
+            fileSize: size,
+            expirationReferenceDate: expirationReferenceDate
+        )
+        try Task.checkCancellation()
 
         logger.info("Uploading file: \(snapshot.fileName) (\(size) bytes, \(uploadOperations.count) chunks)")
 
+        var receipts = Array<UploadPartReceipt?>(repeating: nil, count: uploadOperations.count)
         var nextIndex = 0
         while nextIndex < uploadOperations.count {
+            let completedBeforeBatch = receipts.compactMap { $0 }
+            if Task.isCancelled {
+                guard !completedBeforeBatch.isEmpty else {
+                    throw CancellationError()
+                }
+                throw UploadTransferFailure(
+                    message: "Upload was cancelled before all parts completed",
+                    receipts: completedBeforeBatch
+                )
+            }
+
             let batchEnd = min(nextIndex + batchSize, uploadOperations.count)
             let batch = Array(uploadOperations[nextIndex..<batchEnd].enumerated())
 
-            try await withThrowingTaskGroup(of: Void.self) { group in
+            var failures: [(index: Int, message: String)] = []
+            var wasCancelled = false
+            await withTaskGroup(of: UploadChunkOutcome.self) { group in
                 for (batchOffset, operation) in batch {
                     let chunkIndex = nextIndex + batchOffset
                     group.addTask {
-                        try await self.uploadChunk(
-                            fileURL: snapshot.url,
-                            fileSize: size,
-                            operation: operation,
-                            chunkIndex: chunkIndex
-                        )
+                        do {
+                            let receipt = try await self.uploadChunk(
+                                fileURL: snapshot.url,
+                                fileSize: size,
+                                operation: operation,
+                                chunkIndex: chunkIndex,
+                                maxAttempts: max(1, maxAttemptsPerPart),
+                                retryDelayNanoseconds: retryDelayNanoseconds
+                            )
+                            return .success(chunkIndex, receipt)
+                        } catch is CancellationError {
+                            return .cancelled
+                        } catch {
+                            return .failure(chunkIndex, Self.transferFailureMessage(from: error))
+                        }
                     }
                 }
-                try await group.waitForAll()
+                for await outcome in group {
+                    switch outcome {
+                    case .success(let index, let receipt):
+                        receipts[index] = receipt
+                    case .failure(let index, let message):
+                        failures.append((index, message))
+                    case .cancelled:
+                        wasCancelled = true
+                        group.cancelAll()
+                    }
+                }
+            }
+
+            let completedReceipts = receipts.compactMap { $0 }
+            if let failure = failures.min(by: { $0.index < $1.index }) {
+                throw UploadTransferFailure(
+                    message: failure.message,
+                    receipts: completedReceipts
+                )
+            }
+            if wasCancelled {
+                guard !completedReceipts.isEmpty else {
+                    throw CancellationError()
+                }
+                throw UploadTransferFailure(
+                    message: "Upload was cancelled before all parts completed",
+                    receipts: completedReceipts
+                )
             }
 
             nextIndex = batchEnd
         }
 
-        let md5 = try computeMD5(fileURL: snapshot.url)
+        let completedReceipts = receipts.compactMap { $0 }
+        let md5: String
+        do {
+            md5 = try computeMD5(fileURL: snapshot.url)
+        } catch {
+            let message = error is CancellationError
+                ? "Upload checksum verification was cancelled after byte transfer completed"
+                : Self.transferFailureMessage(from: error)
+            throw UploadTransferFailure(message: message, receipts: completedReceipts)
+        }
         guard md5 == snapshot.md5Checksum else {
-            throw ASCError.network("The immutable upload snapshot changed during transfer")
+            throw UploadTransferFailure(
+                message: "The immutable upload snapshot changed during transfer",
+                receipts: completedReceipts
+            )
         }
         logger.info("Upload complete. MD5: \(md5)")
-        return md5
+        return UploadTransferResult(fileMD5: md5, receipts: completedReceipts)
     }
 
     private func createSnapshot(of fileURL: URL) throws -> URL {
@@ -148,7 +298,11 @@ public actor UploadService {
         }
     }
 
-    func validateUploadOperations(_ operations: [ASCUploadOperation], fileSize: Int) throws {
+    func validateUploadOperations(
+        _ operations: [ASCUploadOperation],
+        fileSize: Int,
+        expirationReferenceDate: Date
+    ) throws {
         guard !operations.isEmpty else {
             throw ASCError.network("Apple returned no upload operations")
         }
@@ -166,6 +320,19 @@ public actor UploadService {
                   components.fragment == nil,
                   components.url != nil else {
                 throw ASCError.network("Upload operation \(index) has an invalid URL")
+            }
+
+            if let expiration = operation.expiration {
+                guard let expirationDate = Self.uploadExpirationDate(expiration) else {
+                    throw ASCError.network("Upload operation \(index) has an invalid expiration")
+                }
+                guard expirationDate > expirationReferenceDate else {
+                    throw ASCError.network("Upload chunk \(index) URL has expired")
+                }
+            }
+            if let partNumber = operation.partNumber,
+               !(1...9_007_199_254_740_991).contains(partNumber) {
+                throw ASCError.network("Upload operation \(index) has an invalid part number")
             }
 
             let offset = operation.offset ?? 0
@@ -205,13 +372,14 @@ public actor UploadService {
         }
     }
 
-    /// Uploads a single chunk to the presigned URL
     private func uploadChunk(
         fileURL: URL,
         fileSize: Int,
         operation: ASCUploadOperation,
-        chunkIndex: Int
-    ) async throws {
+        chunkIndex: Int,
+        maxAttempts: Int,
+        retryDelayNanoseconds: UInt64
+    ) async throws -> UploadPartReceipt {
         guard let urlString = operation.url,
               let url = URL(string: urlString) else {
             throw ASCError.network("Upload operation \(chunkIndex) has no URL")
@@ -241,40 +409,102 @@ public actor UploadService {
             }
         }
 
-        try Task.checkCancellation()
+        let effectiveMethod = operation.method ?? "PUT"
+        let allowedAttempts = Self.isExplicitPUT(operation.method) ? max(1, maxAttempts) : 1
 
-        // Build request — presigned URL, no JWT
-        var request = URLRequest(url: url)
-        request.httpMethod = operation.method ?? "PUT"
+        for attempt in 1...allowedAttempts {
+            try Task.checkCancellation()
 
-        // Set headers from upload operation (Content-Type, Content-MD5, etc.)
-        if let headers = operation.requestHeaders {
-            for header in headers {
-                if let name = header.name, let value = header.value {
-                    request.setValue(value, forHTTPHeaderField: name)
+            if let expiration = operation.expiration,
+               let expirationDate = Self.uploadExpirationDate(expiration),
+               expirationDate <= Date() {
+                throw ASCError.network("Upload chunk \(chunkIndex) URL has expired")
+            }
+
+            var request = URLRequest(url: url)
+            request.httpMethod = effectiveMethod
+            request.httpShouldHandleCookies = false
+
+            if let headers = operation.requestHeaders {
+                for header in headers {
+                    if let name = header.name, let value = header.value {
+                        request.setValue(value, forHTTPHeaderField: name)
+                    }
                 }
             }
-        }
 
-        logger.debug("Uploading chunk \(chunkIndex): offset=\(offset), length=\(length)")
+            logger.debug("Uploading chunk \(chunkIndex): offset=\(offset), length=\(length), attempt=\(attempt)")
 
-        let response: HTTPURLResponse
-        do {
-            (_, response) = try await transport.upload(for: request, fromFile: uploadFileURL)
-        } catch {
-            if error is CancellationError || Task.isCancelled {
-                throw CancellationError()
+            let response: HTTPURLResponse
+            do {
+                (_, response) = try await transport.upload(for: request, fromFile: uploadFileURL)
+            } catch {
+                if error is CancellationError || Task.isCancelled {
+                    throw CancellationError()
+                }
+                guard attempt < allowedAttempts else {
+                    let suffix = allowedAttempts == 1 ? "" : " after \(attempt) attempts"
+                    throw ASCError.network("Upload chunk \(chunkIndex) transfer failed\(suffix)")
+                }
+                if retryDelayNanoseconds > 0 {
+                    try await Task.sleep(nanoseconds: retryDelayNanoseconds)
+                }
+                continue
             }
-            throw ASCError.network("Upload chunk \(chunkIndex) transfer failed")
+
+            guard response.url == url else {
+                throw ASCError.network("Upload chunk \(chunkIndex) redirect response was rejected")
+            }
+            if 200...299 ~= response.statusCode {
+                return UploadPartReceipt(
+                    operationIndex: chunkIndex,
+                    method: effectiveMethod,
+                    offset: offset,
+                    length: length,
+                    attempts: attempt,
+                    statusCode: response.statusCode,
+                    expiration: operation.expiration,
+                    partNumber: operation.partNumber,
+                    entityTag: operation.entityTag,
+                    responseEntityTag: response.value(forHTTPHeaderField: "ETag")
+                )
+            }
+
+            guard attempt < allowedAttempts,
+                  Self.retryableUploadStatusCodes.contains(response.statusCode) else {
+                throw ASCError.network("Upload chunk \(chunkIndex) failed with status \(response.statusCode)")
+            }
+
+            try Task.checkCancellation()
+            if retryDelayNanoseconds > 0 {
+                try await Task.sleep(nanoseconds: retryDelayNanoseconds)
+            }
         }
 
-        try Task.checkCancellation()
+        throw ASCError.network("Upload chunk \(chunkIndex) transfer failed")
+    }
 
-        guard 200...299 ~= response.statusCode else {
-            throw ASCError.network("Upload chunk \(chunkIndex) failed with status \(response.statusCode)")
+    private static let retryableUploadStatusCodes = Set([408, 429, 500, 502, 503, 504])
+
+    private static func isExplicitPUT(_ method: String?) -> Bool {
+        method == "PUT"
+    }
+
+    private static func transferFailureMessage(from error: Error) -> String {
+        if let ascError = error as? ASCError,
+           case .network(let message) = ascError {
+            return message
         }
+        return error.localizedDescription
+    }
 
-        logger.debug("Chunk \(chunkIndex) uploaded successfully")
+    private static func uploadExpirationDate(_ value: String) -> Date? {
+        let fractional = ISO8601DateFormatter()
+        fractional.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        if let date = fractional.date(from: value) {
+            return date
+        }
+        return ISO8601DateFormatter().date(from: value)
     }
 
     private func createChunkFile(
@@ -356,8 +586,10 @@ public actor UploadService {
     /// Computes MD5 hex checksum of a file without loading it fully into memory.
     /// - Parameter fileURL: File URL to hash.
     /// - Returns: Lowercase hex MD5 checksum.
-    /// - Throws: ASCError if the file cannot be read.
+    /// - Throws: ASCError if the file cannot be read, or CancellationError when hashing is cancelled.
     public func computeMD5(fileURL: URL) throws -> String {
+        try Task.checkCancellation()
+
         let handle: FileHandle
         do {
             handle = try FileHandle(forReadingFrom: fileURL)
@@ -368,6 +600,7 @@ public actor UploadService {
         var hasher = Insecure.MD5()
         do {
             while true {
+                try Task.checkCancellation()
                 let data = try handle.read(upToCount: 1024 * 1024) ?? Data()
                 if data.isEmpty { break }
                 hasher.update(data: data)
@@ -375,6 +608,9 @@ public actor UploadService {
             try handle.close()
         } catch {
             try? handle.close()
+            if error is CancellationError {
+                throw CancellationError()
+            }
             throw ASCError.network("Failed to hash file: \(error.localizedDescription)")
         }
 

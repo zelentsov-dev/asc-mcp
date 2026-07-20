@@ -119,6 +119,8 @@ extension BuildsWorker {
                 "internalBuildState": detail.attributes.internalBuildState.jsonSafe,
                 "externalBuildState": detail.attributes.externalBuildState.jsonSafe
             ]
+        case .buildUpload(let upload):
+            return formatIncludedBuildUpload(upload)
         case .preReleaseVersion(let version):
             return [
                 "id": version.id,
@@ -148,6 +150,48 @@ extension BuildsWorker {
                 "email": tester.attributes.email.jsonSafe,
                 "firstName": tester.attributes.firstName.jsonSafe,
                 "lastName": tester.attributes.lastName.jsonSafe
+            ]
+        }
+    }
+
+    private func formatIncludedBuildUpload(_ upload: ASCBuildUpload) -> [String: Any] {
+        var result: [String: Any] = [
+            "id": upload.id,
+            "type": upload.type,
+            "shortVersion": (upload.attributes?.cfBundleShortVersionString).jsonSafe,
+            "buildVersion": (upload.attributes?.cfBundleVersion).jsonSafe,
+            "createdDate": (upload.attributes?.createdDate).jsonSafe,
+            "platform": (upload.attributes?.platform).jsonSafe,
+            "uploadedDate": (upload.attributes?.uploadedDate).jsonSafe
+        ]
+
+        if let state = upload.attributes?.state {
+            result["state"] = [
+                "state": state.state.jsonSafe,
+                "errors": formatBuildUploadStateDetails(state.errors),
+                "warnings": formatBuildUploadStateDetails(state.warnings),
+                "infos": formatBuildUploadStateDetails(state.infos)
+            ]
+        }
+
+        if let relationships = upload.relationships {
+            result["relationships"] = [
+                "buildId": (relationships.build?.data?.id).jsonSafe,
+                "assetFileId": (relationships.assetFile?.data?.id).jsonSafe,
+                "assetDescriptionFileId": (relationships.assetDescriptionFile?.data?.id).jsonSafe,
+                "assetSpiFileId": (relationships.assetSpiFile?.data?.id).jsonSafe,
+                "buildUploadFilesURL": (relationships.buildUploadFiles?.links?.related).jsonSafe
+            ]
+        }
+
+        return result
+    }
+
+    private func formatBuildUploadStateDetails(_ details: [ASCBuildUploadStateDetail]?) -> [[String: Any]] {
+        (details ?? []).map { detail in
+            [
+                "code": detail.code.jsonSafe,
+                "description": detail.description.jsonSafe
             ]
         }
     }

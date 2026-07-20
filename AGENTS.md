@@ -49,7 +49,7 @@ Each company needs: `keyID`, `issuerID`, `privateKeyPath` (path to `.p8` file).
 
 **WorkerManager** (`Workers/MainWorker/WorkerManager.swift`) — central registry, routes tool calls by prefix.
 
-**Workers** (38 Swift worker classes; 34 `--workers` filter keys; 451 tools):
+**Workers** (39 Swift worker classes; 35 `--workers` filter keys; 461 tools):
 
 | Worker | Prefix | Tools | Domain |
 |--------|--------|-------|--------|
@@ -60,6 +60,7 @@ Each company needs: `keyID`, `issuerID`, `privateKeyPath` (path to `.p8` file).
 | WebhooksWorker | `webhooks_` | 11 | Webhook notifications, delivery diagnostics, receiver helpers |
 | XcodeCloudWorker | `xcode_cloud_` | 30 | Xcode Cloud products, workflows, builds, artifacts, issues, test results, SCM |
 | BuildsWorker | `builds_` | 4 | Build management |
+| BuildUploadsWorker | `build_uploads_` | 10 | Build upload parents, files, safe transfers, and recovery |
 | BuildBetaDetailsWorker | `builds_*_beta_` | 11 | TestFlight localizations, notifications, beta groups, individual testers |
 | BuildProcessingWorker | `builds_*_processing_` | 4 | Build states, encryption |
 | ExportComplianceWorker | `export_compliance_` | 11 | Encryption declarations, document delivery, build linkage, readiness |

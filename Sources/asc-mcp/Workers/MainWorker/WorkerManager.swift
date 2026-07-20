@@ -240,6 +240,7 @@ private struct WorkerGraph: Sendable {
     let webhooksWorker: WebhooksWorker
     let xcodeCloudWorker: XcodeCloudWorker
     let buildsWorker: BuildsWorker
+    let buildUploadsWorker: BuildUploadsWorker
     let buildProcessingWorker: BuildProcessingWorker
     let exportComplianceWorker: ExportComplianceWorker
     let buildBetaDetailsWorker: BuildBetaDetailsWorker
@@ -274,6 +275,7 @@ private struct WorkerGraph: Sendable {
         self.webhooksWorker = WebhooksWorker(httpClient: httpClient)
         self.xcodeCloudWorker = XcodeCloudWorker(httpClient: httpClient)
         self.buildsWorker = BuildsWorker(httpClient: httpClient)
+        self.buildUploadsWorker = BuildUploadsWorker(httpClient: httpClient, uploadService: uploadService)
         self.buildProcessingWorker = BuildProcessingWorker(httpClient: httpClient)
         self.exportComplianceWorker = ExportComplianceWorker(httpClient: httpClient, uploadService: uploadService)
         self.buildBetaDetailsWorker = BuildBetaDetailsWorker(httpClient: httpClient)
@@ -313,7 +315,7 @@ private struct WorkerRuntime: Sendable {
 public actor WorkerManager {
     static let validWorkerFilterKeys: Set<String> = [
         "company", "auth", "apps", "accessibility", "webhooks", "xcode_cloud",
-        "builds", "build_processing", "export_compliance", "build_beta", "versions", "reviews",
+        "builds", "build_uploads", "build_processing", "export_compliance", "build_beta", "versions", "reviews",
         "beta_groups", "beta_feedback", "beta_testers", "iap", "provisioning",
         "app_info", "pricing", "users", "app_events", "analytics", "subscriptions",
         "sandbox", "beta_app", "pre_release", "beta_license", "screenshots",
@@ -466,6 +468,7 @@ public actor WorkerManager {
                 getTools: { await graph.exportComplianceWorker.getTools() },
                 handle: { try await graph.exportComplianceWorker.handleTool($0) }
             ),
+            WorkerDescriptor(key: "build_uploads", enabledKeys: ["build_uploads"], prefixes: ["build_uploads_"], getTools: { await graph.buildUploadsWorker.getTools() }, handle: { try await graph.buildUploadsWorker.handleTool($0) }),
             WorkerDescriptor(key: "builds", enabledKeys: ["builds"], prefixes: ["builds_"], getTools: { await graph.buildsWorker.getTools() }, handle: { try await graph.buildsWorker.handleTool($0) }),
             WorkerDescriptor(key: "versions", enabledKeys: ["versions"], prefixes: ["app_versions_"], getTools: { await graph.appLifecycleWorker.getTools() }, handle: { try await graph.appLifecycleWorker.handleTool($0) }),
             WorkerDescriptor(key: "reviews", enabledKeys: ["reviews"], prefixes: ["reviews_"], getTools: { await graph.reviewsWorker.getTools() }, handle: { try await graph.reviewsWorker.handleTool($0) }),

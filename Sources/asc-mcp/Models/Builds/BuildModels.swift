@@ -100,6 +100,7 @@ public struct ASCPagedDocumentLinks: Codable, Sendable {
 public enum ASCBuildIncludedResource: Codable, Sendable {
     case app(BuildIncludedApp)
     case buildBetaDetail(ASCBuildBetaDetail)
+    case buildUpload(ASCBuildUpload)
     case preReleaseVersion(ASCPreReleaseVersion)
     case buildBundle(ASCBuildBundle)
     case betaGroup(ASCBetaGroup)
@@ -120,6 +121,9 @@ public enum ASCBuildIncludedResource: Codable, Sendable {
         case "buildBetaDetails":
             let detail = try ASCBuildBetaDetail(from: decoder)
             self = .buildBetaDetail(detail)
+        case "buildUploads":
+            let upload = try ASCBuildUpload(from: decoder)
+            self = .buildUpload(upload)
         case "preReleaseVersions":
             let version = try ASCPreReleaseVersion(from: decoder)
             self = .preReleaseVersion(version)
@@ -147,6 +151,8 @@ public enum ASCBuildIncludedResource: Codable, Sendable {
             try app.encode(to: encoder)
         case .buildBetaDetail(let detail):
             try detail.encode(to: encoder)
+        case .buildUpload(let upload):
+            try upload.encode(to: encoder)
         case .preReleaseVersion(let version):
             try version.encode(to: encoder)
         case .buildBundle(let bundle):

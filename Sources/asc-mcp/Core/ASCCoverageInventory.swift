@@ -38,7 +38,7 @@ struct ASCCoverageArea: Sendable {
 }
 
 enum ASCCoverageInventory {
-    static let snapshotDate = "2026-07-20"
+    static let snapshotDate = "2026-07-21"
     static let appleAPIVersionBaseline = "4.4.1"
 
     static let areas: [ASCCoverageArea] = [
@@ -102,11 +102,12 @@ enum ASCCoverageInventory {
             status: .partial,
             priority: .p0,
             workerKeys: [
-                "builds", "build_processing", "export_compliance", "build_beta", "beta_groups",
+                "builds", "build_uploads", "build_processing", "export_compliance", "build_beta", "beta_groups",
                 "beta_feedback", "beta_testers", "beta_app", "pre_release", "beta_license"
             ],
             coveredCapabilities: [
                 "build list/find",
+                "resumable build upload reservation, multipart transfer, commit, and processing reconciliation",
                 "build processing and encryption",
                 "export-compliance declarations, documents, and verified build linkage",
                 "beta localizations and build notifications",

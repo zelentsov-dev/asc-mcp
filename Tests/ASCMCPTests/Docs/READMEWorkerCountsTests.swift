@@ -13,12 +13,12 @@ struct READMEWorkerCountsTests {
         let snapshots = try await TestFactory.collectWorkerToolSnapshots()
         let totalTools = snapshots.reduce(0) { $0 + $1.count }
 
-        #expect(totalTools == 451)
-        #expect(snapshots.count == 34)
+        #expect(totalTools == 461)
+        #expect(snapshots.count == 35)
         #expect(readme.contains("**\(totalTools) tools**"))
-        #expect(readme.contains("32 App Store tool domains + 2 core domains"))
-        #expect(readme.contains("34 `--workers` filter keys"))
-        #expect(readme.contains("38 Swift worker classes"))
+        #expect(readme.contains("33 App Store tool domains + 2 core domains"))
+        #expect(readme.contains("35 `--workers` filter keys"))
+        #expect(readme.contains("39 Swift worker classes"))
         #expect(!readme.contains("@v2.4.0"))
         #expect(!readme.contains("builds_wait_for_processing"))
 

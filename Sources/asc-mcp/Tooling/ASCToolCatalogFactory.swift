@@ -21,6 +21,7 @@ enum ASCToolCatalogFactory {
         "webhooks": "Webhook Notifications",
         "xcode_cloud": "Xcode Cloud",
         "builds": "Builds",
+        "build_uploads": "Build Uploads",
         "build_processing": "Build Processing",
         "export_compliance": "Export Compliance",
         "build_beta": "TestFlight Beta Details",

@@ -1,6 +1,6 @@
 # App Store Connect OpenAPI Coverage
 
-Generated: 2026-07-20
+Generated: 2026-07-21
 
 Sources:
 - Apple App Store Connect API overview: https://developer.apple.com/app-store-connect/api/
@@ -26,7 +26,7 @@ Unclassified paths: 0
 | Domain | Status | Priority | Apple paths | Operations | Workers | Notes |
 |---|---|---:|---:|---:|---|---|
 | App Store app metadata and release operations | Partial | P0 | 303 | 380 | `apps`, `accessibility`, `versions`, `app_info`, `pricing`, `app_events`, `screenshots`, `custom_pages`, `ppo`, `promoted`, `review_attachments`, `review_submissions`, `reviews`, `export_compliance` | The common release workflow includes strict version filtering and paging, safe phased-release controls, generic review submissions, and App Info-owned age-rating inspection. API 4.0 app-surface additions remain the highest App Store coverage gap. |
-| TestFlight builds, testers, groups, and beta app review | Partial | P0 | 115 | 154 | `builds`, `build_processing`, `export_compliance`, `build_beta`, `beta_groups`, `beta_feedback`, `beta_testers`, `beta_app`, `pre_release`, `beta_license` | Core TestFlight administration and dedicated beta feedback retrieval are covered; recruitment criteria and beta App Clip APIs remain the main gaps. |
+| TestFlight builds, testers, groups, and beta app review | Partial | P0 | 115 | 154 | `builds`, `build_uploads`, `build_processing`, `export_compliance`, `build_beta`, `beta_groups`, `beta_feedback`, `beta_testers`, `beta_app`, `pre_release`, `beta_license` | Core TestFlight administration, resumable build uploads, and dedicated beta feedback retrieval are covered; recruitment criteria and beta App Clip APIs remain the main gaps. |
 | Essentials: auth, errors, paging, uploads, rate limits | Partial | P1 | 0 | 0 | `auth` | Core runtime behavior is covered; OpenAPI drift is now generated from Apple's official specification. |
 | Provisioning and identifiers | Partial | P1 | 32 | 49 | `provisioning` | Core signing automation exists; Wallet and Apple Pay identifiers are useful next additions. |
 | Reporting, analytics, metrics, and diagnostics | Partial | P1 | 47 | 56 | `analytics`, `metrics` | Read-heavy workflows are safe and valuable; summaries and recommendations are high UX leverage. |

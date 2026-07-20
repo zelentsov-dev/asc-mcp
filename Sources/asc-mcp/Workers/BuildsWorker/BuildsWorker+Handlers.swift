@@ -21,7 +21,7 @@ extension BuildsWorker {
             let response: ASCBuildsResponse
             var queryParams: [String: String] = [
                 "filter[app]": appId,
-                "include": "app,buildBetaDetail,preReleaseVersion"
+                "include": "app,buildBetaDetail,preReleaseVersion,buildUpload"
             ]
 
             if let version = commaSeparatedStringList(arguments["version"]) {
@@ -133,6 +133,7 @@ extension BuildsWorker {
             }
             includes.append("preReleaseVersion")
             includes.append("buildBundles")
+            includes.append("buildUpload")
             
             let queryParams: [String: String] = [
                 "include": includes.joined(separator: ",")
@@ -155,6 +156,8 @@ extension BuildsWorker {
                     switch item {
                     case .buildBetaDetail(_):
                         includedData["betaDetail"] = formatIncludedResource(item)
+                    case .buildUpload(_):
+                        includedData["buildUpload"] = formatIncludedResource(item)
                     case .app(_):
                         includedData["app"] = formatIncludedResource(item)
                     case .preReleaseVersion(_):
@@ -206,7 +209,7 @@ extension BuildsWorker {
             var queryParams: [String: String] = [
                 "filter[app]": appId,
                 "filter[version]": buildNumber,
-                "include": "app,buildBetaDetail,preReleaseVersion",
+                "include": "app,buildBetaDetail,preReleaseVersion,buildUpload",
                 "limit": "1",
                 "sort": arguments["sort"]?.stringValue ?? "-uploadedDate"
             ]
@@ -230,10 +233,13 @@ extension BuildsWorker {
             
             let build = formatBuild(response.data[0])
             
-            let result = [
+            var result = [
                 "success": true,
                 "build": build
             ] as [String: Any]
+            if let included = response.included, !included.isEmpty {
+                result["included"] = included.map { formatIncludedResource($0) }
+            }
             
             return MCPResult.jsonObject(result)
             

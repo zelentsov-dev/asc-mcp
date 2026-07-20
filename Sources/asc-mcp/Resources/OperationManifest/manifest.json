@@ -7,12 +7,12 @@
     "operationCount": 1263
   },
   "optionalInputCoveragePin": {
-    "total": 2428,
-    "bound": 924,
+    "total": 2488,
+    "bound": 968,
     "internalControl": 40,
-    "intentionallyOmitted": 1464,
+    "intentionallyOmitted": 1480,
     "unclassified": 0,
-    "identitySHA256": "5bb9c377a13d404e0374945d0016a9739c5cc2c3acd1e851108c24ffea5ba67d"
+    "identitySHA256": "b2220715e8a131a9ef49f9c9ce2a931dd18ef79bf3d7371a4273b0164c28119e"
   },
   "optionalParameterFamilyRules": [
     {
@@ -1431,14 +1431,6 @@
       "reviewAtSpec": "4.4.1"
     },
     {
-      "id": "deferred.apps_buildUploads_getToManyRelated",
-      "operationId": "apps_buildUploads_getToManyRelated",
-      "disposition": "deferred",
-      "reason": "The `apps` resource-group capability is not yet exposed by asc-mcp.",
-      "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
-    },
-    {
       "id": "deferred.apps_builds_getToManyRelated",
       "operationId": "apps_builds_getToManyRelated",
       "disposition": "deferred",
@@ -1682,7 +1674,7 @@
       "id": "deferred.apps_buildUploads_getToManyRelationship",
       "operationId": "apps_buildUploads_getToManyRelationship",
       "disposition": "deferred",
-      "reason": "The `apps` resource-group capability is not yet exposed by asc-mcp.",
+      "reason": "build_uploads_list exposes the related BuildUpload resources; the linkage-only relationship endpoint is deferred because it would duplicate IDs without upload attributes or processing state.",
       "owner": "asc-mcp",
       "reviewAtSpec": "4.4.1"
     },
@@ -2415,66 +2407,10 @@
       "reviewAtSpec": "4.4.1"
     },
     {
-      "id": "deferred.buildUploadFiles_createInstance",
-      "operationId": "buildUploadFiles_createInstance",
-      "disposition": "deferred",
-      "reason": "The `buildUploadFiles` resource-group capability is not yet exposed by asc-mcp.",
-      "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
-    },
-    {
-      "id": "deferred.buildUploadFiles_getInstance",
-      "operationId": "buildUploadFiles_getInstance",
-      "disposition": "deferred",
-      "reason": "The `buildUploadFiles` resource-group capability is not yet exposed by asc-mcp.",
-      "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
-    },
-    {
-      "id": "deferred.buildUploadFiles_updateInstance",
-      "operationId": "buildUploadFiles_updateInstance",
-      "disposition": "deferred",
-      "reason": "The `buildUploadFiles` resource-group capability is not yet exposed by asc-mcp.",
-      "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
-    },
-    {
-      "id": "deferred.buildUploads_createInstance",
-      "operationId": "buildUploads_createInstance",
-      "disposition": "deferred",
-      "reason": "The `buildUploads` resource-group capability is not yet exposed by asc-mcp.",
-      "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
-    },
-    {
-      "id": "deferred.buildUploads_deleteInstance",
-      "operationId": "buildUploads_deleteInstance",
-      "disposition": "deferred",
-      "reason": "The `buildUploads` resource-group capability is not yet exposed by asc-mcp.",
-      "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
-    },
-    {
-      "id": "deferred.buildUploads_getInstance",
-      "operationId": "buildUploads_getInstance",
-      "disposition": "deferred",
-      "reason": "The `buildUploads` resource-group capability is not yet exposed by asc-mcp.",
-      "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
-    },
-    {
-      "id": "deferred.buildUploads_buildUploadFiles_getToManyRelated",
-      "operationId": "buildUploads_buildUploadFiles_getToManyRelated",
-      "disposition": "deferred",
-      "reason": "The `buildUploads` resource-group capability is not yet exposed by asc-mcp.",
-      "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
-    },
-    {
       "id": "deferred.buildUploads_buildUploadFiles_getToManyRelationship",
       "operationId": "buildUploads_buildUploadFiles_getToManyRelationship",
       "disposition": "deferred",
-      "reason": "The `buildUploads` resource-group capability is not yet exposed by asc-mcp.",
+      "reason": "build_uploads_list_files exposes the related BuildUploadFile resources; the linkage-only relationship endpoint is deferred because it would duplicate IDs without file attributes or delivery state.",
       "owner": "asc-mcp",
       "reviewAtSpec": "4.4.1"
     },

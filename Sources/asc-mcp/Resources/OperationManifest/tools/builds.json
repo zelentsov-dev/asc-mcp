@@ -18,7 +18,7 @@
               "location": "query",
               "appleName": "include",
               "disposition": "internalControl",
-              "reason": "The finder fixes include to app, buildBetaDetail, and preReleaseVersion so a stable match projection can be produced.",
+              "reason": "The finder fixes include to app, buildBetaDetail, preReleaseVersion, and buildUpload so a stable match and upload-state projection can be produced.",
               "reviewAtSpec": "4.4.1"
             },
             {
@@ -190,12 +190,17 @@
             "localRole": "firstMatchingBuildProjection"
           },
           {
+            "outputField": "included",
+            "operationId": "builds_getCollection",
+            "jsonPointer": "/included"
+          },
+          {
             "outputField": "success",
             "localRole": "True when a matching build exists; false is a local empty-result projection."
           }
         ]
       },
-      "note": "Exact filter workflow with pre-release platform/version disambiguation and deterministic sorting; include and limit remain fixed for the singular projection."
+      "note": "Exact filter workflow with pre-release platform/version disambiguation and deterministic sorting; include is fixed to app, buildBetaDetail, preReleaseVersion, and buildUpload, and limit remains fixed for the singular projection."
     },
     {
       "tool": "builds_get",
@@ -293,7 +298,7 @@
           }
         ]
       },
-      "note": "The two booleans derive the comma-separated include parameter; preReleaseVersion and buildBundles are always added. Output is a reduced projection and has no MCP output schema."
+      "note": "The two booleans derive part of the comma-separated include parameter; preReleaseVersion, buildBundles, and buildUpload are always added. Included BuildUpload state is projected without upload-operation credentials. Output is a reduced projection and has no MCP output schema."
     },
     {
       "tool": "builds_list",
@@ -312,7 +317,7 @@
               "location": "query",
               "appleName": "include",
               "disposition": "internalControl",
-              "reason": "The list fixes include to the related resources projected in its included output.",
+              "reason": "The list fixes include to app, buildBetaDetail, preReleaseVersion, and buildUpload, which are projected in its included output.",
               "reviewAtSpec": "4.4.1"
             },
             {
@@ -508,7 +513,7 @@
           }
         ]
       },
-      "note": "Apple makes filter[app] optional, but the public tool requires app_id. Current collection filters accept scalar or array values, included resources are preserved, and current Build attributes are projected."
+      "note": "Apple makes filter[app] optional, but the public tool requires app_id. Current collection filters accept scalar or array values; app, buildBetaDetail, preReleaseVersion, and buildUpload included resources are preserved; and current Build attributes are projected without upload-operation credentials."
     },
     {
       "tool": "builds_list_for_version",

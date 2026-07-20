@@ -1,0 +1,676 @@
+{
+  "workerKey": "build_uploads",
+  "tools": [
+    {
+      "tool": "build_uploads_list",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "apps_buildUploads_getToManyRelated",
+          "method": "get",
+          "path": "/v1/apps/{id}/buildUploads",
+          "role": "primary"
+        }
+      ],
+      "fields": [
+        { "toolField": "app_id", "sourceKind": "parameter", "operationId": "apps_buildUploads_getToManyRelated", "location": "path", "appleName": "id" },
+        { "toolField": "short_version_strings", "sourceKind": "parameter", "operationId": "apps_buildUploads_getToManyRelated", "location": "query", "appleName": "filter[cfBundleShortVersionString]" },
+        { "toolField": "build_versions", "sourceKind": "parameter", "operationId": "apps_buildUploads_getToManyRelated", "location": "query", "appleName": "filter[cfBundleVersion]" },
+        { "toolField": "platforms", "sourceKind": "parameter", "operationId": "apps_buildUploads_getToManyRelated", "location": "query", "appleName": "filter[platform]" },
+        { "toolField": "states", "sourceKind": "parameter", "operationId": "apps_buildUploads_getToManyRelated", "location": "query", "appleName": "filter[state]" },
+        { "toolField": "sort", "sourceKind": "parameter", "operationId": "apps_buildUploads_getToManyRelated", "location": "query", "appleName": "sort" },
+        { "toolField": "fields_build_uploads", "sourceKind": "parameter", "operationId": "apps_buildUploads_getToManyRelated", "location": "query", "appleName": "fields[buildUploads]" },
+        { "toolField": "fields_builds", "sourceKind": "parameter", "operationId": "apps_buildUploads_getToManyRelated", "location": "query", "appleName": "fields[builds]" },
+        { "toolField": "fields_build_upload_files", "sourceKind": "parameter", "operationId": "apps_buildUploads_getToManyRelated", "location": "query", "appleName": "fields[buildUploadFiles]" },
+        { "toolField": "include", "sourceKind": "parameter", "operationId": "apps_buildUploads_getToManyRelated", "location": "query", "appleName": "include" },
+        { "toolField": "include_sensitive_details", "sourceKind": "local", "localRole": "False by default. When true, assetToken and uploadOperations are exposed only inside returned BuildUploadFile resource paths; errors always redact transfer credentials." },
+        { "toolField": "limit", "sourceKind": "parameter", "operationId": "apps_buildUploads_getToManyRelated", "location": "query", "appleName": "limit" },
+        { "toolField": "next_url", "sourceKind": "local", "localRole": "Strict Apple continuation URL for this exact app collection: scheme, host, path, immutable query scope, and a non-empty cursor are validated before the GET." }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          { "operationId": "apps_buildUploads_getToManyRelated", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": [
+          { "outputField": "buildUploads", "operationId": "apps_buildUploads_getToManyRelated", "jsonPointer": "/data" },
+          { "outputField": "included", "operationId": "apps_buildUploads_getToManyRelated", "jsonPointer": "/included" },
+          { "outputField": "next_url", "operationId": "apps_buildUploads_getToManyRelated", "jsonPointer": "/links/next" },
+          { "outputField": "total", "operationId": "apps_buildUploads_getToManyRelated", "jsonPointer": "/meta/paging/total" },
+          { "outputField": "count", "localRole": "Count of BuildUpload resources returned on the current page." }
+        ]
+      },
+      "note": "Maps every Apple 4.4.1 collection filter, sort, sparse fieldset, include, and limit through a strict GET 200 contract. Sensitive BuildUploadFile transfer credentials are redacted by default and explicit disclosure is limited to successful BuildUploadFile output paths; pagination preserves the complete original query scope."
+    },
+    {
+      "tool": "build_uploads_get",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "buildUploads_getInstance",
+          "method": "get",
+          "path": "/v1/buildUploads/{id}",
+          "role": "primary"
+        }
+      ],
+      "fields": [
+        { "toolField": "build_upload_id", "sourceKind": "parameter", "operationId": "buildUploads_getInstance", "location": "path", "appleName": "id" },
+        { "toolField": "fields_build_uploads", "sourceKind": "parameter", "operationId": "buildUploads_getInstance", "location": "query", "appleName": "fields[buildUploads]" },
+        { "toolField": "fields_builds", "sourceKind": "parameter", "operationId": "buildUploads_getInstance", "location": "query", "appleName": "fields[builds]" },
+        { "toolField": "fields_build_upload_files", "sourceKind": "parameter", "operationId": "buildUploads_getInstance", "location": "query", "appleName": "fields[buildUploadFiles]" },
+        { "toolField": "include", "sourceKind": "parameter", "operationId": "buildUploads_getInstance", "location": "query", "appleName": "include" },
+        { "toolField": "include_sensitive_details", "sourceKind": "local", "localRole": "False by default. When true, assetToken and uploadOperations are exposed only inside returned BuildUploadFile resource paths; errors always redact transfer credentials." }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          { "operationId": "buildUploads_getInstance", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": [
+          { "outputField": "buildUpload", "operationId": "buildUploads_getInstance", "jsonPointer": "/data" },
+          { "outputField": "included", "operationId": "buildUploads_getInstance", "jsonPointer": "/included" }
+        ]
+      },
+      "note": "Uses the strict Apple GET 200 response and exposes all Apple 4.4.1 sparse fieldsets and includes while keeping presigned transfer credentials opt-in, path-scoped to BuildUploadFile output, and redacted from errors."
+    },
+    {
+      "tool": "build_uploads_create",
+      "kind": "compound",
+      "status": "partial",
+      "effect": "write",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "apps_buildUploads_getToManyRelated",
+          "method": "get",
+          "path": "/v1/apps/{id}/buildUploads",
+          "role": "supporting",
+          "condition": "Take exact preflight and postflight sets around parent creation for unknown-outcome recovery; follow strict pagination for at most 20 pages and reject repeated continuations.",
+          "inputs": [
+            { "sourceKind": "fixed", "location": "query", "appleName": "fields[buildUploads]", "fixedValue": ["cfBundleShortVersionString", "cfBundleVersion", "createdDate", "state", "platform", "uploadedDate", "build", "assetFile", "assetDescriptionFile", "assetSpiFile", "buildUploadFiles"] },
+            { "sourceKind": "fixed", "location": "query", "appleName": "limit", "fixedValue": 200 }
+          ],
+          "optionalParameterClassifications": [
+            {
+              "location": "query",
+              "appleName": "filter[state]",
+              "disposition": "intentionallyOmitted",
+              "reason": "Recovery must compare the complete exact version/build/platform fingerprint regardless of current upload state.",
+              "reviewAtSpec": "4.4.1"
+            },
+            {
+              "location": "query",
+              "appleName": "sort",
+              "disposition": "intentionallyOmitted",
+              "reason": "Recovery computes a set difference across every bounded page, so Apple result ordering cannot affect identity.",
+              "reviewAtSpec": "4.4.1"
+            },
+            {
+              "location": "query",
+              "appleName": "include",
+              "disposition": "intentionallyOmitted",
+              "reason": "Parent recovery needs only BuildUpload identity and fingerprint attributes; related resources cannot prove create ownership.",
+              "reviewAtSpec": "4.4.1"
+            }
+          ]
+        },
+        {
+          "operationId": "buildUploads_createInstance",
+          "method": "post",
+          "path": "/v1/buildUploads",
+          "role": "primary",
+          "inputs": [
+            { "sourceKind": "fixed", "jsonPointer": "/data/type", "fixedValue": "buildUploads" },
+            { "sourceKind": "fixed", "jsonPointer": "/data/relationships/app/data/type", "fixedValue": "apps" }
+          ]
+        }
+      ],
+      "fields": [
+        { "toolField": "app_id", "sourceKind": "parameter", "operationId": "apps_buildUploads_getToManyRelated", "location": "path", "appleName": "id" },
+        { "toolField": "app_id", "sourceKind": "requestBody", "operationId": "buildUploads_createInstance", "jsonPointer": "/data/relationships/app/data/id" },
+        { "toolField": "short_version", "sourceKind": "parameter", "operationId": "apps_buildUploads_getToManyRelated", "location": "query", "appleName": "filter[cfBundleShortVersionString]" },
+        { "toolField": "short_version", "sourceKind": "requestBody", "operationId": "buildUploads_createInstance", "jsonPointer": "/data/attributes/cfBundleShortVersionString" },
+        { "toolField": "build_version", "sourceKind": "parameter", "operationId": "apps_buildUploads_getToManyRelated", "location": "query", "appleName": "filter[cfBundleVersion]" },
+        { "toolField": "build_version", "sourceKind": "requestBody", "operationId": "buildUploads_createInstance", "jsonPointer": "/data/attributes/cfBundleVersion" },
+        { "toolField": "platform", "sourceKind": "parameter", "operationId": "apps_buildUploads_getToManyRelated", "location": "query", "appleName": "filter[platform]" },
+        { "toolField": "platform", "sourceKind": "requestBody", "operationId": "buildUploads_createInstance", "jsonPointer": "/data/attributes/platform" }
+      ],
+      "response": {
+        "mode": "aggregate",
+        "sources": [
+          { "operationId": "apps_buildUploads_getToManyRelated", "statusCode": "200", "mediaType": "application/json" },
+          { "operationId": "buildUploads_createInstance", "statusCode": "201", "mediaType": "application/json" }
+        ],
+        "fields": [
+          { "outputField": "buildUpload", "localRole": "For success, the fresh app-scoped collection projection whose ID matches the contract-valid POST 201 response and was absent before the request; for ambiguous recovery, the one unique unattributed candidate returned only inside an error result." },
+          { "outputField": "candidateId", "localRole": "Unique bounded-recovery candidate ID returned only for candidate_inspection_required." },
+          { "outputField": "candidateAttributionConfirmed", "localRole": "False for every recovered candidate because concurrent creation prevents attribution to this invocation." },
+          { "outputField": "workflowState", "localRole": "candidate_inspection_required for one unique postflight candidate whose invocation ownership is not proven." },
+          { "outputField": "createdByInvocation", "localRole": "True only after an exact 201 identity is absent from preflight and confirmed by a fresh requested-app collection read; false for recovered candidates." },
+          { "outputField": "reconciledAfterCreate", "localRole": "True only for one uniquely observed exact postflight candidate; that outcome is success false and stops before any further mutation." },
+          { "outputField": "automaticDeletionAllowed", "localRole": "False for a uniquely recovered candidate because attribution to this invocation is not confirmed." },
+          { "outputField": "operationCommitState", "localRole": "committed only after exact 201 plus fresh app-membership proof; preserves unknown for transport ambiguity and committed_unverified for an invalid accepted response or its recovered candidate." },
+          { "outputField": "inspectionRequired", "localRole": "True for recovered or unresolved outcomes before another POST or continuation." },
+          { "outputField": "inspection", "localRole": "Executable build_uploads_get or bounded build_uploads_list guidance using canonical candidate IDs and the exact requested fingerprint; inspection does not prove invocation ownership." },
+          { "outputField": "retrySafe", "localRole": "False for recovered, committed_unverified, and unknown outcomes; the returned inspection guidance must be followed before another POST." }
+        ]
+      },
+      "note": "Invocation ownership and success require Apple's exact POST 201 with canonical type, ID, required self link, exact app/version/build/platform fingerprint, absence from preflight, and fresh membership in the requested app collection; the fresh scoped projection is returned. Ambiguous outcomes scan at most 20 strict pages; when one new exact candidate is found the call stops and returns success false, isError true, candidate_inspection_required, the original unknown or committed_unverified state, and executable inspection, while zero or multiple candidates remain unresolved. Recovered or otherwise ambiguous parents are never owned, automatically deleted, or safe to retry."
+    },
+    {
+      "tool": "build_uploads_delete",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "destructive",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "buildUploads_deleteInstance",
+          "method": "delete",
+          "path": "/v1/buildUploads/{id}",
+          "role": "primary"
+        }
+      ],
+      "fields": [
+        { "toolField": "build_upload_id", "sourceKind": "parameter", "operationId": "buildUploads_deleteInstance", "location": "path", "appleName": "id" },
+        { "toolField": "confirm_build_upload_id", "sourceKind": "local", "localRole": "Required exact-match confirmation for build_upload_id; mismatch is rejected before any network request." }
+      ],
+      "response": {
+        "mode": "local",
+        "sources": [
+          { "operationId": "buildUploads_deleteInstance", "statusCode": "204" }
+        ],
+        "fields": [
+          { "outputField": "success", "localRole": "Local confirmation after Apple's contentless 204 response." },
+          { "outputField": "buildUploadId", "localRole": "Echoes the explicitly requested parent identifier." },
+          { "outputField": "operationCommitState", "localRole": "committed only for exact 204; committed_unverified or unknown is returned for an ambiguous accepted or transport outcome." },
+          { "outputField": "inspectionRequired", "localRole": "True for every committed_unverified or unknown DELETE result." },
+          { "outputField": "inspection", "localRole": "Executable build_uploads_get guidance carrying the exact known build_upload_id after an ambiguous DELETE." },
+          { "outputField": "retrySafe", "localRole": "False for every committed_unverified or unknown DELETE result." }
+        ]
+      },
+      "note": "This is the only public Build Upload deletion surface. The confirmation ID must exactly match before the request, and only Apple's exact DELETE 204 confirms success; ambiguous or unexpected accepted outcomes preserve the exact parent ID and executable build_uploads_get inspection and are non-retryable until inspected. Apple defines no DELETE for BuildUploadFile children."
+    },
+    {
+      "tool": "build_uploads_list_files",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "buildUploads_buildUploadFiles_getToManyRelated",
+          "method": "get",
+          "path": "/v1/buildUploads/{id}/buildUploadFiles",
+          "role": "primary"
+        }
+      ],
+      "fields": [
+        { "toolField": "build_upload_id", "sourceKind": "parameter", "operationId": "buildUploads_buildUploadFiles_getToManyRelated", "location": "path", "appleName": "id" },
+        { "toolField": "fields_build_upload_files", "sourceKind": "parameter", "operationId": "buildUploads_buildUploadFiles_getToManyRelated", "location": "query", "appleName": "fields[buildUploadFiles]" },
+        { "toolField": "include_sensitive_details", "sourceKind": "local", "localRole": "False by default. When true, assetToken and uploadOperations are exposed only inside returned BuildUploadFile resource paths; errors always redact transfer credentials." },
+        { "toolField": "limit", "sourceKind": "parameter", "operationId": "buildUploads_buildUploadFiles_getToManyRelated", "location": "query", "appleName": "limit" },
+        { "toolField": "next_url", "sourceKind": "local", "localRole": "Strict Apple continuation URL for this exact parent collection: scheme, host, path, immutable query scope, and a non-empty cursor are validated before the GET." }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          { "operationId": "buildUploads_buildUploadFiles_getToManyRelated", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": [
+          { "outputField": "buildUploadFiles", "operationId": "buildUploads_buildUploadFiles_getToManyRelated", "jsonPointer": "/data" },
+          { "outputField": "next_url", "operationId": "buildUploads_buildUploadFiles_getToManyRelated", "jsonPointer": "/links/next" },
+          { "outputField": "total", "operationId": "buildUploads_buildUploadFiles_getToManyRelated", "jsonPointer": "/meta/paging/total" },
+          { "outputField": "count", "localRole": "Count of BuildUploadFile resources on the current page." }
+        ]
+      },
+      "note": "Maps every Apple 4.4.1 query input through a strict GET 200 contract and preserves strict pagination scope. Signed upload operations are redacted by default and explicit disclosure is limited to successful BuildUploadFile output paths."
+    },
+    {
+      "tool": "build_uploads_get_file",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "buildUploadFiles_getInstance",
+          "method": "get",
+          "path": "/v1/buildUploadFiles/{id}",
+          "role": "primary"
+        }
+      ],
+      "fields": [
+        { "toolField": "file_id", "sourceKind": "parameter", "operationId": "buildUploadFiles_getInstance", "location": "path", "appleName": "id" },
+        { "toolField": "fields_build_upload_files", "sourceKind": "parameter", "operationId": "buildUploadFiles_getInstance", "location": "query", "appleName": "fields[buildUploadFiles]" },
+        { "toolField": "include_sensitive_details", "sourceKind": "local", "localRole": "False by default. When true, assetToken and uploadOperations are exposed only inside the returned BuildUploadFile resource path; errors always redact transfer credentials." }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          { "operationId": "buildUploadFiles_getInstance", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": [
+          { "outputField": "buildUploadFile", "operationId": "buildUploadFiles_getInstance", "jsonPointer": "/data" }
+        ]
+      },
+      "note": "Returns the strict Apple GET 200 file and delivery-state projection. Transfer credentials remain opt-in, path-scoped to successful BuildUploadFile output, and redacted from diagnostic errors."
+    },
+    {
+      "tool": "build_uploads_reserve_file",
+      "kind": "compound",
+      "status": "partial",
+      "effect": "write",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "buildUploads_buildUploadFiles_getToManyRelated",
+          "method": "get",
+          "path": "/v1/buildUploads/{id}/buildUploadFiles",
+          "role": "supporting",
+          "condition": "Take exact preflight and postflight file sets around reservation for unknown-outcome recovery; follow strict pagination for at most 20 pages and reject repeated continuations.",
+          "inputs": [
+            { "sourceKind": "fixed", "location": "query", "appleName": "fields[buildUploadFiles]", "fixedValue": ["assetDeliveryState", "assetToken", "assetType", "fileName", "fileSize", "sourceFileChecksums", "uploadOperations", "uti"] },
+            { "sourceKind": "fixed", "location": "query", "appleName": "limit", "fixedValue": 200 }
+          ]
+        },
+        {
+          "operationId": "buildUploadFiles_createInstance",
+          "method": "post",
+          "path": "/v1/buildUploadFiles",
+          "role": "primary",
+          "inputs": [
+            { "sourceKind": "fixed", "jsonPointer": "/data/type", "fixedValue": "buildUploadFiles" },
+            { "sourceKind": "fixed", "jsonPointer": "/data/relationships/buildUpload/data/type", "fixedValue": "buildUploads" }
+          ]
+        }
+      ],
+      "fields": [
+        { "toolField": "build_upload_id", "sourceKind": "parameter", "operationId": "buildUploads_buildUploadFiles_getToManyRelated", "location": "path", "appleName": "id" },
+        { "toolField": "build_upload_id", "sourceKind": "requestBody", "operationId": "buildUploadFiles_createInstance", "jsonPointer": "/data/relationships/buildUpload/data/id" },
+        { "toolField": "asset_type", "sourceKind": "requestBody", "operationId": "buildUploadFiles_createInstance", "jsonPointer": "/data/attributes/assetType" },
+        { "toolField": "file_name", "sourceKind": "requestBody", "operationId": "buildUploadFiles_createInstance", "jsonPointer": "/data/attributes/fileName" },
+        { "toolField": "file_size", "sourceKind": "requestBody", "operationId": "buildUploadFiles_createInstance", "jsonPointer": "/data/attributes/fileSize" },
+        { "toolField": "uti", "sourceKind": "requestBody", "operationId": "buildUploadFiles_createInstance", "jsonPointer": "/data/attributes/uti" },
+        { "toolField": "include_sensitive_details", "sourceKind": "local", "localRole": "False by default. When true, assetToken and uploadOperations are exposed only inside an exact confirmed successful BuildUploadFile resource path; recovered and all other error outputs remain redacted." }
+      ],
+      "response": {
+        "mode": "aggregate",
+        "sources": [
+          { "operationId": "buildUploads_buildUploadFiles_getToManyRelated", "statusCode": "200", "mediaType": "application/json" },
+          { "operationId": "buildUploadFiles_createInstance", "statusCode": "201", "mediaType": "application/json" }
+        ],
+        "fields": [
+          { "outputField": "buildUploadFile", "localRole": "For success, the fresh parent-scoped collection projection whose ID matches the contract-valid POST 201 response and was absent before the request; for ambiguous recovery, one unique unattributed candidate with transfer credentials redacted inside an error result." },
+          { "outputField": "candidateId", "localRole": "Unique bounded-recovery candidate ID returned only for candidate_inspection_required." },
+          { "outputField": "candidateAttributionConfirmed", "localRole": "False for every recovered candidate because concurrent reservation prevents attribution to this invocation." },
+          { "outputField": "workflowState", "localRole": "candidate_inspection_required for one unique postflight candidate whose invocation ownership is not proven." },
+          { "outputField": "createdByInvocation", "localRole": "True only after an exact 201 identity is absent from preflight and confirmed by a fresh requested-parent collection read." },
+          { "outputField": "reconciledAfterCreate", "localRole": "True only for one uniquely observed exact postflight candidate; that outcome is success false and stops before transfer or commit." },
+          { "outputField": "automaticDeletionAllowed", "localRole": "False for a uniquely recovered candidate because attribution to this invocation is not confirmed and no child delete exists." },
+          { "outputField": "operationCommitState", "localRole": "committed only after exact 201 plus fresh parent-membership proof; preserves unknown for transport ambiguity and committed_unverified for an invalid accepted response or its recovered candidate." },
+          { "outputField": "inspectionRequired", "localRole": "True for recovered or unresolved outcomes before another POST, transfer, or commit." },
+          { "outputField": "inspection", "localRole": "Executable build_uploads_get_file or bounded build_uploads_list_files guidance using canonical IDs; inspection does not prove invocation ownership." },
+          { "outputField": "retrySafe", "localRole": "False for recovered, committed_unverified, and unknown outcomes; the returned inspection guidance must be followed before another POST." }
+        ]
+      },
+      "note": "Invocation ownership and success require Apple's exact POST 201 with canonical type, ID, required self link, file fingerprint, absence from preflight, and fresh membership in the requested parent collection; the fresh scoped projection supplies any transfer operations. Ambiguous outcomes scan at most 20 strict pages; when one new exact candidate is found the call stops and returns success false, isError true, candidate_inspection_required, the original unknown or committed_unverified state, and executable inspection, while zero or multiple candidates remain unresolved. Recovered reservations are never owned, automatically deleted, exposed with transfer credentials, or safe to retry, and neither this tool nor Apple exposes child-file DELETE."
+    },
+    {
+      "tool": "build_uploads_commit_file",
+      "kind": "compound",
+      "status": "partial",
+      "effect": "write",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "buildUploadFiles_updateInstance",
+          "method": "patch",
+          "path": "/v1/buildUploadFiles/{id}",
+          "role": "primary",
+          "inputs": [
+            { "sourceKind": "fixed", "jsonPointer": "/data/type", "fixedValue": "buildUploadFiles" }
+          ]
+        },
+        {
+          "operationId": "buildUploadFiles_getInstance",
+          "method": "get",
+          "path": "/v1/buildUploadFiles/{id}",
+          "role": "conditional",
+          "condition": "Diagnose an ambiguous or contract-invalid PATCH without claiming confirmation; the follow-up GET cannot prove that every requested writable attribute was applied.",
+          "inputs": [
+            { "sourceKind": "derived", "location": "path", "appleName": "id", "derivedFrom": ["file_id"], "localRole": "Inspect only the exact file identifier supplied to PATCH." },
+            { "sourceKind": "fixed", "location": "query", "appleName": "fields[buildUploadFiles]", "fixedValue": ["assetDeliveryState", "assetToken", "assetType", "fileName", "fileSize", "sourceFileChecksums", "uploadOperations", "uti"] }
+          ]
+        }
+      ],
+      "fields": [
+        { "toolField": "file_id", "sourceKind": "parameter", "operationId": "buildUploadFiles_updateInstance", "location": "path", "appleName": "id" },
+        { "toolField": "file_id", "sourceKind": "requestBody", "operationId": "buildUploadFiles_updateInstance", "jsonPointer": "/data/id" },
+        { "toolField": "source_file_checksums", "sourceKind": "requestBody", "operationId": "buildUploadFiles_updateInstance", "jsonPointer": "/data/attributes/sourceFileChecksums" },
+        { "toolField": "uploaded", "sourceKind": "requestBody", "operationId": "buildUploadFiles_updateInstance", "jsonPointer": "/data/attributes/uploaded" }
+      ],
+      "response": {
+        "mode": "aggregate",
+        "sources": [
+          { "operationId": "buildUploadFiles_updateInstance", "statusCode": "200", "mediaType": "application/json" },
+          { "operationId": "buildUploadFiles_getInstance", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": [
+          { "outputField": "buildUploadFile", "localRole": "Exact canonical BuildUploadFile from PATCH 200, or its redacted follow-up GET projection when an ambiguous PATCH requires diagnostic inspection." },
+          { "outputField": "commitConfirmed", "localRole": "True only when PATCH returns the exact expected BuildUploadFile resource." },
+          { "outputField": "reconciledAfterCommit", "localRole": "False for a directly confirmed PATCH; an ambiguous PATCH returns operationCommitState unknown instead of a false confirmation." },
+          { "outputField": "operationCommitState", "localRole": "committed only for an exact PATCH 200 with canonical identity; committed_unverified for another accepted status or invalid success response; unknown when commitment cannot be determined." },
+          { "outputField": "fileId", "localRole": "Always preserves the exact canonical PATCH input ID for ambiguous inspection, even when the diagnostic GET fails." },
+          { "outputField": "inspectionRequired", "localRole": "True for every ambiguous PATCH outcome." },
+          { "outputField": "inspection", "localRole": "Executable build_uploads_get_file guidance carrying the exact known file_id regardless of diagnostic GET success." },
+          { "outputField": "retrySafe", "localRole": "False for every ambiguous or accepted-but-unverified PATCH result." }
+        ]
+      },
+      "note": "Preserves omission versus explicit null for both optional Apple attributes and requires at least one attribute locally. Only Apple's exact PATCH 200 with canonical type, ID, and required self link confirms the commit. A GET after an ambiguous PATCH is diagnostic only because it cannot prove every writable attribute; the exact file ID and executable inspection remain present even if that GET fails, while the result stays non-retryable and never triggers deletion."
+    },
+    {
+      "tool": "build_uploads_upload_file",
+      "kind": "compound",
+      "status": "partial",
+      "effect": "write",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "buildUploads_getInstance",
+          "method": "get",
+          "path": "/v1/buildUploads/{id}",
+          "role": "supporting",
+          "condition": "Confirm the supplied existing parent with an exact GET 200 before any reservation or transfer.",
+          "inputs": [
+            { "sourceKind": "fixed", "location": "query", "appleName": "fields[buildUploads]", "fixedValue": ["cfBundleShortVersionString", "cfBundleVersion", "createdDate", "state", "platform", "uploadedDate", "build", "assetFile", "assetDescriptionFile", "assetSpiFile", "buildUploadFiles"] }
+          ],
+          "optionalParameterClassifications": [
+            {
+              "location": "query",
+              "appleName": "include",
+              "disposition": "intentionallyOmitted",
+              "reason": "Parent identity and processing state are sufficient for upload-file ownership and polling; related resources do not affect the transfer contract.",
+              "reviewAtSpec": "4.4.1"
+            }
+          ]
+        },
+        {
+          "operationId": "buildUploads_buildUploadFiles_getToManyRelated",
+          "method": "get",
+          "path": "/v1/buildUploads/{id}/buildUploadFiles",
+          "role": "conditional",
+          "condition": "Verify supplied file_id membership, or take exact preflight and postflight sets around a new reservation; recovery follows strict pagination for at most 20 pages and rejects repeated continuations.",
+          "inputs": [
+            { "sourceKind": "fixed", "location": "query", "appleName": "fields[buildUploadFiles]", "fixedValue": ["assetDeliveryState", "assetToken", "assetType", "fileName", "fileSize", "sourceFileChecksums", "uploadOperations", "uti"] },
+            { "sourceKind": "fixed", "location": "query", "appleName": "limit", "fixedValue": 200 }
+          ]
+        },
+        {
+          "operationId": "buildUploadFiles_createInstance",
+          "method": "post",
+          "path": "/v1/buildUploadFiles",
+          "role": "conditional",
+          "condition": "Reserve a new file only when file_id is omitted. An exact POST 201 may continue; a uniquely recovered reservation is returned with continuation guidance and the workflow stops before transfer.",
+          "inputs": [
+            { "sourceKind": "fixed", "jsonPointer": "/data/type", "fixedValue": "buildUploadFiles" },
+            { "sourceKind": "fixed", "jsonPointer": "/data/relationships/buildUpload/data/type", "fixedValue": "buildUploads" }
+          ]
+        },
+        {
+          "operationId": "buildUploadFiles_getInstance",
+          "method": "get",
+          "path": "/v1/buildUploadFiles/{id}",
+          "role": "conditional",
+          "condition": "Load a resumed reservation, diagnose an ambiguous PATCH without claiming confirmation, and poll file delivery state only after a confirmed commit.",
+          "inputs": [
+            { "sourceKind": "derived", "location": "path", "appleName": "id", "derivedFrom": ["file_id", "buildUploadFiles_createInstance:/data/id"], "localRole": "Use only a supplied and membership-verified resume ID or the exact canonical reservation ID confirmed by POST 201; recovered candidates require a later explicit resume call." },
+            { "sourceKind": "fixed", "location": "query", "appleName": "fields[buildUploadFiles]", "fixedValue": ["assetDeliveryState", "assetToken", "assetType", "fileName", "fileSize", "sourceFileChecksums", "uploadOperations", "uti"] }
+          ]
+        },
+        {
+          "operationId": "buildUploadFiles_updateInstance",
+          "method": "patch",
+          "path": "/v1/buildUploadFiles/{id}",
+          "role": "primary",
+          "condition": "Commit the immutable bytes only after every presigned transfer operation succeeds.",
+          "inputs": [
+            { "sourceKind": "derived", "location": "path", "appleName": "id", "derivedFrom": ["file_id", "buildUploadFiles_createInstance:/data/id"], "localRole": "Commit only the verified resumed file or the exact canonical reservation confirmed by POST 201; never a candidate recovered from an ambiguous POST in the same call." },
+            { "sourceKind": "derived", "jsonPointer": "/data/id", "derivedFrom": ["file_id", "buildUploadFiles_createInstance:/data/id"], "localRole": "Copy the verified reservation identifier into the JSON:API update body." },
+            { "sourceKind": "fixed", "jsonPointer": "/data/type", "fixedValue": "buildUploadFiles" },
+            { "sourceKind": "derived", "jsonPointer": "/data/attributes/sourceFileChecksums", "derivedFrom": ["file_path"], "localRole": "Derive the MD5 checksum from the same immutable snapshot bytes transferred through every signed operation." },
+            { "sourceKind": "fixed", "jsonPointer": "/data/attributes/uploaded", "fixedValue": true }
+          ]
+        }
+      ],
+      "fields": [
+        { "toolField": "build_upload_id", "sourceKind": "parameter", "operationId": "buildUploads_getInstance", "location": "path", "appleName": "id" },
+        { "toolField": "build_upload_id", "sourceKind": "parameter", "operationId": "buildUploads_buildUploadFiles_getToManyRelated", "location": "path", "appleName": "id" },
+        { "toolField": "build_upload_id", "sourceKind": "requestBody", "operationId": "buildUploadFiles_createInstance", "jsonPointer": "/data/relationships/buildUpload/data/id" },
+        { "toolField": "file_id", "sourceKind": "local", "localRole": "Optional resume identity that cannot be supplied without expected_md5; when present it must be a canonical string before snapshot creation or any network request, then membership in build_upload_id and immutable snapshot name and size are verified before transfer." },
+        { "toolField": "file_path", "sourceKind": "local", "localRole": "When a fresh reservation is required, reject a noncanonical path basename before snapshot creation or any Apple request. Create a fresh mode-0600 immutable snapshot before any Apple API request or presigned transfer, use it for every byte range, checksum, file name, and file size, and verify the MD5 again after all transfers before PATCH." },
+        { "toolField": "expected_md5", "sourceKind": "local", "localRole": "Snapshot proof required whenever file_id is supplied and optional for a recovered-parent continuation; compare it with the MD5 of the fresh mode-0600 immutable snapshot before any Apple API request or presigned transfer, and stop without network activity on mismatch." },
+        { "toolField": "file_path", "sourceKind": "derived", "operationId": "buildUploadFiles_createInstance", "jsonPointer": "/data/attributes/fileName", "derivedFrom": ["file_path"], "localRole": "Derive fileName from the immutable snapshot." },
+        { "toolField": "file_path", "sourceKind": "derived", "operationId": "buildUploadFiles_createInstance", "jsonPointer": "/data/attributes/fileSize", "derivedFrom": ["file_path"], "localRole": "Derive fileSize from the immutable snapshot." },
+        { "toolField": "asset_type", "sourceKind": "requestBody", "operationId": "buildUploadFiles_createInstance", "jsonPointer": "/data/attributes/assetType", "localRole": "When present, reject null, non-string, empty, or unsupported values before snapshot creation or any network request; required when file_id is omitted." },
+        { "toolField": "uti", "sourceKind": "requestBody", "operationId": "buildUploadFiles_createInstance", "jsonPointer": "/data/attributes/uti", "localRole": "When present, reject null, non-string, empty, or unsupported values before snapshot creation or any network request; required when file_id is omitted." },
+        { "toolField": "max_transfer_attempts", "sourceKind": "local", "localRole": "Bounds retries independently only when Apple explicitly specifies PUT. POST, PATCH, an omitted method, and every unknown method get one attempt. Redirects are rejected and App Store Connect JWT headers are never sent to signed transfer URLs." }
+      ],
+      "response": {
+        "mode": "aggregate",
+        "sources": [
+          { "operationId": "buildUploads_getInstance", "statusCode": "200", "mediaType": "application/json" },
+          { "operationId": "buildUploads_buildUploadFiles_getToManyRelated", "statusCode": "200", "mediaType": "application/json" },
+          { "operationId": "buildUploadFiles_createInstance", "statusCode": "201", "mediaType": "application/json" },
+          { "operationId": "buildUploadFiles_getInstance", "statusCode": "200", "mediaType": "application/json" },
+          { "operationId": "buildUploadFiles_updateInstance", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": [
+          { "outputField": "buildUpload", "localRole": "Verified existing parent projection and its latest processing state." },
+          { "outputField": "buildUploadFile", "localRole": "Reserved or resumed file projection with transfer credentials redacted." },
+          { "outputField": "transferReceipts", "localRole": "Per-part operationIndex, method, offset, length, attempts, statusCode, expiration, partNumber, entityTag, and responseEntityTag; URL and request or response headers are never emitted." },
+          { "outputField": "processingComplete", "localRole": "True only after Apple reports COMPLETE for the parent; a committed but still-processing upload is returned as pending." },
+          { "outputField": "workflowState", "localRole": "continuation_required for one uniquely recovered reservation; reservation_unresolved for zero or multiple candidates; checksum_inspection_required when an initial UPLOAD_COMPLETE or COMPLETE file lacks matching Apple MD5 evidence." },
+          { "outputField": "checksumEvidence", "localRole": "For checksum_inspection_required, returns the deliveryState, fresh immutable snapshotChecksum, nullable Apple file checksum algorithm and value, and verified false; transfer and PATCH are not attempted and both resources are retained for inspection." },
+          { "outputField": "candidateAttributionConfirmed", "localRole": "False when a reservation is uniquely recovered after an ambiguous POST; that result is not treated as invocation-owned." },
+          { "outputField": "operationCommitState", "localRole": "Preserves unknown for transport ambiguity and committed_unverified for an invalid accepted response when reservation recovery returns a continuation." },
+          { "outputField": "continuationRequired", "localRole": "True for a uniquely recovered reservation; transfer and commit stop until an explicit build_uploads_upload_file call resumes with the returned buildUploadId and fileId." },
+          { "outputField": "buildUploadId", "localRole": "Exact verified parent identifier needed for explicit continuation." },
+          { "outputField": "fileId", "localRole": "Unique recovered reservation identifier needed for explicit continuation; absent when recovery remains unresolved." },
+          { "outputField": "parentDeleted", "localRole": "False for continuation_required and checksum_inspection_required because the existing parent is retained." },
+          { "outputField": "continuation", "localRole": "Exact build_uploads_upload_file tool name and arguments for an explicit resume call, carrying expected_md5 from the fresh immutable snapshot together with the recovered file ID." },
+          { "outputField": "retrySafe", "localRole": "False for recovered, committed_unverified, checksum_inspection_required, unknown, and post-commit pending outcomes." }
+        ]
+      },
+      "note": "Uses a fresh mode-0600 immutable snapshot and checks expected_md5 before any Apple API request or presigned transfer; expected_md5 is required with file_id resume and may prove a recovered-parent continuation. It verifies the snapshot MD5 again after all raw presigned transfers and exposes no transfer credentials. An initial UPLOAD_COMPLETE or COMPLETE file without matching Apple MD5 evidence returns checksum_inspection_required with checksumEvidence and committed_unverified; no transfer or PATCH occurs, both resources are retained, and retrySafe is false. Only explicit PUT operations may retry; other methods run once, redirects are rejected, and no ASC authorization is attached. A uniquely recovered reservation stops with exact continuation IDs and expected_md5 instead of transferring. Existing parents are never automatically deleted, ambiguous PATCH inspection cannot prove commit, and no child DELETE operation exists."
+    },
+    {
+      "tool": "build_uploads_upload",
+      "kind": "compound",
+      "status": "partial",
+      "effect": "write",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "apps_buildUploads_getToManyRelated",
+          "method": "get",
+          "path": "/v1/apps/{id}/buildUploads",
+          "role": "supporting",
+          "condition": "Take exact preflight and postflight sets around parent creation for unknown-outcome recovery; follow strict pagination for at most 20 pages and reject repeated continuations.",
+          "inputs": [
+            { "sourceKind": "fixed", "location": "query", "appleName": "fields[buildUploads]", "fixedValue": ["cfBundleShortVersionString", "cfBundleVersion", "createdDate", "state", "platform", "uploadedDate", "build", "assetFile", "assetDescriptionFile", "assetSpiFile", "buildUploadFiles"] },
+            { "sourceKind": "fixed", "location": "query", "appleName": "limit", "fixedValue": 200 }
+          ],
+          "optionalParameterClassifications": [
+            {
+              "location": "query",
+              "appleName": "filter[state]",
+              "disposition": "intentionallyOmitted",
+              "reason": "Recovery must compare the complete exact version/build/platform fingerprint regardless of current upload state.",
+              "reviewAtSpec": "4.4.1"
+            },
+            {
+              "location": "query",
+              "appleName": "sort",
+              "disposition": "intentionallyOmitted",
+              "reason": "Recovery computes a set difference across every bounded page, so Apple result ordering cannot affect identity.",
+              "reviewAtSpec": "4.4.1"
+            },
+            {
+              "location": "query",
+              "appleName": "include",
+              "disposition": "intentionallyOmitted",
+              "reason": "Parent recovery needs only BuildUpload identity and fingerprint attributes; related resources cannot prove create ownership.",
+              "reviewAtSpec": "4.4.1"
+            }
+          ]
+        },
+        {
+          "operationId": "buildUploads_createInstance",
+          "method": "post",
+          "path": "/v1/buildUploads",
+          "role": "primary",
+          "condition": "Create the BuildUpload parent after the immutable local snapshot succeeds. An exact POST 201 may continue; a uniquely recovered parent is returned with continuation guidance and the workflow stops before file reservation.",
+          "inputs": [
+            { "sourceKind": "fixed", "jsonPointer": "/data/type", "fixedValue": "buildUploads" },
+            { "sourceKind": "fixed", "jsonPointer": "/data/relationships/app/data/type", "fixedValue": "apps" }
+          ]
+        },
+        {
+          "operationId": "buildUploads_buildUploadFiles_getToManyRelated",
+          "method": "get",
+          "path": "/v1/buildUploads/{id}/buildUploadFiles",
+          "role": "supporting",
+          "condition": "Take exact preflight and postflight file sets around reservation for unknown-outcome recovery; follow strict pagination for at most 20 pages and reject repeated continuations.",
+          "inputs": [
+            { "sourceKind": "derived", "location": "path", "appleName": "id", "derivedFrom": ["buildUploads_createInstance:/data/id"], "localRole": "Use only the exact canonical parent confirmed by POST 201; a recovered parent stops the workflow and requires explicit continuation." },
+            { "sourceKind": "fixed", "location": "query", "appleName": "fields[buildUploadFiles]", "fixedValue": ["assetDeliveryState", "assetToken", "assetType", "fileName", "fileSize", "sourceFileChecksums", "uploadOperations", "uti"] },
+            { "sourceKind": "fixed", "location": "query", "appleName": "limit", "fixedValue": 200 }
+          ]
+        },
+        {
+          "operationId": "buildUploadFiles_createInstance",
+          "method": "post",
+          "path": "/v1/buildUploadFiles",
+          "role": "supporting",
+          "condition": "Reserve the immutable snapshot under the exact confirmed parent. An exact POST 201 may continue; a uniquely recovered reservation is returned with continuation guidance and the workflow stops before transfer.",
+          "inputs": [
+            { "sourceKind": "fixed", "jsonPointer": "/data/type", "fixedValue": "buildUploadFiles" },
+            { "sourceKind": "fixed", "jsonPointer": "/data/relationships/buildUpload/data/type", "fixedValue": "buildUploads" },
+            { "sourceKind": "derived", "jsonPointer": "/data/relationships/buildUpload/data/id", "derivedFrom": ["buildUploads_createInstance:/data/id"], "localRole": "Reserve the file only beneath the exact canonical parent confirmed by POST 201; never beneath a recovered parent in the same call." }
+          ]
+        },
+        {
+          "operationId": "buildUploadFiles_updateInstance",
+          "method": "patch",
+          "path": "/v1/buildUploadFiles/{id}",
+          "role": "supporting",
+          "condition": "Commit only after every signed transfer part succeeds.",
+          "inputs": [
+            { "sourceKind": "derived", "location": "path", "appleName": "id", "derivedFrom": ["buildUploadFiles_createInstance:/data/id"], "localRole": "Commit only the exact canonical reservation confirmed by POST 201; never a candidate recovered from an ambiguous POST in the same call." },
+            { "sourceKind": "derived", "jsonPointer": "/data/id", "derivedFrom": ["buildUploadFiles_createInstance:/data/id"], "localRole": "Copy the exact reservation identifier into the JSON:API update body." },
+            { "sourceKind": "fixed", "jsonPointer": "/data/type", "fixedValue": "buildUploadFiles" },
+            { "sourceKind": "derived", "jsonPointer": "/data/attributes/sourceFileChecksums", "derivedFrom": ["file_path"], "localRole": "Derive MD5 from the same immutable snapshot bytes transferred through all signed operations." },
+            { "sourceKind": "fixed", "jsonPointer": "/data/attributes/uploaded", "fixedValue": true }
+          ]
+        },
+        {
+          "operationId": "buildUploadFiles_getInstance",
+          "method": "get",
+          "path": "/v1/buildUploadFiles/{id}",
+          "role": "conditional",
+          "condition": "Diagnose ambiguous PATCH without claiming confirmation and poll the exact file only after a confirmed commit.",
+          "inputs": [
+            { "sourceKind": "derived", "location": "path", "appleName": "id", "derivedFrom": ["buildUploadFiles_createInstance:/data/id"], "localRole": "Read only the exact reserved file." },
+            { "sourceKind": "fixed", "location": "query", "appleName": "fields[buildUploadFiles]", "fixedValue": ["assetDeliveryState", "assetToken", "assetType", "fileName", "fileSize", "sourceFileChecksums", "uploadOperations", "uti"] }
+          ]
+        },
+        {
+          "operationId": "buildUploads_getInstance",
+          "method": "get",
+          "path": "/v1/buildUploads/{id}",
+          "role": "conditional",
+          "condition": "Poll the exact parent after commit until COMPLETE, FAILED, cancellation, or the bounded local polling limit.",
+          "inputs": [
+            { "sourceKind": "derived", "location": "path", "appleName": "id", "derivedFrom": ["buildUploads_createInstance:/data/id"], "localRole": "Read only the exact canonical parent confirmed by POST 201; recovered parents require explicit continuation." },
+            { "sourceKind": "fixed", "location": "query", "appleName": "fields[buildUploads]", "fixedValue": ["cfBundleShortVersionString", "cfBundleVersion", "createdDate", "state", "platform", "uploadedDate", "build", "assetFile", "assetDescriptionFile", "assetSpiFile", "buildUploadFiles"] }
+          ],
+          "optionalParameterClassifications": [
+            {
+              "location": "query",
+              "appleName": "include",
+              "disposition": "intentionallyOmitted",
+              "reason": "Post-commit polling needs parent processing state and build linkage already present in the base BuildUpload projection; expanded resources do not change terminal classification.",
+              "reviewAtSpec": "4.4.1"
+            }
+          ]
+        },
+        {
+          "operationId": "buildUploads_deleteInstance",
+          "method": "delete",
+          "path": "/v1/buildUploads/{id}",
+          "role": "conditional",
+          "condition": "Before any file PATCH is attempted, best-effort delete only a parent whose exact 201 response confirmed creation by this invocation; recovered or existing parents are retained.",
+          "inputs": [
+            { "sourceKind": "derived", "location": "path", "appleName": "id", "derivedFrom": ["buildUploads_createInstance:/data/id"], "localRole": "Delete only a parent identity confirmed by this invocation, never a BuildUploadFile child." }
+          ]
+        }
+      ],
+      "fields": [
+        { "toolField": "app_id", "sourceKind": "parameter", "operationId": "apps_buildUploads_getToManyRelated", "location": "path", "appleName": "id" },
+        { "toolField": "app_id", "sourceKind": "requestBody", "operationId": "buildUploads_createInstance", "jsonPointer": "/data/relationships/app/data/id" },
+        { "toolField": "short_version", "sourceKind": "parameter", "operationId": "apps_buildUploads_getToManyRelated", "location": "query", "appleName": "filter[cfBundleShortVersionString]" },
+        { "toolField": "short_version", "sourceKind": "requestBody", "operationId": "buildUploads_createInstance", "jsonPointer": "/data/attributes/cfBundleShortVersionString" },
+        { "toolField": "build_version", "sourceKind": "parameter", "operationId": "apps_buildUploads_getToManyRelated", "location": "query", "appleName": "filter[cfBundleVersion]" },
+        { "toolField": "build_version", "sourceKind": "requestBody", "operationId": "buildUploads_createInstance", "jsonPointer": "/data/attributes/cfBundleVersion" },
+        { "toolField": "platform", "sourceKind": "parameter", "operationId": "apps_buildUploads_getToManyRelated", "location": "query", "appleName": "filter[platform]" },
+        { "toolField": "platform", "sourceKind": "requestBody", "operationId": "buildUploads_createInstance", "jsonPointer": "/data/attributes/platform" },
+        { "toolField": "file_path", "sourceKind": "local", "localRole": "Reject a noncanonical path basename before snapshot creation or parent mutation. Create a mode-0600 immutable snapshot before parent creation, use it for every reservation field, transfer range, and checksum, then verify the MD5 again after all transfers before PATCH." },
+        { "toolField": "file_path", "sourceKind": "derived", "operationId": "buildUploadFiles_createInstance", "jsonPointer": "/data/attributes/fileName", "derivedFrom": ["file_path"], "localRole": "Derive fileName from the immutable snapshot." },
+        { "toolField": "file_path", "sourceKind": "derived", "operationId": "buildUploadFiles_createInstance", "jsonPointer": "/data/attributes/fileSize", "derivedFrom": ["file_path"], "localRole": "Derive fileSize from the immutable snapshot." },
+        { "toolField": "asset_type", "sourceKind": "requestBody", "operationId": "buildUploadFiles_createInstance", "jsonPointer": "/data/attributes/assetType", "localRole": "Defaults to ASSET only when omitted; reject a present null, non-string, empty, or unsupported value before snapshot creation or any network request." },
+        { "toolField": "uti", "sourceKind": "requestBody", "operationId": "buildUploadFiles_createInstance", "jsonPointer": "/data/attributes/uti", "localRole": "Reject a present null, non-string, empty, or unsupported value before snapshot creation or any network request." },
+        { "toolField": "max_transfer_attempts", "sourceKind": "local", "localRole": "Bounds retries independently only when Apple explicitly specifies PUT. POST, PATCH, an omitted method, and every unknown method get one attempt. Redirects are rejected and signed transfer requests never receive the App Store Connect JWT." }
+      ],
+      "response": {
+        "mode": "aggregate",
+        "sources": [
+          { "operationId": "apps_buildUploads_getToManyRelated", "statusCode": "200", "mediaType": "application/json" },
+          { "operationId": "buildUploads_createInstance", "statusCode": "201", "mediaType": "application/json" },
+          { "operationId": "buildUploads_buildUploadFiles_getToManyRelated", "statusCode": "200", "mediaType": "application/json" },
+          { "operationId": "buildUploadFiles_createInstance", "statusCode": "201", "mediaType": "application/json" },
+          { "operationId": "buildUploadFiles_updateInstance", "statusCode": "200", "mediaType": "application/json" },
+          { "operationId": "buildUploadFiles_getInstance", "statusCode": "200", "mediaType": "application/json" },
+          { "operationId": "buildUploads_getInstance", "statusCode": "200", "mediaType": "application/json" },
+          { "operationId": "buildUploads_deleteInstance", "statusCode": "204" }
+        ],
+        "fields": [
+          { "outputField": "buildUpload", "localRole": "Exact parent projection with current processing state and optional final Build relationship." },
+          { "outputField": "buildUploadFile", "localRole": "Exact reserved file projection with credentials redacted." },
+          { "outputField": "transferReceipts", "localRole": "Per-part operationIndex, method, offset, length, attempts, statusCode, expiration, partNumber, entityTag, and responseEntityTag; URL and request or response headers are never emitted." },
+          { "outputField": "cleanup", "localRole": "Parent-only cleanup outcome, resource identity, and explicit inspection/deletion guidance." },
+          { "outputField": "processingComplete", "localRole": "True only for parent COMPLETE; committed processing remains a successful pending result that is unsafe to retry blindly." },
+          { "outputField": "workflowState", "localRole": "continuation_required for one uniquely recovered parent or file reservation; parent_unresolved for zero or multiple parent candidates; reservation_unresolved for zero or multiple file candidates; checksum_inspection_required when an initial UPLOAD_COMPLETE or COMPLETE file lacks matching Apple MD5 evidence." },
+          { "outputField": "checksumEvidence", "localRole": "For checksum_inspection_required, returns the deliveryState, fresh immutable snapshotChecksum, nullable Apple file checksum algorithm and value, and verified false; transfer and PATCH are not attempted and both resources are retained for inspection." },
+          { "outputField": "candidateAttributionConfirmed", "localRole": "False when a parent or file reservation is uniquely recovered after an ambiguous POST; that candidate is not treated as invocation-owned." },
+          { "outputField": "operationCommitState", "localRole": "Preserves unknown for transport ambiguity and committed_unverified for an invalid accepted response when parent or reservation recovery returns a continuation." },
+          { "outputField": "continuationRequired", "localRole": "True for a uniquely recovered parent or reservation; mutation stops and exact continuation.tool and arguments identify the explicit next call." },
+          { "outputField": "buildUploadId", "localRole": "Unique recovered parent ID or exact confirmed parent ID needed for explicit continuation." },
+          { "outputField": "fileId", "localRole": "Unique recovered file reservation ID when recovery stopped after file POST; absent for recovered-parent or unresolved outcomes." },
+          { "outputField": "parentDeleted", "localRole": "False for continuation_required and checksum_inspection_required because no recovered, existing, or checksum-unverified parent is deleted." },
+          { "outputField": "continuation", "localRole": "Exact build_uploads_upload_file tool name and arguments for an explicit resume call; recovered-parent and recovered-file continuations carry expected_md5 from the fresh immutable snapshot, with fileId included when a reservation was recovered." },
+          { "outputField": "retrySafe", "localRole": "False for recovered, committed_unverified, checksum_inspection_required, unknown, and post-commit pending outcomes."
+          }
+        ]
+      },
+      "note": "Snapshots before mutation and verifies the same MD5 after all transfers. Exact POST 201 parents and reservations may continue; a uniquely recovered parent or file stops with exact IDs and an explicit build_uploads_upload_file continuation carrying expected_md5 from the fresh immutable snapshot, while zero or multiple candidates remain unresolved. On that continuation, expected_md5 is checked before any Apple API request or presigned transfer. An initial UPLOAD_COMPLETE or COMPLETE file without matching Apple MD5 evidence returns checksum_inspection_required with checksumEvidence and committed_unverified; no transfer or PATCH occurs, both resources are retained, and retrySafe is false. Presigned operations expose no credentials, attach no ASC authorization, reject redirects, and retry only explicit PUT. Before PATCH, cleanup may DELETE only a parent confirmed by this invocation's exact 201; after PATCH or unknown ownership every resource is retained. No BuildUploadFile DELETE exists or is claimed."
+    }
+  ],
+  "implementationAliases": []
+}
