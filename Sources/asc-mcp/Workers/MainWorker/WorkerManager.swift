@@ -241,6 +241,7 @@ private struct WorkerGraph: Sendable {
     let xcodeCloudWorker: XcodeCloudWorker
     let buildsWorker: BuildsWorker
     let buildProcessingWorker: BuildProcessingWorker
+    let exportComplianceWorker: ExportComplianceWorker
     let buildBetaDetailsWorker: BuildBetaDetailsWorker
     let appLifecycleWorker: AppLifecycleWorker
     let reviewsWorker: ReviewsWorker
@@ -273,6 +274,7 @@ private struct WorkerGraph: Sendable {
         self.xcodeCloudWorker = XcodeCloudWorker(httpClient: httpClient)
         self.buildsWorker = BuildsWorker(httpClient: httpClient)
         self.buildProcessingWorker = BuildProcessingWorker(httpClient: httpClient)
+        self.exportComplianceWorker = ExportComplianceWorker(httpClient: httpClient, uploadService: uploadService)
         self.buildBetaDetailsWorker = BuildBetaDetailsWorker(httpClient: httpClient)
         self.appLifecycleWorker = AppLifecycleWorker(httpClient: httpClient)
         self.reviewsWorker = ReviewsWorker(httpClient: httpClient)
@@ -309,7 +311,7 @@ private struct WorkerRuntime: Sendable {
 public actor WorkerManager {
     static let validWorkerFilterKeys: Set<String> = [
         "company", "auth", "apps", "accessibility", "webhooks", "xcode_cloud",
-        "builds", "build_processing", "build_beta", "versions", "reviews",
+        "builds", "build_processing", "export_compliance", "build_beta", "versions", "reviews",
         "beta_groups", "beta_feedback", "beta_testers", "iap", "provisioning",
         "app_info", "pricing", "users", "app_events", "analytics", "subscriptions",
         "sandbox", "beta_app", "pre_release", "beta_license", "screenshots",
@@ -453,6 +455,13 @@ public actor WorkerManager {
                 ],
                 getTools: { await graph.buildProcessingWorker.getTools() },
                 handle: { try await graph.buildProcessingWorker.handleTool($0) }
+            ),
+            WorkerDescriptor(
+                key: "export_compliance",
+                enabledKeys: ["export_compliance"],
+                prefixes: ["export_compliance_"],
+                getTools: { await graph.exportComplianceWorker.getTools() },
+                handle: { try await graph.exportComplianceWorker.handleTool($0) }
             ),
             WorkerDescriptor(key: "builds", enabledKeys: ["builds"], prefixes: ["builds_"], getTools: { await graph.buildsWorker.getTools() }, handle: { try await graph.buildsWorker.handleTool($0) }),
             WorkerDescriptor(key: "versions", enabledKeys: ["versions"], prefixes: ["app_versions_"], getTools: { await graph.appLifecycleWorker.getTools() }, handle: { try await graph.appLifecycleWorker.handleTool($0) }),

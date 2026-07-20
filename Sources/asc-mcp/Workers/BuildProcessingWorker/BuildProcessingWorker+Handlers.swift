@@ -239,7 +239,7 @@ extension BuildProcessingWorker {
             var warnings: [String] = []
             
             let isProcessed = processingState == "VALID"
-            let encryptionDeclarationRecorded = usesNonExemptEncryption != nil
+            let encryptionDeclarationRecorded = usesNonExemptEncryption == false
             let isNotExpired = !expired
             
             switch processingState {
@@ -253,8 +253,10 @@ extension BuildProcessingWorker {
                 issues.append("Build processing state is unknown (state: \(processingState))")
             }
             
-            if !encryptionDeclarationRecorded {
+            if usesNonExemptEncryption == nil {
                 issues.append("Non-exempt encryption declaration is not set")
+            } else if usesNonExemptEncryption == true {
+                issues.append("Non-exempt encryption requires export_compliance_check_release_readiness to verify an approved attached declaration and completed document")
             }
             
             if !isNotExpired {
@@ -262,7 +264,7 @@ extension BuildProcessingWorker {
             }
             
             if usesNonExemptEncryption == true {
-                warnings.append("The build declares non-exempt encryption; additional export-compliance review or documentation may still be required")
+                warnings.append("This tool cannot verify non-exempt export compliance; use export_compliance_check_release_readiness")
             }
             
             // Check beta states

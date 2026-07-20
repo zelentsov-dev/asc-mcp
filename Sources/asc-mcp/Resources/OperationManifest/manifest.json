@@ -591,30 +591,6 @@
       "reviewAtSpec": "4.4.1"
     },
     {
-      "id": "deferred.appEncryptionDeclarationDocuments_createInstance",
-      "operationId": "appEncryptionDeclarationDocuments_createInstance",
-      "disposition": "deferred",
-      "reason": "The `appEncryptionDeclarationDocuments` resource-group capability is not yet exposed by asc-mcp.",
-      "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
-    },
-    {
-      "id": "deferred.appEncryptionDeclarationDocuments_getInstance",
-      "operationId": "appEncryptionDeclarationDocuments_getInstance",
-      "disposition": "deferred",
-      "reason": "The `appEncryptionDeclarationDocuments` resource-group capability is not yet exposed by asc-mcp.",
-      "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
-    },
-    {
-      "id": "deferred.appEncryptionDeclarationDocuments_updateInstance",
-      "operationId": "appEncryptionDeclarationDocuments_updateInstance",
-      "disposition": "deferred",
-      "reason": "The `appEncryptionDeclarationDocuments` resource-group capability is not yet exposed by asc-mcp.",
-      "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
-    },
-    {
       "id": "deferred.appEncryptionDeclarations_getCollection",
       "operationId": "appEncryptionDeclarations_getCollection",
       "disposition": "deferred",
@@ -623,32 +599,8 @@
       "reviewAtSpec": "4.4.1"
     },
     {
-      "id": "deferred.appEncryptionDeclarations_createInstance",
-      "operationId": "appEncryptionDeclarations_createInstance",
-      "disposition": "deferred",
-      "reason": "The `appEncryptionDeclarations` resource-group capability is not yet exposed by asc-mcp.",
-      "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
-    },
-    {
-      "id": "deferred.appEncryptionDeclarations_getInstance",
-      "operationId": "appEncryptionDeclarations_getInstance",
-      "disposition": "deferred",
-      "reason": "The `appEncryptionDeclarations` resource-group capability is not yet exposed by asc-mcp.",
-      "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
-    },
-    {
       "id": "deferred.appEncryptionDeclarations_app_getToOneRelated",
       "operationId": "appEncryptionDeclarations_app_getToOneRelated",
-      "disposition": "deferred",
-      "reason": "The `appEncryptionDeclarations` resource-group capability is not yet exposed by asc-mcp.",
-      "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
-    },
-    {
-      "id": "deferred.appEncryptionDeclarations_appEncryptionDeclarationDocument_getToOneRelated",
-      "operationId": "appEncryptionDeclarations_appEncryptionDeclarationDocument_getToOneRelated",
       "disposition": "deferred",
       "reason": "The `appEncryptionDeclarations` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
@@ -1449,14 +1401,6 @@
     {
       "id": "deferred.apps_appClips_getToManyRelated",
       "operationId": "apps_appClips_getToManyRelated",
-      "disposition": "deferred",
-      "reason": "The `apps` resource-group capability is not yet exposed by asc-mcp.",
-      "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
-    },
-    {
-      "id": "deferred.apps_appEncryptionDeclarations_getToManyRelated",
-      "operationId": "apps_appEncryptionDeclarations_getToManyRelated",
       "disposition": "deferred",
       "reason": "The `apps` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
@@ -2551,14 +2495,6 @@
       "reviewAtSpec": "4.4.1"
     },
     {
-      "id": "deferred.builds_appEncryptionDeclaration_getToOneRelated",
-      "operationId": "builds_appEncryptionDeclaration_getToOneRelated",
-      "disposition": "deferred",
-      "reason": "The `builds` resource-group capability is not yet exposed by asc-mcp.",
-      "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
-    },
-    {
       "id": "deferred.builds_appStoreVersion_getToOneRelated",
       "operationId": "builds_appStoreVersion_getToOneRelated",
       "disposition": "deferred",
@@ -2618,7 +2554,7 @@
       "id": "deferred.builds_appEncryptionDeclaration_updateToOneRelationship",
       "operationId": "builds_appEncryptionDeclaration_updateToOneRelationship",
       "disposition": "deferred",
-      "reason": "The `builds` resource-group capability is not yet exposed by asc-mcp.",
+      "reason": "Apple's current DocC deprecates the direct relationship PATCH and directs clients to builds_updateInstance instead.",
       "owner": "asc-mcp",
       "reviewAtSpec": "4.4.1"
     },

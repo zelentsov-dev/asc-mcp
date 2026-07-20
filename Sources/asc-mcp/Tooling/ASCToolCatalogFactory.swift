@@ -22,6 +22,7 @@ enum ASCToolCatalogFactory {
         "xcode_cloud": "Xcode Cloud",
         "builds": "Builds",
         "build_processing": "Build Processing",
+        "export_compliance": "Export Compliance",
         "build_beta": "TestFlight Beta Details",
         "versions": "App Version Lifecycle",
         "reviews": "Customer Reviews",

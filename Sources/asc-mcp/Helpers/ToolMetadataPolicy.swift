@@ -72,6 +72,7 @@ enum ToolMetadataPolicy {
         "_summary",
         "_inventory",
         "_prepare",
+        "_inspect",
         "_status",
         "_check",
         "_current",

@@ -96,12 +96,13 @@ enum ASCCoverageInventory {
             status: .partial,
             priority: .p0,
             workerKeys: [
-                "builds", "build_processing", "build_beta", "beta_groups",
+                "builds", "build_processing", "export_compliance", "build_beta", "beta_groups",
                 "beta_feedback", "beta_testers", "beta_app", "pre_release", "beta_license"
             ],
             coveredCapabilities: [
                 "build list/find",
                 "build processing and encryption",
+                "export-compliance declarations, documents, and verified build linkage",
                 "beta localizations and build notifications",
                 "beta groups and testers",
                 "beta feedback crash submissions",
