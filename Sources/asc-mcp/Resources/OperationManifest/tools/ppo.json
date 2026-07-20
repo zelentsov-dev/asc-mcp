@@ -53,6 +53,15 @@
           "inputs": [
             { "sourceKind": "fixed", "jsonPointer": "/data/type", "fixedValue": "appStoreVersionExperimentTreatments" },
             { "sourceKind": "fixed", "jsonPointer": "/data/relationships/appStoreVersionExperimentV2/data/type", "fixedValue": "appStoreVersionExperiments" }
+          ],
+          "optionalParameterClassifications": [
+            {
+              "location": "body",
+              "appleName": "/data/relationships/appStoreVersionExperiment",
+              "disposition": "intentionallyOmitted",
+              "reason": "Apple 4.4.1 accepts either the legacy appStoreVersionExperiment relationship or appStoreVersionExperimentV2. This worker exposes V2 experiment IDs and always binds appStoreVersionExperimentV2, so the legacy alternative is omitted to avoid an ambiguous parent.",
+              "reviewAtSpec": "4.4.1"
+            }
           ]
         }
       ],
@@ -150,7 +159,30 @@
           "operationId": "appStoreVersionExperimentsV2_getInstance",
           "method": "get",
           "path": "/v2/appStoreVersionExperiments/{id}",
-          "role": "primary"
+          "role": "primary",
+          "optionalParameterClassifications": [
+            {
+              "location": "query",
+              "appleName": "include",
+              "disposition": "intentionallyOmitted",
+              "reason": "Apple 4.4.1 can expand app, latestControlVersion, controlVersions, and appStoreVersionExperimentTreatments. This detail contract returns the experiment resource only; treatments are available through ppo_list_treatments.",
+              "reviewAtSpec": "4.4.1"
+            },
+            {
+              "location": "query",
+              "appleName": "limit[appStoreVersionExperimentTreatments]",
+              "disposition": "intentionallyOmitted",
+              "reason": "Apple applies this nested limit only when appStoreVersionExperimentTreatments is included; this tool does not include that relationship and ppo_list_treatments provides bounded pagination.",
+              "reviewAtSpec": "4.4.1"
+            },
+            {
+              "location": "query",
+              "appleName": "limit[controlVersions]",
+              "disposition": "intentionallyOmitted",
+              "reason": "Apple applies this nested limit only when controlVersions is included; the current detail projection does not include or return control-version resources.",
+              "reviewAtSpec": "4.4.1"
+            }
+          ]
         }
       ],
       "fields": [
@@ -180,12 +212,36 @@
           "operationId": "apps_appStoreVersionExperimentsV2_getToManyRelated",
           "method": "get",
           "path": "/v1/apps/{id}/appStoreVersionExperimentsV2",
-          "role": "primary"
+          "role": "primary",
+          "optionalParameterClassifications": [
+            {
+              "location": "query",
+              "appleName": "include",
+              "disposition": "intentionallyOmitted",
+              "reason": "Apple 4.4.1 can expand app, control versions, and treatments. This collection contract returns experiment resources only; treatments are retrieved through ppo_list_treatments.",
+              "reviewAtSpec": "4.4.1"
+            },
+            {
+              "location": "query",
+              "appleName": "limit[appStoreVersionExperimentTreatments]",
+              "disposition": "intentionallyOmitted",
+              "reason": "Apple applies this nested limit only when appStoreVersionExperimentTreatments is included; the collection does not include that relationship and the dedicated treatment tool is paginated.",
+              "reviewAtSpec": "4.4.1"
+            },
+            {
+              "location": "query",
+              "appleName": "limit[controlVersions]",
+              "disposition": "intentionallyOmitted",
+              "reason": "Apple applies this nested limit only when controlVersions is included; the experiment collection projection does not include control-version resources.",
+              "reviewAtSpec": "4.4.1"
+            }
+          ]
         }
       ],
       "fields": [
         { "toolField": "app_id", "sourceKind": "parameter", "operationId": "apps_appStoreVersionExperimentsV2_getToManyRelated", "location": "path", "appleName": "id" },
         { "toolField": "limit", "sourceKind": "parameter", "operationId": "apps_appStoreVersionExperimentsV2_getToManyRelated", "location": "query", "appleName": "limit" },
+        { "toolField": "states", "sourceKind": "parameter", "operationId": "apps_appStoreVersionExperimentsV2_getToManyRelated", "location": "query", "appleName": "filter[state]", "localRole": "Accept a scalar or string array and serialize Apple's explode=false filter as CSV." },
         { "toolField": "next_url", "sourceKind": "local", "localRole": "paginationContinuation" }
       ],
       "response": {
@@ -200,7 +256,7 @@
           { "outputField": "next_url", "operationId": "apps_appStoreVersionExperimentsV2_getToManyRelated", "jsonPointer": "/links/next" }
         ]
       },
-      "note": "Direct paginated V2 experiment relationship read; current tool does not expose Apple's state filter, fields, include, or nested limits."
+      "note": "Direct paginated V2 experiment relationship read with validated scalar-or-array state filtering and Apple explode=false CSV semantics; relationship expansion remains intentionally omitted."
     },
     {
       "tool": "ppo_list_treatment_localizations",
@@ -213,12 +269,36 @@
           "operationId": "appStoreVersionExperimentTreatments_appStoreVersionExperimentTreatmentLocalizations_getToManyRelated",
           "method": "get",
           "path": "/v1/appStoreVersionExperimentTreatments/{id}/appStoreVersionExperimentTreatmentLocalizations",
-          "role": "primary"
+          "role": "primary",
+          "optionalParameterClassifications": [
+            {
+              "location": "query",
+              "appleName": "include",
+              "disposition": "intentionallyOmitted",
+              "reason": "Apple 4.4.1 can expand the parent treatment and its appScreenshotSets or appPreviewSets. This worker returns localization resources only and leaves media lifecycle operations to ScreenshotsWorker.",
+              "reviewAtSpec": "4.4.1"
+            },
+            {
+              "location": "query",
+              "appleName": "limit[appPreviewSets]",
+              "disposition": "intentionallyOmitted",
+              "reason": "Apple applies this nested limit only when appPreviewSets is included; this localization list does not include media resources.",
+              "reviewAtSpec": "4.4.1"
+            },
+            {
+              "location": "query",
+              "appleName": "limit[appScreenshotSets]",
+              "disposition": "intentionallyOmitted",
+              "reason": "Apple applies this nested limit only when appScreenshotSets is included; this localization list does not include media resources.",
+              "reviewAtSpec": "4.4.1"
+            }
+          ]
         }
       ],
       "fields": [
         { "toolField": "treatment_id", "sourceKind": "parameter", "operationId": "appStoreVersionExperimentTreatments_appStoreVersionExperimentTreatmentLocalizations_getToManyRelated", "location": "path", "appleName": "id" },
         { "toolField": "limit", "sourceKind": "parameter", "operationId": "appStoreVersionExperimentTreatments_appStoreVersionExperimentTreatmentLocalizations_getToManyRelated", "location": "query", "appleName": "limit" },
+        { "toolField": "locale", "sourceKind": "parameter", "operationId": "appStoreVersionExperimentTreatments_appStoreVersionExperimentTreatmentLocalizations_getToManyRelated", "location": "query", "appleName": "filter[locale]", "localRole": "Accept a scalar or string array and serialize Apple's explode=false filter as CSV." },
         { "toolField": "next_url", "sourceKind": "local", "localRole": "paginationContinuation" }
       ],
       "response": {
@@ -232,7 +312,7 @@
           { "outputField": "next_url", "operationId": "appStoreVersionExperimentTreatments_appStoreVersionExperimentTreatmentLocalizations_getToManyRelated", "jsonPointer": "/links/next" }
         ]
       },
-      "note": "Direct paginated localization read; current tool does not expose Apple's locale filter, fields, include, or nested media-set limits."
+      "note": "Direct paginated localization read with scalar-or-array locale filtering and Apple explode=false CSV semantics; media relationship expansion remains intentionally omitted."
     },
     {
       "tool": "ppo_list_treatments",
@@ -245,7 +325,23 @@
           "operationId": "appStoreVersionExperimentsV2_appStoreVersionExperimentTreatments_getToManyRelated",
           "method": "get",
           "path": "/v2/appStoreVersionExperiments/{id}/appStoreVersionExperimentTreatments",
-          "role": "primary"
+          "role": "primary",
+          "optionalParameterClassifications": [
+            {
+              "location": "query",
+              "appleName": "include",
+              "disposition": "intentionallyOmitted",
+              "reason": "Apple 4.4.1 can expand legacy or V2 experiment parents and treatment localizations. This tool returns treatments only; localizations are retrieved through ppo_list_treatment_localizations.",
+              "reviewAtSpec": "4.4.1"
+            },
+            {
+              "location": "query",
+              "appleName": "limit[appStoreVersionExperimentTreatmentLocalizations]",
+              "disposition": "intentionallyOmitted",
+              "reason": "Apple applies this nested limit only when treatment localizations are included; ppo_list_treatment_localizations provides bounded pagination instead.",
+              "reviewAtSpec": "4.4.1"
+            }
+          ]
         }
       ],
       "fields": [

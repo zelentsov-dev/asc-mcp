@@ -138,7 +138,16 @@
           "method": "get",
           "path": "/v1/promotedPurchases/{id}",
           "role": "primary",
-          "condition": null
+          "condition": null,
+          "optionalParameterClassifications": [
+            {
+              "location": "query",
+              "appleName": "include",
+              "disposition": "internalControl",
+              "reason": "The handler always sends Apple 4.4.1 include=inAppPurchaseV2,subscription so the detail result can project the linked product without requiring caller-controlled expansion.",
+              "reviewAtSpec": "4.4.1"
+            }
+          ]
         }
       ],
       "fields": [
@@ -221,7 +230,16 @@
           "method": "get",
           "path": "/v1/apps/{id}/promotedPurchases",
           "role": "primary",
-          "condition": null
+          "condition": null,
+          "optionalParameterClassifications": [
+            {
+              "location": "query",
+              "appleName": "include",
+              "disposition": "intentionallyOmitted",
+              "reason": "Apple 4.4.1 can include inAppPurchaseV2 and subscription resources, but this collection contract returns base promoted-purchase attributes and relationship IDs; promoted_get provides expanded linked-product details.",
+              "reviewAtSpec": "4.4.1"
+            }
+          ]
         }
       ],
       "fields": [

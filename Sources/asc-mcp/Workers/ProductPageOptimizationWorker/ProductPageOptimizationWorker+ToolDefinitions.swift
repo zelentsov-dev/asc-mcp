@@ -19,6 +19,10 @@ extension ProductPageOptimizationWorker {
                         "type": .string("integer"),
                         "description": .string("Max results (default: 25, max: 200)")
                     ]),
+                    "states": stringOrArrayEnumSchema(
+                        "Filter by one or more experiment states",
+                        values: Self.supportedExperimentStates
+                    ),
                     "next_url": .object([
                         "type": .string("string"),
                         "description": .string("Pagination URL from previous response to fetch next page")
@@ -188,6 +192,7 @@ extension ProductPageOptimizationWorker {
                         "type": .string("integer"),
                         "description": .string("Max results (default: 25, max: 200)")
                     ]),
+                    "locale": stringOrArraySchema("Filter by one or more locale codes"),
                     "next_url": .object([
                         "type": .string("string"),
                         "description": .string("Pagination URL from previous response to fetch next page")
@@ -217,5 +222,42 @@ extension ProductPageOptimizationWorker {
                 "required": .array([.string("treatment_id"), .string("locale")])
             ])
         )
+    }
+
+    private func stringOrArraySchema(_ description: String) -> Value {
+        .object([
+            "description": .string(description),
+            "oneOf": .array([
+                .object(["type": .string("string")]),
+                .object([
+                    "type": .string("array"),
+                    "items": .object(["type": .string("string")]),
+                    "minItems": .int(1),
+                    "uniqueItems": .bool(true)
+                ])
+            ])
+        ])
+    }
+
+    private func stringOrArrayEnumSchema(_ description: String, values: [String]) -> Value {
+        let enumValues = Value.array(values.map(Value.string))
+        return .object([
+            "description": .string(description + ": " + values.joined(separator: ", ")),
+            "oneOf": .array([
+                .object([
+                    "type": .string("string"),
+                    "enum": enumValues
+                ]),
+                .object([
+                    "type": .string("array"),
+                    "items": .object([
+                        "type": .string("string"),
+                        "enum": enumValues
+                    ]),
+                    "minItems": .int(1),
+                    "uniqueItems": .bool(true)
+                ])
+            ])
+        ])
     }
 }

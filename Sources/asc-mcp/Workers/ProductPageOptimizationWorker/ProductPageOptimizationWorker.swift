@@ -3,6 +3,18 @@ import MCP
 
 /// ProductPageOptimizationWorker manages A/B testing experiments for App Store product pages
 public final class ProductPageOptimizationWorker: Sendable {
+    static let supportedExperimentStates = [
+        "PREPARE_FOR_SUBMISSION",
+        "READY_FOR_REVIEW",
+        "WAITING_FOR_REVIEW",
+        "IN_REVIEW",
+        "ACCEPTED",
+        "APPROVED",
+        "REJECTED",
+        "COMPLETED",
+        "STOPPED"
+    ]
+
     let httpClient: HTTPClient
 
     public init(httpClient: HTTPClient) {

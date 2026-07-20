@@ -17,6 +17,11 @@ extension ProductPageOptimizationWorker {
         }
 
         do {
+            let states = try stringList(
+                arguments["states"],
+                field: "states",
+                allowedValues: Set(Self.supportedExperimentStates)
+            )
             let response: ASCExperimentsResponse
 
             if let nextUrl = try paginationURL(from: arguments["next_url"]) {
@@ -32,6 +37,9 @@ extension ProductPageOptimizationWorker {
                     queryParams["limit"] = String(min(max(limit, 1), 200))
                 } else {
                     queryParams["limit"] = "25"
+                }
+                if let states {
+                    queryParams["filter[state]"] = states.joined(separator: ",")
                 }
 
                 response = try await httpClient.get(
@@ -368,6 +376,7 @@ extension ProductPageOptimizationWorker {
         }
 
         do {
+            let locales = try stringList(arguments["locale"], field: "locale")
             let response: ASCTreatmentLocalizationsResponse
 
             if let nextUrl = try paginationURL(from: arguments["next_url"]) {
@@ -383,6 +392,9 @@ extension ProductPageOptimizationWorker {
                     queryParams["limit"] = String(min(max(limit, 1), 200))
                 } else {
                     queryParams["limit"] = "25"
+                }
+                if let locales {
+                    queryParams["filter[locale]"] = locales.joined(separator: ",")
                 }
 
                 response = try await httpClient.get(
@@ -465,6 +477,39 @@ extension ProductPageOptimizationWorker {
 
     // MARK: - Formatting
 
+    private func stringList(
+        _ value: Value?,
+        field: String,
+        allowedValues: Set<String>? = nil
+    ) throws -> [String]? {
+        guard let value else { return nil }
+        let values: [String]
+        if let string = value.stringValue {
+            values = [string]
+        } else if let array = value.arrayValue,
+                  !array.isEmpty,
+                  array.allSatisfy({ $0.stringValue != nil }) {
+            values = array.compactMap(\.stringValue)
+        } else {
+            throw PPOArgumentError("\(field) must be a non-empty string or array of strings")
+        }
+
+        guard values.allSatisfy({ !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }) else {
+            throw PPOArgumentError("\(field) must contain only non-empty strings")
+        }
+        guard Set(values).count == values.count,
+              values.allSatisfy({ !$0.contains(",") }) else {
+            throw PPOArgumentError("\(field) must contain unique values without commas")
+        }
+        if let allowedValues,
+           let invalid = values.first(where: { !allowedValues.contains($0) }) {
+            throw PPOArgumentError(
+                "Unsupported \(field) value '\(invalid)'. Valid values: \(allowedValues.sorted().joined(separator: ", "))"
+            )
+        }
+        return values
+    }
+
     private func formatExperiment(_ experiment: ASCExperiment) -> [String: Any] {
         return [
             "id": experiment.id,
@@ -506,4 +551,14 @@ extension ProductPageOptimizationWorker {
             "locale": (localization.attributes?.locale).jsonSafe
         ]
     }
+}
+
+private struct PPOArgumentError: LocalizedError, Sendable {
+    let message: String
+
+    init(_ message: String) {
+        self.message = message
+    }
+
+    var errorDescription: String? { message }
 }
