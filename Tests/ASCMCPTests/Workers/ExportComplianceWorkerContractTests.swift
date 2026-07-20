@@ -501,45 +501,47 @@ struct ExportComplianceWorkerContractTests {
         let fileURL = try exportComplianceFile(Data("hello".utf8))
         defer { try? FileManager.default.removeItem(at: fileURL) }
 
-        for storedChecksum in ["7d793037a0760186574b0282f2f435e7", "INVALID"] {
-            let apiTransport = TestHTTPTransport(responses: [
-                .init(statusCode: 200, body: exportComplianceDeclarationResponse(id: "declaration-1", state: "CREATED")),
-                .init(statusCode: 404, body: exportComplianceAPIError(404)),
-                .init(
-                    statusCode: 201,
-                    body: exportComplianceDocumentResponse(
-                        id: "document-1",
-                        fileName: fileURL.lastPathComponent,
-                        state: "AWAITING_UPLOAD",
-                        uploadOperations: true,
-                        includeSecrets: true,
-                        sourceFileChecksum: storedChecksum
+        for state in [nil, "AWAITING_UPLOAD", "UPLOAD_COMPLETE", "FAILED", "FUTURE_STATE"] as [String?] {
+            for storedChecksum in ["7d793037a0760186574b0282f2f435e7", "INVALID"] {
+                let apiTransport = TestHTTPTransport(responses: [
+                    .init(statusCode: 200, body: exportComplianceDeclarationResponse(id: "declaration-1", state: "CREATED")),
+                    .init(statusCode: 404, body: exportComplianceAPIError(404)),
+                    .init(
+                        statusCode: 201,
+                        body: exportComplianceDocumentResponse(
+                            id: "document-1",
+                            fileName: fileURL.lastPathComponent,
+                            state: state,
+                            uploadOperations: true,
+                            includeSecrets: true,
+                            sourceFileChecksum: storedChecksum
+                        )
                     )
+                ])
+                let uploadTransport = TestHTTPTransport(responses: [])
+                let worker = try await exportComplianceWorker(
+                    apiTransport: apiTransport,
+                    uploadTransport: uploadTransport
                 )
-            ])
-            let uploadTransport = TestHTTPTransport(responses: [])
-            let worker = try await exportComplianceWorker(
-                apiTransport: apiTransport,
-                uploadTransport: uploadTransport
-            )
-            let result = try await worker.handleTool(.init(
-                name: "export_compliance_create_document",
-                arguments: [
-                    "declaration_id": .string("declaration-1"),
-                    "file_path": .string(fileURL.path)
-                ]
-            ))
+                let result = try await worker.handleTool(.init(
+                    name: "export_compliance_create_document",
+                    arguments: [
+                        "declaration_id": .string("declaration-1"),
+                        "file_path": .string(fileURL.path)
+                    ]
+                ))
 
-            #expect(result.isError == true)
-            #expect(await apiTransport.recordedRequests().map(\.httpMethod) == ["GET", "GET", "POST"])
-            #expect(await uploadTransport.requestCount() == 0)
-            let payload = try exportComplianceObject(result.structuredContent)
-            #expect(payload["retrySafe"] == .bool(false))
-            #expect(payload["checksumBindingConflict"] == .bool(true))
-            #expect(payload["sourceFileChecksumReceipt"] == nil)
-            #expect(payload["nextAction"] == nil)
-            #expect(payload["inspection"] != nil)
-            exportComplianceExpectNoSecrets(result)
+                #expect(result.isError == true)
+                #expect(await apiTransport.recordedRequests().map(\.httpMethod) == ["GET", "GET", "POST"])
+                #expect(await uploadTransport.requestCount() == 0)
+                let payload = try exportComplianceObject(result.structuredContent)
+                #expect(payload["retrySafe"] == .bool(false))
+                #expect(payload["checksumBindingConflict"] == .bool(true))
+                #expect(payload["sourceFileChecksumReceipt"] == nil)
+                #expect(payload["nextAction"] == nil)
+                #expect(payload["inspection"] != nil)
+                exportComplianceExpectNoSecrets(result)
+            }
         }
     }
 
@@ -880,6 +882,47 @@ struct ExportComplianceWorkerContractTests {
         #expect(payload["inspection"] != nil)
     }
 
+    @Test("document upload can correct a caller receipt from a matching Apple binding")
+    func uploadDocumentStoredChecksumCorrectsCallerReceipt() async throws {
+        let fileURL = try exportComplianceFile(Data("hello".utf8))
+        defer { try? FileManager.default.removeItem(at: fileURL) }
+        let apiTransport = TestHTTPTransport(responses: [
+            .init(
+                statusCode: 200,
+                body: exportComplianceDocumentResponse(
+                    id: "document-1",
+                    fileName: fileURL.lastPathComponent,
+                    state: "AWAITING_UPLOAD",
+                    uploadOperations: true,
+                    includeSecrets: true,
+                    checksum: true
+                )
+            )
+        ])
+        let uploadTransport = TestHTTPTransport(responses: [])
+        let worker = try await exportComplianceWorker(
+            apiTransport: apiTransport,
+            uploadTransport: uploadTransport
+        )
+        let result = try await worker.handleTool(.init(
+            name: "export_compliance_upload_document",
+            arguments: exportComplianceUploadArguments(
+                fileURL,
+                checksum: "7d793037a0760186574b0282f2f435e7"
+            )
+        ))
+
+        #expect(result.isError == true)
+        #expect(await apiTransport.recordedRequests().map(\.httpMethod) == ["GET"])
+        #expect(await uploadTransport.requestCount() == 0)
+        let payload = try exportComplianceObject(result.structuredContent)
+        #expect(payload["checksumBindingConflict"] == nil)
+        #expect(payload["sourceFileChecksumReceipt"] == .string(exportComplianceHelloMD5))
+        let nextAction = try exportComplianceValueObject(payload["nextAction"])
+        let arguments = try exportComplianceValueObject(nextAction["arguments"])
+        #expect(arguments["source_file_checksum"] == .string(exportComplianceHelloMD5))
+    }
+
     @Test("document upload fails closed for an invalid checksum stored by Apple")
     func uploadDocumentInvalidStoredChecksum() async throws {
         let fileURL = try exportComplianceFile(Data("hello".utf8))
@@ -913,6 +956,7 @@ struct ExportComplianceWorkerContractTests {
         let payload = try exportComplianceObject(result.structuredContent)
         let details = try exportComplianceErrorDetails(result)
         #expect(details["retrySafe"] == .bool(false))
+        #expect(details["checksumBindingConflict"] == .bool(true))
         #expect(details["sourceFileChecksumReceipt"] == nil)
         #expect(details["nextAction"] == nil)
         #expect(details["inspection"] != nil)

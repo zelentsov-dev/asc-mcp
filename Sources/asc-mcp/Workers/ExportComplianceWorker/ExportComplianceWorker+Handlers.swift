@@ -413,6 +413,7 @@ extension ExportComplianceWorker {
                 details: .object([
                     "document_id": .string(documentID),
                     "retrySafe": .bool(false),
+                    "checksumBindingConflict": .bool(true),
                     "inspection": .object([
                         "tool": .string("export_compliance_get_document"),
                         "arguments": .object(["document_id": .string(documentID)])
@@ -1264,18 +1265,17 @@ private func exportComplianceUploadResult(
         )
     }
 
-    let retainedDocument: ASCExportComplianceDocument?
-    if case .preCommitFailure(_, let document, _, _) = outcome,
-       document.attributes?.assetDeliveryState?.state == "AWAITING_UPLOAD" {
-        retainedDocument = document
+    let preCommitDocument: ASCExportComplianceDocument?
+    if case .preCommitFailure(_, let document, _, _) = outcome {
+        preCommitDocument = document
     } else {
-        retainedDocument = nil
+        preCommitDocument = nil
     }
-    if let retainedDocument,
+    if let preCommitDocument,
        payload["reservationDeleted"] as? Bool == false,
        let documentID = payload["document_id"] as? String {
         let snapshotChecksum = payload["sourceFileChecksumReceipt"] as? String
-        let storedChecksum = retainedDocument.attributes?.sourceFileChecksum
+        let storedChecksum = preCommitDocument.attributes?.sourceFileChecksum
         let callerChecksumConflict = authoritativeChecksum.map {
             $0 != snapshotChecksum
         } ?? false
@@ -1291,10 +1291,10 @@ private func exportComplianceUploadResult(
                 "arguments": descriptor.inspectionArguments
             ]
         }
-        let checksum = checksumBindingConflict
-            ? nil
-            : (storedChecksum ?? authoritativeChecksum ?? snapshotChecksum)
-        if let checksum {
+        let checksum = storedChecksum ?? authoritativeChecksum ?? snapshotChecksum
+        if preCommitDocument.attributes?.assetDeliveryState?.state == "AWAITING_UPLOAD",
+           !checksumBindingConflict,
+           let checksum {
             payload["sourceFileChecksumReceipt"] = checksum
             payload["nextAction"] = [
                 "tool": "export_compliance_upload_document",
