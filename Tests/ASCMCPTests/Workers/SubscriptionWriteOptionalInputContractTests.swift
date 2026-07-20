@@ -40,7 +40,7 @@ struct SubscriptionWriteOptionalInputContractTests {
 
     @Test("introductory offer preserves concrete and null optional attributes")
     func introductoryOfferPreservesTriState() async throws {
-        let response = #"{"data":{"type":"subscriptionIntroductoryOffers","id":"intro-1","attributes":{"duration":"ONE_MONTH","offerMode":"FREE_TRIAL","numberOfPeriods":1}}}"#
+        let response = #"{"data":{"type":"subscriptionIntroductoryOffers","id":"intro-1","attributes":{"duration":"ONE_MONTH","offerMode":"FREE_TRIAL","numberOfPeriods":1,"startDate":"2026-08-01","endDate":"2026-12-31","targetSubscriptionPlanType":"MONTHLY"}}}"#
         let transport = TestHTTPTransport(responses: [
             .init(statusCode: 201, body: response),
             .init(statusCode: 201, body: response),
@@ -93,6 +93,11 @@ struct SubscriptionWriteOptionalInputContractTests {
         #expect(concreteAttributes["startDate"] as? String == "2026-08-01")
         #expect(concreteAttributes["endDate"] as? String == "2026-12-31")
         #expect(concreteAttributes["targetSubscriptionPlanType"] as? String == "MONTHLY")
+        let concreteResult = try subscriptionOptionalResultObject(concrete)
+        let concreteOffer = try #require(concreteResult["introductory_offer"] as? [String: Any])
+        #expect(concreteOffer["startDate"] as? String == "2026-08-01")
+        #expect(concreteOffer["endDate"] as? String == "2026-12-31")
+        #expect(concreteOffer["targetSubscriptionPlanType"] as? String == "MONTHLY")
         let clearedAttributes = try subscriptionOptionalAttributes(bodies[1])
         #expect(clearedAttributes["startDate"] is NSNull)
         #expect(clearedAttributes["endDate"] is NSNull)
@@ -359,6 +364,14 @@ private func subscriptionOptionalBody(_ body: String) throws -> [String: Any] {
 private func subscriptionOptionalAttributes(_ body: [String: Any]) throws -> [String: Any] {
     let data = try #require(body["data"] as? [String: Any])
     return try #require(data["attributes"] as? [String: Any])
+}
+
+private func subscriptionOptionalResultObject(_ result: CallTool.Result) throws -> [String: Any] {
+    let text = result.content.compactMap { content in
+        if case .text(let text, _, _) = content { return text }
+        return nil
+    }.joined(separator: "\n")
+    return try #require(JSONSerialization.jsonObject(with: Data(text.utf8)) as? [String: Any])
 }
 
 private enum SubscriptionWriteOptionalTestError: Error {
