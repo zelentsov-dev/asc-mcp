@@ -107,10 +107,33 @@ extension InAppPurchasesWorker {
             return MCPResult.error("Required parameter 'iap_id' or 'availability_id' is missing")
         }
 
+        let iapId = arguments["iap_id"]?.stringValue
+        let availabilityId = arguments["availability_id"]?.stringValue
+        guard (iapId == nil) != (availabilityId == nil) else {
+            return MCPResult.error("Exactly one of iap_id or availability_id is required")
+        }
+
+        if arguments["include_territories"] != nil,
+           arguments["include_territories"]?.boolValue == nil {
+            return MCPResult.error("include_territories must be a boolean")
+        }
+        let includeTerritories = arguments["include_territories"]?.boolValue ?? true
+        if !includeTerritories, arguments["territory_limit"] != nil {
+            return MCPResult.error("territory_limit requires include_territories=true")
+        }
+        if arguments["territory_limit"] != nil,
+           arguments["territory_limit"]?.intValue == nil {
+            return MCPResult.error("territory_limit must be an integer")
+        }
+        let territoryLimit = arguments["territory_limit"]?.intValue ?? 50
+        guard (1...50).contains(territoryLimit) else {
+            return MCPResult.error("territory_limit must be between 1 and 50")
+        }
+
         let endpoint: String
-        if let iapId = arguments["iap_id"]?.stringValue {
+        if let iapId {
             endpoint = "/v2/inAppPurchases/\(try ASCPathSegment.encode(iapId))/inAppPurchaseAvailability"
-        } else if let availabilityId = arguments["availability_id"]?.stringValue {
+        } else if let availabilityId {
             endpoint = "/v1/inAppPurchaseAvailabilities/\(try ASCPathSegment.encode(availabilityId))"
         } else {
             return MCPResult.error("Required parameter 'iap_id' or 'availability_id' is missing")
@@ -119,12 +142,19 @@ extension InAppPurchasesWorker {
         do {
             let response = try await httpClient.get(
                 endpoint,
-                parameters: iapAvailabilityQuery(includeTerritories: arguments["include_territories"]?.boolValue ?? true),
+                parameters: iapAvailabilityQuery(
+                    includeTerritories: includeTerritories,
+                    territoryLimit: territoryLimit
+                ),
                 as: PassthroughAPIResponse.self
             )
             return MCPResult.jsonObject([
                 "success": true,
-                "availability": formatIAPAvailability(response.data, included: IAPIncludedIndex(response.included))
+                "availability": formatIAPAvailability(
+                    response.data,
+                    included: IAPIncludedIndex(response.included),
+                    includeTerritories: includeTerritories
+                )
             ])
         } catch {
             return MCPResult.error("Failed to get IAP availability: \(error.localizedDescription)")
@@ -139,7 +169,8 @@ extension InAppPurchasesWorker {
             params,
             endpoint: "/v1/inAppPurchaseAvailabilities/\(try ASCPathSegment.encode(availabilityId))/availableTerritories",
             key: "territories",
-            defaultQuery: ["fields[territories]": "currency"]
+            defaultQuery: ["fields[territories]": "currency"],
+            includePaginationState: true
         )
     }
 
@@ -255,7 +286,8 @@ extension InAppPurchasesWorker {
                 "fields[inAppPurchaseAvailabilities]": "availableInNewTerritories,availableTerritories",
                 "fields[promotedPurchases]": "visibleForAllUsers,enabled,state"
             ],
-            extraResult: ["app_id": appId]
+            extraResult: ["app_id": appId],
+            preserveIncluded: true
         )
     }
 
@@ -483,12 +515,22 @@ extension InAppPurchasesWorker {
         guard let oneTimeCodeId = params.arguments?["one_time_code_id"]?.stringValue else {
             return MCPResult.error("Required parameter 'one_time_code_id' is missing")
         }
-        return try await listIAPPassthroughResources(
-            params,
-            endpoint: "/v1/inAppPurchaseOfferCodeOneTimeUseCodes/\(try ASCPathSegment.encode(oneTimeCodeId))/values",
-            key: "values",
-            defaultQuery: [:]
-        )
+        do {
+            let data = try await httpClient.getRaw(
+                "/v1/inAppPurchaseOfferCodeOneTimeUseCodes/\(try ASCPathSegment.encode(oneTimeCodeId))/values",
+                accept: "text/csv"
+            )
+            return MCPResult.jsonObject([
+                "success": true,
+                "one_time_code_id": oneTimeCodeId,
+                "media_type": "text/csv",
+                "values_csv": String(data: data, encoding: .utf8) ?? NSNull(),
+                "values_base64": data.base64EncodedString(),
+                "byte_count": data.count
+            ])
+        } catch {
+            return MCPResult.error("Failed to get one-time code values: \(error.localizedDescription)")
+        }
     }
 
     func createIAPCustomCode(_ params: CallTool.Parameters) async throws -> CallTool.Result {
@@ -553,13 +595,15 @@ extension InAppPurchasesWorker {
         endpoint: String,
         key: String,
         defaultQuery: [String: String],
-        extraResult: [String: Any] = [:]
+        extraResult: [String: Any] = [:],
+        preserveIncluded: Bool = false,
+        includePaginationState: Bool = false
     ) async throws -> CallTool.Result {
         do {
             let response: PassthroughAPIResponse
             if let nextUrl = try paginationURL(from: params.arguments?["next_url"]) {
                 var requiredParameters: [String: String] = [:]
-                for (key, value) in defaultQuery where key.hasPrefix("filter[") {
+                for (key, value) in defaultQuery where preserveIncluded || key.hasPrefix("filter[") {
                     requiredParameters[key] = value
                 }
                 response = try await httpClient.getPage(
@@ -577,6 +621,14 @@ extension InAppPurchasesWorker {
             result["success"] = true
             result[key] = data.map { formatIAPGenericResource($0) }
             result["count"] = data.count
+            if preserveIncluded {
+                let included = response.included ?? []
+                result["included"] = included.map(\.asAny)
+                result["included_count"] = included.count
+            }
+            if includePaginationState {
+                result["page_is_last"] = response.links?.objectValue?["next"]?.stringValue == nil
+            }
             appendIAPNext(response.links, to: &result)
             return MCPResult.jsonObject(result)
         } catch {
@@ -652,7 +704,7 @@ extension InAppPurchasesWorker {
         ]
     }
 
-    private func iapAvailabilityQuery(includeTerritories: Bool) -> [String: String] {
+    private func iapAvailabilityQuery(includeTerritories: Bool, territoryLimit: Int) -> [String: String] {
         guard includeTerritories else {
             return ["fields[inAppPurchaseAvailabilities]": "availableInNewTerritories,availableTerritories"]
         }
@@ -660,7 +712,7 @@ extension InAppPurchasesWorker {
             "include": "availableTerritories",
             "fields[inAppPurchaseAvailabilities]": "availableInNewTerritories,availableTerritories",
             "fields[territories]": "currency",
-            "limit[availableTerritories]": "50"
+            "limit[availableTerritories]": String(territoryLimit)
         ]
     }
 
@@ -723,20 +775,64 @@ extension InAppPurchasesWorker {
         ]
     }
 
-    private func formatIAPAvailability(_ resource: JSONValue, included: IAPIncludedIndex) -> [String: Any] {
+    private func formatIAPAvailability(
+        _ resource: JSONValue,
+        included: IAPIncludedIndex,
+        includeTerritories: Bool
+    ) -> [String: Any] {
         let territoryIds = resource.iapRelationshipIds("availableTerritories")
-        return [
+        let expandedTerritories = includeTerritories ? territoryIds.compactMap { id -> [String: Any]? in
+            guard let territory = included.resource(type: "territories", id: id) else { return nil }
+            return [
+                "id": id,
+                "type": "territories",
+                "currency": territory.iapAttributes["currency"]?.stringValue.iapJSONSafe ?? NSNull()
+            ]
+        } : []
+        let relationship = resource.iapRelationships["availableTerritories"]
+        let paging = relationship?.objectValue?["meta"]?.objectValue?["paging"]?.objectValue
+        let total = paging?["total"]?.intValue
+        let limit = paging?["limit"]?.intValue
+        let nextCursor = paging?["nextCursor"]?.stringValue
+        let projectionComplete = includeTerritories
+            && paging != nil
+            && nextCursor == nil
+            && (total.map { expandedTerritories.count >= $0 } ?? true)
+        let hasMore: Any
+        if includeTerritories {
+            hasMore = !projectionComplete
+        } else {
+            hasMore = NSNull()
+        }
+        let continuationTool: Any
+        let continuationArguments: Any
+        if projectionComplete {
+            continuationTool = NSNull()
+            continuationArguments = NSNull()
+        } else {
+            continuationTool = "iap_list_available_territories"
+            continuationArguments = ["availability_id": resource.iapResourceId ?? ""]
+        }
+
+        var result: [String: Any] = [
             "id": resource.iapResourceId ?? "",
             "type": resource.iapResourceType ?? "",
             "available_in_new_territories": resource.iapAttributes["availableInNewTerritories"]?.boolValue.iapJSONSafe ?? NSNull(),
-            "available_territories": territoryIds.map { id in
-                [
-                    "id": id,
-                    "type": "territories",
-                    "currency": included.resource(type: "territories", id: id)?.iapAttributes["currency"]?.stringValue.iapJSONSafe ?? NSNull()
-                ] as [String: Any]
-            }
+            "territory_projection": [
+                "requested": includeTerritories,
+                "returned": expandedTerritories.count,
+                "total": total.iapJSONSafe,
+                "limit": limit.iapJSONSafe,
+                "has_more": hasMore,
+                "complete": projectionComplete,
+                "continuation_tool": continuationTool,
+                "continuation_arguments": continuationArguments
+            ] as [String: Any]
         ]
+        if includeTerritories {
+            result["available_territories"] = expandedTerritories
+        }
+        return result
     }
 
     private func formatIAPGenericResource(_ resource: JSONValue) -> [String: Any] {
@@ -843,6 +939,15 @@ private extension Optional where Wrapped == String {
 }
 
 private extension Optional where Wrapped == Bool {
+    var iapJSONSafe: Any {
+        switch self {
+        case .some(let value): value
+        case .none: NSNull()
+        }
+    }
+}
+
+private extension Optional where Wrapped == Int {
     var iapJSONSafe: Any {
         switch self {
         case .some(let value): value

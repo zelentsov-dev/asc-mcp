@@ -25,7 +25,12 @@ extension InAppPurchasesWorker {
                     ]),
                     "filter_type": .object([
                         "type": .string("string"),
-                        "description": .string("Filter by type: CONSUMABLE, NON_CONSUMABLE, AUTO_RENEWABLE, NON_RENEWING")
+                        "description": .string("Filter by in-app purchase type"),
+                        "enum": .array([
+                            .string("CONSUMABLE"),
+                            .string("NON_CONSUMABLE"),
+                            .string("NON_RENEWING_SUBSCRIPTION")
+                        ])
                     ]),
                     "next_url": .object([
                         "type": .string("string"),
@@ -75,7 +80,12 @@ extension InAppPurchasesWorker {
                     ]),
                     "iap_type": .object([
                         "type": .string("string"),
-                        "description": .string("CONSUMABLE, NON_CONSUMABLE, AUTO_RENEWABLE, NON_RENEWING")
+                        "description": .string("In-app purchase type"),
+                        "enum": .array([
+                            .string("CONSUMABLE"),
+                            .string("NON_CONSUMABLE"),
+                            .string("NON_RENEWING_SUBSCRIPTION")
+                        ])
                     ]),
                     "review_note": .object([
                         "type": .string("string"),
@@ -359,10 +369,42 @@ extension InAppPurchasesWorker {
                     ]),
                     "manual_price_ids": .object([
                         "type": .string("string"),
-                        "description": .string("Comma-separated list of manual price IDs")
+                        "description": .string("Legacy comma-separated list of existing inAppPurchasePrices IDs; mutually exclusive with manual_prices")
+                    ]),
+                    "manual_prices": .object([
+                        "type": .string("array"),
+                        "description": .string("Inline manual prices; mutually exclusive with manual_price_ids"),
+                        "items": .object([
+                            "type": .string("object"),
+                            "properties": .object([
+                                "price_point_id": .object([
+                                    "type": .string("string"),
+                                    "description": .string("In-app purchase price point ID")
+                                ]),
+                                "start_date": .object([
+                                    "type": .string("string"),
+                                    "format": .string("date"),
+                                    "description": .string("Optional inclusive start date in YYYY-MM-DD format")
+                                ]),
+                                "end_date": .object([
+                                    "type": .string("string"),
+                                    "format": .string("date"),
+                                    "description": .string("Optional inclusive end date in YYYY-MM-DD format")
+                                ])
+                            ]),
+                            "required": .array([.string("price_point_id")]),
+                            "additionalProperties": .bool(false)
+                        ])
                     ])
                 ]),
-                "required": .array([.string("iap_id"), .string("base_territory_id")])
+                "required": .array([.string("iap_id"), .string("base_territory_id")]),
+                "allOf": .array([
+                    .object([
+                        "not": .object([
+                            "required": .array([.string("manual_price_ids"), .string("manual_prices")])
+                        ])
+                    ])
+                ])
             ])
         )
     }
@@ -429,10 +471,20 @@ extension InAppPurchasesWorker {
                     ]),
                     "include_territories": .object([
                         "type": .string("boolean"),
-                        "description": .string("Include available territories (default: true)")
+                        "description": .string("Include the first territory projection (default: true); use iap_list_available_territories for pagination")
+                    ]),
+                    "territory_limit": .object([
+                        "type": .string("integer"),
+                        "minimum": .int(1),
+                        "maximum": .int(50),
+                        "description": .string("Maximum expanded territories in the projection (default: 50, Apple max: 50)")
                     ])
                 ]),
-                "required": .array([])
+                "required": .array([]),
+                "oneOf": .array([
+                    .object(["required": .array([.string("iap_id")])]),
+                    .object(["required": .array([.string("availability_id")])])
+                ])
             ])
         )
     }

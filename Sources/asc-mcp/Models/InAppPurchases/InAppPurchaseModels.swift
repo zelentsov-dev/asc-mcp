@@ -110,6 +110,7 @@ public struct ASCSubscriptionGroupsResponse: Codable, Sendable {
 /// Subscription group single response
 public struct ASCSubscriptionGroupResponse: Codable, Sendable {
     public let data: ASCSubscriptionGroup
+    public let included: [JSONValue]?
 }
 
 /// Subscription group resource
@@ -234,6 +235,7 @@ public struct ASCIAPPriceSchedule: Codable, Sendable {
 /// Create IAP price schedule request
 public struct CreateIAPPriceScheduleRequest: Codable, Sendable {
     public let data: CreateData
+    public let included: [ManualPriceInlineCreate]?
 
     public struct CreateData: Codable, Sendable {
         public var type: String = "inAppPurchasePriceSchedules"
@@ -256,6 +258,27 @@ public struct CreateIAPPriceScheduleRequest: Codable, Sendable {
 
     public struct BaseTerritoryRelationship: Codable, Sendable {
         public let data: ASCResourceIdentifier
+    }
+
+    public struct ManualPriceInlineCreate: Codable, Sendable {
+        public var type: String = "inAppPurchasePrices"
+        public let id: String
+        public let attributes: Attributes?
+        public let relationships: Relationships
+
+        public struct Attributes: Codable, Sendable {
+            public let startDate: String?
+            public let endDate: String?
+        }
+
+        public struct Relationships: Codable, Sendable {
+            public let inAppPurchaseV2: InAppPurchaseRelationship
+            public let inAppPurchasePricePoint: PricePointRelationship
+        }
+
+        public struct PricePointRelationship: Codable, Sendable {
+            public let data: ASCResourceIdentifier
+        }
     }
 }
 

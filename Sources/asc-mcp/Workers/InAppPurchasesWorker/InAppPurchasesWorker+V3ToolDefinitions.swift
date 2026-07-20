@@ -21,7 +21,7 @@ extension InAppPurchasesWorker {
             iapSimpleTool("iap_get_one_time_code", "Get one-time IAP offer code batch", ["one_time_code_id": "One-time code resource ID"], ["one_time_code_id"]),
             iapSimpleTool("iap_update_one_time_code", "Update one-time IAP offer code batch", ["one_time_code_id": "One-time code resource ID", "active": "Whether active"], ["one_time_code_id"]),
             iapSimpleTool("iap_deactivate_one_time_code", "Deactivate one-time IAP offer code batch", ["one_time_code_id": "One-time code resource ID"], ["one_time_code_id"]),
-            iapSimpleTool("iap_get_one_time_code_values", "Get generated one-time IAP offer code values", ["one_time_code_id": "One-time code resource ID", "limit": "Max results", "next_url": "Pagination URL"], ["one_time_code_id"]),
+            iapSimpleTool("iap_get_one_time_code_values", "Get generated one-time IAP offer code values as lossless CSV", ["one_time_code_id": "One-time code resource ID"], ["one_time_code_id"]),
             iapSimpleTool("iap_create_custom_code", "Create a custom IAP offer code", ["offer_code_id": "IAP offer code ID", "custom_code": "Custom code", "number_of_codes": "Number of codes", "expiration_date": "Optional expiration date"], ["offer_code_id", "custom_code", "number_of_codes"]),
             iapSimpleTool("iap_get_custom_code", "Get custom IAP offer code", ["custom_code_id": "Custom code ID"], ["custom_code_id"]),
             iapSimpleTool("iap_update_custom_code", "Update custom IAP offer code", ["custom_code_id": "Custom code ID", "active": "Whether active"], ["custom_code_id"]),

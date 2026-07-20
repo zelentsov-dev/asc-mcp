@@ -45,6 +45,11 @@ extension InAppPurchasesWorker {
         do {
             let response: ASCInAppPurchasesV2Response
 
+            if let type = arguments["filter_type"]?.stringValue,
+               !Self.supportedIAPTypes.contains(type) {
+                return MCPResult.error("filter_type must be one of: \(Self.supportedIAPTypes.sorted().joined(separator: ", "))")
+            }
+
             if let nextUrl = try paginationURL(from: arguments["next_url"]) {
                 var requiredParameters: [String: String] = [:]
                 if let state = arguments["filter_state"]?.stringValue {
@@ -160,6 +165,10 @@ extension InAppPurchasesWorker {
                 content: [MCPContent.text("Error: Required parameters: app_id, name, product_id, iap_type")],
                 isError: true
             )
+        }
+
+        guard Self.supportedIAPTypes.contains(iapType) else {
+            return MCPResult.error("iap_type must be one of: \(Self.supportedIAPTypes.sorted().joined(separator: ", "))")
         }
 
         do {
@@ -416,10 +425,15 @@ extension InAppPurchasesWorker {
             )
 
             let group = formatSubscriptionGroup(response.data)
+            let included = response.included ?? []
 
             let result = [
                 "success": true,
-                "subscription_group": group
+                "subscription_group": group,
+                "subscriptions": included
+                    .filter { $0.objectValue?["type"]?.stringValue == "subscriptions" }
+                    .map(\.asAny),
+                "included": included.map(\.asAny)
             ] as [String: Any]
 
             return MCPResult.jsonObject(result)
@@ -726,15 +740,91 @@ extension InAppPurchasesWorker {
             )
         }
 
-        do {
-            var manualPriceIdentifiers: [ASCResourceIdentifier] = []
-            if let manualPriceIds = arguments["manual_price_ids"]?.stringValue {
-                manualPriceIdentifiers = manualPriceIds
-                    .split(separator: ",")
-                    .map { String($0).trimmingCharacters(in: .whitespaces) }
-                    .map { ASCResourceIdentifier(type: "inAppPurchasePrices", id: $0) }
+        let legacyManualPrices = arguments["manual_price_ids"]
+        let inlineManualPrices = arguments["manual_prices"]
+        guard legacyManualPrices == nil || inlineManualPrices == nil else {
+            return MCPResult.error("manual_price_ids and manual_prices are mutually exclusive")
+        }
+
+        let manualPriceIdentifiers: [ASCResourceIdentifier]
+        let includedManualPrices: [CreateIAPPriceScheduleRequest.ManualPriceInlineCreate]?
+
+        if let inlineManualPrices {
+            guard let values = inlineManualPrices.arrayValue else {
+                return MCPResult.error("manual_prices must be an array of objects")
             }
 
+            var identifiers: [ASCResourceIdentifier] = []
+            var included: [CreateIAPPriceScheduleRequest.ManualPriceInlineCreate] = []
+            for (index, value) in values.enumerated() {
+                guard let object = value.objectValue,
+                      let pricePointId = object["price_point_id"]?.stringValue?.trimmingCharacters(in: .whitespacesAndNewlines),
+                      !pricePointId.isEmpty else {
+                    return MCPResult.error("manual_prices[\(index)].price_point_id is required")
+                }
+
+                let allowedKeys: Set<String> = ["price_point_id", "start_date", "end_date"]
+                if let unsupportedKey = object.keys.first(where: { !allowedKeys.contains($0) }) {
+                    return MCPResult.error("manual_prices[\(index)] contains unsupported field '\(unsupportedKey)'")
+                }
+
+                if object["start_date"] != nil, object["start_date"]?.stringValue == nil {
+                    return MCPResult.error("manual_prices[\(index)].start_date must be a string")
+                }
+                if object["end_date"] != nil, object["end_date"]?.stringValue == nil {
+                    return MCPResult.error("manual_prices[\(index)].end_date must be a string")
+                }
+                let startDate = object["start_date"]?.stringValue
+                let endDate = object["end_date"]?.stringValue
+                if let startDate, !isValidIAPPriceDate(startDate) {
+                    return MCPResult.error("manual_prices[\(index)].start_date must use YYYY-MM-DD")
+                }
+                if let endDate, !isValidIAPPriceDate(endDate) {
+                    return MCPResult.error("manual_prices[\(index)].end_date must use YYYY-MM-DD")
+                }
+                if let startDate, let endDate, startDate > endDate {
+                    return MCPResult.error("manual_prices[\(index)].start_date must not be after end_date")
+                }
+
+                let inlineId = "${price-\(index)}"
+                identifiers.append(ASCResourceIdentifier(type: "inAppPurchasePrices", id: inlineId))
+                included.append(CreateIAPPriceScheduleRequest.ManualPriceInlineCreate(
+                    id: inlineId,
+                    attributes: startDate == nil && endDate == nil
+                        ? nil
+                        : .init(startDate: startDate, endDate: endDate),
+                    relationships: .init(
+                        inAppPurchaseV2: .init(
+                            data: ASCResourceIdentifier(type: "inAppPurchases", id: iapId)
+                        ),
+                        inAppPurchasePricePoint: .init(
+                            data: ASCResourceIdentifier(type: "inAppPurchasePricePoints", id: pricePointId)
+                        )
+                    )
+                ))
+            }
+            manualPriceIdentifiers = identifiers
+            includedManualPrices = included
+        } else if let legacyManualPrices {
+            guard let csv = legacyManualPrices.stringValue else {
+                return MCPResult.error("manual_price_ids must be a comma-separated string")
+            }
+            let ids = csv
+                .split(separator: ",", omittingEmptySubsequences: false)
+                .map { String($0).trimmingCharacters(in: .whitespacesAndNewlines) }
+            guard !ids.isEmpty, ids.allSatisfy({ !$0.isEmpty }) else {
+                return MCPResult.error("manual_price_ids must contain only non-empty IDs")
+            }
+            manualPriceIdentifiers = ids.map {
+                ASCResourceIdentifier(type: "inAppPurchasePrices", id: $0)
+            }
+            includedManualPrices = nil
+        } else {
+            manualPriceIdentifiers = []
+            includedManualPrices = nil
+        }
+
+        do {
             let request = CreateIAPPriceScheduleRequest(
                 data: CreateIAPPriceScheduleRequest.CreateData(
                     relationships: CreateIAPPriceScheduleRequest.Relationships(
@@ -748,7 +838,8 @@ extension InAppPurchasesWorker {
                             data: ASCResourceIdentifier(type: "territories", id: baseTerritoryId)
                         )
                     )
-                )
+                ),
+                included: includedManualPrices
             )
 
             let response: ASCIAPPriceScheduleResponse = try await httpClient.post(
@@ -773,6 +864,22 @@ extension InAppPurchasesWorker {
                 isError: true
             )
         }
+    }
+
+    private func isValidIAPPriceDate(_ value: String) -> Bool {
+        guard value.count == 10,
+              value[value.index(value.startIndex, offsetBy: 4)] == "-",
+              value[value.index(value.startIndex, offsetBy: 7)] == "-" else {
+            return false
+        }
+        let formatter = DateFormatter()
+        formatter.calendar = Calendar(identifier: .gregorian)
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = TimeZone(secondsFromGMT: 0)
+        formatter.dateFormat = "yyyy-MM-dd"
+        formatter.isLenient = false
+        guard let date = formatter.date(from: value) else { return false }
+        return formatter.string(from: date) == value
     }
 
     // MARK: - Availability
@@ -1258,6 +1365,12 @@ extension InAppPurchasesWorker {
             "contentHosting": iap.attributes.contentHosting.jsonSafe
         ]
     }
+
+    private static let supportedIAPTypes: Set<String> = [
+        "CONSUMABLE",
+        "NON_CONSUMABLE",
+        "NON_RENEWING_SUBSCRIPTION"
+    ]
 
     private func formatLocalization(_ loc: ASCInAppPurchaseLocalization) -> [String: Any] {
         return [

@@ -715,18 +715,63 @@
           "derivedFrom": [
             "include_territories"
           ],
-          "localRole": "Maps true to include=availableTerritories and false to omission while preserving the fixed sparse-field query."
+          "localRole": "Maps true to include=availableTerritories and false to omission while preserving the fixed sparse-field query. Exactly one of iap_id and availability_id is accepted."
+        },
+        {
+          "toolField": "territory_limit",
+          "sourceKind": "derived",
+          "operationId": "inAppPurchasesV2_inAppPurchaseAvailability_getToOneRelated",
+          "location": "query",
+          "appleName": "limit[availableTerritories]",
+          "derivedFrom": [
+            "territory_limit",
+            "include_territories"
+          ],
+          "localRole": "Clamped by the public schema to Apple's 1...50 embedded-relationship limit and emitted only when include_territories is true."
         }
       ],
       "response": {
-        "mode": "opaque",
+        "mode": "projection",
         "sources": [
           { "operationId": "inAppPurchaseAvailabilities_getInstance", "statusCode": "200", "mediaType": "application/json" },
           { "operationId": "inAppPurchasesV2_inAppPurchaseAvailability_getToOneRelated", "statusCode": "200", "mediaType": "application/json" }
         ],
-        "fields": []
+        "fields": [
+          {
+            "outputField": "success",
+            "localRole": "Set true after the selected Apple availability read succeeds."
+          },
+          {
+            "outputField": "availability",
+            "operationId": "inAppPurchasesV2_inAppPurchaseAvailability_getToOneRelated",
+            "jsonPointer": "/data",
+            "localRole": "Projects the IAP-scoped Apple availability resource."
+          },
+          {
+            "outputField": "availability",
+            "operationId": "inAppPurchaseAvailabilities_getInstance",
+            "jsonPointer": "/data",
+            "localRole": "Projects the availability-ID-scoped Apple resource."
+          },
+          {
+            "outputField": "availability.available_territories",
+            "operationId": "inAppPurchasesV2_inAppPurchaseAvailability_getToOneRelated",
+            "jsonPointer": "/included",
+            "localRole": "Returned only when include_territories is true for the IAP-scoped read."
+          },
+          {
+            "outputField": "availability.available_territories",
+            "operationId": "inAppPurchaseAvailabilities_getInstance",
+            "jsonPointer": "/included",
+            "localRole": "Returned only when include_territories is true for the availability-ID-scoped read."
+          },
+          {
+            "outputField": "availability.territory_projection",
+            "localRole": "Combines Apple relationship paging metadata and included count; when incomplete it names iap_list_available_territories and the availability_id required for paginated continuation."
+          }
+        ]
       },
-      "note": "Apple 4.4.1 operation identity and all public inputs are classified; response remains opaque, so the semantic mapping is partial."
+      "note": "Exactly one parent identifier selects one Apple operation. Embedded territory expansion is an explicitly bounded projection (Apple max 50), never presented as complete without paging evidence; full traversal uses iap_list_available_territories."
     },
     {
       "tool": "iap_get_custom_code",
@@ -882,22 +927,10 @@
           "operationId": "inAppPurchaseOfferCodeOneTimeUseCodes_values_getToOneRelated",
           "location": "path",
           "appleName": "id"
-        },
-        {
-          "toolField": "limit",
-          "sourceKind": "local",
-          "localRole": "Legacy schema field; Apple CSV operation has no query parameters.",
-          "omissionReason": "Not accepted by Apple 4.4.1 values operation."
-        },
-        {
-          "toolField": "next_url",
-          "sourceKind": "local",
-          "localRole": "Legacy schema field; Apple CSV operation is a single non-paginated response.",
-          "omissionReason": "Not accepted by Apple 4.4.1 values operation."
         }
       ],
       "response": {
-        "mode": "opaque",
+        "mode": "projection",
         "sources": [
           {
             "operationId": "inAppPurchaseOfferCodeOneTimeUseCodes_values_getToOneRelated",
@@ -905,9 +938,34 @@
             "mediaType": "text/csv"
           }
         ],
-        "fields": []
+        "fields": [
+          {
+            "outputField": "success",
+            "localRole": "Set true after a successful Apple response."
+          },
+          {
+            "outputField": "one_time_code_id",
+            "localRole": "Echoes the validated resource ID used in the request path."
+          },
+          {
+            "outputField": "media_type",
+            "localRole": "Reports the requested and documented Apple response media type text/csv."
+          },
+          {
+            "outputField": "values_csv",
+            "localRole": "Unparsed UTF-8 view of the raw Apple text/csv body; null only if Apple returns invalid UTF-8."
+          },
+          {
+            "outputField": "values_base64",
+            "localRole": "Base64 encoding of the exact Apple response bytes for lossless recovery even when the body is not valid UTF-8."
+          },
+          {
+            "outputField": "byte_count",
+            "localRole": "Byte count of the raw Apple response body."
+          }
+        ]
       },
-      "note": "Apple returns text/csv and accepts no limit or pagination query. The public limit/next_url inputs are legacy-only and must be rejected or ignored deterministically; JSON decoding is not valid."
+      "note": "Apple returns text/csv and accepts no query parameters. The public schema exposes only the path ID, and the handler preserves both the UTF-8 CSV string and exact bytes as base64 without JSON decoding."
     },
     {
       "tool": "iap_get_price_schedule",
@@ -1044,13 +1102,36 @@
         }
       ],
       "response": {
-        "mode": "opaque",
+        "mode": "projection",
         "sources": [
           { "operationId": "subscriptionGroups_getInstance", "statusCode": "200", "mediaType": "application/json" }
         ],
-        "fields": []
+        "fields": [
+          {
+            "outputField": "success",
+            "localRole": "Set true after a successful Apple response."
+          },
+          {
+            "outputField": "subscription_group",
+            "operationId": "subscriptionGroups_getInstance",
+            "jsonPointer": "/data",
+            "localRole": "Projects the subscription group identity and reference name."
+          },
+          {
+            "outputField": "subscriptions",
+            "operationId": "subscriptionGroups_getInstance",
+            "jsonPointer": "/included",
+            "localRole": "Filters Apple included resources to subscriptions when include_subscriptions is true."
+          },
+          {
+            "outputField": "included",
+            "operationId": "subscriptionGroups_getInstance",
+            "jsonPointer": "/included",
+            "localRole": "Preserves every Apple included resource without normalization."
+          }
+        ]
       },
-      "note": "Apple 4.4.1 operation identity and all public inputs are classified; response remains opaque, so the semantic mapping is partial."
+      "note": "include_subscriptions maps to Apple's include=subscriptions query and the response exposes both a subscription projection and the complete Apple included array."
     },
     {
       "tool": "iap_inventory",
@@ -1089,13 +1170,46 @@
         }
       ],
       "response": {
-        "mode": "opaque",
+        "mode": "projection",
         "sources": [
           { "operationId": "apps_inAppPurchasesV2_getToManyRelated", "statusCode": "200", "mediaType": "application/json" }
         ],
-        "fields": []
+        "fields": [
+          {
+            "outputField": "success",
+            "localRole": "Set true after a successful Apple response."
+          },
+          {
+            "outputField": "app_id",
+            "localRole": "Echoes the validated app ID used in the request path."
+          },
+          {
+            "outputField": "in_app_purchases",
+            "operationId": "apps_inAppPurchasesV2_getToManyRelated",
+            "jsonPointer": "/data",
+            "localRole": "Projects the Apple IAP resources into snake-case inventory objects."
+          },
+          {
+            "outputField": "included",
+            "operationId": "apps_inAppPurchasesV2_getToManyRelated",
+            "jsonPointer": "/included",
+            "localRole": "Preserves every Apple included resource for the current IAP page without normalization."
+          },
+          {
+            "outputField": "included_count",
+            "operationId": "apps_inAppPurchasesV2_getToManyRelated",
+            "jsonPointer": "/included",
+            "localRole": "Counts Apple included resources for the current page."
+          },
+          {
+            "outputField": "next_url",
+            "operationId": "apps_inAppPurchasesV2_getToManyRelated",
+            "jsonPointer": "/links/next",
+            "localRole": "Returned only when Apple supplies a continuation page."
+          }
+        ]
       },
-      "note": "Single Apple collection read with includes; the MCP response is a local projection and does not currently surface all included resources."
+      "note": "Single Apple collection read with includes. The MCP response preserves Apple's complete included array for each page, and continuation URLs are validated against the same include and sparse-field projection."
     },
     {
       "tool": "iap_list",
@@ -1193,13 +1307,36 @@
         }
       ],
       "response": {
-        "mode": "opaque",
+        "mode": "projection",
         "sources": [
           { "operationId": "inAppPurchaseAvailabilities_availableTerritories_getToManyRelated", "statusCode": "200", "mediaType": "application/json" }
         ],
-        "fields": []
+        "fields": [
+          {
+            "outputField": "success",
+            "localRole": "Set true after a successful Apple page response."
+          },
+          {
+            "outputField": "territories",
+            "operationId": "inAppPurchaseAvailabilities_availableTerritories_getToManyRelated",
+            "jsonPointer": "/data",
+            "localRole": "Projects the current Apple territory page."
+          },
+          {
+            "outputField": "next_url",
+            "operationId": "inAppPurchaseAvailabilities_availableTerritories_getToManyRelated",
+            "jsonPointer": "/links/next",
+            "localRole": "Returned only when Apple supplies a continuation page."
+          },
+          {
+            "outputField": "page_is_last",
+            "operationId": "inAppPurchaseAvailabilities_availableTerritories_getToManyRelated",
+            "jsonPointer": "/links/next",
+            "localRole": "True exactly when Apple omits links.next for the current page."
+          }
+        ]
       },
-      "note": "Apple 4.4.1 operation identity and all public inputs are classified; response remains opaque, so the semantic mapping is partial."
+      "note": "This is the authoritative paginated traversal for all available territories. The response exposes Apple's next URL and an explicit page_is_last flag."
     },
     {
       "tool": "iap_list_images",
@@ -1818,6 +1955,20 @@
               "sourceKind": "fixed",
               "jsonPointer": "/data/relationships/baseTerritory/data/type",
               "fixedValue": "territories"
+            },
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/relationships/manualPrices/data/*/type",
+              "fixedValue": "inAppPurchasePrices"
+            },
+            {
+              "sourceKind": "derived",
+              "jsonPointer": "/data/relationships/manualPrices/data/*/id",
+              "derivedFrom": [
+                "manual_prices",
+                "manual_price_ids"
+              ],
+              "localRole": "Generate ${price-index} linkage IDs for inline manual_prices, or preserve existing IDs from the legacy manual_price_ids form."
             }
           ]
         }
@@ -1839,17 +1990,40 @@
           "toolField": "manual_price_ids",
           "sourceKind": "requestBody",
           "operationId": "inAppPurchasePriceSchedules_createInstance",
-          "jsonPointer": "/data/relationships/manualPrices/data"
+          "jsonPointer": "/data/relationships/manualPrices/data",
+          "localRole": "Backward-compatible relationship linkage using existing inAppPurchasePrices IDs; mutually exclusive with manual_prices."
+        },
+        {
+          "toolField": "manual_prices",
+          "sourceKind": "requestBody",
+          "operationId": "inAppPurchasePriceSchedules_createInstance",
+          "jsonPointer": "/included",
+          "localRole": "Each item becomes an inline inAppPurchasePrices resource linked to the selected IAP and price point, with optional startDate and endDate attributes; mutually exclusive with manual_price_ids."
         }
       ],
       "response": {
-        "mode": "opaque",
+        "mode": "projection",
         "sources": [
           { "operationId": "inAppPurchasePriceSchedules_createInstance", "statusCode": "201", "mediaType": "application/json" }
         ],
-        "fields": []
+        "fields": [
+          {
+            "outputField": "success",
+            "localRole": "Set true after Apple creates the price schedule."
+          },
+          {
+            "outputField": "price_schedule.id",
+            "operationId": "inAppPurchasePriceSchedules_createInstance",
+            "jsonPointer": "/data/id"
+          },
+          {
+            "outputField": "price_schedule.type",
+            "operationId": "inAppPurchasePriceSchedules_createInstance",
+            "jsonPointer": "/data/type"
+          }
+        ]
       },
-      "note": "The Apple request uses inline manual price resources. The current comma-separated manual_price_ids surface cannot fully express start/end dates, so this mapping remains partial."
+      "note": "The preferred manual_prices array maps to Apple inline manual price resources with price-point relationships and optional dates. The legacy manual_price_ids linkage remains supported when manual_prices is absent; the two forms are rejected together."
     },
     {
       "tool": "iap_submit_for_review",
