@@ -41,6 +41,7 @@ public struct CreateBundleIdRequest: Codable, Sendable {
         public let name: String
         public let identifier: String
         public let platform: String
+        public let seedId: String?
     }
 }
 
@@ -130,7 +131,8 @@ public struct CertificateAttributes: Codable, Sendable {
     public let serialNumber: String?
     public let platform: String?
     public let expirationDate: String?
-    // certificateContent omitted - too large for MCP responses
+    public let certificateContent: String?
+    public let activated: Bool?
 }
 
 // MARK: - Profile Models
@@ -154,9 +156,10 @@ public struct ProfileAttributes: Codable, Sendable {
     public let platform: String?
     public let profileType: String?
     public let profileState: String?
+    public let profileContent: String?
     public let uuid: String?
+    public let createdDate: String?
     public let expirationDate: String?
-    // profileContent omitted - base64 blob too large for MCP responses
 }
 
 // MARK: - Single Certificate Response
@@ -241,6 +244,8 @@ public struct CapabilitySetting: Codable, Sendable {
     public let key: String?
     public let name: String?
     public let description: String?
+    public let enabledByDefault: Bool?
+    public let visible: Bool?
     public let allowedInstances: String?
     public let minInstances: Int?
     public let options: [CapabilityOption]?
@@ -251,7 +256,9 @@ public struct CapabilityOption: Codable, Sendable {
     public let key: String?
     public let name: String?
     public let description: String?
+    public let enabledByDefault: Bool?
     public let enabled: Bool?
+    public let supportsWildcard: Bool?
 }
 
 // MARK: - Enable Capability Request

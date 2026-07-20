@@ -13,23 +13,33 @@ extension ProvisioningWorker {
                 "properties": .object([
                     "limit": .object([
                         "type": .string("integer"),
+                        "minimum": .int(1),
+                        "maximum": .int(200),
                         "description": .string("Max results (default: 25, max: 200)")
                     ]),
                     "filter_platform": .object([
                         "type": .string("string"),
-                        "description": .string("Filter by platform: IOS, MAC_OS, UNIVERSAL")
+                        "description": .string("Filter by one or more platforms (comma-separated): IOS, MAC_OS, UNIVERSAL")
                     ]),
                     "filter_identifier": .object([
                         "type": .string("string"),
-                        "description": .string("Filter by bundle identifier")
+                        "description": .string("Filter by one or more bundle identifiers (comma-separated)")
                     ]),
                     "filter_name": .object([
                         "type": .string("string"),
-                        "description": .string("Filter by name")
+                        "description": .string("Filter by one or more names (comma-separated)")
+                    ]),
+                    "filter_seed_id": .object([
+                        "type": .string("string"),
+                        "description": .string("Filter by one or more seed IDs (comma-separated)")
+                    ]),
+                    "filter_id": .object([
+                        "type": .string("string"),
+                        "description": .string("Filter by one or more bundle ID resource IDs (comma-separated)")
                     ]),
                     "sort": .object([
                         "type": .string("string"),
-                        "description": .string("Sort: name, -name, platform, -platform, seedId, -seedId")
+                        "description": .string("Comma-separated sort fields: name, -name, platform, -platform, identifier, -identifier, seedId, -seedId, id, -id")
                     ]),
                     "next_url": .object([
                         "type": .string("string"),
@@ -76,6 +86,10 @@ extension ProvisioningWorker {
                     "platform": .object([
                         "type": .string("string"),
                         "description": .string("Platform: IOS, MAC_OS, UNIVERSAL")
+                    ]),
+                    "seed_id": .object([
+                        "type": .string("string"),
+                        "description": .string("Optional Apple Developer Program seed ID")
                     ])
                 ]),
                 "required": .array([.string("name"), .string("identifier"), .string("platform")])
@@ -109,19 +123,33 @@ extension ProvisioningWorker {
                 "properties": .object([
                     "limit": .object([
                         "type": .string("integer"),
+                        "minimum": .int(1),
+                        "maximum": .int(200),
                         "description": .string("Max results (default: 25, max: 200)")
                     ]),
                     "filter_platform": .object([
                         "type": .string("string"),
-                        "description": .string("Filter by platform: IOS, MAC_OS")
+                        "description": .string("Filter by one or more platforms (comma-separated): IOS, MAC_OS, UNIVERSAL")
                     ]),
                     "filter_status": .object([
                         "type": .string("string"),
-                        "description": .string("Filter by status: ENABLED, DISABLED")
+                        "description": .string("Filter by one or more statuses (comma-separated): ENABLED, DISABLED")
+                    ]),
+                    "filter_name": .object([
+                        "type": .string("string"),
+                        "description": .string("Filter by one or more device names (comma-separated)")
+                    ]),
+                    "filter_udid": .object([
+                        "type": .string("string"),
+                        "description": .string("Filter by one or more device UDIDs (comma-separated)")
+                    ]),
+                    "filter_id": .object([
+                        "type": .string("string"),
+                        "description": .string("Filter by one or more device resource IDs (comma-separated)")
                     ]),
                     "sort": .object([
                         "type": .string("string"),
-                        "description": .string("Sort: name, -name, platform, -platform, udid, -udid, status, -status")
+                        "description": .string("Comma-separated sort fields: name, -name, platform, -platform, udid, -udid, status, -status, id, -id")
                     ]),
                     "next_url": .object([
                         "type": .string("string"),
@@ -150,7 +178,7 @@ extension ProvisioningWorker {
                     ]),
                     "platform": .object([
                         "type": .string("string"),
-                        "description": .string("Platform: IOS, MAC_OS")
+                        "description": .string("Platform: IOS, MAC_OS, UNIVERSAL")
                     ])
                 ]),
                 "required": .array([.string("name"), .string("udid"), .string("platform")])
@@ -192,15 +220,29 @@ extension ProvisioningWorker {
                 "properties": .object([
                     "limit": .object([
                         "type": .string("integer"),
+                        "minimum": .int(1),
+                        "maximum": .int(200),
                         "description": .string("Max results (default: 25, max: 200)")
                     ]),
                     "filter_type": .object([
                         "type": .string("string"),
-                        "description": .string("Filter by certificate type (e.g. IOS_DISTRIBUTION)")
+                        "description": .string("Filter by one or more certificate types (comma-separated, e.g. IOS_DISTRIBUTION,DISTRIBUTION)")
+                    ]),
+                    "filter_display_name": .object([
+                        "type": .string("string"),
+                        "description": .string("Filter by one or more certificate display names (comma-separated)")
+                    ]),
+                    "filter_serial_number": .object([
+                        "type": .string("string"),
+                        "description": .string("Filter by one or more certificate serial numbers (comma-separated)")
+                    ]),
+                    "filter_id": .object([
+                        "type": .string("string"),
+                        "description": .string("Filter by one or more certificate resource IDs (comma-separated)")
                     ]),
                     "sort": .object([
                         "type": .string("string"),
-                        "description": .string("Sort: displayName, -displayName, serialNumber, -serialNumber")
+                        "description": .string("Comma-separated sort fields: displayName, -displayName, certificateType, -certificateType, serialNumber, -serialNumber, id, -id")
                     ]),
                     "next_url": .object([
                         "type": .string("string"),
@@ -215,7 +257,7 @@ extension ProvisioningWorker {
     func getCertificateTool() -> Tool {
         return Tool(
             name: "provisioning_get_certificate",
-            description: "Get details of a signing certificate",
+            description: "Get signing-certificate details, including Base64-encoded certificateContent when Apple returns it",
             inputSchema: .object([
                 "type": .string("object"),
                 "properties": .object([
@@ -249,7 +291,7 @@ extension ProvisioningWorker {
     func getProfileTool() -> Tool {
         return Tool(
             name: "provisioning_get_profile",
-            description: "Get details of a provisioning profile",
+            description: "Get provisioning-profile details, including Base64-encoded profileContent when Apple returns it",
             inputSchema: .object([
                 "type": .string("object"),
                 "properties": .object([
@@ -283,7 +325,7 @@ extension ProvisioningWorker {
     func createProfileTool() -> Tool {
         return Tool(
             name: "provisioning_create_profile",
-            description: "Create a new provisioning profile",
+            description: "Create a provisioning profile and return its details, including Base64-encoded profileContent when Apple returns it",
             inputSchema: .object([
                 "type": .string("object"),
                 "properties": .object([
@@ -302,12 +344,16 @@ extension ProvisioningWorker {
                     "certificate_ids": .object([
                         "type": .string("array"),
                         "items": .object(["type": .string("string")]),
-                        "description": .string("Array of certificate resource IDs to include in the profile")
+                        "minItems": .int(1),
+                        "uniqueItems": .bool(true),
+                        "description": .string("Non-empty array of unique certificate resource IDs to include in the profile")
                     ]),
                     "device_ids": .object([
                         "type": .string("array"),
                         "items": .object(["type": .string("string")]),
-                        "description": .string("Array of device resource IDs (optional, not needed for App Store/Direct profiles)")
+                        "minItems": .int(1),
+                        "uniqueItems": .bool(true),
+                        "description": .string("Optional non-empty array of unique device resource IDs; omit for App Store and Direct profiles")
                     ])
                 ]),
                 "required": .array([.string("name"), .string("profile_type"), .string("bundle_id_resource_id"), .string("certificate_ids")])
@@ -328,6 +374,8 @@ extension ProvisioningWorker {
                     ]),
                     "limit": .object([
                         "type": .string("integer"),
+                        "minimum": .int(1),
+                        "maximum": .int(200),
                         "description": .string("Max results (default: 25, max: 200)")
                     ]),
                     "next_url": .object([
@@ -391,19 +439,29 @@ extension ProvisioningWorker {
                 "properties": .object([
                     "limit": .object([
                         "type": .string("integer"),
+                        "minimum": .int(1),
+                        "maximum": .int(200),
                         "description": .string("Max results (default: 25, max: 200)")
                     ]),
                     "filter_profile_type": .object([
                         "type": .string("string"),
-                        "description": .string("Filter by type (e.g. IOS_APP_STORE)")
+                        "description": .string("Filter by one or more profile types (comma-separated, e.g. IOS_APP_STORE,MAC_APP_STORE)")
                     ]),
                     "filter_profile_state": .object([
                         "type": .string("string"),
-                        "description": .string("Filter by state: ACTIVE, INVALID")
+                        "description": .string("Filter by one or more states (comma-separated): ACTIVE, INVALID")
+                    ]),
+                    "filter_name": .object([
+                        "type": .string("string"),
+                        "description": .string("Filter by one or more profile names (comma-separated)")
+                    ]),
+                    "filter_id": .object([
+                        "type": .string("string"),
+                        "description": .string("Filter by one or more profile resource IDs (comma-separated)")
                     ]),
                     "sort": .object([
                         "type": .string("string"),
-                        "description": .string("Sort: name, -name, profileState, -profileState")
+                        "description": .string("Comma-separated sort fields: name, -name, profileType, -profileType, profileState, -profileState, id, -id")
                     ]),
                     "next_url": .object([
                         "type": .string("string"),

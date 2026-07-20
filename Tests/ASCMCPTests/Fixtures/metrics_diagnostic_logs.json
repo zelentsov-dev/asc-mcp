@@ -1,0 +1,70 @@
+{
+  "version": "1.0",
+  "productData": [
+    {
+      "signatureId": "signature-1",
+      "diagnosticInsights": [
+        {
+          "insightsURL": "https://developer.apple.com/documentation/xcode/reducing-disk-writes",
+          "insightsCategory": "DISK_WRITES",
+          "insightsString": "Frequent writes originate in CacheStore.flush()"
+        }
+      ],
+      "diagnosticLogs": [
+        {
+          "callStackTree": [
+            {
+              "callStackPerThread": true,
+              "callStacks": [
+                {
+                  "callStackRootFrames": [
+                    {
+                      "sampleCount": 7,
+                      "isBlameFrame": true,
+                      "symbolName": "CacheStore.flush()",
+                      "insightsCategory": "DISK_WRITES",
+                      "offsetIntoSymbol": "24",
+                      "binaryName": "ExampleApp",
+                      "fileName": "CacheStore.swift",
+                      "binaryUUID": "11111111-2222-3333-4444-555555555555",
+                      "lineNumber": "87",
+                      "address": "0x0000000100001234",
+                      "offsetIntoBinaryTextSegment": "4660",
+                      "rawFrame": "0 ExampleApp 0x0000000100001234 CacheStore.flush() + 24",
+                      "subFrames": [
+                        {
+                          "sampleCount": 7,
+                          "isBlameFrame": false,
+                          "symbolName": "Persistence.save()",
+                          "binaryName": "ExampleApp",
+                          "fileName": "Persistence.swift",
+                          "binaryUUID": "11111111-2222-3333-4444-555555555555",
+                          "lineNumber": "42",
+                          "address": "0x0000000100001200",
+                          "offsetIntoBinaryTextSegment": "4608",
+                          "rawFrame": "1 ExampleApp 0x0000000100001200 Persistence.save() + 12",
+                          "subFrames": []
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "diagnosticMetaData": {
+            "bundleId": "com.example.app",
+            "event": "Disk Writes",
+            "osVersion": "18.5",
+            "appVersion": "4.2.0",
+            "writesCaused": "5242880",
+            "deviceType": "iPhone15,2",
+            "platformArchitecture": "arm64",
+            "eventDetail": "Background cache flush",
+            "buildVersion": "420"
+          }
+        }
+      ]
+    }
+  ]
+}

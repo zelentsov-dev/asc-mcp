@@ -15,37 +15,32 @@ extension MetricsWorker {
     /// - Throws: Error if required parameters are missing or API call fails
     func getAppPerfMetrics(_ params: CallTool.Parameters) async throws -> CallTool.Result {
         guard let arguments = params.arguments,
-              let appId = arguments["app_id"]?.stringValue,
-              let metricType = arguments["metric_type"]?.stringValue else {
+              let appId = arguments["app_id"]?.stringValue else {
             return CallTool.Result(
-                content: [MCPContent.text("Required parameters: app_id, metric_type")],
+                content: [MCPContent.text("Required parameter 'app_id' is missing")],
                 isError: true
             )
         }
 
         do {
-            let queryParams: [String: String] = [
-                "filter[metricType]": metricType
-            ]
+            let metricTypes = try filterSelection(
+                arguments["metric_type"],
+                name: "metric_type",
+                allowedValues: Set(MetricsWorker.supportedMetricTypes)
+            )
+            let deviceTypes = try filterSelection(
+                arguments["device_type"],
+                name: "device_type"
+            )
+            let queryParams = perfPowerQuery(metricTypes: metricTypes, deviceTypes: deviceTypes)
 
             let data = try await httpClient.getRaw("/v1/apps/\(try ASCPathSegment.encode(appId))/perfPowerMetrics", parameters: queryParams, accept: "application/vnd.apple.xcode-metrics+json")
-
-            // Try Codable first, fall back to raw JSON for metric types with different structures
-            let productData: [[String: Any]]
-            if let response = try? JSONDecoder().decode(ASCPerfPowerMetricsResponse.self, from: data) {
-                productData = (response.productData ?? []).map { formatProductData($0) }
-            } else if let json = try JSONSerialization.jsonObject(with: data) as? [String: Any],
-                      let rawProductData = json["productData"] as? [[String: Any]] {
-                productData = rawProductData.map { formatProductDataRaw($0) }
-            } else {
-                productData = []
-            }
-
-            let result: [String: Any] = [
-                "success": true,
-                "metric_type": metricType,
-                "product_data": productData
-            ]
+            let response = try JSONDecoder().decode(ASCPerfPowerMetricsResponse.self, from: data)
+            let result = formatPerfPowerResponse(
+                response,
+                metricTypes: metricTypes,
+                deviceTypes: deviceTypes
+            )
 
             return MCPResult.jsonObject(result)
 
@@ -62,37 +57,32 @@ extension MetricsWorker {
     /// - Throws: Error if required parameters are missing or API call fails
     func getBuildPerfMetrics(_ params: CallTool.Parameters) async throws -> CallTool.Result {
         guard let arguments = params.arguments,
-              let buildId = arguments["build_id"]?.stringValue,
-              let metricType = arguments["metric_type"]?.stringValue else {
+              let buildId = arguments["build_id"]?.stringValue else {
             return CallTool.Result(
-                content: [MCPContent.text("Required parameters: build_id, metric_type")],
+                content: [MCPContent.text("Required parameter 'build_id' is missing")],
                 isError: true
             )
         }
 
         do {
-            let queryParams: [String: String] = [
-                "filter[metricType]": metricType
-            ]
+            let metricTypes = try filterSelection(
+                arguments["metric_type"],
+                name: "metric_type",
+                allowedValues: Set(MetricsWorker.supportedMetricTypes)
+            )
+            let deviceTypes = try filterSelection(
+                arguments["device_type"],
+                name: "device_type"
+            )
+            let queryParams = perfPowerQuery(metricTypes: metricTypes, deviceTypes: deviceTypes)
 
             let data = try await httpClient.getRaw("/v1/builds/\(try ASCPathSegment.encode(buildId))/perfPowerMetrics", parameters: queryParams, accept: "application/vnd.apple.xcode-metrics+json")
-
-            // Try Codable first, fall back to raw JSON for metric types with different structures
-            let productData: [[String: Any]]
-            if let response = try? JSONDecoder().decode(ASCPerfPowerMetricsResponse.self, from: data) {
-                productData = (response.productData ?? []).map { formatProductData($0) }
-            } else if let json = try JSONSerialization.jsonObject(with: data) as? [String: Any],
-                      let rawProductData = json["productData"] as? [[String: Any]] {
-                productData = rawProductData.map { formatProductDataRaw($0) }
-            } else {
-                productData = []
-            }
-
-            let result: [String: Any] = [
-                "success": true,
-                "metric_type": metricType,
-                "product_data": productData
-            ]
+            let response = try JSONDecoder().decode(ASCPerfPowerMetricsResponse.self, from: data)
+            let result = formatPerfPowerResponse(
+                response,
+                metricTypes: metricTypes,
+                deviceTypes: deviceTypes
+            )
 
             return MCPResult.jsonObject(result)
 
@@ -120,8 +110,13 @@ extension MetricsWorker {
             let response: ASCDiagnosticSignaturesResponse
             var queryParams: [String: String] = [:]
 
-            if let diagnosticType = arguments["diagnostic_type"]?.stringValue {
-                queryParams["filter[diagnosticType]"] = diagnosticType
+            let diagnosticTypes = try filterSelection(
+                arguments["diagnostic_type"],
+                name: "diagnostic_type",
+                allowedValues: Set(MetricsWorker.supportedDiagnosticTypes)
+            )
+            if let diagnosticTypes {
+                queryParams["filter[diagnosticType]"] = diagnosticTypes.queryValue
             }
 
             if let limit = arguments["limit"]?.intValue {
@@ -160,6 +155,9 @@ extension MetricsWorker {
             if let nextUrl = response.links?.next {
                 result["next_url"] = nextUrl
             }
+            if let diagnosticTypes {
+                result["diagnostic_type"] = diagnosticTypes.echo.asAny
+            }
 
             return MCPResult.jsonObject(result)
 
@@ -184,24 +182,23 @@ extension MetricsWorker {
         }
 
         do {
-            let data = try await httpClient.getRaw("/v1/diagnosticSignatures/\(try ASCPathSegment.encode(signatureId))/logs", accept: "application/vnd.apple.diagnostic-logs+json")
-
-            // Parse raw JSON because response format (application/vnd.apple.diagnostic-logs+json)
-            // is non-standard and Codable model may not match the actual response structure
-            let logs: [[String: Any]]
-            if let json = try JSONSerialization.jsonObject(with: data) as? [String: Any],
-               let productData = json["productData"] as? [[String: Any]] {
-                logs = productData.map { formatDiagnosticLogProductDataRaw($0) }
-            } else {
-                // Fallback: try Codable decoding
-                let response = try JSONDecoder().decode(ASCDiagnosticLogsResponse.self, from: data)
-                logs = (response.productData ?? []).map { formatDiagnosticLogProductData($0) }
+            var queryParams: [String: String] = [:]
+            if let limit = arguments["limit"]?.intValue {
+                queryParams["limit"] = String(min(max(limit, 1), 200))
             }
+
+            let data = try await httpClient.getRaw(
+                "/v1/diagnosticSignatures/\(try ASCPathSegment.encode(signatureId))/logs",
+                parameters: queryParams,
+                accept: "application/vnd.apple.diagnostic-logs+json"
+            )
+            let response = try JSONDecoder().decode(ASCDiagnosticLogsResponse.self, from: data)
 
             let result: [String: Any] = [
                 "success": true,
                 "signature_id": signatureId,
-                "diagnostic_logs": logs
+                "version": response.version.jsonSafe,
+                "diagnostic_logs": (response.productData ?? []).map { formatDiagnosticLogProductData($0) }
             ]
 
             return MCPResult.jsonObject(result)
@@ -216,59 +213,126 @@ extension MetricsWorker {
 
     // MARK: - Formatting
 
-    /// Formats product data from raw JSON (fallback for BATTERY, TERMINATION, ANIMATION metric types)
-    private func formatProductDataRaw(_ productData: [String: Any]) -> [String: Any] {
-        var dict: [String: Any] = [:]
-        dict["platform"] = productData["platform"] ?? NSNull()
-        if let categories = productData["metricCategories"] as? [[String: Any]] {
-            dict["metric_categories"] = categories.map { category -> [String: Any] in
-                var catDict: [String: Any] = [:]
-                catDict["identifier"] = category["identifier"] ?? NSNull()
-                if let metrics = category["metrics"] as? [[String: Any]] {
-                    catDict["metrics"] = metrics.map { metric -> [String: Any] in
-                        var metricDict: [String: Any] = [:]
-                        metricDict["identifier"] = metric["identifier"] ?? NSNull()
-                        if let unit = metric["unit"] as? [String: Any] {
-                            metricDict["unit"] = [
-                                "identifier": unit["identifier"] ?? NSNull(),
-                                "display_name": unit["displayName"] ?? NSNull()
-                            ]
-                        }
-                        if let datasets = metric["datasets"] as? [[String: Any]] {
-                            metricDict["datasets"] = datasets.map { dataset -> [String: Any] in
-                                var dsDict: [String: Any] = [:]
-                                if let criteria = dataset["filterCriteria"] as? [String: Any] {
-                                    dsDict["filter_criteria"] = [
-                                        "device": criteria["device"] ?? NSNull(),
-                                        "device_marketing_name": criteria["deviceMarketingName"] ?? NSNull(),
-                                        "percentile": criteria["percentile"] ?? NSNull()
-                                    ]
-                                }
-                                if let points = dataset["points"] as? [[String: Any]] {
-                                    dsDict["points"] = points.map { point -> [String: Any] in
-                                        var ptDict: [String: Any] = [:]
-                                        ptDict["version"] = point["version"] ?? NSNull()
-                                        ptDict["value"] = point["value"] ?? NSNull()
-                                        ptDict["goal"] = point["goal"] ?? NSNull()
-                                        if let breakdown = point["percentageBreakdown"] {
-                                            ptDict["percentage_breakdown"] = breakdown
-                                        }
-                                        return ptDict
-                                    }
-                                }
-                                return dsDict
-                            }
-                        }
-                        return metricDict
-                    }
-                }
-                return catDict
-            }
+    private func perfPowerQuery(
+        metricTypes: MetricsFilterSelection?,
+        deviceTypes: MetricsFilterSelection?
+    ) -> [String: String] {
+        var query: [String: String] = [:]
+        if let metricTypes {
+            query["filter[metricType]"] = metricTypes.queryValue
         }
-        return dict
+        if let deviceTypes {
+            query["filter[deviceType]"] = deviceTypes.queryValue
+        }
+        return query
     }
 
-    /// Formats product data from perfPowerMetrics response
+    private func formatPerfPowerResponse(
+        _ response: ASCPerfPowerMetricsResponse,
+        metricTypes: MetricsFilterSelection?,
+        deviceTypes: MetricsFilterSelection?
+    ) -> [String: Any] {
+        var result: [String: Any] = [
+            "success": true,
+            "product_data": (response.productData ?? []).map { formatProductData($0) }
+        ]
+        if let metricTypes {
+            result["metric_type"] = metricTypes.echo.asAny
+        }
+        if let deviceTypes {
+            result["device_type"] = deviceTypes.echo.asAny
+        }
+        if let version = response.version {
+            result["version"] = version
+        }
+        if let insights = response.insights {
+            result["insights"] = formatMetricsInsights(insights)
+        }
+        return result
+    }
+
+    private func filterSelection(
+        _ value: Value?,
+        name: String,
+        allowedValues: Set<String>? = nil
+    ) throws -> MetricsFilterSelection? {
+        guard let value else {
+            return nil
+        }
+
+        let values: [String]
+        let echo: MetricsFilterEcho
+        if let string = value.stringValue {
+            values = [string]
+            echo = .scalar(string)
+        } else if let array = value.arrayValue {
+            let strings = array.compactMap(\.stringValue)
+            guard strings.count == array.count else {
+                throw ASCError.parsing("'\(name)' must be a string or an array of strings")
+            }
+            values = strings
+            echo = .array(strings)
+        } else {
+            throw ASCError.parsing("'\(name)' must be a string or an array of strings")
+        }
+
+        guard !values.isEmpty else {
+            throw ASCError.parsing("'\(name)' must contain at least one value")
+        }
+        guard values.allSatisfy({ value in
+            let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+            return !trimmed.isEmpty && trimmed == value
+        }) else {
+            throw ASCError.parsing("'\(name)' must contain only non-empty strings without surrounding whitespace")
+        }
+        guard Set(values).count == values.count else {
+            throw ASCError.parsing("'\(name)' must not contain duplicate values")
+        }
+        if let allowedValues {
+            let unsupported = values.filter { !allowedValues.contains($0) }
+            guard unsupported.isEmpty else {
+                throw ASCError.parsing("Unsupported value(s) for '\(name)': \(unsupported.joined(separator: ", "))")
+            }
+        }
+
+        return MetricsFilterSelection(
+            queryValue: values.joined(separator: ","),
+            echo: echo
+        )
+    }
+
+    private func formatMetricsInsights(_ insights: ASCMetricsInsights) -> [String: Any] {
+        [
+            "trending_up": (insights.trendingUp ?? []).map { formatMetricsInsight($0) },
+            "regressions": (insights.regressions ?? []).map { formatMetricsInsight($0) }
+        ]
+    }
+
+    private func formatMetricsInsight(_ insight: ASCMetricsInsight) -> [String: Any] {
+        [
+            "metric_category": insight.metricCategory.jsonSafe,
+            "latest_version": insight.latestVersion.jsonSafe,
+            "metric": insight.metric.jsonSafe,
+            "summary": insight.summaryString.jsonSafe,
+            "reference_versions": insight.referenceVersions.jsonSafe,
+            "max_latest_version_value": insight.maxLatestVersionValue.jsonSafe,
+            "sub_system_label": insight.subSystemLabel.jsonSafe,
+            "high_impact": insight.highImpact.jsonSafe,
+            "populations": (insight.populations ?? []).map { formatMetricsInsightPopulation($0) }
+        ]
+    }
+
+    private func formatMetricsInsightPopulation(_ population: ASCMetricsInsightPopulation) -> [String: Any] {
+        [
+            "delta_percentage": population.deltaPercentage.jsonSafe,
+            "percentile": population.percentile.jsonSafe,
+            "summary": population.summaryString.jsonSafe,
+            "reference_average_value": population.referenceAverageValue.jsonSafe,
+            "latest_version_value": population.latestVersionValue.jsonSafe,
+            "device": population.device.jsonSafe
+        ]
+    }
+
     private func formatProductData(_ productData: ASCProductData) -> [String: Any] {
         var dict: [String: Any] = [:]
         dict["platform"] = productData.platform.jsonSafe
@@ -276,7 +340,6 @@ extension MetricsWorker {
         return dict
     }
 
-    /// Formats a metric category
     private func formatMetricCategory(_ category: ASCMetricCategory) -> [String: Any] {
         var dict: [String: Any] = [:]
         dict["identifier"] = category.identifier.jsonSafe
@@ -284,7 +347,6 @@ extension MetricsWorker {
         return dict
     }
 
-    /// Formats an individual metric
     private func formatMetric(_ metric: ASCMetric) -> [String: Any] {
         var dict: [String: Any] = [:]
         dict["identifier"] = metric.identifier.jsonSafe
@@ -298,7 +360,6 @@ extension MetricsWorker {
         return dict
     }
 
-    /// Formats a metric dataset
     private func formatDataset(_ dataset: ASCMetricDataset) -> [String: Any] {
         var dict: [String: Any] = [:]
         if let criteria = dataset.filterCriteria {
@@ -309,14 +370,20 @@ extension MetricsWorker {
             ]
         }
         dict["points"] = (dataset.points ?? []).map { formatPoint($0) }
+        if let goal = dataset.recommendedMetricGoal {
+            dict["recommended_metric_goal"] = [
+                "value": goal.value.jsonSafe,
+                "detail": goal.detail.jsonSafe
+            ]
+        }
         return dict
     }
 
-    /// Formats a metric data point
     private func formatPoint(_ point: ASCMetricPoint) -> [String: Any] {
         var dict: [String: Any] = [:]
         dict["version"] = point.version.jsonSafe
         dict["value"] = point.value.jsonSafe
+        dict["error_margin"] = point.errorMargin.jsonSafe
         dict["goal"] = point.goal.jsonSafe
         if let breakdown = point.percentageBreakdown {
             dict["percentage_breakdown"] = [
@@ -327,7 +394,6 @@ extension MetricsWorker {
         return dict
     }
 
-    /// Formats a diagnostic signature for JSON output
     private func formatDiagnosticSignature(_ signature: ASCDiagnosticSignature) -> [String: Any] {
         var dict: [String: Any] = [
             "id": signature.id,
@@ -340,143 +406,104 @@ extension MetricsWorker {
             if let insight = attrs.insight {
                 dict["insight"] = [
                     "insight_type": insight.insightType.jsonSafe,
-                    "reference_url": insight.referenceURL.jsonSafe
+                    "direction": insight.direction.jsonSafe,
+                    "reference_versions": (insight.referenceVersions ?? []).map {
+                        [
+                            "version": $0.version.jsonSafe,
+                            "value": $0.value.jsonSafe
+                        ]
+                    }
                 ]
             }
         }
         return dict
     }
 
-    /// Formats diagnostic log product data from raw JSON (JSONSerialization)
-    private func formatDiagnosticLogProductDataRaw(_ productData: [String: Any]) -> [String: Any] {
-        var dict: [String: Any] = [:]
-        dict["signature_id"] = productData["signatureId"] ?? NSNull()
-        if let logs = productData["diagnosticLogs"] as? [[String: Any]] {
-            dict["logs"] = logs.map { formatDiagnosticLogRaw($0) }
-        } else {
-            dict["logs"] = []
-        }
-        return dict
-    }
-
-    /// Formats a diagnostic log entry from raw JSON, handling callStackTree as string, base64, or dict
-    private func formatDiagnosticLogRaw(_ log: [String: Any]) -> [String: Any] {
-        var dict: [String: Any] = [:]
-
-        if let treeDict = log["callStackTree"] as? [String: Any] {
-            // callStackTree is already a JSON object
-            dict["call_stack_per_thread"] = treeDict["callStackPerThread"] ?? NSNull()
-            if let callStacks = treeDict["callStacks"] as? [[String: Any]] {
-                dict["call_stacks"] = callStacks.map { formatCallStackRaw($0) }
-            }
-        } else if let treeString = log["callStackTree"] as? String {
-            // callStackTree is a string — try base64 first, then raw JSON
-            let jsonData: Data?
-            if let base64Data = Data(base64Encoded: treeString) {
-                jsonData = base64Data
-            } else {
-                jsonData = treeString.data(using: .utf8)
-            }
-
-            if let data = jsonData,
-               let treeObj = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
-                dict["call_stack_per_thread"] = treeObj["callStackPerThread"] ?? NSNull()
-                if let callStacks = treeObj["callStacks"] as? [[String: Any]] {
-                    dict["call_stacks"] = callStacks.map { formatCallStackRaw($0) }
-                }
-            } else {
-                dict["raw_call_stack_tree"] = treeString
-            }
-        }
-
-        // If nothing was parsed, include raw callStackTree for debugging
-        if dict.isEmpty, let rawTree = log["callStackTree"] {
-            dict["raw_call_stack_tree"] = "\(rawTree)"
-        }
-
-        // Also include any other keys from the log besides callStackTree
-        for (key, value) in log where key != "callStackTree" {
-            dict[key] = value
-        }
-
-        return dict
-    }
-
-    /// Formats a call stack from raw JSON
-    private func formatCallStackRaw(_ stack: [String: Any]) -> [String: Any] {
-        var dict: [String: Any] = [:]
-        dict["thread_attributed"] = stack["threadAttributed"] ?? NSNull()
-        if let rootFrames = stack["callStackRootFrames"] as? [[String: Any]] {
-            dict["root_frames"] = rootFrames.map { formatCallStackFrameRaw($0) }
-        }
-        return dict
-    }
-
-    /// Formats a call stack frame from raw JSON (recursive for subframes)
-    private func formatCallStackFrameRaw(_ frame: [String: Any]) -> [String: Any] {
-        var dict: [String: Any] = [:]
-        dict["binary_name"] = frame["binaryName"] ?? NSNull()
-        dict["address"] = frame["address"] ?? NSNull()
-        dict["offset"] = frame["offsetIntoBinaryTextSegment"] ?? NSNull()
-        dict["raw_frame"] = frame["rawFrame"] ?? NSNull()
-        if let subFrames = frame["subFrames"] as? [[String: Any]], !subFrames.isEmpty {
-            dict["sub_frames"] = subFrames.map { formatCallStackFrameRaw($0) }
-        }
-        return dict
-    }
-
-    /// Formats diagnostic log product data
     private func formatDiagnosticLogProductData(_ productData: ASCDiagnosticLogProductData) -> [String: Any] {
-        var dict: [String: Any] = [:]
-        dict["signature_id"] = productData.signatureId.jsonSafe
-        dict["logs"] = (productData.diagnosticLogs ?? []).map { formatDiagnosticLog($0) }
-        return dict
+        [
+            "signature_id": productData.signatureId.jsonSafe,
+            "diagnostic_insights": (productData.diagnosticInsights ?? []).map { formatDiagnosticLogInsight($0) },
+            "logs": (productData.diagnosticLogs ?? []).map { formatDiagnosticLog($0) }
+        ]
     }
 
-    /// Formats a diagnostic log entry, decoding callStackTree from base64 or raw JSON string
+    private func formatDiagnosticLogInsight(_ insight: ASCDiagnosticLogInsight) -> [String: Any] {
+        [
+            "insights_url": insight.insightsURL.jsonSafe,
+            "insights_category": insight.insightsCategory.jsonSafe,
+            "insights_string": insight.insightsString.jsonSafe
+        ]
+    }
+
     private func formatDiagnosticLog(_ log: ASCDiagnosticLog) -> [String: Any] {
-        var dict: [String: Any] = [:]
-        guard let treeString = log.callStackTree else { return dict }
-
-        // Try to decode: first as base64, then as raw JSON string
-        let jsonData: Data?
-        if let base64Data = Data(base64Encoded: treeString) {
-            jsonData = base64Data
-        } else {
-            jsonData = treeString.data(using: .utf8)
-        }
-
-        if let data = jsonData,
-           let tree = try? JSONDecoder().decode(ASCCallStackTree.self, from: data) {
-            dict["call_stack_per_thread"] = tree.callStackPerThread.jsonSafe
-            dict["call_stacks"] = (tree.callStacks ?? []).map { formatCallStack($0) }
-        }
-
-        // If nothing was parsed, include raw string for debugging
-        if dict.isEmpty {
-            dict["raw_call_stack_tree"] = treeString
+        var dict: [String: Any] = [
+            "call_stack_trees": (log.callStackTree ?? []).map { formatCallStackTree($0) }
+        ]
+        if let metadata = log.diagnosticMetaData {
+            dict["diagnostic_metadata"] = formatDiagnosticMetaData(metadata)
         }
         return dict
     }
 
-    /// Formats a call stack
+    private func formatDiagnosticMetaData(_ metadata: ASCDiagnosticMetaData) -> [String: Any] {
+        [
+            "bundle_id": metadata.bundleId.jsonSafe,
+            "event": metadata.event.jsonSafe,
+            "os_version": metadata.osVersion.jsonSafe,
+            "app_version": metadata.appVersion.jsonSafe,
+            "writes_caused": metadata.writesCaused.jsonSafe,
+            "device_type": metadata.deviceType.jsonSafe,
+            "platform_architecture": metadata.platformArchitecture.jsonSafe,
+            "event_detail": metadata.eventDetail.jsonSafe,
+            "build_version": metadata.buildVersion.jsonSafe
+        ]
+    }
+
+    private func formatCallStackTree(_ tree: ASCCallStackTree) -> [String: Any] {
+        [
+            "call_stack_per_thread": tree.callStackPerThread.jsonSafe,
+            "call_stacks": (tree.callStacks ?? []).map { formatCallStack($0) }
+        ]
+    }
+
     private func formatCallStack(_ stack: ASCCallStack) -> [String: Any] {
-        var dict: [String: Any] = [:]
-        dict["thread_attributed"] = stack.threadAttributed.jsonSafe
-        dict["root_frames"] = (stack.callStackRootFrames ?? []).map { formatCallStackFrame($0) }
-        return dict
+        ["root_frames": (stack.callStackRootFrames ?? []).map { formatCallStackFrame($0) }]
     }
 
-    /// Formats a call stack frame (recursive for subframes)
     private func formatCallStackFrame(_ frame: ASCCallStackFrame) -> [String: Any] {
-        var dict: [String: Any] = [:]
-        dict["binary_name"] = frame.binaryName.jsonSafe
-        dict["address"] = frame.address.jsonSafe
-        dict["offset"] = frame.offsetIntoBinaryTextSegment.jsonSafe
-        dict["raw_frame"] = frame.rawFrame.jsonSafe
-        if let subFrames = frame.subFrames, !subFrames.isEmpty {
-            dict["sub_frames"] = subFrames.map { formatCallStackFrame($0) }
+        [
+            "sample_count": frame.sampleCount.jsonSafe,
+            "is_blame_frame": frame.isBlameFrame.jsonSafe,
+            "symbol_name": frame.symbolName.jsonSafe,
+            "insights_category": frame.insightsCategory.jsonSafe,
+            "offset_into_symbol": frame.offsetIntoSymbol.jsonSafe,
+            "binary_name": frame.binaryName.jsonSafe,
+            "file_name": frame.fileName.jsonSafe,
+            "binary_uuid": frame.binaryUUID.jsonSafe,
+            "line_number": frame.lineNumber.jsonSafe,
+            "address": frame.address.jsonSafe,
+            "offset_into_binary_text_segment": frame.offsetIntoBinaryTextSegment.jsonSafe,
+            "raw_frame": frame.rawFrame.jsonSafe,
+            "sub_frames": (frame.subFrames ?? []).map { formatCallStackFrame($0) }
+        ]
+    }
+}
+
+private struct MetricsFilterSelection: Sendable {
+    let queryValue: String
+    let echo: MetricsFilterEcho
+}
+
+private enum MetricsFilterEcho: Sendable {
+    case scalar(String)
+    case array([String])
+
+    var asAny: Any {
+        switch self {
+        case .scalar(let value):
+            return value
+        case .array(let values):
+            return values
         }
-        return dict
     }
 }

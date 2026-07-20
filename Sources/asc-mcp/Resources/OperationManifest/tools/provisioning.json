@@ -21,7 +21,8 @@
       "fields": [
         { "toolField": "name", "sourceKind": "requestBody", "operationId": "bundleIds_createInstance", "jsonPointer": "/data/attributes/name" },
         { "toolField": "identifier", "sourceKind": "requestBody", "operationId": "bundleIds_createInstance", "jsonPointer": "/data/attributes/identifier" },
-        { "toolField": "platform", "sourceKind": "requestBody", "operationId": "bundleIds_createInstance", "jsonPointer": "/data/attributes/platform" }
+        { "toolField": "platform", "sourceKind": "requestBody", "operationId": "bundleIds_createInstance", "jsonPointer": "/data/attributes/platform" },
+        { "toolField": "seed_id", "sourceKind": "requestBody", "operationId": "bundleIds_createInstance", "jsonPointer": "/data/attributes/seedId" }
       ],
       "response": {
         "mode": "projection",
@@ -32,7 +33,7 @@
           { "outputField": "bundle_id", "operationId": "bundleIds_createInstance", "jsonPointer": "/data" }
         ]
       },
-      "note": "Exact Apple 4.4.1 create operation with a selected bundle-ID response projection and no MCP output schema."
+      "note": "Exact Apple 4.4.1 create attributes, including optional seedId, with a selected bundle-ID response projection and no MCP output schema."
     },
     {
       "tool": "provisioning_create_profile",
@@ -57,8 +58,8 @@
         { "toolField": "name", "sourceKind": "requestBody", "operationId": "profiles_createInstance", "jsonPointer": "/data/attributes/name" },
         { "toolField": "profile_type", "sourceKind": "requestBody", "operationId": "profiles_createInstance", "jsonPointer": "/data/attributes/profileType" },
         { "toolField": "bundle_id_resource_id", "sourceKind": "requestBody", "operationId": "profiles_createInstance", "jsonPointer": "/data/relationships/bundleId/data/id" },
-        { "toolField": "certificate_ids", "sourceKind": "requestBody", "operationId": "profiles_createInstance", "jsonPointer": "/data/relationships/certificates/data/*/id", "localRole": "non-string array elements are silently dropped" },
-        { "toolField": "device_ids", "sourceKind": "requestBody", "operationId": "profiles_createInstance", "jsonPointer": "/data/relationships/devices/data/*/id", "localRole": "optional relationship; non-string array elements are silently dropped" }
+        { "toolField": "certificate_ids", "sourceKind": "requestBody", "operationId": "profiles_createInstance", "jsonPointer": "/data/relationships/certificates/data/*/id", "localRole": "validated non-empty unique string IDs" },
+        { "toolField": "device_ids", "sourceKind": "requestBody", "operationId": "profiles_createInstance", "jsonPointer": "/data/relationships/devices/data/*/id", "localRole": "optional relationship with validated non-empty unique string IDs" }
       ],
       "response": {
         "mode": "projection",
@@ -69,7 +70,7 @@
           { "outputField": "profile", "operationId": "profiles_createInstance", "jsonPointer": "/data" }
         ]
       },
-      "note": "The Apple operation and body relationships are exact, but the handler does not reject partially invalid certificate_ids/device_ids arrays and drops Apple's profileContent from the decoded/formatted result."
+      "note": "Apple 4.4.1 profile relationships are preserved after complete local ID-array validation, and the create response includes installable profileContent plus current profile timestamps."
     },
     {
       "tool": "provisioning_delete_bundle_id",
@@ -161,7 +162,7 @@
       "fields": [
         { "toolField": "bundle_id_resource_id", "sourceKind": "requestBody", "operationId": "bundleIdCapabilities_createInstance", "jsonPointer": "/data/relationships/bundleId/data/id" },
         { "toolField": "capability_type", "sourceKind": "requestBody", "operationId": "bundleIdCapabilities_createInstance", "jsonPointer": "/data/attributes/capabilityType" },
-        { "toolField": "settings", "sourceKind": "requestBody", "operationId": "bundleIdCapabilities_createInstance", "jsonPointer": "/data/attributes/settings", "localRole": "JSON string decoded locally as an array before request encoding" }
+        { "toolField": "settings", "sourceKind": "requestBody", "operationId": "bundleIdCapabilities_createInstance", "jsonPointer": "/data/attributes/settings", "localRole": "JSON string type-checked and decoded locally as an array before request encoding" }
       ],
       "response": {
         "mode": "projection",
@@ -172,7 +173,7 @@
           { "outputField": "capability", "operationId": "bundleIdCapabilities_createInstance", "jsonPointer": "/data" }
         ]
       },
-      "note": "Exact Apple create operation, but settings are accepted only as a JSON-encoded string and the response model omits enabledByDefault, visible, and supportsWildcard capability attributes."
+      "note": "Exact Apple create operation. Settings remain a JSON-encoded string input, while the response preserves enabledByDefault, visible, enabled, and supportsWildcard flags."
     },
     {
       "tool": "provisioning_get_bundle_id",
@@ -181,7 +182,35 @@
       "effect": "read",
       "implementationState": "asBuilt",
       "operations": [
-        { "operationId": "bundleIds_getInstance", "method": "get", "path": "/v1/bundleIds/{id}", "role": "primary" }
+        {
+          "operationId": "bundleIds_getInstance",
+          "method": "get",
+          "path": "/v1/bundleIds/{id}",
+          "role": "primary",
+          "optionalParameterClassifications": [
+            {
+              "location": "query",
+              "appleName": "include",
+              "disposition": "intentionallyOmitted",
+              "reason": "This detail tool returns a stable bundle-ID projection and does not project related profiles, capabilities, or app resources.",
+              "reviewAtSpec": "4.4.1"
+            },
+            {
+              "location": "query",
+              "appleName": "limit[bundleIdCapabilities]",
+              "disposition": "intentionallyOmitted",
+              "reason": "The related capability collection is not included by this tool, so its nested include limit has no effect on the documented output.",
+              "reviewAtSpec": "4.4.1"
+            },
+            {
+              "location": "query",
+              "appleName": "limit[profiles]",
+              "disposition": "intentionallyOmitted",
+              "reason": "The related profile collection is not included by this tool, so its nested include limit has no effect on the documented output.",
+              "reviewAtSpec": "4.4.1"
+            }
+          ]
+        }
       ],
       "fields": [
         { "toolField": "bundle_id_resource_id", "sourceKind": "parameter", "operationId": "bundleIds_getInstance", "location": "path", "appleName": "id" }
@@ -204,7 +233,21 @@
       "effect": "read",
       "implementationState": "asBuilt",
       "operations": [
-        { "operationId": "certificates_getInstance", "method": "get", "path": "/v1/certificates/{id}", "role": "primary" }
+        {
+          "operationId": "certificates_getInstance",
+          "method": "get",
+          "path": "/v1/certificates/{id}",
+          "role": "primary",
+          "optionalParameterClassifications": [
+            {
+              "location": "query",
+              "appleName": "include",
+              "disposition": "intentionallyOmitted",
+              "reason": "The certificate detail output is deliberately limited to certificate attributes and does not project the optional passTypeId relationship.",
+              "reviewAtSpec": "4.4.1"
+            }
+          ]
+        }
       ],
       "fields": [
         { "toolField": "certificate_id", "sourceKind": "parameter", "operationId": "certificates_getInstance", "location": "path", "appleName": "id" }
@@ -218,7 +261,7 @@
           { "outputField": "certificate", "operationId": "certificates_getInstance", "jsonPointer": "/data" }
         ]
       },
-      "note": "The current certificate model/formatter omits Apple's certificateContent, so this cannot retrieve the certificate bytes despite using the correct get operation. Sparse fields and passTypeId include are not exposed."
+      "note": "The detail projection returns Apple's certificateContent and activated state. Sparse fields follow the global projection policy; passTypeId include is intentionally omitted."
     },
     {
       "tool": "provisioning_get_profile",
@@ -227,7 +270,35 @@
       "effect": "read",
       "implementationState": "asBuilt",
       "operations": [
-        { "operationId": "profiles_getInstance", "method": "get", "path": "/v1/profiles/{id}", "role": "primary" }
+        {
+          "operationId": "profiles_getInstance",
+          "method": "get",
+          "path": "/v1/profiles/{id}",
+          "role": "primary",
+          "optionalParameterClassifications": [
+            {
+              "location": "query",
+              "appleName": "include",
+              "disposition": "intentionallyOmitted",
+              "reason": "The profile detail output returns profile attributes and does not project bundleId, devices, or certificates relationship resources.",
+              "reviewAtSpec": "4.4.1"
+            },
+            {
+              "location": "query",
+              "appleName": "limit[certificates]",
+              "disposition": "intentionallyOmitted",
+              "reason": "Certificates are not included by this tool, so the nested relationship limit has no effect on its documented output.",
+              "reviewAtSpec": "4.4.1"
+            },
+            {
+              "location": "query",
+              "appleName": "limit[devices]",
+              "disposition": "intentionallyOmitted",
+              "reason": "Devices are not included by this tool, so the nested relationship limit has no effect on its documented output.",
+              "reviewAtSpec": "4.4.1"
+            }
+          ]
+        }
       ],
       "fields": [
         { "toolField": "profile_id", "sourceKind": "parameter", "operationId": "profiles_getInstance", "location": "path", "appleName": "id" }
@@ -241,7 +312,7 @@
           { "outputField": "profile", "operationId": "profiles_getInstance", "jsonPointer": "/data" }
         ]
       },
-      "note": "The current profile model/formatter omits Apple's profileContent, so this cannot retrieve installable provisioning-profile bytes. Sparse fields and bundleId/certificates/devices includes are not exposed."
+      "note": "The detail projection returns installable profileContent with createdDate and expirationDate. Sparse fields follow the global projection policy; relationships are intentionally omitted."
     },
     {
       "tool": "provisioning_list_bundle_ids",
@@ -250,13 +321,43 @@
       "effect": "read",
       "implementationState": "asBuilt",
       "operations": [
-        { "operationId": "bundleIds_getCollection", "method": "get", "path": "/v1/bundleIds", "role": "primary" }
+        {
+          "operationId": "bundleIds_getCollection",
+          "method": "get",
+          "path": "/v1/bundleIds",
+          "role": "primary",
+          "optionalParameterClassifications": [
+            {
+              "location": "query",
+              "appleName": "include",
+              "disposition": "intentionallyOmitted",
+              "reason": "The collection tool returns a stable bundle-ID projection and does not project related profiles, capabilities, or app resources.",
+              "reviewAtSpec": "4.4.1"
+            },
+            {
+              "location": "query",
+              "appleName": "limit[bundleIdCapabilities]",
+              "disposition": "intentionallyOmitted",
+              "reason": "The related capability collection is not included, so its nested limit has no effect on the documented output.",
+              "reviewAtSpec": "4.4.1"
+            },
+            {
+              "location": "query",
+              "appleName": "limit[profiles]",
+              "disposition": "intentionallyOmitted",
+              "reason": "The related profile collection is not included, so its nested limit has no effect on the documented output.",
+              "reviewAtSpec": "4.4.1"
+            }
+          ]
+        }
       ],
       "fields": [
         { "toolField": "limit", "sourceKind": "parameter", "operationId": "bundleIds_getCollection", "location": "query", "appleName": "limit" },
         { "toolField": "filter_platform", "sourceKind": "parameter", "operationId": "bundleIds_getCollection", "location": "query", "appleName": "filter[platform]" },
         { "toolField": "filter_identifier", "sourceKind": "parameter", "operationId": "bundleIds_getCollection", "location": "query", "appleName": "filter[identifier]" },
         { "toolField": "filter_name", "sourceKind": "parameter", "operationId": "bundleIds_getCollection", "location": "query", "appleName": "filter[name]" },
+        { "toolField": "filter_seed_id", "sourceKind": "parameter", "operationId": "bundleIds_getCollection", "location": "query", "appleName": "filter[seedId]" },
+        { "toolField": "filter_id", "sourceKind": "parameter", "operationId": "bundleIds_getCollection", "location": "query", "appleName": "filter[id]" },
         { "toolField": "sort", "sourceKind": "parameter", "operationId": "bundleIds_getCollection", "location": "query", "appleName": "sort" },
         { "toolField": "next_url", "sourceKind": "local", "localRole": "paginationContinuation" }
       ],
@@ -270,7 +371,7 @@
           { "outputField": "next_url", "operationId": "bundleIds_getCollection", "jsonPointer": "/links/next" }
         ]
       },
-      "note": "The exposed filters and sorting map exactly, but Apple id/seedId filters, sparse fields, includes, and nested include limits are not exposed."
+      "note": "All Apple 4.4.1 collection filters, sort, limit, and continuation are exposed. Sparse fields follow the global projection policy; includes and their nested limits are intentionally omitted."
     },
     {
       "tool": "provisioning_list_capabilities",
@@ -283,7 +384,7 @@
       ],
       "fields": [
         { "toolField": "bundle_id_resource_id", "sourceKind": "parameter", "operationId": "bundleIds_bundleIdCapabilities_getToManyRelated", "location": "path", "appleName": "id" },
-        { "toolField": "limit", "sourceKind": "local", "localRole": "acceptedButIgnored", "omissionReason": "The handler currently creates an empty query instead of sending Apple 4.4.1's supported limit parameter." },
+        { "toolField": "limit", "sourceKind": "parameter", "operationId": "bundleIds_bundleIdCapabilities_getToManyRelated", "location": "query", "appleName": "limit" },
         { "toolField": "next_url", "sourceKind": "local", "localRole": "paginationContinuation" }
       ],
       "response": {
@@ -296,7 +397,7 @@
           { "outputField": "next_url", "operationId": "bundleIds_bundleIdCapabilities_getToManyRelated", "jsonPointer": "/links/next" }
         ]
       },
-      "note": "Known contract bug: Apple 4.4.1 defines query limit for this operation, but the current handler ignores the advertised MCP limit field. Sparse fields are omitted, and enabledByDefault, visible, and supportsWildcard are lost by the response model."
+      "note": "Apple 4.4.1 limit and continuation are honored. Capability settings preserve enabledByDefault, visible, enabled, and supportsWildcard; sparse fields follow the global projection policy."
     },
     {
       "tool": "provisioning_list_certificates",
@@ -305,11 +406,28 @@
       "effect": "read",
       "implementationState": "asBuilt",
       "operations": [
-        { "operationId": "certificates_getCollection", "method": "get", "path": "/v1/certificates", "role": "primary" }
+        {
+          "operationId": "certificates_getCollection",
+          "method": "get",
+          "path": "/v1/certificates",
+          "role": "primary",
+          "optionalParameterClassifications": [
+            {
+              "location": "query",
+              "appleName": "include",
+              "disposition": "intentionallyOmitted",
+              "reason": "Certificate lists use a bounded attribute projection and do not project optional passTypeId relationship resources.",
+              "reviewAtSpec": "4.4.1"
+            }
+          ]
+        }
       ],
       "fields": [
         { "toolField": "limit", "sourceKind": "parameter", "operationId": "certificates_getCollection", "location": "query", "appleName": "limit" },
         { "toolField": "filter_type", "sourceKind": "parameter", "operationId": "certificates_getCollection", "location": "query", "appleName": "filter[certificateType]" },
+        { "toolField": "filter_display_name", "sourceKind": "parameter", "operationId": "certificates_getCollection", "location": "query", "appleName": "filter[displayName]" },
+        { "toolField": "filter_serial_number", "sourceKind": "parameter", "operationId": "certificates_getCollection", "location": "query", "appleName": "filter[serialNumber]" },
+        { "toolField": "filter_id", "sourceKind": "parameter", "operationId": "certificates_getCollection", "location": "query", "appleName": "filter[id]" },
         { "toolField": "sort", "sourceKind": "parameter", "operationId": "certificates_getCollection", "location": "query", "appleName": "sort" },
         { "toolField": "next_url", "sourceKind": "local", "localRole": "paginationContinuation" }
       ],
@@ -323,7 +441,7 @@
           { "outputField": "next_url", "operationId": "certificates_getCollection", "jsonPointer": "/links/next" }
         ]
       },
-      "note": "Only certificateType, sort, limit, and continuation are exposed. Apple displayName/serialNumber/id filters, sparse fields, include, and passTypeId limits are omitted; certificateContent is dropped from output."
+      "note": "All Apple 4.4.1 certificate filters, sort, limit, and continuation are exposed. Lists intentionally omit certificateContent and passTypeId resources; detail lookup returns certificateContent."
     },
     {
       "tool": "provisioning_list_devices",
@@ -338,6 +456,9 @@
         { "toolField": "limit", "sourceKind": "parameter", "operationId": "devices_getCollection", "location": "query", "appleName": "limit" },
         { "toolField": "filter_platform", "sourceKind": "parameter", "operationId": "devices_getCollection", "location": "query", "appleName": "filter[platform]" },
         { "toolField": "filter_status", "sourceKind": "parameter", "operationId": "devices_getCollection", "location": "query", "appleName": "filter[status]" },
+        { "toolField": "filter_name", "sourceKind": "parameter", "operationId": "devices_getCollection", "location": "query", "appleName": "filter[name]" },
+        { "toolField": "filter_udid", "sourceKind": "parameter", "operationId": "devices_getCollection", "location": "query", "appleName": "filter[udid]" },
+        { "toolField": "filter_id", "sourceKind": "parameter", "operationId": "devices_getCollection", "location": "query", "appleName": "filter[id]" },
         { "toolField": "sort", "sourceKind": "parameter", "operationId": "devices_getCollection", "location": "query", "appleName": "sort" },
         { "toolField": "next_url", "sourceKind": "local", "localRole": "paginationContinuation" }
       ],
@@ -351,7 +472,7 @@
           { "outputField": "next_url", "operationId": "devices_getCollection", "jsonPointer": "/links/next" }
         ]
       },
-      "note": "The exposed filters map exactly, but Apple name/udid/id/deviceClass filters and sparse fields are omitted. The public descriptions also omit UNIVERSAL where Apple 4.4.1 permits it."
+      "note": "All Apple 4.4.1 device filters, sort, limit, and continuation are exposed, including UNIVERSAL platform support. Sparse fields follow the global projection policy."
     },
     {
       "tool": "provisioning_list_profiles",
@@ -360,12 +481,42 @@
       "effect": "read",
       "implementationState": "asBuilt",
       "operations": [
-        { "operationId": "profiles_getCollection", "method": "get", "path": "/v1/profiles", "role": "primary" }
+        {
+          "operationId": "profiles_getCollection",
+          "method": "get",
+          "path": "/v1/profiles",
+          "role": "primary",
+          "optionalParameterClassifications": [
+            {
+              "location": "query",
+              "appleName": "include",
+              "disposition": "intentionallyOmitted",
+              "reason": "Profile lists use a bounded attribute projection and do not project bundleId, devices, or certificates relationship resources.",
+              "reviewAtSpec": "4.4.1"
+            },
+            {
+              "location": "query",
+              "appleName": "limit[certificates]",
+              "disposition": "intentionallyOmitted",
+              "reason": "Certificates are not included by this tool, so the nested relationship limit has no effect on its documented output.",
+              "reviewAtSpec": "4.4.1"
+            },
+            {
+              "location": "query",
+              "appleName": "limit[devices]",
+              "disposition": "intentionallyOmitted",
+              "reason": "Devices are not included by this tool, so the nested relationship limit has no effect on its documented output.",
+              "reviewAtSpec": "4.4.1"
+            }
+          ]
+        }
       ],
       "fields": [
         { "toolField": "limit", "sourceKind": "parameter", "operationId": "profiles_getCollection", "location": "query", "appleName": "limit" },
         { "toolField": "filter_profile_type", "sourceKind": "parameter", "operationId": "profiles_getCollection", "location": "query", "appleName": "filter[profileType]" },
         { "toolField": "filter_profile_state", "sourceKind": "parameter", "operationId": "profiles_getCollection", "location": "query", "appleName": "filter[profileState]" },
+        { "toolField": "filter_name", "sourceKind": "parameter", "operationId": "profiles_getCollection", "location": "query", "appleName": "filter[name]" },
+        { "toolField": "filter_id", "sourceKind": "parameter", "operationId": "profiles_getCollection", "location": "query", "appleName": "filter[id]" },
         { "toolField": "sort", "sourceKind": "parameter", "operationId": "profiles_getCollection", "location": "query", "appleName": "sort" },
         { "toolField": "next_url", "sourceKind": "local", "localRole": "paginationContinuation" }
       ],
@@ -379,7 +530,7 @@
           { "outputField": "next_url", "operationId": "profiles_getCollection", "jsonPointer": "/links/next" }
         ]
       },
-      "note": "Apple name/uuid/id filters, sparse fields, includes, and nested relationship limits are omitted. The response model drops profileContent and all included relationships."
+      "note": "All Apple 4.4.1 profile filters, sort, limit, and continuation are exposed. Lists intentionally omit profileContent and relationship resources; detail/create responses return profileContent."
     },
     {
       "tool": "provisioning_register_device",
@@ -412,7 +563,7 @@
           { "outputField": "device", "operationId": "devices_createInstance", "jsonPointer": "/data" }
         ]
       },
-      "note": "Exact Apple 4.4.1 create operation. The public platform description omits UNIVERSAL even though the current Apple schema permits it."
+      "note": "Exact Apple 4.4.1 create operation, including IOS, MAC_OS, and UNIVERSAL platform support."
     },
     {
       "tool": "provisioning_revoke_certificate",
@@ -469,7 +620,7 @@
           { "outputField": "device", "operationId": "devices_updateInstance", "jsonPointer": "/data" }
         ]
       },
-      "note": "Exact Apple 4.4.1 path/body mapping. The schema permits a request with device_id but neither mutable attribute; the handler sends that empty update and relies on Apple's error response."
+      "note": "Exact Apple 4.4.1 path/body mapping. The handler requires at least one mutable attribute and rejects an empty PATCH before network access."
     }
   ],
   "implementationAliases": []

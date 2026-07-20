@@ -9,12 +9,23 @@ import Foundation
 import MCP
 
 extension MetricsWorker {
+    static let supportedMetricTypes = [
+        "DISK",
+        "HANG",
+        "BATTERY",
+        "LAUNCH",
+        "MEMORY",
+        "ANIMATION",
+        "TERMINATION",
+        "STORAGE"
+    ]
+    static let supportedDiagnosticTypes = ["DISK_WRITES", "HANGS", "LAUNCHES"]
 
     /// Creates tool definition for getting app performance/power metrics
     func appPerfMetricsTool() -> Tool {
         return Tool(
             name: "metrics_app_perf",
-            description: "Get performance and power metrics for an app. Returns disk, hang, battery, launch, memory, animation, and termination metrics across device types and app versions.",
+            description: "Get performance and power metrics for an app. Returns disk, hang, battery, launch, memory, animation, termination, and storage metrics across device types and app versions.",
             inputSchema: .object([
                 "type": .string("object"),
                 "properties": .object([
@@ -22,21 +33,15 @@ extension MetricsWorker {
                         "type": .string("string"),
                         "description": .string("App Store Connect app ID")
                     ]),
-                    "metric_type": .object([
-                        "type": .string("string"),
-                        "description": .string("Type of performance metric to retrieve"),
-                        "enum": .array([
-                            .string("DISK"),
-                            .string("HANG"),
-                            .string("BATTERY"),
-                            .string("LAUNCH"),
-                            .string("MEMORY"),
-                            .string("ANIMATION"),
-                            .string("TERMINATION")
-                        ])
-                    ])
+                    "metric_type": enumListSchema(
+                        "Optional performance metric type filter",
+                        values: MetricsWorker.supportedMetricTypes
+                    ),
+                    "device_type": stringListSchema(
+                        "Optional device type filter, such as iPhone15,2; Apple also supports all_iphones and all_ipads"
+                    )
                 ]),
-                "required": .array([.string("app_id"), .string("metric_type")])
+                "required": .array([.string("app_id")])
             ])
         )
     }
@@ -53,21 +58,15 @@ extension MetricsWorker {
                         "type": .string("string"),
                         "description": .string("Build ID from App Store Connect")
                     ]),
-                    "metric_type": .object([
-                        "type": .string("string"),
-                        "description": .string("Type of performance metric to retrieve"),
-                        "enum": .array([
-                            .string("DISK"),
-                            .string("HANG"),
-                            .string("BATTERY"),
-                            .string("LAUNCH"),
-                            .string("MEMORY"),
-                            .string("ANIMATION"),
-                            .string("TERMINATION")
-                        ])
-                    ])
+                    "metric_type": enumListSchema(
+                        "Optional performance metric type filter",
+                        values: MetricsWorker.supportedMetricTypes
+                    ),
+                    "device_type": stringListSchema(
+                        "Optional device type filter, such as iPhone15,2; Apple also supports all_iphones and all_ipads"
+                    )
                 ]),
-                "required": .array([.string("build_id"), .string("metric_type")])
+                "required": .array([.string("build_id")])
             ])
         )
     }
@@ -76,7 +75,7 @@ extension MetricsWorker {
     func buildDiagnosticsTool() -> Tool {
         return Tool(
             name: "metrics_build_diagnostics",
-            description: "List diagnostic signatures for a specific build. Shows crash/hang/disk-write signatures with their weight and insights. Available only for App Store builds. Pre-release/TestFlight builds return 404.",
+            description: "List diagnostic signatures for a specific build. Shows launch, hang, and disk-write signatures with their weight and insights. Available only for App Store builds. Pre-release/TestFlight builds return 404.",
             inputSchema: .object([
                 "type": .string("object"),
                 "properties": .object([
@@ -84,17 +83,15 @@ extension MetricsWorker {
                         "type": .string("string"),
                         "description": .string("Build ID from App Store Connect")
                     ]),
-                    "diagnostic_type": .object([
-                        "type": .string("string"),
-                        "description": .string("Filter by diagnostic type"),
-                        "enum": .array([
-                            .string("DISK_WRITES"),
-                            .string("HANGS")
-                        ])
-                    ]),
+                    "diagnostic_type": enumListSchema(
+                        "Optional diagnostic type filter",
+                        values: MetricsWorker.supportedDiagnosticTypes
+                    ),
                     "limit": .object([
                         "type": .string("integer"),
-                        "description": .string("Maximum number of results to return (1-200, default: 25)")
+                        "description": .string("Maximum number of results to return (1-200, default: 25)"),
+                        "minimum": .int(1),
+                        "maximum": .int(200)
                     ]),
                     "next_url": .object([
                         "type": .string("string"),
@@ -110,17 +107,59 @@ extension MetricsWorker {
     func getDiagnosticLogsTool() -> Tool {
         return Tool(
             name: "metrics_get_diagnostic_logs",
-            description: "Get diagnostic logs for a specific diagnostic signature. Returns call stack trees with frame details for debugging.",
+            description: "Get diagnostic logs for a specific diagnostic signature. Returns diagnostic insights, metadata, and call stack trees with complete frame details.",
             inputSchema: .object([
                 "type": .string("object"),
                 "properties": .object([
                     "signature_id": .object([
                         "type": .string("string"),
                         "description": .string("Diagnostic signature ID")
+                    ]),
+                    "limit": .object([
+                        "type": .string("integer"),
+                        "description": .string("Maximum number of diagnostic logs to return (1-200)"),
+                        "minimum": .int(1),
+                        "maximum": .int(200)
                     ])
                 ]),
                 "required": .array([.string("signature_id")])
             ])
         )
+    }
+
+    private func stringListSchema(_ description: String) -> Value {
+        .object([
+            "description": .string(description),
+            "oneOf": .array([
+                .object(["type": .string("string")]),
+                .object([
+                    "type": .string("array"),
+                    "items": .object(["type": .string("string")]),
+                    "minItems": .int(1),
+                    "uniqueItems": .bool(true)
+                ])
+            ])
+        ])
+    }
+
+    private func enumListSchema(_ description: String, values: [String]) -> Value {
+        .object([
+            "description": .string(description),
+            "oneOf": .array([
+                .object([
+                    "type": .string("string"),
+                    "enum": .array(values.map(Value.string))
+                ]),
+                .object([
+                    "type": .string("array"),
+                    "items": .object([
+                        "type": .string("string"),
+                        "enum": .array(values.map(Value.string))
+                    ]),
+                    "minItems": .int(1),
+                    "uniqueItems": .bool(true)
+                ])
+            ])
+        ])
     }
 }

@@ -12,7 +12,16 @@
           "operationId": "apps_perfPowerMetrics_getToManyRelated",
           "method": "get",
           "path": "/v1/apps/{id}/perfPowerMetrics",
-          "role": "primary"
+          "role": "primary",
+          "optionalParameterClassifications": [
+            {
+              "location": "query",
+              "appleName": "filter[platform]",
+              "disposition": "intentionallyOmitted",
+              "reason": "Apple 4.4.1 only permits IOS, so exposing this filter would not change the result set.",
+              "reviewAtSpec": "4.4.1"
+            }
+          ]
         }
       ],
       "fields": [
@@ -29,6 +38,13 @@
           "operationId": "apps_perfPowerMetrics_getToManyRelated",
           "location": "query",
           "appleName": "filter[metricType]"
+        },
+        {
+          "toolField": "device_type",
+          "sourceKind": "parameter",
+          "operationId": "apps_perfPowerMetrics_getToManyRelated",
+          "location": "query",
+          "appleName": "filter[deviceType]"
         }
       ],
       "response": {
@@ -47,7 +63,22 @@
           },
           {
             "outputField": "metric_type",
-            "localRole": "requestEcho"
+            "localRole": "optional request echo preserving scalar-or-array input shape"
+          },
+          {
+            "outputField": "device_type",
+            "localRole": "optional request echo preserving scalar-or-array input shape"
+          },
+          {
+            "outputField": "version",
+            "operationId": "apps_perfPowerMetrics_getToManyRelated",
+            "jsonPointer": "/version"
+          },
+          {
+            "outputField": "insights",
+            "operationId": "apps_perfPowerMetrics_getToManyRelated",
+            "jsonPointer": "/insights",
+            "localRole": "snakeCaseProjection"
           },
           {
             "outputField": "product_data",
@@ -57,7 +88,7 @@
           }
         ]
       },
-      "note": "Partial against OpenAPI 4.4.1: the public enum omits new STORAGE metrics and the tool lacks filter[platform] and filter[deviceType]. The projection drops top-level version and insights, metric errorMargin and recommendedMetricGoal; goal is modeled as Double although Apple defines a string. Apple's goalKeys field is deprecated and is neither modeled nor returned."
+      "note": "Aligned with the nondeprecated OpenAPI 4.4.1 xcodeMetrics shape: optional metricType and deviceType filters accept a backward-compatible scalar or Apple's array cardinality and arrays are encoded with explode=false CSV semantics. Zero filters request the complete metric set. STORAGE, version, insights, errorMargin, recommendedMetricGoal, and string-valued goal are projected. filter[platform] is intentionally omitted because Apple only permits IOS. Deprecated goalKeys is intentionally not returned."
     },
     {
       "tool": "metrics_build_diagnostics",
@@ -128,13 +159,17 @@
             "localRole": "pageCount"
           },
           {
+            "outputField": "diagnostic_type",
+            "localRole": "optional request echo preserving scalar-or-array input shape"
+          },
+          {
             "outputField": "next_url",
             "operationId": "builds_diagnosticSignatures_getToManyRelated",
             "jsonPointer": "/links/next"
           }
         ]
       },
-      "note": "Partial: Apple 4.4.1 supports diagnosticType LAUNCHES, but the public enum only exposes DISK_WRITES and HANGS. Sparse fields are absent. DiagnosticInsight is decoded with a nonexistent referenceURL, so direction and referenceVersions are dropped."
+      "note": "Aligned with the nondeprecated OpenAPI 4.4.1 diagnostic signature shape: diagnosticType accepts a backward-compatible scalar or Apple's array cardinality and arrays are encoded with explode=false CSV semantics. LAUNCHES is exposed and DiagnosticInsight returns insightType, direction, and referenceVersions. Sparse field selection is intentionally omitted because the tool returns a stable documented signature projection instead of caller-defined JSON:API fieldsets."
     },
     {
       "tool": "metrics_build_perf",
@@ -147,7 +182,16 @@
           "operationId": "builds_perfPowerMetrics_getToManyRelated",
           "method": "get",
           "path": "/v1/builds/{id}/perfPowerMetrics",
-          "role": "primary"
+          "role": "primary",
+          "optionalParameterClassifications": [
+            {
+              "location": "query",
+              "appleName": "filter[platform]",
+              "disposition": "intentionallyOmitted",
+              "reason": "Apple 4.4.1 only permits IOS, so exposing this filter would not change the result set.",
+              "reviewAtSpec": "4.4.1"
+            }
+          ]
         }
       ],
       "fields": [
@@ -164,6 +208,13 @@
           "operationId": "builds_perfPowerMetrics_getToManyRelated",
           "location": "query",
           "appleName": "filter[metricType]"
+        },
+        {
+          "toolField": "device_type",
+          "sourceKind": "parameter",
+          "operationId": "builds_perfPowerMetrics_getToManyRelated",
+          "location": "query",
+          "appleName": "filter[deviceType]"
         }
       ],
       "response": {
@@ -182,7 +233,22 @@
           },
           {
             "outputField": "metric_type",
-            "localRole": "requestEcho"
+            "localRole": "optional request echo preserving scalar-or-array input shape"
+          },
+          {
+            "outputField": "device_type",
+            "localRole": "optional request echo preserving scalar-or-array input shape"
+          },
+          {
+            "outputField": "version",
+            "operationId": "builds_perfPowerMetrics_getToManyRelated",
+            "jsonPointer": "/version"
+          },
+          {
+            "outputField": "insights",
+            "operationId": "builds_perfPowerMetrics_getToManyRelated",
+            "jsonPointer": "/insights",
+            "localRole": "snakeCaseProjection"
           },
           {
             "outputField": "product_data",
@@ -192,7 +258,7 @@
           }
         ]
       },
-      "note": "Partial against OpenAPI 4.4.1: the public enum omits new STORAGE metrics and the tool lacks filter[platform] and filter[deviceType]. The projection drops top-level version and insights, metric errorMargin and recommendedMetricGoal; goal is modeled as Double although Apple defines a string. Apple's goalKeys field is deprecated and is neither modeled nor returned."
+      "note": "Aligned with the nondeprecated OpenAPI 4.4.1 xcodeMetrics shape: optional metricType and deviceType filters accept a backward-compatible scalar or Apple's array cardinality and arrays are encoded with explode=false CSV semantics. Zero filters request the complete metric set. STORAGE, version, insights, errorMargin, recommendedMetricGoal, and string-valued goal are projected. filter[platform] is intentionally omitted because Apple only permits IOS. Deprecated goalKeys is intentionally not returned."
     },
     {
       "tool": "metrics_get_diagnostic_logs",
@@ -215,6 +281,13 @@
           "operationId": "diagnosticSignatures_logs_getToManyRelated",
           "location": "path",
           "appleName": "id"
+        },
+        {
+          "toolField": "limit",
+          "sourceKind": "parameter",
+          "operationId": "diagnosticSignatures_logs_getToManyRelated",
+          "location": "query",
+          "appleName": "limit"
         }
       ],
       "response": {
@@ -236,14 +309,19 @@
             "localRole": "requestEcho"
           },
           {
+            "outputField": "version",
+            "operationId": "diagnosticSignatures_logs_getToManyRelated",
+            "jsonPointer": "/version"
+          },
+          {
             "outputField": "diagnostic_logs",
             "operationId": "diagnosticSignatures_logs_getToManyRelated",
             "jsonPointer": "/productData",
-            "localRole": "attemptedCallStackProjection"
+            "localRole": "completeDiagnosticProjection"
           }
         ]
       },
-      "note": "Partial and currently structurally unreliable: OpenAPI 4.4.1 defines callStackTree as an array of trees, while both raw and Codable paths expect an object or string; version, diagnosticInsights, diagnosticMetaData, and several frame fields are lost. Apple's limit parameter is not exposed."
+      "note": "Aligned with the OpenAPI 4.4.1 diagnosticLogs shape: callStackTree is decoded as an array, limit is exposed, and version, diagnosticInsights, diagnosticMetaData, and every documented frame field are projected."
     }
   ],
   "implementationAliases": []

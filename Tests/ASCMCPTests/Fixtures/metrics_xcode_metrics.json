@@ -1,0 +1,72 @@
+{
+  "version": "1.0",
+  "insights": {
+    "trendingUp": [
+      {
+        "metricCategory": "STORAGE",
+        "latestVersion": "4.2.0",
+        "metric": "diskSpaceUsed",
+        "summaryString": "Storage use increased",
+        "referenceVersions": "4.1.0",
+        "maxLatestVersionValue": 184.5,
+        "subSystemLabel": "Documents",
+        "highImpact": true,
+        "populations": [
+          {
+            "deltaPercentage": 12.5,
+            "percentile": "P90",
+            "summaryString": "Higher on iPhone 15 Pro",
+            "referenceAverageValue": 164.0,
+            "latestVersionValue": 184.5,
+            "device": "iPhone15,2"
+          }
+        ]
+      }
+    ],
+    "regressions": []
+  },
+  "productData": [
+    {
+      "platform": "IOS",
+      "metricCategories": [
+        {
+          "identifier": "STORAGE",
+          "metrics": [
+            {
+              "identifier": "diskSpaceUsed",
+              "unit": {
+                "identifier": "megabytes",
+                "displayName": "MB"
+              },
+              "datasets": [
+                {
+                  "filterCriteria": {
+                    "percentile": "P90",
+                    "device": "iPhone15,2",
+                    "deviceMarketingName": "iPhone 15 Pro"
+                  },
+                  "points": [
+                    {
+                      "version": "4.2.0",
+                      "value": 184.5,
+                      "errorMargin": 2.25,
+                      "percentageBreakdown": {
+                        "value": 61.0,
+                        "subSystemLabel": "Documents"
+                      },
+                      "goal": "Less than 200 MB"
+                    }
+                  ],
+                  "recommendedMetricGoal": {
+                    "value": 175.0,
+                    "detail": "Keep the P90 value below 175 MB"
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

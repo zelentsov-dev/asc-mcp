@@ -35,6 +35,16 @@ extension ProvisioningWorker {
                 queryParams["filter[name]"] = name
             }
 
+            if let seedIdValue = arguments?["filter_seed_id"],
+               let seedId = seedIdValue.stringValue {
+                queryParams["filter[seedId]"] = seedId
+            }
+
+            if let idValue = arguments?["filter_id"],
+               let id = idValue.stringValue {
+                queryParams["filter[id]"] = id
+            }
+
             if let sortValue = arguments?["sort"],
                let sort = sortValue.stringValue {
                 queryParams["sort"] = sort
@@ -131,13 +141,18 @@ extension ProvisioningWorker {
             )
         }
 
+        if arguments["seed_id"] != nil, arguments["seed_id"]?.stringValue == nil {
+            return MCPResult.error("'seed_id' must be a string")
+        }
+
         do {
             let request = CreateBundleIdRequest(
                 data: CreateBundleIdRequest.CreateBundleIdData(
                     attributes: CreateBundleIdRequest.CreateBundleIdAttributes(
                         name: name,
                         identifier: identifier,
-                        platform: platform
+                        platform: platform,
+                        seedId: arguments["seed_id"]?.stringValue
                     )
                 )
             )
@@ -219,6 +234,21 @@ extension ProvisioningWorker {
             if let statusValue = arguments?["filter_status"],
                let status = statusValue.stringValue {
                 queryParams["filter[status]"] = status
+            }
+
+            if let nameValue = arguments?["filter_name"],
+               let name = nameValue.stringValue {
+                queryParams["filter[name]"] = name
+            }
+
+            if let udidValue = arguments?["filter_udid"],
+               let udid = udidValue.stringValue {
+                queryParams["filter[udid]"] = udid
+            }
+
+            if let idValue = arguments?["filter_id"],
+               let id = idValue.stringValue {
+                queryParams["filter[id]"] = id
             }
 
             if let sortValue = arguments?["sort"],
@@ -328,13 +358,26 @@ extension ProvisioningWorker {
             )
         }
 
+        if arguments["name"] != nil, arguments["name"]?.stringValue == nil {
+            return MCPResult.error("'name' must be a string")
+        }
+        if arguments["status"] != nil, arguments["status"]?.stringValue == nil {
+            return MCPResult.error("'status' must be a string")
+        }
+
+        let name = arguments["name"]?.stringValue
+        let status = arguments["status"]?.stringValue
+        guard name != nil || status != nil else {
+            return MCPResult.error("Provide at least one update field: name or status")
+        }
+
         do {
             let request = UpdateDeviceRequest(
                 data: UpdateDeviceRequest.UpdateDeviceData(
                     id: deviceId,
                     attributes: UpdateDeviceRequest.UpdateDeviceAttributes(
-                        name: arguments["name"]?.stringValue,
-                        status: arguments["status"]?.stringValue
+                        name: name,
+                        status: status
                     )
                 )
             )
@@ -381,6 +424,21 @@ extension ProvisioningWorker {
             if let typeValue = arguments?["filter_type"],
                let type = typeValue.stringValue {
                 queryParams["filter[certificateType]"] = type
+            }
+
+            if let displayNameValue = arguments?["filter_display_name"],
+               let displayName = displayNameValue.stringValue {
+                queryParams["filter[displayName]"] = displayName
+            }
+
+            if let serialNumberValue = arguments?["filter_serial_number"],
+               let serialNumber = serialNumberValue.stringValue {
+                queryParams["filter[serialNumber]"] = serialNumber
+            }
+
+            if let idValue = arguments?["filter_id"],
+               let id = idValue.stringValue {
+                queryParams["filter[id]"] = id
             }
 
             if let sortValue = arguments?["sort"],
@@ -454,6 +512,16 @@ extension ProvisioningWorker {
                 queryParams["filter[profileState]"] = state
             }
 
+            if let nameValue = arguments?["filter_name"],
+               let name = nameValue.stringValue {
+                queryParams["filter[name]"] = name
+            }
+
+            if let idValue = arguments?["filter_id"],
+               let id = idValue.stringValue {
+                queryParams["filter[id]"] = id
+            }
+
             if let sortValue = arguments?["sort"],
                let sort = sortValue.stringValue {
                 queryParams["sort"] = sort
@@ -519,7 +587,7 @@ extension ProvisioningWorker {
                 as: ASCCertificateResponse.self
             )
 
-            let certificate = formatCertificate(response.data)
+            let certificate = formatCertificate(response.data, includeContent: true)
 
             let result = [
                 "success": true,
@@ -586,7 +654,7 @@ extension ProvisioningWorker {
                 as: ASCProfileResponse.self
             )
 
-            let profile = formatProfile(response.data)
+            let profile = formatProfile(response.data, includeContent: true)
 
             let result = [
                 "success": true,
@@ -651,19 +719,42 @@ extension ProvisioningWorker {
             )
         }
 
+        let certificateIds = certIdsArray.compactMap(\.stringValue)
+        guard certificateIds.count == certIdsArray.count,
+              !certificateIds.isEmpty,
+              certificateIds.allSatisfy({ !$0.isEmpty }) else {
+            return MCPResult.error("'certificate_ids' must contain only non-empty string IDs")
+        }
+        guard Set(certificateIds).count == certificateIds.count else {
+            return MCPResult.error("'certificate_ids' must not contain duplicate values")
+        }
+
+        let deviceIds: [String]?
+        if let deviceIdsValue = arguments["device_ids"] {
+            guard let deviceIdsArray = deviceIdsValue.arrayValue else {
+                return MCPResult.error("'device_ids' must be an array of strings")
+            }
+            let parsedDeviceIds = deviceIdsArray.compactMap(\.stringValue)
+            guard parsedDeviceIds.count == deviceIdsArray.count,
+                  !parsedDeviceIds.isEmpty,
+                  parsedDeviceIds.allSatisfy({ !$0.isEmpty }) else {
+                return MCPResult.error("'device_ids' must contain only non-empty string IDs")
+            }
+            guard Set(parsedDeviceIds).count == parsedDeviceIds.count else {
+                return MCPResult.error("'device_ids' must not contain duplicate values")
+            }
+            deviceIds = parsedDeviceIds
+        } else {
+            deviceIds = nil
+        }
+
         do {
-            let certificateItems = certIdsArray.compactMap { value -> CreateProfileRequest.RelationshipItem? in
-                guard let id = value.stringValue else { return nil }
-                return CreateProfileRequest.RelationshipItem(type: "certificates", id: id)
+            let certificateItems = certificateIds.map {
+                CreateProfileRequest.RelationshipItem(type: "certificates", id: $0)
             }
 
-            var deviceItems: [CreateProfileRequest.RelationshipItem]? = nil
-            if let deviceIdsValue = arguments["device_ids"],
-               let deviceIdsArray = deviceIdsValue.arrayValue {
-                deviceItems = deviceIdsArray.compactMap { value -> CreateProfileRequest.RelationshipItem? in
-                    guard let id = value.stringValue else { return nil }
-                    return CreateProfileRequest.RelationshipItem(type: "devices", id: id)
-                }
+            let deviceItems = deviceIds?.map {
+                CreateProfileRequest.RelationshipItem(type: "devices", id: $0)
             }
 
             let devicesRelationship: CreateProfileRequest.RelationshipDataArray? =
@@ -691,7 +782,7 @@ extension ProvisioningWorker {
                 as: ASCProfileResponse.self
             )
 
-            let profile = formatProfile(response.data)
+            let profile = formatProfile(response.data, includeContent: true)
 
             let result = [
                 "success": true,
@@ -724,19 +815,27 @@ extension ProvisioningWorker {
 
         do {
             let response: ASCBundleIdCapabilitiesResponse
+            var queryParams: [String: String] = [:]
+
+            if let limitValue = arguments["limit"],
+               let limit = limitValue.intValue {
+                queryParams["limit"] = String(min(max(limit, 1), 200))
+            } else {
+                queryParams["limit"] = "25"
+            }
 
             if let nextUrl = try paginationURL(from: arguments["next_url"]) {
+                var requiredParameters = queryParams
+                requiredParameters.removeValue(forKey: "limit")
                 response = try await httpClient.getPage(
                     nextUrl,
                     scope: PaginationScope(
-                        path: "/v1/bundleIds/\(try ASCPathSegment.encode(bundleIdResourceId))/bundleIdCapabilities"
+                        path: "/v1/bundleIds/\(try ASCPathSegment.encode(bundleIdResourceId))/bundleIdCapabilities",
+                        requiredParameters: requiredParameters
                     ),
                     as: ASCBundleIdCapabilitiesResponse.self
                 )
             } else {
-                // Note: Apple API does not support limit parameter for this endpoint despite documentation
-                let queryParams: [String: String] = [:]
-
                 response = try await httpClient.get(
                     "/v1/bundleIds/\(try ASCPathSegment.encode(bundleIdResourceId))/bundleIdCapabilities",
                     parameters: queryParams,
@@ -781,9 +880,14 @@ extension ProvisioningWorker {
 
         do {
             var settings: [CapabilitySetting]? = nil
-            if let settingsValue = arguments["settings"],
-               let settingsString = settingsValue.stringValue,
-               let settingsData = settingsString.data(using: .utf8) {
+            if let settingsValue = arguments["settings"] {
+                guard let settingsString = settingsValue.stringValue,
+                      let settingsData = settingsString.data(using: .utf8) else {
+                    return CallTool.Result(
+                        content: [MCPContent.text("Error: settings must be a JSON string containing an array")],
+                        isError: true
+                    )
+                }
                 settings = try JSONDecoder().decode([CapabilitySetting].self, from: settingsData)
             }
 
@@ -883,8 +987,8 @@ extension ProvisioningWorker {
         ]
     }
 
-    private func formatCertificate(_ cert: ASCCertificate) -> [String: Any] {
-        return [
+    private func formatCertificate(_ cert: ASCCertificate, includeContent: Bool = false) -> [String: Any] {
+        var result: [String: Any] = [
             "id": cert.id,
             "type": cert.type,
             "name": cert.attributes.name.jsonSafe,
@@ -892,12 +996,17 @@ extension ProvisioningWorker {
             "displayName": cert.attributes.displayName.jsonSafe,
             "serialNumber": cert.attributes.serialNumber.jsonSafe,
             "platform": cert.attributes.platform.jsonSafe,
-            "expirationDate": cert.attributes.expirationDate.jsonSafe
+            "expirationDate": cert.attributes.expirationDate.jsonSafe,
+            "activated": cert.attributes.activated.jsonSafe
         ]
+        if includeContent {
+            result["certificateContent"] = cert.attributes.certificateContent.jsonSafe
+        }
+        return result
     }
 
-    private func formatProfile(_ profile: ASCProfile) -> [String: Any] {
-        return [
+    private func formatProfile(_ profile: ASCProfile, includeContent: Bool = false) -> [String: Any] {
+        var result: [String: Any] = [
             "id": profile.id,
             "type": profile.type,
             "name": profile.attributes.name.jsonSafe,
@@ -905,8 +1014,13 @@ extension ProvisioningWorker {
             "profileType": profile.attributes.profileType.jsonSafe,
             "profileState": profile.attributes.profileState.jsonSafe,
             "uuid": profile.attributes.uuid.jsonSafe,
+            "createdDate": profile.attributes.createdDate.jsonSafe,
             "expirationDate": profile.attributes.expirationDate.jsonSafe
         ]
+        if includeContent {
+            result["profileContent"] = profile.attributes.profileContent.jsonSafe
+        }
+        return result
     }
 
     private func formatCapability(_ capability: ASCBundleIdCapability) -> [String: Any] {
@@ -925,6 +1039,12 @@ extension ProvisioningWorker {
                 if let desc = setting.description {
                     s["description"] = desc
                 }
+                if let enabledByDefault = setting.enabledByDefault {
+                    s["enabledByDefault"] = enabledByDefault
+                }
+                if let visible = setting.visible {
+                    s["visible"] = visible
+                }
                 if let allowedInstances = setting.allowedInstances {
                     s["allowedInstances"] = allowedInstances
                 }
@@ -940,8 +1060,14 @@ extension ProvisioningWorker {
                         if let desc = option.description {
                             o["description"] = desc
                         }
+                        if let enabledByDefault = option.enabledByDefault {
+                            o["enabledByDefault"] = enabledByDefault
+                        }
                         if let enabled = option.enabled {
                             o["enabled"] = enabled
+                        }
+                        if let supportsWildcard = option.supportsWildcard {
+                            o["supportsWildcard"] = supportsWildcard
                         }
                         return o
                     }

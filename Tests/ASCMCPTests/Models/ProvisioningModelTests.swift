@@ -56,10 +56,11 @@ struct ProvisioningModelTests {
     }
 
     @Test func createBundleIdRequest() throws {
-        let request = CreateBundleIdRequest(data: .init(attributes: .init(name: "New App", identifier: "com.new", platform: "IOS")))
+        let request = CreateBundleIdRequest(data: .init(attributes: .init(name: "New App", identifier: "com.new", platform: "IOS", seedId: "SEED123")))
         let data = try JSONEncoder().encode(request)
         let decoded = try JSONDecoder().decode(CreateBundleIdRequest.self, from: data)
         #expect(decoded.data.attributes.identifier == "com.new")
+        #expect(decoded.data.attributes.seedId == "SEED123")
     }
 
     @Test func registerDeviceRequest() throws {
