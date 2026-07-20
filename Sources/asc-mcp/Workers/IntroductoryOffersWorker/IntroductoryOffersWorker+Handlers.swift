@@ -17,36 +17,29 @@ extension IntroductoryOffersWorker {
 
         do {
             let response: ASCIntroductoryOffersResponse
+            let endpoint = "/v1/subscriptions/\(try ASCPathSegment.encode(subscriptionId))/introductoryOffers"
+            var query = [
+                "limit": String(min(max(arguments["limit"]?.intValue ?? 25, 1), 200))
+            ]
+            if let territory = arguments["filter_territory"]?.stringValue {
+                query["filter[territory]"] = territory
+            }
 
             if let nextUrl = try paginationURL(from: arguments["next_url"]) {
-                var requiredParameters: [String: String] = [:]
-                if let territory = arguments["filter_territory"]?.stringValue {
-                    requiredParameters["filter[territory]"] = territory
-                }
                 response = try await httpClient.getPage(
                     nextUrl,
                     scope: PaginationScope(
-                        path: "/v1/subscriptions/\(try ASCPathSegment.encode(subscriptionId))/introductoryOffers",
-                        requiredParameters: requiredParameters
+                        path: endpoint,
+                        requiredParameters: query,
+                        allowedParameters: Set(query.keys).union(["cursor"]),
+                        requiredNonEmptyParameters: ["cursor"]
                     ),
                     as: ASCIntroductoryOffersResponse.self
                 )
             } else {
-                var queryParams: [String: String] = [:]
-
-                if let limit = arguments["limit"]?.intValue {
-                    queryParams["limit"] = String(min(max(limit, 1), 200))
-                } else {
-                    queryParams["limit"] = "25"
-                }
-
-                if let territory = arguments["filter_territory"]?.stringValue {
-                    queryParams["filter[territory]"] = territory
-                }
-
                 response = try await httpClient.get(
-                    "/v1/subscriptions/\(try ASCPathSegment.encode(subscriptionId))/introductoryOffers",
-                    parameters: queryParams,
+                    endpoint,
+                    parameters: query,
                     as: ASCIntroductoryOffersResponse.self
                 )
             }

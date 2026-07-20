@@ -17,25 +17,26 @@ extension OfferCodesWorker {
 
         do {
             let response: ASCOfferCodesResponse
+            let endpoint = "/v1/subscriptions/\(try ASCPathSegment.encode(subscriptionId))/offerCodes"
+            let query = [
+                "limit": String(min(max(arguments["limit"]?.intValue ?? 25, 1), 200))
+            ]
 
             if let nextUrl = try paginationURL(from: arguments["next_url"]) {
                 response = try await httpClient.getPage(
                     nextUrl,
-                    scope: PaginationScope(path: "/v1/subscriptions/\(try ASCPathSegment.encode(subscriptionId))/offerCodes"),
+                    scope: PaginationScope(
+                        path: endpoint,
+                        requiredParameters: query,
+                        allowedParameters: Set(query.keys).union(["cursor"]),
+                        requiredNonEmptyParameters: ["cursor"]
+                    ),
                     as: ASCOfferCodesResponse.self
                 )
             } else {
-                var queryParams: [String: String] = [:]
-
-                if let limit = arguments["limit"]?.intValue {
-                    queryParams["limit"] = String(min(max(limit, 1), 200))
-                } else {
-                    queryParams["limit"] = "25"
-                }
-
                 response = try await httpClient.get(
-                    "/v1/subscriptions/\(try ASCPathSegment.encode(subscriptionId))/offerCodes",
-                    parameters: queryParams,
+                    endpoint,
+                    parameters: query,
                     as: ASCOfferCodesResponse.self
                 )
             }
@@ -344,25 +345,26 @@ extension OfferCodesWorker {
 
         do {
             let response: ASCOfferCodePricesResponse
+            let endpoint = "/v1/subscriptionOfferCodes/\(try ASCPathSegment.encode(offerCodeId))/prices"
+            let query = [
+                "limit": String(min(max(arguments["limit"]?.intValue ?? 25, 1), 200))
+            ]
 
             if let nextUrl = try paginationURL(from: arguments["next_url"]) {
                 response = try await httpClient.getPage(
                     nextUrl,
-                    scope: PaginationScope(path: "/v1/subscriptionOfferCodes/\(try ASCPathSegment.encode(offerCodeId))/prices"),
+                    scope: PaginationScope(
+                        path: endpoint,
+                        requiredParameters: query,
+                        allowedParameters: Set(query.keys).union(["cursor"]),
+                        requiredNonEmptyParameters: ["cursor"]
+                    ),
                     as: ASCOfferCodePricesResponse.self
                 )
             } else {
-                var queryParams: [String: String] = [:]
-
-                if let limit = arguments["limit"]?.intValue {
-                    queryParams["limit"] = String(min(max(limit, 1), 200))
-                } else {
-                    queryParams["limit"] = "25"
-                }
-
                 response = try await httpClient.get(
-                    "/v1/subscriptionOfferCodes/\(try ASCPathSegment.encode(offerCodeId))/prices",
-                    parameters: queryParams,
+                    endpoint,
+                    parameters: query,
                     as: ASCOfferCodePricesResponse.self
                 )
             }

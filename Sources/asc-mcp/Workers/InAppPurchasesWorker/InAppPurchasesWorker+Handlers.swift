@@ -650,37 +650,24 @@ extension InAppPurchasesWorker {
 
         do {
             let response: ASCIAPPricePointsResponse
+            let endpoint = "/v2/inAppPurchases/\(try ASCPathSegment.encode(iapId))/pricePoints"
+            var query = [
+                "limit": String(min(max(arguments["limit"]?.intValue ?? 50, 1), 200))
+            ]
+            if let territory = arguments["territory"]?.stringValue {
+                query["filter[territory]"] = territory
+            }
 
             if let nextUrl = try paginationURL(from: arguments["next_url"]) {
-                var requiredParameters: [String: String] = [:]
-                if let territory = arguments["territory"]?.stringValue {
-                    requiredParameters["filter[territory]"] = territory
-                }
                 response = try await httpClient.getPage(
                     nextUrl,
-                    scope: PaginationScope(
-                        path: "/v2/inAppPurchases/\(try ASCPathSegment.encode(iapId))/pricePoints",
-                        requiredParameters: requiredParameters
-                    ),
+                    scope: iapCommercePaginationScope(path: endpoint, query: query),
                     as: ASCIAPPricePointsResponse.self
                 )
             } else {
-                var queryParams: [String: String] = [:]
-
-                if let limitValue = arguments["limit"],
-                   let limit = limitValue.intValue {
-                    queryParams["limit"] = String(min(max(limit, 1), 200))
-                } else {
-                    queryParams["limit"] = "50"
-                }
-
-                if let territory = arguments["territory"]?.stringValue {
-                    queryParams["filter[territory]"] = territory
-                }
-
                 response = try await httpClient.get(
-                    "/v2/inAppPurchases/\(try ASCPathSegment.encode(iapId))/pricePoints",
-                    parameters: queryParams,
+                    endpoint,
+                    parameters: query,
                     as: ASCIAPPricePointsResponse.self
                 )
             }
