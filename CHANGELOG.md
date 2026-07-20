@@ -24,6 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Treat ambiguous declaration creation, document reservation, upload commit, and delivery outcomes as unsafe to retry until the resource is reconciled.
+- Preserve non-secret recovery states, checksum receipts, and action placeholders through error normalization while continuing to redact credential-like values.
 - Confirm declaration and build parents before translating related-resource 404 responses into an absent document or declaration relationship.
 - Preserve non-default pagination limits in validated declaration continuation links and reject cross-app, cross-query, empty-cursor, or unexpected continuation data.
 - Retain committed or uncertain document reservations instead of suggesting an unsupported child-document delete.
