@@ -23,27 +23,22 @@ extension ProductPageOptimizationWorker {
                 allowedValues: Set(Self.supportedExperimentStates)
             )
             let response: ASCExperimentsResponse
+            let endpoint = "/v1/apps/\(try ASCPathSegment.encode(appId))/appStoreVersionExperimentsV2"
+            let limit = arguments["limit"]?.intValue ?? 25
+            var queryParams = ["limit": String(min(max(limit, 1), 200))]
+            if let states {
+                queryParams["filter[state]"] = states.joined(separator: ",")
+            }
 
             if let nextUrl = try paginationURL(from: arguments["next_url"]) {
                 response = try await httpClient.getPage(
                     nextUrl,
-                    scope: PaginationScope(path: "/v1/apps/\(try ASCPathSegment.encode(appId))/appStoreVersionExperimentsV2"),
+                    scope: ppoPaginationScope(path: endpoint, query: queryParams),
                     as: ASCExperimentsResponse.self
                 )
             } else {
-                var queryParams: [String: String] = [:]
-
-                if let limit = arguments["limit"]?.intValue {
-                    queryParams["limit"] = String(min(max(limit, 1), 200))
-                } else {
-                    queryParams["limit"] = "25"
-                }
-                if let states {
-                    queryParams["filter[state]"] = states.joined(separator: ",")
-                }
-
                 response = try await httpClient.get(
-                    "/v1/apps/\(try ASCPathSegment.encode(appId))/appStoreVersionExperimentsV2",
+                    endpoint,
                     parameters: queryParams,
                     as: ASCExperimentsResponse.self
                 )
@@ -268,24 +263,19 @@ extension ProductPageOptimizationWorker {
 
         do {
             let response: ASCTreatmentsResponse
+            let endpoint = "/v2/appStoreVersionExperiments/\(try ASCPathSegment.encode(experimentId))/appStoreVersionExperimentTreatments"
+            let limit = arguments["limit"]?.intValue ?? 25
+            let queryParams = ["limit": String(min(max(limit, 1), 200))]
 
             if let nextUrl = try paginationURL(from: arguments["next_url"]) {
                 response = try await httpClient.getPage(
                     nextUrl,
-                    scope: PaginationScope(path: "/v2/appStoreVersionExperiments/\(try ASCPathSegment.encode(experimentId))/appStoreVersionExperimentTreatments"),
+                    scope: ppoPaginationScope(path: endpoint, query: queryParams),
                     as: ASCTreatmentsResponse.self
                 )
             } else {
-                var queryParams: [String: String] = [:]
-
-                if let limit = arguments["limit"]?.intValue {
-                    queryParams["limit"] = String(min(max(limit, 1), 200))
-                } else {
-                    queryParams["limit"] = "25"
-                }
-
                 response = try await httpClient.get(
-                    "/v2/appStoreVersionExperiments/\(try ASCPathSegment.encode(experimentId))/appStoreVersionExperimentTreatments",
+                    endpoint,
                     parameters: queryParams,
                     as: ASCTreatmentsResponse.self
                 )
@@ -378,27 +368,22 @@ extension ProductPageOptimizationWorker {
         do {
             let locales = try stringList(arguments["locale"], field: "locale")
             let response: ASCTreatmentLocalizationsResponse
+            let endpoint = "/v1/appStoreVersionExperimentTreatments/\(try ASCPathSegment.encode(treatmentId))/appStoreVersionExperimentTreatmentLocalizations"
+            let limit = arguments["limit"]?.intValue ?? 25
+            var queryParams = ["limit": String(min(max(limit, 1), 200))]
+            if let locales {
+                queryParams["filter[locale]"] = locales.joined(separator: ",")
+            }
 
             if let nextUrl = try paginationURL(from: arguments["next_url"]) {
                 response = try await httpClient.getPage(
                     nextUrl,
-                    scope: PaginationScope(path: "/v1/appStoreVersionExperimentTreatments/\(try ASCPathSegment.encode(treatmentId))/appStoreVersionExperimentTreatmentLocalizations"),
+                    scope: ppoPaginationScope(path: endpoint, query: queryParams),
                     as: ASCTreatmentLocalizationsResponse.self
                 )
             } else {
-                var queryParams: [String: String] = [:]
-
-                if let limit = arguments["limit"]?.intValue {
-                    queryParams["limit"] = String(min(max(limit, 1), 200))
-                } else {
-                    queryParams["limit"] = "25"
-                }
-                if let locales {
-                    queryParams["filter[locale]"] = locales.joined(separator: ",")
-                }
-
                 response = try await httpClient.get(
-                    "/v1/appStoreVersionExperimentTreatments/\(try ASCPathSegment.encode(treatmentId))/appStoreVersionExperimentTreatmentLocalizations",
+                    endpoint,
                     parameters: queryParams,
                     as: ASCTreatmentLocalizationsResponse.self
                 )
@@ -511,6 +496,15 @@ extension ProductPageOptimizationWorker {
             )
         }
         return values
+    }
+
+    private func ppoPaginationScope(path: String, query: [String: String]) -> PaginationScope {
+        PaginationScope(
+            path: path,
+            requiredParameters: query,
+            allowedParameters: Set(query.keys).union(["cursor"]),
+            requiredNonEmptyParameters: ["cursor"]
+        )
     }
 
     private func formatExperiment(_ experiment: ASCExperiment) -> [String: Any] {

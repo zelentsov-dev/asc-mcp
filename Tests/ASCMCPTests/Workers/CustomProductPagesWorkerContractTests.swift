@@ -84,10 +84,15 @@ struct CustomProductPagesWorkerContractTests {
 
     @Test("version create preserves deep-link value, null, and validation")
     func versionDeepLink() async throws {
-        let response = #"{"data":{"type":"appCustomProductPageVersions","id":"version-1","attributes":{"deepLink":null}}}"#
         let transport = TestHTTPTransport(responses: [
-            .init(statusCode: 201, body: response),
-            .init(statusCode: 201, body: response)
+            .init(
+                statusCode: 201,
+                body: #"{"data":{"type":"appCustomProductPageVersions","id":"version-1","attributes":{"deepLink":"ascmcp://campaign/summer"}}}"#
+            ),
+            .init(
+                statusCode: 201,
+                body: #"{"data":{"type":"appCustomProductPageVersions","id":"version-2","attributes":{"deepLink":null}}}"#
+            )
         ])
         let worker = CustomProductPagesWorker(httpClient: try await cppClient(transport))
 
@@ -105,6 +110,14 @@ struct CustomProductPagesWorkerContractTests {
 
         #expect(concrete.isError != true)
         #expect(nullable.isError != true)
+        let concreteRoot = try cppValueObject(concrete.structuredContent)
+        let concreteVersion = try cppValueObject(concreteRoot["version"])
+        #expect(concreteVersion["id"] == .string("version-1"))
+        #expect(concreteVersion["deepLink"] == .string("ascmcp://campaign/summer"))
+        let nullableRoot = try cppValueObject(nullable.structuredContent)
+        let nullableVersion = try cppValueObject(nullableRoot["version"])
+        #expect(nullableVersion["id"] == .string("version-2"))
+        #expect(nullableVersion["deepLink"] == .null)
         let requests = await transport.recordedRequests()
         #expect(try cppAttributes(requests[0])["deepLink"] as? String == "ascmcp://campaign/summer")
         #expect(try cppAttributes(requests[1])["deepLink"] is NSNull)

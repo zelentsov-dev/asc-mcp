@@ -18,24 +18,19 @@ extension PromotedPurchasesWorker {
 
         do {
             let response: ASCPromotedPurchasesResponse
+            let endpoint = "/v1/apps/\(try ASCPathSegment.encode(appId))/promotedPurchases"
+            let limit = arguments["limit"]?.intValue ?? 25
+            let queryParams = ["limit": String(min(max(limit, 1), 200))]
 
             if let nextUrl = try paginationURL(from: arguments["next_url"]) {
                 response = try await httpClient.getPage(
                     nextUrl,
-                    scope: PaginationScope(path: "/v1/apps/\(try ASCPathSegment.encode(appId))/promotedPurchases"),
+                    scope: promotedPurchasePaginationScope(path: endpoint, query: queryParams),
                     as: ASCPromotedPurchasesResponse.self
                 )
             } else {
-                var queryParams: [String: String] = [:]
-
-                if let limit = arguments["limit"]?.intValue {
-                    queryParams["limit"] = String(min(max(limit, 1), 200))
-                } else {
-                    queryParams["limit"] = "25"
-                }
-
                 response = try await httpClient.get(
-                    "/v1/apps/\(try ASCPathSegment.encode(appId))/promotedPurchases",
+                    endpoint,
                     parameters: queryParams,
                     as: ASCPromotedPurchasesResponse.self
                 )
@@ -405,6 +400,15 @@ extension PromotedPurchasesWorker {
             throw PromotedPurchaseInputError("Parameter '\(name)' must be a boolean or null")
         }
         return .value(bool)
+    }
+
+    private func promotedPurchasePaginationScope(path: String, query: [String: String]) -> PaginationScope {
+        PaginationScope(
+            path: path,
+            requiredParameters: query,
+            allowedParameters: Set(query.keys).union(["cursor"]),
+            requiredNonEmptyParameters: ["cursor"]
+        )
     }
 }
 

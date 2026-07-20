@@ -96,7 +96,7 @@ struct MarketingOptionalInputContractTests {
         let transport = TestHTTPTransport(responses: [
             .init(
                 statusCode: 200,
-                body: #"{"data":{"type":"promotedPurchases","id":"promoted-1","relationships":{"subscription":{"data":{"type":"subscriptions","id":"subscription-1"}}}}}"#
+                body: #"{"data":{"type":"promotedPurchases","id":"promoted-1","relationships":{"subscription":{"data":{"type":"subscriptions","id":"subscription-1"}}}},"included":[{"type":"subscriptions","id":"subscription-1","attributes":{"name":"Pro Annual","productId":"com.example.pro.annual"}}]}"#
             ),
             .init(statusCode: 200, body: #"{"data":[]}"#)
         ])
@@ -118,6 +118,15 @@ struct MarketingOptionalInputContractTests {
         ))
         #expect(detail.isError != true)
         #expect(list.isError != true)
+        let detailRoot = try optionalInputObject(detail.structuredContent)
+        let purchase = try optionalInputObject(detailRoot["promoted_purchase"])
+        #expect(purchase["subscriptionId"] == .string("subscription-1"))
+        #expect(purchase["inAppPurchaseId"] == .null)
+        let linkedProduct = try optionalInputObject(purchase["linkedProduct"])
+        #expect(linkedProduct["type"] == .string("subscriptions"))
+        #expect(linkedProduct["id"] == .string("subscription-1"))
+        #expect(linkedProduct["name"] == .string("Pro Annual"))
+        #expect(linkedProduct["productId"] == .string("com.example.pro.annual"))
 
         let requests = await transport.recordedRequests()
         #expect(optionalInputQuery(requests[0])["include"] == "inAppPurchaseV2,subscription")

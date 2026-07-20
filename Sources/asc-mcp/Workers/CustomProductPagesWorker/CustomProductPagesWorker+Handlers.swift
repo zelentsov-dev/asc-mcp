@@ -18,28 +18,22 @@ extension CustomProductPagesWorker {
 
         do {
             let response: ASCCustomProductPagesResponse
+            let endpoint = "/v1/apps/\(try ASCPathSegment.encode(appId))/appCustomProductPages"
+            let limit = arguments["limit"]?.intValue ?? 25
+            var queryParams = ["limit": String(min(max(limit, 1), 200))]
+            if let visible = try commaSeparatedBooleans(arguments["visible"], field: "visible") {
+                queryParams["filter[visible]"] = visible
+            }
 
             if let nextUrl = try paginationURL(from: arguments["next_url"]) {
                 response = try await httpClient.getPage(
                     nextUrl,
-                    scope: PaginationScope(path: "/v1/apps/\(try ASCPathSegment.encode(appId))/appCustomProductPages"),
+                    scope: customPagePaginationScope(path: endpoint, query: queryParams),
                     as: ASCCustomProductPagesResponse.self
                 )
             } else {
-                var queryParams: [String: String] = [:]
-
-                if let limitValue = arguments["limit"],
-                   let limit = limitValue.intValue {
-                    queryParams["limit"] = String(min(max(limit, 1), 200))
-                } else {
-                    queryParams["limit"] = "25"
-                }
-                if let visible = try commaSeparatedBooleans(arguments["visible"], field: "visible") {
-                    queryParams["filter[visible]"] = visible
-                }
-
                 response = try await httpClient.get(
-                    "/v1/apps/\(try ASCPathSegment.encode(appId))/appCustomProductPages",
+                    endpoint,
                     parameters: queryParams,
                     as: ASCCustomProductPagesResponse.self
                 )
@@ -294,41 +288,35 @@ extension CustomProductPagesWorker {
 
         do {
             let response: ASCCustomProductPageVersionsResponse
+            let endpoint = "/v1/appCustomProductPages/\(try ASCPathSegment.encode(pageId))/appCustomProductPageVersions"
+            let limit = arguments["limit"]?.intValue ?? 25
+            var queryParams = ["limit": String(min(max(limit, 1), 200))]
+            if let states = try commaSeparatedStrings(
+                arguments["state"],
+                field: "state",
+                allowedValues: [
+                    "PREPARE_FOR_SUBMISSION",
+                    "READY_FOR_REVIEW",
+                    "WAITING_FOR_REVIEW",
+                    "IN_REVIEW",
+                    "ACCEPTED",
+                    "APPROVED",
+                    "REPLACED_WITH_NEW_VERSION",
+                    "REJECTED"
+                ]
+            ) {
+                queryParams["filter[state]"] = states
+            }
 
             if let nextUrl = try paginationURL(from: arguments["next_url"]) {
                 response = try await httpClient.getPage(
                     nextUrl,
-                    scope: PaginationScope(path: "/v1/appCustomProductPages/\(try ASCPathSegment.encode(pageId))/appCustomProductPageVersions"),
+                    scope: customPagePaginationScope(path: endpoint, query: queryParams),
                     as: ASCCustomProductPageVersionsResponse.self
                 )
             } else {
-                var queryParams: [String: String] = [:]
-
-                if let limitValue = arguments["limit"],
-                   let limit = limitValue.intValue {
-                    queryParams["limit"] = String(min(max(limit, 1), 200))
-                } else {
-                    queryParams["limit"] = "25"
-                }
-                if let states = try commaSeparatedStrings(
-                    arguments["state"],
-                    field: "state",
-                    allowedValues: [
-                        "PREPARE_FOR_SUBMISSION",
-                        "READY_FOR_REVIEW",
-                        "WAITING_FOR_REVIEW",
-                        "IN_REVIEW",
-                        "ACCEPTED",
-                        "APPROVED",
-                        "REPLACED_WITH_NEW_VERSION",
-                        "REJECTED"
-                    ]
-                ) {
-                    queryParams["filter[state]"] = states
-                }
-
                 response = try await httpClient.get(
-                    "/v1/appCustomProductPages/\(try ASCPathSegment.encode(pageId))/appCustomProductPageVersions",
+                    endpoint,
                     parameters: queryParams,
                     as: ASCCustomProductPageVersionsResponse.self
                 )
@@ -419,28 +407,22 @@ extension CustomProductPagesWorker {
 
         do {
             let response: ASCCustomProductPageLocalizationsResponse
+            let endpoint = "/v1/appCustomProductPageVersions/\(try ASCPathSegment.encode(versionId))/appCustomProductPageLocalizations"
+            let limit = arguments["limit"]?.intValue ?? 25
+            var queryParams = ["limit": String(min(max(limit, 1), 200))]
+            if let locales = try commaSeparatedStrings(arguments["locale"], field: "locale") {
+                queryParams["filter[locale]"] = locales
+            }
 
             if let nextUrl = try paginationURL(from: arguments["next_url"]) {
                 response = try await httpClient.getPage(
                     nextUrl,
-                    scope: PaginationScope(path: "/v1/appCustomProductPageVersions/\(try ASCPathSegment.encode(versionId))/appCustomProductPageLocalizations"),
+                    scope: customPagePaginationScope(path: endpoint, query: queryParams),
                     as: ASCCustomProductPageLocalizationsResponse.self
                 )
             } else {
-                var queryParams: [String: String] = [:]
-
-                if let limitValue = arguments["limit"],
-                   let limit = limitValue.intValue {
-                    queryParams["limit"] = String(min(max(limit, 1), 200))
-                } else {
-                    queryParams["limit"] = "25"
-                }
-                if let locales = try commaSeparatedStrings(arguments["locale"], field: "locale") {
-                    queryParams["filter[locale]"] = locales
-                }
-
                 response = try await httpClient.get(
-                    "/v1/appCustomProductPageVersions/\(try ASCPathSegment.encode(versionId))/appCustomProductPageLocalizations",
+                    endpoint,
                     parameters: queryParams,
                     as: ASCCustomProductPageLocalizationsResponse.self
                 )
@@ -605,21 +587,26 @@ extension CustomProductPagesWorker {
 
         let values: [String]
         if let string = value.stringValue {
-            values = string.split(separator: ",", omittingEmptySubsequences: false).map {
-                $0.trimmingCharacters(in: .whitespacesAndNewlines)
-            }
+            values = [string]
         } else if let array = value.arrayValue {
             let strings = array.compactMap(\.stringValue)
             guard strings.count == array.count else {
                 throw CustomProductPageInputError("'\(field)' must contain only strings")
             }
-            values = strings.map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            values = strings
         } else {
             throw CustomProductPageInputError("'\(field)' must be a string or an array of strings")
         }
 
-        guard !values.isEmpty, values.allSatisfy({ !$0.isEmpty }) else {
-            throw CustomProductPageInputError("'\(field)' must contain at least one non-empty value")
+        guard !values.isEmpty,
+              values.allSatisfy({ value in
+                  let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+                  return !trimmed.isEmpty && trimmed == value
+              }) else {
+            throw CustomProductPageInputError("'\(field)' must contain non-empty strings without surrounding whitespace")
+        }
+        guard values.allSatisfy({ !$0.contains(",") }) else {
+            throw CustomProductPageInputError("'\(field)' values must not contain commas")
         }
         guard Set(values).count == values.count else {
             throw CustomProductPageInputError("'\(field)' must not contain duplicate values")
@@ -653,6 +640,15 @@ extension CustomProductPagesWorker {
             throw CustomProductPageInputError("'\(field)' must not contain duplicate values")
         }
         return values.map(String.init).joined(separator: ",")
+    }
+
+    private func customPagePaginationScope(path: String, query: [String: String]) -> PaginationScope {
+        PaginationScope(
+            path: path,
+            requiredParameters: query,
+            allowedParameters: Set(query.keys).union(["cursor"]),
+            requiredNonEmptyParameters: ["cursor"]
+        )
     }
 
     private func nullableAbsoluteURI(

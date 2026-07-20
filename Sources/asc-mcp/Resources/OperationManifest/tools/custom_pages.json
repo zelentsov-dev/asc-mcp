@@ -109,7 +109,11 @@
         "sources": [
           { "operationId": "appCustomProductPageVersions_createInstance", "statusCode": "201", "mediaType": "application/json" }
         ],
-        "fields": []
+        "fields": [
+          { "outputField": "success", "localRole": "successfulCreate" },
+          { "outputField": "version", "operationId": "appCustomProductPageVersions_createInstance", "jsonPointer": "/data" },
+          { "outputField": "version.deepLink", "operationId": "appCustomProductPageVersions_createInstance", "jsonPointer": "/data/attributes/deepLink" }
+        ]
       },
       "note": "The tool exposes Apple's nullable deepLink attribute. Localizations are created after the version through the dedicated localization create operation because this standalone request has no inline included resource array."
     },
