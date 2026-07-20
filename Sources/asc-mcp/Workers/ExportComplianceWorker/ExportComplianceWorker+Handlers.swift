@@ -452,7 +452,7 @@ extension ExportComplianceWorker {
                 return MCPResult.jsonObject([
                     "success": true,
                     "declarationId": declarationID,
-                    "declarationState": declaration.attributes?.appEncryptionDeclarationState.jsonSafe,
+                    "declarationState": (declaration.attributes?.appEncryptionDeclarationState).jsonSafe,
                     "documentPresent": false,
                     "deliveryStatus": "MISSING",
                     "processingComplete": false
@@ -1073,15 +1073,15 @@ private func exportComplianceDeclarationDictionary(
     [
         "id": declaration.id,
         "type": declaration.type,
-        "appDescription": declaration.attributes?.appDescription.jsonSafe,
-        "createdDate": declaration.attributes?.createdDate.jsonSafe,
-        "exempt": declaration.attributes?.exempt.jsonSafe,
-        "containsProprietaryCryptography": declaration.attributes?.containsProprietaryCryptography.jsonSafe,
-        "containsThirdPartyCryptography": declaration.attributes?.containsThirdPartyCryptography.jsonSafe,
-        "availableOnFrenchStore": declaration.attributes?.availableOnFrenchStore.jsonSafe,
-        "state": declaration.attributes?.appEncryptionDeclarationState.jsonSafe,
-        "codeValue": declaration.attributes?.codeValue.jsonSafe,
-        "documentId": declaration.relationships?.appEncryptionDeclarationDocument?.data?.id.jsonSafe
+        "appDescription": (declaration.attributes?.appDescription).jsonSafe,
+        "createdDate": (declaration.attributes?.createdDate).jsonSafe,
+        "exempt": (declaration.attributes?.exempt).jsonSafe,
+        "containsProprietaryCryptography": (declaration.attributes?.containsProprietaryCryptography).jsonSafe,
+        "containsThirdPartyCryptography": (declaration.attributes?.containsThirdPartyCryptography).jsonSafe,
+        "availableOnFrenchStore": (declaration.attributes?.availableOnFrenchStore).jsonSafe,
+        "state": (declaration.attributes?.appEncryptionDeclarationState).jsonSafe,
+        "codeValue": (declaration.attributes?.codeValue).jsonSafe,
+        "documentId": (declaration.relationships?.appEncryptionDeclarationDocument?.data?.id).jsonSafe
     ]
 }
 
@@ -1093,10 +1093,10 @@ private func exportComplianceDocumentDictionary(
     var result: [String: Any] = [
         "id": document.id,
         "type": document.type,
-        "fileSize": attributes?.fileSize.jsonSafe,
-        "fileName": attributes?.fileName.jsonSafe,
-        "sourceFileChecksum": attributes?.sourceFileChecksum.jsonSafe,
-        "deliveryState": state?.state.jsonSafe
+        "fileSize": (attributes?.fileSize).jsonSafe,
+        "fileName": (attributes?.fileName).jsonSafe,
+        "sourceFileChecksum": (attributes?.sourceFileChecksum).jsonSafe,
+        "deliveryState": (state?.state).jsonSafe
     ]
     if let errors = state?.errors {
         result["deliveryErrors"] = exportComplianceAssetMessages(errors)
