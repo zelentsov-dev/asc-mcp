@@ -406,17 +406,41 @@ extension ExportComplianceWorker {
             )
         }
 
+        if let storedChecksum = reserved.attributes?.sourceFileChecksum,
+           !exportComplianceIsLowercaseMD5(storedChecksum) {
+            return MCPResult.error(
+                "Document transfer is blocked because Apple returned an invalid stored checksum binding.",
+                details: .object([
+                    "document_id": .string(documentID),
+                    "retrySafe": .bool(false),
+                    "inspection": .object([
+                        "tool": .string("export_compliance_get_document"),
+                        "arguments": .object(["document_id": .string(documentID)])
+                    ])
+                ])
+            )
+        }
+
         let outcome = await performDocumentUpload(
             filePath: filePath,
             declarationID: nil,
             existingResource: reserved,
             expectedChecksum: expectedChecksum
         )
+        let storedChecksum = reserved.attributes?.sourceFileChecksum
+        let authoritativeChecksum: String?
+        if let storedChecksum {
+            authoritativeChecksum = exportComplianceIsLowercaseMD5(storedChecksum)
+                ? storedChecksum
+                : nil
+        } else {
+            authoritativeChecksum = expectedChecksum
+        }
         return exportComplianceUploadResult(
             outcome,
             descriptor: exportComplianceUploadDescriptor(documentID: documentID),
             filePath: filePath,
-            authoritativeChecksum: expectedChecksum
+            authoritativeChecksum: authoritativeChecksum
         )
     }
 
@@ -851,6 +875,15 @@ extension ExportComplianceWorker {
                         throw ExportComplianceInputError(
                             "file name and byte size must match the existing reservation"
                         )
+                    }
+                    if let storedChecksum = document.attributes?.sourceFileChecksum {
+                        guard exportComplianceIsLowercaseMD5(storedChecksum),
+                              storedChecksum == snapshot.md5Checksum,
+                              expectedChecksum == nil || storedChecksum == expectedChecksum else {
+                            throw ExportComplianceInputError(
+                                "snapshot bytes and source_file_checksum must match the checksum already stored by Apple"
+                            )
+                        }
                     }
                 }
                 if let expectedChecksum,
@@ -1425,15 +1458,19 @@ private func exportComplianceMD5(
     _ field: String
 ) throws -> String {
     let checksum = try exportComplianceString(arguments, field)
-    guard checksum.range(
-        of: #"^[0-9a-f]{32}$"#,
-        options: .regularExpression
-    ) != nil else {
+    guard exportComplianceIsLowercaseMD5(checksum) else {
         throw ExportComplianceInputError(
             "Parameter '\(field)' must be exactly 32 lowercase hexadecimal MD5 characters"
         )
     }
     return checksum
+}
+
+private func exportComplianceIsLowercaseMD5(_ checksum: String) -> Bool {
+    checksum.range(
+        of: #"^[0-9a-f]{32}$"#,
+        options: .regularExpression
+    ) != nil
 }
 
 private func exportComplianceLimit(_ value: Value?) throws -> Int {

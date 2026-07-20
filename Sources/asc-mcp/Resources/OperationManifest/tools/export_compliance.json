@@ -459,12 +459,12 @@
         ],
         "fields": [
           { "outputField": "document", "localRole": "Latest safe resource projection after commit, reconciliation, or bounded delivery polling." },
-          { "outputField": "sourceFileChecksumReceipt", "localRole": "On a retained precommit reservation, return the lowercase MD5 of the immutable snapshot so resume can require the exact same bytes." },
+          { "outputField": "sourceFileChecksumReceipt", "localRole": "When reservation creation is ambiguous or a known precommit reservation is retained, return the lowercase MD5 of the immutable snapshot so later inspection and resume can require the exact same bytes." },
           { "outputField": "retrySafe", "localRole": "True only before reservation or after a deterministic reservation rejection; false for retained, ambiguous, committed, pending, or failed outcomes." },
           { "outputField": "inspection", "localRole": "When reservation identity or commit state is unresolved, inspect the declaration or retained document before any retry." }
         ]
       },
-      "note": "Preflights declaration state and confirmed absence, then reserves, transfers, commits, and polls using one immutable snapshot. Transfer is allowed only from exact AWAITING_UPLOAD. Deterministic reservation rejection is retryable after input correction; transport, 408, 5xx, malformed-success, invalid-identity, retained precommit, and ambiguous commit outcomes remain unsafe until inspection. The tool never exposes assetToken, downloadUrl, upload URL, or request headers."
+      "note": "Preflights declaration state and confirmed absence, then reserves, transfers, commits, and polls using one immutable snapshot. Transfer is allowed only from exact AWAITING_UPLOAD. Deterministic reservation rejection is retryable after input correction; transport, 408, 5xx, malformed-success, invalid-identity, retained precommit, and ambiguous commit outcomes remain unsafe until inspection. Every post-snapshot unresolved reservation returns the immutable snapshot checksum receipt so a document later found by inspection can be resumed only with the original bytes. The tool never exposes assetToken, downloadUrl, upload URL, or request headers."
     },
     {
       "tool": "export_compliance_get_build_declaration",
@@ -809,7 +809,7 @@
         { "toolField": "document_id", "sourceKind": "parameter", "operationId": "appEncryptionDeclarationDocuments_updateInstance", "location": "path", "appleName": "id" },
         { "toolField": "document_id", "sourceKind": "requestBody", "operationId": "appEncryptionDeclarationDocuments_updateInstance", "jsonPointer": "/data/id" },
         { "toolField": "file_path", "sourceKind": "local", "localRole": "Create one immutable snapshot and verify file name, byte size, and bytes against the reservation and checksum receipt before any signed transfer." },
-        { "toolField": "source_file_checksum", "sourceKind": "requestBody", "operationId": "appEncryptionDeclarationDocuments_updateInstance", "jsonPointer": "/data/attributes/sourceFileChecksum", "localRole": "Require the exact lowercase MD5 receipt returned for the retained reservation and prove that the snapshot computes to the same checksum before committing it." }
+        { "toolField": "source_file_checksum", "sourceKind": "requestBody", "operationId": "appEncryptionDeclarationDocuments_updateInstance", "jsonPointer": "/data/attributes/sourceFileChecksum", "localRole": "Require the exact lowercase MD5 receipt returned for the retained reservation and prove that it equals both the immutable snapshot checksum and any sourceFileChecksum already stored by Apple before transferring bytes." }
       ],
       "response": {
         "mode": "aggregate",

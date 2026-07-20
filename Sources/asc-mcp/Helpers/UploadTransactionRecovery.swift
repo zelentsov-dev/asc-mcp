@@ -53,7 +53,7 @@ enum UploadTransactionOutcome<Resource: RecoverableUploadResource>: Sendable {
     case processingPending(String, Resource, reconciledAfterCommit: Bool)
     case beforeReservation(String)
     case reservationRejected(String)
-    case reservationUnresolved(String)
+    case reservationUnresolved(String, checksumReceipt: String?)
     case preCommitFailure(String, Resource, UploadCleanupOutcome, checksumReceipt: String?)
     case commitFailed(String, Resource)
     case commitUnresolved(String, Resource)
@@ -122,14 +122,16 @@ enum UploadTransactionRecovery {
         if let existingResource {
             guard !existingResource.id.isEmpty, existingResource.type == expectedType else {
                 return .reservationUnresolved(
-                    "The existing \(resourceName) reservation identity could not be confirmed."
+                    "The existing \(resourceName) reservation identity could not be confirmed.",
+                    checksumReceipt: nil
                 )
             }
             do {
                 existingEndpoint = try resourceEndpoint(existingResource.id)
             } catch {
                 return .reservationUnresolved(
-                    "The existing \(resourceName) reservation has an invalid resource id."
+                    "The existing \(resourceName) reservation has an invalid resource id.",
+                    checksumReceipt: nil
                 )
             }
         } else {
@@ -235,7 +237,8 @@ enum UploadTransactionRecovery {
                     )
                 }
                 return .reservationUnresolved(
-                    "The \(resourceName) reservation request did not return a confirmed response: \(error.localizedDescription)"
+                    "The \(resourceName) reservation request did not return a confirmed response: \(error.localizedDescription)",
+                    checksumReceipt: snapshot.md5Checksum
                 )
             }
 
@@ -243,19 +246,22 @@ enum UploadTransactionRecovery {
                 reserved = try decodeResource(reservationData)
             } catch {
                 return .reservationUnresolved(
-                    "Apple returned an unreadable \(resourceName) reservation response: \(error.localizedDescription)"
+                    "Apple returned an unreadable \(resourceName) reservation response: \(error.localizedDescription)",
+                    checksumReceipt: snapshot.md5Checksum
                 )
             }
 
             guard !reserved.id.isEmpty else {
                 return .reservationUnresolved(
-                    "Apple returned a \(resourceName) reservation without a usable resource id."
+                    "Apple returned a \(resourceName) reservation without a usable resource id.",
+                    checksumReceipt: snapshot.md5Checksum
                 )
             }
 
             guard reserved.type == expectedType else {
                 return .reservationUnresolved(
-                    "Apple returned an unexpected resource type for the \(resourceName) reservation, so its identity could not be confirmed."
+                    "Apple returned an unexpected resource type for the \(resourceName) reservation, so its identity could not be confirmed.",
+                    checksumReceipt: snapshot.md5Checksum
                 )
             }
 
@@ -263,7 +269,8 @@ enum UploadTransactionRecovery {
                 endpoint = try resourceEndpoint(reserved.id)
             } catch {
                 return .reservationUnresolved(
-                    "Apple returned a \(resourceName) reservation with an invalid resource id."
+                    "Apple returned a \(resourceName) reservation with an invalid resource id.",
+                    checksumReceipt: snapshot.md5Checksum
                 )
             }
         }
@@ -774,18 +781,26 @@ enum UploadTransactionRecovery {
                 true
             )
 
-        case .reservationUnresolved(let message):
+        case .reservationUnresolved(let message, let checksumReceipt):
             let safeMessage = Redactor.redact(message)
+            var value: [String: Any] = [
+                "success": false,
+                "error": safeMessage,
+                "reservationState": "unknown",
+                "reservationIdKnown": false,
+                "retrySafe": false,
+                "inspection": inspectionGuidance(descriptor)
+            ]
+            if let checksumReceiptKey = descriptor.checksumReceiptKey,
+               let checksumReceipt {
+                value[checksumReceiptKey] = checksumReceipt
+            }
+            let recoveryInstruction = checksumReceipt == nil
+                ? "Inspect the parent collection before retrying to avoid a duplicate."
+                : "Preserve the checksum receipt and inspect the parent collection before retrying to avoid a duplicate."
             return (
-                [
-                    "success": false,
-                    "error": safeMessage,
-                    "reservationState": "unknown",
-                    "reservationIdKnown": false,
-                    "retrySafe": false,
-                    "inspection": inspectionGuidance(descriptor)
-                ],
-                "Error: \(safeMessage) The reservation id is unavailable. Inspect the parent collection before retrying to avoid a duplicate.",
+                value,
+                "Error: \(safeMessage) The reservation id is unavailable. \(recoveryInstruction)",
                 true
             )
 
