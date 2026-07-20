@@ -805,7 +805,7 @@
           },
           {
             "outputField": "operationCommitState",
-            "localRole": "Set to unknown when a network failure prevents determining whether Apple committed the non-idempotent POST."
+            "localRole": "Set to unknown when a network failure, HTTP 408, or 5xx response prevents determining whether Apple committed the non-idempotent POST."
           },
           {
             "outputField": "retrySafe",
@@ -833,7 +833,7 @@
           }
         ]
       },
-      "note": "Exact external beta-review submission operation. Build lineage prefers Apple's response relationship and otherwise preserves the validated request relationship; malformed successful responses or contradictory included evidence produce an operationCommitted, retrySafe=false recovery result."
+      "note": "Exact external beta-review submission operation. Build lineage prefers Apple's response relationship and otherwise preserves the validated request relationship; malformed successful responses or contradictory included evidence produce an operationCommitted recovery, while network, 408, and 5xx outcomes remain commit-unknown. Every ambiguous outcome is retrySafe=false with inspection guidance."
     },
     {
       "tool": "beta_app_update_localization",

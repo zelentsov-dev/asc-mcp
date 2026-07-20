@@ -326,7 +326,16 @@ extension BetaAppWorker {
                 body: requestData
             )
         } catch let error as ASCError {
-            if case .network = error {
+            let ambiguousOutcome: Bool
+            switch error {
+            case .network:
+                ambiguousOutcome = true
+            case .api(_, let statusCode), .apiResponse(_, let statusCode):
+                ambiguousOutcome = statusCode == 408 || (500...599).contains(statusCode)
+            default:
+                ambiguousOutcome = false
+            }
+            if ambiguousOutcome {
                 return unknownSubmissionCommitFailure(error.localizedDescription, requestedBuildID: buildId)
             }
             return MCPResult.error("Failed to submit build for beta review: \(error.localizedDescription)")

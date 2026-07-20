@@ -589,6 +589,28 @@ struct BetaAppWorkerContractTests {
         #expect(await transport.requestCount() == 1)
     }
 
+    @Test("submission create marks timeout and server outcomes unknown and unsafe to retry")
+    func submissionCreateMarksAmbiguousHTTPOutcomesUnknown() async throws {
+        for statusCode in [408, 500, 503] {
+            let transport = TestHTTPTransport(responses: [
+                .init(statusCode: statusCode, body: #"{"errors":[{"status":"500","title":"Temporary failure"}]}"#)
+            ])
+            let worker = BetaAppWorker(httpClient: try await makeBetaAppContractClient(transport))
+
+            let result = try await worker.handleTool(CallTool.Parameters(
+                name: "beta_app_submit_for_review",
+                arguments: ["build_id": .string("build-1")]
+            ))
+
+            #expect(result.isError == true)
+            let root = try betaAppContractObject(result.structuredContent)
+            #expect(root["operationCommitState"] == .string("unknown"))
+            #expect(root["retrySafe"] == .bool(false))
+            #expect(root["submissionIdKnown"] == .bool(false))
+            #expect(await transport.requestCount() == 1)
+        }
+    }
+
     @Test("submission filters accept scalars and use a single filter as deterministic lineage")
     func submissionFiltersAcceptScalars() async throws {
         let transport = TestHTTPTransport(responses: [

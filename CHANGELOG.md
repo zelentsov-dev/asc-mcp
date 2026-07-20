@@ -17,7 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Reject blank or whitespace-padded required identifiers and inconsistent primary, included, or fallback Build linkage before returning a misleading success.
-- Mark malformed successful create responses and post-create lineage validation failures as committed and unsafe to retry, with an explicit submission-inspection path.
+- Mark malformed successful create responses and post-create lineage validation failures as committed, and network, HTTP 408, or 5xx outcomes as commit-unknown; all remain unsafe to retry until the submission is inspected.
 - Validate Beta App localization and review-submission continuation URLs against the concrete collection path, complete originating query, effective page size, exact query-name allowlist, and Apple's non-empty cursor.
 - Emit fallback-specific output only when the relationship endpoint was actually required, keeping the public response lineage consistent with the operation manifest.
 
