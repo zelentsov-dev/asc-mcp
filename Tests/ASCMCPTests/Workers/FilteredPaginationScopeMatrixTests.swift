@@ -584,7 +584,7 @@ private let completeManifestPaginationToolNames = [
     "review_attachments_list"
 ]
 
-private let strictContinuationLocalRole = "Strict Apple continuation URL for this exact collection. The caller must repeat every originating list control, including the effective/default limit, filters, sort, include, fields, and nested limits when supported; the exact query and a non-empty cursor are validated before network access."
+private let strictContinuationLocalRole = "Strict Apple continuation URL for this exact collection. The caller must repeat every originating list control, including the effective/default limit, filters, sort, include, fields, and nested limits when supported; the exact query and a non-empty cursor are validated before sending the continuation request."
 
 private let strictContinuationToolDescription = "Apple continuation URL from the previous response. Repeat every originating list control, including the effective/default limit, filters, sort, include, fields, and nested limits when supported; the exact query and a non-empty cursor are validated."
 

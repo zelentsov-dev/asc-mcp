@@ -210,7 +210,7 @@
         { "toolField": "include", "sourceKind": "parameter", "operationId": "apps_appInfos_getToManyRelated", "location": "query", "appleName": "include" },
         { "toolField": "limit", "sourceKind": "parameter", "operationId": "apps_appInfos_getToManyRelated", "location": "query", "appleName": "limit" },
         { "toolField": "localizations_limit", "sourceKind": "parameter", "operationId": "apps_appInfos_getToManyRelated", "location": "query", "appleName": "limit[appInfoLocalizations]" },
-        { "toolField": "next_url", "sourceKind": "local", "localRole": "Strict Apple continuation URL for this exact collection. The caller must repeat every originating list control, including the effective/default limit, filters, sort, include, fields, and nested limits when supported; the exact query and a non-empty cursor are validated before network access." }
+        { "toolField": "next_url", "sourceKind": "local", "localRole": "Strict Apple continuation URL for this exact collection. The caller must repeat every originating list control, including the effective/default limit, filters, sort, include, fields, and nested limits when supported; the exact query and a non-empty cursor are validated before sending the continuation request." }
       ],
       "response": {
         "mode": "projection",
@@ -251,7 +251,7 @@
         { "toolField": "locale", "sourceKind": "parameter", "operationId": "appInfos_appInfoLocalizations_getToManyRelated", "location": "query", "appleName": "filter[locale]" },
         { "toolField": "include", "sourceKind": "parameter", "operationId": "appInfos_appInfoLocalizations_getToManyRelated", "location": "query", "appleName": "include" },
         { "toolField": "limit", "sourceKind": "parameter", "operationId": "appInfos_appInfoLocalizations_getToManyRelated", "location": "query", "appleName": "limit" },
-        { "toolField": "next_url", "sourceKind": "local", "localRole": "Strict Apple continuation URL for this exact collection. The caller must repeat every originating list control, including the effective/default limit, filters, sort, include, fields, and nested limits when supported; the exact query and a non-empty cursor are validated before network access." }
+        { "toolField": "next_url", "sourceKind": "local", "localRole": "Strict Apple continuation URL for this exact collection. The caller must repeat every originating list control, including the effective/default limit, filters, sort, include, fields, and nested limits when supported; the exact query and a non-empty cursor are validated before sending the continuation request." }
       ],
       "response": {
         "mode": "projection",

@@ -16,7 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Reject continuation URLs that change a parent resource, collection path, filter value, projection, include set, limit, origin, port, or URL authority before any network request.
+- Reject continuation URLs that change a parent resource, collection path, filter value, projection, include set, limit, origin, port, or URL authority before sending the continuation request.
 - Reject missing or blank cursors, duplicate query names, unexpected query parameters, credentials, fragments, and non-canonical path encodings across the affected workers.
 - Apply the same validation to internal multi-page aggregation loops so server-provided links cannot silently cross query scopes.
 
