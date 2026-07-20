@@ -31,7 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - No public MCP tool was removed. Several list and metrics filters now accept either one value or an array; existing scalar calls remain valid.
 - `app_events_create` and `app_events_update` now require an absolute `deep_link` and accept only Apple's documented purchase-requirement values.
-- The strict contract pin currently records 2,138 optional Apple inputs: 672 bound, 6 internally controlled, 958 intentionally omitted, and 502 still queued for domain review. Future phases must update this pin explicitly and cannot increase the unreviewed surface silently.
+- The strict contract pin currently records 2,154 optional Apple inputs: 706 bound, 6 internally controlled, 965 intentionally omitted, and 477 still queued for domain review. Future phases must update this pin explicitly and cannot increase the unreviewed surface silently.
 
 ## [3.1.0] - 2026-07-20
 
