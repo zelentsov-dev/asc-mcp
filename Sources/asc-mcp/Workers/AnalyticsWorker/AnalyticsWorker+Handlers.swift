@@ -894,7 +894,7 @@ extension AnalyticsWorker {
             if let nextUrl = try paginationURL(from: arguments["next_url"]) {
                 response = try await httpClient.getPage(
                     nextUrl,
-                    scope: PaginationScope(path: endpoint),
+                    scope: PaginationScope.strict(path: endpoint, query: queryParams),
                     as: ASCAnalyticsReportSegmentsResponse.self
                 )
             } else {

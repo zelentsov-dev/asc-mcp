@@ -527,26 +527,20 @@ extension UsersWorker {
         }
 
         do {
+            let endpoint = "/v1/users/\(try ASCPathSegment.encode(userId))/visibleApps"
+            let limit = arguments["limit"]?.intValue ?? 25
+            let queryParams = ["limit": String(min(max(limit, 1), 200))]
             let response: ASCAppsResponse
 
             if let nextUrl = try paginationURL(from: arguments["next_url"]) {
                 response = try await httpClient.getPage(
                     nextUrl,
-                    scope: PaginationScope(path: "/v1/users/\(try ASCPathSegment.encode(userId))/visibleApps"),
+                    scope: PaginationScope.strict(path: endpoint, query: queryParams),
                     as: ASCAppsResponse.self
                 )
             } else {
-                var queryParams: [String: String] = [:]
-
-                if let limitValue = arguments["limit"],
-                   let limit = limitValue.intValue {
-                    queryParams["limit"] = String(min(max(limit, 1), 200))
-                } else {
-                    queryParams["limit"] = "25"
-                }
-
                 response = try await httpClient.get(
-                    "/v1/users/\(try ASCPathSegment.encode(userId))/visibleApps",
+                    endpoint,
                     parameters: queryParams,
                     as: ASCAppsResponse.self
                 )

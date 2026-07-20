@@ -197,17 +197,19 @@ extension AccessibilityWorker {
         }
 
         do {
+            let endpoint = "/v1/apps/\(try ASCPathSegment.encode(appID))/relationships/accessibilityDeclarations"
+            let query = defaultListQuery(arguments: arguments)
             let response: ASCAccessibilityDeclarationLinkagesResponse
             if let nextURL = try paginationURL(from: arguments["next_url"]) {
                 response = try await httpClient.getPage(
                     nextURL,
-                    scope: PaginationScope(path: "/v1/apps/\(try ASCPathSegment.encode(appID))/relationships/accessibilityDeclarations"),
+                    scope: PaginationScope.strict(path: endpoint, query: query),
                     as: ASCAccessibilityDeclarationLinkagesResponse.self
                 )
             } else {
                 response = try await httpClient.get(
-                    "/v1/apps/\(try ASCPathSegment.encode(appID))/relationships/accessibilityDeclarations",
-                    parameters: defaultListQuery(arguments: arguments),
+                    endpoint,
+                    parameters: query,
                     as: ASCAccessibilityDeclarationLinkagesResponse.self
                 )
             }

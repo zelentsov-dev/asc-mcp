@@ -19,26 +19,20 @@ extension PricingWorker {
         let arguments = params.arguments
 
         do {
+            let endpoint = "/v1/territories"
+            let limit = arguments?["limit"]?.intValue ?? 200
+            let queryParams = ["limit": String(min(max(limit, 1), 200))]
             let response: ASCTerritoriesResponse
 
             if let nextUrl = try paginationURL(from: arguments?["next_url"]) {
                 response = try await httpClient.getPage(
                     nextUrl,
-                    scope: PaginationScope(path: "/v1/territories"),
+                    scope: PaginationScope.strict(path: endpoint, query: queryParams),
                     as: ASCTerritoriesResponse.self
                 )
             } else {
-                var queryParams: [String: String] = [:]
-
-                if let limitValue = arguments?["limit"],
-                   let limit = limitValue.intValue {
-                    queryParams["limit"] = String(min(max(limit, 1), 200))
-                } else {
-                    queryParams["limit"] = "200"
-                }
-
                 response = try await httpClient.get(
-                    "/v1/territories",
+                    endpoint,
                     parameters: queryParams,
                     as: ASCTerritoriesResponse.self
                 )

@@ -357,27 +357,21 @@ extension BetaTestersWorker {
         }
 
         do {
+            let endpoint = "/v1/betaTesters/\(try ASCPathSegment.encode(testerId))/apps"
+            let limit = arguments["limit"]?.intValue ?? 25
+            let queryParams = ["limit": String(min(max(limit, 1), 200))]
             let response: ASCAppsResponse
 
             // Check for pagination URL
             if let nextUrl = try paginationURL(from: arguments["next_url"]) {
                 response = try await httpClient.getPage(
                     nextUrl,
-                    scope: PaginationScope(path: "/v1/betaTesters/\(try ASCPathSegment.encode(testerId))/apps"),
+                    scope: PaginationScope.strict(path: endpoint, query: queryParams),
                     as: ASCAppsResponse.self
                 )
             } else {
-                var queryParams: [String: String] = [:]
-
-                if let limitValue = arguments["limit"],
-                   let limit = limitValue.intValue {
-                    queryParams["limit"] = String(min(max(limit, 1), 200))
-                } else {
-                    queryParams["limit"] = "25"
-                }
-
                 response = try await httpClient.get(
-                    "/v1/betaTesters/\(try ASCPathSegment.encode(testerId))/apps",
+                    endpoint,
                     parameters: queryParams,
                     as: ASCAppsResponse.self
                 )

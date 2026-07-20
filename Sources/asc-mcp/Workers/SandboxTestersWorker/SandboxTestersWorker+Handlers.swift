@@ -10,25 +10,20 @@ extension SandboxTestersWorker {
         let arguments = params.arguments
 
         do {
+            let endpoint = "/v2/sandboxTesters"
+            let limit = arguments?["limit"]?.intValue ?? 25
+            let queryParams = ["limit": String(min(max(limit, 1), 200))]
             let response: ASCSandboxTestersResponse
 
             if let nextUrl = try paginationURL(from: arguments?["next_url"]) {
                 response = try await httpClient.getPage(
                     nextUrl,
-                    scope: PaginationScope(path: "/v2/sandboxTesters"),
+                    scope: PaginationScope.strict(path: endpoint, query: queryParams),
                     as: ASCSandboxTestersResponse.self
                 )
             } else {
-                var queryParams: [String: String] = [:]
-
-                if let limit = arguments?["limit"]?.intValue {
-                    queryParams["limit"] = String(min(max(limit, 1), 200))
-                } else {
-                    queryParams["limit"] = "25"
-                }
-
                 response = try await httpClient.get(
-                    "/v2/sandboxTesters",
+                    endpoint,
                     parameters: queryParams,
                     as: ASCSandboxTestersResponse.self
                 )

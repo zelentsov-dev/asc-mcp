@@ -250,27 +250,21 @@ extension BuildBetaDetailsWorker {
         }
 
         do {
+            let endpoint = "/v1/builds/\(try ASCPathSegment.encode(buildId))/betaBuildLocalizations"
+            let limit = arguments["limit"]?.intValue ?? 50
+            let queryParams = ["limit": String(min(max(limit, 1), 200))]
             let response: ASCBetaBuildLocalizationsResponse
 
             // Check for pagination URL
             if let nextUrl = try paginationURL(from: arguments["next_url"]) {
                 response = try await httpClient.getPage(
                     nextUrl,
-                    scope: PaginationScope(path: "/v1/builds/\(try ASCPathSegment.encode(buildId))/betaBuildLocalizations"),
+                    scope: PaginationScope.strict(path: endpoint, query: queryParams),
                     as: ASCBetaBuildLocalizationsResponse.self
                 )
             } else {
-                var queryParams: [String: String] = [:]
-
-                if let limitValue = arguments["limit"],
-                   let limit = limitValue.intValue {
-                    queryParams["limit"] = String(min(max(limit, 1), 200))
-                } else {
-                    queryParams["limit"] = "50"
-                }
-
                 response = try await httpClient.get(
-                    "/v1/builds/\(try ASCPathSegment.encode(buildId))/betaBuildLocalizations",
+                    endpoint,
                     parameters: queryParams,
                     as: ASCBetaBuildLocalizationsResponse.self
                 )
@@ -417,27 +411,21 @@ extension BuildBetaDetailsWorker {
         }
 
         do {
+            let endpoint = "/v1/builds/\(try ASCPathSegment.encode(buildId))/individualTesters"
+            let limit = arguments["limit"]?.intValue ?? 50
+            let queryParams = ["limit": String(min(max(limit, 1), 200))]
             let response: ASCBetaTestersResponse
 
             // Check for pagination URL
             if let nextUrl = try paginationURL(from: arguments["next_url"]) {
                 response = try await httpClient.getPage(
                     nextUrl,
-                    scope: PaginationScope(path: "/v1/builds/\(try ASCPathSegment.encode(buildId))/individualTesters"),
+                    scope: PaginationScope.strict(path: endpoint, query: queryParams),
                     as: ASCBetaTestersResponse.self
                 )
             } else {
-                var queryParams: [String: String] = [:]
-
-                if let limitValue = arguments["limit"],
-                   let limit = limitValue.intValue {
-                    queryParams["limit"] = String(min(max(limit, 1), 200))
-                } else {
-                    queryParams["limit"] = "50"
-                }
-
                 response = try await httpClient.get(
-                    "/v1/builds/\(try ASCPathSegment.encode(buildId))/individualTesters",
+                    endpoint,
                     parameters: queryParams,
                     as: ASCBetaTestersResponse.self
                 )
@@ -629,27 +617,21 @@ extension BuildBetaDetailsWorker {
         }
 
         do {
+            let endpoint = "/v1/builds/\(try ASCPathSegment.encode(buildId))/individualTesters"
+            let limit = arguments["limit"]?.intValue ?? 50
+            let queryParams = ["limit": String(min(max(limit, 1), 200))]
             let response: ASCBetaTestersResponse
 
             // Check for pagination URL
             if let nextUrl = try paginationURL(from: arguments["next_url"]) {
                 response = try await httpClient.getPage(
                     nextUrl,
-                    scope: PaginationScope(path: "/v1/builds/\(try ASCPathSegment.encode(buildId))/individualTesters"),
+                    scope: PaginationScope.strict(path: endpoint, query: queryParams),
                     as: ASCBetaTestersResponse.self
                 )
             } else {
-                var queryParams: [String: String] = [:]
-
-                if let limitValue = arguments["limit"],
-                   let limit = limitValue.intValue {
-                    queryParams["limit"] = String(min(max(limit, 1), 200))
-                } else {
-                    queryParams["limit"] = "50"
-                }
-
                 response = try await httpClient.get(
-                    "/v1/builds/\(try ASCPathSegment.encode(buildId))/individualTesters",
+                    endpoint,
                     parameters: queryParams,
                     as: ASCBetaTestersResponse.self
                 )
