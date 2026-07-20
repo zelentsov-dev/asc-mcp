@@ -277,6 +277,11 @@
           "operationId": "appStoreVersions_deleteInstance",
           "location": "path",
           "appleName": "id"
+        },
+        {
+          "toolField": "confirm_version_id",
+          "sourceKind": "local",
+          "localRole": "Exact version ID confirmation required before irreversible deletion."
         }
       ],
       "response": {
@@ -284,9 +289,14 @@
         "sources": [
           { "operationId": "appStoreVersions_deleteInstance", "statusCode": "204" }
         ],
-        "fields": []
+        "fields": [
+          { "outputField": "deletionState", "localRole": "Confirmed on 204; commit_unknown for network, 408, or 5xx outcomes; rejected for definite non-success responses." },
+          { "outputField": "outcomeUnknown", "localRole": "True only when Apple may have committed the single-attempt DELETE despite an ambiguous transport or server outcome." },
+          { "outputField": "retrySafe", "localRole": "False for confirmed or commit-unknown outcomes; true only for a definite rejection." },
+          { "outputField": "inspection", "localRole": "Exact app_versions_get guidance included when the DELETE outcome is unknown." }
+        ]
       },
-      "note": "Apple returns 204 with no response document; the MCP deletion confirmation is synthesized locally."
+      "note": "Apple returns 204 with no response document. The handler requires exact version-ID confirmation, sends DELETE once, and reports network, 408, or 5xx outcomes as commit_unknown with retrySafe=false and exact-version inspection guidance instead of claiming failure or retrying blindly."
     },
     {
       "tool": "app_versions_delete_phased_release",
@@ -321,9 +331,14 @@
         "sources": [
           { "operationId": "appStoreVersionPhasedReleases_deleteInstance", "statusCode": "204" }
         ],
-        "fields": []
+        "fields": [
+          { "outputField": "deletionState", "localRole": "Confirmed on 204; commit_unknown for network, 408, or 5xx outcomes; rejected for definite non-success responses." },
+          { "outputField": "outcomeUnknown", "localRole": "True only when Apple may have committed the single-attempt DELETE despite an ambiguous transport or server outcome." },
+          { "outputField": "retrySafe", "localRole": "False for confirmed or commit-unknown outcomes; true only for a definite rejection." },
+          { "outputField": "inspection", "localRole": "Owning-version relationship or App Store Connect UI guidance included when the DELETE outcome is unknown because Apple has no direct GET by phased-release ID." }
+        ]
       },
-      "note": "Apple permits deletion only for an eligible planned rollout that has not started and returns 204 without a document. The handler requires exact-ID confirmation and returns the deleted phased release id."
+      "note": "Apple permits deletion only for an eligible planned rollout that has not started and returns 204 without a document. The handler requires exact-ID confirmation, sends DELETE once, and reports network, 408, or 5xx outcomes as commit_unknown with retrySafe=false. Apple 4.4.1 exposes no direct GET by phased-release ID, so recovery guidance uses the owning version relationship or App Store Connect UI."
     },
     {
       "tool": "app_versions_get",
@@ -1566,10 +1581,10 @@
           "operationId": "appStoreVersionPhasedReleases_updateInstance",
           "jsonPointer": "/data/attributes/phasedReleaseState"
         },
-        {
-          "toolField": "confirm_phased_release_id",
-          "sourceKind": "local",
-          "localRole": "Exact phased release ID confirmation required when COMPLETE immediately releases the version to all users."
+    {
+      "toolField": "confirm_phased_release_id",
+      "sourceKind": "local",
+      "localRole": "Exact phased release ID confirmation required when ACTIVE starts or resumes distribution, or COMPLETE immediately releases the version to all users."
         }
       ],
       "response": {
@@ -1583,7 +1598,7 @@
         ],
         "fields": []
       },
-      "note": "Runtime validation restricts updates to ACTIVE, PAUSED, or COMPLETE. COMPLETE requires exact phased-release-ID confirmation."
+  "note": "Runtime validation restricts updates to ACTIVE, PAUSED, or COMPLETE. ACTIVE and COMPLETE require exact phased-release-ID confirmation."
     }
   ],
   "implementationAliases": []

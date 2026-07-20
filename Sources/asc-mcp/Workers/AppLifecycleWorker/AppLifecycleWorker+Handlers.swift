@@ -722,11 +722,14 @@ extension AppLifecycleWorker {
                     "phased_release_state must be one of: \(Self.phasedReleaseUpdateStates.sorted().joined(separator: ", "))"
                 )
             }
-            if state == "COMPLETE" {
-                let confirmation = try optionalIdentifier("confirm_phased_release_id", from: arguments)
+            if state == "ACTIVE" || state == "COMPLETE" {
+                let confirmation = try optionalCanonicalIdentifier("confirm_phased_release_id", from: arguments)
                 guard confirmation == phasedReleaseId else {
+                    let consequence = state == "ACTIVE"
+                        ? "ACTIVE starts or resumes distribution"
+                        : "COMPLETE immediately releases the version to all users"
                     return MCPResult.error(
-                        "COMPLETE immediately releases the version to all users. Set confirm_phased_release_id to the exact phased_release_id to continue."
+                        "\(consequence). Set confirm_phased_release_id to the exact phased_release_id to continue."
                     )
                 }
             }
@@ -754,29 +757,51 @@ extension AppLifecycleWorker {
         }
     }
 
+    /// Deletes an eligible planned phased release after exact resource-ID confirmation.
+    /// - Returns: JSON confirmation, or a structured error that distinguishes a rejected request from an unknown commit outcome.
+    /// - Throws: This handler converts validation and App Store Connect failures into `CallTool.Result` errors.
     func deletePhasedRelease(_ params: CallTool.Parameters) async throws -> CallTool.Result {
         guard let arguments = params.arguments else {
-            return MCPResult.error("Required parameter 'phased_release_id' is missing")
+            return MCPResult.error("Required parameters are missing: phased_release_id, confirm_phased_release_id")
         }
 
+        let phasedReleaseId: String
         do {
-            let phasedReleaseId = try requiredIdentifier("phased_release_id", from: arguments)
-            let confirmation = try optionalIdentifier("confirm_phased_release_id", from: arguments)
+            phasedReleaseId = try requiredCanonicalIdentifier("phased_release_id", from: arguments)
+            let confirmation = try requiredCanonicalIdentifier("confirm_phased_release_id", from: arguments)
             guard confirmation == phasedReleaseId else {
                 return MCPResult.error(
                     "Deleting a phased release cancels an eligible planned rollout. Set confirm_phased_release_id to the exact phased_release_id to continue."
                 )
             }
+        } catch {
+            return MCPResult.error(error.localizedDescription)
+        }
+
+        do {
             _ = try await httpClient.delete(
                 "/v1/appStoreVersionPhasedReleases/\(try ASCPathSegment.encode(phasedReleaseId))"
             )
             return MCPResult.jsonObject([
                 "success": true,
+                "deletionState": "confirmed",
+                "outcomeUnknown": false,
+                "retrySafe": false,
                 "phased_release_id": phasedReleaseId,
                 "message": "Phased release deleted successfully"
             ])
         } catch {
-            return MCPResult.error("Failed to delete phased release: \(error.localizedDescription)")
+            return deletionFailure(
+                resourceName: "phased release",
+                targetField: "phased_release_id",
+                targetID: phasedReleaseId,
+                error: error,
+                inspection: .object([
+                    "tool": .string("app_versions_get_phased_release"),
+                    "requiredArguments": .array([.string("version_id")]),
+                    "instruction": .string("Inspect the owning app version's phased-release relationship, or verify the rollout in App Store Connect, before another delete attempt.")
+                ])
+            )
         }
     }
 
@@ -1179,16 +1204,25 @@ extension AppLifecycleWorker {
         }
     }
 
-    /// Deletes an app store version when Apple marks it deletable
-    /// - Returns: JSON with success confirmation
-    /// - Throws: CallTool.Result with error if version_id missing or API call fails
+    /// Deletes an app store version after exact resource-ID confirmation.
+    /// - Returns: JSON confirmation, or a structured error that distinguishes a rejected request from an unknown commit outcome.
+    /// - Throws: This handler converts validation and App Store Connect failures into `CallTool.Result` errors.
     func deleteVersion(_ params: CallTool.Parameters) async throws -> CallTool.Result {
-        guard let arguments = params.arguments,
-              let versionId = arguments["version_id"]?.stringValue else {
-            return CallTool.Result(
-                content: [MCPContent.text("Error: Required parameter 'version_id' is missing")],
-                isError: true
-            )
+        guard let arguments = params.arguments else {
+            return MCPResult.error("Required parameters are missing: version_id, confirm_version_id")
+        }
+
+        let versionId: String
+        do {
+            versionId = try requiredCanonicalIdentifier("version_id", from: arguments)
+            let confirmation = try requiredCanonicalIdentifier("confirm_version_id", from: arguments)
+            guard confirmation == versionId else {
+                return MCPResult.error(
+                    "Deleting an app store version is irreversible. Set confirm_version_id to the exact version_id to continue."
+                )
+            }
+        } catch {
+            return MCPResult.error(error.localizedDescription)
         }
 
         do {
@@ -1196,15 +1230,26 @@ extension AppLifecycleWorker {
 
             let result: [String: Any] = [
                 "success": true,
+                "deletionState": "confirmed",
+                "outcomeUnknown": false,
+                "retrySafe": false,
+                "version_id": versionId,
                 "message": "Version '\(versionId)' deleted successfully"
             ]
 
             return MCPResult.jsonObject(result)
 
         } catch {
-            return CallTool.Result(
-                content: [MCPContent.text("Error: Failed to delete version: \(error.localizedDescription)")],
-                isError: true
+            return deletionFailure(
+                resourceName: "app store version",
+                targetField: "version_id",
+                targetID: versionId,
+                error: error,
+                inspection: .object([
+                    "tool": .string("app_versions_get"),
+                    "arguments": .object(["version_id": .string(versionId)]),
+                    "instruction": .string("Inspect this exact version before another delete attempt.")
+                ])
             )
         }
     }
@@ -1280,6 +1325,23 @@ private extension AppLifecycleWorker {
         return value
     }
 
+    func requiredCanonicalIdentifier(_ name: String, from arguments: [String: Value]) throws -> String {
+        guard let value = try optionalCanonicalIdentifier(name, from: arguments) else {
+            throw AppLifecycleArgumentError("Required parameter '\(name)' is missing")
+        }
+        return value
+    }
+
+    func optionalCanonicalIdentifier(_ name: String, from arguments: [String: Value]) throws -> String? {
+        guard let value = try optionalIdentifier(name, from: arguments) else {
+            return nil
+        }
+        guard value == value.trimmingCharacters(in: .whitespacesAndNewlines) else {
+            throw AppLifecycleArgumentError("\(name) must not contain leading or trailing whitespace")
+        }
+        return value
+    }
+
     func optionalIdentifier(_ name: String, from arguments: [String: Value]) throws -> String? {
         guard let value = arguments[name] else {
             return nil
@@ -1289,6 +1351,59 @@ private extension AppLifecycleWorker {
             throw AppLifecycleArgumentError("\(name) must be a non-empty string")
         }
         return string
+    }
+
+    func deletionFailure(
+        resourceName: String,
+        targetField: String,
+        targetID: String,
+        error: Error,
+        inspection: Value
+    ) -> CallTool.Result {
+        let outcomeUnknown = isAmbiguousDeletionFailure(error)
+        let state = outcomeUnknown ? "commit_unknown" : "rejected"
+        let message = outcomeUnknown
+            ? "The \(resourceName) delete outcome is unknown. Do not retry until the exact target is inspected."
+            : "Failed to delete \(resourceName): \(error.localizedDescription)"
+
+        return MCPResult.error(
+            message,
+            details: .object([
+                "deletionState": .string(state),
+                "operationCommitState": .string(outcomeUnknown ? "unknown" : "rejected"),
+                "outcomeUnknown": .bool(outcomeUnknown),
+                "retrySafe": .bool(!outcomeUnknown),
+                "mutationAttempted": .bool(true),
+                "targetId": .string(targetID),
+                targetField: .string(targetID),
+                "cause": structuredDeletionError(error),
+                "inspection": inspection
+            ])
+        )
+    }
+
+    func isAmbiguousDeletionFailure(_ error: Error) -> Bool {
+        guard let error = error as? ASCError else {
+            return true
+        }
+        switch error {
+        case .network:
+            return true
+        case .api(_, let statusCode), .apiResponse(_, let statusCode):
+            return statusCode == 408 || (500...599).contains(statusCode)
+        case .authentication, .configuration, .parsing:
+            return false
+        }
+    }
+
+    func structuredDeletionError(_ error: Error) -> Value {
+        if let error = error as? ASCError {
+            return error.structuredValue
+        }
+        return .object([
+            "type": .string("unexpected"),
+            "message": .string(Redactor.redact(error.localizedDescription))
+        ])
     }
 
     func nullableString(

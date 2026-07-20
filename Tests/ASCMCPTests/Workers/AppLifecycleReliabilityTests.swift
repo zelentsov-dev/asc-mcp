@@ -50,7 +50,9 @@ struct AppLifecycleReliabilityTests {
         let create = try lifecycleReliabilityProperties(try #require(tools.first { $0.name == "app_versions_create" }))
         let update = try lifecycleReliabilityProperties(try #require(tools.first { $0.name == "app_versions_update" }))
         let age = try lifecycleReliabilityProperties(try #require(tools.first { $0.name == "app_versions_update_age_rating" }))
+        let updatePhased = try #require(tools.first { $0.name == "app_versions_update_phased_release" })
         let deletePhased = try #require(tools.first { $0.name == "app_versions_delete_phased_release" })
+        let deleteVersion = try #require(tools.first { $0.name == "app_versions_delete" })
 
         #expect(list["states"] != nil)
         #expect(list["states"]?.objectValue?["deprecated"]?.boolValue == true)
@@ -72,6 +74,10 @@ struct AppLifecycleReliabilityTests {
         #expect(tools.contains { $0.name == "app_versions_delete_phased_release" })
         #expect(Set(deletePhased.inputSchema.objectValue?["required"]?.arrayValue?.compactMap(\.stringValue) ?? []) == [
             "phased_release_id", "confirm_phased_release_id"
+        ])
+        #expect(updatePhased.inputSchema.objectValue?["allOf"]?.arrayValue?.isEmpty == false)
+        #expect(Set(deleteVersion.inputSchema.objectValue?["required"]?.arrayValue?.compactMap(\.stringValue) ?? []) == [
+            "version_id", "confirm_version_id"
         ])
     }
 
@@ -195,9 +201,148 @@ struct AppLifecycleReliabilityTests {
         ))
 
         #expect(result.isError != true)
+        let payload = try lifecycleReliabilityStructuredObject(result)
+        #expect(payload["deletionState"] == .string("confirmed"))
+        #expect(payload["outcomeUnknown"] == .bool(false))
+        #expect(payload["retrySafe"] == .bool(false))
         let request = try #require(await transport.recordedRequests().first)
         #expect(request.httpMethod == "DELETE")
         #expect(request.url?.path == "/v1/appStoreVersionPhasedReleases/phase-1")
+    }
+
+    @Test("version delete requires an exact canonical confirmation before network access")
+    func versionDeleteRequiresExactConfirmation() async throws {
+        let invalidArguments: [[String: Value]] = [
+            ["version_id": .string("ver-1")],
+            ["version_id": .string("ver-1"), "confirm_version_id": .string("ver-2")],
+            ["version_id": .string(" ver-1 "), "confirm_version_id": .string(" ver-1 ")]
+        ]
+
+        for arguments in invalidArguments {
+            let transport = TestHTTPTransport(responses: [])
+            let worker = try await makeLifecycleReliabilityWorker(transport)
+            let result = try await worker.handleTool(.init(
+                name: "app_versions_delete",
+                arguments: arguments
+            ))
+
+            #expect(result.isError == true)
+            #expect(await transport.requestCount() == 0)
+        }
+    }
+
+    @Test("version delete sends one confirmed request")
+    func versionDeleteUsesOneConfirmedRequest() async throws {
+        let transport = TestHTTPTransport(responses: [.init(statusCode: 204, body: "")])
+        let worker = try await makeLifecycleReliabilityWorker(transport)
+
+        let result = try await worker.handleTool(.init(
+            name: "app_versions_delete",
+            arguments: [
+                "version_id": .string("ver-1"),
+                "confirm_version_id": .string("ver-1")
+            ]
+        ))
+
+        #expect(result.isError != true)
+        let payload = try lifecycleReliabilityStructuredObject(result)
+        #expect(payload["version_id"] == .string("ver-1"))
+        #expect(payload["deletionState"] == .string("confirmed"))
+        #expect(payload["retrySafe"] == .bool(false))
+        let requests = await transport.recordedRequests()
+        #expect(requests.count == 1)
+        #expect(requests.first?.httpMethod == "DELETE")
+        #expect(requests.first?.url?.path == "/v1/appStoreVersions/ver-1")
+    }
+
+    @Test("ambiguous delete statuses stay commit unknown after one attempt")
+    func ambiguousDeleteStatusesStayUnknown() async throws {
+        let cases: [(String, [String: Value])] = [
+            (
+                "app_versions_delete",
+                ["version_id": .string("ver-1"), "confirm_version_id": .string("ver-1")]
+            ),
+            (
+                "app_versions_delete_phased_release",
+                ["phased_release_id": .string("phase-1"), "confirm_phased_release_id": .string("phase-1")]
+            )
+        ]
+
+        for (tool, arguments) in cases {
+            for statusCode in [408, 500, 502, 503, 504] {
+                let transport = TestHTTPTransport(responses: [
+                    .init(statusCode: statusCode, body: lifecycleReliabilityAPIError(statusCode))
+                ])
+                let worker = try await makeLifecycleReliabilityWorker(transport)
+                let result = try await worker.handleTool(.init(name: tool, arguments: arguments))
+
+                #expect(result.isError == true)
+                let details = try lifecycleReliabilityErrorDetails(result)
+                #expect(details["deletionState"] == .string("commit_unknown"))
+                #expect(details["operationCommitState"] == .string("unknown"))
+                #expect(details["outcomeUnknown"] == .bool(true))
+                #expect(details["retrySafe"] == .bool(false))
+                let requests = await transport.recordedRequests()
+                #expect(requests.count == 1)
+                #expect(requests.first?.httpMethod == "DELETE")
+            }
+        }
+    }
+
+    @Test("network delete failures stay commit unknown after one attempt")
+    func networkDeleteFailuresStayUnknown() async throws {
+        let cases: [(String, [String: Value])] = [
+            (
+                "app_versions_delete",
+                ["version_id": .string("ver-1"), "confirm_version_id": .string("ver-1")]
+            ),
+            (
+                "app_versions_delete_phased_release",
+                ["phased_release_id": .string("phase-1"), "confirm_phased_release_id": .string("phase-1")]
+            )
+        ]
+
+        for (tool, arguments) in cases {
+            let transport = TestHTTPTransport(responses: [])
+            let worker = try await makeLifecycleReliabilityWorker(transport)
+            let result = try await worker.handleTool(.init(name: tool, arguments: arguments))
+
+            #expect(result.isError == true)
+            let details = try lifecycleReliabilityErrorDetails(result)
+            #expect(details["deletionState"] == .string("commit_unknown"))
+            #expect(details["outcomeUnknown"] == .bool(true))
+            #expect(details["retrySafe"] == .bool(false))
+            let requests = await transport.recordedRequests()
+            #expect(requests.count == 1)
+            #expect(requests.first?.httpMethod == "DELETE")
+        }
+    }
+
+    @Test("definite delete rejection remains retry safe and preserves Apple error")
+    func definiteDeleteRejection() async throws {
+        let transport = TestHTTPTransport(responses: [
+            .init(statusCode: 403, body: lifecycleReliabilityAPIError(403))
+        ])
+        let worker = try await makeLifecycleReliabilityWorker(transport)
+
+        let result = try await worker.handleTool(.init(
+            name: "app_versions_delete",
+            arguments: [
+                "version_id": .string("ver-1"),
+                "confirm_version_id": .string("ver-1")
+            ]
+        ))
+
+        #expect(result.isError == true)
+        let details = try lifecycleReliabilityErrorDetails(result)
+        #expect(details["deletionState"] == .string("rejected"))
+        #expect(details["operationCommitState"] == .string("rejected"))
+        #expect(details["outcomeUnknown"] == .bool(false))
+        #expect(details["retrySafe"] == .bool(true))
+        let cause = try lifecycleReliabilityValueObject(details["cause"])
+        #expect(cause["type"] == .string("api"))
+        #expect(cause["statusCode"] == .int(403))
+        #expect(await transport.requestCount() == 1)
     }
 
     @Test("submit rejects mismatched app ownership before creating a submission")
@@ -248,6 +393,26 @@ private func lifecycleReliabilityObject(_ result: CallTool.Result) throws -> [St
     try #require(JSONSerialization.jsonObject(with: Data(lifecycleReliabilityText(result).utf8)) as? [String: Any])
 }
 
+private func lifecycleReliabilityStructuredObject(_ result: CallTool.Result) throws -> [String: Value] {
+    try lifecycleReliabilityValueObject(result.structuredContent)
+}
+
+private func lifecycleReliabilityErrorDetails(_ result: CallTool.Result) throws -> [String: Value] {
+    let root = try lifecycleReliabilityStructuredObject(result)
+    return try lifecycleReliabilityValueObject(root["details"])
+}
+
+private func lifecycleReliabilityValueObject(_ value: Value?) throws -> [String: Value] {
+    guard case .object(let object)? = value else {
+        throw LifecycleReliabilityTestError.expectedObject
+    }
+    return object
+}
+
+private func lifecycleReliabilityAPIError(_ statusCode: Int) -> String {
+    #"{"errors":[{"status":"\#(statusCode)","detail":"request rejected"}]}"#
+}
+
 private func lifecycleReliabilityProperties(_ tool: Tool) throws -> [String: Value] {
     guard case .object(let schema) = tool.inputSchema,
           case .object(let properties)? = schema["properties"] else {
@@ -272,4 +437,5 @@ private func lifecycleReliabilityFixedQuery(
 
 private enum LifecycleReliabilityTestError: Error {
     case expectedProperties
+    case expectedObject
 }

@@ -722,10 +722,10 @@ Includes tester list/search/get/create/delete, app relationships, invitations, b
 | `app_versions_create_phased_release` | Create gradual rollout |
 | `app_versions_get_phased_release` | Get phased release info and ID |
 | `app_versions_update_phased_release` | Pause/resume/complete rollout |
-| `app_versions_delete_phased_release` | Delete a phased release configuration |
+| `app_versions_delete_phased_release` | Delete an eligible planned phased release with exact-ID confirmation and unknown-outcome safety |
 | `app_versions_set_review_details` | Set reviewer contact info |
 | `app_versions_update_age_rating` | Configure age rating declaration |
-| `app_versions_delete` | Delete an editable app version |
+| `app_versions_delete` | Delete an editable app version with exact-ID confirmation and unknown-outcome safety |
 
 </details>
 

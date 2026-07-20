@@ -392,7 +392,7 @@ extension AppLifecycleWorker {
     func updatePhasedReleaseTool() -> Tool {
         Tool(
             name: "app_versions_update_phased_release",
-            description: "Pause, resume, or immediately complete a phased rollout. COMPLETE releases to all users and requires exact phased-release-ID confirmation.",
+            description: "Pause, start or resume, or immediately complete a phased rollout. ACTIVE and COMPLETE require exact phased-release-ID confirmation.",
             inputSchema: .object([
                 "type": .string("object"),
                 "properties": .object([
@@ -407,10 +407,25 @@ extension AppLifecycleWorker {
                     ]),
                     "confirm_phased_release_id": .object([
                         "type": .string("string"),
-                        "description": .string("Exact phased_release_id required when COMPLETE immediately releases the version to all users")
+                        "description": .string("Exact phased_release_id required when ACTIVE starts or resumes distribution, or COMPLETE releases to all users")
                     ])
                 ]),
-                "required": .array([.string("phased_release_id"), .string("phased_release_state")])
+                "required": .array([.string("phased_release_id"), .string("phased_release_state")]),
+                "allOf": .array([
+                    .object([
+                        "if": .object([
+                            "properties": .object([
+                                "phased_release_state": .object([
+                                    "enum": .array([.string("ACTIVE"), .string("COMPLETE")])
+                                ])
+                            ]),
+                            "required": .array([.string("phased_release_state")])
+                        ]),
+                        "then": .object([
+                            "required": .array([.string("confirm_phased_release_id")])
+                        ])
+                    ])
+                ])
             ])
         )
     }
@@ -646,16 +661,20 @@ extension AppLifecycleWorker {
     func deleteVersionTool() -> Tool {
         Tool(
             name: "app_versions_delete",
-            description: "Delete an app store version. App Store Connect validates whether the version is currently deletable.",
+            description: "Delete an app store version after exact version-ID confirmation. App Store Connect validates whether the version is currently deletable.",
             inputSchema: .object([
                 "type": .string("object"),
                 "properties": .object([
                     "version_id": .object([
                         "type": .string("string"),
                         "description": .string("Version ID to delete")
+                    ]),
+                    "confirm_version_id": .object([
+                        "type": .string("string"),
+                        "description": .string("Exact version_id required to confirm irreversible deletion")
                     ])
                 ]),
-                "required": .array([.string("version_id")])
+                "required": .array([.string("version_id"), .string("confirm_version_id")])
             ])
         )
     }

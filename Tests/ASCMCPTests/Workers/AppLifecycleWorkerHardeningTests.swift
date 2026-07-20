@@ -238,6 +238,10 @@ struct AppLifecycleWorkerHardeningTests {
             ),
             (
                 "app_versions_update_phased_release",
+                ["phased_release_id": .string("phase-1"), "phased_release_state": .string("ACTIVE")]
+            ),
+            (
+                "app_versions_update_phased_release",
                 ["phased_release_id": .string("phase-1"), "phased_release_state": .string("COMPLETE")]
             ),
             (
@@ -259,6 +263,7 @@ struct AppLifecycleWorkerHardeningTests {
     func phasedReleaseMutationsAcceptExactConfirmations() async throws {
         let transport = TestHTTPTransport(responses: [
             .init(statusCode: 201, body: #"{"data":{"type":"appStoreVersionPhasedReleases","id":"phase-1","attributes":{"phasedReleaseState":"ACTIVE"}}}"#),
+            .init(statusCode: 200, body: #"{"data":{"type":"appStoreVersionPhasedReleases","id":"phase-1","attributes":{"phasedReleaseState":"ACTIVE"}}}"#),
             .init(statusCode: 200, body: #"{"data":{"type":"appStoreVersionPhasedReleases","id":"phase-1","attributes":{"phasedReleaseState":"COMPLETE"}}}"#)
         ])
         let worker = try await makeWorker(transport: transport)
@@ -271,6 +276,14 @@ struct AppLifecycleWorkerHardeningTests {
                 "confirm_version_id": .string("ver-1")
             ]
         ))
+        let activate = try await worker.handleTool(.init(
+            name: "app_versions_update_phased_release",
+            arguments: [
+                "phased_release_id": .string("phase-1"),
+                "phased_release_state": .string("ACTIVE"),
+                "confirm_phased_release_id": .string("phase-1")
+            ]
+        ))
         let complete = try await worker.handleTool(.init(
             name: "app_versions_update_phased_release",
             arguments: [
@@ -281,14 +294,17 @@ struct AppLifecycleWorkerHardeningTests {
         ))
 
         #expect(create.isError != true)
+        #expect(activate.isError != true)
         #expect(complete.isError != true)
         let requests = await transport.recordedRequests()
-        #expect(requests.map(\.httpMethod) == ["POST", "PATCH"])
+        #expect(requests.map(\.httpMethod) == ["POST", "PATCH", "PATCH"])
         #expect(requests[0].url?.path == "/v1/appStoreVersionPhasedReleases")
         #expect(requests[1].url?.path == "/v1/appStoreVersionPhasedReleases/phase-1")
+        #expect(requests[2].url?.path == "/v1/appStoreVersionPhasedReleases/phase-1")
         let bodies = await transport.recordedBodyStrings()
         #expect(bodies[0].contains(#""phasedReleaseState":"ACTIVE""#))
-        #expect(bodies[1].contains(#""phasedReleaseState":"COMPLETE""#))
+        #expect(bodies[1].contains(#""phasedReleaseState":"ACTIVE""#))
+        #expect(bodies[2].contains(#""phasedReleaseState":"COMPLETE""#))
     }
 
     @Test("phased release handlers reject workflow-incompatible states")
