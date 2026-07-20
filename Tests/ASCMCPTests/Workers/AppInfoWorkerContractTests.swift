@@ -59,7 +59,8 @@ struct AppInfoWorkerContractTests {
 
         #expect(result.isError != true)
         let request = try #require(await transport.recordedRequests().first)
-        let components = try #require(URLComponents(url: try #require(request.url), resolvingAgainstBaseURL: false))
+        let url = try #require(request.url)
+        let components = try #require(URLComponents(url: url, resolvingAgainstBaseURL: false))
         #expect(components.percentEncodedPath == "/v1/apps/app%3A1/appInfos")
         let query = try appInfoContractQuery(request)
         #expect(query["include"] == "app,ageRatingDeclaration")
@@ -209,7 +210,8 @@ private func appInfoContractWorker(transport: TestHTTPTransport) async throws ->
 }
 
 private func appInfoContractQuery(_ request: URLRequest) throws -> [String: String] {
-    let components = try #require(URLComponents(url: try #require(request.url), resolvingAgainstBaseURL: false))
+    let url = try #require(request.url)
+    let components = try #require(URLComponents(url: url, resolvingAgainstBaseURL: false))
     return Dictionary(uniqueKeysWithValues: (components.queryItems ?? []).map { ($0.name, $0.value ?? "") })
 }
 

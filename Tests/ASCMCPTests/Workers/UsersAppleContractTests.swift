@@ -99,8 +99,9 @@ struct UsersAppleContractTests {
 
         #expect(result.isError != true)
         let request = try #require(await transport.recordedRequests().first)
+        let url = try #require(request.url)
         let components = try #require(URLComponents(
-            url: try #require(request.url),
+            url: url,
             resolvingAgainstBaseURL: false
         ))
         #expect(components.percentEncodedPath == "/v1/users/user%3A1")

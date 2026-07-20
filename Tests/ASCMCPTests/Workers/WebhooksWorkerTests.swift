@@ -494,7 +494,8 @@ struct WebhooksWorkerTests {
         let requests = await transport.recordedRequests()
         #expect(requests.count == 2)
         for request in requests {
-            let components = try #require(URLComponents(url: try #require(request.url), resolvingAgainstBaseURL: false))
+            let url = try #require(request.url)
+            let components = try #require(URLComponents(url: url, resolvingAgainstBaseURL: false))
             #expect(components.queryItems?.first { $0.name == "include" }?.value == "app")
         }
     }

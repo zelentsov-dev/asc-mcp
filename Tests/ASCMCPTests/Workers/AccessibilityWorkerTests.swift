@@ -292,7 +292,8 @@ struct AccessibilityWorkerTests {
 
         #expect(result.isError != true)
         let request = try #require(await transport.recordedRequests().first)
-        let components = try #require(URLComponents(url: try #require(request.url), resolvingAgainstBaseURL: false))
+        let url = try #require(request.url)
+        let components = try #require(URLComponents(url: url, resolvingAgainstBaseURL: false))
         let query = Dictionary(uniqueKeysWithValues: (components.queryItems ?? []).map { ($0.name, $0.value ?? "") })
         #expect(query["filter[deviceFamily]"] == "IPHONE,IPAD")
         #expect(query["filter[state]"] == "DRAFT,PUBLISHED")

@@ -352,7 +352,8 @@ private func analyticsContractEnum(_ property: Value?) throws -> [String] {
 }
 
 private func analyticsContractQuery(_ request: URLRequest) throws -> [String: String] {
-    let components = try #require(URLComponents(url: try #require(request.url), resolvingAgainstBaseURL: false))
+    let url = try #require(request.url)
+    let components = try #require(URLComponents(url: url, resolvingAgainstBaseURL: false))
     return Dictionary(uniqueKeysWithValues: (components.queryItems ?? []).map { ($0.name, $0.value ?? "") })
 }
 
