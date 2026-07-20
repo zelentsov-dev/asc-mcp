@@ -601,9 +601,8 @@ extension AppsWorker {
     /// Fetches media (preview videos and screenshots) for a localization
     /// - Returns: Tuple with optional preview sets and screenshot sets arrays
     private func fetchMedia(for localizationId: String) async throws -> (previews: [[String: Any]], screenshots: [[String: Any]]) {
-        let encodedLocalizationId = try ASCPathSegment.encode(localizationId)
-        let previewPath = "/v1/appStoreVersionLocalizations/\(encodedLocalizationId)/appPreviewSets"
-        let screenshotPath = "/v1/appStoreVersionLocalizations/\(encodedLocalizationId)/appScreenshotSets"
+        let previewPath = "/v1/appStoreVersionLocalizations/\(try ASCPathSegment.encode(localizationId))/appPreviewSets"
+        let screenshotPath = "/v1/appStoreVersionLocalizations/\(try ASCPathSegment.encode(localizationId))/appScreenshotSets"
         let previewInclude = "appPreviews"
         let screenshotInclude = "appScreenshots"
         var previews: [[String: Any]] = []

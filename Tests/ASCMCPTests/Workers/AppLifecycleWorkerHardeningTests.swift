@@ -305,7 +305,11 @@ struct AppLifecycleWorkerHardeningTests {
             ]
         ))
 
-        let body = try #require(await transport.recordedBodyStrings().first)
+        let requests = await transport.recordedRequests()
+        let createRequest = try #require(requests.first(where: {
+            $0.httpMethod == "POST" && $0.url?.path == "/v1/reviewSubmissions"
+        }))
+        let body = try #require(createRequest.httpBody.flatMap { String(data: $0, encoding: .utf8) })
         #expect(body.contains("\"reviewSubmissions\""))
         #expect(!body.contains("platform"))
     }
