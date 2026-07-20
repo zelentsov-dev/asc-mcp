@@ -168,7 +168,7 @@ struct AppsSearchContractTests {
             ("bundle-search", "filter[bundleId]")
         ] {
             let operation = try #require(operations[invocationID])
-            let inputs = Dictionary(uniqueKeysWithValues: (operation.inputs ?? []).compactMap { input in
+            let inputs: [String: ASCJSONValue] = Dictionary(uniqueKeysWithValues: (operation.inputs ?? []).compactMap { input in
                 guard input.location == "query", let name = input.appleName, let value = input.fixedValue else {
                     return nil
                 }
