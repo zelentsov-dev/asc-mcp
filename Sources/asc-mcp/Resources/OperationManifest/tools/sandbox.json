@@ -24,17 +24,31 @@
           "toolField": "sandbox_tester_ids",
           "sourceKind": "requestBody",
           "operationId": "sandboxTestersClearPurchaseHistoryRequestV2_createInstance",
-          "jsonPointer": "/data/relationships/sandboxTesters/data"
+          "jsonPointer": "/data/relationships/sandboxTesters/data/*/id"
         }
       ],
       "response": {
-        "mode": "opaque",
+        "mode": "projection",
         "sources": [
           { "operationId": "sandboxTestersClearPurchaseHistoryRequestV2_createInstance", "statusCode": "201", "mediaType": "application/json" }
         ],
-        "fields": []
+        "fields": [
+          {
+            "outputField": "success",
+            "localRole": "Set true after Apple creates the clear-history request."
+          },
+          {
+            "outputField": "request_id",
+            "operationId": "sandboxTestersClearPurchaseHistoryRequestV2_createInstance",
+            "jsonPointer": "/data/id"
+          },
+          {
+            "outputField": "message",
+            "localRole": "Local confirmation containing the validated tester count."
+          }
+        ]
       },
-      "note": "Apple 4.4.1 operation identity and all public inputs are classified; response remains opaque, so the semantic mapping is partial."
+      "note": "Validates every submitted tester ID and returns Apple's 201 request resource identifier."
     },
     {
       "tool": "sandbox_list",
@@ -66,13 +80,37 @@
         }
       ],
       "response": {
-        "mode": "opaque",
+        "mode": "projection",
         "sources": [
           { "operationId": "sandboxTestersV2_getCollection", "statusCode": "200", "mediaType": "application/json" }
         ],
-        "fields": []
+        "fields": [
+          {
+            "outputField": "success",
+            "localRole": "Set true after a successful Apple response."
+          },
+          {
+            "outputField": "sandbox_testers",
+            "operationId": "sandboxTestersV2_getCollection",
+            "jsonPointer": "/data"
+          },
+          {
+            "outputField": "count",
+            "localRole": "Count of testers in the current page."
+          },
+          {
+            "outputField": "total",
+            "operationId": "sandboxTestersV2_getCollection",
+            "jsonPointer": "/meta/paging/total"
+          },
+          {
+            "outputField": "next_url",
+            "operationId": "sandboxTestersV2_getCollection",
+            "jsonPointer": "/links/next"
+          }
+        ]
       },
-      "note": "Apple 4.4.1 operation identity and all public inputs are classified; response remains opaque, so the semantic mapping is partial."
+      "note": "Projects sparse Apple resources safely even when attributes are absent and preserves paging total."
     },
     {
       "tool": "sandbox_update",
@@ -126,13 +164,23 @@
         }
       ],
       "response": {
-        "mode": "opaque",
+        "mode": "projection",
         "sources": [
           { "operationId": "sandboxTestersV2_updateInstance", "statusCode": "200", "mediaType": "application/json" }
         ],
-        "fields": []
+        "fields": [
+          {
+            "outputField": "success",
+            "localRole": "Set true after Apple accepts the update."
+          },
+          {
+            "outputField": "sandbox_tester",
+            "operationId": "sandboxTestersV2_updateInstance",
+            "jsonPointer": "/data"
+          }
+        ]
       },
-      "note": "Apple 4.4.1 operation identity and all public inputs are classified; response remains opaque, so the semantic mapping is partial."
+      "note": "Preserves value, explicit null, and omission for every writable attribute and rejects empty PATCH requests."
     }
   ],
   "implementationAliases": []

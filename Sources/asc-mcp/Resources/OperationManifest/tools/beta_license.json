@@ -12,7 +12,16 @@
           "operationId": "betaLicenseAgreements_getInstance",
           "method": "get",
           "path": "/v1/betaLicenseAgreements/{id}",
-          "role": "primary"
+          "role": "primary",
+          "optionalParameterClassifications": [
+            {
+              "location": "query",
+              "appleName": "include",
+              "disposition": "intentionallyOmitted",
+              "reason": "The base resource app linkage is projected as appId; expanding the full App resource is outside this focused agreement tool.",
+              "reviewAtSpec": "4.4.1"
+            }
+          ]
         }
       ],
       "fields": [
@@ -38,10 +47,14 @@
             "outputField": "beta_license_agreement",
             "operationId": "betaLicenseAgreements_getInstance",
             "jsonPointer": "/data"
+          },
+          {
+            "outputField": "success",
+            "localRole": "Set true after a successful Apple response."
           }
         ]
       },
-      "note": "Exact resource read; the current model and formatter omit links and the documented app relationship."
+      "note": "Projects agreement attributes plus the documented app relationship linkage and related URL."
     },
     {
       "tool": "beta_license_list",
@@ -54,7 +67,16 @@
           "operationId": "betaLicenseAgreements_getCollection",
           "method": "get",
           "path": "/v1/betaLicenseAgreements",
-          "role": "primary"
+          "role": "primary",
+          "optionalParameterClassifications": [
+            {
+              "location": "query",
+              "appleName": "include",
+              "disposition": "intentionallyOmitted",
+              "reason": "Each agreement already projects its app linkage; expanding full App resources would duplicate the apps worker.",
+              "reviewAtSpec": "4.4.1"
+            }
+          ]
         }
       ],
       "fields": [
@@ -89,6 +111,10 @@
         ],
         "fields": [
           {
+            "outputField": "success",
+            "localRole": "Set true after a successful Apple response."
+          },
+          {
             "outputField": "beta_license_agreements",
             "operationId": "betaLicenseAgreements_getCollection",
             "jsonPointer": "/data"
@@ -97,10 +123,19 @@
             "outputField": "next_url",
             "operationId": "betaLicenseAgreements_getCollection",
             "jsonPointer": "/links/next"
+          },
+          {
+            "outputField": "count",
+            "localRole": "Count of agreements in the current page."
+          },
+          {
+            "outputField": "total",
+            "operationId": "betaLicenseAgreements_getCollection",
+            "jsonPointer": "/meta/paging/total"
           }
         ]
       },
-      "note": "Valid filter subset; sparse fields and app include are not exposed and the response projection drops the app relationship."
+      "note": "Supports Apple scalar-or-array app filtering, pagination, total, and app relationship linkage projection."
     },
     {
       "tool": "beta_license_update",
@@ -157,13 +192,17 @@
         ],
         "fields": [
           {
+            "outputField": "success",
+            "localRole": "Set true after Apple accepts the update."
+          },
+          {
             "outputField": "beta_license_agreement",
             "operationId": "betaLicenseAgreements_updateInstance",
             "jsonPointer": "/data"
           }
         ]
       },
-      "note": "Correct writable attribute, but the MCP schema requires only the id and therefore allows an empty PATCH when agreement_text is omitted."
+      "note": "Preserves Apple nullable agreementText semantics and rejects empty or incorrectly typed updates before network I/O."
     }
   ],
   "implementationAliases": []

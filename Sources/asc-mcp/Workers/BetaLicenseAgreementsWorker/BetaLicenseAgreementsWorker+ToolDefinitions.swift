@@ -12,11 +12,21 @@ extension BetaLicenseAgreementsWorker {
                 "type": .string("object"),
                 "properties": .object([
                     "app_id": .object([
-                        "type": .string("string"),
-                        "description": .string("Filter by app ID")
+                        "oneOf": .array([
+                            .object(["type": .string("string"), "minLength": .int(1)]),
+                            .object([
+                                "type": .string("array"),
+                                "items": .object(["type": .string("string"), "minLength": .int(1)]),
+                                "minItems": .int(1),
+                                "uniqueItems": .bool(true)
+                            ])
+                        ]),
+                        "description": .string("Filter by one or more app IDs")
                     ]),
                     "limit": .object([
                         "type": .string("integer"),
+                        "minimum": .int(1),
+                        "maximum": .int(200),
                         "description": .string("Max results (default: 25, max: 200)")
                     ]),
                     "next_url": .object([
@@ -58,11 +68,11 @@ extension BetaLicenseAgreementsWorker {
                         "description": .string("Beta license agreement ID")
                     ]),
                     "agreement_text": .object([
-                        "type": .string("string"),
-                        "description": .string("New license agreement text for TestFlight testers")
+                        "type": .array([.string("string"), .string("null")]),
+                        "description": .string("New license agreement text, or null to clear it")
                     ])
                 ]),
-                "required": .array([.string("beta_license_agreement_id")])
+                "required": .array([.string("beta_license_agreement_id"), .string("agreement_text")])
             ])
         )
     }

@@ -6,6 +6,7 @@ import Foundation
 public struct ASCBetaAppLocalizationsResponse: Codable, Sendable {
     public let data: [ASCBetaAppLocalization]
     public let links: ASCPagedDocumentLinks?
+    public let meta: ASCPagingInformation?
 }
 
 /// Beta app localization single response
@@ -17,7 +18,7 @@ public struct ASCBetaAppLocalizationResponse: Codable, Sendable {
 public struct ASCBetaAppLocalization: Codable, Sendable {
     public let type: String
     public let id: String
-    public let attributes: BetaAppLocalizationAttributes
+    public let attributes: BetaAppLocalizationAttributes?
 }
 
 /// Beta app localization attributes
@@ -85,6 +86,7 @@ public struct UpdateBetaAppLocalizationRequest: Codable, Sendable {
 public struct ASCBetaAppReviewSubmissionsResponse: Codable, Sendable {
     public let data: [ASCBetaAppReviewSubmission]
     public let links: ASCPagedDocumentLinks?
+    public let meta: ASCPagingInformation?
 }
 
 /// Beta app review submission single response
@@ -96,7 +98,12 @@ public struct ASCBetaAppReviewSubmissionResponse: Codable, Sendable {
 public struct ASCBetaAppReviewSubmission: Codable, Sendable {
     public let type: String
     public let id: String
-    public let attributes: BetaAppReviewSubmissionAttributes
+    public let attributes: BetaAppReviewSubmissionAttributes?
+    public let relationships: Relationships?
+
+    public struct Relationships: Codable, Sendable {
+        public let build: ASCRelationship?
+    }
 }
 
 /// Beta app review submission attributes
@@ -136,7 +143,7 @@ public struct ASCBetaAppReviewDetailResponse: Codable, Sendable {
 public struct ASCBetaAppReviewDetail: Codable, Sendable {
     public let type: String
     public let id: String
-    public let attributes: BetaAppReviewDetailAttributes
+    public let attributes: BetaAppReviewDetailAttributes?
 }
 
 /// Beta app review detail attributes
@@ -160,17 +167,6 @@ public struct UpdateBetaAppReviewDetailRequest: Codable, Sendable {
     public struct UpdateData: Codable, Sendable {
         public var type: String = "betaAppReviewDetails"
         public let id: String
-        public let attributes: Attributes
-    }
-
-    public struct Attributes: Codable, Sendable {
-        public let contactFirstName: String?
-        public let contactLastName: String?
-        public let contactPhone: String?
-        public let contactEmail: String?
-        public let demoAccountName: String?
-        public let demoAccountPassword: String?
-        public let demoAccountRequired: Bool?
-        public let notes: String?
+        public let attributes: [String: JSONValue]
     }
 }

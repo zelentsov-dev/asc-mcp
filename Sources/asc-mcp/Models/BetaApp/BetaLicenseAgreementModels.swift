@@ -6,6 +6,7 @@ import Foundation
 public struct ASCBetaLicenseAgreementsResponse: Codable, Sendable {
     public let data: [ASCBetaLicenseAgreement]
     public let links: ASCPagedDocumentLinks?
+    public let meta: ASCPagingInformation?
 }
 
 /// Beta license agreement single response
@@ -18,6 +19,11 @@ public struct ASCBetaLicenseAgreement: Codable, Sendable {
     public let type: String
     public let id: String
     public let attributes: BetaLicenseAgreementAttributes?
+    public let relationships: Relationships?
+
+    public struct Relationships: Codable, Sendable {
+        public let app: ASCRelationship?
+    }
 }
 
 /// Beta license agreement attributes
@@ -38,6 +44,6 @@ public struct UpdateBetaLicenseAgreementRequest: Codable, Sendable {
     }
 
     public struct Attributes: Codable, Sendable {
-        public let agreementText: String?
+        public let agreementText: JSONValue
     }
 }

@@ -49,6 +49,9 @@ extension BetaAppWorker {
                 "localizations": localizations,
                 "count": localizations.count
             ]
+            if let total = response.meta?.paging?.total {
+                result["total"] = total
+            }
             if let next = response.links?.next {
                 result["next_url"] = next
             }
@@ -75,16 +78,31 @@ extension BetaAppWorker {
             )
         }
 
+        let feedbackEmail: String?
+        let marketingURL: String?
+        let privacyPolicyURL: String?
+        let tvOSPrivacyPolicy: String?
+        let description: String?
+        do {
+            feedbackEmail = try strictOptionalString("feedback_email", from: arguments)
+            marketingURL = try strictOptionalString("marketing_url", from: arguments)
+            privacyPolicyURL = try strictOptionalString("privacy_policy_url", from: arguments)
+            tvOSPrivacyPolicy = try strictOptionalString("tv_os_privacy_policy", from: arguments)
+            description = try strictOptionalString("description", from: arguments)
+        } catch {
+            return MCPResult.error(error.localizedDescription)
+        }
+
         do {
             let request = CreateBetaAppLocalizationRequest(
                 data: CreateBetaAppLocalizationRequest.CreateData(
                     attributes: CreateBetaAppLocalizationRequest.Attributes(
                         locale: locale,
-                        feedbackEmail: arguments["feedback_email"]?.stringValue,
-                        marketingUrl: arguments["marketing_url"]?.stringValue,
-                        privacyPolicyUrl: arguments["privacy_policy_url"]?.stringValue,
-                        tvOsPrivacyPolicy: arguments["tv_os_privacy_policy"]?.stringValue,
-                        description: arguments["description"]?.stringValue
+                        feedbackEmail: feedbackEmail,
+                        marketingUrl: marketingURL,
+                        privacyPolicyUrl: privacyPolicyURL,
+                        tvOsPrivacyPolicy: tvOSPrivacyPolicy,
+                        description: description
                     ),
                     relationships: CreateBetaAppLocalizationRequest.Relationships(
                         app: CreateBetaAppLocalizationRequest.AppRelationship(
@@ -163,16 +181,34 @@ extension BetaAppWorker {
             )
         }
 
+        let feedbackEmail: String?
+        let marketingURL: String?
+        let privacyPolicyURL: String?
+        let tvOSPrivacyPolicy: String?
+        let description: String?
+        do {
+            feedbackEmail = try strictOptionalString("feedback_email", from: arguments)
+            marketingURL = try strictOptionalString("marketing_url", from: arguments)
+            privacyPolicyURL = try strictOptionalString("privacy_policy_url", from: arguments)
+            tvOSPrivacyPolicy = try strictOptionalString("tv_os_privacy_policy", from: arguments)
+            description = try strictOptionalString("description", from: arguments)
+        } catch {
+            return MCPResult.error(error.localizedDescription)
+        }
+        guard [feedbackEmail, marketingURL, privacyPolicyURL, tvOSPrivacyPolicy, description].contains(where: { $0 != nil }) else {
+            return MCPResult.error("At least one localization update field is required")
+        }
+
         do {
             let request = UpdateBetaAppLocalizationRequest(
                 data: UpdateBetaAppLocalizationRequest.UpdateData(
                     id: localizationId,
                     attributes: UpdateBetaAppLocalizationRequest.Attributes(
-                        feedbackEmail: arguments["feedback_email"]?.stringValue,
-                        marketingUrl: arguments["marketing_url"]?.stringValue,
-                        privacyPolicyUrl: arguments["privacy_policy_url"]?.stringValue,
-                        tvOsPrivacyPolicy: arguments["tv_os_privacy_policy"]?.stringValue,
-                        description: arguments["description"]?.stringValue
+                        feedbackEmail: feedbackEmail,
+                        marketingUrl: marketingURL,
+                        privacyPolicyUrl: privacyPolicyURL,
+                        tvOsPrivacyPolicy: tvOSPrivacyPolicy,
+                        description: description
                     )
                 )
             )
@@ -280,21 +316,38 @@ extension BetaAppWorker {
     /// - Returns: JSON array of submissions with review states
     func listSubmissions(_ params: CallTool.Parameters) async throws -> CallTool.Result {
         guard let arguments = params.arguments,
-              let buildId = arguments["build_id"]?.stringValue else {
+              let buildValue = arguments["build_id"] else {
             return CallTool.Result(
                 content: [MCPContent.text("Error: Required parameter 'build_id' is missing")],
                 isError: true
             )
         }
 
+        let buildIDs: String
+        let reviewStates: String?
+        do {
+            buildIDs = try commaSeparatedStrings(buildValue, field: "build_id")
+            if let reviewStateValue = arguments["review_state"] {
+                reviewStates = try commaSeparatedStrings(
+                    reviewStateValue,
+                    field: "review_state",
+                    allowedValues: Self.betaReviewStates
+                )
+            } else {
+                reviewStates = nil
+            }
+        } catch {
+            return MCPResult.error(error.localizedDescription)
+        }
+
         do {
             let response: ASCBetaAppReviewSubmissionsResponse
             var queryParams: [String: String] = [
-                "filter[build]": buildId
+                "filter[build]": buildIDs
             ]
 
-            if let reviewState = arguments["review_state"]?.stringValue {
-                queryParams["filter[betaReviewState]"] = reviewState
+            if let reviewStates {
+                queryParams["filter[betaReviewState]"] = reviewStates
             }
             if let limit = arguments["limit"]?.intValue {
                 queryParams["limit"] = String(min(max(limit, 1), 200))
@@ -328,6 +381,9 @@ extension BetaAppWorker {
                 "submissions": submissions,
                 "count": submissions.count
             ]
+            if let total = response.meta?.paging?.total {
+                result["total"] = total
+            }
             if let next = response.links?.next {
                 result["next_url"] = next
             }
@@ -425,20 +481,37 @@ extension BetaAppWorker {
             )
         }
 
+        var attributes: [String: JSONValue] = [:]
+        do {
+            let stringFields = [
+                "contact_first_name": "contactFirstName",
+                "contact_last_name": "contactLastName",
+                "contact_phone": "contactPhone",
+                "contact_email": "contactEmail",
+                "demo_account_name": "demoAccountName",
+                "demo_account_password": "demoAccountPassword",
+                "notes": "notes"
+            ]
+            for (toolField, appleField) in stringFields {
+                if let value = try nullableString(toolField, from: arguments) {
+                    attributes[appleField] = value
+                }
+            }
+            if let value = try nullableBool("demo_account_required", from: arguments) {
+                attributes["demoAccountRequired"] = value
+            }
+        } catch {
+            return MCPResult.error(error.localizedDescription)
+        }
+        guard !attributes.isEmpty else {
+            return MCPResult.error("At least one review detail update field is required")
+        }
+
         do {
             let request = UpdateBetaAppReviewDetailRequest(
                 data: UpdateBetaAppReviewDetailRequest.UpdateData(
                     id: reviewDetailId,
-                    attributes: UpdateBetaAppReviewDetailRequest.Attributes(
-                        contactFirstName: arguments["contact_first_name"]?.stringValue,
-                        contactLastName: arguments["contact_last_name"]?.stringValue,
-                        contactPhone: arguments["contact_phone"]?.stringValue,
-                        contactEmail: arguments["contact_email"]?.stringValue,
-                        demoAccountName: arguments["demo_account_name"]?.stringValue,
-                        demoAccountPassword: arguments["demo_account_password"]?.stringValue,
-                        demoAccountRequired: arguments["demo_account_required"]?.boolValue,
-                        notes: arguments["notes"]?.stringValue
-                    )
+                    attributes: attributes
                 )
             )
 
@@ -471,12 +544,12 @@ extension BetaAppWorker {
         return [
             "id": localization.id,
             "type": localization.type,
-            "locale": localization.attributes.locale.jsonSafe,
-            "feedbackEmail": localization.attributes.feedbackEmail.jsonSafe,
-            "marketingUrl": localization.attributes.marketingUrl.jsonSafe,
-            "privacyPolicyUrl": localization.attributes.privacyPolicyUrl.jsonSafe,
-            "tvOsPrivacyPolicy": localization.attributes.tvOsPrivacyPolicy.jsonSafe,
-            "description": localization.attributes.description.jsonSafe
+            "locale": (localization.attributes?.locale).jsonSafe,
+            "feedbackEmail": (localization.attributes?.feedbackEmail).jsonSafe,
+            "marketingUrl": (localization.attributes?.marketingUrl).jsonSafe,
+            "privacyPolicyUrl": (localization.attributes?.privacyPolicyUrl).jsonSafe,
+            "tvOsPrivacyPolicy": (localization.attributes?.tvOsPrivacyPolicy).jsonSafe,
+            "description": (localization.attributes?.description).jsonSafe
         ]
     }
 
@@ -484,8 +557,10 @@ extension BetaAppWorker {
         return [
             "id": submission.id,
             "type": submission.type,
-            "betaReviewState": submission.attributes.betaReviewState.jsonSafe,
-            "submittedDate": submission.attributes.submittedDate.jsonSafe
+            "betaReviewState": (submission.attributes?.betaReviewState).jsonSafe,
+            "submittedDate": (submission.attributes?.submittedDate).jsonSafe,
+            "buildId": (submission.relationships?.build?.data?.id).jsonSafe,
+            "buildRelatedURL": (submission.relationships?.build?.links?.related).jsonSafe
         ]
     }
 
@@ -493,14 +568,96 @@ extension BetaAppWorker {
         return [
             "id": detail.id,
             "type": detail.type,
-            "contactFirstName": detail.attributes.contactFirstName.jsonSafe,
-            "contactLastName": detail.attributes.contactLastName.jsonSafe,
-            "contactPhone": detail.attributes.contactPhone.jsonSafe,
-            "contactEmail": detail.attributes.contactEmail.jsonSafe,
-            "demoAccountName": detail.attributes.demoAccountName.jsonSafe,
-            "demoAccountPassword": detail.attributes.demoAccountPassword.jsonSafe,
-            "demoAccountRequired": detail.attributes.demoAccountRequired.jsonSafe,
-            "notes": detail.attributes.notes.jsonSafe
+            "contactFirstName": (detail.attributes?.contactFirstName).jsonSafe,
+            "contactLastName": (detail.attributes?.contactLastName).jsonSafe,
+            "contactPhone": (detail.attributes?.contactPhone).jsonSafe,
+            "contactEmail": (detail.attributes?.contactEmail).jsonSafe,
+            "demoAccountName": (detail.attributes?.demoAccountName).jsonSafe,
+            "demoAccountPassword": (detail.attributes?.demoAccountPassword).jsonSafe,
+            "demoAccountRequired": (detail.attributes?.demoAccountRequired).jsonSafe,
+            "notes": (detail.attributes?.notes).jsonSafe
         ]
     }
+
+    private func strictOptionalString(_ name: String, from arguments: [String: Value]) throws -> String? {
+        guard let value = arguments[name] else {
+            return nil
+        }
+        guard !value.isNull, let string = value.stringValue else {
+            throw BetaAppArgumentError("\(name) must be a string; omit the field instead of passing null")
+        }
+        return string
+    }
+
+    private func nullableString(_ name: String, from arguments: [String: Value]) throws -> JSONValue? {
+        guard let value = arguments[name] else {
+            return nil
+        }
+        if value.isNull {
+            return .null
+        }
+        guard let string = value.stringValue else {
+            throw BetaAppArgumentError("\(name) must be a string or null")
+        }
+        return .string(string)
+    }
+
+    private func nullableBool(_ name: String, from arguments: [String: Value]) throws -> JSONValue? {
+        guard let value = arguments[name] else {
+            return nil
+        }
+        if value.isNull {
+            return .null
+        }
+        guard let bool = value.boolValue else {
+            throw BetaAppArgumentError("\(name) must be a boolean or null")
+        }
+        return .bool(bool)
+    }
+
+    private func commaSeparatedStrings(
+        _ value: Value,
+        field: String,
+        allowedValues: Set<String>? = nil
+    ) throws -> String {
+        let values: [String]
+        if let string = value.stringValue {
+            values = [string]
+        } else if let array = value.arrayValue,
+                  !array.isEmpty,
+                  array.allSatisfy({ $0.stringValue != nil }) {
+            values = array.compactMap(\.stringValue)
+        } else {
+            throw BetaAppArgumentError("\(field) must be a non-empty string or array of strings")
+        }
+        guard values.allSatisfy({ !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }) else {
+            throw BetaAppArgumentError("\(field) must contain only non-empty strings")
+        }
+        guard Set(values).count == values.count,
+              values.allSatisfy({ !$0.contains(",") }) else {
+            throw BetaAppArgumentError("\(field) must contain unique values without commas")
+        }
+        if let allowedValues,
+           let invalid = values.first(where: { !allowedValues.contains($0) }) {
+            throw BetaAppArgumentError("\(field) contains unsupported value '\(invalid)'")
+        }
+        return values.joined(separator: ",")
+    }
+
+    private static let betaReviewStates: Set<String> = [
+        "WAITING_FOR_REVIEW",
+        "IN_REVIEW",
+        "REJECTED",
+        "APPROVED"
+    ]
+}
+
+private struct BetaAppArgumentError: LocalizedError {
+    let message: String
+
+    init(_ message: String) {
+        self.message = message
+    }
+
+    var errorDescription: String? { message }
 }

@@ -19,6 +19,8 @@ extension BetaAppWorker {
                     ]),
                     "limit": .object([
                         "type": .string("integer"),
+                        "minimum": .int(1),
+                        "maximum": .int(200),
                         "description": .string("Max results (default: 25, max: 200)")
                     ]),
                     "next_url": .object([
@@ -95,6 +97,7 @@ extension BetaAppWorker {
             description: "Update a beta app localization (TestFlight metadata for a locale)",
             inputSchema: .object([
                 "type": .string("object"),
+                "minProperties": .int(2),
                 "properties": .object([
                     "localization_id": .object([
                         "type": .string("string"),
@@ -170,16 +173,39 @@ extension BetaAppWorker {
                 "type": .string("object"),
                 "properties": .object([
                     "build_id": .object([
-                        "type": .string("string"),
-                        "description": .string("Build ID (required by Apple API)")
+                        "oneOf": .array([
+                            .object(["type": .string("string"), "minLength": .int(1)]),
+                            .object([
+                                "type": .string("array"),
+                                "items": .object(["type": .string("string"), "minLength": .int(1)]),
+                                "minItems": .int(1),
+                                "uniqueItems": .bool(true)
+                            ])
+                        ]),
+                        "description": .string("One or more build IDs required by Apple")
                     ]),
                     "review_state": .object([
-                        "type": .string("string"),
+                        "oneOf": .array([
+                            .object([
+                                "type": .string("string"),
+                                "enum": .array([.string("WAITING_FOR_REVIEW"), .string("IN_REVIEW"), .string("REJECTED"), .string("APPROVED")])
+                            ]),
+                            .object([
+                                "type": .string("array"),
+                                "items": .object([
+                                    "type": .string("string"),
+                                    "enum": .array([.string("WAITING_FOR_REVIEW"), .string("IN_REVIEW"), .string("REJECTED"), .string("APPROVED")])
+                                ]),
+                                "minItems": .int(1),
+                                "uniqueItems": .bool(true)
+                            ])
+                        ]),
                         "description": .string("Filter by review state"),
-                        "enum": .array([.string("WAITING_FOR_REVIEW"), .string("IN_REVIEW"), .string("REJECTED"), .string("APPROVED")])
                     ]),
                     "limit": .object([
                         "type": .string("integer"),
+                        "minimum": .int(1),
+                        "maximum": .int(200),
                         "description": .string("Max results (default: 25, max: 200)")
                     ]),
                     "next_url": .object([
@@ -234,41 +260,42 @@ extension BetaAppWorker {
             description: "Update beta app review details (demo account, contact info for beta review)",
             inputSchema: .object([
                 "type": .string("object"),
+                "minProperties": .int(2),
                 "properties": .object([
                     "review_detail_id": .object([
                         "type": .string("string"),
                         "description": .string("Beta app review detail ID")
                     ]),
                     "contact_first_name": .object([
-                        "type": .string("string"),
+                        "type": .array([.string("string"), .string("null")]),
                         "description": .string("Contact first name")
                     ]),
                     "contact_last_name": .object([
-                        "type": .string("string"),
+                        "type": .array([.string("string"), .string("null")]),
                         "description": .string("Contact last name")
                     ]),
                     "contact_phone": .object([
-                        "type": .string("string"),
+                        "type": .array([.string("string"), .string("null")]),
                         "description": .string("Contact phone number")
                     ]),
                     "contact_email": .object([
-                        "type": .string("string"),
+                        "type": .array([.string("string"), .string("null")]),
                         "description": .string("Contact email address")
                     ]),
                     "demo_account_name": .object([
-                        "type": .string("string"),
+                        "type": .array([.string("string"), .string("null")]),
                         "description": .string("Demo account username")
                     ]),
                     "demo_account_password": .object([
-                        "type": .string("string"),
+                        "type": .array([.string("string"), .string("null")]),
                         "description": .string("Demo account password")
                     ]),
                     "demo_account_required": .object([
-                        "type": .string("boolean"),
+                        "type": .array([.string("boolean"), .string("null")]),
                         "description": .string("Whether a demo account is required for review")
                     ]),
                     "notes": .object([
-                        "type": .string("string"),
+                        "type": .array([.string("string"), .string("null")]),
                         "description": .string("Additional notes for the reviewer")
                     ])
                 ]),

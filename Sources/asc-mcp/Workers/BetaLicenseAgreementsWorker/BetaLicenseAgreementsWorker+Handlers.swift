@@ -13,8 +13,8 @@ extension BetaLicenseAgreementsWorker {
             let response: ASCBetaLicenseAgreementsResponse
             var queryParams: [String: String] = [:]
 
-            if let appId = arguments?["app_id"]?.stringValue {
-                queryParams["filter[app]"] = appId
+            if let appIDs = try commaSeparatedAppIDs(arguments?["app_id"]) {
+                queryParams["filter[app]"] = appIDs
             }
             if let limit = arguments?["limit"]?.intValue {
                 queryParams["limit"] = String(min(max(limit, 1), 200))
@@ -48,6 +48,9 @@ extension BetaLicenseAgreementsWorker {
                 "beta_license_agreements": agreements,
                 "count": agreements.count
             ]
+            if let total = response.meta?.paging?.total {
+                result["total"] = total
+            }
             if let next = response.links?.next {
                 result["next_url"] = next
             }
@@ -108,12 +111,24 @@ extension BetaLicenseAgreementsWorker {
             )
         }
 
+        guard let agreementTextValue = arguments["agreement_text"] else {
+            return MCPResult.error("At least one update field is required: agreement_text")
+        }
+        let agreementText: JSONValue
+        if agreementTextValue.isNull {
+            agreementText = .null
+        } else if let value = agreementTextValue.stringValue {
+            agreementText = .string(value)
+        } else {
+            return MCPResult.error("Parameter 'agreement_text' must be a string or null")
+        }
+
         do {
             let request = UpdateBetaLicenseAgreementRequest(
                 data: UpdateBetaLicenseAgreementRequest.UpdateData(
                     id: agreementId,
                     attributes: UpdateBetaLicenseAgreementRequest.Attributes(
-                        agreementText: arguments["agreement_text"]?.stringValue
+                        agreementText: agreementText
                     )
                 )
             )
@@ -147,7 +162,45 @@ extension BetaLicenseAgreementsWorker {
         return [
             "id": agreement.id,
             "type": agreement.type,
-            "agreementText": (agreement.attributes?.agreementText).jsonSafe
+            "agreementText": (agreement.attributes?.agreementText).jsonSafe,
+            "appId": (agreement.relationships?.app?.data?.id).jsonSafe,
+            "appRelatedURL": (agreement.relationships?.app?.links?.related).jsonSafe
         ]
     }
+
+    private func commaSeparatedAppIDs(_ value: Value?) throws -> String? {
+        guard let value else {
+            return nil
+        }
+        let ids: [String]
+        if let string = value.stringValue {
+            ids = [string]
+        } else if let values = value.arrayValue {
+            guard !values.isEmpty,
+                  values.allSatisfy({ $0.stringValue?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false }) else {
+                throw BetaLicenseArgumentError("app_id must be a non-empty string or array of non-empty strings")
+            }
+            ids = values.compactMap(\.stringValue)
+        } else {
+            throw BetaLicenseArgumentError("app_id must be a non-empty string or array of non-empty strings")
+        }
+        guard ids.allSatisfy({ !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }) else {
+            throw BetaLicenseArgumentError("app_id must be a non-empty string or array of non-empty strings")
+        }
+        guard Set(ids).count == ids.count,
+              ids.allSatisfy({ !$0.contains(",") }) else {
+            throw BetaLicenseArgumentError("app_id must contain unique values without commas")
+        }
+        return ids.joined(separator: ",")
+    }
+}
+
+private struct BetaLicenseArgumentError: LocalizedError {
+    let message: String
+
+    init(_ message: String) {
+        self.message = message
+    }
+
+    var errorDescription: String? { message }
 }

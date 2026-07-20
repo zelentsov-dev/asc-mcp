@@ -142,7 +142,16 @@
           "operationId": "betaAppLocalizations_getInstance",
           "method": "get",
           "path": "/v1/betaAppLocalizations/{id}",
-          "role": "primary"
+          "role": "primary",
+          "optionalParameterClassifications": [
+            {
+              "location": "query",
+              "appleName": "include",
+              "disposition": "intentionallyOmitted",
+              "reason": "The focused localization tool projects the base resource; callers can use apps tools for expanded App details.",
+              "reviewAtSpec": "4.4.1"
+            }
+          ]
         }
       ],
       "fields": [
@@ -213,7 +222,7 @@
           }
         ]
       },
-      "note": "Exact app-related review-detail read; direct collection and instance reads are not exposed."
+      "note": "Exact app-related review-detail read; direct collection and instance reads are not exposed. MCP result sanitization always redacts demoAccountPassword in the returned projection."
     },
     {
       "tool": "beta_app_get_submission",
@@ -226,7 +235,16 @@
           "operationId": "betaAppReviewSubmissions_getInstance",
           "method": "get",
           "path": "/v1/betaAppReviewSubmissions/{id}",
-          "role": "primary"
+          "role": "primary",
+          "optionalParameterClassifications": [
+            {
+              "location": "query",
+              "appleName": "include",
+              "disposition": "intentionallyOmitted",
+              "reason": "The submission tool projects the build relationship linkage without expanding the full Build resource.",
+              "reviewAtSpec": "4.4.1"
+            }
+          ]
         }
       ],
       "fields": [
@@ -255,7 +273,7 @@
           }
         ]
       },
-      "note": "The current response model and formatter omit the documented build relationship, so the projection cannot identify the submitted build."
+      "note": "Projects the documented build relationship ID and related URL without expanding the full Build resource."
     },
     {
       "tool": "beta_app_list_localizations",
@@ -311,6 +329,15 @@
             "outputField": "next_url",
             "operationId": "apps_betaAppLocalizations_getToManyRelated",
             "jsonPointer": "/links/next"
+          },
+          {
+            "outputField": "total",
+            "operationId": "apps_betaAppLocalizations_getToManyRelated",
+            "jsonPointer": "/meta/paging/total"
+          },
+          {
+            "outputField": "count",
+            "localRole": "Count of localizations in the current page."
           }
         ]
       },
@@ -327,7 +354,16 @@
           "operationId": "betaAppReviewSubmissions_getCollection",
           "method": "get",
           "path": "/v1/betaAppReviewSubmissions",
-          "role": "primary"
+          "role": "primary",
+          "optionalParameterClassifications": [
+            {
+              "location": "query",
+              "appleName": "include",
+              "disposition": "intentionallyOmitted",
+              "reason": "Each submission projects its build linkage; full Build expansion remains available through the builds worker.",
+              "reviewAtSpec": "4.4.1"
+            }
+          ]
         }
       ],
       "fields": [
@@ -377,10 +413,19 @@
             "outputField": "next_url",
             "operationId": "betaAppReviewSubmissions_getCollection",
             "jsonPointer": "/links/next"
+          },
+          {
+            "outputField": "total",
+            "operationId": "betaAppReviewSubmissions_getCollection",
+            "jsonPointer": "/meta/paging/total"
+          },
+          {
+            "outputField": "count",
+            "localRole": "Count of submissions in the current page."
           }
         ]
       },
-      "note": "Correctly requires Apple's required filter[build]. The projection still drops each submission's build relationship."
+      "note": "Supports Apple scalar-or-array build and review-state filters and projects each submission's build linkage."
     },
     {
       "tool": "beta_app_submit_for_review",
@@ -433,7 +478,7 @@
           }
         ]
       },
-      "note": "Exact external beta-review submission operation; output drops the returned build relationship."
+      "note": "Exact external beta-review submission operation with returned build relationship linkage."
     },
     {
       "tool": "beta_app_update_localization",
@@ -520,7 +565,7 @@
           }
         ]
       },
-      "note": "All public writable fields are valid; the handler can still send an empty attributes object because no at-least-one-update guard is enforced."
+      "note": "Although Apple 4.4.1 marks these transport attributes nullable, App Store Connect business rules do not permit clearing an existing beta localization value. Explicit null is rejected locally, all writable fields are type-checked, and empty PATCH requests fail pre-network."
     },
     {
       "tool": "beta_app_update_review_details",
@@ -625,7 +670,7 @@
           }
         ]
       },
-      "note": "All public fields map to 4.4.1 writable attributes. Empty PATCH remains possible, and the response projection includes sensitive demo credentials."
+      "note": "All public fields preserve Apple value, explicit-null, and omission semantics; empty or malformed PATCH requests fail pre-network. MCP result sanitization always redacts demoAccountPassword in the returned projection."
     }
   ],
   "implementationAliases": []
