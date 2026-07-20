@@ -13,7 +13,7 @@ struct READMEWorkerCountsTests {
         let snapshots = try await TestFactory.collectWorkerToolSnapshots()
         let totalTools = snapshots.reduce(0) { $0 + $1.count }
 
-        #expect(totalTools == 389)
+        #expect(totalTools == 390)
         #expect(snapshots.count == 32)
         #expect(readme.contains("**\(totalTools) tools**"))
         #expect(readme.contains("30 App Store tool domains + 2 core domains"))

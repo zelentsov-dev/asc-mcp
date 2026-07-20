@@ -61,7 +61,7 @@ struct LocalizationModelTests {
     @Test func updateRequest() throws {
         let request = ASCAppStoreVersionLocalizationUpdateRequest(
             id: "loc-1",
-            attributes: .init(description: "New desc", whatsNew: "New features", keywords: nil, promotionalText: nil, supportUrl: nil, marketingUrl: nil)
+            attributes: .init(description: .string("New desc"), whatsNew: .string("New features"), keywords: nil, promotionalText: nil, supportUrl: nil, marketingUrl: nil)
         )
         let data = try JSONEncoder().encode(request)
         let json = try JSONSerialization.jsonObject(with: data) as? [String: Any]
@@ -76,13 +76,22 @@ struct LocalizationModelTests {
     @Test func updateRequestRoundtrip() throws {
         let request = ASCAppStoreVersionLocalizationUpdateRequest(
             id: "loc-1",
-            attributes: .init(description: "Desc", whatsNew: "What's new", keywords: "key1,key2", promotionalText: "Promo", supportUrl: "https://support.com", marketingUrl: "https://marketing.com")
+            attributes: .init(
+                description: .string("Desc"),
+                whatsNew: .string("What's new"),
+                keywords: .string("key1,key2"),
+                promotionalText: .string("Promo"),
+                supportUrl: .string("https://support.com"),
+                marketingUrl: .string("https://marketing.com")
+            )
         )
         let data = try JSONEncoder().encode(request)
-        let decoded = try JSONDecoder().decode(ASCAppStoreVersionLocalizationUpdateRequest.self, from: data)
-        #expect(decoded.data.id == "loc-1")
-        #expect(decoded.data.attributes.whatsNew == "What's new")
-        #expect(decoded.data.attributes.keywords == "key1,key2")
+        let object = try #require(JSONSerialization.jsonObject(with: data) as? [String: Any])
+        let requestData = try #require(object["data"] as? [String: Any])
+        let attributes = try #require(requestData["attributes"] as? [String: Any])
+        #expect(requestData["id"] as? String == "loc-1")
+        #expect(attributes["whatsNew"] as? String == "What's new")
+        #expect(attributes["keywords"] as? String == "key1,key2")
     }
 
     @Test func createRequest() throws {

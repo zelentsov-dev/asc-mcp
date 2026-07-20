@@ -13,11 +13,14 @@ struct AppLifecycleModelTests {
     }
 
     @Test func updateVersionRequest() throws {
-        let request = UpdateAppStoreVersionRequest(id: "ver-1", releaseType: "AFTER_APPROVAL", copyright: "2025 Corp")
+        let request = UpdateAppStoreVersionRequest(id: "ver-1", releaseType: .string("AFTER_APPROVAL"), copyright: .string("2025 Corp"))
         let data = try JSONEncoder().encode(request)
         let decoded = try JSONDecoder().decode(UpdateAppStoreVersionRequest.self, from: data)
         #expect(decoded.data.id == "ver-1")
-        #expect(decoded.data.attributes.copyright == "2025 Corp")
+        let object = try #require(JSONSerialization.jsonObject(with: data) as? [String: Any])
+        let bodyData = try #require(object["data"] as? [String: Any])
+        let attributes = try #require(bodyData["attributes"] as? [String: Any])
+        #expect(attributes["copyright"] as? String == "2025 Corp")
     }
 
     @Test func attachBuildRequest() throws {

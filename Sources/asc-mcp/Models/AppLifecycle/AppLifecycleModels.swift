@@ -23,6 +23,8 @@ struct CreateAppStoreVersionRequest: Codable, Sendable {
         struct Attributes: Codable, Sendable {
             let platform: String
             let versionString: String
+            let copyright: String?
+            let reviewType: String?
             let releaseType: String?
             let earliestReleaseDate: String?
         }
@@ -31,12 +33,22 @@ struct CreateAppStoreVersionRequest: Codable, Sendable {
         }
     }
 
-    init(platform: String, versionString: String, releaseType: String?, earliestReleaseDate: String?, appId: String) {
+    init(
+        platform: String,
+        versionString: String,
+        copyright: String? = nil,
+        reviewType: String? = nil,
+        releaseType: String?,
+        earliestReleaseDate: String?,
+        appId: String
+    ) {
         self.data = Data(
             type: "appStoreVersions",
             attributes: Data.Attributes(
                 platform: platform,
                 versionString: versionString,
+                copyright: copyright,
+                reviewType: reviewType,
                 releaseType: releaseType,
                 earliestReleaseDate: earliestReleaseDate
             ),
@@ -55,14 +67,24 @@ struct UpdateAppStoreVersionRequest: Codable, Sendable {
         let id: String
         let attributes: Attributes
         struct Attributes: Codable, Sendable {
-            let releaseType: String?
-            let earliestReleaseDate: String?
-            let copyright: String?
-            let versionString: String?
+            let releaseType: NullableAttributeValue?
+            let earliestReleaseDate: NullableAttributeValue?
+            let copyright: NullableAttributeValue?
+            let versionString: NullableAttributeValue?
+            let reviewType: NullableAttributeValue?
+            let downloadable: NullableAttributeValue?
         }
     }
 
-    init(id: String, releaseType: String? = nil, earliestReleaseDate: String? = nil, copyright: String? = nil, versionString: String? = nil) {
+    init(
+        id: String,
+        releaseType: NullableAttributeValue? = nil,
+        earliestReleaseDate: NullableAttributeValue? = nil,
+        copyright: NullableAttributeValue? = nil,
+        versionString: NullableAttributeValue? = nil,
+        reviewType: NullableAttributeValue? = nil,
+        downloadable: NullableAttributeValue? = nil
+    ) {
         self.data = Data(
             type: "appStoreVersions",
             id: id,
@@ -70,7 +92,9 @@ struct UpdateAppStoreVersionRequest: Codable, Sendable {
                 releaseType: releaseType,
                 earliestReleaseDate: earliestReleaseDate,
                 copyright: copyright,
-                versionString: versionString
+                versionString: versionString,
+                reviewType: reviewType,
+                downloadable: downloadable
             )
         )
     }
@@ -338,12 +362,15 @@ struct UpdateAgeRatingDeclarationRequest: Codable, Sendable {
 }
 
 /// String, boolean, or explicit null value for nullable App Store Connect attributes
-enum NullableAttributeValue: Codable, Sendable {
+public enum NullableAttributeValue: Codable, Sendable {
     case string(String)
     case bool(Bool)
     case null
 
-    init(from decoder: Decoder) throws {
+    /// Decodes a nullable string or Boolean attribute.
+    /// - Parameter decoder: The decoder containing the attribute value.
+    /// - Throws: A decoding error when the value is not a string, Boolean, or null.
+    public init(from decoder: Decoder) throws {
         let container = try decoder.singleValueContainer()
         if container.decodeNil() {
             self = .null
@@ -356,7 +383,10 @@ enum NullableAttributeValue: Codable, Sendable {
         }
     }
 
-    func encode(to encoder: Encoder) throws {
+    /// Encodes the selected string, Boolean, or explicit null value.
+    /// - Parameter encoder: The encoder that receives the attribute value.
+    /// - Throws: An encoding error when the value cannot be written.
+    public func encode(to encoder: Encoder) throws {
         var container = encoder.singleValueContainer()
         switch self {
         case .string(let v): try container.encode(v)

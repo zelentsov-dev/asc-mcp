@@ -32,6 +32,15 @@ extension AppLifecycleWorker {
                     "earliest_release_date": .object([
                         "type": .string("string"),
                         "description": .string("Earliest release date for SCHEDULED release (ISO 8601)")
+                    ]),
+                    "copyright": .object([
+                        "type": .string("string"),
+                        "description": .string("Copyright text")
+                    ]),
+                    "review_type": .object([
+                        "type": .string("string"),
+                        "description": .string("Review flow type"),
+                        "enum": .array([.string("APP_STORE"), .string("NOTARIZATION")])
                     ])
                 ]),
                 "required": .array([.string("app_id"), .string("platform"), .string("version_string")])
@@ -77,7 +86,32 @@ extension AppLifecycleWorker {
                                 .string("NOT_APPLICABLE")
                             ])
                         ]),
-                        "description": .string("Filter by version states")
+                        "description": .string("Deprecated compatibility filter mapped to Apple's filter[appStoreState]"),
+                        "deprecated": .bool(true)
+                    ]),
+                    "app_version_states": .object([
+                        "type": .string("array"),
+                        "items": .object([
+                            "type": .string("string"),
+                            "enum": .array([
+                                .string("ACCEPTED"),
+                                .string("DEVELOPER_REJECTED"),
+                                .string("IN_REVIEW"),
+                                .string("INVALID_BINARY"),
+                                .string("METADATA_REJECTED"),
+                                .string("PENDING_APPLE_RELEASE"),
+                                .string("PENDING_DEVELOPER_RELEASE"),
+                                .string("PREPARE_FOR_SUBMISSION"),
+                                .string("PROCESSING_FOR_DISTRIBUTION"),
+                                .string("READY_FOR_DISTRIBUTION"),
+                                .string("READY_FOR_REVIEW"),
+                                .string("REJECTED"),
+                                .string("REPLACED_WITH_NEW_VERSION"),
+                                .string("WAITING_FOR_EXPORT_COMPLIANCE"),
+                                .string("WAITING_FOR_REVIEW")
+                            ])
+                        ]),
+                        "description": .string("Current version-state filter mapped to Apple's filter[appVersionState]")
                     ]),
                     "platform": .object([
                         "type": .string("string"),
@@ -86,7 +120,10 @@ extension AppLifecycleWorker {
                     ]),
                     "limit": .object([
                         "type": .string("integer"),
-                        "description": .string("Maximum number of versions to return (default: 25)")
+                        "description": .string("Maximum number of versions to return (default: 25)"),
+                        "minimum": .int(1),
+                        "maximum": .int(200),
+                        "default": .int(25)
                     ]),
                     "next_url": .object([
                         "type": .string("string"),
@@ -127,21 +164,30 @@ extension AppLifecycleWorker {
                         "description": .string("Version ID in App Store Connect")
                     ]),
                     "release_type": .object([
-                        "type": .string("string"),
+                        "type": .array([.string("string"), .string("null")]),
                         "description": .string("Release type after approval"),
-                        "enum": .array([.string("MANUAL"), .string("AFTER_APPROVAL"), .string("SCHEDULED")])
+                        "enum": .array([.string("MANUAL"), .string("AFTER_APPROVAL"), .string("SCHEDULED"), .null])
                     ]),
                     "earliest_release_date": .object([
-                        "type": .string("string"),
+                        "type": .array([.string("string"), .string("null")]),
                         "description": .string("Earliest release date for SCHEDULED release (ISO 8601)")
                     ]),
                     "copyright": .object([
-                        "type": .string("string"),
+                        "type": .array([.string("string"), .string("null")]),
                         "description": .string("Copyright text")
                     ]),
                     "version_string": .object([
-                        "type": .string("string"),
+                        "type": .array([.string("string"), .string("null")]),
                         "description": .string("Version number (can only be updated before submission)")
+                    ]),
+                    "review_type": .object([
+                        "type": .array([.string("string"), .string("null")]),
+                        "description": .string("Review flow type"),
+                        "enum": .array([.string("APP_STORE"), .string("NOTARIZATION"), .null])
+                    ]),
+                    "downloadable": .object([
+                        "type": .array([.string("boolean"), .string("null")]),
+                        "description": .string("Whether the version remains downloadable")
                     ])
                 ]),
                 "required": .array([.string("version_id")])
@@ -187,7 +233,7 @@ extension AppLifecycleWorker {
                     ]),
                     "platform": .object([
                         "type": .string("string"),
-                        "description": .string("Platform for submission (default: IOS)"),
+                        "description": .string("Optional submission platform; when supplied, it must match the version platform"),
                         "enum": .array([.string("IOS"), .string("MAC_OS"), .string("TV_OS"), .string("VISION_OS")])
                     ])
                 ]),
@@ -270,6 +316,23 @@ extension AppLifecycleWorker {
                     ])
                 ]),
                 "required": .array([.string("phased_release_id"), .string("phased_release_state")])
+            ])
+        )
+    }
+
+    func deletePhasedReleaseTool() -> Tool {
+        Tool(
+            name: "app_versions_delete_phased_release",
+            description: "Delete a phased release configuration",
+            inputSchema: .object([
+                "type": .string("object"),
+                "properties": .object([
+                    "phased_release_id": .object([
+                        "type": .string("string"),
+                        "description": .string("Phased release ID")
+                    ])
+                ]),
+                "required": .array([.string("phased_release_id")])
             ])
         )
     }

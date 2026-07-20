@@ -22,6 +22,7 @@ public final class AppLifecycleWorker: Sendable {
             createPhasedReleaseTool(),
             getPhasedReleaseTool(),
             updatePhasedReleaseTool(),
+            deletePhasedReleaseTool(),
             releaseVersionTool(),
             setReviewDetailsTool(),
             updateAgeRatingTool(),
@@ -52,6 +53,8 @@ public final class AppLifecycleWorker: Sendable {
             return try await getPhasedRelease(params)
         case "app_versions_update_phased_release":
             return try await updatePhasedRelease(params)
+        case "app_versions_delete_phased_release":
+            return try await deletePhasedRelease(params)
         case "app_versions_release":
             return try await releaseVersion(params)
         case "app_versions_set_review_details":

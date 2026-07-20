@@ -21,10 +21,14 @@ extension AppLifecycleWorker {
         do {
             let releaseType = arguments["release_type"]?.stringValue ?? "MANUAL"
             let earliestDate = arguments["earliest_release_date"]?.stringValue
+            let copyright = arguments["copyright"]?.stringValue
+            let reviewType = arguments["review_type"]?.stringValue
 
             let request = CreateAppStoreVersionRequest(
                 platform: platform,
                 versionString: versionString,
+                copyright: copyright,
+                reviewType: reviewType,
                 releaseType: releaseType,
                 earliestReleaseDate: earliestDate,
                 appId: appId
@@ -64,13 +68,23 @@ extension AppLifecycleWorker {
             )
         }
 
+        let effectiveLimit = min(max(arguments["limit"]?.intValue ?? 25, 1), 200)
+
         do {
             let responseData: Data
 
             // Check for pagination URL
             if let nextUrl = try paginationURL(from: arguments["next_url"]) {
-                var requiredParameters: [String: String] = [:]
+                var requiredParameters: [String: String] = [
+                    "include": "build,appStoreVersionSubmission,appStoreVersionPhasedRelease"
+                ]
                 if let states = arguments["states"]?.arrayValue {
+                    let stateStrings = states.compactMap { $0.stringValue }
+                    if !stateStrings.isEmpty {
+                        requiredParameters["filter[appStoreState]"] = stateStrings.joined(separator: ",")
+                    }
+                }
+                if let states = arguments["app_version_states"]?.arrayValue {
                     let stateStrings = states.compactMap { $0.stringValue }
                     if !stateStrings.isEmpty {
                         requiredParameters["filter[appVersionState]"] = stateStrings.joined(separator: ",")
@@ -79,6 +93,7 @@ extension AppLifecycleWorker {
                 if let platform = arguments["platform"]?.stringValue {
                     requiredParameters["filter[platform]"] = platform
                 }
+                requiredParameters["limit"] = String(effectiveLimit)
                 responseData = try await httpClient.getPage(
                     nextUrl,
                     scope: PaginationScope(
@@ -95,6 +110,13 @@ extension AppLifecycleWorker {
                 if let states = arguments["states"]?.arrayValue {
                     let stateStrings = states.compactMap { $0.stringValue }
                     if !stateStrings.isEmpty {
+                        queryParams["filter[appStoreState]"] = stateStrings.joined(separator: ",")
+                    }
+                }
+
+                if let states = arguments["app_version_states"]?.arrayValue {
+                    let stateStrings = states.compactMap { $0.stringValue }
+                    if !stateStrings.isEmpty {
                         queryParams["filter[appVersionState]"] = stateStrings.joined(separator: ",")
                     }
                 }
@@ -104,12 +126,7 @@ extension AppLifecycleWorker {
                     queryParams["filter[platform]"] = platform
                 }
 
-                // Add limit
-                if let limit = arguments["limit"]?.intValue {
-                    queryParams["limit"] = String(min(max(limit, 1), 200))
-                } else {
-                    queryParams["limit"] = "25"
-                }
+                queryParams["limit"] = String(effectiveLimit)
 
                 responseData = try await httpClient.get(
                     "/v1/apps/\(try ASCPathSegment.encode(appId))/appStoreVersions",
@@ -200,12 +217,22 @@ extension AppLifecycleWorker {
         }
 
         do {
-            let releaseType = arguments["release_type"]?.stringValue
-            let earliestDate = arguments["earliest_release_date"]?.stringValue
-            let copyright = arguments["copyright"]?.stringValue
-            let versionString = arguments["version_string"]?.stringValue
+            let releaseType = try nullableString(
+                "release_type",
+                from: arguments,
+                allowedValues: ["MANUAL", "AFTER_APPROVAL", "SCHEDULED"]
+            )
+            let earliestDate = try nullableString("earliest_release_date", from: arguments)
+            let copyright = try nullableString("copyright", from: arguments)
+            let versionString = try nullableString("version_string", from: arguments)
+            let reviewType = try nullableString(
+                "review_type",
+                from: arguments,
+                allowedValues: ["APP_STORE", "NOTARIZATION"]
+            )
+            let downloadable = try nullableBool("downloadable", from: arguments)
 
-            guard releaseType != nil || earliestDate != nil || copyright != nil || versionString != nil else {
+            guard releaseType != nil || earliestDate != nil || copyright != nil || versionString != nil || reviewType != nil || downloadable != nil else {
                 return CallTool.Result(
                     content: [MCPContent.text("Error: No attributes to update")],
                     isError: true
@@ -217,7 +244,9 @@ extension AppLifecycleWorker {
                 releaseType: releaseType,
                 earliestReleaseDate: earliestDate,
                 copyright: copyright,
-                versionString: versionString
+                versionString: versionString,
+                reviewType: reviewType,
+                downloadable: downloadable
             )
 
             let response = try await httpClient.patch(
@@ -232,8 +261,14 @@ extension AppLifecycleWorker {
                 "version": [
                     "id": v.id,
                     "version_string": (v.attributes?.versionString).jsonSafe,
-                    "state": (v.attributes?.appStoreState).jsonSafe,
+                    "state": (v.attributes?.appVersionState ?? v.attributes?.appStoreState).jsonSafe,
+                    "appVersionState": (v.attributes?.appVersionState).jsonSafe,
+                    "appStoreState": (v.attributes?.appStoreState).jsonSafe,
+                    "app_version_state": (v.attributes?.appVersionState).jsonSafe,
+                    "app_store_state": (v.attributes?.appStoreState).jsonSafe,
                     "release_type": (v.attributes?.releaseType).jsonSafe,
+                    "review_type": (v.attributes?.reviewType).jsonSafe,
+                    "downloadable": (v.attributes?.downloadable).jsonSafe,
                     "created_date": (v.attributes?.createdDate).jsonSafe
                 ] as [String: Any],
                 "message": "Version updated successfully"
@@ -302,28 +337,27 @@ extension AppLifecycleWorker {
         var failedStep = "create_review_submission"
 
         do {
-            // Resolve app ID: use provided app_id or extract from version
-            let appId: String
-            if let providedAppId = arguments["app_id"]?.stringValue {
-                appId = providedAppId
-            } else {
-                // Fetch version to get the app relationship
-                let versionResponse = try await httpClient.get(
-                    "/v1/appStoreVersions/\(try ASCPathSegment.encode(versionId))",
-                    parameters: [:],
-                    as: ASCAppStoreVersionResponse.self
-                )
-                guard let appData = versionResponse.data.relationships?.app?.data,
-                      case .single(let appRef) = appData else {
-                    return CallTool.Result(
-                        content: [MCPContent.text("Error: Could not resolve app ID from version. Provide 'app_id' explicitly.")],
-                        isError: true
-                    )
-                }
-                appId = appRef.id
+            let versionResponse = try await httpClient.get(
+                "/v1/appStoreVersions/\(try ASCPathSegment.encode(versionId))",
+                parameters: ["fields[appStoreVersions]": "app,platform,versionString,appVersionState"],
+                as: ASCAppStoreVersionResponse.self
+            )
+            guard let appData = versionResponse.data.relationships?.app?.data,
+                  case .single(let appRef) = appData,
+                  appRef.type == "apps" else {
+                return MCPResult.error("Could not resolve app ownership from version '\(versionId)'.")
+            }
+            let appId = appRef.id
+            if let providedAppId = arguments["app_id"]?.stringValue, providedAppId != appId {
+                return MCPResult.error("Version '\(versionId)' belongs to app '\(appId)', not '\(providedAppId)'.")
             }
 
             let platform = arguments["platform"]?.stringValue
+            if let platform,
+               let versionPlatform = versionResponse.data.attributes?.platform,
+               platform != versionPlatform {
+                return MCPResult.error("Version '\(versionId)' is on platform '\(versionPlatform)', not '\(platform)'.")
+            }
 
             // Step 1: Create review submission
             let submissionRequest = CreateReviewSubmissionRequest(platform: platform, appId: appId)
@@ -386,10 +420,9 @@ extension AppLifecycleWorker {
                 "failed_step": failedStep,
                 "error": error.localizedDescription,
                 "recovery_tools": [
-                    "app_versions_cancel_review",
-                    "app_versions_get"
+                    "app_versions_cancel_review"
                 ],
-                "message": "Review submission was created, but the submit flow failed before completion. Use submission_id to inspect or cancel the partial submission."
+                "message": "Review submission was created, but the submit flow failed before completion. This MCP has no review-submission inspection or resume tool; use app_versions_cancel_review with review_submission_id set to the returned submission_id before retrying."
             ],
             isError: true
         )
@@ -537,6 +570,26 @@ extension AppLifecycleWorker {
                 content: [MCPContent.text("Error: Failed to update phased release: \(error.localizedDescription)")],
                 isError: true
             )
+        }
+    }
+
+    func deletePhasedRelease(_ params: CallTool.Parameters) async throws -> CallTool.Result {
+        guard let arguments = params.arguments,
+              let phasedReleaseId = arguments["phased_release_id"]?.stringValue else {
+            return MCPResult.error("Required parameter 'phased_release_id' is missing")
+        }
+
+        do {
+            _ = try await httpClient.delete(
+                "/v1/appStoreVersionPhasedReleases/\(try ASCPathSegment.encode(phasedReleaseId))"
+            )
+            return MCPResult.jsonObject([
+                "success": true,
+                "phased_release_id": phasedReleaseId,
+                "message": "Phased release deleted successfully"
+            ])
+        } catch {
+            return MCPResult.error("Failed to delete phased release: \(error.localizedDescription)")
         }
     }
 

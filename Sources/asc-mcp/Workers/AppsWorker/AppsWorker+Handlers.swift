@@ -3,6 +3,72 @@ import MCP
 
 // MARK: - Tool Handlers
 extension AppsWorker {
+    private func effectiveVersionState(_ version: ASCAppStoreVersion) -> String {
+        version.attributes?.appVersionState ?? version.attributes?.appStoreState ?? "UNKNOWN"
+    }
+
+    private func versionBelongsToApp(_ version: ASCAppStoreVersion, appId: String) -> Bool {
+        guard let data = version.relationships?.app?.data,
+              case .single(let app) = data else {
+            return false
+        }
+        return app.type == "apps" && app.id == appId
+    }
+
+    private func localizationBelongsToVersion(_ localization: ASCAppStoreVersionLocalization, versionId: String) -> Bool {
+        guard let data = localization.relationships?.appStoreVersion?.data,
+              case .single(let version) = data else {
+            return false
+        }
+        return version.type == "appStoreVersions" && version.id == versionId
+    }
+
+    private func fetchAllVersions(appId: String) async throws -> [ASCAppStoreVersion] {
+        let path = "/v1/apps/\(try ASCPathSegment.encode(appId))/appStoreVersions"
+        let versionFields = "platform,versionString,appVersionState,appStoreState,createdDate"
+        var response: ASCAppStoreVersionsResponse? = try await httpClient.get(
+            path,
+            parameters: [
+                "fields[appStoreVersions]": versionFields,
+                "limit": "200"
+            ],
+            as: ASCAppStoreVersionsResponse.self
+        )
+        var versions: [ASCAppStoreVersion] = []
+        while let page = response {
+            versions.append(contentsOf: page.data)
+            if let next = page.links?.next {
+                response = try await httpClient.getPage(
+                    next,
+                    scope: PaginationScope(
+                        path: path,
+                        requiredParameters: [
+                            "fields[appStoreVersions]": versionFields,
+                            "limit": "200"
+                        ]
+                    ),
+                    as: ASCAppStoreVersionsResponse.self
+                )
+            } else {
+                response = nil
+            }
+        }
+        return versions
+    }
+
+    private func nullableMetadataString(_ name: String, from arguments: [String: Value]) throws -> NullableAttributeValue? {
+        guard let value = arguments[name] else {
+            return nil
+        }
+        if value.isNull {
+            return .null
+        }
+        guard let string = value.stringValue else {
+            throw AppsMetadataArgumentError("\(name) must be a string or null")
+        }
+        return .string(string)
+    }
+
     private func validateAppStoreMetadataArguments(
         _ arguments: [String: Value],
         locale: String
@@ -53,16 +119,22 @@ extension AppsWorker {
     /// - Returns: JSON array of apps with their IDs, names, bundle IDs, and metadata
     /// - Throws: CallTool.Result with error if API call fails
     public func listApps(_ params: CallTool.Parameters) async throws -> CallTool.Result {
+        let arguments = params.arguments ?? [:]
+        let effectiveLimit = min(max(arguments["limit"]?.intValue ?? 25, 1), 200)
+
         do {
             let response: ASCAppsResponse
 
             // Check for pagination next_url
-            if let nextUrl = try paginationURL(from: params.arguments?["next_url"]) {
-                var requiredParameters: [String: String] = [:]
-                if let bundleId = params.arguments?["bundle_id"]?.stringValue {
+            if let nextUrl = try paginationURL(from: arguments["next_url"]) {
+                var requiredParameters: [String: String] = ["limit": String(effectiveLimit)]
+                if let sort = arguments["sort"]?.stringValue {
+                    requiredParameters["sort"] = sort
+                }
+                if let bundleId = arguments["bundle_id"]?.stringValue {
                     requiredParameters["filter[bundleId]"] = bundleId
                 }
-                if let name = params.arguments?["name"]?.stringValue {
+                if let name = arguments["name"]?.stringValue {
                     requiredParameters["filter[name]"] = name
                 }
                 response = try await httpClient.getPage(
@@ -71,26 +143,16 @@ extension AppsWorker {
                     as: ASCAppsResponse.self
                 )
             } else {
-                // Extract parameters
-                var queryParams: [String: String] = [:]
+                var queryParams: [String: String] = ["limit": String(effectiveLimit)]
 
-                if let arguments = params.arguments {
-                    if let limitValue = arguments["limit"],
-                       let limit = limitValue.intValue {
-                        queryParams["limit"] = String(limit)
-                    }
-                    if let sortValue = arguments["sort"],
-                       let sort = sortValue.stringValue {
-                        queryParams["sort"] = sort
-                    }
-                    if let bundleIdValue = arguments["bundle_id"],
-                       let bundleId = bundleIdValue.stringValue {
-                        queryParams["filter[bundleId]"] = bundleId
-                    }
-                    if let nameValue = arguments["name"],
-                       let name = nameValue.stringValue {
-                        queryParams["filter[name]"] = name
-                    }
+                if let sort = arguments["sort"]?.stringValue {
+                    queryParams["sort"] = sort
+                }
+                if let bundleId = arguments["bundle_id"]?.stringValue {
+                    queryParams["filter[bundleId]"] = bundleId
+                }
+                if let name = arguments["name"]?.stringValue {
+                    queryParams["filter[name]"] = name
                 }
 
                 response = try await httpClient.get("/v1/apps", parameters: queryParams, as: ASCAppsResponse.self)
@@ -168,31 +230,9 @@ extension AppsWorker {
             let app = response.data
             
             // Format detailed response
-            var relationships: [String: Any] = [:]
+            let relationships = app.relationships?.values.mapValues(formatRelationship) ?? [:]
             
-            // Safely process relationships
-            if let appRelationships = app.relationships {
-                if let appInfos = appRelationships.appInfos {
-                    relationships["appInfos"] = formatRelationship(appInfos)
-                }
-                if let appStoreVersions = appRelationships.appStoreVersions {
-                    relationships["appStoreVersions"] = formatRelationship(appStoreVersions)
-                }
-                if let availableTerritories = appRelationships.availableTerritories {
-                    relationships["availableTerritories"] = formatRelationship(availableTerritories)
-                }
-                if let betaLicenseAgreement = appRelationships.betaLicenseAgreement {
-                    relationships["betaLicenseAgreement"] = formatRelationship(betaLicenseAgreement)
-                }
-                if let builds = appRelationships.builds {
-                    relationships["builds"] = formatRelationship(builds)
-                }
-                if let preReleaseVersions = appRelationships.preReleaseVersions {
-                    relationships["preReleaseVersions"] = formatRelationship(preReleaseVersions)
-                }
-            }
-            
-            let result: [String: Any] = [
+            var result: [String: Any] = [
                 "success": true,
                 "app": [
                     "id": app.id,
@@ -213,6 +253,10 @@ extension AppsWorker {
                     "relationships": relationships
                 ]
             ]
+
+            if let included = response.included {
+                result["included"] = included.map(\.asAny)
+            }
             
             return MCPResult.jsonObject(result)
             
@@ -292,12 +336,19 @@ extension AppsWorker {
 
         do {
             let response: ASCAppStoreVersionsResponse
+            let versionFields = "platform,versionString,appVersionState,appStoreState,createdDate"
 
             // Check for pagination next_url
             if let nextUrl = try paginationURL(from: arguments["next_url"]) {
                 response = try await httpClient.getPage(
                     nextUrl,
-                    scope: PaginationScope(path: "/v1/apps/\(try ASCPathSegment.encode(appId))/appStoreVersions"),
+                    scope: PaginationScope(
+                        path: "/v1/apps/\(try ASCPathSegment.encode(appId))/appStoreVersions",
+                        requiredParameters: [
+                            "fields[appStoreVersions]": versionFields,
+                            "limit": "200"
+                        ]
+                    ),
                     as: ASCAppStoreVersionsResponse.self
                 )
             } else {
@@ -305,7 +356,7 @@ extension AppsWorker {
                     "/v1/apps/\(try ASCPathSegment.encode(appId))/appStoreVersions",
                     parameters: [
                         "limit": "200",
-                        "fields[appStoreVersions]": "versionString,appStoreState,createdDate"
+                        "fields[appStoreVersions]": versionFields
                     ],
                     as: ASCAppStoreVersionsResponse.self
                 )
@@ -315,7 +366,10 @@ extension AppsWorker {
                 return [
                     "id": version.id,
                     "versionString": version.attributes?.versionString ?? "N/A",
-                    "appStoreState": version.attributes?.appStoreState ?? "UNKNOWN",
+                    "platform": version.attributes?.platform ?? "UNKNOWN",
+                    "appVersionState": version.attributes?.appVersionState.jsonSafe,
+                    "appStoreState": version.attributes?.appStoreState.jsonSafe,
+                    "state": version.state,
                     "createdDate": version.attributes?.createdDate ?? "",
                     "type": version.type
                 ] as [String: Any]
@@ -360,33 +414,38 @@ extension AppsWorker {
         let locale = arguments["locale"]?.stringValue
         let versionIdParam = arguments["version_id"]?.stringValue
         let versionStateFilter = arguments["version_state"]?.stringValue
+        let platformFilter = arguments["platform"]?.stringValue
         let includeMedia = arguments["include_media"]?.boolValue ?? false
 
         do {
             // Step 1: Resolve version
-            let resolvedVersion: (id: String, versionString: String, state: String)
+            let resolvedVersion: (id: String, versionString: String, appVersionState: String?, appStoreState: String?, platform: String?)
 
             if let versionId = versionIdParam {
                 // Use provided version_id — fetch its details
                 let versionResponse: ASCAppStoreVersionResponse = try await httpClient.get(
                     "/v1/appStoreVersions/\(try ASCPathSegment.encode(versionId))",
-                    parameters: ["fields[appStoreVersions]": "versionString,appStoreState"],
+                    parameters: ["fields[appStoreVersions]": "app,platform,versionString,appVersionState,appStoreState"],
                     as: ASCAppStoreVersionResponse.self
                 )
                 let v = versionResponse.data
-                resolvedVersion = (id: v.id, versionString: v.version, state: v.state)
-            } else {
-                // Auto-resolve version
-                let versionsResponse: ASCAppStoreVersionsResponse = try await httpClient.get(
-                    "/v1/apps/\(try ASCPathSegment.encode(appId))/appStoreVersions",
-                    parameters: [
-                        "fields[appStoreVersions]": "versionString,appStoreState,createdDate",
-                        "limit": "10"
-                    ],
-                    as: ASCAppStoreVersionsResponse.self
+                guard versionBelongsToApp(v, appId: appId) else {
+                    return MCPResult.error("Version '\(versionId)' does not belong to app '\(appId)'")
+                }
+                if let platformFilter, v.attributes?.platform != platformFilter {
+                    return MCPResult.error("Version '\(versionId)' is not on platform '\(platformFilter)'")
+                }
+                resolvedVersion = (
+                    id: v.id,
+                    versionString: v.version,
+                    appVersionState: v.attributes?.appVersionState,
+                    appStoreState: v.attributes?.appStoreState,
+                    platform: v.attributes?.platform
                 )
+            } else {
+                let versions = try await fetchAllVersions(appId: appId)
 
-                guard !versionsResponse.data.isEmpty else {
+                guard !versions.isEmpty else {
                     return CallTool.Result(
                         content: [MCPContent.text(JSONFormatter.formatJSON([
                             "success": false,
@@ -396,13 +455,18 @@ extension AppsWorker {
                     )
                 }
 
-                let versions = versionsResponse.data
+                let platformVersions = platformFilter.map { platform in
+                    versions.filter { $0.attributes?.platform == platform }
+                } ?? versions
+
+                guard !platformVersions.isEmpty else {
+                    return MCPResult.error("App '\(appId)' has no versions for platform '\(platformFilter ?? "UNKNOWN")'")
+                }
                 let selected: ASCAppStoreVersion
 
                 if let stateFilter = versionStateFilter {
-                    // Filter by requested state
-                    guard let match = versions.first(where: { $0.attributes?.appStoreState == stateFilter }) else {
-                        let available = versions.compactMap { $0.attributes?.appStoreState }.joined(separator: ", ")
+                    guard let match = platformVersions.first(where: { effectiveVersionState($0) == stateFilter }) else {
+                        let available = Set(platformVersions.map(effectiveVersionState)).sorted().joined(separator: ", ")
                         return CallTool.Result(
                             content: [MCPContent.text(JSONFormatter.formatJSON([
                                 "success": false,
@@ -413,9 +477,7 @@ extension AppsWorker {
                     }
                     selected = match
                 } else {
-                    // Priority: editable and review-issue states > published > first available
-                    // Within each state, prefer platform: IOS > MAC_OS > TV_OS > VISION_OS
-                    let platformPriority = ["IOS", "MAC_OS", "TV_OS", "WATCH_OS", "VISION_OS"]
+                    let platformPriority = ["IOS", "MAC_OS", "TV_OS", "VISION_OS"]
 
                     func preferredByPlatform(_ candidates: [ASCAppStoreVersion]) -> ASCAppStoreVersion? {
                         for platform in platformPriority {
@@ -426,25 +488,33 @@ extension AppsWorker {
                         return candidates.first
                     }
 
-                    let statePriority = ["PREPARE_FOR_SUBMISSION", "REJECTED", "METADATA_REJECTED", "READY_FOR_SALE"]
+                    let statePriority = [
+                        "PREPARE_FOR_SUBMISSION",
+                        "REJECTED",
+                        "METADATA_REJECTED",
+                        "READY_FOR_DISTRIBUTION",
+                        "READY_FOR_SALE"
+                    ]
                     selected = statePriority
                         .lazy
                         .compactMap { state in
-                            preferredByPlatform(versions.filter { $0.attributes?.appStoreState == state })
+                            preferredByPlatform(platformVersions.filter { effectiveVersionState($0) == state })
                         }
-                        .first ?? versions[0]
+                        .first ?? platformVersions[0]
                 }
 
                 resolvedVersion = (
                     id: selected.id,
                     versionString: selected.attributes?.versionString ?? "N/A",
-                    state: selected.attributes?.appStoreState ?? "UNKNOWN"
+                    appVersionState: selected.attributes?.appVersionState,
+                    appStoreState: selected.attributes?.appStoreState,
+                    platform: selected.attributes?.platform
                 )
             }
 
             // Step 2: Fetch localizations
             var localizationParams: [String: String] = [
-                "fields[appStoreVersionLocalizations]": "description,locale,keywords,marketingUrl,promotionalText,supportUrl,whatsNew",
+                "fields[appStoreVersionLocalizations]": "description,locale,keywords,marketingUrl,promotionalText,supportUrl,whatsNew,appStoreVersion",
                 "limit": "200"
             ]
             if let locale = locale {
@@ -468,10 +538,17 @@ extension AppsWorker {
                 )
             }
 
+            guard localizationsResponse.data.allSatisfy({ localizationBelongsToVersion($0, versionId: resolvedVersion.id) }) else {
+                return MCPResult.error("Apple returned a localization outside version '\(resolvedVersion.id)' context")
+            }
+
             let versionInfo: [String: Any] = [
                 "id": resolvedVersion.id,
                 "versionString": resolvedVersion.versionString,
-                "appStoreState": resolvedVersion.state
+                "platform": resolvedVersion.platform.jsonSafe,
+                "appVersionState": resolvedVersion.appVersionState.jsonSafe,
+                "appStoreState": resolvedVersion.appStoreState.jsonSafe,
+                "state": resolvedVersion.appVersionState ?? resolvedVersion.appStoreState ?? "UNKNOWN"
             ]
 
             // Helper to format a single localization
@@ -498,9 +575,9 @@ extension AppsWorker {
 
                 // Step 3: Fetch media if requested
                 if includeMedia {
-                    let mediaResult = await fetchMedia(for: loc.id)
-                    if let previews = mediaResult.previews { result["appPreviewSets"] = previews }
-                    if let screenshots = mediaResult.screenshots { result["screenshotSets"] = screenshots }
+                    let mediaResult = try await fetchMedia(for: loc.id)
+                    result["appPreviewSets"] = mediaResult.previews
+                    result["screenshotSets"] = mediaResult.screenshots
                 }
             } else {
                 // All locales mode
@@ -523,19 +600,22 @@ extension AppsWorker {
 
     /// Fetches media (preview videos and screenshots) for a localization
     /// - Returns: Tuple with optional preview sets and screenshot sets arrays
-    private func fetchMedia(for localizationId: String) async -> (previews: [[String: Any]]?, screenshots: [[String: Any]]?) {
-        var previews: [[String: Any]]?
-        var screenshots: [[String: Any]]?
+    private func fetchMedia(for localizationId: String) async throws -> (previews: [[String: Any]], screenshots: [[String: Any]]) {
+        let encodedLocalizationId = try ASCPathSegment.encode(localizationId)
+        let previewPath = "/v1/appStoreVersionLocalizations/\(encodedLocalizationId)/appPreviewSets"
+        let screenshotPath = "/v1/appStoreVersionLocalizations/\(encodedLocalizationId)/appScreenshotSets"
+        let previewInclude = "appPreviews"
+        let screenshotInclude = "appScreenshots"
+        var previews: [[String: Any]] = []
+        var screenshots: [[String: Any]] = []
+        var previewResponse: ASCAppPreviewSetsResponse? = try await httpClient.get(
+            previewPath,
+            parameters: ["include": previewInclude, "limit": "200", "limit[appPreviews]": "50"],
+            as: ASCAppPreviewSetsResponse.self
+        )
 
-        // Fetch preview videos
-        if let previewSetsData = try? await httpClient.get(
-            "/v1/appStoreVersionLocalizations/\(try ASCPathSegment.encode(localizationId))/appPreviewSets",
-            parameters: ["include": "appPreviews", "limit": "10"]
-        ) {
-            if let response = try? JSONDecoder().decode(ASCAppPreviewSetsResponse.self, from: previewSetsData),
-               !response.data.isEmpty {
-                var sets: [[String: Any]] = []
-                for previewSet in response.data {
+        while let response = previewResponse {
+            for previewSet in response.data {
                     var setInfo: [String: Any] = ["id": previewSet.id]
                     if let previewType = previewSet.attributes?.previewType {
                         setInfo["previewType"] = previewType
@@ -556,26 +636,43 @@ extension AppsWorker {
                                 if let v = p.attributes?.fileName { item["fileName"] = v }
                                 if let v = p.attributes?.mimeType { item["mimeType"] = v }
                                 if let v = p.previewImageUrl { item["previewImageUrl"] = v }
+                                if let dimensions = p.previewImageDimensions {
+                                    item["width"] = dimensions.width
+                                    item["height"] = dimensions.height
+                                }
                                 items.append(item)
                             }
                         }
                         if !items.isEmpty { setInfo["appPreviews"] = items }
                     }
-                    sets.append(setInfo)
-                }
-                if !sets.isEmpty { previews = sets }
+                    previews.append(setInfo)
+            }
+            if let next = response.links?.next {
+                previewResponse = try await httpClient.getPage(
+                    next,
+                    scope: PaginationScope(
+                        path: previewPath,
+                        requiredParameters: [
+                            "include": previewInclude,
+                            "limit": "200",
+                            "limit[appPreviews]": "50"
+                        ]
+                    ),
+                    as: ASCAppPreviewSetsResponse.self
+                )
+            } else {
+                previewResponse = nil
             }
         }
 
-        // Fetch screenshots
-        if let screenshotSetsData = try? await httpClient.get(
-            "/v1/appStoreVersionLocalizations/\(try ASCPathSegment.encode(localizationId))/appScreenshotSets",
-            parameters: ["include": "appScreenshots", "limit": "10"]
-        ) {
-            if let response = try? JSONDecoder().decode(ASCAppScreenshotSetsResponse.self, from: screenshotSetsData),
-               !response.data.isEmpty {
-                var sets: [[String: Any]] = []
-                for set in response.data {
+        var screenshotResponse: ASCAppScreenshotSetsResponse? = try await httpClient.get(
+            screenshotPath,
+            parameters: ["include": screenshotInclude, "limit": "200", "limit[appScreenshots]": "50"],
+            as: ASCAppScreenshotSetsResponse.self
+        )
+
+        while let response = screenshotResponse {
+            for set in response.data {
                     var setData: [String: Any] = [
                         "id": set.id,
                         "screenshotDisplayType": set.attributes?.screenshotDisplayType ?? ""
@@ -593,21 +690,33 @@ extension AppsWorker {
                             for s in included where s.id == sid {
                                 var item: [String: Any] = ["id": s.id]
                                 if let v = s.attributes?.fileName { item["fileName"] = v }
-                                if let imageAsset = s.attributes?.imageAsset,
-                                   let url = imageAsset.templateUrl {
-                                    item["url"] = url
-                                        .replacingOccurrences(of: "{w}", with: "1290")
-                                        .replacingOccurrences(of: "{h}", with: "2796")
-                                        .replacingOccurrences(of: "{f}", with: "png")
+                                if let url = s.imageUrl { item["url"] = url }
+                                if let dimensions = s.dimensions {
+                                    item["width"] = dimensions.width
+                                    item["height"] = dimensions.height
                                 }
                                 items.append(item)
                             }
                         }
                     }
                     setData["screenshots"] = items
-                    sets.append(setData)
-                }
-                if !sets.isEmpty { screenshots = sets }
+                    screenshots.append(setData)
+            }
+            if let next = response.links?.next {
+                screenshotResponse = try await httpClient.getPage(
+                    next,
+                    scope: PaginationScope(
+                        path: screenshotPath,
+                        requiredParameters: [
+                            "include": screenshotInclude,
+                            "limit": "200",
+                            "limit[appScreenshots]": "50"
+                        ]
+                    ),
+                    as: ASCAppScreenshotSetsResponse.self
+                )
+            } else {
+                screenshotResponse = nil
             }
         }
 
@@ -620,7 +729,7 @@ extension AppsWorker {
     public func updateMetadata(_ params: CallTool.Parameters) async throws -> CallTool.Result {
         guard let arguments = params.arguments,
               let appIdValue = arguments["app_id"],
-              let _ = appIdValue.stringValue, // validate presence, app_id is only needed for validation
+              let appId = appIdValue.stringValue,
               let versionIdValue = arguments["version_id"],
               let versionId = versionIdValue.stringValue,
               let localeValue = arguments["locale"],
@@ -638,30 +747,40 @@ extension AppsWorker {
             // enforces the exact editable-state rules on the PATCH request.
             let versionResponse: ASCAppStoreVersionResponse = try await httpClient.get(
                 "/v1/appStoreVersions/\(try ASCPathSegment.encode(versionId))",
+                parameters: ["fields[appStoreVersions]": "app,platform,versionString,appVersionState,appStoreState"],
                 as: ASCAppStoreVersionResponse.self
             )
             
             let version = versionResponse.data
+            guard versionBelongsToApp(version, appId: appId) else {
+                return MCPResult.error("Version '\(versionId)' does not belong to app '\(appId)'")
+            }
             
             // 2. Get localization ID for the specified locale
             let localizationsResponse: ASCAppStoreVersionLocalizationsResponse = try await httpClient.get(
                 "/v1/appStoreVersions/\(try ASCPathSegment.encode(versionId))/appStoreVersionLocalizations",
-                parameters: ["filter[locale]": locale],
+                parameters: [
+                    "filter[locale]": locale,
+                    "fields[appStoreVersionLocalizations]": "locale,appStoreVersion"
+                ],
                 as: ASCAppStoreVersionLocalizationsResponse.self
             )
             
             guard let localization = localizationsResponse.data.first else {
                 return MCPResult.error("Localization '\(locale)' not found for version \(version.version)")
             }
+            guard localizationBelongsToVersion(localization, versionId: versionId) else {
+                return MCPResult.error("Localization '\(localization.id)' does not belong to version '\(versionId)'")
+            }
             
             // 3. Collect attributes for update (only provided fields)
             let attributes = ASCAppStoreVersionLocalizationUpdateRequest.Data.Attributes(
-                description: arguments["description"]?.stringValue,
-                whatsNew: arguments["whats_new"]?.stringValue,
-                keywords: arguments["keywords"]?.stringValue,
-                promotionalText: arguments["promotional_text"]?.stringValue,
-                supportUrl: arguments["support_url"]?.stringValue,
-                marketingUrl: arguments["marketing_url"]?.stringValue
+                description: try nullableMetadataString("description", from: arguments),
+                whatsNew: try nullableMetadataString("whats_new", from: arguments),
+                keywords: try nullableMetadataString("keywords", from: arguments),
+                promotionalText: try nullableMetadataString("promotional_text", from: arguments),
+                supportUrl: try nullableMetadataString("support_url", from: arguments),
+                marketingUrl: try nullableMetadataString("marketing_url", from: arguments)
             )
             
             // Check that at least one field is provided
@@ -847,7 +966,14 @@ extension AppsWorker {
         }
         
         if let data = relationship.data {
-            result["data"] = data.map { ["id": $0.id, "type": $0.type] }
+            switch data {
+            case .single(let value):
+                result["data"] = ["id": value.id, "type": value.type]
+            case .multiple(let values):
+                result["data"] = values.map { ["id": $0.id, "type": $0.type] }
+            case .null:
+                result["data"] = NSNull()
+            }
         }
         
         if let meta = relationship.meta {
@@ -884,21 +1010,38 @@ extension AppsWorker {
         }
 
         do {
+            let localizationFields = "locale,description,whatsNew,keywords,promotionalText,supportUrl,marketingUrl,appStoreVersion"
+            let versionResponse: ASCAppStoreVersionResponse = try await httpClient.get(
+                "/v1/appStoreVersions/\(try ASCPathSegment.encode(versionId))",
+                parameters: ["fields[appStoreVersions]": "app"],
+                as: ASCAppStoreVersionResponse.self
+            )
+            guard versionBelongsToApp(versionResponse.data, appId: appId) else {
+                return MCPResult.error("Version '\(versionId)' does not belong to app '\(appId)'")
+            }
+
             let localizationsResponse: ASCAppStoreVersionLocalizationsResponse
 
             // Check for pagination next_url
             if let nextUrl = try paginationURL(from: arguments["next_url"]) {
                 localizationsResponse = try await httpClient.getPage(
                     nextUrl,
-                    scope: PaginationScope(path: "/v1/appStoreVersions/\(try ASCPathSegment.encode(versionId))/appStoreVersionLocalizations"),
+                    scope: PaginationScope(
+                        path: "/v1/appStoreVersions/\(try ASCPathSegment.encode(versionId))/appStoreVersionLocalizations",
+                        requiredParameters: ["fields[appStoreVersionLocalizations]": localizationFields]
+                    ),
                     as: ASCAppStoreVersionLocalizationsResponse.self
                 )
             } else {
                 localizationsResponse = try await httpClient.get(
                     "/v1/appStoreVersions/\(try ASCPathSegment.encode(versionId))/appStoreVersionLocalizations",
-                    parameters: [:],
+                    parameters: ["fields[appStoreVersionLocalizations]": localizationFields],
                     as: ASCAppStoreVersionLocalizationsResponse.self
                 )
+            }
+
+            guard localizationsResponse.data.allSatisfy({ localizationBelongsToVersion($0, versionId: versionId) }) else {
+                return MCPResult.error("Apple returned a localization outside version '\(versionId)' context")
             }
 
             // Format result
@@ -957,4 +1100,14 @@ extension AppsWorker {
             return MCPResult.jsonObject(result, isError: true)
         }
     }
+}
+
+private struct AppsMetadataArgumentError: LocalizedError {
+    let message: String
+
+    init(_ message: String) {
+        self.message = message
+    }
+
+    var errorDescription: String? { message }
 }

@@ -1223,14 +1223,6 @@
       "reviewAtSpec": "4.4.1"
     },
     {
-      "id": "deferred.appStoreVersionPhasedReleases_deleteInstance",
-      "operationId": "appStoreVersionPhasedReleases_deleteInstance",
-      "disposition": "deferred",
-      "reason": "The `appStoreVersionPhasedReleases` resource-group capability is not yet exposed by asc-mcp.",
-      "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
-    },
-    {
       "id": "deferred.appStoreVersionPromotions_createInstance",
       "operationId": "appStoreVersionPromotions_createInstance",
       "disposition": "deferred",

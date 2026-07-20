@@ -49,7 +49,7 @@ Each company needs: `keyID`, `issuerID`, `privateKeyPath` (path to `.p8` file).
 
 **WorkerManager** (`Workers/MainWorker/WorkerManager.swift`) — central registry, routes tool calls by prefix.
 
-**Workers** (36 Swift worker classes; 32 `--workers` filter keys; 389 tools):
+**Workers** (36 Swift worker classes; 32 `--workers` filter keys; 390 tools):
 
 | Worker | Prefix | Tools | Domain |
 |--------|--------|-------|--------|
@@ -62,7 +62,7 @@ Each company needs: `keyID`, `issuerID`, `privateKeyPath` (path to `.p8` file).
 | BuildsWorker | `builds_` | 4 | Build management |
 | BuildBetaDetailsWorker | `builds_*_beta_` | 11 | TestFlight localizations, notifications, beta groups, individual testers |
 | BuildProcessingWorker | `builds_*_processing_` | 4 | Build states, encryption |
-| AppLifecycleWorker | `app_versions_` | 14 | Versions, submit, release, phased rollout, delete |
+| AppLifecycleWorker | `app_versions_` | 15 | Versions, submit, release, phased rollout, delete |
 | ReviewsWorker | `reviews_` | 8 | Customer reviews, responses, AI summarizations |
 | BetaGroupsWorker | `beta_groups_` | 9 | TestFlight groups CRUD, testers, builds |
 | BetaFeedbackWorker | `beta_feedback_` | 8 | TestFlight feedback screenshots, crash submissions, crash logs |

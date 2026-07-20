@@ -228,12 +228,12 @@ public struct ASCAppStoreVersionLocalizationUpdateRequest: Codable, Sendable {
         public let attributes: Attributes
         
         public struct Attributes: Codable, Sendable {
-            public let description: String?
-            public let whatsNew: String?
-            public let keywords: String?
-            public let promotionalText: String?
-            public let supportUrl: String?
-            public let marketingUrl: String?
+            public let description: NullableAttributeValue?
+            public let whatsNew: NullableAttributeValue?
+            public let keywords: NullableAttributeValue?
+            public let promotionalText: NullableAttributeValue?
+            public let supportUrl: NullableAttributeValue?
+            public let marketingUrl: NullableAttributeValue?
         }
     }
     
@@ -332,8 +332,14 @@ public struct ASCAppPreview: Codable, Sendable {
         public let videoUrl: String?
         public let mimeType: String?
         public let previewFrameTimeCode: String?
+        public let previewFrameImage: PreviewFrameImage?
         public let previewImage: PreviewImage?
         public let assetDeliveryState: AssetDeliveryState?
+    }
+
+    public struct PreviewFrameImage: Codable, Sendable {
+        public let image: PreviewImage?
+        public let state: AssetDeliveryState?
     }
     
     public struct PreviewImage: Codable, Sendable {
@@ -472,15 +478,26 @@ public struct CreateAppStoreVersionLocalizationRequest: Codable, Sendable {
 extension ASCAppPreview {
     /// Preview image URL
     public var previewImageUrl: String? {
-        guard let templateUrl = attributes?.previewImage?.templateUrl else {
+        guard let previewImage = attributes?.previewFrameImage?.image ?? attributes?.previewImage,
+              let templateUrl = previewImage.templateUrl,
+              let width = previewImage.width,
+              let height = previewImage.height else {
             return nil
         }
-        
-        // Replace placeholders with actual values for maximum size
+
         return templateUrl
-            .replacingOccurrences(of: "{w}", with: "1290")
-            .replacingOccurrences(of: "{h}", with: "2796")
+            .replacingOccurrences(of: "{w}", with: String(width))
+            .replacingOccurrences(of: "{h}", with: String(height))
             .replacingOccurrences(of: "{f}", with: "png")
+    }
+
+    public var previewImageDimensions: (width: Int, height: Int)? {
+        let previewImage = attributes?.previewFrameImage?.image ?? attributes?.previewImage
+        guard let width = previewImage?.width,
+              let height = previewImage?.height else {
+            return nil
+        }
+        return (width, height)
     }
     
     /// Video URL

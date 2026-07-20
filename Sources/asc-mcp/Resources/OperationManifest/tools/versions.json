@@ -158,6 +158,18 @@
           "sourceKind": "requestBody",
           "operationId": "appStoreVersions_createInstance",
           "jsonPointer": "/data/attributes/earliestReleaseDate"
+        },
+        {
+          "toolField": "copyright",
+          "sourceKind": "requestBody",
+          "operationId": "appStoreVersions_createInstance",
+          "jsonPointer": "/data/attributes/copyright"
+        },
+        {
+          "toolField": "review_type",
+          "sourceKind": "requestBody",
+          "operationId": "appStoreVersions_createInstance",
+          "jsonPointer": "/data/attributes/reviewType"
         }
       ],
       "response": {
@@ -257,6 +269,38 @@
       "note": "Apple returns 204 with no response document; the MCP deletion confirmation is synthesized locally."
     },
     {
+      "tool": "app_versions_delete_phased_release",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "destructive",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "appStoreVersionPhasedReleases_deleteInstance",
+          "method": "delete",
+          "path": "/v1/appStoreVersionPhasedReleases/{id}",
+          "role": "primary"
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "phased_release_id",
+          "sourceKind": "parameter",
+          "operationId": "appStoreVersionPhasedReleases_deleteInstance",
+          "location": "path",
+          "appleName": "id"
+        }
+      ],
+      "response": {
+        "mode": "local",
+        "sources": [
+          { "operationId": "appStoreVersionPhasedReleases_deleteInstance", "statusCode": "204" }
+        ],
+        "fields": []
+      },
+      "note": "Apple returns 204 without a document; the handler returns the deleted phased release id."
+    },
+    {
       "tool": "app_versions_get",
       "kind": "direct",
       "status": "partial",
@@ -267,7 +311,15 @@
           "operationId": "appStoreVersions_getInstance",
           "method": "get",
           "path": "/v1/appStoreVersions/{id}",
-          "role": "primary"
+          "role": "primary",
+          "inputs": [
+            {
+              "sourceKind": "fixed",
+              "location": "query",
+              "appleName": "include",
+              "fixedValue": ["build", "appStoreVersionSubmission", "appStoreVersionPhasedRelease", "appStoreReviewDetail"]
+            }
+          ]
         }
       ],
       "fields": [
@@ -338,7 +390,15 @@
           "operationId": "apps_appStoreVersions_getToManyRelated",
           "method": "get",
           "path": "/v1/apps/{id}/appStoreVersions",
-          "role": "primary"
+          "role": "primary",
+          "inputs": [
+            {
+              "sourceKind": "fixed",
+              "location": "query",
+              "appleName": "include",
+              "fixedValue": ["build", "appStoreVersionSubmission", "appStoreVersionPhasedRelease"]
+            }
+          ]
         }
       ],
       "fields": [
@@ -351,6 +411,13 @@
         },
         {
           "toolField": "states",
+          "sourceKind": "parameter",
+          "operationId": "apps_appStoreVersions_getToManyRelated",
+          "location": "query",
+          "appleName": "filter[appStoreState]"
+        },
+        {
+          "toolField": "app_version_states",
           "sourceKind": "parameter",
           "operationId": "apps_appStoreVersions_getToManyRelated",
           "location": "query",
@@ -373,7 +440,7 @@
         {
           "toolField": "next_url",
           "sourceKind": "local",
-          "localRole": "paginationContinuation"
+          "localRole": "paginationContinuationPreservingFiltersAndIncludedRelationships"
         }
       ],
       "response": {
@@ -387,7 +454,7 @@
         ],
         "fields": []
       },
-      "note": "The current MCP states enum still contains legacy appStoreState values while the handler sends filter[appVersionState]; the schema enum must be aligned to Apple 4.4.1."
+      "note": "states preserves deprecated filter[appStoreState] compatibility; app_version_states exposes current filter[appVersionState]. Pagination preserves all supplied filters, page size, and the fixed included relationships."
     },
     {
       "tool": "app_versions_release",
@@ -401,7 +468,15 @@
           "method": "get",
           "path": "/v1/appStoreVersions/{id}",
           "role": "supporting",
-          "condition": "Always used to validate versionString and releasable state before the irreversible request."
+          "condition": "Always used to validate versionString and releasable state before the irreversible request.",
+          "inputs": [
+            {
+              "sourceKind": "fixed",
+              "location": "query",
+              "appleName": "fields[appStoreVersions]",
+              "fixedValue": ["platform", "versionString", "appVersionState"]
+            }
+          ]
         },
         {
           "operationId": "appStoreVersionReleaseRequests_createInstance",
@@ -655,8 +730,16 @@
           "operationId": "appStoreVersions_getInstance",
           "method": "get",
           "path": "/v1/appStoreVersions/{id}",
-          "role": "conditional",
-          "condition": "Used only when app_id is omitted, to derive the owning app id."
+          "role": "supporting",
+          "condition": "Always validates the version's owning app before creating a review submission.",
+          "inputs": [
+            {
+              "sourceKind": "fixed",
+              "location": "query",
+              "appleName": "fields[appStoreVersions]",
+              "fixedValue": ["app", "platform", "versionString", "appVersionState"]
+            }
+          ]
         },
         {
           "operationId": "reviewSubmissions_createInstance",
@@ -784,7 +867,7 @@
         ],
         "fields": []
       },
-      "note": "Submission requires the three-operation Review Submissions workflow; the optional app_id is derived from the version when absent."
+      "note": "Submission validates app ownership before the three-operation Review Submissions workflow; partial failures expose only the available cancel recovery tool."
     },
     {
       "tool": "app_versions_update",
@@ -846,6 +929,18 @@
           "sourceKind": "requestBody",
           "operationId": "appStoreVersions_updateInstance",
           "jsonPointer": "/data/attributes/versionString"
+        },
+        {
+          "toolField": "review_type",
+          "sourceKind": "requestBody",
+          "operationId": "appStoreVersions_updateInstance",
+          "jsonPointer": "/data/attributes/reviewType"
+        },
+        {
+          "toolField": "downloadable",
+          "sourceKind": "requestBody",
+          "operationId": "appStoreVersions_updateInstance",
+          "jsonPointer": "/data/attributes/downloadable"
         }
       ],
       "response": {
@@ -858,7 +953,8 @@
           }
         ],
         "fields": []
-      }
+      },
+      "note": "All nullable update attributes preserve omitted versus explicit MCP null semantics; output exposes appVersionState separately from deprecated appStoreState."
     },
     {
       "tool": "app_versions_update_age_rating",

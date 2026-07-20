@@ -105,6 +105,11 @@ private func metadataLocalizationsBody(id: String, locale: String) -> String {
           "attributes": {
             "locale": "\(locale)",
             "keywords": "map,friends,location"
+          },
+          "relationships": {
+            "appStoreVersion": {
+              "data": { "type": "appStoreVersions", "id": "\(id.contains("metadata-rejected") ? "ver-metadata-rejected" : "ver-rejected")" }
+            }
           }
         }
       ]

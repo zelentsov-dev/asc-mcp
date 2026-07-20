@@ -24,38 +24,133 @@ public struct ASCApp: Codable, Sendable {
     }
     
     public struct Relationships: Codable, Sendable {
-        public let ciProduct: Relationship?
-        public let betaGroups: Relationship?
-        public let appStoreVersions: Relationship?
-        public let preReleaseVersions: Relationship?
-        public let betaAppLocalizations: Relationship?
-        public let builds: Relationship?
-        public let betaLicenseAgreement: Relationship?
-        public let betaAppReviewDetail: Relationship?
-        public let appInfos: Relationship?
-        public let appClips: Relationship?
-        public let endUserLicenseAgreement: Relationship?
-        public let preOrder: Relationship?
-        public let prices: Relationship?
-        public let availableTerritories: Relationship?
-        public let inAppPurchases: Relationship?
-        public let subscriptionGroups: Relationship?
-        public let gameCenterEnabledVersions: Relationship?
-        public let appCustomProductPages: Relationship?
-        public let inAppPurchasesV2: Relationship?
-        public let promotedPurchases: Relationship?
-        public let appEvents: Relationship?
-        public let reviewSubmissions: Relationship?
-        public let subscriptionGracePeriod: Relationship?
-        public let customerReviews: Relationship?
-        public let perfPowerMetrics: Relationship?
-        public let appEncryptionDeclarations: Relationship?
+        public let values: [String: Relationship]
+
+        public init(from decoder: Decoder) throws {
+            let container = try decoder.container(keyedBy: RelationshipKey.self)
+            var values: [String: Relationship] = [:]
+            for key in container.allKeys {
+                values[key.stringValue] = try container.decode(Relationship.self, forKey: key)
+            }
+            self.values = values
+        }
+
+        public func encode(to encoder: Encoder) throws {
+            var container = encoder.container(keyedBy: RelationshipKey.self)
+            for (name, relationship) in values {
+                try container.encode(relationship, forKey: RelationshipKey(name))
+            }
+        }
+
+        public var ciProduct: Relationship? { values["ciProduct"] }
+        public var betaGroups: Relationship? { values["betaGroups"] }
+        public var appStoreVersions: Relationship? { values["appStoreVersions"] }
+        public var preReleaseVersions: Relationship? { values["preReleaseVersions"] }
+        public var betaAppLocalizations: Relationship? { values["betaAppLocalizations"] }
+        public var builds: Relationship? { values["builds"] }
+        public var betaLicenseAgreement: Relationship? { values["betaLicenseAgreement"] }
+        public var betaAppReviewDetail: Relationship? { values["betaAppReviewDetail"] }
+        public var appInfos: Relationship? { values["appInfos"] }
+        public var appClips: Relationship? { values["appClips"] }
+        public var endUserLicenseAgreement: Relationship? { values["endUserLicenseAgreement"] }
+        public var preOrder: Relationship? { values["preOrder"] }
+        public var prices: Relationship? { values["prices"] }
+        public var availableTerritories: Relationship? { values["availableTerritories"] }
+        public var inAppPurchases: Relationship? { values["inAppPurchases"] }
+        public var subscriptionGroups: Relationship? { values["subscriptionGroups"] }
+        public var gameCenterEnabledVersions: Relationship? { values["gameCenterEnabledVersions"] }
+        public var appCustomProductPages: Relationship? { values["appCustomProductPages"] }
+        public var inAppPurchasesV2: Relationship? { values["inAppPurchasesV2"] }
+        public var promotedPurchases: Relationship? { values["promotedPurchases"] }
+        public var appEvents: Relationship? { values["appEvents"] }
+        public var reviewSubmissions: Relationship? { values["reviewSubmissions"] }
+        public var subscriptionGracePeriod: Relationship? { values["subscriptionGracePeriod"] }
+        public var customerReviews: Relationship? { values["customerReviews"] }
+        public var perfPowerMetrics: Relationship? { values["perfPowerMetrics"] }
+        public var appEncryptionDeclarations: Relationship? { values["appEncryptionDeclarations"] }
+
+        private struct RelationshipKey: CodingKey {
+            let stringValue: String
+            let intValue: Int? = nil
+
+            init(_ stringValue: String) {
+                self.stringValue = stringValue
+            }
+
+            init?(stringValue: String) {
+                self.init(stringValue)
+            }
+
+            init?(intValue: Int) {
+                return nil
+            }
+        }
     }
     
     public struct Relationship: Codable, Sendable {
         public let links: Links?
         public let meta: Meta?
-        public let data: [ResourceIdentifier]?
+        public let data: DataType?
+
+        public init(from decoder: Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            links = try container.decodeIfPresent(Links.self, forKey: .links)
+            meta = try container.decodeIfPresent(Meta.self, forKey: .meta)
+            if container.contains(.data) {
+                if try container.decodeNil(forKey: .data) {
+                    data = .null
+                } else {
+                    data = try container.decode(DataType.self, forKey: .data)
+                }
+            } else {
+                data = nil
+            }
+        }
+
+        public func encode(to encoder: Encoder) throws {
+            var container = encoder.container(keyedBy: CodingKeys.self)
+            try container.encodeIfPresent(links, forKey: .links)
+            try container.encodeIfPresent(meta, forKey: .meta)
+            try container.encodeIfPresent(data, forKey: .data)
+        }
+
+        public enum DataType: Codable, Sendable {
+            case single(ResourceIdentifier)
+            case multiple([ResourceIdentifier])
+            case null
+
+            public init(from decoder: Decoder) throws {
+                let container = try decoder.singleValueContainer()
+                if let single = try? container.decode(ResourceIdentifier.self) {
+                    self = .single(single)
+                } else if let multiple = try? container.decode([ResourceIdentifier].self) {
+                    self = .multiple(multiple)
+                } else {
+                    throw DecodingError.typeMismatch(
+                        DataType.self,
+                        .init(codingPath: decoder.codingPath, debugDescription: "Expected relationship object or array")
+                    )
+                }
+            }
+
+            public func encode(to encoder: Encoder) throws {
+                var container = encoder.singleValueContainer()
+                switch self {
+                case .single(let value):
+                    try container.encode(value)
+                case .multiple(let values):
+                    try container.encode(values)
+                case .null:
+                    try container.encodeNil()
+                }
+            }
+        }
+
+        private enum CodingKeys: String, CodingKey {
+            case links
+            case meta
+            case data
+        }
         
         public struct Links: Codable, Sendable {
             public let related: String?
@@ -103,6 +198,7 @@ public struct ASCAppsResponse: Codable, Sendable {
 /// Single app response
 public struct ASCAppResponse: Codable, Sendable {
     public let data: ASCApp
+    public let included: [JSONValue]?
     public let links: Links
     
     public struct Links: Codable, Sendable {

@@ -112,11 +112,14 @@ private func appVersionBody(state: String) -> String {
       "data": {
         "type": "appStoreVersions",
         "id": "ver-1",
-        "attributes": {
-          "platform": "IOS",
-          "versionString": "3.3",
-          "appStoreState": "\(state)"
-        }
+          "attributes": {
+            "platform": "IOS",
+            "versionString": "3.3",
+            "appStoreState": "\(state)"
+          },
+          "relationships": {
+            "app": { "data": { "type": "apps", "id": "app-1" } }
+          }
       }
     }
     """
@@ -131,6 +134,9 @@ private func localizationsBody(id: String, locale: String) -> String {
           "id": "\(id)",
           "attributes": {
             "locale": "\(locale)"
+          },
+          "relationships": {
+            "appStoreVersion": { "data": { "type": "appStoreVersions", "id": "ver-1" } }
           }
         }
       ]

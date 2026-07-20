@@ -15,6 +15,7 @@ public struct ASCAppStoreVersion: Codable, Sendable {
         public let appVersionState: String?
         public let appStoreState: String?
         public let copyright: String?
+        public let reviewType: String?
         public let releaseType: String?
         public let earliestReleaseDate: String?
         public let downloadable: Bool?
@@ -172,7 +173,7 @@ extension ASCAppStoreVersion {
     
     /// Version state
     public var state: String {
-        return attributes?.appStoreState ?? "Unknown"
+        return attributes?.appVersionState ?? attributes?.appStoreState ?? "Unknown"
     }
     
     /// Platform

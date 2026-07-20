@@ -95,10 +95,11 @@
         ],
         "fields": [
           { "outputField": "success", "localRole": "successfulRead" },
-          { "outputField": "app", "operationId": "apps_getInstance", "jsonPointer": "/data" }
+          { "outputField": "app", "operationId": "apps_getInstance", "jsonPointer": "/data" },
+          { "outputField": "included", "operationId": "apps_getInstance", "jsonPointer": "/included" }
         ]
       },
-      "note": "Partial because the current app model projects only a subset of current attributes and relationships and does not safely expose all valid included resource shapes."
+      "note": "The handler projects app attributes while preserving every returned relationship key, included resources, and JSON:API to-one versus to-many linkage."
     },
     {
       "tool": "apps_get_metadata",
@@ -112,14 +113,36 @@
           "method": "get",
           "path": "/v1/appStoreVersions/{id}",
           "role": "supporting",
-          "condition": "version_id is supplied"
+          "condition": "version_id is supplied",
+          "inputs": [
+            {
+              "sourceKind": "fixed",
+              "location": "query",
+              "appleName": "fields[appStoreVersions]",
+              "fixedValue": ["app", "platform", "versionString", "appVersionState", "appStoreState"]
+            }
+          ]
         },
         {
           "operationId": "apps_appStoreVersions_getToManyRelated",
           "method": "get",
           "path": "/v1/apps/{id}/appStoreVersions",
           "role": "supporting",
-          "condition": "version_id is omitted"
+          "condition": "version_id is omitted",
+          "inputs": [
+            {
+              "sourceKind": "fixed",
+              "location": "query",
+              "appleName": "fields[appStoreVersions]",
+              "fixedValue": ["platform", "versionString", "appVersionState", "appStoreState", "createdDate"]
+            },
+            {
+              "sourceKind": "fixed",
+              "location": "query",
+              "appleName": "limit",
+              "fixedValue": 200
+            }
+          ]
         },
         {
           "operationId": "appStoreVersions_appStoreVersionLocalizations_getToManyRelated",
@@ -136,6 +159,18 @@
                 "apps_appStoreVersions_getToManyRelated:/data/*/id"
               ],
               "localRole": "useResolvedVersionIdentifier"
+            },
+            {
+              "sourceKind": "fixed",
+              "location": "query",
+              "appleName": "fields[appStoreVersionLocalizations]",
+              "fixedValue": ["description", "locale", "keywords", "marketingUrl", "promotionalText", "supportUrl", "whatsNew", "appStoreVersion"]
+            },
+            {
+              "sourceKind": "fixed",
+              "location": "query",
+              "appleName": "limit",
+              "fixedValue": 200
             }
           ]
         },
@@ -152,6 +187,24 @@
               "appleName": "id",
               "derivedFrom": ["appStoreVersions_appStoreVersionLocalizations_getToManyRelated:/data/*/id"],
               "localRole": "useFirstLocaleFilteredLocalizationIdentifier"
+            },
+            {
+              "sourceKind": "fixed",
+              "location": "query",
+              "appleName": "include",
+              "fixedValue": ["appPreviews"]
+            },
+            {
+              "sourceKind": "fixed",
+              "location": "query",
+              "appleName": "limit",
+              "fixedValue": 200
+            },
+            {
+              "sourceKind": "fixed",
+              "location": "query",
+              "appleName": "limit[appPreviews]",
+              "fixedValue": 50
             }
           ]
         },
@@ -168,6 +221,24 @@
               "appleName": "id",
               "derivedFrom": ["appStoreVersions_appStoreVersionLocalizations_getToManyRelated:/data/*/id"],
               "localRole": "useFirstLocaleFilteredLocalizationIdentifier"
+            },
+            {
+              "sourceKind": "fixed",
+              "location": "query",
+              "appleName": "include",
+              "fixedValue": ["appScreenshots"]
+            },
+            {
+              "sourceKind": "fixed",
+              "location": "query",
+              "appleName": "limit",
+              "fixedValue": 200
+            },
+            {
+              "sourceKind": "fixed",
+              "location": "query",
+              "appleName": "limit[appScreenshots]",
+              "fixedValue": 50
             }
           ]
         }
@@ -176,7 +247,8 @@
         { "toolField": "app_id", "sourceKind": "parameter", "operationId": "apps_appStoreVersions_getToManyRelated", "location": "path", "appleName": "id" },
         { "toolField": "locale", "sourceKind": "parameter", "operationId": "appStoreVersions_appStoreVersionLocalizations_getToManyRelated", "location": "query", "appleName": "filter[locale]" },
         { "toolField": "version_id", "sourceKind": "parameter", "operationId": "appStoreVersions_getInstance", "location": "path", "appleName": "id" },
-        { "toolField": "version_state", "sourceKind": "local", "localRole": "selectVersionFromCollection" },
+        { "toolField": "version_state", "sourceKind": "local", "localRole": "selectVersionByAppVersionStateWithDeprecatedAppStoreStateFallback" },
+        { "toolField": "platform", "sourceKind": "local", "localRole": "selectOrValidateVersionPlatform" },
         { "toolField": "include_media", "sourceKind": "local", "localRole": "enableConditionalMediaReads" }
       ],
       "response": {
@@ -196,7 +268,7 @@
           { "outputField": "screenshotSets", "operationId": "appStoreVersionLocalizations_appScreenshotSets_getToManyRelated", "jsonPointer": "/data" }
         ]
       },
-      "note": "Partial: version resolution is local, uses a bounded collection and legacy appStoreState fields, and optional media failures are currently degraded silently."
+      "note": "Partial because the tool aggregates several Apple operations; version resolution follows all collection pages, prefers appVersionState with deprecated appStoreState fallback, validates ownership, and propagates media failures."
     },
     {
       "tool": "apps_list",
@@ -217,7 +289,7 @@
         { "toolField": "sort", "sourceKind": "parameter", "operationId": "apps_getCollection", "location": "query", "appleName": "sort" },
         { "toolField": "bundle_id", "sourceKind": "parameter", "operationId": "apps_getCollection", "location": "query", "appleName": "filter[bundleId]" },
         { "toolField": "name", "sourceKind": "parameter", "operationId": "apps_getCollection", "location": "query", "appleName": "filter[name]" },
-        { "toolField": "next_url", "sourceKind": "local", "localRole": "paginationContinuation" }
+        { "toolField": "next_url", "sourceKind": "local", "localRole": "paginationContinuationPreservingFiltersSortAndEffectiveLimit" }
       ],
       "response": {
         "mode": "projection",
@@ -234,26 +306,50 @@
     },
     {
       "tool": "apps_list_localizations",
-      "kind": "direct",
+      "kind": "compound",
       "status": "partial",
       "effect": "read",
       "implementationState": "asBuilt",
       "operations": [
         {
+          "operationId": "appStoreVersions_getInstance",
+          "method": "get",
+          "path": "/v1/appStoreVersions/{id}",
+          "role": "supporting",
+          "inputs": [
+            {
+              "sourceKind": "fixed",
+              "location": "query",
+              "appleName": "fields[appStoreVersions]",
+              "fixedValue": ["app"]
+            }
+          ]
+        },
+        {
           "operationId": "appStoreVersions_appStoreVersionLocalizations_getToManyRelated",
           "method": "get",
           "path": "/v1/appStoreVersions/{id}/appStoreVersionLocalizations",
-          "role": "primary"
+          "role": "primary",
+          "inputs": [
+            {
+              "sourceKind": "fixed",
+              "location": "query",
+              "appleName": "fields[appStoreVersionLocalizations]",
+              "fixedValue": ["locale", "description", "whatsNew", "keywords", "promotionalText", "supportUrl", "marketingUrl", "appStoreVersion"]
+            }
+          ]
         }
       ],
       "fields": [
-        { "toolField": "app_id", "sourceKind": "local", "localRole": "validationAndResponseContext", "omissionReason": "The Apple relationship endpoint is identified only by version_id; app_id is not sent or ownership-checked." },
+        { "toolField": "app_id", "sourceKind": "local", "localRole": "validateVersionOwnershipFromAppRelationship", "derivedFrom": ["appStoreVersions_getInstance:/data/relationships/app/data/id"] },
+        { "toolField": "version_id", "sourceKind": "parameter", "operationId": "appStoreVersions_getInstance", "location": "path", "appleName": "id" },
         { "toolField": "version_id", "sourceKind": "parameter", "operationId": "appStoreVersions_appStoreVersionLocalizations_getToManyRelated", "location": "path", "appleName": "id" },
         { "toolField": "next_url", "sourceKind": "local", "localRole": "paginationContinuation" }
       ],
       "response": {
         "mode": "projection",
         "sources": [
+          { "operationId": "appStoreVersions_getInstance", "statusCode": "200", "mediaType": "application/json" },
           { "operationId": "appStoreVersions_appStoreVersionLocalizations_getToManyRelated", "statusCode": "200", "mediaType": "application/json" }
         ],
         "fields": [
@@ -262,7 +358,7 @@
           { "outputField": "next_url", "operationId": "appStoreVersions_appStoreVersionLocalizations_getToManyRelated", "jsonPointer": "/links/next" }
         ]
       },
-      "note": "Direct Apple relationship read with a local redundant app_id input and a projected response."
+      "note": "The handler validates app-to-version ownership, then returns only localizations whose appStoreVersion linkage matches version_id."
     },
     {
       "tool": "apps_list_versions",
@@ -275,7 +371,21 @@
           "operationId": "apps_appStoreVersions_getToManyRelated",
           "method": "get",
           "path": "/v1/apps/{id}/appStoreVersions",
-          "role": "primary"
+          "role": "primary",
+          "inputs": [
+            {
+              "sourceKind": "fixed",
+              "location": "query",
+              "appleName": "fields[appStoreVersions]",
+              "fixedValue": ["platform", "versionString", "appVersionState", "appStoreState", "createdDate"]
+            },
+            {
+              "sourceKind": "fixed",
+              "location": "query",
+              "appleName": "limit",
+              "fixedValue": 200
+            }
+          ]
         }
       ],
       "fields": [
@@ -293,7 +403,7 @@
           { "outputField": "next_url", "operationId": "apps_appStoreVersions_getToManyRelated", "jsonPointer": "/links/next" }
         ]
       },
-      "note": "Partial because the handler hard-codes a narrow legacy appStoreState field projection and exposes no current platform/state filters."
+      "note": "Partial because the handler requests a fixed 200-item projection containing platform, current appVersionState, deprecated appStoreState, versionString, and createdDate; it exposes no public platform/state filters and returns next_url for caller-driven pagination."
     },
     {
       "tool": "apps_search",
@@ -370,17 +480,33 @@
           "operationId": "appStoreVersions_getInstance",
           "method": "get",
           "path": "/v1/appStoreVersions/{id}",
-          "role": "supporting"
+          "role": "supporting",
+          "inputs": [
+            {
+              "sourceKind": "fixed",
+              "location": "query",
+              "appleName": "fields[appStoreVersions]",
+              "fixedValue": ["app", "platform", "versionString", "appVersionState", "appStoreState"]
+            }
+          ]
         },
         {
           "operationId": "appStoreVersions_appStoreVersionLocalizations_getToManyRelated",
           "method": "get",
           "path": "/v1/appStoreVersions/{id}/appStoreVersionLocalizations",
-          "role": "supporting"
+          "role": "supporting",
+          "inputs": [
+            {
+              "sourceKind": "fixed",
+              "location": "query",
+              "appleName": "fields[appStoreVersionLocalizations]",
+              "fixedValue": ["locale", "appStoreVersion"]
+            }
+          ]
         }
       ],
       "fields": [
-        { "toolField": "app_id", "sourceKind": "local", "localRole": "validationOnly", "omissionReason": "The current handler validates presence but does not send app_id to Apple or verify version ownership." },
+        { "toolField": "app_id", "sourceKind": "local", "localRole": "validateVersionOwnershipFromAppRelationship", "derivedFrom": ["appStoreVersions_getInstance:/data/relationships/app/data/id"] },
         { "toolField": "version_id", "sourceKind": "parameter", "operationId": "appStoreVersions_getInstance", "location": "path", "appleName": "id" },
         { "toolField": "version_id", "sourceKind": "parameter", "operationId": "appStoreVersions_appStoreVersionLocalizations_getToManyRelated", "location": "path", "appleName": "id" },
         { "toolField": "locale", "sourceKind": "parameter", "operationId": "appStoreVersions_appStoreVersionLocalizations_getToManyRelated", "location": "query", "appleName": "filter[locale]" },
@@ -405,7 +531,7 @@
           { "outputField": "updatedFields", "localRole": "providedAttributeNames" }
         ]
       },
-      "note": "The intended current Apple workflow is version context read, localization resolution, then PATCH by localization ID; status remains partial because app_id is validation-only and no output schema is declared."
+      "note": "The handler validates app-to-version and version-to-localization ownership, preserves omitted versus explicit-null localization attributes, then patches the resolved localization."
     }
   ],
   "implementationAliases": []

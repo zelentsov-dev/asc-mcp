@@ -13,11 +13,19 @@ extension AppsWorker {
                 "properties": .object([
                     "limit": .object([
                         "type": .string("integer"),
-                        "description": .string("Maximum number of apps (default 25)")
+                        "description": .string("Maximum number of apps (default 25)"),
+                        "minimum": .int(1),
+                        "maximum": .int(200),
+                        "default": .int(25)
                     ]),
                     "sort": .object([
                         "type": .string("string"),
-                        "description": .string("Sort order: name, -name, bundleId, -bundleId")
+                        "description": .string("Sort order"),
+                        "enum": .array([
+                            .string("name"), .string("-name"),
+                            .string("bundleId"), .string("-bundleId"),
+                            .string("sku"), .string("-sku")
+                        ])
                     ]),
                     "bundle_id": .object([
                         "type": .string("string"),
@@ -104,7 +112,7 @@ extension AppsWorker {
 
                 Behavior:
                 - Without locale: returns ALL locales in one request
-                - Without version_id: auto-selects version (priority: PREPARE_FOR_SUBMISSION > REJECTED > METADATA_REJECTED > READY_FOR_SALE)
+                - Without version_id: auto-selects version by appVersionState, then platform (priority: PREPARE_FOR_SUBMISSION > REJECTED > METADATA_REJECTED > READY_FOR_DISTRIBUTION; legacy READY_FOR_SALE remains supported)
                 - include_media: false by default, media loaded only on request
                 """,
             inputSchema: .object([
@@ -124,7 +132,12 @@ extension AppsWorker {
                     ]),
                     "version_state": .object([
                         "type": .string("string"),
-                        "description": .string("Version state filter (for example PREPARE_FOR_SUBMISSION, REJECTED, METADATA_REJECTED, READY_FOR_SALE)")
+                        "description": .string("appVersionState filter. Legacy appStoreState is used only when Apple omits appVersionState")
+                    ]),
+                    "platform": .object([
+                        "type": .string("string"),
+                        "description": .string("Optional platform used to select or validate the version"),
+                        "enum": .array([.string("IOS"), .string("MAC_OS"), .string("TV_OS"), .string("VISION_OS")])
                     ]),
                     "include_media": .object([
                         "type": .string("boolean"),
@@ -155,34 +168,23 @@ extension AppsWorker {
                         "type": .string("string"),
                         "description": .string("Locale code (e.g. 'en-US', 'ru-RU', 'de-DE', 'fr-FR', 'ja', 'zh-Hans')")
                     ]),
-                    "description": .object([
-                        "type": .string("string"),
-                        "description": .string("App description (up to 4000 characters)")
-                    ]),
-                    "whats_new": .object([
-                        "type": .string("string"),
-                        "description": .string("What's New in This Version (up to 4000 characters)")
-                    ]),
-                    "keywords": .object([
-                        "type": .string("string"),
-                        "description": .string("Keywords separated by commas (up to 100 characters)")
-                    ]),
-                    "promotional_text": .object([
-                        "type": .string("string"),
-                        "description": .string("Promotional text (up to 170 characters)")
-                    ]),
-                    "support_url": .object([
-                        "type": .string("string"),
-                        "description": .string("Support URL")
-                    ]),
-                    "marketing_url": .object([
-                        "type": .string("string"),
-                        "description": .string("Marketing URL")
-                    ])
+                    "description": nullableMetadataProperty("App description (up to 4000 characters)"),
+                    "whats_new": nullableMetadataProperty("What's New in This Version (up to 4000 characters)"),
+                    "keywords": nullableMetadataProperty("Keywords separated by commas (up to 100 characters)"),
+                    "promotional_text": nullableMetadataProperty("Promotional text (up to 170 characters)"),
+                    "support_url": nullableMetadataProperty("Support URL"),
+                    "marketing_url": nullableMetadataProperty("Marketing URL")
                 ]),
                 "required": .array([.string("app_id"), .string("version_id"), .string("locale")])
             ])
         )
+    }
+
+    private func nullableMetadataProperty(_ description: String) -> Value {
+        .object([
+            "type": .array([.string("string"), .string("null")]),
+            "description": .string("\(description). Pass null to clear the value.")
+        ])
     }
     
     func createLocalizationTool() -> Tool {
