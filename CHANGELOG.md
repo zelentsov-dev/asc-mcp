@@ -25,6 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Reject malformed version resources, ambiguous App Info selection, invalid age-rating values and URLs, and inconsistent review-detail relationships before returning misleading success.
 - Require the exact phased-release ID before deleting an eligible planned rollout.
+- Stop automatically repeating DELETE requests after ambiguous network, timeout, or server failures while preserving safe authorization-refresh and rate-limit retries.
 
 ### Compatibility
 

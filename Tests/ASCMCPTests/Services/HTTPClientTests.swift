@@ -76,6 +76,132 @@ struct HTTPClientTests {
         #expect(await transport.requestCount() == 2)
     }
 
+    @Test("DELETE does not retry an ambiguous network failure")
+    func deleteDoesNotRetryNetworkFailure() async throws {
+        let transport = ScriptedHTTPTransport(steps: [
+            .networkFailure,
+            .response(statusCode: 204, headers: [:], body: "")
+        ])
+        let client = await HTTPClient(
+            jwtService: try TestFactory.makeJWTService(),
+            baseURL: "https://api.example.test",
+            transport: transport,
+            maxRetries: 2
+        )
+
+        do {
+            _ = try await client.delete("/v1/resources/resource-1")
+            Issue.record("Expected an ambiguous network error")
+        } catch let error as ASCError {
+            guard case .network = error else {
+                Issue.record("Expected a network error, got \(error)")
+                return
+            }
+        }
+
+        #expect(await transport.requestCount() == 1)
+    }
+
+    @Test("DELETE does not retry ambiguous HTTP failures")
+    func deleteDoesNotRetryAmbiguousHTTPFailures() async throws {
+        for expectedStatusCode in [408, 500, 502, 503, 504] {
+            let transport = ScriptedHTTPTransport(steps: [
+                .response(
+                    statusCode: expectedStatusCode,
+                    headers: ["Retry-After": "0"],
+                    body: #"{"errors":[{"status":"\#(expectedStatusCode)","detail":"failed"}]}"#
+                ),
+                .response(statusCode: 204, headers: [:], body: "")
+            ])
+            let client = await HTTPClient(
+                jwtService: try TestFactory.makeJWTService(),
+                baseURL: "https://api.example.test",
+                transport: transport,
+                maxRetries: 2
+            )
+
+            do {
+                _ = try await client.delete("/v1/resources/resource-1")
+                Issue.record("Expected an API error for \(expectedStatusCode)")
+            } catch let error as ASCError {
+                guard case .apiResponse(_, let statusCode) = error else {
+                    Issue.record("Expected an API response error, got \(error)")
+                    return
+                }
+                #expect(statusCode == expectedStatusCode)
+            }
+
+            #expect(await transport.requestCount() == 1)
+        }
+    }
+
+    @Test("DELETE retries a rate-limit rejection")
+    func deleteRetriesRateLimitRejection() async throws {
+        let transport = ScriptedHTTPTransport(steps: [
+            .response(
+                statusCode: 429,
+                headers: ["Retry-After": "0"],
+                body: #"{"errors":[{"status":"429","detail":"rate limited"}]}"#
+            ),
+            .response(statusCode: 204, headers: [:], body: "")
+        ])
+        let client = await HTTPClient(
+            jwtService: try TestFactory.makeJWTService(),
+            baseURL: "https://api.example.test",
+            transport: transport,
+            maxRetries: 2
+        )
+
+        _ = try await client.delete("/v1/resources/resource-1")
+
+        #expect(await transport.requestCount() == 2)
+    }
+
+    @Test("DELETE refreshes authorization after a 401 rejection")
+    func deleteRefreshesAuthorizationAfter401() async throws {
+        let transport = ScriptedHTTPTransport(steps: [
+            .response(
+                statusCode: 401,
+                headers: [:],
+                body: #"{"errors":[{"status":"401","detail":"expired"}]}"#
+            ),
+            .response(statusCode: 204, headers: [:], body: "")
+        ])
+        let client = await HTTPClient(
+            jwtService: try TestFactory.makeJWTService(),
+            baseURL: "https://api.example.test",
+            transport: transport,
+            maxRetries: 2
+        )
+
+        _ = try await client.delete("/v1/resources/resource-1")
+
+        #expect(await transport.requestCount() == 2)
+    }
+
+    @Test("PUT retains retry behavior for a transient server failure")
+    func putRetainsTransientFailureRetry() async throws {
+        let transport = ScriptedHTTPTransport(steps: [
+            .response(
+                statusCode: 500,
+                headers: ["Retry-After": "0"],
+                body: #"{"errors":[{"status":"500","detail":"failed"}]}"#
+            ),
+            .response(statusCode: 200, headers: [:], body: #"{"ok":true}"#)
+        ])
+        let client = await HTTPClient(
+            jwtService: try TestFactory.makeJWTService(),
+            baseURL: "https://api.example.test",
+            transport: transport,
+            maxRetries: 2
+        )
+
+        let data = try await client.put("/v1/resources/resource-1", body: Data())
+
+        #expect(String(data: data, encoding: .utf8) == #"{"ok":true}"#)
+        #expect(await transport.requestCount() == 2)
+    }
+
     @Test("decodes Apple error response")
     func decodesAppleErrorResponse() async throws {
         let transport = MockHTTPTransport(responses: [
@@ -194,6 +320,44 @@ private actor MockHTTPTransport: HTTPTransport {
             headerFields: response.headers
         )!
         return (response.data, httpResponse)
+    }
+
+    func requestCount() -> Int {
+        requests.count
+    }
+}
+
+private actor ScriptedHTTPTransport: HTTPTransport {
+    enum Step: Sendable {
+        case networkFailure
+        case response(statusCode: Int, headers: [String: String], body: String)
+    }
+
+    private var steps: [Step]
+    private var requests: [URLRequest] = []
+
+    init(steps: [Step]) {
+        self.steps = steps
+    }
+
+    func data(for request: URLRequest) async throws -> (Data, HTTPURLResponse) {
+        requests.append(request)
+        guard !steps.isEmpty else {
+            throw URLError(.badServerResponse)
+        }
+
+        switch steps.removeFirst() {
+        case .networkFailure:
+            throw URLError(.networkConnectionLost)
+        case .response(let statusCode, let headers, let body):
+            let response = HTTPURLResponse(
+                url: request.url ?? URL(string: "https://api.example.test")!,
+                statusCode: statusCode,
+                httpVersion: "HTTP/1.1",
+                headerFields: headers
+            )!
+            return (Data(body.utf8), response)
+        }
     }
 
     func requestCount() -> Int {

@@ -120,9 +120,7 @@ public actor HTTPClient {
             request.httpBody = body
         }
 
-        // Retry logic: all methods retry on 429 (rate limit),
-        // only idempotent methods retry on other errors
-        let isIdempotent = method == .GET || method == .PUT || method == .DELETE
+        let retriesAmbiguousFailures = method == .GET || method == .PUT
         let maxAttempts = maxRetries
 
         for attempt in 0..<maxAttempts {
@@ -163,11 +161,9 @@ public actor HTTPClient {
                 // Check if this error is retryable
                 if attempt < maxAttempts - 1 {
                     let isRetryable: Bool
-                    if isIdempotent {
-                        // Idempotent methods: retry all retryable status codes
+                    if retriesAmbiguousFailures {
                         isRetryable = retryableStatusCodes.contains(httpResponse.statusCode)
                     } else {
-                        // Non-idempotent (POST/PATCH): only retry rate limiting
                         isRetryable = httpResponse.statusCode == 429
                     }
 
@@ -190,8 +186,7 @@ public actor HTTPClient {
                 // Propagate ASCError
                 throw error
             } catch {
-                // Network errors: only retry for idempotent methods
-                if attempt < maxAttempts - 1 && isIdempotent {
+                if attempt < maxAttempts - 1 && retriesAmbiguousFailures {
                     let delay = calculateRetryDelay(attempt: attempt, response: nil)
                     logger.warning("Network error: \(error.localizedDescription), retrying in \(delay)s")
                     try await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
