@@ -6,7 +6,7 @@ extension MetricsWorker {
         await betaTesterUsage(
             params,
             parentField: "app_id",
-            endpoint: { "/v1/apps/\($0)/metrics/betaTesterUsages" },
+            endpoint: { "/v1/apps/" + $0 + "/metrics/betaTesterUsages" },
             metricName: "app_beta_tester_usage"
         )
     }
@@ -15,7 +15,7 @@ extension MetricsWorker {
         await betaTesterUsage(
             params,
             parentField: "group_id",
-            endpoint: { "/v1/betaGroups/\($0)/metrics/betaTesterUsages" },
+            endpoint: { "/v1/betaGroups/" + $0 + "/metrics/betaTesterUsages" },
             metricName: "group_beta_tester_usage"
         )
     }
