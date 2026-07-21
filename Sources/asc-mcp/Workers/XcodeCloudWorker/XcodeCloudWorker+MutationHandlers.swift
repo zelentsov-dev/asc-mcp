@@ -806,7 +806,12 @@ private extension XcodeCloudWorker {
             expectedID: expectedID,
             context: "Apple \(context) response"
         )
-        let path = expectedPath ?? "/v1/ciWorkflows/\(try ASCPathSegment.encode(response.data.id))"
+        let path: String
+        if let expectedPath {
+            path = expectedPath
+        } else {
+            path = "/v1/ciWorkflows/\(try ASCPathSegment.encode(response.data.id))"
+        }
         try xcValidateDocumentSelf(response.links.`self`, expectedPath: path, context: context)
         if let resourceSelf = response.data.links?.`self` {
             try xcValidateDocumentSelf(resourceSelf, expectedPath: path, context: "\(context) resource")
