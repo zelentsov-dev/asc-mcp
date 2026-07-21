@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.1.1] - 2026-07-21
+
+### Changed
+
+- Split CI into stable promotion-lineage, test, and Release/App Store Connect contract gates so independent verification runs in parallel and failures identify the affected layer.
+- Release tags now require an annotated exact SemVer tag on the current `main` commit; superseded pull-request and `develop` runs may be cancelled, while `main` and release-tag runs always finish.
+- Tag CI now installs the tagged source through Mint, performs real MCP `initialize`, `tools/list`, and structured-error checks, and publishes a GitHub Release only after every required gate succeeds.
+- Weekly and manually dispatched CI runs monitor the pinned Apple App Store Connect OpenAPI contract even when the repository has no code changes.
+
+### Fixed
+
+- Test failures are evaluated before the slower release contract finishes and retain a downloadable log with a concise failure summary.
+- Release validation uses the already-built release binary instead of rebuilding through repeated `swift run` commands.
+- Release notes are generated from the shipped changelog section, and publishing follows a draft-first flow compatible with immutable GitHub Releases.
+
+### Compatibility
+
+- No MCP tool, input, output, worker filter, Apple operation mapping, or runtime behavior changes in this patch release; the catalog remains at 502 tools.
+
 ## [4.1.0] - 2026-07-21
 
 ### Added
