@@ -37,7 +37,8 @@ struct ReviewAttachmentsWorkerReliabilityTests {
         #expect(request.url?.path == "/v1/appStoreReviewAttachments/attachment-1")
         let query = reviewAttachmentsQuery(request)
         #expect(query["fields[appStoreReviewAttachments]"] == reviewAttachmentsReadFields)
-        #expect(query["include"] == nil)
+        #expect(query["fields[appStoreReviewDetails]"] == "appStoreVersion")
+        #expect(query["include"] == "appStoreReviewDetail")
         let root = try reviewAttachmentsObject(result.structuredContent)
         let attachment = try reviewAttachmentsObject(root["attachment"])
         #expect(attachment["appStoreReviewDetailId"] == .string("review-detail-1"))
@@ -60,8 +61,9 @@ struct ReviewAttachmentsWorkerReliabilityTests {
         let request = try #require(await transport.recordedRequests().first)
         let query = reviewAttachmentsQuery(request)
         #expect(query["fields[appStoreReviewAttachments]"] == reviewAttachmentsReadFields)
+        #expect(query["fields[appStoreReviewDetails]"] == "appStoreVersion")
         #expect(query["limit"] == "25")
-        #expect(query["include"] == nil)
+        #expect(query["include"] == "appStoreReviewDetail")
         let root = try reviewAttachmentsObject(result.structuredContent)
         #expect(root["count"] == .int(1))
         #expect(root["total"] == .int(41))
@@ -108,6 +110,8 @@ struct ReviewAttachmentsWorkerReliabilityTests {
         let request = try #require(await transport.recordedRequests().first)
         let query = reviewAttachmentsQuery(request)
         #expect(query["fields[appStoreReviewAttachments]"] == reviewAttachmentsReadFields)
+        #expect(query["fields[appStoreReviewDetails]"] == "appStoreVersion")
+        #expect(query["include"] == "appStoreReviewDetail")
         #expect(query["limit"] == "73")
         #expect(query["cursor"] == "next")
     }
@@ -195,7 +199,7 @@ struct ReviewAttachmentsWorkerReliabilityTests {
         #expect(collection.meta?.paging?.total == 41)
     }
 
-    @Test("manifest records three include omissions and fixed safe projections")
+    @Test("manifest records fixed lineage includes and safe projections")
     func manifestRecordsReadInvocations() throws {
         let manifest = try ASCOperationManifestBundle.loadBundled()
         let readInvocations = [
@@ -203,13 +207,7 @@ struct ReviewAttachmentsWorkerReliabilityTests {
             try #require(manifest.mapping(for: "review_attachments_list")?.operations.first)
         ]
 
-        var reasons: Set<String> = []
         for invocation in readInvocations {
-            let include = try #require(invocation.optionalParameterClassifications?.first {
-                $0.location == "query" && $0.appleName == "include"
-            })
-            #expect(include.disposition == .intentionallyOmitted)
-            reasons.insert(include.reason)
             let fields = try #require(invocation.inputs?.first {
                 $0.sourceKind == .fixed
                     && $0.location == "query"
@@ -218,6 +216,18 @@ struct ReviewAttachmentsWorkerReliabilityTests {
             #expect(fields == .array(reviewAttachmentsReadFields.split(separator: ",").map {
                 .string(String($0))
             }))
+            let include = try #require(invocation.inputs?.first {
+                $0.sourceKind == .fixed
+                    && $0.location == "query"
+                    && $0.appleName == "include"
+            }?.fixedValue)
+            #expect(include == .array([.string("appStoreReviewDetail")]))
+            let reviewDetailFields = try #require(invocation.inputs?.first {
+                $0.sourceKind == .fixed
+                    && $0.location == "query"
+                    && $0.appleName == "fields[appStoreReviewDetails]"
+            }?.fixedValue)
+            #expect(reviewDetailFields == .array([.string("appStoreVersion")]))
         }
 
         let reconciliation = try #require(manifest.mapping(for: "review_attachments_upload")?.operations.first {
@@ -230,8 +240,6 @@ struct ReviewAttachmentsWorkerReliabilityTests {
         #expect(reconciliation.inputs?.contains {
             $0.location == "query" && $0.appleName == "fields[appStoreReviewAttachments]"
         } != true)
-        reasons.insert(reconciliationInclude.reason)
-        #expect(reasons.count == 3)
 
         let relationshipWaiver = try #require(manifest.index.waivers.first {
             $0.operationID == "appStoreReviewDetails_appStoreReviewAttachments_getToManyRelationship"
@@ -290,6 +298,8 @@ private func reviewAttachmentsNextURL(fields: String, limit: Int) -> String {
     components.queryItems = [
         URLQueryItem(name: "cursor", value: "next"),
         URLQueryItem(name: "fields[appStoreReviewAttachments]", value: fields),
+        URLQueryItem(name: "fields[appStoreReviewDetails]", value: "appStoreVersion"),
+        URLQueryItem(name: "include", value: "appStoreReviewDetail"),
         URLQueryItem(name: "limit", value: String(limit))
     ]
     return components.url!.absoluteString
@@ -314,7 +324,7 @@ private func reviewAttachmentsSingleResponse() -> String {
         }
       },
       "links": {
-        "self": "https://api.example.test/v1/appStoreReviewAttachments/attachment-1?fields%5BappStoreReviewAttachments%5D=fileSize,fileName,sourceFileChecksum,assetDeliveryState,appStoreReviewDetail"
+        "self": "https://api.example.test/v1/appStoreReviewAttachments/attachment-1?fields%5BappStoreReviewAttachments%5D=fileSize,fileName,sourceFileChecksum,assetDeliveryState,appStoreReviewDetail&fields%5BappStoreReviewDetails%5D=appStoreVersion&include=appStoreReviewDetail"
       }
     }
     """
@@ -341,7 +351,7 @@ private func reviewAttachmentsCollectionResponse() -> String {
         }
       ],
       "links": {
-        "self": "https://api.example.test/v1/appStoreReviewDetails/review-detail-1/appStoreReviewAttachments?fields%5BappStoreReviewAttachments%5D=fileSize,fileName,sourceFileChecksum,assetDeliveryState,appStoreReviewDetail&limit=25"
+        "self": "https://api.example.test/v1/appStoreReviewDetails/review-detail-1/appStoreReviewAttachments?fields%5BappStoreReviewAttachments%5D=fileSize,fileName,sourceFileChecksum,assetDeliveryState,appStoreReviewDetail&fields%5BappStoreReviewDetails%5D=appStoreVersion&include=appStoreReviewDetail&limit=25"
       },
       "meta": {"paging": {"total": 41, "limit": 25}}
     }
@@ -353,7 +363,7 @@ private func reviewAttachmentsEmptyCollectionResponse() -> String {
     {
       "data": [],
       "links": {
-        "self": "https://api.example.test/v1/appStoreReviewDetails/review-detail-1/appStoreReviewAttachments?cursor=next&fields%5BappStoreReviewAttachments%5D=fileSize,fileName,sourceFileChecksum,assetDeliveryState,appStoreReviewDetail&limit=73"
+        "self": "https://api.example.test/v1/appStoreReviewDetails/review-detail-1/appStoreReviewAttachments?cursor=next&fields%5BappStoreReviewAttachments%5D=fileSize,fileName,sourceFileChecksum,assetDeliveryState,appStoreReviewDetail&fields%5BappStoreReviewDetails%5D=appStoreVersion&include=appStoreReviewDetail&limit=73"
       },
       "meta": {"paging": {"total": 0, "limit": 73}}
     }

@@ -134,6 +134,7 @@ struct AppsVersionsOptionalInputContractTests {
             "cursor": "page-2",
             "fields[appStoreVersionLocalizations]": "locale,description,whatsNew,keywords,promotionalText,supportUrl,marketingUrl,appStoreVersion",
             "filter[locale]": "en-US,de-DE",
+            "include": "appStoreVersion",
             "limit": "75"
         ]
         let nextURL = optionalInputURL(

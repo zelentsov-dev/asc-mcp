@@ -599,6 +599,8 @@ private func marketingPaginationFixtures() -> [MarketingPaginationFixture] {
             wrongParentPath: "/v1/appStoreReviewDetails/review-detail-2/appStoreReviewAttachments",
             requiredQuery: [
                 "fields[appStoreReviewAttachments]": "fileSize,fileName,sourceFileChecksum,assetDeliveryState,appStoreReviewDetail",
+                "fields[appStoreReviewDetails]": "appStoreVersion",
+                "include": "appStoreReviewDetail",
                 "limit": "42"
             ]
         )

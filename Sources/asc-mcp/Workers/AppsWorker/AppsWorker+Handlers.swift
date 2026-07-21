@@ -127,6 +127,7 @@ extension AppsWorker {
         let path = "/v1/appStoreVersions/\(try ASCPathSegment.encode(versionId))/appStoreVersionLocalizations"
         var parameters = [
             "fields[appStoreVersionLocalizations]": "description,locale,keywords,marketingUrl,promotionalText,supportUrl,whatsNew,appStoreVersion",
+            "include": "appStoreVersion",
             "limit": "200"
         ]
         if let locale {
@@ -669,7 +670,10 @@ extension AppsWorker {
                 // Use provided version_id — fetch its details
                 let versionResponse: ASCAppStoreVersionResponse = try await httpClient.get(
                     "/v1/appStoreVersions/\(try ASCPathSegment.encode(versionId))",
-                    parameters: ["fields[appStoreVersions]": "app,platform,versionString,appVersionState,appStoreState"],
+                    parameters: [
+                        "fields[appStoreVersions]": "app,platform,versionString,appVersionState,appStoreState",
+                        "include": "app"
+                    ],
                     as: ASCAppStoreVersionResponse.self
                 )
                 let v = versionResponse.data
@@ -976,7 +980,10 @@ extension AppsWorker {
             // enforces the exact editable-state rules on the PATCH request.
             let versionResponse: ASCAppStoreVersionResponse = try await httpClient.get(
                 "/v1/appStoreVersions/\(try ASCPathSegment.encode(versionId))",
-                parameters: ["fields[appStoreVersions]": "app,platform,versionString,appVersionState,appStoreState"],
+                parameters: [
+                    "fields[appStoreVersions]": "app,platform,versionString,appVersionState,appStoreState",
+                    "include": "app"
+                ],
                 as: ASCAppStoreVersionResponse.self
             )
             
@@ -991,6 +998,7 @@ extension AppsWorker {
                 parameters: [
                     "filter[locale]": locale,
                     "fields[appStoreVersionLocalizations]": "locale,appStoreVersion",
+                    "include": "appStoreVersion",
                     "limit": "1"
                 ],
                 as: ASCAppStoreVersionLocalizationsResponse.self
@@ -1264,6 +1272,7 @@ extension AppsWorker {
             let effectiveLimit = try validatedLimit(arguments["limit"], defaultValue: 200)
             var localizationParameters = [
                 "fields[appStoreVersionLocalizations]": localizationFields,
+                "include": "appStoreVersion",
                 "limit": String(effectiveLimit)
             ]
             if let locales = try stringListQueryValue("locales", from: arguments) {
@@ -1271,7 +1280,10 @@ extension AppsWorker {
             }
             let versionResponse: ASCAppStoreVersionResponse = try await httpClient.get(
                 "/v1/appStoreVersions/\(try ASCPathSegment.encode(versionId))",
-                parameters: ["fields[appStoreVersions]": "app"],
+                parameters: [
+                    "fields[appStoreVersions]": "app",
+                    "include": "app"
+                ],
                 as: ASCAppStoreVersionResponse.self
             )
             guard versionBelongsToApp(versionResponse.data, appId: appId) else {

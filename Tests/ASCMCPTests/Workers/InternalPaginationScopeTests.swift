@@ -191,7 +191,7 @@ private func internalPaginationFixtures() -> [InternalPaginationFixture] {
             name: "app_lifecycle_age_rating_app_infos",
             path: "/v1/apps/app-1/appInfos",
             wrongPath: "/v1/apps/app-2/appInfos",
-            queries: [["fields[appInfos]": "state,app", "limit": "200"]]
+            queries: [["fields[appInfos]": "state,app", "include": "app", "limit": "200"]]
         ),
         InternalPaginationFixture(
             name: "apps_metadata_previews",

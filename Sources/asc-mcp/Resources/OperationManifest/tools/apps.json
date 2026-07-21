@@ -135,7 +135,6 @@
           "role": "supporting",
           "condition": "version_id is supplied",
           "optionalParameterClassifications": [
-            { "location": "query", "appleName": "include", "disposition": "intentionallyOmitted", "reason": "The ownership and selection check uses a fixed sparse App Store version projection and does not consume included relationships.", "reviewAtSpec": "4.4.1" },
             { "location": "query", "appleName": "limit[appStoreVersionExperiments]", "disposition": "intentionallyOmitted", "reason": "App Store version experiments are not included by this metadata lookup.", "reviewAtSpec": "4.4.1" },
             { "location": "query", "appleName": "limit[appStoreVersionExperimentsV2]", "disposition": "intentionallyOmitted", "reason": "App Store version experiments are not included by this metadata lookup.", "reviewAtSpec": "4.4.1" },
             { "location": "query", "appleName": "limit[appStoreVersionLocalizations]", "disposition": "intentionallyOmitted", "reason": "Localizations are fetched through their dedicated paginated related-resource operation.", "reviewAtSpec": "4.4.1" }
@@ -146,6 +145,12 @@
               "location": "query",
               "appleName": "fields[appStoreVersions]",
               "fixedValue": ["app", "platform", "versionString", "appVersionState", "appStoreState"]
+            },
+            {
+              "sourceKind": "fixed",
+              "location": "query",
+              "appleName": "include",
+              "fixedValue": ["app"]
             }
           ]
         },
@@ -187,7 +192,6 @@
           "path": "/v1/appStoreVersions/{id}/appStoreVersionLocalizations",
           "role": "primary",
           "optionalParameterClassifications": [
-            { "location": "query", "appleName": "include", "disposition": "intentionallyOmitted", "reason": "The metadata aggregate reads base localizations and loads media through dedicated paginated operations.", "reviewAtSpec": "4.4.1" },
             { "location": "query", "appleName": "limit[appPreviewSets]", "disposition": "intentionallyOmitted", "reason": "Preview sets are loaded through their dedicated paginated related-resource operation.", "reviewAtSpec": "4.4.1" },
             { "location": "query", "appleName": "limit[appScreenshotSets]", "disposition": "intentionallyOmitted", "reason": "Screenshot sets are loaded through their dedicated paginated related-resource operation.", "reviewAtSpec": "4.4.1" },
             { "location": "query", "appleName": "limit[searchKeywords]", "disposition": "intentionallyOmitted", "reason": "Search keyword relationships are outside the metadata aggregate response.", "reviewAtSpec": "4.4.1" }
@@ -208,6 +212,12 @@
               "location": "query",
               "appleName": "fields[appStoreVersionLocalizations]",
               "fixedValue": ["description", "locale", "keywords", "marketingUrl", "promotionalText", "supportUrl", "whatsNew", "appStoreVersion"]
+            },
+            {
+              "sourceKind": "fixed",
+              "location": "query",
+              "appleName": "include",
+              "fixedValue": ["appStoreVersion"]
             },
             {
               "sourceKind": "fixed",
@@ -406,7 +416,6 @@
           "path": "/v1/appStoreVersions/{id}",
           "role": "supporting",
           "optionalParameterClassifications": [
-            { "location": "query", "appleName": "include", "disposition": "intentionallyOmitted", "reason": "The ownership check reads only the fixed App relationship projection.", "reviewAtSpec": "4.4.1" },
             { "location": "query", "appleName": "limit[appStoreVersionExperiments]", "disposition": "intentionallyOmitted", "reason": "App Store version experiments are not included in the ownership check.", "reviewAtSpec": "4.4.1" },
             { "location": "query", "appleName": "limit[appStoreVersionExperimentsV2]", "disposition": "intentionallyOmitted", "reason": "App Store version experiments are not included in the ownership check.", "reviewAtSpec": "4.4.1" },
             { "location": "query", "appleName": "limit[appStoreVersionLocalizations]", "disposition": "intentionallyOmitted", "reason": "Localizations are fetched by the dedicated primary operation.", "reviewAtSpec": "4.4.1" }
@@ -417,6 +426,12 @@
               "location": "query",
               "appleName": "fields[appStoreVersions]",
               "fixedValue": ["app"]
+            },
+            {
+              "sourceKind": "fixed",
+              "location": "query",
+              "appleName": "include",
+              "fixedValue": ["app"]
             }
           ]
         },
@@ -426,7 +441,6 @@
           "path": "/v1/appStoreVersions/{id}/appStoreVersionLocalizations",
           "role": "primary",
           "optionalParameterClassifications": [
-            { "location": "query", "appleName": "include", "disposition": "intentionallyOmitted", "reason": "The list returns the base localization projection and does not expand relationships.", "reviewAtSpec": "4.4.1" },
             { "location": "query", "appleName": "limit[appPreviewSets]", "disposition": "intentionallyOmitted", "reason": "Preview sets are not included by the localization list.", "reviewAtSpec": "4.4.1" },
             { "location": "query", "appleName": "limit[appScreenshotSets]", "disposition": "intentionallyOmitted", "reason": "Screenshot sets are not included by the localization list.", "reviewAtSpec": "4.4.1" },
             { "location": "query", "appleName": "limit[searchKeywords]", "disposition": "intentionallyOmitted", "reason": "Search keywords are not included by the localization list.", "reviewAtSpec": "4.4.1" }
@@ -437,6 +451,12 @@
               "location": "query",
               "appleName": "fields[appStoreVersionLocalizations]",
               "fixedValue": ["locale", "description", "whatsNew", "keywords", "promotionalText", "supportUrl", "marketingUrl", "appStoreVersion"]
+            },
+            {
+              "sourceKind": "fixed",
+              "location": "query",
+              "appleName": "include",
+              "fixedValue": ["appStoreVersion"]
             }
           ]
         }
@@ -715,7 +735,6 @@
           "path": "/v1/appStoreVersions/{id}",
           "role": "supporting",
           "optionalParameterClassifications": [
-            { "location": "query", "appleName": "include", "disposition": "intentionallyOmitted", "reason": "The write preflight reads only the fixed version ownership and state projection.", "reviewAtSpec": "4.4.1" },
             { "location": "query", "appleName": "limit[appStoreVersionExperiments]", "disposition": "intentionallyOmitted", "reason": "App Store version experiments are not included in the write preflight.", "reviewAtSpec": "4.4.1" },
             { "location": "query", "appleName": "limit[appStoreVersionExperimentsV2]", "disposition": "intentionallyOmitted", "reason": "App Store version experiments are not included in the write preflight.", "reviewAtSpec": "4.4.1" },
             { "location": "query", "appleName": "limit[appStoreVersionLocalizations]", "disposition": "intentionallyOmitted", "reason": "The target localization is resolved through the dedicated filtered operation.", "reviewAtSpec": "4.4.1" }
@@ -726,6 +745,12 @@
               "location": "query",
               "appleName": "fields[appStoreVersions]",
               "fixedValue": ["app", "platform", "versionString", "appVersionState", "appStoreState"]
+            },
+            {
+              "sourceKind": "fixed",
+              "location": "query",
+              "appleName": "include",
+              "fixedValue": ["app"]
             }
           ]
         },
@@ -736,7 +761,6 @@
           "role": "supporting",
           "optionalParameterClassifications": [
             { "location": "query", "appleName": "limit", "disposition": "internalControl", "reason": "The exact-locale write lookup fixes the page size to one before patching the resolved localization.", "reviewAtSpec": "4.4.1" },
-            { "location": "query", "appleName": "include", "disposition": "intentionallyOmitted", "reason": "The exact-locale write lookup uses a fixed base localization projection and does not expand relationships.", "reviewAtSpec": "4.4.1" },
             { "location": "query", "appleName": "limit[appPreviewSets]", "disposition": "intentionallyOmitted", "reason": "Preview sets are not included in the write lookup.", "reviewAtSpec": "4.4.1" },
             { "location": "query", "appleName": "limit[appScreenshotSets]", "disposition": "intentionallyOmitted", "reason": "Screenshot sets are not included in the write lookup.", "reviewAtSpec": "4.4.1" },
             { "location": "query", "appleName": "limit[searchKeywords]", "disposition": "intentionallyOmitted", "reason": "Search keywords are not included in the write lookup.", "reviewAtSpec": "4.4.1" }
@@ -747,6 +771,12 @@
               "location": "query",
               "appleName": "fields[appStoreVersionLocalizations]",
               "fixedValue": ["locale", "appStoreVersion"]
+            },
+            {
+              "sourceKind": "fixed",
+              "location": "query",
+              "appleName": "include",
+              "fixedValue": ["appStoreVersion"]
             }
           ]
         }

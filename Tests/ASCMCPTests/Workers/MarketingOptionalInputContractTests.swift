@@ -228,8 +228,6 @@ struct MarketingOptionalInputContractTests {
             "screenshots_upload_preview": [include],
             "promoted_get": ["query:include:internalControl"],
             "promoted_list": [include],
-            "review_attachments_get": [include],
-            "review_attachments_list": [include],
             "review_attachments_upload": [include]
         ]
 
@@ -241,7 +239,7 @@ struct MarketingOptionalInputContractTests {
             }
             return classifications.isEmpty ? nil : mapping.tool
         })
-        #expect(expected.count == 38)
+        #expect(expected.count == 36)
         #expect(classifiedTools == Set(expected.keys))
 
         for (tool, identities) in expected {

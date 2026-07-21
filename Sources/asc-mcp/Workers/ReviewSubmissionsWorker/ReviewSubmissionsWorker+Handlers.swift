@@ -98,11 +98,14 @@ extension ReviewSubmissionsWorker {
                 field: "platforms",
                 allowedValues: Set(ASCReviewSubmissionPlatform.allCases.map(\.rawValue))
             )
-            let includes = try stringList(
+            var includes = try stringList(
                 arguments["include"],
                 field: "include",
                 allowedValues: Set(Self.submissionIncludes)
             ) ?? Self.submissionIncludes
+            if !includes.contains("app") {
+                includes.insert("app", at: 0)
+            }
             let limit = try boundedInteger(arguments["limit"], field: "limit", maximum: 200, defaultValue: 25)
             let itemLimit = try boundedInteger(
                 arguments["item_limit"],
