@@ -986,6 +986,30 @@ struct OperationToolManifestTests {
         }
     }
 
+    @Test("direct Apple DELETE mapping must be destructive")
+    func directAppleDeleteMustBeDestructive() throws {
+        let spec = try ASCOpenAPISpec.parse(loadFixture("openapi_minimal.oas"))
+        let manifest = try loadValidManifest()
+        let update = try #require(manifest.mapping(for: "apps_update"))
+        let operation = try #require(update.operations.first)
+        let invalid = replacing(
+            update,
+            effect: .write,
+            operations: [replacing(operation, method: "delete")]
+        )
+
+        let diagnostics = ASCOperationToolAnalyzer().analyze(
+            spec: spec,
+            manifest: replacingTool(in: manifest, with: invalid)
+        )
+
+        #expect(diagnostics.contains { diagnostic in
+            diagnostic.code == .toolAppleEffectMismatch &&
+                diagnostic.tool == "apps_update" &&
+                diagnostic.message.contains("DELETE")
+        })
+    }
+
     @Test("bundled manifest tracks the exact public MCP catalog")
     func bundledManifestTracksPublicCatalog() async throws {
         let manifest = try ASCOperationManifestBundle.loadBundled()
@@ -1123,6 +1147,7 @@ struct OperationToolManifestTests {
     private func replacing(
         _ mapping: ASCToolOperationMapping,
         implementationState: ASCImplementationState? = nil,
+        effect: ASCToolEffect? = nil,
         operations: [ASCOperationUse]? = nil,
         fields: [ASCToolFieldBinding]? = nil,
         response: ASCResponseMapping? = nil
@@ -1131,7 +1156,7 @@ struct OperationToolManifestTests {
             tool: mapping.tool,
             kind: mapping.kind,
             status: mapping.status,
-            effect: mapping.effect,
+            effect: effect ?? mapping.effect,
             implementationState: implementationState ?? mapping.implementationState,
             replacementTool: mapping.replacementTool,
             operations: operations ?? mapping.operations,
@@ -1144,6 +1169,7 @@ struct OperationToolManifestTests {
     private func replacing(
         _ operation: ASCOperationUse,
         invocationID: String? = nil,
+        method: String? = nil,
         role: ASCOperationRole? = nil,
         inputs: [ASCOperationInputBinding]? = nil,
         optionalParameterClassifications: [ASCOptionalParameterClassification]? = nil
@@ -1151,7 +1177,7 @@ struct OperationToolManifestTests {
         ASCOperationUse(
             invocationID: invocationID,
             operationID: operation.operationID,
-            method: operation.method,
+            method: method ?? operation.method,
             path: operation.path,
             role: role ?? operation.role,
             condition: operation.condition,

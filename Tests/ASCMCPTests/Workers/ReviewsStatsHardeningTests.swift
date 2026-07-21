@@ -270,6 +270,30 @@ struct ReviewsStatsHardeningTests {
         #expect(result.isError == true)
         #expect(await transport.requestCount() == 2)
     }
+
+    @Test("stats skip sparse reviews without failing and report incomplete aggregation")
+    func statsHandleSparseReviewAttributes() async throws {
+        let transport = TestHTTPTransport(responses: [
+            .init(statusCode: 200, body: reviewsPage(reviews: [
+                "{\"type\":\"customerReviews\",\"id\":\"review-sparse\"}",
+                reviewJSON(id: "review-1", rating: 5, date: "2026-07-18T10:00:00Z", territory: "USA")
+            ]))
+        ])
+        let worker = try await makeReviewsWorker(transport: transport)
+
+        let result = try await worker.handleTool(CallTool.Parameters(
+            name: "reviews_stats",
+            arguments: ["app_id": .string("app-1"), "period": .string("all_time")]
+        ))
+
+        #expect(result.isError != true)
+        let root = try reviewsObject(result.structuredContent)
+        #expect(root["total_in_period"] == .int(1))
+        #expect(root["reviews_scanned"] == .int(2))
+        #expect(root["unique_reviews_scanned"] == .int(2))
+        #expect(root["unaggregatable_reviews_skipped"] == .int(1))
+        #expect(root["complete"] == .bool(false))
+    }
 }
 
 private func makeReviewsWorker(transport: TestHTTPTransport) async throws -> ReviewsWorker {

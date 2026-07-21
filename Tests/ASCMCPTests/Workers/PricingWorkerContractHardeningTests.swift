@@ -5,6 +5,95 @@ import Testing
 
 @Suite("Pricing Worker Contract Hardening Tests")
 struct PricingWorkerContractHardeningTests {
+    @Test("list schemas publish Apple limit bounds and local defaults")
+    func listLimitSchemas() async throws {
+        let worker = try await makePricingHardeningWorker(
+            transport: TestHTTPTransport(responses: [])
+        )
+        let tools = await worker.getTools()
+        let expectedDefaults = [
+            "pricing_list_territories": 200,
+            "pricing_list_price_points": 50,
+            "pricing_list_territory_availability": 50,
+            "pricing_list_territory_availabilities": 50
+        ]
+
+        for (toolName, expectedDefault) in expectedDefaults {
+            let tool = try #require(tools.first { $0.name == toolName })
+            let schema = try pricingHardeningObject(tool.inputSchema)
+            let properties = try pricingHardeningObject(schema["properties"])
+            let limit = try pricingHardeningObject(properties["limit"])
+            #expect(limit["minimum"] == .int(1))
+            #expect(limit["maximum"] == .int(200))
+            #expect(limit["default"] == .int(expectedDefault))
+        }
+    }
+
+    @Test("list handlers reject out-of-range limits before network access")
+    func listLimitRuntimeValidation() async throws {
+        let calls = [
+            CallTool.Parameters(name: "pricing_list_territories", arguments: ["limit": .int(0)]),
+            CallTool.Parameters(name: "pricing_list_price_points", arguments: ["app_id": .string("app-1"), "limit": .int(201)]),
+            CallTool.Parameters(name: "pricing_list_territory_availability", arguments: ["app_id": .string("app-1"), "limit": .int(0)]),
+            CallTool.Parameters(name: "pricing_list_territory_availabilities", arguments: ["availability_id": .string("availability-1"), "limit": .int(201)])
+        ]
+
+        for call in calls {
+            let transport = TestHTTPTransport(responses: [])
+            let worker = try await makePricingHardeningWorker(transport: transport)
+            let result = try await worker.handleTool(call)
+            #expect(result.isError == true)
+            #expect(await transport.requestCount() == 0)
+        }
+    }
+
+    @Test("nested pricing limits reject invalid values before network access")
+    func nestedLimitRuntimeValidation() async throws {
+        let calls = [
+            CallTool.Parameters(
+                name: "pricing_get_price_schedule",
+                arguments: ["app_id": .string("app-1"), "manual_prices_limit": .int(0)]
+            ),
+            CallTool.Parameters(
+                name: "pricing_get_price_schedule",
+                arguments: ["app_id": .string("app-1"), "automatic_prices_limit": .string("50")]
+            ),
+            CallTool.Parameters(
+                name: "pricing_get_availability_v2",
+                arguments: ["availability_id": .string("availability-1"), "territory_availabilities_limit": .int(51)]
+            )
+        ]
+
+        for call in calls {
+            let transport = TestHTTPTransport(responses: [])
+            let worker = try await makePricingHardeningWorker(transport: transport)
+            let result = try await worker.handleTool(call)
+            #expect(result.isError == true)
+            #expect(await transport.requestCount() == 0)
+        }
+    }
+
+    @Test("pricing manifest declares formatter completeness fields")
+    func manifestOutputParity() throws {
+        let manifest = try ASCOperationManifestBundle.loadBundled()
+        let expectedAvailabilityFields: Set<String> = [
+            "availability.territory_availabilities_included_count",
+            "availability.territory_availabilities_total",
+            "availability.territory_availabilities_limit",
+            "availability.territory_availabilities_related_url",
+            "availability.territory_availabilities_relationship_url",
+            "availability.territory_availabilities_truncated"
+        ]
+
+        for toolName in ["pricing_create_availability", "pricing_get_availability", "pricing_get_availability_v2"] {
+            let mapping = try #require(manifest.mapping(for: toolName))
+            #expect(Set(mapping.response.fields.map(\.outputField)).isSuperset(of: expectedAvailabilityFields))
+        }
+
+        let schedule = try #require(manifest.mapping(for: "pricing_get_price_schedule"))
+        #expect(Set(schedule.response.fields.map(\.outputField)).contains("price_schedule.base_territory"))
+    }
+
     @Test("published availability creation requires at least one territory source")
     func availabilityCreationSchemaPreservesSourceRequirement() async throws {
         let worker = try await makePricingHardeningWorker(
@@ -149,6 +238,43 @@ struct PricingWorkerContractHardeningTests {
 
         #expect(result.isError == true)
         #expect(await transport.requestCount() == 0)
+    }
+
+    @Test("pricing creates reject invalid Apple resource identities")
+    func rejectsInvalidCreateResourceIdentities() async throws {
+        let scheduleTransport = TestHTTPTransport(responses: [
+            .init(statusCode: 201, body: #"{"data":{"type":"appPrices","id":"schedule-1"}}"#)
+        ])
+        let scheduleWorker = try await makePricingHardeningWorker(transport: scheduleTransport)
+        let scheduleResult = try await scheduleWorker.handleTool(CallTool.Parameters(
+            name: "pricing_set_price_schedule",
+            arguments: [
+                "app_id": .string("app-1"),
+                "base_territory_id": .string("USA"),
+                "price_point_id": .string("point-1")
+            ]
+        ))
+
+        let availabilityTransport = TestHTTPTransport(responses: [
+            .init(statusCode: 201, body: #"{"data":{"type":"appAvailabilities","id":""}}"#)
+        ])
+        let availabilityWorker = try await makePricingHardeningWorker(transport: availabilityTransport)
+        let availabilityResult = try await availabilityWorker.handleTool(CallTool.Parameters(
+            name: "pricing_create_availability",
+            arguments: [
+                "app_id": .string("app-1"),
+                "available_in_new_territories": .bool(true),
+                "territory_ids": .array([.string("territory-availability-1")])
+            ]
+        ))
+
+        #expect(scheduleResult.isError == true)
+        #expect(availabilityResult.isError == true)
+        for result in [scheduleResult, availabilityResult] {
+            let payload = try pricingHardeningObject(result.structuredContent)
+            #expect(payload["operationCommitState"] == .string("committed_unverified"))
+            #expect(payload["retrySafe"] == .bool(false))
+        }
     }
 
     @Test("price schedule rejects conflicting input modes before the network")

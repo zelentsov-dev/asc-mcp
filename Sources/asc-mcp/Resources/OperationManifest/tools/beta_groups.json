@@ -46,7 +46,7 @@
           }
         ]
       },
-      "note": "Exact relationship mutation; Apple returns no response document."
+      "note": "Rejects empty, malformed, or mixed-type ID arrays atomically before the exact relationship mutation; only Apple's 204 no-content response is accepted."
     },
     {
       "tool": "beta_groups_add_testers",
@@ -93,7 +93,7 @@
           }
         ]
       },
-      "note": "Exact relationship mutation; Apple returns no response document."
+      "note": "Rejects empty, malformed, or mixed-type ID arrays atomically before the exact relationship mutation; only Apple's 204 no-content response is accepted."
     },
     {
       "tool": "beta_groups_create",
@@ -459,7 +459,7 @@
           }
         ]
       },
-      "note": "Exact related-resource list with complete Apple 4.4.1 appDevices projections; the worker does not expose the corresponding group builds read."
+      "note": "Exact related-resource list with complete Apple 4.4.1 appDevices projections and fail-closed 1 through 200 limit validation; the worker does not expose the corresponding group builds read."
     },
     {
       "tool": "beta_groups_remove_builds",
@@ -506,7 +506,7 @@
           }
         ]
       },
-      "note": "Exact relationship removal; Apple returns no response document."
+      "note": "Rejects empty, malformed, or mixed-type ID arrays atomically before the exact relationship removal; Apple returns 204 without a response document."
     },
     {
       "tool": "beta_groups_remove_testers",
@@ -553,7 +553,7 @@
           }
         ]
       },
-      "note": "Exact relationship removal; Apple returns no response document."
+      "note": "Rejects empty, malformed, or mixed-type ID arrays atomically before the exact relationship removal; Apple returns 204 without a response document."
     },
     {
       "tool": "beta_groups_update",
@@ -652,7 +652,7 @@
           }
         ]
       },
-      "note": "Exposes every current writable beta-group attribute and rejects empty PATCH requests before network access."
+      "note": "Exposes every current writable beta-group attribute, preserves explicit JSON null separately from omission, validates nullable value types, and rejects empty PATCH requests before network access."
     },
     {
       "tool": "beta_groups_get_recruitment_criteria",

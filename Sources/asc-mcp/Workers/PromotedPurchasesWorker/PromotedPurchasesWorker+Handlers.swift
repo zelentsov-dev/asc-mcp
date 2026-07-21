@@ -290,7 +290,12 @@ extension PromotedPurchasesWorker {
 
         } catch {
             return promotedCreateFailure(
-                error: error,
+                error: promotedAcceptedMutationError(
+                    error,
+                    method: "POST",
+                    expectedStatusCode: 201,
+                    actualStatusCode: receipt.statusCode
+                ),
                 phase: .acceptedResponse,
                 appID: appId,
                 visible: visible,
@@ -402,7 +407,12 @@ extension PromotedPurchasesWorker {
                 operation: "promoted_update",
                 targetID: promotedPurchaseId,
                 requestedArguments: promotedRequestedUpdateArguments(arguments),
-                error: error,
+                error: promotedAcceptedMutationError(
+                    error,
+                    method: "PATCH",
+                    expectedStatusCode: 200,
+                    actualStatusCode: receipt.statusCode
+                ),
                 phase: .acceptedResponse
             )
         }
@@ -574,7 +584,12 @@ extension PromotedPurchasesWorker {
                 appID: appID,
                 requestedOrder: requestedOrder,
                 preflightOrder: preflightOrder,
-                error: error,
+                error: promotedAcceptedMutationError(
+                    error,
+                    method: "PATCH",
+                    expectedStatusCode: 204,
+                    actualStatusCode: receipt.statusCode
+                ),
                 phase: .acceptedResponse
             )
         }
@@ -653,16 +668,17 @@ extension PromotedPurchasesWorker {
             details: .object([
                 "deprecated": .bool(true),
                 "tool": .string(tool),
-                "migration": .string("Use promoted_get to resolve the linked product, then use the matching IAP or subscription image tools."),
+                "migration": .string("Use promoted_get to resolve the linked product, select its current version, then use the matching active version-scoped IAP or subscription image tools."),
                 "replacement_tools": .array([
-                    .string("iap_upload_image"),
-                    .string("iap_get_image"),
-                    .string("iap_list_images"),
-                    .string("iap_delete_image"),
-                    .string("subscriptions_upload_image"),
-                    .string("subscriptions_get_image"),
-                    .string("subscriptions_list_images"),
-                    .string("subscriptions_delete_image")
+                    .string("iap_get_version_image"),
+                    .string("iap_list_version_images"),
+                    .string("iap_upload_version_image"),
+                    .string("iap_get_version_image_resource"),
+                    .string("iap_delete_version_image"),
+                    .string("subscriptions_list_version_images"),
+                    .string("subscriptions_upload_version_image"),
+                    .string("subscriptions_get_version_image"),
+                    .string("subscriptions_delete_version_image")
                 ])
             ])
         )
@@ -716,8 +732,8 @@ extension PromotedPurchasesWorker {
         guard let values = arguments[name]?.arrayValue else {
             throw PromotedPurchaseInputError("\(name) must be a JSON array of resource IDs")
         }
-        guard (1...200).contains(values.count) else {
-            throw PromotedPurchaseInputError("\(name) must contain between 1 and 200 resource IDs")
+        guard !values.isEmpty else {
+            throw PromotedPurchaseInputError("\(name) must contain at least one resource ID")
         }
         var identities = Set<String>()
         return try values.enumerated().map { index, value in
@@ -1333,6 +1349,29 @@ extension PromotedPurchasesWorker {
             "type": .string(phase == .request ? "request" : "response_validation"),
             "message": .string(Redactor.redact(error.localizedDescription))
         ])
+    }
+
+    private func promotedAcceptedMutationError(
+        _ error: Error,
+        method: String,
+        expectedStatusCode: Int,
+        actualStatusCode: Int
+    ) -> ASCError {
+        let cause: ASCError
+        if let ascError = error as? ASCError {
+            if case .mutationCommittedUnverified = ascError {
+                return ascError
+            }
+            cause = ascError
+        } else {
+            cause = .parsing(Redactor.redact(error.localizedDescription))
+        }
+        return .mutationCommittedUnverified(
+            method: method,
+            expectedStatusCode: expectedStatusCode,
+            actualStatusCode: actualStatusCode,
+            cause: cause
+        )
     }
 
     private func promotedDeleteFailure(targetID: String, error: Error) -> CallTool.Result {

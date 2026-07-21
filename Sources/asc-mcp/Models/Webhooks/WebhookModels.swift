@@ -200,14 +200,62 @@ public struct ASCWebhookUpdateRequest: Codable, Sendable {
     }
 
     public struct Attributes: Codable, Sendable {
-        public let enabled: Bool?
-        public let eventTypes: [String]?
-        public let name: String?
-        public let secret: String?
-        public let url: String?
+        private let values: [String: JSONValue]
+
+        public var enabled: Bool? {
+            guard case .bool(let value)? = values["enabled"] else { return nil }
+            return value
+        }
+
+        public var eventTypes: [String]? {
+            guard case .array(let values)? = values["eventTypes"] else { return nil }
+            return values.compactMap {
+                guard case .string(let value) = $0 else { return nil }
+                return value
+            }
+        }
+
+        public var name: String? { stringValue(for: "name") }
+        public var secret: String? { stringValue(for: "secret") }
+        public var url: String? { stringValue(for: "url") }
+
+        public init(
+            enabled: Bool?,
+            eventTypes: [String]?,
+            name: String?,
+            secret: String?,
+            url: String?
+        ) {
+            var values: [String: JSONValue] = [:]
+            if let enabled { values["enabled"] = .bool(enabled) }
+            if let eventTypes { values["eventTypes"] = .array(eventTypes.map(JSONValue.string)) }
+            if let name { values["name"] = .string(name) }
+            if let secret { values["secret"] = .string(secret) }
+            if let url { values["url"] = .string(url) }
+            self.values = values
+        }
+
+        init(values: [String: JSONValue]) {
+            self.values = values
+        }
 
         public var hasChanges: Bool {
-            enabled != nil || eventTypes != nil || name != nil || secret != nil || url != nil
+            !values.isEmpty
+        }
+
+        public init(from decoder: Decoder) throws {
+            let container = try decoder.singleValueContainer()
+            values = try container.decode([String: JSONValue].self)
+        }
+
+        public func encode(to encoder: Encoder) throws {
+            var container = encoder.singleValueContainer()
+            try container.encode(values)
+        }
+
+        private func stringValue(for key: String) -> String? {
+            guard case .string(let value)? = values[key] else { return nil }
+            return value
         }
     }
 }

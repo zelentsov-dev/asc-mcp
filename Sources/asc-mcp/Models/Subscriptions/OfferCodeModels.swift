@@ -139,7 +139,7 @@ public struct UpdateOfferCodeCustomCodeRequest: Codable, Sendable {
     }
 
     public struct Attributes: Codable, Sendable {
-        public let active: Bool?
+        public let active: ASCNullable<Bool>?
     }
 }
 
@@ -214,7 +214,7 @@ public struct UpdateOfferCodeRequest: Codable, Sendable {
     }
 
     public struct Attributes: Codable, Sendable {
-        public let active: Bool?
+        public let active: ASCNullable<Bool>?
     }
 }
 

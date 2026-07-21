@@ -12,9 +12,9 @@ extension BuildBetaDetailsWorker {
             "type": detail.type
         ]
         
-        result["autoNotifyEnabled"] = detail.attributes.autoNotifyEnabled.jsonSafe
-        result["internalBuildState"] = detail.attributes.internalBuildState.jsonSafe
-        result["externalBuildState"] = detail.attributes.externalBuildState.jsonSafe
+        result["autoNotifyEnabled"] = (detail.attributes?.autoNotifyEnabled).jsonSafe
+        result["internalBuildState"] = (detail.attributes?.internalBuildState).jsonSafe
+        result["externalBuildState"] = (detail.attributes?.externalBuildState).jsonSafe
         
         // Add relationships if present
         if let relationships = detail.relationships {
@@ -42,8 +42,8 @@ extension BuildBetaDetailsWorker {
             "type": localization.type
         ]
         
-        result["locale"] = localization.attributes.locale.jsonSafe
-        result["whatsNew"] = localization.attributes.whatsNew.jsonSafe
+        result["locale"] = (localization.attributes?.locale).jsonSafe
+        result["whatsNew"] = (localization.attributes?.whatsNew).jsonSafe
 
         if let build = localization.relationships?.build?.data {
             result["build"] = [
@@ -62,18 +62,18 @@ extension BuildBetaDetailsWorker {
             "type": group.type
         ]
         
-        result["name"] = group.attributes.name.jsonSafe
-        result["createdDate"] = group.attributes.createdDate.jsonSafe
-        result["isInternalGroup"] = group.attributes.isInternalGroup.jsonSafe
-        result["hasAccessToAllBuilds"] = group.attributes.hasAccessToAllBuilds.jsonSafe
-        result["publicLinkEnabled"] = group.attributes.publicLinkEnabled.jsonSafe
-        result["publicLinkLimit"] = group.attributes.publicLinkLimit.jsonSafe
-        result["publicLinkLimitEnabled"] = group.attributes.publicLinkLimitEnabled.jsonSafe
-        result["publicLink"] = group.attributes.publicLink.jsonSafe
-        result["publicLinkId"] = group.attributes.publicLinkId.jsonSafe
-        result["feedbackEnabled"] = group.attributes.feedbackEnabled.jsonSafe
-        result["iosBuildsAvailableForAppleSiliconMac"] = group.attributes.iosBuildsAvailableForAppleSiliconMac.jsonSafe
-        result["iosBuildsAvailableForAppleVision"] = group.attributes.iosBuildsAvailableForAppleVision.jsonSafe
+        result["name"] = (group.attributes?.name).jsonSafe
+        result["createdDate"] = (group.attributes?.createdDate).jsonSafe
+        result["isInternalGroup"] = (group.attributes?.isInternalGroup).jsonSafe
+        result["hasAccessToAllBuilds"] = (group.attributes?.hasAccessToAllBuilds).jsonSafe
+        result["publicLinkEnabled"] = (group.attributes?.publicLinkEnabled).jsonSafe
+        result["publicLinkLimit"] = (group.attributes?.publicLinkLimit).jsonSafe
+        result["publicLinkLimitEnabled"] = (group.attributes?.publicLinkLimitEnabled).jsonSafe
+        result["publicLink"] = (group.attributes?.publicLink).jsonSafe
+        result["publicLinkId"] = (group.attributes?.publicLinkId).jsonSafe
+        result["feedbackEnabled"] = (group.attributes?.feedbackEnabled).jsonSafe
+        result["iosBuildsAvailableForAppleSiliconMac"] = (group.attributes?.iosBuildsAvailableForAppleSiliconMac).jsonSafe
+        result["iosBuildsAvailableForAppleVision"] = (group.attributes?.iosBuildsAvailableForAppleVision).jsonSafe
 
         if let relationships = group.relationships {
             var relationIds: [String: Any] = [:]
@@ -105,12 +105,12 @@ extension BuildBetaDetailsWorker {
             "type": tester.type
         ]
         
-        result["email"] = tester.attributes.email.jsonSafe
-        result["firstName"] = tester.attributes.firstName.jsonSafe
-        result["lastName"] = tester.attributes.lastName.jsonSafe
-        result["inviteType"] = tester.attributes.inviteType.jsonSafe
-        result["state"] = tester.attributes.state.jsonSafe
-        result["appDevices"] = tester.attributes.appDevices.map { devices in
+        result["email"] = (tester.attributes?.email).jsonSafe
+        result["firstName"] = (tester.attributes?.firstName).jsonSafe
+        result["lastName"] = (tester.attributes?.lastName).jsonSafe
+        result["inviteType"] = (tester.attributes?.inviteType).jsonSafe
+        result["state"] = (tester.attributes?.state).jsonSafe
+        result["appDevices"] = (tester.attributes?.appDevices).map { devices in
             devices.map { device in
                 [
                     "model": device.model.jsonSafe,

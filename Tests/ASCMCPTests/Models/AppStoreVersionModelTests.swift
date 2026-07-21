@@ -84,6 +84,15 @@ struct AppStoreVersionModelTests {
         #expect(response.data[0].version == "1.0")
     }
 
+    @Test func versionsResponsePagingTotalIsOptional() throws {
+        let json = """
+        {"data":[],"links":{"self":"https://api.example.com/versions"},"meta":{"paging":{"limit":10}}}
+        """.data(using: .utf8)!
+        let response = try JSONDecoder().decode(ASCAppStoreVersionsResponse.self, from: json)
+        #expect(response.meta?.paging?.total == nil)
+        #expect(response.meta?.paging?.limit == 10)
+    }
+
     @Test func singleVersionResponseDecode() throws {
         let json = """
         {"data":{"id":"v1","type":"appStoreVersions","attributes":{"versionString":"1.0"}}}

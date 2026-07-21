@@ -10,7 +10,7 @@ extension InAppPurchasesWorker {
 
         do {
             let response: PassthroughAPIResponse
-            var query = iapPricePointQuery(limit: clampedIAPLimit(arguments["limit"]?.intValue, defaultValue: 50, max: 8000))
+            var query = iapPricePointQuery(limit: try validatedCommerceLimit(arguments["limit"], defaultValue: 50, maximum: 8000))
             if let territoryId = arguments["territory_id"]?.stringValue ?? arguments["territory"]?.stringValue {
                 query["filter[territory]"] = territoryId
             }
@@ -54,7 +54,7 @@ extension InAppPurchasesWorker {
 
         do {
             let response: PassthroughAPIResponse
-            var query = iapPricePointQuery(limit: clampedIAPLimit(arguments["limit"]?.intValue, defaultValue: 25, max: 8000))
+            var query = iapPricePointQuery(limit: try validatedCommerceLimit(arguments["limit"], defaultValue: 25, maximum: 8000))
             if let iapId = arguments["iap_id"]?.stringValue {
                 query["filter[inAppPurchaseV2]"] = iapId
             }
@@ -182,23 +182,18 @@ extension InAppPurchasesWorker {
                 return MCPResult.error("IAP price schedule response did not include an id")
             }
 
-            let manual: PassthroughAPIResponse = try await httpClient.get(
-                "/v1/inAppPurchasePriceSchedules/\(try ASCPathSegment.encode(scheduleId))/manualPrices",
-                parameters: iapPriceQuery(territoryId: territoryId),
-                as: PassthroughAPIResponse.self
+            let query = iapPriceQuery(territoryId: territoryId)
+            let manualResult = try await fetchAllIAPPricingPages(
+                endpoint: "/v1/inAppPurchasePriceSchedules/\(try ASCPathSegment.encode(scheduleId))/manualPrices",
+                query: query
             )
-            let automatic: PassthroughAPIResponse = try await httpClient.get(
-                "/v1/inAppPurchasePriceSchedules/\(try ASCPathSegment.encode(scheduleId))/automaticPrices",
-                parameters: iapPriceQuery(territoryId: territoryId),
-                as: PassthroughAPIResponse.self
+            let automaticResult = try await fetchAllIAPPricingPages(
+                endpoint: "/v1/inAppPurchasePriceSchedules/\(try ASCPathSegment.encode(scheduleId))/automaticPrices",
+                query: query
             )
 
-            let manualPrices = (manual.data.arrayValue ?? []).map {
-                formatIAPPrice($0, included: IAPIncludedIndex(manual.included))
-            }
-            let automaticPrices = (automatic.data.arrayValue ?? []).map {
-                formatIAPPrice($0, included: IAPIncludedIndex(automatic.included))
-            }
+            let manualPrices = manualResult.prices
+            let automaticPrices = automaticResult.prices
             let prices = (manualPrices + automaticPrices).sorted {
                 ($0["start_date"] as? String ?? "") < ($1["start_date"] as? String ?? "")
             }
@@ -223,11 +218,67 @@ extension InAppPurchasesWorker {
                 "current_price": current ?? NSNull(),
                 "scheduled_prices": scheduled,
                 "manual_prices": manualPrices,
-                "automatic_prices": automaticPrices
+                "automatic_prices": automaticPrices,
+                "manual_pages_fetched": manualResult.pagesFetched,
+                "automatic_pages_fetched": automaticResult.pagesFetched,
+                "complete": true,
+                "truncated": false
             ])
         } catch {
             return MCPResult.error("Failed to summarize IAP pricing: \(error.localizedDescription)")
         }
+    }
+
+    private func fetchAllIAPPricingPages(
+        endpoint: String,
+        query: [String: String]
+    ) async throws -> (prices: [[String: Any]], pagesFetched: Int) {
+        let scope = iapCommercePaginationScope(path: endpoint, query: query)
+        var response = try await httpClient.get(
+            endpoint,
+            parameters: query,
+            as: PassthroughAPIResponse.self
+        )
+        var prices: [[String: Any]] = []
+        var pagesFetched = 0
+        var seenNextURLs: Set<String> = []
+
+        while true {
+            guard let resources = response.data.arrayValue else {
+                throw ASCError.parsing("IAP pricing response data must be an array")
+            }
+            let included = IAPIncludedIndex(response.included)
+            prices.append(contentsOf: resources.map { formatIAPPrice($0, included: included) })
+            pagesFetched += 1
+
+            guard let nextURL = try iapPricingNextURL(response.links) else {
+                break
+            }
+            guard seenNextURLs.insert(nextURL).inserted else {
+                throw ASCError.parsing("IAP pricing pagination returned a repeated next URL")
+            }
+            response = try await httpClient.getPage(
+                nextURL,
+                scope: scope,
+                as: PassthroughAPIResponse.self
+            )
+        }
+
+        return (prices, pagesFetched)
+    }
+
+    private func iapPricingNextURL(_ links: JSONValue?) throws -> String? {
+        guard let value = links?.objectValue?["next"] else {
+            return nil
+        }
+        if case .null = value {
+            return nil
+        }
+        guard let nextURL = value.stringValue,
+              !nextURL.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            throw ASCError.parsing("IAP pricing links.next must be a non-empty string or null")
+        }
+        return nextURL
     }
 
     func prepareIAPOfferPrices(_ params: CallTool.Parameters) async throws -> CallTool.Result {
@@ -350,10 +401,24 @@ extension InAppPurchasesWorker {
         guard let arguments = params.arguments,
               let iapId = arguments["iap_id"]?.stringValue,
               let name = arguments["name"]?.stringValue,
-              let eligibilities = arguments["customer_eligibilities"]?.arrayValue?.compactMap(\.stringValue),
-              let territoryIds = arguments["territory_ids"]?.arrayValue?.compactMap(\.stringValue),
-              let pricePointIds = arguments["price_point_ids"]?.arrayValue?.compactMap(\.stringValue) else {
+              let eligibilityValues = arguments["customer_eligibilities"]?.arrayValue,
+              let territoryValues = arguments["territory_ids"]?.arrayValue,
+              let pricePointValues = arguments["price_point_ids"]?.arrayValue else {
             return MCPResult.error("Required parameters: iap_id, name, customer_eligibilities, territory_ids, price_point_ids")
+        }
+        let eligibilities = eligibilityValues.compactMap(\.stringValue)
+        let territoryIds = territoryValues.compactMap(\.stringValue)
+        let pricePointIds = pricePointValues.compactMap(\.stringValue)
+        guard eligibilities.count == eligibilityValues.count,
+              territoryIds.count == territoryValues.count,
+              pricePointIds.count == pricePointValues.count else {
+            return MCPResult.error("customer_eligibilities, territory_ids, and price_point_ids must contain only strings")
+        }
+        let allowedEligibilities: Set<String> = ["NON_SPENDER", "ACTIVE_SPENDER", "CHURNED_SPENDER"]
+        guard !eligibilities.isEmpty,
+              Set(eligibilities).count == eligibilities.count,
+              eligibilities.allSatisfy(allowedEligibilities.contains) else {
+            return MCPResult.error("customer_eligibilities must contain unique values from: ACTIVE_SPENDER, CHURNED_SPENDER, NON_SPENDER")
         }
         guard territoryIds.count == pricePointIds.count else {
             return MCPResult.error("price_point_ids and territory_ids must have the same count (got \(pricePointIds.count) vs \(territoryIds.count))")
@@ -396,11 +461,14 @@ extension InAppPurchasesWorker {
         guard let offerCodeId = params.arguments?["offer_code_id"]?.stringValue else {
             return MCPResult.error("Required parameter 'offer_code_id' is missing")
         }
+        guard let active = iapNullableActive(params.arguments?["active"]) else {
+            return MCPResult.error("Required parameter 'active' must be a Boolean or null")
+        }
         return try await patchIAPActiveResource(
             endpoint: "/v1/inAppPurchaseOfferCodes/\(try ASCPathSegment.encode(offerCodeId))",
             type: "inAppPurchaseOfferCodes",
             id: offerCodeId,
-            active: params.arguments?["active"]?.boolValue,
+            active: active,
             key: "offer_code"
         )
     }
@@ -413,7 +481,7 @@ extension InAppPurchasesWorker {
             endpoint: "/v1/inAppPurchaseOfferCodes/\(try ASCPathSegment.encode(offerCodeId))",
             type: "inAppPurchaseOfferCodes",
             id: offerCodeId,
-            active: false,
+            active: .value(false),
             key: "offer_code"
         )
     }
@@ -426,7 +494,7 @@ extension InAppPurchasesWorker {
 
         do {
             let response: PassthroughAPIResponse
-            var query = iapOfferPriceQuery(limit: clampedIAPLimit(arguments["limit"]?.intValue, defaultValue: 25, max: 200))
+            var query = iapOfferPriceQuery(limit: try validatedCommerceLimit(arguments["limit"], defaultValue: 25, maximum: 200))
             if let territoryId = arguments["territory_id"]?.stringValue {
                 query["filter[territory]"] = territoryId
             }
@@ -473,8 +541,15 @@ extension InAppPurchasesWorker {
             "numberOfCodes": numberOfCodes,
             "expirationDate": expirationDate
         ]
-        if let environment = arguments["environment"]?.stringValue {
-            attributes["environment"] = environment
+        if let environmentValue = arguments["environment"] {
+            if case .null = environmentValue {
+                attributes["environment"] = NSNull()
+            } else if let environment = environmentValue.stringValue,
+                      ["PRODUCTION", "SANDBOX"].contains(environment) {
+                attributes["environment"] = environment
+            } else {
+                return MCPResult.error("environment must be PRODUCTION, SANDBOX, or null")
+            }
         }
         let body: [String: Any] = [
             "data": [
@@ -509,11 +584,14 @@ extension InAppPurchasesWorker {
         guard let oneTimeCodeId = params.arguments?["one_time_code_id"]?.stringValue else {
             return MCPResult.error("Required parameter 'one_time_code_id' is missing")
         }
+        guard let active = iapNullableActive(params.arguments?["active"]) else {
+            return MCPResult.error("Required parameter 'active' must be a Boolean or null")
+        }
         return try await patchIAPActiveResource(
             endpoint: "/v1/inAppPurchaseOfferCodeOneTimeUseCodes/\(try ASCPathSegment.encode(oneTimeCodeId))",
             type: "inAppPurchaseOfferCodeOneTimeUseCodes",
             id: oneTimeCodeId,
-            active: params.arguments?["active"]?.boolValue,
+            active: active,
             key: "one_time_code"
         )
     }
@@ -526,7 +604,7 @@ extension InAppPurchasesWorker {
             endpoint: "/v1/inAppPurchaseOfferCodeOneTimeUseCodes/\(try ASCPathSegment.encode(oneTimeCodeId))",
             type: "inAppPurchaseOfferCodeOneTimeUseCodes",
             id: oneTimeCodeId,
-            active: false,
+            active: .value(false),
             key: "one_time_code"
         )
     }
@@ -588,11 +666,14 @@ extension InAppPurchasesWorker {
         guard let customCodeId = params.arguments?["custom_code_id"]?.stringValue else {
             return MCPResult.error("Required parameter 'custom_code_id' is missing")
         }
+        guard let active = iapNullableActive(params.arguments?["active"]) else {
+            return MCPResult.error("Required parameter 'active' must be a Boolean or null")
+        }
         return try await patchIAPActiveResource(
             endpoint: "/v1/inAppPurchaseOfferCodeCustomCodes/\(try ASCPathSegment.encode(customCodeId))",
             type: "inAppPurchaseOfferCodeCustomCodes",
             id: customCodeId,
-            active: params.arguments?["active"]?.boolValue,
+            active: active,
             key: "custom_code"
         )
     }
@@ -605,7 +686,7 @@ extension InAppPurchasesWorker {
             endpoint: "/v1/inAppPurchaseOfferCodeCustomCodes/\(try ASCPathSegment.encode(customCodeId))",
             type: "inAppPurchaseOfferCodeCustomCodes",
             id: customCodeId,
-            active: false,
+            active: .value(false),
             key: "custom_code"
         )
     }
@@ -622,7 +703,7 @@ extension InAppPurchasesWorker {
         do {
             let response: PassthroughAPIResponse
             var query = defaultQuery
-            query["limit"] = String(clampedIAPLimit(params.arguments?["limit"]?.intValue, defaultValue: 25, max: 200))
+            query["limit"] = String(try validatedCommerceLimit(params.arguments?["limit"], defaultValue: 25, maximum: 200))
             if let nextUrl = try paginationURL(from: params.arguments?["next_url"]) {
                 response = try await httpClient.getPage(
                     nextUrl,
@@ -662,32 +743,115 @@ extension InAppPurchasesWorker {
     }
 
     private func postIAPPassthroughResource(endpoint: String, body: [String: Any], key: String) async throws -> CallTool.Result {
+        guard let requestData = body["data"] as? [String: Any],
+              let expectedType = requestData["type"] as? String else {
+            return MCPResult.error("Failed to create \(key): request resource type is missing")
+        }
+
+        let data: Data
         do {
-            let data = try JSONSerialization.data(withJSONObject: body)
-            let responseData = try await httpClient.post(endpoint, body: data)
+            data = try JSONSerialization.data(withJSONObject: body)
+        } catch {
+            return MCPResult.error(error, prefix: "Failed to encode \(key)")
+        }
+
+        let responseData: Data
+        do {
+            responseData = try await httpClient.post(endpoint, body: data)
+        } catch {
+            return MCPResult.error(error, prefix: "Failed to create \(key)")
+        }
+
+        do {
             let response = try JSONDecoder().decode(PassthroughAPIResponse.self, from: responseData)
+            guard let responseType = response.data.iapResourceType,
+                  let responseID = response.data.iapResourceId else {
+                throw ASCError.parsing("POST response resource identity does not match the request contract")
+            }
+            try ASCNonIdempotentWriteRecovery.validateResourceIdentity(
+                type: responseType,
+                id: responseID,
+                expectedType: expectedType,
+                context: "IAP commerce POST response"
+            )
             return MCPResult.jsonObject(["success": true, key: formatIAPGenericResource(response.data)])
         } catch {
-            return MCPResult.error("Failed to create \(key): \(error.localizedDescription)")
+            return MCPResult.error(
+                iapCommittedUnverifiedMutation(method: "POST", statusCode: 201, error: error),
+                prefix: "Failed to verify created \(key)"
+            )
         }
     }
 
-    private func patchIAPActiveResource(endpoint: String, type: String, id: String, active: Bool?, key: String) async throws -> CallTool.Result {
-        var data: [String: Any] = [
-            "type": type,
-            "id": id
-        ]
-        if let active {
-            data["attributes"] = ["active": active]
+    private func patchIAPActiveResource(endpoint: String, type: String, id: String, active: ASCNullable<Bool>, key: String) async throws -> CallTool.Result {
+        let encodedActive: Any
+        switch active {
+        case .value(let value): encodedActive = value
+        case .null: encodedActive = NSNull()
         }
+        let data: [String: Any] = [
+            "type": type,
+            "id": id,
+            "attributes": ["active": encodedActive]
+        ]
+
+        let body: Data
         do {
-            let body = try JSONSerialization.data(withJSONObject: ["data": data])
-            let responseData = try await httpClient.patch(endpoint, body: body)
+            body = try JSONSerialization.data(withJSONObject: ["data": data])
+        } catch {
+            return MCPResult.error(error, prefix: "Failed to encode \(key)")
+        }
+
+        let responseData: Data
+        do {
+            responseData = try await httpClient.patch(endpoint, body: body)
+        } catch {
+            return MCPResult.error(error, prefix: "Failed to update \(key)")
+        }
+
+        do {
             let response = try JSONDecoder().decode(PassthroughAPIResponse.self, from: responseData)
+            guard let responseType = response.data.iapResourceType,
+                  let responseID = response.data.iapResourceId else {
+                throw ASCError.parsing("PATCH response resource identity does not match the request contract")
+            }
+            try ASCNonIdempotentWriteRecovery.validateResourceIdentity(
+                type: responseType,
+                id: responseID,
+                expectedType: type,
+                expectedID: id,
+                context: "IAP commerce PATCH response"
+            )
             return MCPResult.jsonObject(["success": true, key: formatIAPGenericResource(response.data)])
         } catch {
-            return MCPResult.error("Failed to update \(key): \(error.localizedDescription)")
+            return MCPResult.error(
+                iapCommittedUnverifiedMutation(method: "PATCH", statusCode: 200, error: error),
+                prefix: "Failed to verify updated \(key)"
+            )
         }
+    }
+
+    private func iapCommittedUnverifiedMutation(method: String, statusCode: Int, error: Error) -> ASCError {
+        let cause = error as? ASCError ?? .parsing(error.localizedDescription)
+        return .mutationCommittedUnverified(
+            method: method,
+            expectedStatusCode: statusCode,
+            actualStatusCode: statusCode,
+            cause: cause
+        )
+    }
+
+    private func iapNullableActive(_ value: Value?) -> ASCNullable<Bool>? {
+        guard let value else {
+            return nil
+        }
+        if case .null = value {
+            return .null
+        }
+        guard let bool = value.boolValue else {
+            return nil
+        }
+        return .value(bool)
     }
 
     private func iapPricePointQuery(limit: Int) -> [String: String] {
@@ -730,10 +894,6 @@ extension InAppPurchasesWorker {
             "fields[territories]": "currency",
             "limit[availableTerritories]": String(territoryLimit)
         ]
-    }
-
-    private func clampedIAPLimit(_ value: Int?, defaultValue: Int, max: Int) -> Int {
-        min(Swift.max(value ?? defaultValue, 1), max)
     }
 
     private func appendIAPNext(_ links: JSONValue?, to result: inout [String: Any]) {

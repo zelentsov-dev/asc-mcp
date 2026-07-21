@@ -30,7 +30,7 @@ extension AccessibilityWorker {
         do {
             let response: ASCAccessibilityDeclarationsResponse
             let path = "/v1/apps/\(try ASCPathSegment.encode(appID))/accessibilityDeclarations"
-            var query = defaultListQuery(arguments: arguments)
+            var query = try defaultListQuery(arguments: arguments)
             if let deviceFamilies = parseStringList(arguments["device_family"]) {
                 query["filter[deviceFamily]"] = deviceFamilies.joined(separator: ",")
             }
@@ -114,12 +114,20 @@ extension AccessibilityWorker {
                 supports: supportAttributes(from: arguments)
             )
             let response = try await httpClient.post("/v1/accessibilityDeclarations", body: request, as: ASCAccessibilityDeclarationResponse.self)
+            try validateAcceptedAccessibilityMutationResource(
+                type: response.data.type,
+                id: response.data.id,
+                expectedType: "accessibilityDeclarations",
+                method: "POST",
+                statusCode: 201,
+                context: "Apple accessibility declaration create response"
+            )
             return MCPResult.jsonObject([
                 "success": true,
                 "accessibility_declaration": formatDeclaration(response.data)
             ])
         } catch {
-            return MCPResult.error("Failed to create accessibility declaration: \(error.localizedDescription)")
+            return MCPResult.error(error, prefix: "Failed to create accessibility declaration")
         }
     }
 
@@ -144,12 +152,21 @@ extension AccessibilityWorker {
 
             let request = ASCAccessibilityDeclarationUpdateRequest(declarationID: declarationID, attributes: attributes)
             let response = try await httpClient.patch("/v1/accessibilityDeclarations/\(try ASCPathSegment.encode(declarationID))", body: request, as: ASCAccessibilityDeclarationResponse.self)
+            try validateAcceptedAccessibilityMutationResource(
+                type: response.data.type,
+                id: response.data.id,
+                expectedType: "accessibilityDeclarations",
+                expectedID: declarationID,
+                method: "PATCH",
+                statusCode: 200,
+                context: "Apple accessibility declaration update response"
+            )
             return MCPResult.jsonObject([
                 "success": true,
                 "accessibility_declaration": formatDeclaration(response.data)
             ])
         } catch {
-            return MCPResult.error("Failed to update accessibility declaration: \(error.localizedDescription)")
+            return MCPResult.error(error, prefix: "Failed to update accessibility declaration")
         }
     }
 
@@ -186,7 +203,7 @@ extension AccessibilityWorker {
 
         do {
             let endpoint = "/v1/apps/\(try ASCPathSegment.encode(appID))/relationships/accessibilityDeclarations"
-            let query = defaultListQuery(arguments: arguments)
+            let query = try defaultListQuery(arguments: arguments)
             let response: ASCAccessibilityDeclarationLinkagesResponse
             if let nextURL = try paginationURL(from: arguments["next_url"]) {
                 response = try await httpClient.getPage(
@@ -215,9 +232,45 @@ extension AccessibilityWorker {
         }
     }
 
-    private func defaultListQuery(arguments: [String: Value]) -> [String: String] {
-        let limit = arguments["limit"]?.intValue ?? 25
-        return ["limit": String(min(max(limit, 1), 200))]
+    private func defaultListQuery(arguments: [String: Value]) throws -> [String: String] {
+        let limit: Int
+        if let value = arguments["limit"] {
+            guard let parsed = value.intValue, (1...200).contains(parsed) else {
+                throw AccessibilityArgumentError("'limit' must be an integer between 1 and 200")
+            }
+            limit = parsed
+        } else {
+            limit = 25
+        }
+        return ["limit": String(limit)]
+    }
+
+    private func validateAcceptedAccessibilityMutationResource(
+        type: String,
+        id: String,
+        expectedType: String,
+        expectedID: String? = nil,
+        method: String,
+        statusCode: Int,
+        context: String
+    ) throws {
+        do {
+            try ASCNonIdempotentWriteRecovery.validateResourceIdentity(
+                type: type,
+                id: id,
+                expectedType: expectedType,
+                expectedID: expectedID,
+                context: context
+            )
+        } catch {
+            let cause = error as? ASCError ?? .parsing(Redactor.redact(error.localizedDescription))
+            throw ASCError.mutationCommittedUnverified(
+                method: method,
+                expectedStatusCode: statusCode,
+                actualStatusCode: statusCode,
+                cause: cause
+            )
+        }
     }
 
     private func supportAttributes(from arguments: [String: Value]) -> ASCAccessibilityDeclarationSupportAttributes {

@@ -11,12 +11,19 @@ extension SubscriptionsWorker {
         do {
             let response: PassthroughAPIResponse
             let endpoint = "/v1/subscriptions/\(try ASCPathSegment.encode(subscriptionId))/prices"
-            var query = subscriptionPriceQuery(arguments: arguments, maxLimit: 200)
+            var query = try subscriptionPriceQuery(arguments: arguments, maxLimit: 200)
             if let territoryId = arguments["territory_id"]?.stringValue {
                 query["filter[territory]"] = territoryId
             }
             if let pricePointId = arguments["price_point_id"]?.stringValue {
                 query["filter[subscriptionPricePoint]"] = pricePointId
+            }
+            if let planTypes = try subscriptionCatalogQueryValue(
+                arguments["plan_types"],
+                field: "plan_types",
+                allowedValues: Set(ASCSubscriptionPlanType.allCases.map(\.rawValue))
+            ) {
+                query["filter[planType]"] = planTypes
             }
 
             if let nextUrl = try paginationURL(from: arguments["next_url"]) {
@@ -60,10 +67,23 @@ extension SubscriptionsWorker {
                 "include": "territory",
                 "fields[subscriptionPricePoints]": "customerPrice,proceeds,proceedsYear2,territory,equalizations",
                 "fields[territories]": "currency",
-                "limit": String(clampedLimit(arguments["limit"]?.intValue, defaultValue: 25, max: 8000))
+                "limit": String(try validatedCommerceLimit(arguments["limit"], defaultValue: 25, maximum: 8000))
             ]
             if let territoryId = arguments["territory_id"]?.stringValue {
                 query["filter[territory]"] = territoryId
+            }
+            if let upfrontPricePointIds = try subscriptionCatalogQueryValue(
+                arguments["upfront_price_point_ids"],
+                field: "upfront_price_point_ids"
+            ) {
+                query["filter[upfrontPricePointId]"] = upfrontPricePointIds
+            }
+            if let planTypes = try subscriptionCatalogQueryValue(
+                arguments["plan_types"],
+                field: "plan_types",
+                allowedValues: Set(ASCSubscriptionPlanType.allCases.map(\.rawValue))
+            ) {
+                query["filter[planType]"] = planTypes
             }
 
             if let nextUrl = try paginationURL(from: arguments["next_url"]) {
@@ -159,9 +179,8 @@ extension SubscriptionsWorker {
     func createSubscriptionPrice(_ params: CallTool.Parameters) async throws -> CallTool.Result {
         guard let arguments = params.arguments,
               let subscriptionId = arguments["subscription_id"]?.stringValue,
-              let territoryId = arguments["territory_id"]?.stringValue,
               let pricePointId = arguments["price_point_id"]?.stringValue else {
-            return MCPResult.error("Required parameters: subscription_id, territory_id, price_point_id")
+            return MCPResult.error("Required parameters: subscription_id, price_point_id")
         }
 
         var attributes: [String: Any] = [:]
@@ -184,15 +203,18 @@ extension SubscriptionsWorker {
         ) {
             return MCPResult.error(error)
         }
+        var relationships: [String: Any] = [
+            "subscription": ["data": ["type": "subscriptions", "id": subscriptionId]],
+            "subscriptionPricePoint": ["data": ["type": "subscriptionPricePoints", "id": pricePointId]]
+        ]
+        if let territoryId = arguments["territory_id"]?.stringValue {
+            relationships["territory"] = ["data": ["type": "territories", "id": territoryId]]
+        }
         let body: [String: Any] = [
             "data": [
                 "type": "subscriptionPrices",
                 "attributes": attributes,
-                "relationships": [
-                    "subscription": ["data": ["type": "subscriptions", "id": subscriptionId]],
-                    "territory": ["data": ["type": "territories", "id": territoryId]],
-                    "subscriptionPricePoint": ["data": ["type": "subscriptionPricePoints", "id": pricePointId]]
-                ]
+                "relationships": relationships
             ]
         ]
         return try await postResource(endpoint: "/v1/subscriptionPrices", body: body, key: "price")
@@ -309,12 +331,25 @@ extension SubscriptionsWorker {
         do {
             let response: PassthroughAPIResponse
             let endpoint = "/v1/subscriptionPricePoints/\(try ASCPathSegment.encode(pricePointId))/equalizations"
-            var query = pricePointQuery(limit: clampedLimit(arguments["limit"]?.intValue, defaultValue: 25, max: 8000))
+            var query = pricePointQuery(limit: try validatedCommerceLimit(arguments["limit"], defaultValue: 25, maximum: 8000))
             if let subscriptionId = arguments["subscription_id"]?.stringValue {
                 query["filter[subscription]"] = subscriptionId
             }
             if let territoryId = arguments["territory_id"]?.stringValue {
                 query["filter[territory]"] = territoryId
+            }
+            if let upfrontPricePointIds = try subscriptionCatalogQueryValue(
+                arguments["upfront_price_point_ids"],
+                field: "upfront_price_point_ids"
+            ) {
+                query["filter[upfrontPricePointId]"] = upfrontPricePointIds
+            }
+            if let planTypes = try subscriptionCatalogQueryValue(
+                arguments["plan_types"],
+                field: "plan_types",
+                allowedValues: Set(ASCSubscriptionPlanType.allCases.map(\.rawValue))
+            ) {
+                query["filter[planType]"] = planTypes
             }
 
             if let nextUrl = try paginationURL(from: arguments["next_url"]) {
@@ -412,7 +447,7 @@ extension SubscriptionsWorker {
                 "/v1/apps/\(try ASCPathSegment.encode(appId))/subscriptionGroups",
                 parameters: [
                     "include": "subscriptions",
-                    "limit": String(clampedLimit(arguments["limit"]?.intValue, defaultValue: 200, max: 200))
+                    "limit": String(try validatedCommerceLimit(arguments["limit"], defaultValue: 200, maximum: 200))
                 ],
                 as: PassthroughAPIResponse.self
             )
@@ -455,7 +490,7 @@ extension SubscriptionsWorker {
             do {
                 let prices: PassthroughAPIResponse = try await httpClient.get(
                     "/v1/subscriptions/\(try ASCPathSegment.encode(subscriptionId))/prices",
-                    parameters: subscriptionPriceQuery(arguments: ["territory_id": .string(territoryId)], maxLimit: 200).merging(["filter[territory]": territoryId]) { _, new in new },
+                    parameters: try subscriptionPriceQuery(arguments: ["territory_id": .string(territoryId)], maxLimit: 200).merging(["filter[territory]": territoryId]) { _, new in new },
                     as: PassthroughAPIResponse.self
                 )
                 let formatted = (prices.data.arrayValue ?? []).map {
@@ -979,7 +1014,7 @@ extension SubscriptionsWorker {
             let response: PassthroughAPIResponse
             let endpoint = "/v1/subscriptions/\(try ASCPathSegment.encode(subscriptionId))/\(try ASCPathSegment.encode(endpointSuffix))"
             var query = defaultQuery
-            query["limit"] = String(clampedLimit(arguments["limit"]?.intValue, defaultValue: 25, max: 200))
+            query["limit"] = String(try validatedCommerceLimit(arguments["limit"], defaultValue: 25, maximum: 200))
             if let territoryId = arguments["territory_id"]?.stringValue {
                 query["filter[territory]"] = territoryId
             }
@@ -1042,7 +1077,7 @@ extension SubscriptionsWorker {
             default:
                 return MCPResult.error("Unsupported subscription offer price endpoint")
             }
-            var query = subscriptionOfferPriceQuery(arguments: arguments, fieldsKey: fieldsKey)
+            var query = try subscriptionOfferPriceQuery(arguments: arguments, fieldsKey: fieldsKey)
             if let territoryId = arguments["territory_id"]?.stringValue {
                 query["filter[territory]"] = territoryId
             }
@@ -1110,13 +1145,22 @@ extension SubscriptionsWorker {
         guard let customCodeId = params.arguments?["custom_code_id"]?.stringValue else {
             return MCPResult.error("Required parameter 'custom_code_id' is missing")
         }
-        var data: [String: Any] = [
-            "type": "subscriptionOfferCodeCustomCodes",
-            "id": customCodeId
-        ]
-        if let active = params.arguments?["active"]?.boolValue {
-            data["attributes"] = ["active": active]
+        guard let activeValue = params.arguments?["active"] else {
+            return MCPResult.error("Required parameter 'active' must be a Boolean or null")
         }
+        let active: Any
+        if activeValue.isNull {
+            active = NSNull()
+        } else if let bool = activeValue.boolValue {
+            active = bool
+        } else {
+            return MCPResult.error("Required parameter 'active' must be a Boolean or null")
+        }
+        let data: [String: Any] = [
+            "type": "subscriptionOfferCodeCustomCodes",
+            "id": customCodeId,
+            "attributes": ["active": active]
+        ]
         let body: [String: Any] = ["data": data]
         return try await patchResource(endpoint: "/v1/subscriptionOfferCodeCustomCodes/\(try ASCPathSegment.encode(customCodeId))", body: body, key: "custom_code")
     }
@@ -1137,7 +1181,7 @@ extension SubscriptionsWorker {
         do {
             let response: PassthroughAPIResponse
             var query = defaultQuery
-            query["limit"] = String(clampedLimit(params.arguments?["limit"]?.intValue, defaultValue: 25, max: 200))
+            query["limit"] = String(try validatedCommerceLimit(params.arguments?["limit"], defaultValue: 25, maximum: 200))
 
             if let nextUrl = try paginationURL(from: params.arguments?["next_url"]) {
                 response = try await httpClient.getPage(
@@ -1171,34 +1215,106 @@ extension SubscriptionsWorker {
     }
 
     private func postResource(endpoint: String, body: [String: Any], key: String) async throws -> CallTool.Result {
+        guard let requestData = body["data"] as? [String: Any],
+              let expectedType = requestData["type"] as? String else {
+            return MCPResult.error("Failed to create \(key): request resource type is missing")
+        }
+
+        let data: Data
         do {
-            let data = try JSONSerialization.data(withJSONObject: body)
-            let responseData = try await httpClient.post(endpoint, body: data)
+            data = try JSONSerialization.data(withJSONObject: body)
+        } catch {
+            return MCPResult.error(error, prefix: "Failed to encode \(key)")
+        }
+
+        let responseData: Data
+        do {
+            responseData = try await httpClient.post(endpoint, body: data)
+        } catch {
+            return MCPResult.error(error, prefix: "Failed to create \(key)")
+        }
+
+        do {
             let response = try JSONDecoder().decode(PassthroughAPIResponse.self, from: responseData)
+            guard let responseType = response.data.type,
+                  let responseID = response.data.id else {
+                throw ASCError.parsing("POST response resource identity does not match the request contract")
+            }
+            try ASCNonIdempotentWriteRecovery.validateResourceIdentity(
+                type: responseType,
+                id: responseID,
+                expectedType: expectedType,
+                context: "Subscription commerce POST response"
+            )
             return MCPResult.jsonObject(["success": true, key: formatGenericResource(response.data)])
         } catch {
-            return MCPResult.error("Failed to create \(key): \(error.localizedDescription)")
+            return MCPResult.error(
+                subscriptionCommittedUnverifiedMutation(method: "POST", statusCode: 201, error: error),
+                prefix: "Failed to verify created \(key)"
+            )
         }
     }
 
     private func patchResource(endpoint: String, body: [String: Any], key: String) async throws -> CallTool.Result {
+        guard let requestData = body["data"] as? [String: Any],
+              let expectedType = requestData["type"] as? String,
+              let expectedID = requestData["id"] as? String else {
+            return MCPResult.error("Failed to update \(key): request resource identity is missing")
+        }
+
+        let data: Data
         do {
-            let data = try JSONSerialization.data(withJSONObject: body)
-            let responseData = try await httpClient.patch(endpoint, body: data)
+            data = try JSONSerialization.data(withJSONObject: body)
+        } catch {
+            return MCPResult.error(error, prefix: "Failed to encode \(key)")
+        }
+
+        let responseData: Data
+        do {
+            responseData = try await httpClient.patch(endpoint, body: data)
+        } catch {
+            return MCPResult.error(error, prefix: "Failed to update \(key)")
+        }
+
+        do {
             let response = try JSONDecoder().decode(PassthroughAPIResponse.self, from: responseData)
+            guard let responseType = response.data.type,
+                  let responseID = response.data.id else {
+                throw ASCError.parsing("PATCH response resource identity does not match the request contract")
+            }
+            try ASCNonIdempotentWriteRecovery.validateResourceIdentity(
+                type: responseType,
+                id: responseID,
+                expectedType: expectedType,
+                expectedID: expectedID,
+                context: "Subscription commerce PATCH response"
+            )
             return MCPResult.jsonObject(["success": true, key: formatGenericResource(response.data)])
         } catch {
-            return MCPResult.error("Failed to update \(key): \(error.localizedDescription)")
+            return MCPResult.error(
+                subscriptionCommittedUnverifiedMutation(method: "PATCH", statusCode: 200, error: error),
+                prefix: "Failed to verify updated \(key)"
+            )
         }
     }
 
-    private func subscriptionPriceQuery(arguments: [String: Value], maxLimit: Int) -> [String: String] {
+    private func subscriptionCommittedUnverifiedMutation(method: String, statusCode: Int, error: Error) -> ASCError {
+        let cause = error as? ASCError ?? .parsing(error.localizedDescription)
+        return .mutationCommittedUnverified(
+            method: method,
+            expectedStatusCode: statusCode,
+            actualStatusCode: statusCode,
+            cause: cause
+        )
+    }
+
+    private func subscriptionPriceQuery(arguments: [String: Value], maxLimit: Int) throws -> [String: String] {
         [
             "include": "territory,subscriptionPricePoint",
             "fields[subscriptionPrices]": "startDate,preserved,planType,territory,subscriptionPricePoint",
             "fields[subscriptionPricePoints]": "customerPrice,proceeds,proceedsYear2,territory,equalizations",
             "fields[territories]": "currency",
-            "limit": String(clampedLimit(arguments["limit"]?.intValue, defaultValue: 25, max: maxLimit))
+            "limit": String(try validatedCommerceLimit(arguments["limit"], defaultValue: 25, maximum: maxLimit))
         ]
     }
 
@@ -1223,18 +1339,14 @@ extension SubscriptionsWorker {
         ]
     }
 
-    private func subscriptionOfferPriceQuery(arguments: [String: Value], fieldsKey: String) -> [String: String] {
+    private func subscriptionOfferPriceQuery(arguments: [String: Value], fieldsKey: String) throws -> [String: String] {
         [
             "include": "territory,subscriptionPricePoint",
             "fields[\(fieldsKey)]": "territory,subscriptionPricePoint",
             "fields[subscriptionPricePoints]": "customerPrice,proceeds,proceedsYear2,territory,equalizations",
             "fields[territories]": "currency",
-            "limit": String(clampedLimit(arguments["limit"]?.intValue, defaultValue: 25, max: 200))
+            "limit": String(try validatedCommerceLimit(arguments["limit"], defaultValue: 25, maximum: 200))
         ]
-    }
-
-    private func clampedLimit(_ value: Int?, defaultValue: Int, max: Int) -> Int {
-        min(Swift.max(value ?? defaultValue, 1), max)
     }
 
     private func appendNext(_ links: JSONValue?, to result: inout [String: Any]) {

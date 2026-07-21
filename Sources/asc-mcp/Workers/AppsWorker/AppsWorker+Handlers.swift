@@ -120,6 +120,47 @@ extension AppsWorker {
         return versions
     }
 
+    private func fetchAllMetadataLocalizations(
+        versionId: String,
+        locale: String?
+    ) async throws -> [ASCAppStoreVersionLocalization] {
+        let path = "/v1/appStoreVersions/\(try ASCPathSegment.encode(versionId))/appStoreVersionLocalizations"
+        var parameters = [
+            "fields[appStoreVersionLocalizations]": "description,locale,keywords,marketingUrl,promotionalText,supportUrl,whatsNew,appStoreVersion",
+            "limit": "200"
+        ]
+        if let locale {
+            parameters["filter[locale]"] = locale
+        }
+
+        let scope = PaginationScope.strict(path: path, query: parameters)
+        var response: ASCAppStoreVersionLocalizationsResponse? = try await httpClient.get(
+            path,
+            parameters: parameters,
+            as: ASCAppStoreVersionLocalizationsResponse.self
+        )
+        var localizations: [ASCAppStoreVersionLocalization] = []
+        var seenNextURLs: Set<String> = []
+
+        while let page = response {
+            localizations.append(contentsOf: page.data)
+            if let next = page.links?.next {
+                guard seenNextURLs.insert(next).inserted else {
+                    throw ASCError.parsing("App metadata localization pagination returned a repeated next URL")
+                }
+                response = try await httpClient.getPage(
+                    next,
+                    scope: scope,
+                    as: ASCAppStoreVersionLocalizationsResponse.self
+                )
+            } else {
+                response = nil
+            }
+        }
+
+        return localizations
+    }
+
     private func nullableMetadataString(_ name: String, from arguments: [String: Value]) throws -> NullableAttributeValue? {
         guard let value = arguments[name] else {
             return nil
@@ -195,6 +236,40 @@ extension AppsWorker {
         return strings.joined(separator: ",")
     }
 
+    private func appDetailsIncludeValue(_ value: Value?) throws -> String? {
+        guard let value else { return nil }
+        let allowedValues: Set<String> = [
+            "appEncryptionDeclarations", "appStoreIcon", "ciProduct", "betaGroups", "appStoreVersions",
+            "preReleaseVersions", "betaAppLocalizations", "builds", "betaLicenseAgreement",
+            "betaAppReviewDetail", "appInfos", "appClips", "endUserLicenseAgreement", "inAppPurchases",
+            "subscriptionGroups", "gameCenterEnabledVersions", "appCustomProductPages", "inAppPurchasesV2",
+            "promotedPurchases", "appEvents", "reviewSubmissions", "subscriptionGracePeriod",
+            "gameCenterDetail", "appStoreVersionExperimentsV2", "androidToIosAppMappingDetails"
+        ]
+        let values: [String]
+        if let string = value.stringValue {
+            values = string.split(separator: ",", omittingEmptySubsequences: false).map(String.init)
+        } else if let array = value.arrayValue {
+            let strings = array.compactMap(\.stringValue)
+            guard strings.count == array.count else {
+                throw AppsMetadataArgumentError("include must contain only strings")
+            }
+            values = strings
+        } else {
+            throw AppsMetadataArgumentError("include must be a string or array of strings")
+        }
+        guard !values.isEmpty, values.allSatisfy({ !$0.isEmpty }) else {
+            throw AppsMetadataArgumentError("include must contain at least one non-empty value")
+        }
+        guard Set(values).count == values.count else {
+            throw AppsMetadataArgumentError("include must not contain duplicate values")
+        }
+        if let invalid = values.first(where: { !allowedValues.contains($0) }) {
+            throw AppsMetadataArgumentError("Unsupported include value '\(invalid)'")
+        }
+        return values.joined(separator: ",")
+    }
+
     private func addStringListQueryArguments(
         _ mappings: [(toolField: String, appleName: String)],
         from arguments: [String: Value],
@@ -230,15 +305,56 @@ extension AppsWorker {
         }
     }
 
+    private func validatedLimit(
+        _ value: Value?,
+        field: String = "limit",
+        maximum: Int = 200,
+        defaultValue: Int
+    ) throws -> Int {
+        guard let value else { return defaultValue }
+        guard let limit = value.intValue, (1...maximum).contains(limit) else {
+            throw AppsMetadataArgumentError("'\(field)' must be an integer between 1 and \(maximum)")
+        }
+        return limit
+    }
+
+    private func validateAcceptedAppsMutationResource(
+        type: String,
+        id: String,
+        expectedType: String,
+        expectedID: String? = nil,
+        method: String,
+        statusCode: Int,
+        context: String
+    ) throws {
+        do {
+            try ASCNonIdempotentWriteRecovery.validateResourceIdentity(
+                type: type,
+                id: id,
+                expectedType: expectedType,
+                expectedID: expectedID,
+                context: context
+            )
+        } catch {
+            let cause = error as? ASCError ?? .parsing(Redactor.redact(error.localizedDescription))
+            throw ASCError.mutationCommittedUnverified(
+                method: method,
+                expectedStatusCode: statusCode,
+                actualStatusCode: statusCode,
+                cause: cause
+            )
+        }
+    }
+
     
     /// Lists all apps from App Store Connect with optional filtering
     /// - Returns: JSON array of apps with their IDs, names, bundle IDs, and metadata
     /// - Throws: CallTool.Result with error if API call fails
     public func listApps(_ params: CallTool.Parameters) async throws -> CallTool.Result {
         let arguments = params.arguments ?? [:]
-        let effectiveLimit = min(max(arguments["limit"]?.intValue ?? 25, 1), 200)
 
         do {
+            let effectiveLimit = try validatedLimit(arguments["limit"], defaultValue: 25)
             let response: ASCAppsResponse
 
             // Check for pagination next_url
@@ -286,9 +402,10 @@ extension AppsWorker {
                     "primaryLocale": app.locale,
                     "type": app.type,
                     "attributes": [
-                        "availableInNewTerritories": (app.attributes?.availableInNewTerritories).jsonSafe,
+                        "accessibilityUrl": (app.attributes?.accessibilityUrl).jsonSafe,
                         "contentRightsDeclaration": (app.attributes?.contentRightsDeclaration).jsonSafe,
-                        "isOrEverWasMadeForKids": (app.attributes?.isOrEverWasMadeForKids).jsonSafe
+                        "isOrEverWasMadeForKids": (app.attributes?.isOrEverWasMadeForKids).jsonSafe,
+                        "streamlinedPurchasingEnabled": (app.attributes?.streamlinedPurchasingEnabled).jsonSafe
                     ]
                 ] as [String: Any]
             }
@@ -297,7 +414,7 @@ extension AppsWorker {
                 "success": true,
                 "apps": apps,
                 "count": response.data.count,
-                "totalCount": response.totalCount,
+                "totalCount": response.totalCount.jsonSafe,
                 "hasNextPage": response.hasNextPage,
                 "links": [
                     "self": response.links.`self`,
@@ -337,9 +454,7 @@ extension AppsWorker {
             // Parameters for including additional information
             var queryParams: [String: String] = [:]
             
-            if let arguments = params.arguments,
-               let includeValue = arguments["include"],
-               let include = includeValue.stringValue {
+            if let include = try appDetailsIncludeValue(arguments["include"]) {
                 queryParams["include"] = include
             }
             
@@ -360,9 +475,10 @@ extension AppsWorker {
                     "sku": app.appSKU,
                     "primaryLocale": app.locale,
                     "attributes": [
-                        "availableInNewTerritories": (app.attributes?.availableInNewTerritories).jsonSafe,
+                        "accessibilityUrl": (app.attributes?.accessibilityUrl).jsonSafe,
                         "contentRightsDeclaration": (app.attributes?.contentRightsDeclaration).jsonSafe,
                         "isOrEverWasMadeForKids": (app.attributes?.isOrEverWasMadeForKids).jsonSafe,
+                        "streamlinedPurchasingEnabled": (app.attributes?.streamlinedPurchasingEnabled).jsonSafe,
                         "subscriptionStatusUrl": (app.attributes?.subscriptionStatusUrl).jsonSafe,
                         "subscriptionStatusUrlVersion": (app.attributes?.subscriptionStatusUrlVersion).jsonSafe,
                         "subscriptionStatusUrlForSandbox": (app.attributes?.subscriptionStatusUrlForSandbox).jsonSafe,
@@ -541,6 +657,10 @@ extension AppsWorker {
         let platformFilter = arguments["platform"]?.stringValue
         let includeMedia = arguments["include_media"]?.boolValue ?? false
 
+        guard !includeMedia || locale != nil else {
+            return MCPResult.error("'include_media' requires an explicit 'locale'")
+        }
+
         do {
             // Step 1: Resolve version
             let resolvedVersion: (id: String, versionString: String, appVersionState: String?, appStoreState: String?, platform: String?)
@@ -626,30 +746,32 @@ extension AppsWorker {
                 )
             }
 
-            // Step 2: Fetch localizations
-            var localizationParams: [String: String] = [
-                "fields[appStoreVersionLocalizations]": "description,locale,keywords,marketingUrl,promotionalText,supportUrl,whatsNew,appStoreVersion",
-                "limit": "200"
-            ]
-            if let locale = locale {
-                localizationParams["filter[locale]"] = locale
-            }
-
-            let localizationsResponse: ASCAppStoreVersionLocalizationsResponse = try await httpClient.get(
-                "/v1/appStoreVersions/\(try ASCPathSegment.encode(resolvedVersion.id))/appStoreVersionLocalizations",
-                parameters: localizationParams,
-                as: ASCAppStoreVersionLocalizationsResponse.self
+            let localizations = try await fetchAllMetadataLocalizations(
+                versionId: resolvedVersion.id,
+                locale: locale
             )
 
             // Check if locale filter returned empty results
-            if let locale = locale, localizationsResponse.data.isEmpty {
+            if let locale = locale, localizations.isEmpty {
                 return MCPResult.error(
                     "Localization '\(locale)' not found for version \(resolvedVersion.versionString)"
                 )
             }
+            if let locale, localizations.count != 1 {
+                return MCPResult.error(
+                    "Apple returned \(localizations.count) localizations for exact locale '\(locale)'"
+                )
+            }
 
-            guard localizationsResponse.data.allSatisfy({ localizationBelongsToVersion($0, versionId: resolvedVersion.id) }) else {
+            guard localizations.allSatisfy({
+                $0.type == "appStoreVersionLocalizations" &&
+                localizationBelongsToVersion($0, versionId: resolvedVersion.id)
+            }) else {
                 return MCPResult.error("Apple returned a localization outside version '\(resolvedVersion.id)' context")
+            }
+            if let locale,
+               localizations.contains(where: { $0.attributes?.locale != locale }) {
+                return MCPResult.error("Apple returned a localization that does not match locale '\(locale)'")
             }
 
             let versionInfo: [String: Any] = [
@@ -680,7 +802,7 @@ extension AppsWorker {
 
             if locale != nil {
                 // Single locale mode
-                let loc = localizationsResponse.data[0]
+                let loc = localizations[0]
                 result["localization"] = formatLocalization(loc)
 
                 // Step 3: Fetch media if requested
@@ -691,7 +813,7 @@ extension AppsWorker {
                 }
             } else {
                 // All locales mode
-                let formatted = localizationsResponse.data
+                let formatted = localizations
                     .sorted { $0.locale < $1.locale }
                     .map { formatLocalization($0) }
                 result["totalLocalizations"] = formatted.count
@@ -877,6 +999,15 @@ extension AppsWorker {
             guard let localization = localizationsResponse.data.first else {
                 return MCPResult.error("Localization '\(locale)' not found for version \(version.version)")
             }
+            guard localizationsResponse.data.count == 1 else {
+                return MCPResult.error("Apple returned \(localizationsResponse.data.count) localizations for exact locale '\(locale)'")
+            }
+            guard localization.type == "appStoreVersionLocalizations" else {
+                return MCPResult.error("Apple returned unexpected resource type '\(localization.type)' for localization '\(locale)'")
+            }
+            guard localization.attributes?.locale == locale else {
+                return MCPResult.error("Apple returned localization '\(localization.id)' for a different locale")
+            }
             guard localizationBelongsToVersion(localization, versionId: versionId) else {
                 return MCPResult.error("Localization '\(localization.id)' does not belong to version '\(versionId)'")
             }
@@ -909,10 +1040,19 @@ extension AppsWorker {
                 attributes: attributes
             )
             
-            let _: ASCAppStoreVersionLocalizationUpdateResponse = try await httpClient.patch(
+            let response: ASCAppStoreVersionLocalizationUpdateResponse = try await httpClient.patch(
                 "/v1/appStoreVersionLocalizations/\(try ASCPathSegment.encode(localization.id))",
                 body: updateRequest,
                 as: ASCAppStoreVersionLocalizationUpdateResponse.self
+            )
+            try validateAcceptedAppsMutationResource(
+                type: response.data.type,
+                id: response.data.id,
+                expectedType: "appStoreVersionLocalizations",
+                expectedID: localization.id,
+                method: "PATCH",
+                statusCode: 200,
+                context: "Apple metadata update response"
             )
             
             // 5. Format result
@@ -953,7 +1093,7 @@ extension AppsWorker {
             )
             
         } catch {
-            return MCPResult.error("Failed to update metadata: \(error.localizedDescription)")
+            return MCPResult.error(error, prefix: "Failed to update metadata")
         }
     }
     
@@ -995,6 +1135,14 @@ extension AppsWorker {
                 body: request,
                 as: ASCAppStoreVersionLocalizationResponse.self
             )
+            try validateAcceptedAppsMutationResource(
+                type: response.data.type,
+                id: response.data.id,
+                expectedType: "appStoreVersionLocalizations",
+                method: "POST",
+                statusCode: 201,
+                context: "Apple localization create response"
+            )
 
             let loc = response.data
             var locData: [String: Any] = [
@@ -1016,10 +1164,7 @@ extension AppsWorker {
             return MCPResult.jsonObject(result)
 
         } catch {
-            return CallTool.Result(
-                content: [MCPContent.text("Error: Failed to create localization: \(error.localizedDescription)")],
-                isError: true
-            )
+            return MCPResult.error(error, prefix: "Failed to create localization")
         }
     }
 
@@ -1116,7 +1261,7 @@ extension AppsWorker {
 
         do {
             let localizationFields = "locale,description,whatsNew,keywords,promotionalText,supportUrl,marketingUrl,appStoreVersion"
-            let effectiveLimit = min(max(arguments["limit"]?.intValue ?? 200, 1), 200)
+            let effectiveLimit = try validatedLimit(arguments["limit"], defaultValue: 200)
             var localizationParameters = [
                 "fields[appStoreVersionLocalizations]": localizationFields,
                 "limit": String(effectiveLimit)
@@ -1191,11 +1336,21 @@ extension AppsWorker {
             // Sort by locale for convenience
             localizations.sort { ($0["locale"] as? String ?? "") < ($1["locale"] as? String ?? "") }
 
+            let totalLocalizations: Any
+            if let total = localizationsResponse.meta?.paging?.total {
+                totalLocalizations = total
+            } else if localizationsResponse.links?.next == nil {
+                totalLocalizations = localizations.count
+            } else {
+                totalLocalizations = NSNull()
+            }
+
             var result: [String: Any] = [
                 "success": true,
                 "appId": appId,
                 "versionId": versionId,
-                "totalLocalizations": localizations.count,
+                "count": localizations.count,
+                "totalLocalizations": totalLocalizations,
                 "localizations": localizations
             ]
 

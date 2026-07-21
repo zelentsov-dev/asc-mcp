@@ -58,7 +58,11 @@ extension AppInfoWorker {
 
         do {
             let path = "/v1/apps/\(try ASCPathSegment.encode(appId))/appInfos"
-            var query = ["limit": String(boundedLimit(arguments["limit"], maximum: 200, defaultValue: 25))]
+            var query = [
+                "limit": String(
+                    try boundedLimit(arguments["limit"], field: "limit", maximum: 200, defaultValue: 25)
+                )
+            ]
             if let includes = try stringList(
                 arguments["include"],
                 field: "include",
@@ -68,7 +72,12 @@ extension AppInfoWorker {
             }
             if arguments["localizations_limit"] != nil {
                 query["limit[appInfoLocalizations]"] = String(
-                    boundedLimit(arguments["localizations_limit"], maximum: 50, defaultValue: 50)
+                    try boundedLimit(
+                        arguments["localizations_limit"],
+                        field: "localizations_limit",
+                        maximum: 50,
+                        defaultValue: 50
+                    )
                 )
             }
 
@@ -133,7 +142,12 @@ extension AppInfoWorker {
             }
             if arguments["localizations_limit"] != nil {
                 queryParams["limit[appInfoLocalizations]"] = String(
-                    boundedLimit(arguments["localizations_limit"], maximum: 50, defaultValue: 50)
+                    try boundedLimit(
+                        arguments["localizations_limit"],
+                        field: "localizations_limit",
+                        maximum: 50,
+                        defaultValue: 50
+                    )
                 )
             }
 
@@ -246,6 +260,15 @@ extension AppInfoWorker {
                 body: request,
                 as: ASCAppInfoResponse.self
             )
+            try validateAcceptedAppInfoMutationResource(
+                type: response.data.type,
+                id: response.data.id,
+                expectedType: "appInfos",
+                expectedID: infoId,
+                method: "PATCH",
+                statusCode: 200,
+                context: "Apple app info update response"
+            )
 
             let result = [
                 "success": true,
@@ -255,10 +278,7 @@ extension AppInfoWorker {
             return MCPResult.jsonObject(result)
 
         } catch {
-            return CallTool.Result(
-                content: [MCPContent.text("Failed to update app info: \(error.localizedDescription)")],
-                isError: true
-            )
+            return MCPResult.error(error, prefix: "Failed to update app info")
         }
     }
 
@@ -276,7 +296,11 @@ extension AppInfoWorker {
 
         do {
             let path = "/v1/appInfos/\(try ASCPathSegment.encode(infoId))/appInfoLocalizations"
-            var query = ["limit": String(boundedLimit(arguments["limit"], maximum: 200, defaultValue: 25))]
+            var query = [
+                "limit": String(
+                    try boundedLimit(arguments["limit"], field: "limit", maximum: 200, defaultValue: 25)
+                )
+            ]
             if let locales = try stringList(arguments["locale"], field: "locale") {
                 query["filter[locale]"] = locales.joined(separator: ",")
             }
@@ -379,6 +403,15 @@ extension AppInfoWorker {
                 body: request,
                 as: ASCAppInfoLocalizationResponse.self
             )
+            try validateAcceptedAppInfoMutationResource(
+                type: response.data.type,
+                id: response.data.id,
+                expectedType: "appInfoLocalizations",
+                expectedID: localizationId,
+                method: "PATCH",
+                statusCode: 200,
+                context: "Apple app info localization update response"
+            )
 
             let localization = formatAppInfoLocalization(response.data)
 
@@ -390,7 +423,7 @@ extension AppInfoWorker {
             return MCPResult.jsonObject(result)
 
         } catch {
-            return MCPResult.error("Failed to update app info localization: \(error.localizedDescription)")
+            return MCPResult.error(error, prefix: "Failed to update app info localization")
         }
     }
 
@@ -441,6 +474,14 @@ extension AppInfoWorker {
                 body: request,
                 as: ASCAppInfoLocalizationResponse.self
             )
+            try validateAcceptedAppInfoMutationResource(
+                type: response.data.type,
+                id: response.data.id,
+                expectedType: "appInfoLocalizations",
+                method: "POST",
+                statusCode: 201,
+                context: "Apple app info localization create response"
+            )
 
             let localization = formatAppInfoLocalization(response.data)
 
@@ -452,7 +493,7 @@ extension AppInfoWorker {
             return MCPResult.jsonObject(result)
 
         } catch {
-            return MCPResult.error("Failed to create app info localization: \(error.localizedDescription)")
+            return MCPResult.error(error, prefix: "Failed to create app info localization")
         }
     }
 
@@ -572,7 +613,18 @@ extension AppInfoWorker {
                 "/v1/endUserLicenseAgreements",
                 body: bodyData
             )
-            let response = try JSONDecoder().decode(ASCEULAResponse.self, from: responseData)
+            let response: ASCEULAResponse
+            do {
+                response = try JSONDecoder().decode(ASCEULAResponse.self, from: responseData)
+                try ASCNonIdempotentWriteRecovery.validateResourceIdentity(
+                    type: response.data.type,
+                    id: response.data.id,
+                    expectedType: "endUserLicenseAgreements",
+                    context: "Apple EULA create response"
+                )
+            } catch {
+                throw committedUnverifiedAppInfoMutation(error, method: "POST", statusCode: 201)
+            }
 
             let result: [String: Any] = [
                 "success": true,
@@ -583,10 +635,7 @@ extension AppInfoWorker {
             return MCPResult.jsonObject(result)
 
         } catch {
-            return CallTool.Result(
-                content: [MCPContent.text("Failed to create EULA: \(error.localizedDescription)")],
-                isError: true
-            )
+            return MCPResult.error(error, prefix: "Failed to create EULA")
         }
     }
 
@@ -646,7 +695,19 @@ extension AppInfoWorker {
                 "/v1/endUserLicenseAgreements/\(try ASCPathSegment.encode(eulaId))",
                 body: bodyData
             )
-            let response = try JSONDecoder().decode(ASCEULAResponse.self, from: responseData)
+            let response: ASCEULAResponse
+            do {
+                response = try JSONDecoder().decode(ASCEULAResponse.self, from: responseData)
+                try ASCNonIdempotentWriteRecovery.validateResourceIdentity(
+                    type: response.data.type,
+                    id: response.data.id,
+                    expectedType: "endUserLicenseAgreements",
+                    expectedID: eulaId,
+                    context: "Apple EULA update response"
+                )
+            } catch {
+                throw committedUnverifiedAppInfoMutation(error, method: "PATCH", statusCode: 200)
+            }
 
             let result: [String: Any] = [
                 "success": true,
@@ -657,10 +718,7 @@ extension AppInfoWorker {
             return MCPResult.jsonObject(result)
 
         } catch {
-            return CallTool.Result(
-                content: [MCPContent.text("Failed to update EULA: \(error.localizedDescription)")],
-                isError: true
-            )
+            return MCPResult.error(error, prefix: "Failed to update EULA")
         }
     }
 
@@ -818,8 +876,53 @@ extension AppInfoWorker {
         return values
     }
 
-    private func boundedLimit(_ value: Value?, maximum: Int, defaultValue: Int) -> Int {
-        min(max(value?.intValue ?? defaultValue, 1), maximum)
+    private func boundedLimit(
+        _ value: Value?,
+        field: String,
+        maximum: Int,
+        defaultValue: Int
+    ) throws -> Int {
+        guard let value else { return defaultValue }
+        guard let limit = value.intValue, (1...maximum).contains(limit) else {
+            throw AppInfoArgumentError("'\(field)' must be an integer between 1 and \(maximum)")
+        }
+        return limit
+    }
+
+    private func validateAcceptedAppInfoMutationResource(
+        type: String,
+        id: String,
+        expectedType: String,
+        expectedID: String? = nil,
+        method: String,
+        statusCode: Int,
+        context: String
+    ) throws {
+        do {
+            try ASCNonIdempotentWriteRecovery.validateResourceIdentity(
+                type: type,
+                id: id,
+                expectedType: expectedType,
+                expectedID: expectedID,
+                context: context
+            )
+        } catch {
+            throw committedUnverifiedAppInfoMutation(error, method: method, statusCode: statusCode)
+        }
+    }
+
+    private func committedUnverifiedAppInfoMutation(
+        _ error: Error,
+        method: String,
+        statusCode: Int
+    ) -> ASCError {
+        let cause = error as? ASCError ?? .parsing(Redactor.redact(error.localizedDescription))
+        return .mutationCommittedUnverified(
+            method: method,
+            expectedStatusCode: statusCode,
+            actualStatusCode: statusCode,
+            cause: cause
+        )
     }
 
     private func nullableString(_ value: Value?, field: String) throws -> JSONValue? {

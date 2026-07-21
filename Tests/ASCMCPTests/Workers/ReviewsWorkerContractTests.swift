@@ -17,6 +17,12 @@ struct ReviewsWorkerContractTests {
             #expect(properties["ratings"]?["type"] == .string("array"))
             #expect(properties["territories"]?["type"] == .string("array"))
             #expect(properties["has_published_response"]?["type"] == .string("boolean"))
+            let territoryPattern = try #require(properties["territory"]?["pattern"]?.stringValue)
+            #expect("USA".range(of: territoryPattern, options: .regularExpression) != nil)
+            #expect("usa".range(of: territoryPattern, options: .regularExpression) != nil)
+            #expect("ZZZ".range(of: territoryPattern, options: .regularExpression) == nil)
+            let territoryItems = try reviewsContractObject(properties["territories"]?["items"])
+            #expect(territoryItems["pattern"]?.stringValue == territoryPattern)
             let sort = try #require(properties["sort"])
             let sortVariants = try reviewsContractArray(sort["oneOf"])
             #expect(sortVariants.count == 2)
@@ -37,6 +43,11 @@ struct ReviewsWorkerContractTests {
             try #require(tools.first { $0.name == "reviews_stats" })
         )
         #expect(stats["has_published_response"]?["type"] == .string("boolean"))
+        let statsTerritoryPattern = try #require(stats["territory"]?["pattern"]?.stringValue)
+        #expect("all".range(of: statsTerritoryPattern, options: .regularExpression) != nil)
+        #expect("ALL".range(of: statsTerritoryPattern, options: .regularExpression) != nil)
+        #expect("usa".range(of: statsTerritoryPattern, options: .regularExpression) != nil)
+        #expect("ZZZ".range(of: statsTerritoryPattern, options: .regularExpression) == nil)
 
         let summarizations = try reviewsContractProperties(
             try #require(tools.first { $0.name == "reviews_summarizations" })
@@ -86,6 +97,35 @@ struct ReviewsWorkerContractTests {
         #expect(response["last_modified_date"] == .string("2026-07-19T12:34:56Z"))
         #expect(response["state"] == .string("PUBLISHED"))
         #expect(response["review_id"] == .string("review-1"))
+    }
+
+    @Test("review pages accept optional totals and sparse customer review attributes")
+    func listAcceptsOptionalPagingTotalAndSparseAttributes() async throws {
+        let transport = TestHTTPTransport(responses: [
+            .init(statusCode: 200, body: """
+            {
+              "data": [{"type":"customerReviews","id":"review-sparse"}],
+              "links": {"self":"https://api.example.test/v1/apps/app-1/customerReviews"},
+              "meta": {"paging":{"limit":50}}
+            }
+            """)
+        ])
+        let worker = try await reviewsContractWorker(transport: transport)
+
+        let result = try await worker.handleTool(CallTool.Parameters(
+            name: "reviews_list",
+            arguments: ["app_id": .string("app-1")]
+        ))
+
+        #expect(result.isError != true)
+        let payload = try reviewsContractObject(result.structuredContent)
+        #expect(payload["total"] == nil)
+        let review = try reviewsContractObject(try #require(reviewsContractArray(payload["reviews"]).first))
+        #expect(review["id"] == .string("review-sparse"))
+        #expect(review["rating"] == nil)
+        #expect(review["reviewer"] == nil)
+        #expect(review["created_date"] == nil)
+        #expect(review["has_response"] == .bool(false))
     }
 
     @Test("version reviews use the version relationship endpoint and current query controls")
@@ -245,6 +285,85 @@ struct ReviewsWorkerContractTests {
             #expect(result.isError == true)
         }
         #expect(await transport.requestCount() == 0)
+    }
+
+    @Test("review territory filters reject codes outside Apple's enum")
+    func territoryFiltersRejectUnsupportedCodes() async throws {
+        let transport = TestHTTPTransport(responses: [])
+        let worker = try await reviewsContractWorker(transport: transport)
+        let calls = [
+            CallTool.Parameters(
+                name: "reviews_list",
+                arguments: ["app_id": .string("app-1"), "territory": .string("ZZZ")]
+            ),
+            CallTool.Parameters(
+                name: "reviews_list_for_version",
+                arguments: [
+                    "version_id": .string("version-1"),
+                    "territories": .array([.string("USA"), .string("ZZZ")])
+                ]
+            ),
+            CallTool.Parameters(
+                name: "reviews_stats",
+                arguments: ["app_id": .string("app-1"), "territory": .string("ZZZ")]
+            )
+        ]
+
+        for call in calls {
+            let result = try await worker.handleTool(call)
+            #expect(result.isError == true)
+        }
+        #expect(await transport.requestCount() == 0)
+    }
+
+    @Test("developer responses are not narrowed by an unsupported local length cap")
+    func createResponseDoesNotApplyLocalLengthCap() async throws {
+        let transport = TestHTTPTransport(responses: [
+            .init(statusCode: 201, body: reviewsContractResponseResource())
+        ])
+        let worker = try await reviewsContractWorker(transport: transport)
+        let responseBody = String(repeating: "a", count: 5_001)
+
+        let result = try await worker.handleTool(CallTool.Parameters(
+            name: "reviews_create_response",
+            arguments: [
+                "review_id": .string("review-1"),
+                "response_body": .string(responseBody)
+            ]
+        ))
+
+        #expect(result.isError != true)
+        let request = try #require(await transport.recordedRequests().first)
+        let body = try #require(request.httpBody)
+        let root = try #require(JSONSerialization.jsonObject(with: body) as? [String: Any])
+        let data = try #require(root["data"] as? [String: Any])
+        let attributes = try #require(data["attributes"] as? [String: Any])
+        #expect(attributes["responseBody"] as? String == responseBody)
+
+        let manifest = try ASCOperationManifestBundle.loadBundled()
+        let mapping = try #require(manifest.mapping(for: "reviews_create_response"))
+        #expect(mapping.note?.contains("5000") == false)
+    }
+
+    @Test("accepted response create decode failure is committed unverified")
+    func createResponseDecodeFailurePreservesCommitState() async throws {
+        let transport = TestHTTPTransport(responses: [
+            .init(statusCode: 201, body: #"{"data":"invalid"}"#)
+        ])
+        let worker = try await reviewsContractWorker(transport: transport)
+
+        let result = try await worker.handleTool(.init(
+            name: "reviews_create_response",
+            arguments: [
+                "review_id": .string("review-1"),
+                "response_body": .string("Thank you")
+            ]
+        ))
+
+        let payload = try reviewsContractObject(result.structuredContent)
+        #expect(result.isError == true)
+        #expect(payload["operationCommitState"] == .string("committed_unverified"))
+        #expect(payload["retrySafe"] == .bool(false))
     }
 
     @Test("reviews manifest records compound response lookup and multi-value sort")

@@ -13,7 +13,12 @@ struct MetricsModelTests {
         #expect(insight.metricCategory == "STORAGE")
         #expect(insight.populations?.first?.device == "iPhone15,2")
 
-        let dataset = try #require(response.productData?.first?.metricCategories?.first?.metrics?.first?.datasets?.first)
+        let metric = try #require(response.productData?.first?.metricCategories?.first?.metrics?.first)
+        let goalKey = try #require(metric.goalKeys?.first)
+        #expect(goalKey.goalKey == "storageP90")
+        #expect(goalKey.lowerBound == 0)
+        #expect(goalKey.upperBound == 200)
+        let dataset = try #require(metric.datasets?.first)
         let point = try #require(dataset.points?.first)
         #expect(point.errorMargin == 2.25)
         #expect(point.goal == "Less than 200 MB")

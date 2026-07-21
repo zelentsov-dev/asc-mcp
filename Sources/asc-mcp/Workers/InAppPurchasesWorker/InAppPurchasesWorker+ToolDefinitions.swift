@@ -105,12 +105,12 @@ extension InAppPurchasesWorker {
                         ])
                     ]),
                     "review_note": .object([
-                        "type": .string("string"),
-                        "description": .string("Notes for App Review")
+                        "type": .array([.string("string"), .string("null")]),
+                        "description": .string("Notes for App Review; pass null to preserve Apple's explicit nullable value")
                     ]),
                     "family_sharable": .object([
-                        "type": .string("boolean"),
-                        "description": .string("Enable Family Sharing")
+                        "type": .array([.string("boolean"), .string("null")]),
+                        "description": .string("Enable Family Sharing; pass null to preserve Apple's explicit nullable value")
                     ])
                 ]),
                 "required": .array([.string("app_id"), .string("name"), .string("product_id"), .string("iap_type")])
@@ -124,22 +124,24 @@ extension InAppPurchasesWorker {
             description: "Update an existing in-app purchase",
             inputSchema: .object([
                 "type": .string("object"),
+                "additionalProperties": .bool(false),
+                "minProperties": .int(2),
                 "properties": .object([
                     "iap_id": .object([
                         "type": .string("string"),
                         "description": .string("In-app purchase ID")
                     ]),
                     "name": .object([
-                        "type": .string("string"),
-                        "description": .string("New reference name")
+                        "type": .array([.string("string"), .string("null")]),
+                        "description": .string("New reference name, or null to clear Apple's nullable value")
                     ]),
                     "review_note": .object([
-                        "type": .string("string"),
-                        "description": .string("Notes for App Review")
+                        "type": .array([.string("string"), .string("null")]),
+                        "description": .string("Notes for App Review, or null to clear")
                     ]),
                     "family_sharable": .object([
-                        "type": .string("boolean"),
-                        "description": .string("Enable Family Sharing")
+                        "type": .array([.string("boolean"), .string("null")]),
+                        "description": .string("Enable Family Sharing, or null to clear Apple's nullable value")
                     ])
                 ]),
                 "required": .array([.string("iap_id")])
@@ -204,7 +206,9 @@ extension InAppPurchasesWorker {
                     ]),
                     "limit": .object([
                         "type": .string("integer"),
-                        "description": .string("Max results (default: 25, max: 200)")
+                        "description": .string("Max results (default: 25, max: 200)"),
+                        "minimum": .int(1),
+                        "maximum": .int(200)
                     ]),
                     "filter_reference_name": iapStringListSchema("Filter by one or more exact group reference names"),
                     "filter_subscription_state": iapEnumListSchema(
@@ -399,7 +403,9 @@ extension InAppPurchasesWorker {
                     ]),
                     "limit": .object([
                         "type": .string("integer"),
-                        "description": .string("Max results (default: 50, max: 8000)")
+                        "description": .string("Max results (default: 50, max: 8000)"),
+                        "minimum": .int(1),
+                        "maximum": .int(8000)
                     ]),
                     "next_url": .object([
                         "type": .string("string"),
@@ -673,7 +679,9 @@ extension InAppPurchasesWorker {
                     ]),
                     "limit": .object([
                         "type": .string("integer"),
-                        "description": .string("Max results (default: 25, max: 200)")
+                        "description": .string("Max results (default: 25, max: 200)"),
+                        "minimum": .int(1),
+                        "maximum": .int(200)
                     ]),
                     "next_url": .object([
                         "type": .string("string"),

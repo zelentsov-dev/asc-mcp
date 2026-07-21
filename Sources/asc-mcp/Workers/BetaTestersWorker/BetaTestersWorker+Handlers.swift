@@ -9,9 +9,19 @@ extension BetaTestersWorker {
     func listBetaTesters(_ params: CallTool.Parameters) async throws -> CallTool.Result {
         let arguments = params.arguments ?? [:]
 
+        let limit: Int
+        if let value = arguments["limit"] {
+            guard let parsed = value.intValue, (1...200).contains(parsed) else {
+                return MCPResult.error("'limit' must be an integer from 1 through 200")
+            }
+            limit = parsed
+        } else {
+            limit = 25
+        }
+
         do {
             let response: ASCBetaTestersResponse
-            var queryParams: [String: String] = [:]
+            var queryParams: [String: String] = ["limit": String(limit)]
 
             if let appIdValue = arguments["app_id"],
                let appId = appIdValue.stringValue {
@@ -26,13 +36,6 @@ extension BetaTestersWorker {
             applyStringList(arguments["tester_ids"], as: "filter[id]", to: &queryParams)
             if let sort = arguments["sort"]?.stringValue {
                 queryParams["sort"] = sort
-            }
-
-            if let limitValue = arguments["limit"],
-               let limit = limitValue.intValue {
-                queryParams["limit"] = String(min(max(limit, 1), 200))
-            } else {
-                queryParams["limit"] = "25"
             }
 
             // Check for pagination URL
@@ -90,17 +93,26 @@ extension BetaTestersWorker {
             )
         }
 
+        let limit: Int
+        if let value = arguments["limit"] {
+            guard let parsed = value.intValue, (1...200).contains(parsed) else {
+                return MCPResult.error("'limit' must be an integer from 1 through 200")
+            }
+            limit = parsed
+        } else {
+            limit = 25
+        }
+
         do {
             var queryParams: [String: String] = [
-                "filter[email]": email
+                "filter[email]": email,
+                "limit": String(limit)
             ]
 
             if let appIdValue = arguments["app_id"],
                let appId = appIdValue.stringValue {
                 queryParams["filter[apps]"] = appId
             }
-            queryParams["limit"] = String(min(max(arguments["limit"]?.intValue ?? 25, 1), 200))
-
             let response: ASCBetaTestersResponse
             if let nextUrl = try paginationURL(from: arguments["next_url"]) {
                 response = try await httpClient.getPage(
@@ -188,7 +200,7 @@ extension BetaTestersWorker {
                     case .betaGroup(let group):
                         includedGroups.append([
                             "id": group.id,
-                            "name": group.attributes.name.jsonSafe
+                            "name": (group.attributes?.name).jsonSafe
                         ])
                     case .build(let build):
                         includedBuilds.append([
@@ -237,6 +249,10 @@ extension BetaTestersWorker {
                 content: [MCPContent.text("Required parameter 'email' is missing")],
                 isError: true
             )
+        }
+
+        guard isValidEmail(email) else {
+            return MCPResult.error("'email' must be a valid email address")
         }
 
         let groupIds: [String]?
@@ -303,10 +319,7 @@ extension BetaTestersWorker {
             return MCPResult.jsonObject(result)
 
         } catch {
-            return CallTool.Result(
-                content: [MCPContent.text("Failed to create beta tester: \(error.localizedDescription)")],
-                isError: true
-            )
+            return MCPResult.error(error, prefix: "Failed to create beta tester")
         }
     }
 
@@ -356,10 +369,19 @@ extension BetaTestersWorker {
             )
         }
 
+        let limit: Int
+        if let value = arguments["limit"] {
+            guard let parsed = value.intValue, (1...200).contains(parsed) else {
+                return MCPResult.error("'limit' must be an integer from 1 through 200")
+            }
+            limit = parsed
+        } else {
+            limit = 25
+        }
+
         do {
             let endpoint = "/v1/betaTesters/\(try ASCPathSegment.encode(testerId))/apps"
-            let limit = arguments["limit"]?.intValue ?? 25
-            let queryParams = ["limit": String(min(max(limit, 1), 200))]
+            let queryParams = ["limit": String(limit)]
             let response: ASCAppsResponse
 
             // Check for pagination URL
@@ -448,10 +470,7 @@ extension BetaTestersWorker {
             return MCPResult.jsonObject(result)
 
         } catch {
-            return CallTool.Result(
-                content: [MCPContent.text("Failed to send invitation: \(error.localizedDescription)")],
-                isError: true
-            )
+            return MCPResult.error(error, prefix: "Failed to send invitation")
         }
     }
 
@@ -470,9 +489,11 @@ extension BetaTestersWorker {
         }
 
         let groupIds = groupIdsArray.compactMap { $0.stringValue }
-        guard !groupIds.isEmpty else {
+        guard !groupIds.isEmpty,
+              groupIds.count == groupIdsArray.count,
+              groupIds.allSatisfy({ !$0.isEmpty }) else {
             return CallTool.Result(
-                content: [MCPContent.text("'group_ids' must contain at least one group ID")],
+                content: [MCPContent.text("'group_ids' must contain only non-empty group ID strings")],
                 isError: true
             )
         }
@@ -485,7 +506,8 @@ extension BetaTestersWorker {
             let bodyData = try JSONEncoder().encode(request)
             _ = try await httpClient.post(
                 "/v1/betaTesters/\(try ASCPathSegment.encode(betaTesterId))/relationships/betaGroups",
-                body: bodyData
+                body: bodyData,
+                expectedStatusCode: 204
             )
 
             let result: [String: Any] = [
@@ -496,10 +518,7 @@ extension BetaTestersWorker {
             return MCPResult.jsonObject(result)
 
         } catch {
-            return CallTool.Result(
-                content: [MCPContent.text("Failed to add tester to groups: \(error.localizedDescription)")],
-                isError: true
-            )
+            return MCPResult.error(error, prefix: "Failed to add tester to groups")
         }
     }
 
@@ -518,9 +537,11 @@ extension BetaTestersWorker {
         }
 
         let groupIds = groupIdsArray.compactMap { $0.stringValue }
-        guard !groupIds.isEmpty else {
+        guard !groupIds.isEmpty,
+              groupIds.count == groupIdsArray.count,
+              groupIds.allSatisfy({ !$0.isEmpty }) else {
             return CallTool.Result(
-                content: [MCPContent.text("'group_ids' must contain at least one group ID")],
+                content: [MCPContent.text("'group_ids' must contain only non-empty group ID strings")],
                 isError: true
             )
         }
@@ -563,9 +584,11 @@ extension BetaTestersWorker {
         }
 
         let buildIds = buildIdsArray.compactMap { $0.stringValue }
-        guard !buildIds.isEmpty else {
+        guard !buildIds.isEmpty,
+              buildIds.count == buildIdsArray.count,
+              buildIds.allSatisfy({ !$0.isEmpty }) else {
             return CallTool.Result(
-                content: [MCPContent.text("'build_ids' must contain at least one build ID")],
+                content: [MCPContent.text("'build_ids' must contain only non-empty build ID strings")],
                 isError: true
             )
         }
@@ -578,7 +601,8 @@ extension BetaTestersWorker {
             let bodyData = try JSONEncoder().encode(request)
             _ = try await httpClient.post(
                 "/v1/betaTesters/\(try ASCPathSegment.encode(betaTesterId))/relationships/builds",
-                body: bodyData
+                body: bodyData,
+                expectedStatusCode: 204
             )
 
             let result: [String: Any] = [
@@ -589,10 +613,7 @@ extension BetaTestersWorker {
             return MCPResult.jsonObject(result)
 
         } catch {
-            return CallTool.Result(
-                content: [MCPContent.text("Failed to add builds to tester: \(error.localizedDescription)")],
-                isError: true
-            )
+            return MCPResult.error(error, prefix: "Failed to add builds to tester")
         }
     }
 
@@ -611,9 +632,11 @@ extension BetaTestersWorker {
         }
 
         let buildIds = buildIdsArray.compactMap { $0.stringValue }
-        guard !buildIds.isEmpty else {
+        guard !buildIds.isEmpty,
+              buildIds.count == buildIdsArray.count,
+              buildIds.allSatisfy({ !$0.isEmpty }) else {
             return CallTool.Result(
-                content: [MCPContent.text("'build_ids' must contain at least one build ID")],
+                content: [MCPContent.text("'build_ids' must contain only non-empty build ID strings")],
                 isError: true
             )
         }
@@ -742,12 +765,12 @@ extension BetaTestersWorker {
         var result: [String: Any] = [
             "id": tester.id,
             "type": tester.type,
-            "email": tester.attributes.email.jsonSafe,
-            "firstName": tester.attributes.firstName.jsonSafe,
-            "lastName": tester.attributes.lastName.jsonSafe,
-            "inviteType": tester.attributes.inviteType.jsonSafe,
-            "state": tester.attributes.state.jsonSafe,
-            "appDevices": tester.attributes.appDevices.map { devices in
+            "email": (tester.attributes?.email).jsonSafe,
+            "firstName": (tester.attributes?.firstName).jsonSafe,
+            "lastName": (tester.attributes?.lastName).jsonSafe,
+            "inviteType": (tester.attributes?.inviteType).jsonSafe,
+            "state": (tester.attributes?.state).jsonSafe,
+            "appDevices": (tester.attributes?.appDevices).map { devices in
                 devices.map { device in
                     [
                         "model": device.model.jsonSafe,
@@ -798,5 +821,14 @@ extension BetaTestersWorker {
         }
         let values = rawValues.compactMap(\.stringValue).filter { !$0.isEmpty }
         return values.count == rawValues.count ? values : nil
+    }
+
+    private func isValidEmail(_ value: String) -> Bool {
+        let range = NSRange(value.startIndex..<value.endIndex, in: value)
+        let regex = try? NSRegularExpression(pattern: #"^[^@\s]+@[^@\s]+$"#)
+        guard let match = regex?.firstMatch(in: value, range: range) else {
+            return false
+        }
+        return match.range == range
     }
 }

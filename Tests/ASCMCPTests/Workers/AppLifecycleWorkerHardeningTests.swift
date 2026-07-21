@@ -535,6 +535,37 @@ struct AppLifecycleWorkerHardeningTests {
         #expect(payload["message"]?.stringValue?.contains("review_submission_id set to the returned submission_id") == true)
     }
 
+    @Test("partial submit mutation preserves typed committed-unverified state")
+    func partialSubmitMutationPreservesCommitState() async throws {
+        let transport = TestHTTPTransport(responses: [
+            .init(statusCode: 200, body: submissionVersionBody(appId: "app-1")),
+            .init(statusCode: 201, body: #"{"data":{"type":"reviewSubmissions","id":"sub-1"}}"#),
+            .init(statusCode: 202, body: #"{"data":{"type":"reviewSubmissionItems","id":"item-1"}}"#)
+        ])
+        let worker = try await makeWorker(transport: transport)
+
+        let result = try await worker.handleTool(.init(
+            name: "app_versions_submit_for_review",
+            arguments: ["version_id": .string("ver-1"), "app_id": .string("app-1")]
+        ))
+
+        #expect(result.isError == true)
+        let payload = try object(result.structuredContent)
+        #expect(payload["partial_success"] == .bool(true))
+        #expect(payload["submission_id"] == .string("sub-1"))
+        #expect(payload["failed_step"] == .string("create_review_submission_item"))
+        #expect(payload["operationCommitState"] == .string("committed_unverified"))
+        #expect(payload["operationCommitted"] == .bool(true))
+        #expect(payload["outcomeUnknown"] == .bool(false))
+        #expect(payload["retrySafe"] == .bool(false))
+        #expect(payload["inspectionRequired"] == .bool(true))
+        let details = try object(payload["details"])
+        #expect(details["type"] == .string("mutation_unverified"))
+        #expect(details["method"] == .string("POST"))
+        #expect(details["statusCode"] == .int(202))
+        #expect(await transport.requestCount() == 3)
+    }
+
     @Test("submit for review exposes submission id after confirm failure")
     func submitForReviewExposesSubmissionIdAfterConfirmFailure() async throws {
         let transport = TestHTTPTransport(responses: [

@@ -7,9 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.1.2] - 2026-07-21
+
+### Changed
+
+- Tightened public input contracts across App Store metadata, TestFlight, commerce, provisioning, users, webhooks, analytics, metrics, and Xcode Cloud so documented enums, nullable values, canonical identifiers, list bounds, and relationship linkages are validated before network access.
+- App, review, accessibility, pricing, provisioning, export-compliance, TestFlight, and commerce projections now preserve sparse Apple responses, honest paging totals, current App Store Connect 4.4.1 fields, and validated resource lineage without inventing missing values.
+- POST and PATCH calls now require each Apple operation's exact success status, never replay after an ambiguous outcome, and expose machine-readable `unknown` or `committed_unverified` recovery state when completion cannot be proved.
+
 ### Fixed
 
+- Preserve explicit JSON `null` separately from omission for supported Apple PATCH and create attributes, including webhook, user, provisioning, TestFlight, subscription, in-app purchase, and App Store version fields.
+- Reject mixed-type relationship ID arrays, invalid email and resource identifiers, out-of-range list controls, duplicate linkages, malformed pagination, and response identity mismatches instead of silently dropping, clamping, or accepting them.
+- Keep export-compliance build attachment on Apple's supported `PATCH /v1/builds/{id}` HTTP 200 contract, and retain inspection guidance for every ambiguous or unverifiable mutation.
+- Expose Xcode metrics goal keys, current App attributes, complete metadata localizations, and paging-aware review, app, provisioning, and availability totals.
 - Release automation now carries exact release IDs through draft creation, normalization, and publication, and paginates existing-release lookup to keep reruns reliable as release history grows.
+
+### Compatibility
+
+- The public catalog remains at 502 tools and no worker filter key, tool name, or successful response key is removed.
+- Previously accepted malformed or out-of-range inputs now fail locally; explicit null clears only attributes Apple marks nullable, while omission continues to leave update fields unchanged.
+- Clients should inspect `operationCommitState`, `outcomeUnknown`, `operationCommitted`, `retrySafe`, and `inspectionRequired` before retrying a failed mutation.
 
 ## [4.1.1] - 2026-07-21
 

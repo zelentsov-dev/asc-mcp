@@ -12,6 +12,9 @@ struct AppInfoWorkerContractTests {
 
         let list = try appInfoContractProperties(try #require(tools.first { $0.name == "app_info_list" }))
         #expect(list["include"] != nil)
+        let listInclude = try appInfoContractObject(list["include"])
+        let listAlternatives = try appInfoContractArray(listInclude["oneOf"])
+        #expect(try appInfoContractObject(listAlternatives.first)["pattern"]?.stringValue != nil)
         #expect(list["limit"] != nil)
         #expect(list["localizations_limit"] != nil)
         #expect(list["next_url"] != nil)
@@ -21,6 +24,9 @@ struct AppInfoWorkerContractTests {
         )
         #expect(localizations["locale"] != nil)
         #expect(localizations["include"] != nil)
+        let localizationInclude = try appInfoContractObject(localizations["include"])
+        let localizationAlternatives = try appInfoContractArray(localizationInclude["oneOf"])
+        #expect(try appInfoContractObject(localizationAlternatives.first)["pattern"]?.stringValue != nil)
         #expect(localizations["limit"] != nil)
         #expect(localizations["next_url"] != nil)
 
@@ -52,8 +58,8 @@ struct AppInfoWorkerContractTests {
             arguments: [
                 "app_id": .string("app:1"),
                 "include": .array([.string("app"), .string("ageRatingDeclaration")]),
-                "limit": .int(500),
-                "localizations_limit": .int(80)
+                "limit": .int(200),
+                "localizations_limit": .int(50)
             ]
         ))
 
@@ -97,7 +103,7 @@ struct AppInfoWorkerContractTests {
                 "info_id": .string("info-1"),
                 "locale": .array([.string("en-US"), .string("fr-FR")]),
                 "include": .string("appInfo"),
-                "limit": .int(300)
+                "limit": .int(200)
             ]
         ))
 
@@ -178,6 +184,58 @@ struct AppInfoWorkerContractTests {
         #expect(localization.isError == true)
         #expect(eula.isError == true)
         #expect(await transport.requestCount() == 0)
+    }
+
+    @Test("present invalid collection limits fail before network")
+    func invalidLimitsFailBeforeNetwork() async throws {
+        let cases: [(String, [String: Value])] = [
+            ("app_info_list", ["app_id": .string("app-1"), "limit": .string("25")]),
+            ("app_info_list", ["app_id": .string("app-1"), "localizations_limit": .int(51)]),
+            ("app_info_get", ["info_id": .string("info-1"), "localizations_limit": .int(0)]),
+            ("app_info_list_localizations", ["info_id": .string("info-1"), "limit": .int(201)])
+        ]
+
+        for (tool, arguments) in cases {
+            let transport = TestHTTPTransport(responses: [])
+            let worker = try await appInfoContractWorker(transport: transport)
+
+            let result = try await worker.handleTool(.init(name: tool, arguments: arguments))
+
+            #expect(result.isError == true)
+            #expect(await transport.requestCount() == 0)
+        }
+    }
+
+    @Test("accepted create and update validation failures are committed unverified")
+    func mutationValidationFailuresPreserveCommitState() async throws {
+        let updateTransport = TestHTTPTransport(responses: [
+            .init(statusCode: 200, body: #"{"data":{"type":"appInfos","id":"info-other"}}"#)
+        ])
+        let updateWorker = try await appInfoContractWorker(transport: updateTransport)
+        let update = try await updateWorker.handleTool(.init(
+            name: "app_info_update",
+            arguments: ["info_id": .string("info-1"), "primary_category_id": .string("cat-1")]
+        ))
+
+        let createTransport = TestHTTPTransport(responses: [
+            .init(statusCode: 201, body: #"{"data":"not-an-eula"}"#)
+        ])
+        let createWorker = try await appInfoContractWorker(transport: createTransport)
+        let create = try await createWorker.handleTool(.init(
+            name: "app_info_create_eula",
+            arguments: [
+                "app_id": .string("app-1"),
+                "agreement_text": .string("Terms"),
+                "territory_ids": .array([.string("USA")])
+            ]
+        ))
+
+        for result in [update, create] {
+            let payload = try appInfoContractObject(result.structuredContent)
+            #expect(result.isError == true)
+            #expect(payload["operationCommitState"] == .string("committed_unverified"))
+            #expect(payload["retrySafe"] == .bool(false))
+        }
     }
 
     @Test("pagination continuation must preserve include controls")

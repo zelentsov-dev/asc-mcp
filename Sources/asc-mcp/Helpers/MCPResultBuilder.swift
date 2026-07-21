@@ -96,10 +96,25 @@ enum MCPResult {
             object["operationCommitState"] = .string("unknown")
             object["outcomeUnknown"] = .bool(true)
             object["retrySafe"] = .bool(false)
+            object["inspectionRequired"] = .bool(true)
+        }
+        if case .mutationOutcomeUnknown = ascError {
+            object["operationCommitState"] = .string("unknown")
+            object["outcomeUnknown"] = .bool(true)
+            object["retrySafe"] = .bool(false)
+            object["inspectionRequired"] = .bool(true)
         }
         if case .deleteCommittedUnverified = ascError {
             object["operationCommitState"] = .string("committed_unverified")
             object["operationCommitted"] = .bool(true)
+            object["outcomeUnknown"] = .bool(false)
+            object["retrySafe"] = .bool(false)
+            object["inspectionRequired"] = .bool(true)
+        }
+        if case .mutationCommittedUnverified = ascError {
+            object["operationCommitState"] = .string("committed_unverified")
+            object["operationCommitted"] = .bool(true)
+            object["outcomeUnknown"] = .bool(false)
             object["retrySafe"] = .bool(false)
             object["inspectionRequired"] = .bool(true)
         }

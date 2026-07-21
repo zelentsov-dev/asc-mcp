@@ -49,7 +49,7 @@
           }
         ]
       },
-      "note": "Exact relationship mutation; Apple returns 204 without a response document."
+      "note": "Rejects empty, malformed, or mixed-type ID arrays atomically before the exact relationship mutation; only Apple's 204 no-content response is accepted."
     },
     {
       "tool": "builds_add_to_beta_groups",
@@ -99,7 +99,7 @@
           }
         ]
       },
-      "note": "Exact relationship mutation; Apple returns 204 without a response document."
+      "note": "Rejects empty, malformed, or mixed-type ID arrays atomically before the exact relationship mutation; only Apple's 204 no-content response is accepted."
     },
     {
       "tool": "builds_get_beta_detail",
@@ -366,7 +366,7 @@
           }
         ]
       },
-      "note": "The endpoint returns only testers assigned individually, not every tester who obtains access through beta groups, and projects the complete Apple 4.4.1 appDevices attribute. This tool duplicates builds_list_individual_testers."
+      "note": "The endpoint returns only testers assigned individually, not every tester who obtains access through beta groups, projects the complete Apple 4.4.1 appDevices attribute, and rejects limits outside 1 through 200 before network access. This tool duplicates builds_list_individual_testers."
     },
     {
       "tool": "builds_list_beta_localizations",
@@ -430,7 +430,7 @@
           }
         ]
       },
-      "note": "Correct paginated related-resource read projecting locale, whatsNew, and build linkage only."
+      "note": "Correct paginated related-resource read projecting locale, whatsNew, and build linkage only; limits outside 1 through 200 are rejected before network access."
     },
     {
       "tool": "builds_list_individual_testers",
@@ -495,7 +495,7 @@
           }
         ]
       },
-      "note": "Correct endpoint with complete Apple 4.4.1 appDevices projections; public functionality duplicates builds_get_beta_testers."
+      "note": "Correct endpoint with complete Apple 4.4.1 appDevices projections and fail-closed 1 through 200 limit validation; public functionality duplicates builds_get_beta_testers."
     },
     {
       "tool": "builds_remove_individual_testers",
@@ -545,7 +545,7 @@
           }
         ]
       },
-      "note": "Exact relationship removal; Apple returns 204 without a response document."
+      "note": "Rejects empty, malformed, or mixed-type ID arrays atomically before the exact relationship removal; Apple returns 204 without a response document."
     },
     {
       "tool": "builds_send_beta_notification",
@@ -752,7 +752,7 @@
           }
         ]
       },
-      "note": "Create-or-update workflow uses Apple-side build and locale filters to find an existing resource across the full collection, then serializes only locale and whatsNew. Deprecated BetaAppLocalization-only inputs remain discoverable and are rejected before network access with replacement tool guidance."
+      "note": "Create-or-update workflow uses Apple-side build and locale filters to find an existing resource across the full collection, then serializes only locale and whatsNew while preserving explicit JSON null separately from omission. Deprecated BetaAppLocalization-only inputs remain discoverable and are rejected before network access with replacement tool guidance."
     },
     {
       "tool": "builds_update_beta_detail",
@@ -825,7 +825,7 @@
           }
         ]
       },
-      "note": "Serializes only autoNotifyEnabled, rejects empty PATCH requests, and rejects deprecated read-only state inputs before network access."
+      "note": "Serializes only autoNotifyEnabled, preserves explicit JSON null separately from omission, rejects invalid nullable value types and empty PATCH requests, and rejects deprecated read-only state inputs before network access."
     }
   ],
   "implementationAliases": []

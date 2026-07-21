@@ -69,17 +69,9 @@ struct AnalyticsSalesReportHardeningTests {
         #expect(rows.count == 1)
     }
 
-    @Test("financial raw row limit is advertised and clamped to 1 through 200")
+    @Test("financial raw row limit is advertised and rejects values outside 1 through 200")
     func financialRawRowLimitIsBounded() async throws {
-        let header = "Quantity\tPartner Share\tPartner Share Currency\tCountry Of Sale (Region)"
-        let body = header + "\n" + Array(
-            repeating: "1\t1.00\tUSD\tUS",
-            count: 205
-        ).joined(separator: "\n")
-        let transport = TestHTTPTransport(responses: [
-            .init(statusCode: 200, body: body),
-            .init(statusCode: 200, body: body)
-        ])
+        let transport = TestHTTPTransport(responses: [])
         let worker = try await makeAnalyticsWorker(transport: transport)
         let tool = try #require(await worker.getTools().first { $0.name == "analytics_financial_report" })
         let properties = try analyticsProperties(tool)
@@ -111,11 +103,9 @@ struct AnalyticsSalesReportHardeningTests {
             ]
         ))
 
-        let minimumRoot = try analyticsObject(minimumResult.structuredContent)
-        let maximumRoot = try analyticsObject(maximumResult.structuredContent)
-        #expect(minimumRoot["showing_rows"] == .int(1))
-        #expect(maximumRoot["showing_rows"] == .int(200))
-        #expect(await transport.requestCount() == 2)
+        #expect(minimumResult.isError == true)
+        #expect(maximumResult.isError == true)
+        #expect(await transport.requestCount() == 0)
     }
 
     @Test("daily sales report can request the latest available date")

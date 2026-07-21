@@ -13,17 +13,12 @@ extension ProvisioningWorker {
             let response: ASCBundleIdsResponse
             var queryParams: [String: String] = [:]
 
-            if let limitValue = arguments?["limit"],
-               let limit = limitValue.intValue {
-                queryParams["limit"] = String(min(max(limit, 1), 200))
-            } else {
-                queryParams["limit"] = "25"
-            }
-
-            if let platformValue = arguments?["filter_platform"],
-               let platform = platformValue.stringValue {
-                queryParams["filter[platform]"] = platform
-            }
+            queryParams["limit"] = String(try provisioningLimit(arguments?["limit"]))
+            queryParams["filter[platform]"] = try provisioningEnumList(
+                arguments?["filter_platform"],
+                name: "filter_platform",
+                allowedValues: Set(ProvisioningWorker.bundleIdPlatforms)
+            )
 
             if let identifierValue = arguments?["filter_identifier"],
                let identifier = identifierValue.stringValue {
@@ -45,10 +40,11 @@ extension ProvisioningWorker {
                 queryParams["filter[id]"] = id
             }
 
-            if let sortValue = arguments?["sort"],
-               let sort = sortValue.stringValue {
-                queryParams["sort"] = sort
-            }
+            queryParams["sort"] = try provisioningEnumList(
+                arguments?["sort"],
+                name: "sort",
+                allowedValues: Set(ProvisioningWorker.bundleIdSortValues)
+            )
 
             if let nextUrl = try paginationURL(from: arguments?["next_url"]) {
                 response = try await httpClient.getPage(
@@ -76,6 +72,9 @@ extension ProvisioningWorker {
             ]
             if let next = response.links?.next {
                 result["next_url"] = next
+            }
+            if let total = response.meta?.paging?.total {
+                result["total"] = total
             }
 
             return MCPResult.jsonObject(result)
@@ -138,9 +137,21 @@ extension ProvisioningWorker {
                 isError: true
             )
         }
+        guard ProvisioningWorker.bundleIdPlatforms.contains(platform) else {
+            return MCPResult.error("'platform' must be one of: \(ProvisioningWorker.bundleIdPlatforms.joined(separator: ", "))")
+        }
 
-        if arguments["seed_id"] != nil, arguments["seed_id"]?.stringValue == nil {
-            return MCPResult.error("'seed_id' must be a string")
+        let seedId: ASCNullable<String>?
+        if let value = arguments["seed_id"] {
+            if value.isNull {
+                seedId = .null
+            } else if let string = value.stringValue {
+                seedId = .value(string)
+            } else {
+                return MCPResult.error("'seed_id' must be a string or null")
+            }
+        } else {
+            seedId = nil
         }
 
         do {
@@ -150,7 +161,7 @@ extension ProvisioningWorker {
                         name: name,
                         identifier: identifier,
                         platform: platform,
-                        seedId: arguments["seed_id"]?.stringValue
+                        nullableSeedId: seedId
                     )
                 )
             )
@@ -171,10 +182,7 @@ extension ProvisioningWorker {
             return MCPResult.jsonObject(result)
 
         } catch {
-            return CallTool.Result(
-                content: [MCPContent.text("Error: Failed to create bundle ID: \(error.localizedDescription)")],
-                isError: true
-            )
+            return MCPResult.error(error, prefix: "Failed to create bundle ID")
         }
     }
 
@@ -214,22 +222,17 @@ extension ProvisioningWorker {
             let response: ASCDevicesResponse
             var queryParams: [String: String] = [:]
 
-            if let limitValue = arguments?["limit"],
-               let limit = limitValue.intValue {
-                queryParams["limit"] = String(min(max(limit, 1), 200))
-            } else {
-                queryParams["limit"] = "25"
-            }
-
-            if let platformValue = arguments?["filter_platform"],
-               let platform = platformValue.stringValue {
-                queryParams["filter[platform]"] = platform
-            }
-
-            if let statusValue = arguments?["filter_status"],
-               let status = statusValue.stringValue {
-                queryParams["filter[status]"] = status
-            }
+            queryParams["limit"] = String(try provisioningLimit(arguments?["limit"]))
+            queryParams["filter[platform]"] = try provisioningEnumList(
+                arguments?["filter_platform"],
+                name: "filter_platform",
+                allowedValues: Set(ProvisioningWorker.bundleIdPlatforms)
+            )
+            queryParams["filter[status]"] = try provisioningEnumList(
+                arguments?["filter_status"],
+                name: "filter_status",
+                allowedValues: Set(ProvisioningWorker.deviceStatuses)
+            )
 
             if let nameValue = arguments?["filter_name"],
                let name = nameValue.stringValue {
@@ -246,10 +249,11 @@ extension ProvisioningWorker {
                 queryParams["filter[id]"] = id
             }
 
-            if let sortValue = arguments?["sort"],
-               let sort = sortValue.stringValue {
-                queryParams["sort"] = sort
-            }
+            queryParams["sort"] = try provisioningEnumList(
+                arguments?["sort"],
+                name: "sort",
+                allowedValues: Set(ProvisioningWorker.deviceSortValues)
+            )
 
             if let nextUrl = try paginationURL(from: arguments?["next_url"]) {
                 response = try await httpClient.getPage(
@@ -278,6 +282,9 @@ extension ProvisioningWorker {
             if let next = response.links?.next {
                 result["next_url"] = next
             }
+            if let total = response.meta?.paging?.total {
+                result["total"] = total
+            }
 
             return MCPResult.jsonObject(result)
 
@@ -303,6 +310,9 @@ extension ProvisioningWorker {
                 content: [MCPContent.text("Error: Required parameters: name, udid, platform")],
                 isError: true
             )
+        }
+        guard ProvisioningWorker.bundleIdPlatforms.contains(platform) else {
+            return MCPResult.error("'platform' must be one of: \(ProvisioningWorker.bundleIdPlatforms.joined(separator: ", "))")
         }
 
         do {
@@ -332,10 +342,7 @@ extension ProvisioningWorker {
             return MCPResult.jsonObject(result)
 
         } catch {
-            return CallTool.Result(
-                content: [MCPContent.text("Error: Failed to register device: \(error.localizedDescription)")],
-                isError: true
-            )
+            return MCPResult.error(error, prefix: "Failed to register device")
         }
     }
 
@@ -351,15 +358,33 @@ extension ProvisioningWorker {
             )
         }
 
-        if arguments["name"] != nil, arguments["name"]?.stringValue == nil {
-            return MCPResult.error("'name' must be a string")
-        }
-        if arguments["status"] != nil, arguments["status"]?.stringValue == nil {
-            return MCPResult.error("'status' must be a string")
+        let name: ASCNullable<String>?
+        if let value = arguments["name"] {
+            if value.isNull {
+                name = .null
+            } else if let string = value.stringValue {
+                name = .value(string)
+            } else {
+                return MCPResult.error("'name' must be a string or null")
+            }
+        } else {
+            name = nil
         }
 
-        let name = arguments["name"]?.stringValue
-        let status = arguments["status"]?.stringValue
+        let status: ASCNullable<String>?
+        if let value = arguments["status"] {
+            if value.isNull {
+                status = .null
+            } else if let string = value.stringValue,
+                      ProvisioningWorker.deviceStatuses.contains(string) {
+                status = .value(string)
+            } else {
+                return MCPResult.error("'status' must be null or one of: \(ProvisioningWorker.deviceStatuses.joined(separator: ", "))")
+            }
+        } else {
+            status = nil
+        }
+
         guard name != nil || status != nil else {
             return MCPResult.error("Provide at least one update field: name or status")
         }
@@ -369,8 +394,8 @@ extension ProvisioningWorker {
                 data: UpdateDeviceRequest.UpdateDeviceData(
                     id: deviceId,
                     attributes: UpdateDeviceRequest.UpdateDeviceAttributes(
-                        name: name,
-                        status: status
+                        nullableName: name,
+                        nullableStatus: status
                     )
                 )
             )
@@ -391,10 +416,7 @@ extension ProvisioningWorker {
             return MCPResult.jsonObject(result)
 
         } catch {
-            return CallTool.Result(
-                content: [MCPContent.text("Error: Failed to update device: \(error.localizedDescription)")],
-                isError: true
-            )
+            return MCPResult.error(error, prefix: "Failed to update device")
         }
     }
 
@@ -407,17 +429,12 @@ extension ProvisioningWorker {
             let response: ASCCertificatesResponse
             var queryParams: [String: String] = [:]
 
-            if let limitValue = arguments?["limit"],
-               let limit = limitValue.intValue {
-                queryParams["limit"] = String(min(max(limit, 1), 200))
-            } else {
-                queryParams["limit"] = "25"
-            }
-
-            if let typeValue = arguments?["filter_type"],
-               let type = typeValue.stringValue {
-                queryParams["filter[certificateType]"] = type
-            }
+            queryParams["limit"] = String(try provisioningLimit(arguments?["limit"]))
+            queryParams["filter[certificateType]"] = try provisioningEnumList(
+                arguments?["filter_type"],
+                name: "filter_type",
+                allowedValues: Set(ProvisioningWorker.certificateTypes)
+            )
 
             if let displayNameValue = arguments?["filter_display_name"],
                let displayName = displayNameValue.stringValue {
@@ -434,10 +451,11 @@ extension ProvisioningWorker {
                 queryParams["filter[id]"] = id
             }
 
-            if let sortValue = arguments?["sort"],
-               let sort = sortValue.stringValue {
-                queryParams["sort"] = sort
-            }
+            queryParams["sort"] = try provisioningEnumList(
+                arguments?["sort"],
+                name: "sort",
+                allowedValues: Set(ProvisioningWorker.certificateSortValues)
+            )
 
             if let nextUrl = try paginationURL(from: arguments?["next_url"]) {
                 response = try await httpClient.getPage(
@@ -466,6 +484,9 @@ extension ProvisioningWorker {
             if let next = response.links?.next {
                 result["next_url"] = next
             }
+            if let total = response.meta?.paging?.total {
+                result["total"] = total
+            }
 
             return MCPResult.jsonObject(result)
 
@@ -486,22 +507,17 @@ extension ProvisioningWorker {
             let response: ASCProfilesResponse
             var queryParams: [String: String] = [:]
 
-            if let limitValue = arguments?["limit"],
-               let limit = limitValue.intValue {
-                queryParams["limit"] = String(min(max(limit, 1), 200))
-            } else {
-                queryParams["limit"] = "25"
-            }
-
-            if let typeValue = arguments?["filter_profile_type"],
-               let type = typeValue.stringValue {
-                queryParams["filter[profileType]"] = type
-            }
-
-            if let stateValue = arguments?["filter_profile_state"],
-               let state = stateValue.stringValue {
-                queryParams["filter[profileState]"] = state
-            }
+            queryParams["limit"] = String(try provisioningLimit(arguments?["limit"]))
+            queryParams["filter[profileType]"] = try provisioningEnumList(
+                arguments?["filter_profile_type"],
+                name: "filter_profile_type",
+                allowedValues: Set(ProvisioningWorker.profileTypes)
+            )
+            queryParams["filter[profileState]"] = try provisioningEnumList(
+                arguments?["filter_profile_state"],
+                name: "filter_profile_state",
+                allowedValues: Set(ProvisioningWorker.profileStates)
+            )
 
             if let nameValue = arguments?["filter_name"],
                let name = nameValue.stringValue {
@@ -513,10 +529,11 @@ extension ProvisioningWorker {
                 queryParams["filter[id]"] = id
             }
 
-            if let sortValue = arguments?["sort"],
-               let sort = sortValue.stringValue {
-                queryParams["sort"] = sort
-            }
+            queryParams["sort"] = try provisioningEnumList(
+                arguments?["sort"],
+                name: "sort",
+                allowedValues: Set(ProvisioningWorker.profileSortValues)
+            )
 
             if let nextUrl = try paginationURL(from: arguments?["next_url"]) {
                 response = try await httpClient.getPage(
@@ -544,6 +561,9 @@ extension ProvisioningWorker {
             ]
             if let next = response.links?.next {
                 result["next_url"] = next
+            }
+            if let total = response.meta?.paging?.total {
+                result["total"] = total
             }
 
             return MCPResult.jsonObject(result)
@@ -701,6 +721,9 @@ extension ProvisioningWorker {
                 isError: true
             )
         }
+        guard ProvisioningWorker.profileTypes.contains(profileType) else {
+            return MCPResult.error("'profile_type' must be one of: \(ProvisioningWorker.profileTypes.joined(separator: ", "))")
+        }
 
         let certificateIds = certIdsArray.compactMap(\.stringValue)
         guard certificateIds.count == certIdsArray.count,
@@ -775,10 +798,7 @@ extension ProvisioningWorker {
             return MCPResult.jsonObject(result)
 
         } catch {
-            return CallTool.Result(
-                content: [MCPContent.text("Error: Failed to create profile: \(error.localizedDescription)")],
-                isError: true
-            )
+            return MCPResult.error(error, prefix: "Failed to create profile")
         }
     }
 
@@ -800,12 +820,7 @@ extension ProvisioningWorker {
             let response: ASCBundleIdCapabilitiesResponse
             var queryParams: [String: String] = [:]
 
-            if let limitValue = arguments["limit"],
-               let limit = limitValue.intValue {
-                queryParams["limit"] = String(min(max(limit, 1), 200))
-            } else {
-                queryParams["limit"] = "25"
-            }
+            queryParams["limit"] = String(try provisioningLimit(arguments["limit"]))
 
             if let nextUrl = try paginationURL(from: arguments["next_url"]) {
                 response = try await httpClient.getPage(
@@ -834,6 +849,9 @@ extension ProvisioningWorker {
             if let next = response.links?.next {
                 result["next_url"] = next
             }
+            if let total = response.meta?.paging?.total {
+                result["total"] = total
+            }
 
             return MCPResult.jsonObject(result)
 
@@ -858,25 +876,23 @@ extension ProvisioningWorker {
                 isError: true
             )
         }
+        guard ProvisioningWorker.capabilityTypes.contains(capabilityType) else {
+            return MCPResult.error("'capability_type' must be one of: \(ProvisioningWorker.capabilityTypes.joined(separator: ", "))")
+        }
+
+        let settings: ASCNullable<[CapabilitySetting]>?
+        do {
+            settings = try capabilitySettings(arguments["settings"])
+        } catch {
+            return MCPResult.error(error, prefix: "Invalid capability settings")
+        }
 
         do {
-            var settings: [CapabilitySetting]? = nil
-            if let settingsValue = arguments["settings"] {
-                guard let settingsString = settingsValue.stringValue,
-                      let settingsData = settingsString.data(using: .utf8) else {
-                    return CallTool.Result(
-                        content: [MCPContent.text("Error: settings must be a JSON string containing an array")],
-                        isError: true
-                    )
-                }
-                settings = try JSONDecoder().decode([CapabilitySetting].self, from: settingsData)
-            }
-
             let request = EnableCapabilityRequest(
                 data: EnableCapabilityRequest.EnableCapabilityData(
                     attributes: EnableCapabilityRequest.EnableCapabilityAttributes(
                         capabilityType: capabilityType,
-                        settings: settings
+                        nullableSettings: settings
                     ),
                     relationships: EnableCapabilityRequest.EnableCapabilityRelationships(
                         bundleId: EnableCapabilityRequest.EnableCapabilityBundleIdData(
@@ -904,10 +920,7 @@ extension ProvisioningWorker {
             return MCPResult.jsonObject(result)
 
         } catch {
-            return CallTool.Result(
-                content: [MCPContent.text("Error: Failed to enable capability: \(error.localizedDescription)")],
-                isError: true
-            )
+            return MCPResult.error(error, prefix: "Failed to enable capability")
         }
     }
 
@@ -944,10 +957,10 @@ extension ProvisioningWorker {
         return [
             "id": bundleId.id,
             "type": bundleId.type,
-            "name": bundleId.attributes.name.jsonSafe,
-            "identifier": bundleId.attributes.identifier.jsonSafe,
-            "platform": bundleId.attributes.platform.jsonSafe,
-            "seedId": bundleId.attributes.seedId.jsonSafe
+            "name": (bundleId.attributes?.name).jsonSafe,
+            "identifier": (bundleId.attributes?.identifier).jsonSafe,
+            "platform": (bundleId.attributes?.platform).jsonSafe,
+            "seedId": (bundleId.attributes?.seedId).jsonSafe
         ]
     }
 
@@ -955,13 +968,13 @@ extension ProvisioningWorker {
         return [
             "id": device.id,
             "type": device.type,
-            "name": device.attributes.name.jsonSafe,
-            "platform": device.attributes.platform.jsonSafe,
-            "udid": device.attributes.udid.jsonSafe,
-            "deviceClass": device.attributes.deviceClass.jsonSafe,
-            "status": device.attributes.status.jsonSafe,
-            "model": device.attributes.model.jsonSafe,
-            "addedDate": device.attributes.addedDate.jsonSafe
+            "name": (device.attributes?.name).jsonSafe,
+            "platform": (device.attributes?.platform).jsonSafe,
+            "udid": (device.attributes?.udid).jsonSafe,
+            "deviceClass": (device.attributes?.deviceClass).jsonSafe,
+            "status": (device.attributes?.status).jsonSafe,
+            "model": (device.attributes?.model).jsonSafe,
+            "addedDate": (device.attributes?.addedDate).jsonSafe
         ]
     }
 
@@ -969,16 +982,16 @@ extension ProvisioningWorker {
         var result: [String: Any] = [
             "id": cert.id,
             "type": cert.type,
-            "name": cert.attributes.name.jsonSafe,
-            "certificateType": cert.attributes.certificateType.jsonSafe,
-            "displayName": cert.attributes.displayName.jsonSafe,
-            "serialNumber": cert.attributes.serialNumber.jsonSafe,
-            "platform": cert.attributes.platform.jsonSafe,
-            "expirationDate": cert.attributes.expirationDate.jsonSafe,
-            "activated": cert.attributes.activated.jsonSafe
+            "name": (cert.attributes?.name).jsonSafe,
+            "certificateType": (cert.attributes?.certificateType).jsonSafe,
+            "displayName": (cert.attributes?.displayName).jsonSafe,
+            "serialNumber": (cert.attributes?.serialNumber).jsonSafe,
+            "platform": (cert.attributes?.platform).jsonSafe,
+            "expirationDate": (cert.attributes?.expirationDate).jsonSafe,
+            "activated": (cert.attributes?.activated).jsonSafe
         ]
         if includeContent {
-            result["certificateContent"] = cert.attributes.certificateContent.jsonSafe
+            result["certificateContent"] = (cert.attributes?.certificateContent).jsonSafe
         }
         return result
     }
@@ -987,16 +1000,16 @@ extension ProvisioningWorker {
         var result: [String: Any] = [
             "id": profile.id,
             "type": profile.type,
-            "name": profile.attributes.name.jsonSafe,
-            "platform": profile.attributes.platform.jsonSafe,
-            "profileType": profile.attributes.profileType.jsonSafe,
-            "profileState": profile.attributes.profileState.jsonSafe,
-            "uuid": profile.attributes.uuid.jsonSafe,
-            "createdDate": profile.attributes.createdDate.jsonSafe,
-            "expirationDate": profile.attributes.expirationDate.jsonSafe
+            "name": (profile.attributes?.name).jsonSafe,
+            "platform": (profile.attributes?.platform).jsonSafe,
+            "profileType": (profile.attributes?.profileType).jsonSafe,
+            "profileState": (profile.attributes?.profileState).jsonSafe,
+            "uuid": (profile.attributes?.uuid).jsonSafe,
+            "createdDate": (profile.attributes?.createdDate).jsonSafe,
+            "expirationDate": (profile.attributes?.expirationDate).jsonSafe
         ]
         if includeContent {
-            result["profileContent"] = profile.attributes.profileContent.jsonSafe
+            result["profileContent"] = (profile.attributes?.profileContent).jsonSafe
         }
         return result
     }
@@ -1005,10 +1018,10 @@ extension ProvisioningWorker {
         var result: [String: Any] = [
             "id": capability.id,
             "type": capability.type,
-            "capabilityType": capability.attributes.capabilityType.jsonSafe
+            "capabilityType": (capability.attributes?.capabilityType).jsonSafe
         ]
 
-        if let settings = capability.attributes.settings, !settings.isEmpty {
+        if let settings = capability.attributes?.settings {
             let formattedSettings = settings.map { setting -> [String: Any] in
                 var s: [String: Any] = [
                     "key": setting.key.jsonSafe,
@@ -1029,7 +1042,7 @@ extension ProvisioningWorker {
                 if let minInstances = setting.minInstances {
                     s["minInstances"] = minInstances
                 }
-                if let options = setting.options, !options.isEmpty {
+                if let options = setting.options {
                     s["options"] = options.map { option -> [String: Any] in
                         var o: [String: Any] = [
                             "key": option.key.jsonSafe,
@@ -1056,5 +1069,182 @@ extension ProvisioningWorker {
         }
 
         return result
+    }
+
+    private func provisioningLimit(_ value: Value?) throws -> Int {
+        guard let value else {
+            return 25
+        }
+        guard let limit = value.intValue, (1...200).contains(limit) else {
+            throw ProvisioningInputValidationError("'limit' must be an integer from 1 through 200")
+        }
+        return limit
+    }
+
+    private func provisioningEnumList(
+        _ value: Value?,
+        name: String,
+        allowedValues: Set<String>
+    ) throws -> String? {
+        guard let value else {
+            return nil
+        }
+
+        let values: [String]
+        if let string = value.stringValue {
+            values = string.split(separator: ",", omittingEmptySubsequences: false).map {
+                $0.trimmingCharacters(in: .whitespacesAndNewlines)
+            }
+        } else if let array = value.arrayValue {
+            let strings = array.compactMap(\.stringValue)
+            guard strings.count == array.count else {
+                throw ProvisioningInputValidationError("'\(name)' must be a string or an array of strings")
+            }
+            values = strings
+        } else {
+            throw ProvisioningInputValidationError("'\(name)' must be a string or an array of strings")
+        }
+
+        guard !values.isEmpty, values.allSatisfy({ !$0.isEmpty }) else {
+            throw ProvisioningInputValidationError("'\(name)' must contain at least one value")
+        }
+        let unsupported = values.filter { !allowedValues.contains($0) }
+        guard unsupported.isEmpty else {
+            throw ProvisioningInputValidationError(
+                "Unsupported value(s) for '\(name)': \(unsupported.joined(separator: ", "))"
+            )
+        }
+        return values.joined(separator: ",")
+    }
+
+    private func capabilitySettings(_ value: Value?) throws -> ASCNullable<[CapabilitySetting]>? {
+        guard let value else {
+            return nil
+        }
+        if value.isNull {
+            return .null
+        }
+        guard let values = value.arrayValue else {
+            throw ProvisioningInputValidationError("'settings' must be an array or null")
+        }
+        return .value(try values.enumerated().map { index, value in
+            try capabilitySetting(value, path: "settings[\(index)]")
+        })
+    }
+
+    private func capabilitySetting(_ value: Value, path: String) throws -> CapabilitySetting {
+        guard let object = value.objectValue else {
+            throw ProvisioningInputValidationError("'\(path)' must be an object")
+        }
+        let allowedKeys: Set<String> = [
+            "key", "name", "description", "enabledByDefault", "visible",
+            "allowedInstances", "minInstances", "options"
+        ]
+        if let unknown = object.keys.sorted().first(where: { !allowedKeys.contains($0) }) {
+            throw ProvisioningInputValidationError("Unknown field '\(path).\(unknown)'")
+        }
+        return CapabilitySetting(
+            key: try capabilityString(
+                object["key"],
+                path: "\(path).key",
+                allowedValues: Set(ProvisioningWorker.capabilitySettingKeys)
+            ),
+            name: try capabilityString(object["name"], path: "\(path).name"),
+            description: try capabilityString(object["description"], path: "\(path).description"),
+            enabledByDefault: try capabilityBool(object["enabledByDefault"], path: "\(path).enabledByDefault"),
+            visible: try capabilityBool(object["visible"], path: "\(path).visible"),
+            allowedInstances: try capabilityString(
+                object["allowedInstances"],
+                path: "\(path).allowedInstances",
+                allowedValues: Set(ProvisioningWorker.capabilityAllowedInstances)
+            ),
+            minInstances: try capabilityInt(object["minInstances"], path: "\(path).minInstances"),
+            options: try capabilityOptions(object["options"], path: "\(path).options")
+        )
+    }
+
+    private func capabilityOptions(_ value: Value?, path: String) throws -> [CapabilityOption]? {
+        guard let value else {
+            return nil
+        }
+        guard let values = value.arrayValue else {
+            throw ProvisioningInputValidationError("'\(path)' must be an array")
+        }
+        return try values.enumerated().map { index, value in
+            try capabilityOption(value, path: "\(path)[\(index)]")
+        }
+    }
+
+    private func capabilityOption(_ value: Value, path: String) throws -> CapabilityOption {
+        guard let object = value.objectValue else {
+            throw ProvisioningInputValidationError("'\(path)' must be an object")
+        }
+        let allowedKeys: Set<String> = [
+            "key", "name", "description", "enabledByDefault", "enabled", "supportsWildcard"
+        ]
+        if let unknown = object.keys.sorted().first(where: { !allowedKeys.contains($0) }) {
+            throw ProvisioningInputValidationError("Unknown field '\(path).\(unknown)'")
+        }
+        return CapabilityOption(
+            key: try capabilityString(
+                object["key"],
+                path: "\(path).key",
+                allowedValues: Set(ProvisioningWorker.capabilityOptionKeys)
+            ),
+            name: try capabilityString(object["name"], path: "\(path).name"),
+            description: try capabilityString(object["description"], path: "\(path).description"),
+            enabledByDefault: try capabilityBool(object["enabledByDefault"], path: "\(path).enabledByDefault"),
+            enabled: try capabilityBool(object["enabled"], path: "\(path).enabled"),
+            supportsWildcard: try capabilityBool(object["supportsWildcard"], path: "\(path).supportsWildcard")
+        )
+    }
+
+    private func capabilityString(
+        _ value: Value?,
+        path: String,
+        allowedValues: Set<String>? = nil
+    ) throws -> String? {
+        guard let value else {
+            return nil
+        }
+        guard let string = value.stringValue else {
+            throw ProvisioningInputValidationError("'\(path)' must be a string")
+        }
+        if let allowedValues, !allowedValues.contains(string) {
+            throw ProvisioningInputValidationError("Unsupported value for '\(path)': \(string)")
+        }
+        return string
+    }
+
+    private func capabilityBool(_ value: Value?, path: String) throws -> Bool? {
+        guard let value else {
+            return nil
+        }
+        guard let boolean = value.boolValue else {
+            throw ProvisioningInputValidationError("'\(path)' must be a boolean")
+        }
+        return boolean
+    }
+
+    private func capabilityInt(_ value: Value?, path: String) throws -> Int? {
+        guard let value else {
+            return nil
+        }
+        guard let integer = value.intValue else {
+            throw ProvisioningInputValidationError("'\(path)' must be an integer")
+        }
+        return integer
+    }
+}
+
+private struct ProvisioningInputValidationError: LocalizedError {
+    let message: String
+
+    init(_ message: String) {
+        self.message = message
+    }
+
+    var errorDescription: String? {
+        message
     }
 }

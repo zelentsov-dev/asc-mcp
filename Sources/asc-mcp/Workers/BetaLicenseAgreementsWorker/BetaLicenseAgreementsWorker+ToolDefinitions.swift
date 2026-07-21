@@ -27,6 +27,7 @@ extension BetaLicenseAgreementsWorker {
                         "type": .string("integer"),
                         "minimum": .int(1),
                         "maximum": .int(200),
+                        "default": .int(25),
                         "description": .string("Max results (default: 25, max: 200)")
                     ]),
                     "next_url": .object([

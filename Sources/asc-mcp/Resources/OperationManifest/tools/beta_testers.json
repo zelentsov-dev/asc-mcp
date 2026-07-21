@@ -46,7 +46,7 @@
           }
         ]
       },
-      "note": "Exact relationship mutation; Apple returns no response document."
+      "note": "Rejects empty, malformed, or mixed-type ID arrays atomically before the exact relationship mutation; only Apple's 204 no-content response is accepted."
     },
     {
       "tool": "beta_testers_add_to_groups",
@@ -93,7 +93,7 @@
           }
         ]
       },
-      "note": "Exact relationship mutation; Apple returns no response document."
+      "note": "Rejects empty, malformed, or mixed-type ID arrays atomically before the exact relationship mutation; only Apple's 204 no-content response is accepted."
     },
     {
       "tool": "beta_testers_create",
@@ -176,7 +176,7 @@
           }
         ]
       },
-      "note": "Apple requires only email; betaGroups and builds relationships are independently optional and validated when supplied, and the response projects the complete Apple 4.4.1 appDevices attribute."
+      "note": "Apple requires only email; the handler validates email format before network access, betaGroups and builds relationships are independently optional and validated when supplied, and the response projects the complete Apple 4.4.1 appDevices attribute."
     },
     {
       "tool": "beta_testers_delete",
@@ -532,7 +532,7 @@
           }
         ]
       },
-      "note": "Exact related-resource list with a reduced app projection."
+      "note": "Exact related-resource list with a reduced app projection and fail-closed 1 through 200 limit validation."
     },
     {
       "tool": "beta_testers_remove_from_app",
@@ -658,7 +658,7 @@
           }
         ]
       },
-      "note": "Exact relationship removal; Apple returns no response document."
+      "note": "Rejects empty, malformed, or mixed-type ID arrays atomically before the exact relationship removal; Apple returns 204 without a response document."
     },
     {
       "tool": "beta_testers_remove_from_groups",
@@ -705,7 +705,7 @@
           }
         ]
       },
-      "note": "Exact relationship removal; Apple returns no response document."
+      "note": "Rejects empty, malformed, or mixed-type ID arrays atomically before the exact relationship removal; Apple returns 204 without a response document."
     },
     {
       "tool": "beta_testers_search",

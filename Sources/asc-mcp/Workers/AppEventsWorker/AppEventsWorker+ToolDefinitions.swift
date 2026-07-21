@@ -90,10 +90,7 @@ extension AppEventsWorker {
                         "format": .string("uri"),
                         "description": .string("Absolute deep-link URI to open the event in the app; null clears it")
                     ]),
-                    "purchase_requirement": nullableEnumSchema(
-                        "Purchase requirement",
-                        values: purchaseRequirements
-                    ),
+                    "purchase_requirement": nullableStringSchema("Purchase requirement string; null clears Apple's value"),
                     "primary_locale": nullableStringSchema("Primary locale code for the event"),
                     "priority": nullableEnumSchema("Event priority", values: ["HIGH", "NORMAL"]),
                     "purpose": nullableEnumSchema("Event purpose", values: appEventPurposes),
@@ -125,10 +122,7 @@ extension AppEventsWorker {
                         "format": .string("uri"),
                         "description": .string("Absolute deep-link URI to open the event in the app; null clears it")
                     ]),
-                    "purchase_requirement": nullableEnumSchema(
-                        "Purchase requirement",
-                        values: purchaseRequirements
-                    ),
+                    "purchase_requirement": nullableStringSchema("Purchase requirement string; null clears Apple's value"),
                     "primary_locale": nullableStringSchema("Primary locale code for the event"),
                     "priority": nullableEnumSchema("Event priority", values: ["HIGH", "NORMAL"]),
                     "purpose": nullableEnumSchema("Event purpose", values: appEventPurposes),
@@ -295,10 +289,6 @@ extension AppEventsWorker {
         ["APPROPRIATE_FOR_ALL_USERS", "ATTRACT_NEW_USERS", "KEEP_ACTIVE_USERS_INFORMED", "BRING_BACK_LAPSED_USERS"]
     }
 
-    private var purchaseRequirements: [String] {
-        ["NO_COST_ASSOCIATED", "IN_APP_PURCHASE"]
-    }
-
     private func boundedIntegerSchema(_ description: String, maximum: Int) -> Value {
         .object([
             "type": .string("integer"),
@@ -340,10 +330,15 @@ extension AppEventsWorker {
 
     private func stringOrArrayEnumSchema(_ description: String, values: [String]) -> Value {
         let enumValues = Value.array(values.map(Value.string))
+        let alternatives = values.map { NSRegularExpression.escapedPattern(for: $0) }.joined(separator: "|")
+        let scalarPattern = "^\\s*(?:\(alternatives))\\s*(?:,\\s*(?:\(alternatives))\\s*)*$"
         return .object([
             "description": .string(description + ": " + values.joined(separator: ", ")),
             "oneOf": .array([
-                .object(["type": .string("string")]),
+                .object([
+                    "type": .string("string"),
+                    "pattern": .string(scalarPattern)
+                ]),
                 .object([
                     "type": .string("array"),
                     "items": .object([

@@ -110,6 +110,72 @@ struct AccessibilityWorkerTests {
         #expect(await transport.requestCount() == 1)
     }
 
+    @Test("present invalid limits fail before network")
+    func invalidLimitsFailBeforeNetwork() async throws {
+        let cases: [(String, [String: Value])] = [
+            ("accessibility_list", ["app_id": .string("app-1"), "limit": .int(0)]),
+            ("accessibility_list", ["app_id": .string("app-1"), "limit": .string("25")]),
+            ("accessibility_list_relationships", ["app_id": .string("app-1"), "limit": .int(201)])
+        ]
+
+        for (tool, arguments) in cases {
+            let transport = TestHTTPTransport(responses: [])
+            let client = await HTTPClient(
+                jwtService: try TestFactory.makeJWTService(),
+                baseURL: "https://api.example.test",
+                transport: transport,
+                maxRetries: 1
+            )
+            let worker = AccessibilityWorker(httpClient: client)
+
+            let result = try await worker.handleTool(.init(name: tool, arguments: arguments))
+
+            #expect(result.isError == true)
+            #expect(await transport.requestCount() == 0)
+        }
+    }
+
+    @Test("accepted create and update identity failures are committed unverified")
+    func mutationIdentityFailuresPreserveCommitState() async throws {
+        let createTransport = TestHTTPTransport(responses: [
+            .init(statusCode: 201, body: #"{"data":{"type":"apps","id":"decl-1"}}"#)
+        ])
+        let createClient = await HTTPClient(
+            jwtService: try TestFactory.makeJWTService(),
+            baseURL: "https://api.example.test",
+            transport: createTransport,
+            maxRetries: 1
+        )
+        let create = try await AccessibilityWorker(httpClient: createClient).handleTool(.init(
+            name: "accessibility_create",
+            arguments: ["app_id": .string("app-1"), "device_family": .string("IPHONE")]
+        ))
+
+        let updateTransport = TestHTTPTransport(responses: [
+            .init(statusCode: 200, body: #"{"data":{"type":"accessibilityDeclarations","id":"decl-other"}}"#)
+        ])
+        let updateClient = await HTTPClient(
+            jwtService: try TestFactory.makeJWTService(),
+            baseURL: "https://api.example.test",
+            transport: updateTransport,
+            maxRetries: 1
+        )
+        let update = try await AccessibilityWorker(httpClient: updateClient).handleTool(.init(
+            name: "accessibility_update",
+            arguments: ["declaration_id": .string("decl-1"), "publish": .bool(true)]
+        ))
+
+        for result in [create, update] {
+            guard case .object(let payload)? = result.structuredContent else {
+                Issue.record("Expected structured mutation failure")
+                continue
+            }
+            #expect(result.isError == true)
+            #expect(payload["operationCommitState"] == .string("committed_unverified"))
+            #expect(payload["retrySafe"] == .bool(false))
+        }
+    }
+
     @Test("request models encode Apple OpenAPI JSON API shape")
     func requestModelsEncodeAppleShape() throws {
         let create = ASCAccessibilityDeclarationCreateRequest(
@@ -300,8 +366,21 @@ struct AccessibilityWorkerTests {
 
         #expect(deviceFamilyAlternatives.count == 2)
         #expect(stateAlternatives.count == 2)
+        #expect(deviceFamilyAlternatives.first?.objectValue?["pattern"]?.stringValue != nil)
+        #expect(stateAlternatives.first?.objectValue?["pattern"]?.stringValue != nil)
         #expect(limit["minimum"]?.intValue == 1)
         #expect(limit["maximum"]?.intValue == 200)
+    }
+
+    @Test("list manifests declare page count and optional Apple total")
+    func listManifestOutputParity() throws {
+        let manifest = try ASCOperationManifestBundle.loadBundled()
+        for toolName in ["accessibility_list", "accessibility_list_relationships"] {
+            let mapping = try #require(manifest.mapping(for: toolName))
+            let fields = Set(mapping.response.fields.map(\.outputField))
+            #expect(fields.contains("count"))
+            #expect(fields.contains("total"))
+        }
     }
 
     @Test("list sends multi-value filters and sparse fields using Apple query names")
@@ -324,7 +403,7 @@ struct AccessibilityWorkerTests {
                 "device_family": .array([.string("IPHONE"), .string("IPAD")]),
                 "state": .array([.string("DRAFT"), .string("PUBLISHED")]),
                 "fields": .array([.string("deviceFamily"), .string("state")]),
-                "limit": .int(500)
+                "limit": .int(200)
             ]
         ))
 

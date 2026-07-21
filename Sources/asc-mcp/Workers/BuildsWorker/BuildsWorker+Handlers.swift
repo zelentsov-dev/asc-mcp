@@ -17,11 +17,22 @@ extension BuildsWorker {
             )
         }
 
+        let limit: Int
+        if let value = arguments["limit"] {
+            guard let parsed = value.intValue, (1...200).contains(parsed) else {
+                return MCPResult.error("'limit' must be an integer from 1 through 200")
+            }
+            limit = parsed
+        } else {
+            limit = 25
+        }
+
         do {
             let response: ASCBuildsResponse
             var queryParams: [String: String] = [
                 "filter[app]": appId,
-                "include": "app,buildBetaDetail,preReleaseVersion,buildUpload"
+                "include": "app,buildBetaDetail,preReleaseVersion,buildUpload",
+                "limit": String(limit)
             ]
 
             if let version = commaSeparatedStringList(arguments["version"]) {
@@ -47,12 +58,6 @@ extension BuildsWorker {
             }
             if let declarationExists = arguments["uses_non_exempt_encryption_set"]?.boolValue {
                 queryParams["exists[usesNonExemptEncryption]"] = declarationExists ? "true" : "false"
-            }
-            if let limitValue = arguments["limit"],
-               let limit = limitValue.intValue {
-                queryParams["limit"] = String(min(max(limit, 1), 200))
-            } else {
-                queryParams["limit"] = "25"
             }
             if let sortValue = arguments["sort"],
                let sort = sortValue.stringValue {

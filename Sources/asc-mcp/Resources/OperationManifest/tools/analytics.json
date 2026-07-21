@@ -442,7 +442,7 @@
         {
           "toolField": "limit",
           "sourceKind": "local",
-          "localRole": "clampedRawTSVRowProjectionLimit1To200"
+          "localRole": "validatedRawTSVRowProjectionLimit1To200"
         }
       ],
       "response": {
@@ -487,7 +487,7 @@
           }
         ]
       },
-      "note": "All Apple 4.4.1 request parameters are bound. Partial because summary_only, the locally clamped 1-to-200 row limit, decompression, TSV parsing, and monetary aggregation are local behavior; the tool does not expose a typed output contract. Decoded reports are integrity-checked and limited to 64 MiB, 256 columns, 1000000 scanned rows, 10000000 scanned data cells, 100000 matched rows, and 1000000 retained cells. Financial aggregation uses Decimal, prefers Apple's signed Extended Partner Share, falls back to Quantity multiplied by per-unit Partner Share, and returns both compatibility numeric values and exact decimal strings."
+      "note": "All Apple 4.4.1 request parameters are bound. Partial because summary_only, the locally validated 1-to-200 row limit, decompression, TSV parsing, and monetary aggregation are local behavior; the tool does not expose a typed output contract. Decoded reports are integrity-checked and limited to 64 MiB, 256 columns, 1000000 scanned rows, 10000000 scanned data cells, 100000 matched rows, and 1000000 retained cells. Financial aggregation uses Decimal, prefers Apple's signed Extended Partner Share, falls back to Quantity multiplied by per-unit Partner Share, and returns both compatibility numeric values and exact decimal strings."
     },
     {
       "tool": "analytics_get_instance",

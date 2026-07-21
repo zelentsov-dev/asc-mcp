@@ -122,32 +122,32 @@ extension BetaGroupsWorker {
                         "description": .string("Beta group ID")
                     ]),
                     "name": .object([
-                        "type": .string("string"),
-                        "description": .string("New group name")
+                        "type": .array([.string("string"), .string("null")]),
+                        "description": .string("New group name, or null to clear it")
                     ]),
                     "public_link_enabled": .object([
-                        "type": .string("boolean"),
-                        "description": .string("Enable public invite link")
+                        "type": .array([.string("boolean"), .string("null")]),
+                        "description": .string("Enable public invite link, or null to clear the setting")
                     ]),
                     "public_link_limit": .object([
-                        "type": .string("integer"),
-                        "description": .string("Max testers via public link")
+                        "type": .array([.string("integer"), .string("null")]),
+                        "description": .string("Max testers via public link, or null to clear the limit")
                     ]),
                     "public_link_limit_enabled": .object([
-                        "type": .string("boolean"),
-                        "description": .string("Enable or disable the public-link tester limit")
+                        "type": .array([.string("boolean"), .string("null")]),
+                        "description": .string("Enable or disable the public-link tester limit, or null to clear the setting")
                     ]),
                     "feedback_enabled": .object([
-                        "type": .string("boolean"),
-                        "description": .string("Enable feedback")
+                        "type": .array([.string("boolean"), .string("null")]),
+                        "description": .string("Enable feedback, or null to clear the setting")
                     ]),
                     "ios_builds_available_for_apple_silicon_mac": .object([
-                        "type": .string("boolean"),
-                        "description": .string("Make eligible iOS builds available on Apple silicon Macs")
+                        "type": .array([.string("boolean"), .string("null")]),
+                        "description": .string("Make eligible iOS builds available on Apple silicon Macs, or null to clear the setting")
                     ]),
                     "ios_builds_available_for_apple_vision": .object([
-                        "type": .string("boolean"),
-                        "description": .string("Make eligible iOS builds available on Apple Vision")
+                        "type": .array([.string("boolean"), .string("null")]),
+                        "description": .string("Make eligible iOS builds available on Apple Vision, or null to clear the setting")
                     ])
                 ]),
                 "required": .array([.string("group_id")])
@@ -187,8 +187,10 @@ extension BetaGroupsWorker {
                         "type": .string("array"),
                         "description": .string("Array of beta tester IDs"),
                         "items": .object([
-                            "type": .string("string")
-                        ])
+                            "type": .string("string"),
+                            "minLength": .int(1)
+                        ]),
+                        "minItems": .int(1)
                     ])
                 ]),
                 "required": .array([.string("group_id"), .string("tester_ids")])
@@ -209,7 +211,10 @@ extension BetaGroupsWorker {
                     ]),
                     "limit": .object([
                         "type": .string("integer"),
-                        "description": .string("Max results (default: 25, max: 200)")
+                        "description": .string("Max results (default: 25, max: 200)"),
+                        "minimum": .int(1),
+                        "maximum": .int(200),
+                        "default": .int(25)
                     ]),
                     "next_url": .object([
                         "type": .string("string"),
@@ -236,8 +241,10 @@ extension BetaGroupsWorker {
                         "type": .string("array"),
                         "description": .string("Array of build IDs to add"),
                         "items": .object([
-                            "type": .string("string")
-                        ])
+                            "type": .string("string"),
+                            "minLength": .int(1)
+                        ]),
+                        "minItems": .int(1)
                     ])
                 ]),
                 "required": .array([.string("group_id"), .string("build_ids")])
@@ -260,8 +267,10 @@ extension BetaGroupsWorker {
                         "type": .string("array"),
                         "description": .string("Array of build IDs to remove"),
                         "items": .object([
-                            "type": .string("string")
-                        ])
+                            "type": .string("string"),
+                            "minLength": .int(1)
+                        ]),
+                        "minItems": .int(1)
                     ])
                 ]),
                 "required": .array([.string("group_id"), .string("build_ids")])
@@ -284,8 +293,10 @@ extension BetaGroupsWorker {
                         "type": .string("array"),
                         "description": .string("Array of beta tester IDs"),
                         "items": .object([
-                            "type": .string("string")
-                        ])
+                            "type": .string("string"),
+                            "minLength": .int(1)
+                        ]),
+                        "minItems": .int(1)
                     ])
                 ]),
                 "required": .array([.string("group_id"), .string("tester_ids")])

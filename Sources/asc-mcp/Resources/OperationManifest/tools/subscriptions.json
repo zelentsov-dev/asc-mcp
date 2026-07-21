@@ -718,7 +718,7 @@
         ],
         "fields": []
       },
-      "note": "Creates one subscription price and preserves omission, concrete values, and explicit null for every nullable Apple 4.4.1 price attribute."
+      "note": "Creates one subscription price with Apple's required subscription and price-point relationships, an optional territory relationship, and omission/value/explicit-null preservation for every nullable price attribute."
     },
     {
       "tool": "subscriptions_create_promotional_offer",
@@ -1093,7 +1093,7 @@
       "tool": "subscriptions_delete",
       "kind": "direct",
       "status": "partial",
-      "effect": "write",
+      "effect": "destructive",
       "implementationState": "asBuilt",
       "operations": [
         {
@@ -1126,7 +1126,7 @@
       "tool": "subscriptions_delete_group",
       "kind": "direct",
       "status": "partial",
-      "effect": "write",
+      "effect": "destructive",
       "implementationState": "asBuilt",
       "operations": [
         {
@@ -1159,7 +1159,7 @@
       "tool": "subscriptions_delete_group_localization",
       "kind": "direct",
       "status": "deprecated",
-      "effect": "write",
+      "effect": "destructive",
       "implementationState": "asBuilt",
       "operations": [
         {
@@ -1192,7 +1192,7 @@
       "tool": "subscriptions_delete_image",
       "kind": "direct",
       "status": "deprecated",
-      "effect": "write",
+      "effect": "destructive",
       "implementationState": "asBuilt",
       "operations": [
         {
@@ -1225,7 +1225,7 @@
       "tool": "subscriptions_delete_intro_offer",
       "kind": "direct",
       "status": "partial",
-      "effect": "write",
+      "effect": "destructive",
       "implementationState": "asBuilt",
       "operations": [
         {
@@ -1258,7 +1258,7 @@
       "tool": "subscriptions_delete_localization",
       "kind": "direct",
       "status": "deprecated",
-      "effect": "write",
+      "effect": "destructive",
       "implementationState": "asBuilt",
       "operations": [
         {
@@ -1291,7 +1291,7 @@
       "tool": "subscriptions_delete_price",
       "kind": "direct",
       "status": "partial",
-      "effect": "write",
+      "effect": "destructive",
       "implementationState": "asBuilt",
       "operations": [
         {
@@ -1324,7 +1324,7 @@
       "tool": "subscriptions_delete_promotional_offer",
       "kind": "direct",
       "status": "partial",
-      "effect": "write",
+      "effect": "destructive",
       "implementationState": "asBuilt",
       "operations": [
         {
@@ -1357,7 +1357,7 @@
       "tool": "subscriptions_delete_review_screenshot",
       "kind": "direct",
       "status": "partial",
-      "effect": "write",
+      "effect": "destructive",
       "implementationState": "asBuilt",
       "operations": [
         {
@@ -1390,7 +1390,7 @@
       "tool": "subscriptions_delete_winback_offer",
       "kind": "direct",
       "status": "partial",
-      "effect": "write",
+      "effect": "destructive",
       "implementationState": "asBuilt",
       "operations": [
         {
@@ -3491,20 +3491,6 @@
           "optionalParameterClassifications": [
             {
               "location": "query",
-              "appleName": "filter[planType]",
-              "disposition": "intentionallyOmitted",
-              "reason": "The current tool retains territory-focused pricing semantics; plan-aware selection requires a dedicated result contract.",
-              "reviewAtSpec": "4.4.1"
-            },
-            {
-              "location": "query",
-              "appleName": "filter[upfrontPricePointId]",
-              "disposition": "intentionallyOmitted",
-              "reason": "The current tool retains territory-focused pricing semantics; plan-aware selection requires a dedicated result contract.",
-              "reviewAtSpec": "4.4.1"
-            },
-            {
-              "location": "query",
               "appleName": "include",
               "disposition": "internalControl",
               "reason": "The handler fixes this query control and requires the same value on every continuation; it is not exposed as a direct public input.",
@@ -3536,6 +3522,20 @@
           "appleName": "filter[territory]"
         },
         {
+          "toolField": "upfront_price_point_ids",
+          "sourceKind": "parameter",
+          "operationId": "subscriptionPricePoints_equalizations_getToManyRelated",
+          "location": "query",
+          "appleName": "filter[upfrontPricePointId]"
+        },
+        {
+          "toolField": "plan_types",
+          "sourceKind": "parameter",
+          "operationId": "subscriptionPricePoints_equalizations_getToManyRelated",
+          "location": "query",
+          "appleName": "filter[planType]"
+        },
+        {
           "toolField": "limit",
           "sourceKind": "parameter",
           "operationId": "subscriptionPricePoints_equalizations_getToManyRelated",
@@ -3556,7 +3556,7 @@
         ],
         "fields": []
       },
-      "note": "Maps current equalizations. Apple 4.4.1 also provides adjustedEqualizations, which this public tool does not expose."
+      "note": "Maps current equalizations with territory, subscription, upfront-price-point, and plan-type filters. Apple 4.4.1 also provides adjustedEqualizations through subscriptions_list_price_point_adjusted_equalizations."
     },
     {
       "tool": "subscriptions_list_price_points",
@@ -3572,20 +3572,6 @@
           "role": "primary",
           "condition": null,
           "optionalParameterClassifications": [
-            {
-              "location": "query",
-              "appleName": "filter[planType]",
-              "disposition": "intentionallyOmitted",
-              "reason": "The current tool retains territory-focused pricing semantics; plan-aware selection requires a dedicated result contract.",
-              "reviewAtSpec": "4.4.1"
-            },
-            {
-              "location": "query",
-              "appleName": "filter[upfrontPricePointId]",
-              "disposition": "intentionallyOmitted",
-              "reason": "The current tool retains territory-focused pricing semantics; plan-aware selection requires a dedicated result contract.",
-              "reviewAtSpec": "4.4.1"
-            },
             {
               "location": "query",
               "appleName": "include",
@@ -3610,6 +3596,20 @@
           "operationId": "subscriptions_pricePoints_getToManyRelated",
           "location": "query",
           "appleName": "filter[territory]"
+        },
+        {
+          "toolField": "upfront_price_point_ids",
+          "sourceKind": "parameter",
+          "operationId": "subscriptions_pricePoints_getToManyRelated",
+          "location": "query",
+          "appleName": "filter[upfrontPricePointId]"
+        },
+        {
+          "toolField": "plan_types",
+          "sourceKind": "parameter",
+          "operationId": "subscriptions_pricePoints_getToManyRelated",
+          "location": "query",
+          "appleName": "filter[planType]"
         },
         {
           "toolField": "limit",
@@ -3650,13 +3650,6 @@
           "optionalParameterClassifications": [
             {
               "location": "query",
-              "appleName": "filter[planType]",
-              "disposition": "intentionallyOmitted",
-              "reason": "The current tool retains territory-focused pricing semantics; plan-aware selection requires a dedicated result contract.",
-              "reviewAtSpec": "4.4.1"
-            },
-            {
-              "location": "query",
               "appleName": "include",
               "disposition": "internalControl",
               "reason": "The handler fixes this query control and requires the same value on every continuation; it is not exposed as a direct public input.",
@@ -3688,6 +3681,13 @@
           "appleName": "filter[subscriptionPricePoint]"
         },
         {
+          "toolField": "plan_types",
+          "sourceKind": "parameter",
+          "operationId": "subscriptions_prices_getToManyRelated",
+          "location": "query",
+          "appleName": "filter[planType]"
+        },
+        {
           "toolField": "limit",
           "sourceKind": "parameter",
           "operationId": "subscriptions_prices_getToManyRelated",
@@ -3707,7 +3707,7 @@
         ],
         "fields": []
       },
-      "note": "Apple 4.4 pricing is plan-aware; the public tool lacks filter[planType], so results may mix MONTHLY and UPFRONT plans."
+      "note": "Apple 4.4.1 pricing is plan-aware; callers can filter MONTHLY and UPFRONT plans while preserving the complete query across pagination."
     },
     {
       "tool": "subscriptions_list_promotional_offer_prices",

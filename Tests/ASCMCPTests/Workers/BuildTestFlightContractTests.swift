@@ -201,6 +201,56 @@ struct BuildTestFlightContractTests {
         #expect(Set(attributes.keys) == ["autoNotifyEnabled"])
     }
 
+    @Test("beta detail update preserves explicit null")
+    func betaDetailUpdatePreservesExplicitNull() async throws {
+        let transport = TestHTTPTransport(responses: [
+            .init(statusCode: 200, body: #"{"data":{"type":"buildBetaDetails","id":"detail-1"}}"#)
+        ])
+        let worker = try await makeBuildBetaDetailsWorker(transport: transport)
+
+        let result = try await worker.handleTool(CallTool.Parameters(
+            name: "builds_update_beta_detail",
+            arguments: [
+                "beta_detail_id": .string("detail-1"),
+                "auto_notify": .null
+            ]
+        ))
+
+        #expect(result.isError != true)
+        let body = try buildContractJSONBody(try #require(await transport.recordedRequests().first))
+        let data = try buildContractDictionary(body["data"])
+        let attributes = try buildContractDictionary(data["attributes"])
+        #expect(attributes["autoNotifyEnabled"] is NSNull)
+        #expect(Set(attributes.keys) == ["autoNotifyEnabled"])
+    }
+
+    @Test("beta localization update preserves explicit null")
+    func betaLocalizationUpdatePreservesExplicitNull() async throws {
+        let transport = TestHTTPTransport(responses: [
+            .init(statusCode: 200, body: #"{"data":[{"type":"betaBuildLocalizations","id":"localization-1"}]}"#),
+            .init(statusCode: 200, body: #"{"data":{"type":"betaBuildLocalizations","id":"localization-1"}}"#)
+        ])
+        let worker = try await makeBuildBetaDetailsWorker(transport: transport)
+
+        let result = try await worker.handleTool(CallTool.Parameters(
+            name: "builds_set_beta_localization",
+            arguments: [
+                "build_id": .string("build-1"),
+                "locale": .string("en-US"),
+                "whats_new": .null
+            ]
+        ))
+
+        #expect(result.isError != true)
+        let requests = await transport.recordedRequests()
+        #expect(requests.map(\.httpMethod) == ["GET", "PATCH"])
+        let body = try buildContractJSONBody(requests[1])
+        let data = try buildContractDictionary(body["data"])
+        let attributes = try buildContractDictionary(data["attributes"])
+        #expect(attributes["whatsNew"] is NSNull)
+        #expect(Set(attributes.keys) == ["whatsNew"])
+    }
+
     @Test("beta detail rejects read-only states before network")
     func betaDetailRejectsReadOnlyStates() async throws {
         let transport = TestHTTPTransport(responses: [])
@@ -234,6 +284,8 @@ struct BuildTestFlightContractTests {
         for field in ["feedback_email", "marketing_url", "privacy_policy_url", "tv_os_privacy_policy"] {
             #expect(try buildContractProperty(field, in: localization)["deprecated"] == .bool(true))
         }
+        #expect(try buildContractProperty("auto_notify", in: betaDetail)["type"] == .array([.string("boolean"), .string("null")]))
+        #expect(try buildContractProperty("whats_new", in: localization)["type"] == .array([.string("string"), .string("null")]))
     }
 }
 

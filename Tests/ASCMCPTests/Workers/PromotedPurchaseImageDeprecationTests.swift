@@ -32,8 +32,10 @@ struct PromotedPurchaseImageDeprecationTests {
                 Issue.record("Expected replacement tool list")
                 continue
             }
-            #expect(replacements.contains(.string("iap_upload_image")))
-            #expect(replacements.contains(.string("subscriptions_upload_image")))
+            #expect(replacements.contains(.string("iap_upload_version_image")))
+            #expect(replacements.contains(.string("subscriptions_upload_version_image")))
+            #expect(!replacements.contains(.string("iap_upload_image")))
+            #expect(!replacements.contains(.string("subscriptions_upload_image")))
         }
 
         #expect(await transport.requestCount() == 0)
@@ -50,6 +52,23 @@ struct PromotedPurchaseImageDeprecationTests {
         for tool in imageTools {
             #expect(tool.description?.contains("Deprecated") == true)
         }
+
+        for toolName in ["promoted_get_image", "promoted_delete_image"] {
+            let tool = try #require(imageTools.first { $0.name == toolName })
+            let properties = try promotedDeprecationObject(
+                try promotedDeprecationObject(tool.inputSchema)["properties"]
+            )
+            let imageID = try promotedDeprecationObject(properties["image_id"])
+            #expect(imageID["pattern"] == .string(#"^(?!\.{1,2}$)[A-Za-z0-9._~-]+$"#))
+        }
+
+        let upload = try #require(imageTools.first { $0.name == "promoted_upload_image" })
+        let uploadProperties = try promotedDeprecationObject(
+            try promotedDeprecationObject(upload.inputSchema)["properties"]
+        )
+        let filePath = try promotedDeprecationObject(uploadProperties["file_path"])
+        #expect(filePath["minLength"] == .int(1))
+        #expect(filePath["pattern"] == .string(#"^\S(?:[\s\S]*\S)?$"#))
     }
 }
 
@@ -86,6 +105,14 @@ private func promotedDeprecationDetails(
         throw PromotedPurchaseImageDeprecationTestError.missingDetails
     }
     return details
+}
+
+private func promotedDeprecationObject(_ value: Value?) throws -> [String: Value] {
+    guard case .object(let object) = value else {
+        Issue.record("Expected schema object")
+        throw PromotedPurchaseImageDeprecationTestError.missingDetails
+    }
+    return object
 }
 
 private enum PromotedPurchaseImageDeprecationTestError: Error {

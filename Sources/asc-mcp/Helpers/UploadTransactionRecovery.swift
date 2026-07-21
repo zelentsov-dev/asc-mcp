@@ -1374,6 +1374,10 @@ private extension ASCError {
             return cause.uploadRecoveryHTTPStatusCode
         case .deleteCommittedUnverified(let statusCode):
             return statusCode
+        case .mutationOutcomeUnknown(_, let cause):
+            return cause.uploadRecoveryHTTPStatusCode
+        case .mutationCommittedUnverified(_, _, let actualStatusCode, _):
+            return actualStatusCode
         default:
             return nil
         }

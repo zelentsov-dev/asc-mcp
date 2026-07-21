@@ -93,6 +93,11 @@ struct MetricsWorkerContractTests {
         let category = try metricsObject(try #require(categories.first))
         let metrics = try metricsArray(category["metrics"])
         let metric = try metricsObject(try #require(metrics.first))
+        let goalKeys = try metricsArray(metric["goal_keys"])
+        let goalKey = try metricsObject(try #require(goalKeys.first))
+        #expect(goalKey["goal_key"] == .string("storageP90"))
+        #expect(goalKey["lower_bound"] == .int(0))
+        #expect(goalKey["upper_bound"] == .int(200))
         let datasets = try metricsArray(metric["datasets"])
         let dataset = try metricsObject(try #require(datasets.first))
         let points = try metricsArray(dataset["points"])
@@ -419,6 +424,27 @@ struct MetricsWorkerContractTests {
         #expect(frame["line_number"] == .string("87"))
         #expect(frame["address"] == .string("0x0000000100001234"))
         #expect(frame["offset_into_binary_text_segment"] == .string("4660"))
+    }
+
+    @Test("diagnostic limits reject invalid present values before network access")
+    func diagnosticLimitsRejectInvalidValues() async throws {
+        for (tool, idField) in [
+            ("metrics_build_diagnostics", "build_id"),
+            ("metrics_get_diagnostic_logs", "signature_id")
+        ] {
+            for invalid in [Value.int(0), .int(201), .string("25")] {
+                let transport = TestHTTPTransport(responses: [])
+                let worker = try await makeMetricsWorker(transport: transport)
+                let result = try await worker.handleTool(CallTool.Parameters(
+                    name: tool,
+                    arguments: [idField: .string("resource-1"), "limit": invalid]
+                ))
+
+                #expect(result.isError == true)
+                #expect(metricsText(result).contains("limit must be an integer from 1 through 200"))
+                #expect(await transport.requestCount() == 0)
+            }
+        }
     }
 }
 

@@ -17,10 +17,10 @@ extension ProvisioningWorker {
                         "maximum": .int(200),
                         "description": .string("Max results (default: 25, max: 200)")
                     ]),
-                    "filter_platform": .object([
-                        "type": .string("string"),
-                        "description": .string("Filter by one or more platforms (comma-separated): IOS, MAC_OS, UNIVERSAL")
-                    ]),
+                    "filter_platform": enumListSchema(
+                        description: "Filter by one or more platforms",
+                        values: ProvisioningWorker.bundleIdPlatforms
+                    ),
                     "filter_identifier": .object([
                         "type": .string("string"),
                         "description": .string("Filter by one or more bundle identifiers (comma-separated)")
@@ -37,10 +37,10 @@ extension ProvisioningWorker {
                         "type": .string("string"),
                         "description": .string("Filter by one or more bundle ID resource IDs (comma-separated)")
                     ]),
-                    "sort": .object([
-                        "type": .string("string"),
-                        "description": .string("Comma-separated sort fields: name, -name, platform, -platform, identifier, -identifier, seedId, -seedId, id, -id")
-                    ]),
+                    "sort": enumListSchema(
+                        description: "Sort by one or more supported fields",
+                        values: ProvisioningWorker.bundleIdSortValues
+                    ),
                     "next_url": .object([
                         "type": .string("string"),
                         "description": .string("Apple continuation URL from the previous response. Repeat every originating list control, including the effective/default limit, filters, sort, include, fields, and nested limits when supported; the exact query and a non-empty cursor are validated.")
@@ -85,11 +85,12 @@ extension ProvisioningWorker {
                     ]),
                     "platform": .object([
                         "type": .string("string"),
+                        "enum": .array(ProvisioningWorker.bundleIdPlatforms.map(Value.string)),
                         "description": .string("Platform: IOS, MAC_OS, UNIVERSAL")
                     ]),
                     "seed_id": .object([
-                        "type": .string("string"),
-                        "description": .string("Optional Apple Developer Program seed ID")
+                        "type": .array([.string("string"), .string("null")]),
+                        "description": .string("Optional Apple Developer Program seed ID; pass null for Apple's explicit nullable value")
                     ])
                 ]),
                 "required": .array([.string("name"), .string("identifier"), .string("platform")])
@@ -127,14 +128,14 @@ extension ProvisioningWorker {
                         "maximum": .int(200),
                         "description": .string("Max results (default: 25, max: 200)")
                     ]),
-                    "filter_platform": .object([
-                        "type": .string("string"),
-                        "description": .string("Filter by one or more platforms (comma-separated): IOS, MAC_OS, UNIVERSAL")
-                    ]),
-                    "filter_status": .object([
-                        "type": .string("string"),
-                        "description": .string("Filter by one or more statuses (comma-separated): ENABLED, DISABLED")
-                    ]),
+                    "filter_platform": enumListSchema(
+                        description: "Filter by one or more platforms",
+                        values: ProvisioningWorker.bundleIdPlatforms
+                    ),
+                    "filter_status": enumListSchema(
+                        description: "Filter by one or more statuses",
+                        values: ProvisioningWorker.deviceStatuses
+                    ),
                     "filter_name": .object([
                         "type": .string("string"),
                         "description": .string("Filter by one or more device names (comma-separated)")
@@ -147,10 +148,10 @@ extension ProvisioningWorker {
                         "type": .string("string"),
                         "description": .string("Filter by one or more device resource IDs (comma-separated)")
                     ]),
-                    "sort": .object([
-                        "type": .string("string"),
-                        "description": .string("Comma-separated sort fields: name, -name, platform, -platform, udid, -udid, status, -status, id, -id")
-                    ]),
+                    "sort": enumListSchema(
+                        description: "Sort by one or more supported fields",
+                        values: ProvisioningWorker.deviceSortValues
+                    ),
                     "next_url": .object([
                         "type": .string("string"),
                         "description": .string("Apple continuation URL from the previous response. Repeat every originating list control, including the effective/default limit, filters, sort, include, fields, and nested limits when supported; the exact query and a non-empty cursor are validated.")
@@ -178,6 +179,7 @@ extension ProvisioningWorker {
                     ]),
                     "platform": .object([
                         "type": .string("string"),
+                        "enum": .array(ProvisioningWorker.bundleIdPlatforms.map(Value.string)),
                         "description": .string("Platform: IOS, MAC_OS, UNIVERSAL")
                     ])
                 ]),
@@ -198,12 +200,13 @@ extension ProvisioningWorker {
                         "description": .string("Device resource ID")
                     ]),
                     "name": .object([
-                        "type": .string("string"),
-                        "description": .string("New device name")
+                        "type": .array([.string("string"), .string("null")]),
+                        "description": .string("New device name, or null for Apple's explicit nullable value")
                     ]),
                     "status": .object([
-                        "type": .string("string"),
-                        "description": .string("New status: ENABLED, DISABLED")
+                        "type": .array([.string("string"), .string("null")]),
+                        "enum": .array(ProvisioningWorker.deviceStatuses.map(Value.string) + [.null]),
+                        "description": .string("New status: ENABLED, DISABLED, or null")
                     ])
                 ]),
                 "required": .array([.string("device_id")])
@@ -224,10 +227,10 @@ extension ProvisioningWorker {
                         "maximum": .int(200),
                         "description": .string("Max results (default: 25, max: 200)")
                     ]),
-                    "filter_type": .object([
-                        "type": .string("string"),
-                        "description": .string("Filter by one or more certificate types (comma-separated, e.g. IOS_DISTRIBUTION,DISTRIBUTION)")
-                    ]),
+                    "filter_type": enumListSchema(
+                        description: "Filter by one or more certificate types",
+                        values: ProvisioningWorker.certificateTypes
+                    ),
                     "filter_display_name": .object([
                         "type": .string("string"),
                         "description": .string("Filter by one or more certificate display names (comma-separated)")
@@ -240,10 +243,10 @@ extension ProvisioningWorker {
                         "type": .string("string"),
                         "description": .string("Filter by one or more certificate resource IDs (comma-separated)")
                     ]),
-                    "sort": .object([
-                        "type": .string("string"),
-                        "description": .string("Comma-separated sort fields: displayName, -displayName, certificateType, -certificateType, serialNumber, -serialNumber, id, -id")
-                    ]),
+                    "sort": enumListSchema(
+                        description: "Sort by one or more supported fields",
+                        values: ProvisioningWorker.certificateSortValues
+                    ),
                     "next_url": .object([
                         "type": .string("string"),
                         "description": .string("Apple continuation URL from the previous response. Repeat every originating list control, including the effective/default limit, filters, sort, include, fields, and nested limits when supported; the exact query and a non-empty cursor are validated.")
@@ -335,6 +338,7 @@ extension ProvisioningWorker {
                     ]),
                     "profile_type": .object([
                         "type": .string("string"),
+                        "enum": .array(ProvisioningWorker.profileTypes.map(Value.string)),
                         "description": .string("Profile type: IOS_APP_DEVELOPMENT, IOS_APP_STORE, IOS_APP_ADHOC, IOS_APP_INHOUSE, MAC_APP_DEVELOPMENT, MAC_APP_STORE, MAC_APP_DIRECT, TVOS_APP_DEVELOPMENT, TVOS_APP_STORE, TVOS_APP_ADHOC, TVOS_APP_INHOUSE, MAC_CATALYST_APP_DEVELOPMENT, MAC_CATALYST_APP_STORE, MAC_CATALYST_APP_DIRECT")
                     ]),
                     "bundle_id_resource_id": .object([
@@ -401,11 +405,13 @@ extension ProvisioningWorker {
                     ]),
                     "capability_type": .object([
                         "type": .string("string"),
+                        "enum": .array(ProvisioningWorker.capabilityTypes.map(Value.string)),
                         "description": .string("Capability type: ICLOUD, IN_APP_PURCHASE, GAME_CENTER, PUSH_NOTIFICATIONS, WALLET, INTER_APP_AUDIO, MAPS, ASSOCIATED_DOMAINS, PERSONAL_VPN, APP_GROUPS, HEALTHKIT, HOMEKIT, WIRELESS_ACCESSORY_CONFIGURATION, APPLE_PAY, DATA_PROTECTION, SIRIKIT, NETWORK_EXTENSIONS, MULTIPATH, HOT_SPOT, NFC_TAG_READING, CLASSKIT, AUTOFILL_CREDENTIAL_PROVIDER, ACCESS_WIFI_INFORMATION, NETWORK_CUSTOM_PROTOCOL, COREMEDIA_HLS_LOW_LATENCY, SYSTEM_EXTENSION_INSTALL, USER_MANAGEMENT, APPLE_ID_AUTH")
                     ]),
                     "settings": .object([
-                        "type": .string("string"),
-                        "description": .string("Optional JSON string with capability settings array")
+                        "type": .array([.string("array"), .string("null")]),
+                        "items": capabilitySettingSchema(),
+                        "description": .string("Capability settings array, explicit null, or omission")
                     ])
                 ]),
                 "required": .array([.string("bundle_id_resource_id"), .string("capability_type")])
@@ -443,14 +449,14 @@ extension ProvisioningWorker {
                         "maximum": .int(200),
                         "description": .string("Max results (default: 25, max: 200)")
                     ]),
-                    "filter_profile_type": .object([
-                        "type": .string("string"),
-                        "description": .string("Filter by one or more profile types (comma-separated, e.g. IOS_APP_STORE,MAC_APP_STORE)")
-                    ]),
-                    "filter_profile_state": .object([
-                        "type": .string("string"),
-                        "description": .string("Filter by one or more states (comma-separated): ACTIVE, INVALID")
-                    ]),
+                    "filter_profile_type": enumListSchema(
+                        description: "Filter by one or more profile types",
+                        values: ProvisioningWorker.profileTypes
+                    ),
+                    "filter_profile_state": enumListSchema(
+                        description: "Filter by one or more states",
+                        values: ProvisioningWorker.profileStates
+                    ),
                     "filter_name": .object([
                         "type": .string("string"),
                         "description": .string("Filter by one or more profile names (comma-separated)")
@@ -459,10 +465,10 @@ extension ProvisioningWorker {
                         "type": .string("string"),
                         "description": .string("Filter by one or more profile resource IDs (comma-separated)")
                     ]),
-                    "sort": .object([
-                        "type": .string("string"),
-                        "description": .string("Comma-separated sort fields: name, -name, profileType, -profileType, profileState, -profileState, id, -id")
-                    ]),
+                    "sort": enumListSchema(
+                        description: "Sort by one or more supported fields",
+                        values: ProvisioningWorker.profileSortValues
+                    ),
                     "next_url": .object([
                         "type": .string("string"),
                         "description": .string("Apple continuation URL from the previous response. Repeat every originating list control, including the effective/default limit, filters, sort, include, fields, and nested limits when supported; the exact query and a non-empty cursor are validated.")
@@ -471,5 +477,62 @@ extension ProvisioningWorker {
                 "required": .array([])
             ])
         )
+    }
+
+    private func enumListSchema(description: String, values: [String]) -> Value {
+        .object([
+            "oneOf": .array([
+                enumSchema(values),
+                .object([
+                    "type": .string("array"),
+                    "items": enumSchema(values),
+                    "minItems": .int(1),
+                    "uniqueItems": .bool(true)
+                ])
+            ]),
+            "description": .string(description)
+        ])
+    }
+
+    private func capabilitySettingSchema() -> Value {
+        .object([
+            "type": .string("object"),
+            "additionalProperties": .bool(false),
+            "properties": .object([
+                "key": enumSchema(ProvisioningWorker.capabilitySettingKeys),
+                "name": .object(["type": .string("string")]),
+                "description": .object(["type": .string("string")]),
+                "enabledByDefault": .object(["type": .string("boolean")]),
+                "visible": .object(["type": .string("boolean")]),
+                "allowedInstances": enumSchema(ProvisioningWorker.capabilityAllowedInstances),
+                "minInstances": .object(["type": .string("integer")]),
+                "options": .object([
+                    "type": .string("array"),
+                    "items": capabilityOptionSchema()
+                ])
+            ])
+        ])
+    }
+
+    private func capabilityOptionSchema() -> Value {
+        .object([
+            "type": .string("object"),
+            "additionalProperties": .bool(false),
+            "properties": .object([
+                "key": enumSchema(ProvisioningWorker.capabilityOptionKeys),
+                "name": .object(["type": .string("string")]),
+                "description": .object(["type": .string("string")]),
+                "enabledByDefault": .object(["type": .string("boolean")]),
+                "enabled": .object(["type": .string("boolean")]),
+                "supportsWildcard": .object(["type": .string("boolean")])
+            ])
+        ])
+    }
+
+    private func enumSchema(_ values: [String]) -> Value {
+        .object([
+            "type": .string("string"),
+            "enum": .array(values.map(Value.string))
+        ])
     }
 }

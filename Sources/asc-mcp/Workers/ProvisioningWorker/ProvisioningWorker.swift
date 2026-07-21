@@ -3,6 +3,105 @@ import MCP
 
 /// ProvisioningWorker manages certificates, devices, profiles and bundle IDs
 public final class ProvisioningWorker: Sendable {
+    static let bundleIdPlatforms = ["IOS", "MAC_OS", "UNIVERSAL"]
+    static let bundleIdSortValues = [
+        "name", "-name", "platform", "-platform", "identifier", "-identifier",
+        "seedId", "-seedId", "id", "-id"
+    ]
+    static let deviceStatuses = ["ENABLED", "DISABLED"]
+    static let deviceSortValues = [
+        "name", "-name", "platform", "-platform", "udid", "-udid",
+        "status", "-status", "id", "-id"
+    ]
+    static let certificateTypes = [
+        "APPLE_PAY",
+        "APPLE_PAY_MERCHANT_IDENTITY",
+        "APPLE_PAY_PSP_IDENTITY",
+        "APPLE_PAY_RSA",
+        "DEVELOPER_ID_KEXT",
+        "DEVELOPER_ID_KEXT_G2",
+        "DEVELOPER_ID_APPLICATION",
+        "DEVELOPER_ID_APPLICATION_G2",
+        "DEVELOPMENT",
+        "DISTRIBUTION",
+        "IDENTITY_ACCESS",
+        "IOS_DEVELOPMENT",
+        "IOS_DISTRIBUTION",
+        "MAC_APP_DISTRIBUTION",
+        "MAC_INSTALLER_DISTRIBUTION",
+        "MAC_APP_DEVELOPMENT",
+        "PASS_TYPE_ID",
+        "PASS_TYPE_ID_WITH_NFC"
+    ]
+    static let certificateSortValues = [
+        "displayName", "-displayName", "certificateType", "-certificateType",
+        "serialNumber", "-serialNumber", "id", "-id"
+    ]
+    static let profileTypes = [
+        "IOS_APP_DEVELOPMENT",
+        "IOS_APP_STORE",
+        "IOS_APP_ADHOC",
+        "IOS_APP_INHOUSE",
+        "MAC_APP_DEVELOPMENT",
+        "MAC_APP_STORE",
+        "MAC_APP_DIRECT",
+        "TVOS_APP_DEVELOPMENT",
+        "TVOS_APP_STORE",
+        "TVOS_APP_ADHOC",
+        "TVOS_APP_INHOUSE",
+        "MAC_CATALYST_APP_DEVELOPMENT",
+        "MAC_CATALYST_APP_STORE",
+        "MAC_CATALYST_APP_DIRECT"
+    ]
+    static let profileStates = ["ACTIVE", "INVALID"]
+    static let profileSortValues = [
+        "name", "-name", "profileType", "-profileType", "profileState", "-profileState", "id", "-id"
+    ]
+    static let capabilityTypes = [
+        "ICLOUD",
+        "IN_APP_PURCHASE",
+        "GAME_CENTER",
+        "PUSH_NOTIFICATIONS",
+        "WALLET",
+        "INTER_APP_AUDIO",
+        "MAPS",
+        "ASSOCIATED_DOMAINS",
+        "PERSONAL_VPN",
+        "APP_GROUPS",
+        "HEALTHKIT",
+        "HOMEKIT",
+        "WIRELESS_ACCESSORY_CONFIGURATION",
+        "APPLE_PAY",
+        "DATA_PROTECTION",
+        "SIRIKIT",
+        "NETWORK_EXTENSIONS",
+        "MULTIPATH",
+        "HOT_SPOT",
+        "NFC_TAG_READING",
+        "CLASSKIT",
+        "AUTOFILL_CREDENTIAL_PROVIDER",
+        "ACCESS_WIFI_INFORMATION",
+        "NETWORK_CUSTOM_PROTOCOL",
+        "COREMEDIA_HLS_LOW_LATENCY",
+        "SYSTEM_EXTENSION_INSTALL",
+        "USER_MANAGEMENT",
+        "APPLE_ID_AUTH"
+    ]
+    static let capabilitySettingKeys = [
+        "ICLOUD_VERSION",
+        "DATA_PROTECTION_PERMISSION_LEVEL",
+        "APPLE_ID_AUTH_APP_CONSENT"
+    ]
+    static let capabilityAllowedInstances = ["ENTRY", "SINGLE", "MULTIPLE"]
+    static let capabilityOptionKeys = [
+        "XCODE_5",
+        "XCODE_6",
+        "COMPLETE_PROTECTION",
+        "PROTECTED_UNLESS_OPEN",
+        "PROTECTED_UNTIL_FIRST_USER_AUTH",
+        "PRIMARY_APP_CONSENT"
+    ]
+
     let httpClient: HTTPClient
 
     public init(httpClient: HTTPClient) {

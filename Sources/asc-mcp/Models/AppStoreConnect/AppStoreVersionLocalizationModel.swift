@@ -84,7 +84,7 @@ public struct ASCAppStoreVersionLocalizationsResponse: Codable, Sendable {
         public let paging: Paging?
         
         public struct Paging: Codable, Sendable {
-            public let total: Int
+            public let total: Int?
             public let limit: Int
         }
     }

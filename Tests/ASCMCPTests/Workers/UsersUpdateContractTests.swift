@@ -13,7 +13,12 @@ struct UsersUpdateContractTests {
               case .object(let properties)? = schema["properties"],
               case .object(let roles)? = properties["roles"],
               case .object(let roleItems)? = roles["items"],
-              case .array(let roleValues)? = roleItems["enum"] else {
+              case .array(let roleValues)? = roleItems["enum"],
+              case .array(let roleTypes)? = roles["type"],
+              case .object(let allAppsVisible)? = properties["all_apps_visible"],
+              case .array(let allAppsVisibleTypes)? = allAppsVisible["type"],
+              case .object(let provisioningAllowed)? = properties["provisioning_allowed"],
+              case .array(let provisioningAllowedTypes)? = provisioningAllowed["type"] else {
             Issue.record("Expected users_update schema properties")
             return
         }
@@ -25,6 +30,64 @@ struct UsersUpdateContractTests {
         #expect(roleNames == Set(UsersWorker.assignableRoles))
         #expect(roleNames.contains("ACCESS_TO_REPORTS"))
         #expect(roleNames.contains("TECHNICAL") == false)
+        #expect(Set(roleTypes.compactMap(\.stringValue)) == ["array", "null"])
+        #expect(Set(allAppsVisibleTypes.compactMap(\.stringValue)) == ["boolean", "null"])
+        #expect(Set(provisioningAllowedTypes.compactMap(\.stringValue)) == ["boolean", "null"])
+    }
+
+    @Test("users_update preserves explicit null for every nullable attribute")
+    func preservesExplicitNullAttributes() async throws {
+        let transport = TestHTTPTransport(responses: [usersUpdateResponse()])
+        let worker = try await usersUpdateWorker(transport: transport)
+
+        let result = try await worker.handleTool(CallTool.Parameters(
+            name: "users_update",
+            arguments: [
+                "user_id": .string("user-1"),
+                "roles": .null,
+                "all_apps_visible": .null,
+                "provisioning_allowed": .null
+            ]
+        ))
+
+        #expect(result.isError != true)
+        let request = try #require(await transport.recordedRequests().first)
+        let body = try usersUpdateBody(request)
+        let data = try usersUpdateDictionary(body["data"])
+        let attributes = try usersUpdateDictionary(data["attributes"])
+        #expect(attributes["roles"] is NSNull)
+        #expect(attributes["allAppsVisible"] is NSNull)
+        #expect(attributes["provisioningAllowed"] is NSNull)
+    }
+
+    @Test("users_update PATCH preserves a committed-unverified response")
+    func patchPreservesCommittedUnverifiedResponse() async throws {
+        let transport = TestHTTPTransport(responses: [
+            .init(statusCode: 200, body: #"{}"#)
+        ])
+        let worker = try await usersUpdateWorker(transport: transport)
+
+        let result = try await worker.handleTool(CallTool.Parameters(
+            name: "users_update",
+            arguments: [
+                "user_id": .string("user-1"),
+                "all_apps_visible": .bool(false)
+            ]
+        ))
+
+        #expect(result.isError == true)
+        let root = try usersUpdateObject(result.structuredContent)
+        #expect(root["operationCommitState"] == .string("committed_unverified"))
+        #expect(root["operationCommitted"] == .bool(true))
+        #expect(root["outcomeUnknown"] == .bool(false))
+        #expect(root["retrySafe"] == .bool(false))
+        #expect(root["inspectionRequired"] == .bool(true))
+        let details = try usersUpdateObject(root["details"])
+        #expect(details["type"] == .string("mutation_unverified"))
+        #expect(details["method"] == .string("PATCH"))
+        #expect(details["expectedStatusCode"] == .int(200))
+        #expect(details["statusCode"] == .int(200))
+        #expect(await transport.requestCount() == 1)
     }
 
     @Test("users_update sends all writable fields with a limited-app developer role")

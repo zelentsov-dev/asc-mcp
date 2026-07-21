@@ -9,11 +9,15 @@ extension BuildBetaDetailsWorker {
     ) -> [ASCMetadataValidator.FieldError] {
         var errors = ASCMetadataValidator.validateLocale(locale)
 
-        if let whatsNew = arguments["whats_new"]?.stringValue {
-            errors += ASCMetadataValidator.validateTextFields(
-                ["whats_new": whatsNew],
-                limits: ["whats_new": 4_000]
-            )
+        if let value = arguments["whats_new"], !value.isNull {
+            if let whatsNew = value.stringValue {
+                errors += ASCMetadataValidator.validateTextFields(
+                    ["whats_new": whatsNew],
+                    limits: ["whats_new": 4_000]
+                )
+            } else {
+                errors.append(.init(field: "whats_new", message: "Value must be a string or null"))
+            }
         }
 
         return errors
@@ -80,11 +84,20 @@ extension BuildBetaDetailsWorker {
             )
         }
         
+        guard let autoNotifyValue = arguments["auto_notify"] else {
+            return MCPResult.error("At least one updatable field is required: auto_notify")
+        }
+
+        let autoNotify: ASCNullable<Bool>
+        if autoNotifyValue.isNull {
+            autoNotify = .null
+        } else if let bool = autoNotifyValue.boolValue {
+            autoNotify = .value(bool)
+        } else {
+            return MCPResult.error("'auto_notify' must be a boolean or null")
+        }
+
         do {
-            guard let autoNotifyValue = arguments["auto_notify"],
-                  let autoNotify = autoNotifyValue.boolValue else {
-                return MCPResult.error("At least one updatable field is required: auto_notify")
-            }
             
             let updateRequest = UpdateBuildBetaDetailRequest(
                 data: UpdateBuildBetaDetailRequest.UpdateBuildBetaDetailData(
@@ -111,10 +124,7 @@ extension BuildBetaDetailsWorker {
             return MCPResult.jsonObject(result)
             
         } catch {
-            return CallTool.Result(
-                content: [MCPContent.text("Error: Failed to update beta detail: \(error.localizedDescription)")],
-                isError: true
-            )
+            return MCPResult.error(error, prefix: "Failed to update beta detail")
         }
     }
     
@@ -146,6 +156,19 @@ extension BuildBetaDetailsWorker {
         if !validationErrors.isEmpty {
             return ASCMetadataValidator.errorResult(validationErrors)
         }
+
+        let whatsNew: ASCNullable<String>?
+        if let value = arguments["whats_new"] {
+            if value.isNull {
+                whatsNew = .null
+            } else if let string = value.stringValue {
+                whatsNew = .value(string)
+            } else {
+                return MCPResult.error("'whats_new' must be a string or null")
+            }
+        } else {
+            whatsNew = nil
+        }
         
         do {
             let existingResponse: ASCBetaBuildLocalizationsResponse = try await httpClient.get(
@@ -165,7 +188,7 @@ extension BuildBetaDetailsWorker {
                     data: CreateBetaBuildLocalizationRequest.CreateBetaBuildLocalizationData(
                         attributes: CreateBetaBuildLocalizationRequest.CreateBetaBuildLocalizationAttributes(
                             locale: locale,
-                            whatsNew: arguments["whats_new"]?.stringValue
+                            whatsNew: whatsNew
                         ),
                         relationships: CreateBetaBuildLocalizationRequest.CreateBetaBuildLocalizationRelationships(
                             build: CreateBetaBuildLocalizationRequest.BuildRelationship(
@@ -200,7 +223,7 @@ extension BuildBetaDetailsWorker {
                 let localizationId = localizationData.id
                 
                 let updateAttributes = UpdateBetaBuildLocalizationRequest.BetaBuildLocalizationUpdateAttributes(
-                    whatsNew: arguments["whats_new"]?.stringValue
+                    whatsNew: whatsNew
                 )
                 
                 if updateAttributes.whatsNew == nil {
@@ -232,7 +255,7 @@ extension BuildBetaDetailsWorker {
             }
             
         } catch {
-            return MCPResult.error("Failed to set beta localization: \(error.localizedDescription)")
+            return MCPResult.error(error, prefix: "Failed to set beta localization")
         }
     }
     
@@ -249,10 +272,19 @@ extension BuildBetaDetailsWorker {
             )
         }
 
+        let limit: Int
+        if let value = arguments["limit"] {
+            guard let parsed = value.intValue, (1...200).contains(parsed) else {
+                return MCPResult.error("'limit' must be an integer from 1 through 200")
+            }
+            limit = parsed
+        } else {
+            limit = 50
+        }
+
         do {
             let endpoint = "/v1/builds/\(try ASCPathSegment.encode(buildId))/betaBuildLocalizations"
-            let limit = arguments["limit"]?.intValue ?? 50
-            let queryParams = ["limit": String(min(max(limit, 1), 200))]
+            let queryParams = ["limit": String(limit)]
             let response: ASCBetaBuildLocalizationsResponse
 
             // Check for pagination URL
@@ -309,11 +341,21 @@ extension BuildBetaDetailsWorker {
             )
         }
 
+        let limit: Int
+        if let value = arguments["limit"] {
+            guard let parsed = value.intValue, (1...200).contains(parsed) else {
+                return MCPResult.error("'limit' must be an integer from 1 through 200")
+            }
+            limit = parsed
+        } else {
+            limit = 50
+        }
+
         do {
             let response: ASCBetaGroupsResponse
             var queryParams: [String: String] = [
                 "filter[builds]": buildId,
-                "limit": String(min(max(arguments["limit"]?.intValue ?? 50, 1), 200))
+                "limit": String(limit)
             ]
             applyBetaGroupStringList(arguments["group_ids"], as: "filter[id]", to: &queryParams)
             applyBetaGroupStringList(arguments["name"], as: "filter[name]", to: &queryParams)
@@ -387,10 +429,19 @@ extension BuildBetaDetailsWorker {
             )
         }
 
+        let limit: Int
+        if let value = arguments["limit"] {
+            guard let parsed = value.intValue, (1...200).contains(parsed) else {
+                return MCPResult.error("'limit' must be an integer from 1 through 200")
+            }
+            limit = parsed
+        } else {
+            limit = 50
+        }
+
         do {
             let endpoint = "/v1/builds/\(try ASCPathSegment.encode(buildId))/individualTesters"
-            let limit = arguments["limit"]?.intValue ?? 50
-            let queryParams = ["limit": String(min(max(limit, 1), 200))]
+            let queryParams = ["limit": String(limit)]
             let response: ASCBetaTestersResponse
 
             // Check for pagination URL
@@ -449,9 +500,11 @@ extension BuildBetaDetailsWorker {
         }
 
         let groupIds = groupIdsArray.compactMap { $0.stringValue }
-        guard !groupIds.isEmpty else {
+        guard !groupIds.isEmpty,
+              groupIds.count == groupIdsArray.count,
+              groupIds.allSatisfy({ !$0.isEmpty }) else {
             return CallTool.Result(
-                content: [MCPContent.text("Error: 'group_ids' must contain at least one group ID")],
+                content: [MCPContent.text("Error: 'group_ids' must contain only non-empty group ID strings")],
                 isError: true
             )
         }
@@ -464,7 +517,8 @@ extension BuildBetaDetailsWorker {
             let bodyData = try JSONEncoder().encode(request)
             _ = try await httpClient.post(
                 "/v1/builds/\(try ASCPathSegment.encode(buildId))/relationships/betaGroups",
-                body: bodyData
+                body: bodyData,
+                expectedStatusCode: 204
             )
 
             let result = [
@@ -475,10 +529,7 @@ extension BuildBetaDetailsWorker {
             return MCPResult.jsonObject(result)
 
         } catch {
-            return CallTool.Result(
-                content: [MCPContent.text("Error: Failed to add build to beta groups: \(error.localizedDescription)")],
-                isError: true
-            )
+            return MCPResult.error(error, prefix: "Failed to add build to beta groups")
         }
     }
 
@@ -498,9 +549,11 @@ extension BuildBetaDetailsWorker {
         }
 
         let testerIds = testerIdsArray.compactMap { $0.stringValue }
-        guard !testerIds.isEmpty else {
+        guard !testerIds.isEmpty,
+              testerIds.count == testerIdsArray.count,
+              testerIds.allSatisfy({ !$0.isEmpty }) else {
             return CallTool.Result(
-                content: [MCPContent.text("Error: 'beta_tester_ids' must contain at least one tester ID")],
+                content: [MCPContent.text("Error: 'beta_tester_ids' must contain only non-empty tester ID strings")],
                 isError: true
             )
         }
@@ -513,7 +566,8 @@ extension BuildBetaDetailsWorker {
             let bodyData = try JSONEncoder().encode(request)
             _ = try await httpClient.post(
                 "/v1/builds/\(try ASCPathSegment.encode(buildId))/relationships/individualTesters",
-                body: bodyData
+                body: bodyData,
+                expectedStatusCode: 204
             )
 
             let result = [
@@ -524,10 +578,7 @@ extension BuildBetaDetailsWorker {
             return MCPResult.jsonObject(result)
 
         } catch {
-            return CallTool.Result(
-                content: [MCPContent.text("Error: Failed to add individual testers: \(error.localizedDescription)")],
-                isError: true
-            )
+            return MCPResult.error(error, prefix: "Failed to add individual testers")
         }
     }
 
@@ -547,9 +598,11 @@ extension BuildBetaDetailsWorker {
         }
 
         let testerIds = testerIdsArray.compactMap { $0.stringValue }
-        guard !testerIds.isEmpty else {
+        guard !testerIds.isEmpty,
+              testerIds.count == testerIdsArray.count,
+              testerIds.allSatisfy({ !$0.isEmpty }) else {
             return CallTool.Result(
-                content: [MCPContent.text("Error: 'beta_tester_ids' must contain at least one tester ID")],
+                content: [MCPContent.text("Error: 'beta_tester_ids' must contain only non-empty tester ID strings")],
                 isError: true
             )
         }
@@ -590,10 +643,19 @@ extension BuildBetaDetailsWorker {
             )
         }
 
+        let limit: Int
+        if let value = arguments["limit"] {
+            guard let parsed = value.intValue, (1...200).contains(parsed) else {
+                return MCPResult.error("'limit' must be an integer from 1 through 200")
+            }
+            limit = parsed
+        } else {
+            limit = 50
+        }
+
         do {
             let endpoint = "/v1/builds/\(try ASCPathSegment.encode(buildId))/individualTesters"
-            let limit = arguments["limit"]?.intValue ?? 50
-            let queryParams = ["limit": String(min(max(limit, 1), 200))]
+            let queryParams = ["limit": String(limit)]
             let response: ASCBetaTestersResponse
 
             // Check for pagination URL
@@ -678,10 +740,7 @@ extension BuildBetaDetailsWorker {
             return MCPResult.jsonObject(result)
 
         } catch {
-            return CallTool.Result(
-                content: [MCPContent.text("Error: Failed to send beta notification: \(error.localizedDescription)")],
-                isError: true
-            )
+            return MCPResult.error(error, prefix: "Failed to send beta notification")
         }
     }
 

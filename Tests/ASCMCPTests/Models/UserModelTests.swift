@@ -43,6 +43,64 @@ struct UserModelTests {
         let data = try JSONEncoder().encode(request)
         let decoded = try JSONDecoder().decode(UpdateUserRequest.self, from: data)
         #expect(decoded.data.id == "u1")
-        #expect(decoded.data.attributes.roles == ["ADMIN", "APP_MANAGER"])
+        #expect(decoded.data.attributes.roles == .value(["ADMIN", "APP_MANAGER"]))
     }
+
+    @Test("user request models preserve omission explicit null and values")
+    func nullableUserRequestAttributes() throws {
+        let update = UpdateUserRequest(
+            data: .init(
+                id: "u1",
+                attributes: .init(
+                    nullableRoles: .null,
+                    nullableAllAppsVisible: .value(false),
+                    nullableProvisioningAllowed: .null
+                )
+            )
+        )
+        let invitation = CreateUserInvitationRequest(
+            data: .init(
+                attributes: .init(
+                    email: "new@example.com",
+                    firstName: "New",
+                    lastName: "User",
+                    roles: ["DEVELOPER"],
+                    nullableAllAppsVisible: nil,
+                    nullableProvisioningAllowed: .null
+                ),
+                relationships: nil
+            )
+        )
+
+        let updateObject = try userModelObject(JSONEncoder().encode(update))
+        let updateData = try userModelObject(updateObject["data"])
+        let updateAttributes = try userModelObject(updateData["attributes"])
+        #expect(updateAttributes["roles"] is NSNull)
+        #expect(updateAttributes["allAppsVisible"] as? Bool == false)
+        #expect(updateAttributes["provisioningAllowed"] is NSNull)
+
+        let invitationObject = try userModelObject(JSONEncoder().encode(invitation))
+        let invitationData = try userModelObject(invitationObject["data"])
+        let invitationAttributes = try userModelObject(invitationData["attributes"])
+        #expect(invitationAttributes.keys.contains("allAppsVisible") == false)
+        #expect(invitationAttributes["provisioningAllowed"] is NSNull)
+    }
+}
+
+private func userModelObject(_ data: Data) throws -> [String: Any] {
+    guard let object = try JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+        throw UserModelTestFailure.expectedObject
+    }
+    return object
+}
+
+private func userModelObject(_ value: Any?) throws -> [String: Any] {
+    guard let object = value as? [String: Any] else {
+        throw UserModelTestFailure.expectedObject
+    }
+    return object
+}
+
+private enum UserModelTestFailure: Error {
+    case expectedObject
 }

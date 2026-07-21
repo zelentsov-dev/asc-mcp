@@ -3,6 +3,26 @@ import MCP
 
 /// Manages export-compliance declarations, documents, and build linkage.
 public final class ExportComplianceWorker: Sendable {
+    private static let allowedArguments: [String: Set<String>] = [
+        "export_compliance_list_declarations": ["app_id", "limit", "next_url"],
+        "export_compliance_get_declaration": ["declaration_id"],
+        "export_compliance_create_declaration": [
+            "app_id",
+            "app_description",
+            "contains_proprietary_cryptography",
+            "contains_third_party_cryptography",
+            "available_on_french_store"
+        ],
+        "export_compliance_create_document": ["declaration_id", "file_path"],
+        "export_compliance_get_document": ["document_id"],
+        "export_compliance_update_document": ["document_id", "source_file_checksum", "uploaded"],
+        "export_compliance_upload_document": ["document_id", "file_path", "source_file_checksum"],
+        "export_compliance_inspect_document": ["declaration_id"],
+        "export_compliance_get_build_declaration": ["build_id"],
+        "export_compliance_attach_build_declaration": ["build_id", "declaration_id"],
+        "export_compliance_check_release_readiness": ["build_id"]
+    ]
+
     let httpClient: HTTPClient
     let uploadService: UploadService
     let deliveryPollAttempts: Int
@@ -54,6 +74,10 @@ public final class ExportComplianceWorker: Sendable {
     /// - Returns: Structured tool output or a structured error.
     /// - Throws: `MCPError.methodNotFound` for an unknown tool name.
     public func handleTool(_ params: CallTool.Parameters) async throws -> CallTool.Result {
+        if let allowed = Self.allowedArguments[params.name],
+           let unsupported = params.arguments?.keys.sorted().first(where: { !allowed.contains($0) }) {
+            return MCPResult.error("Unsupported parameter '\(unsupported)' for tool '\(params.name)'")
+        }
         switch params.name {
         case "export_compliance_list_declarations":
             return try await listDeclarations(params)

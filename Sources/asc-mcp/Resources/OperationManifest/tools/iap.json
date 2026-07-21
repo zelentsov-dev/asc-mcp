@@ -446,7 +446,7 @@
       "tool": "iap_delete",
       "kind": "direct",
       "status": "partial",
-      "effect": "write",
+      "effect": "destructive",
       "implementationState": "asBuilt",
       "operations": [
         {
@@ -479,7 +479,7 @@
       "tool": "iap_delete_image",
       "kind": "direct",
       "status": "deprecated",
-      "effect": "write",
+      "effect": "destructive",
       "implementationState": "asBuilt",
       "operations": [
         {
@@ -512,7 +512,7 @@
       "tool": "iap_delete_localization",
       "kind": "direct",
       "status": "deprecated",
-      "effect": "write",
+      "effect": "destructive",
       "implementationState": "asBuilt",
       "operations": [
         {
@@ -545,7 +545,7 @@
       "tool": "iap_delete_review_screenshot",
       "kind": "direct",
       "status": "partial",
-      "effect": "write",
+      "effect": "destructive",
       "implementationState": "asBuilt",
       "operations": [
         {
@@ -2407,7 +2407,7 @@
         ],
         "fields": []
       },
-      "note": "Reads the schedule, then both price collections; territory_id is applied to both collection filters and results are summarized locally."
+      "note": "Reads the schedule, exhausts every validated page of both manual and automatic price collections, applies territory_id to both filters, and summarizes only the complete result."
     },
     {
       "tool": "iap_set_availability",

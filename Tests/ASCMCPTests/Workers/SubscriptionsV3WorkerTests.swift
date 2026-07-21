@@ -60,6 +60,7 @@ struct SubscriptionsV3WorkerTests {
             arguments: [
                 "subscription_id": .string("sub-1"),
                 "territory_id": .string("USA"),
+                "plan_types": .array([.string("MONTHLY"), .string("UPFRONT")]),
                 "limit": .int(200)
             ]
         ))
@@ -69,6 +70,7 @@ struct SubscriptionsV3WorkerTests {
         let query = queryItems(request)
         #expect(request.url?.path == "/v1/subscriptions/sub-1/prices")
         #expect(query["filter[territory]"] == "USA")
+        #expect(query["filter[planType]"] == "MONTHLY,UPFRONT")
         #expect(query["include"] == "territory,subscriptionPricePoint")
         #expect(query["fields[territories]"] == "currency")
 
@@ -161,6 +163,8 @@ struct SubscriptionsV3WorkerTests {
             arguments: [
                 "subscription_id": .string("sub-1"),
                 "territory_id": .string("USA"),
+                "upfront_price_point_ids": .array([.string("upfront-1"), .string("upfront-2")]),
+                "plan_types": .string("UPFRONT"),
                 "limit": .int(8000)
             ]
         ))
@@ -170,6 +174,8 @@ struct SubscriptionsV3WorkerTests {
         let query = queryItems(request)
         #expect(request.url?.path == "/v1/subscriptions/sub-1/pricePoints")
         #expect(query["filter[territory]"] == "USA")
+        #expect(query["filter[upfrontPricePointId]"] == "upfront-1,upfront-2")
+        #expect(query["filter[planType]"] == "UPFRONT")
         #expect(query["include"] == "territory")
         #expect(query["limit"] == "8000")
 
@@ -194,6 +200,8 @@ struct SubscriptionsV3WorkerTests {
                 "price_point_id": .string("pp-1"),
                 "subscription_id": .string("sub-1"),
                 "territory_id": .string("USA"),
+                "upfront_price_point_ids": .string("upfront-1"),
+                "plan_types": .array([.string("MONTHLY"), .string("UPFRONT")]),
                 "limit": .int(8000)
             ]
         ))
@@ -204,7 +212,64 @@ struct SubscriptionsV3WorkerTests {
         #expect(request.url?.path == "/v1/subscriptionPricePoints/pp-1/equalizations")
         #expect(query["filter[subscription]"] == "sub-1")
         #expect(query["filter[territory]"] == "USA")
+        #expect(query["filter[upfrontPricePointId]"] == "upfront-1")
+        #expect(query["filter[planType]"] == "MONTHLY,UPFRONT")
         #expect(query["limit"] == "8000")
+    }
+
+    @Test("subscription plan filters reject unsupported values before network")
+    func planFiltersRejectUnsupportedValues() async throws {
+        let transport = TestHTTPTransport(responses: [])
+        let worker = try await makeWorker(transport: transport)
+
+        let prices = try await worker.handleTool(CallTool.Parameters(
+            name: "subscriptions_list_prices",
+            arguments: ["subscription_id": .string("sub-1"), "plan_types": .string("ANNUAL")]
+        ))
+        let points = try await worker.handleTool(CallTool.Parameters(
+            name: "subscriptions_list_price_points",
+            arguments: ["subscription_id": .string("sub-1"), "plan_types": .array([.string("MONTHLY"), .string("ANNUAL")])]
+        ))
+        let equalizations = try await worker.handleTool(CallTool.Parameters(
+            name: "subscriptions_list_price_point_equalizations",
+            arguments: ["price_point_id": .string("point-1"), "plan_types": .string("ANNUAL")]
+        ))
+
+        #expect(prices.isError == true)
+        #expect(points.isError == true)
+        #expect(equalizations.isError == true)
+        #expect(await transport.requestCount() == 0)
+    }
+
+    @Test("subscription pricing manifest binds Apple plan-aware filters")
+    func pricingManifestBindsPlanAwareFilters() throws {
+        let manifest = try ASCOperationManifestBundle.loadBundled()
+        let expected: [String: [String: String]] = [
+            "subscriptions_list_prices": ["plan_types": "filter[planType]"],
+            "subscriptions_list_price_points": [
+                "upfront_price_point_ids": "filter[upfrontPricePointId]",
+                "plan_types": "filter[planType]"
+            ],
+            "subscriptions_list_price_point_equalizations": [
+                "upfront_price_point_ids": "filter[upfrontPricePointId]",
+                "plan_types": "filter[planType]"
+            ]
+        ]
+
+        for (toolName, filters) in expected {
+            let mapping = try #require(manifest.mapping(for: toolName))
+            for (toolField, appleName) in filters {
+                #expect(mapping.fields.contains { field in
+                    field.toolField == toolField &&
+                        field.location == "query" &&
+                        field.appleName == appleName
+                })
+            }
+            let omitted = mapping.operations.flatMap { operation in
+                operation.optionalParameterClassifications ?? []
+            }.filter { $0.disposition == .intentionallyOmitted }.map(\.appleName)
+            #expect(Set(omitted).isDisjoint(with: Set(filters.values)))
+        }
     }
 
     @Test("get subscription availability includes available territories")
@@ -1333,6 +1398,65 @@ struct SubscriptionsV3WorkerTests {
         #expect(currentPrice["territory_id"] == .string("USA"))
         #expect(currentPrice["currency"] == .string("USD"))
         #expect(currentPrice["customer_price"] == .string("9.99"))
+    }
+
+    @Test("accepted subscription mutation with mismatched identity is committed unverified")
+    func acceptedMutationWithMismatchedIdentityIsUnverified() async throws {
+        let transport = TestHTTPTransport(responses: [
+            .init(statusCode: 201, body: #"{"data":{"type":"subscriptionPrices","id":"bad/id"}}"#)
+        ])
+        let worker = try await makeWorker(transport: transport)
+
+        let result = try await worker.handleTool(.init(
+            name: "subscriptions_create_price",
+            arguments: [
+                "subscription_id": .string("sub-1"),
+                "price_point_id": .string("point-1")
+            ]
+        ))
+
+        #expect(result.isError == true)
+        let root = try object(result.structuredContent)
+        #expect(root["operationCommitState"] == .string("committed_unverified"))
+        #expect(root["operationCommitted"] == .bool(true))
+        #expect(root["retrySafe"] == .bool(false))
+    }
+
+    @Test("subscription limits reject present invalid values before network")
+    func limitsRejectInvalidValuesBeforeNetwork() async throws {
+        let transport = TestHTTPTransport(responses: [])
+        let worker = try await makeWorker(transport: transport)
+        let cases: [(String, [String: Value])] = [
+            ("subscriptions_list", ["group_id": .string("group-1"), "limit": .int(0)]),
+            ("subscriptions_list_price_points", ["subscription_id": .string("sub-1"), "limit": .int(8001)]),
+            ("subscriptions_list_offer_codes", ["subscription_id": .string("sub-1"), "limit": .int(201)]),
+            ("subscriptions_list_images", ["subscription_id": .string("sub-1"), "limit": .string("25")])
+        ]
+
+        for (name, arguments) in cases {
+            let result = try await worker.handleTool(.init(name: name, arguments: arguments))
+            #expect(result.isError == true)
+        }
+        #expect(await transport.requestCount() == 0)
+    }
+
+    @Test("subscription limit schemas publish the runtime bounds")
+    func limitSchemasPublishRuntimeBounds() async throws {
+        let worker = try await makeWorker(transport: TestHTTPTransport(responses: []))
+        let largeLimitTools: Set<String> = [
+            "subscriptions_list_price_points",
+            "subscriptions_list_price_point_equalizations",
+            "subscriptions_list_price_point_adjusted_equalizations"
+        ]
+
+        for tool in await worker.getTools() {
+            let root = try object(tool.inputSchema)
+            let properties = try object(root["properties"])
+            guard let limitValue = properties["limit"] else { continue }
+            let limit = try object(limitValue)
+            #expect(limit["minimum"] == .int(1))
+            #expect(limit["maximum"] == .int(largeLimitTools.contains(tool.name) ? 8000 : 200))
+        }
     }
 }
 

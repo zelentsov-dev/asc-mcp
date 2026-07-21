@@ -68,7 +68,7 @@ extension SubscriptionsWorker {
             }
 
             var queryParams = selection
-            queryParams["limit"] = String(min(max(arguments["limit"]?.intValue ?? 25, 1), 200))
+            queryParams["limit"] = String(try validatedCommerceLimit(arguments["limit"], defaultValue: 25, maximum: 200))
 
             if let nextUrl = try paginationURL(from: arguments["next_url"]) {
                 response = try await httpClient.getPage(
@@ -145,24 +145,27 @@ extension SubscriptionsWorker {
         guard let arguments = params.arguments,
               let groupId = arguments["group_id"]?.stringValue,
               let name = arguments["name"]?.stringValue,
-              let productId = arguments["product_id"]?.stringValue,
-              let subscriptionPeriod = arguments["subscription_period"]?.stringValue else {
+              let productId = arguments["product_id"]?.stringValue else {
             return CallTool.Result(
-                content: [MCPContent.text("Error: Required parameters: group_id, name, product_id, subscription_period")],
+                content: [MCPContent.text("Error: Required parameters: group_id, name, product_id")],
                 isError: true
             )
         }
 
         do {
+            let subscriptionPeriod = try nullableSubscriptionPeriod(from: arguments)
+            let familySharable = try nullableSubscriptionBool("family_sharable", from: arguments)
+            let groupLevel = try nullableSubscriptionInt("group_level", from: arguments)
+            let reviewNote = try nullableSubscriptionString("review_note", from: arguments)
             let request = CreateSubscriptionRequest(
                 data: CreateSubscriptionRequest.CreateData(
                     attributes: CreateSubscriptionRequest.Attributes(
                         name: name,
                         productId: productId,
                         subscriptionPeriod: subscriptionPeriod,
-                        familySharable: arguments["family_sharable"]?.boolValue,
-                        groupLevel: arguments["group_level"]?.intValue,
-                        reviewNote: arguments["review_note"]?.stringValue
+                        familySharable: familySharable,
+                        groupLevel: groupLevel,
+                        reviewNote: reviewNote
                     ),
                     relationships: CreateSubscriptionRequest.Relationships(
                         group: CreateSubscriptionRequest.GroupRelationship(
@@ -188,10 +191,7 @@ extension SubscriptionsWorker {
             return MCPResult.jsonObject(result)
 
         } catch {
-            return CallTool.Result(
-                content: [MCPContent.text("Error: Failed to create subscription: \(error.localizedDescription)")],
-                isError: true
-            )
+            return MCPResult.error(error, prefix: "Failed to create subscription")
         }
     }
 
@@ -222,14 +222,18 @@ extension SubscriptionsWorker {
 
         do {
             let subscriptionPeriod = try nullableSubscriptionPeriod(from: arguments)
+            let name = try nullableSubscriptionString("name", from: arguments)
+            let familySharable = try nullableSubscriptionBool("family_sharable", from: arguments)
+            let groupLevel = try nullableSubscriptionInt("group_level", from: arguments)
+            let reviewNote = try nullableSubscriptionString("review_note", from: arguments)
             let request = UpdateSubscriptionRequest(
                 data: UpdateSubscriptionRequest.UpdateData(
                     id: subscriptionId,
                     attributes: UpdateSubscriptionRequest.Attributes(
-                        name: arguments["name"]?.stringValue,
-                        familySharable: arguments["family_sharable"]?.boolValue,
-                        groupLevel: arguments["group_level"]?.intValue,
-                        reviewNote: arguments["review_note"]?.stringValue,
+                        name: name,
+                        familySharable: familySharable,
+                        groupLevel: groupLevel,
+                        reviewNote: reviewNote,
                         subscriptionPeriod: subscriptionPeriod
                     )
                 )
@@ -251,16 +255,13 @@ extension SubscriptionsWorker {
             return MCPResult.jsonObject(result)
 
         } catch {
-            return CallTool.Result(
-                content: [MCPContent.text("Error: Failed to update subscription: \(error.localizedDescription)")],
-                isError: true
-            )
+            return MCPResult.error(error, prefix: "Failed to update subscription")
         }
     }
 
     private func nullableSubscriptionPeriod(
         from arguments: [String: Value]
-    ) throws -> NullableAttributeValue? {
+    ) throws -> ASCNullable<String>? {
         guard let value = arguments["subscription_period"] else {
             return nil
         }
@@ -280,7 +281,55 @@ extension SubscriptionsWorker {
                 "subscription_period must be null or one of: \(allowedValues.sorted().joined(separator: ", "))"
             )
         }
-        return .string(string)
+        return .value(string)
+    }
+
+    private func nullableSubscriptionString(
+        _ name: String,
+        from arguments: [String: Value]
+    ) throws -> ASCNullable<String>? {
+        guard let value = arguments[name] else {
+            return nil
+        }
+        if value.isNull {
+            return .null
+        }
+        guard let string = value.stringValue else {
+            throw SubscriptionUpdateInputError("\(name) must be a string or null")
+        }
+        return .value(string)
+    }
+
+    private func nullableSubscriptionBool(
+        _ name: String,
+        from arguments: [String: Value]
+    ) throws -> ASCNullable<Bool>? {
+        guard let value = arguments[name] else {
+            return nil
+        }
+        if value.isNull {
+            return .null
+        }
+        guard let bool = value.boolValue else {
+            throw SubscriptionUpdateInputError("\(name) must be a Boolean or null")
+        }
+        return .value(bool)
+    }
+
+    private func nullableSubscriptionInt(
+        _ name: String,
+        from arguments: [String: Value]
+    ) throws -> ASCNullable<Int>? {
+        guard let value = arguments[name] else {
+            return nil
+        }
+        if value.isNull {
+            return .null
+        }
+        guard let int = value.intValue else {
+            throw SubscriptionUpdateInputError("\(name) must be an integer or null")
+        }
+        return .value(int)
     }
 
     /// Deletes a subscription
@@ -325,7 +374,7 @@ extension SubscriptionsWorker {
 
             let endpoint = "/v1/subscriptions/\(try ASCPathSegment.encode(subscriptionId))/subscriptionLocalizations"
             let query = [
-                "limit": String(min(max(arguments["limit"]?.intValue ?? 25, 1), 200))
+                "limit": String(try validatedCommerceLimit(arguments["limit"], defaultValue: 25, maximum: 200))
             ]
 
             if let nextUrl = try paginationURL(from: arguments["next_url"]) {
@@ -410,7 +459,7 @@ extension SubscriptionsWorker {
             return MCPResult.jsonObject(result)
 
         } catch {
-            return MCPResult.error("Failed to create subscription localization: \(error.localizedDescription)")
+            return MCPResult.error(error, prefix: "Failed to create subscription localization")
         }
     }
 
@@ -454,7 +503,7 @@ extension SubscriptionsWorker {
             return MCPResult.jsonObject(result)
 
         } catch {
-            return MCPResult.error("Failed to update subscription localization: \(error.localizedDescription)")
+            return MCPResult.error(error, prefix: "Failed to update subscription localization")
         }
     }
 
@@ -538,10 +587,7 @@ extension SubscriptionsWorker {
             return MCPResult.jsonObject(result)
 
         } catch {
-            return CallTool.Result(
-                content: [MCPContent.text("Error: Failed to create subscription group: \(error.localizedDescription)")],
-                isError: true
-            )
+            return MCPResult.error(error, prefix: "Failed to create subscription group")
         }
     }
 
@@ -583,10 +629,7 @@ extension SubscriptionsWorker {
             return MCPResult.jsonObject(result)
 
         } catch {
-            return CallTool.Result(
-                content: [MCPContent.text("Error: Failed to update subscription group: \(error.localizedDescription)")],
-                isError: true
-            )
+            return MCPResult.error(error, prefix: "Failed to update subscription group")
         }
     }
 
@@ -650,10 +693,7 @@ extension SubscriptionsWorker {
             return MCPResult.jsonObject(result)
 
         } catch {
-            return CallTool.Result(
-                content: [MCPContent.text("Error: Failed to submit subscription for review: \(error.localizedDescription)")],
-                isError: true
-            )
+            return MCPResult.error(error, prefix: "Failed to submit subscription for review")
         }
     }
 
@@ -703,7 +743,7 @@ extension SubscriptionsWorker {
 
             let endpoint = "/v1/subscriptionGroups/\(try ASCPathSegment.encode(groupId))/subscriptionGroupLocalizations"
             let query = [
-                "limit": String(min(max(arguments["limit"]?.intValue ?? 25, 1), 200))
+                "limit": String(try validatedCommerceLimit(arguments["limit"], defaultValue: 25, maximum: 200))
             ]
 
             if let nextUrl = try paginationURL(from: arguments["next_url"]) {
@@ -786,10 +826,7 @@ extension SubscriptionsWorker {
             return MCPResult.jsonObject(result)
 
         } catch {
-            return CallTool.Result(
-                content: [MCPContent.text("Error: Failed to create subscription group localization: \(error.localizedDescription)")],
-                isError: true
-            )
+            return MCPResult.error(error, prefix: "Failed to create subscription group localization")
         }
     }
 
@@ -865,10 +902,7 @@ extension SubscriptionsWorker {
             return MCPResult.jsonObject(result)
 
         } catch {
-            return CallTool.Result(
-                content: [MCPContent.text("Error: Failed to update subscription group localization: \(error.localizedDescription)")],
-                isError: true
-            )
+            return MCPResult.error(error, prefix: "Failed to update subscription group localization")
         }
     }
 
@@ -1179,7 +1213,7 @@ extension SubscriptionsWorker {
 
             let endpoint = "/v1/subscriptions/\(try ASCPathSegment.encode(subscriptionId))/images"
             let query = [
-                "limit": String(min(max(arguments["limit"]?.intValue ?? 25, 1), 200))
+                "limit": String(try validatedCommerceLimit(arguments["limit"], defaultValue: 25, maximum: 200))
             ]
 
             if let nextUrl = try paginationURL(from: arguments["next_url"]) {

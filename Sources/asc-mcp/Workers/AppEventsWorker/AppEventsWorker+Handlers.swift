@@ -20,7 +20,7 @@ extension AppEventsWorker {
         do {
             let path = "/v1/apps/\(try ASCPathSegment.encode(appId))/appEvents"
             var queryParams = [
-                "limit": String(boundedLimit(arguments["limit"], maximum: 200, defaultValue: 25))
+                "limit": String(try boundedLimit(arguments["limit"], field: "limit", maximum: 200, defaultValue: 25))
             ]
             if let states = try stringList(
                 arguments["event_states"],
@@ -41,7 +41,12 @@ extension AppEventsWorker {
             }
             if arguments["localizations_limit"] != nil {
                 queryParams["limit[localizations]"] = String(
-                    boundedLimit(arguments["localizations_limit"], maximum: 50, defaultValue: 50)
+                    try boundedLimit(
+                        arguments["localizations_limit"],
+                        field: "localizations_limit",
+                        maximum: 50,
+                        defaultValue: 50
+                    )
                 )
             }
 
@@ -110,7 +115,12 @@ extension AppEventsWorker {
             }
             if arguments["localizations_limit"] != nil {
                 queryParams["limit[localizations]"] = String(
-                    boundedLimit(arguments["localizations_limit"], maximum: 50, defaultValue: 50)
+                    try boundedLimit(
+                        arguments["localizations_limit"],
+                        field: "localizations_limit",
+                        maximum: 50,
+                        defaultValue: 50
+                    )
                 )
             }
 
@@ -191,8 +201,7 @@ extension AppEventsWorker {
                         deepLink: try nullableAbsoluteURIValue(arguments["deep_link"], field: "deep_link"),
                         purchaseRequirement: try nullableStringValue(
                             arguments["purchase_requirement"],
-                            field: "purchase_requirement",
-                            allowedValues: allowedPurchaseRequirements
+                            field: "purchase_requirement"
                         ),
                         primaryLocale: try nullableStringValue(arguments["primary_locale"], field: "primary_locale"),
                         priority: try nullableStringValue(
@@ -220,6 +229,14 @@ extension AppEventsWorker {
                 body: request,
                 as: ASCAppEventResponse.self
             )
+            try validateAcceptedAppEventMutationResource(
+                type: response.data.type,
+                id: response.data.id,
+                expectedType: "appEvents",
+                method: "POST",
+                statusCode: 201,
+                context: "Apple app event create response"
+            )
 
             let result = [
                 "success": true,
@@ -229,10 +246,7 @@ extension AppEventsWorker {
             return MCPResult.jsonObject(result)
 
         } catch {
-            return CallTool.Result(
-                content: [MCPContent.text("Failed to create app event: \(error.localizedDescription)")],
-                isError: true
-            )
+            return MCPResult.error(error, prefix: "Failed to create app event")
         }
     }
 
@@ -267,8 +281,7 @@ extension AppEventsWorker {
                 deepLink: try nullableAbsoluteURIValue(arguments["deep_link"], field: "deep_link"),
                 purchaseRequirement: try nullableStringValue(
                     arguments["purchase_requirement"],
-                    field: "purchase_requirement",
-                    allowedValues: allowedPurchaseRequirements
+                    field: "purchase_requirement"
                 ),
                 primaryLocale: try nullableStringValue(arguments["primary_locale"], field: "primary_locale"),
                 priority: try nullableStringValue(
@@ -299,6 +312,15 @@ extension AppEventsWorker {
                 body: request,
                 as: ASCAppEventResponse.self
             )
+            try validateAcceptedAppEventMutationResource(
+                type: response.data.type,
+                id: response.data.id,
+                expectedType: "appEvents",
+                expectedID: eventId,
+                method: "PATCH",
+                statusCode: 200,
+                context: "Apple app event update response"
+            )
 
             let result = [
                 "success": true,
@@ -308,10 +330,7 @@ extension AppEventsWorker {
             return MCPResult.jsonObject(result)
 
         } catch {
-            return CallTool.Result(
-                content: [MCPContent.text("Failed to update app event: \(error.localizedDescription)")],
-                isError: true
-            )
+            return MCPResult.error(error, prefix: "Failed to update app event")
         }
     }
 
@@ -359,7 +378,7 @@ extension AppEventsWorker {
         do {
             let path = "/v1/appEvents/\(try ASCPathSegment.encode(eventId))/localizations"
             var query = [
-                "limit": String(boundedLimit(arguments["limit"], maximum: 200, defaultValue: 25))
+                "limit": String(try boundedLimit(arguments["limit"], field: "limit", maximum: 200, defaultValue: 25))
             ]
             if let includes = try stringList(
                 arguments["include"],
@@ -370,12 +389,22 @@ extension AppEventsWorker {
             }
             if arguments["screenshots_limit"] != nil {
                 query["limit[appEventScreenshots]"] = String(
-                    boundedLimit(arguments["screenshots_limit"], maximum: 50, defaultValue: 50)
+                    try boundedLimit(
+                        arguments["screenshots_limit"],
+                        field: "screenshots_limit",
+                        maximum: 50,
+                        defaultValue: 50
+                    )
                 )
             }
             if arguments["video_clips_limit"] != nil {
                 query["limit[appEventVideoClips]"] = String(
-                    boundedLimit(arguments["video_clips_limit"], maximum: 50, defaultValue: 50)
+                    try boundedLimit(
+                        arguments["video_clips_limit"],
+                        field: "video_clips_limit",
+                        maximum: 50,
+                        defaultValue: 50
+                    )
                 )
             }
 
@@ -473,6 +502,14 @@ extension AppEventsWorker {
                 body: request,
                 as: ASCAppEventLocalizationSingleResponse.self
             )
+            try validateAcceptedAppEventMutationResource(
+                type: response.data.type,
+                id: response.data.id,
+                expectedType: "appEventLocalizations",
+                method: "POST",
+                statusCode: 201,
+                context: "Apple app event localization create response"
+            )
 
             let result: [String: Any] = [
                 "success": true,
@@ -482,10 +519,7 @@ extension AppEventsWorker {
             return MCPResult.jsonObject(result)
 
         } catch {
-            return CallTool.Result(
-                content: [MCPContent.text("Failed to create app event localization: \(error.localizedDescription)")],
-                isError: true
-            )
+            return MCPResult.error(error, prefix: "Failed to create app event localization")
         }
     }
 
@@ -534,6 +568,15 @@ extension AppEventsWorker {
                 body: request,
                 as: ASCAppEventLocalizationSingleResponse.self
             )
+            try validateAcceptedAppEventMutationResource(
+                type: response.data.type,
+                id: response.data.id,
+                expectedType: "appEventLocalizations",
+                expectedID: localizationId,
+                method: "PATCH",
+                statusCode: 200,
+                context: "Apple app event localization update response"
+            )
 
             let result: [String: Any] = [
                 "success": true,
@@ -543,10 +586,7 @@ extension AppEventsWorker {
             return MCPResult.jsonObject(result)
 
         } catch {
-            return CallTool.Result(
-                content: [MCPContent.text("Failed to update app event localization: \(error.localizedDescription)")],
-                isError: true
-            )
+            return MCPResult.error(error, prefix: "Failed to update app event localization")
         }
     }
 
@@ -662,12 +702,45 @@ extension AppEventsWorker {
         ["APPROPRIATE_FOR_ALL_USERS", "ATTRACT_NEW_USERS", "KEEP_ACTIVE_USERS_INFORMED", "BRING_BACK_LAPSED_USERS"]
     }
 
-    private var allowedPurchaseRequirements: Set<String> {
-        ["NO_COST_ASSOCIATED", "IN_APP_PURCHASE"]
+    private func boundedLimit(
+        _ value: Value?,
+        field: String,
+        maximum: Int,
+        defaultValue: Int
+    ) throws -> Int {
+        guard let value else { return defaultValue }
+        guard let limit = value.intValue, (1...maximum).contains(limit) else {
+            throw AppEventArgumentError("'\(field)' must be an integer between 1 and \(maximum)")
+        }
+        return limit
     }
 
-    private func boundedLimit(_ value: Value?, maximum: Int, defaultValue: Int) -> Int {
-        min(max(value?.intValue ?? defaultValue, 1), maximum)
+    private func validateAcceptedAppEventMutationResource(
+        type: String,
+        id: String,
+        expectedType: String,
+        expectedID: String? = nil,
+        method: String,
+        statusCode: Int,
+        context: String
+    ) throws {
+        do {
+            try ASCNonIdempotentWriteRecovery.validateResourceIdentity(
+                type: type,
+                id: id,
+                expectedType: expectedType,
+                expectedID: expectedID,
+                context: context
+            )
+        } catch {
+            let cause = error as? ASCError ?? .parsing(Redactor.redact(error.localizedDescription))
+            throw ASCError.mutationCommittedUnverified(
+                method: method,
+                expectedStatusCode: statusCode,
+                actualStatusCode: statusCode,
+                cause: cause
+            )
+        }
     }
 
     private func stringList(

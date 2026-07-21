@@ -108,6 +108,20 @@ struct ReviewSubmissionsWorkerContractTests {
         #expect(listItems["next_url"]?.objectValue?["format"] == .string("uri-reference"))
     }
 
+    @Test("direct calls enforce the canonical identifier pattern published by every schema")
+    func canonicalIdentifierRuntimeParity() async throws {
+        let transport = TestHTTPTransport(responses: [])
+        let worker = try await makeReviewSubmissionsWorker(transport: transport)
+        for identifier in ["bad id", "идентификатор", "bad%2Fid"] {
+            let result = try await worker.handleTool(.init(
+                name: "review_submissions_get",
+                arguments: ["submission_id": .string(identifier)]
+            ))
+            #expect(result.isError == true)
+        }
+        #expect(await transport.requestCount() == 0)
+    }
+
     @Test("create preserves omitted explicit null and every Apple platform")
     func createPlatformContract() async throws {
         let cases: [(Value?, Any?)] = [
@@ -402,6 +416,74 @@ struct ReviewSubmissionsWorkerContractTests {
             let payload = try reviewSubmissionObject(result.structuredContent)
             let details = try reviewSubmissionObject(payload["details"])
             #expect(details["type"] == .string("parsing"))
+        }
+    }
+
+    @Test("public collections bind Apple page counts and paging metadata to the requested limit")
+    func publicCollectionRequestedLimitBounds() async throws {
+        let listBody = """
+        {
+          "data": [
+            {"type":"reviewSubmissions","id":"sub-1","relationships":{"app":{"data":{"type":"apps","id":"app-1"}}}},
+            {"type":"reviewSubmissions","id":"sub-2","relationships":{"app":{"data":{"type":"apps","id":"app-1"}}}}
+          ],
+          "links": {"self":"https://api.example.test/v1/reviewSubmissions"},
+          "meta": {"paging":{"total":2,"limit":2}}
+        }
+        """
+        let itemBody = """
+        {
+          "data": [
+            {"type":"reviewSubmissionItems","id":"item-1"},
+            {"type":"reviewSubmissionItems","id":"item-2"}
+          ],
+          "links": {"self":"https://api.example.test/v1/reviewSubmissions/sub-1/items"},
+          "meta": {"paging":{"total":2,"limit":2}}
+        }
+        """
+        let cases: [(String, [String: Value], String)] = [
+            ("review_submissions_list", ["app_id": .string("app-1"), "limit": .int(1)], listBody),
+            ("review_submissions_list_items", ["submission_id": .string("sub-1"), "limit": .int(1)], itemBody)
+        ]
+        for (tool, arguments, body) in cases {
+            let transport = TestHTTPTransport(responses: [.init(statusCode: 200, body: body)])
+            let worker = try await makeReviewSubmissionsWorker(transport: transport)
+            let result = try await worker.handleTool(.init(name: tool, arguments: arguments))
+            #expect(result.isError == true)
+        }
+    }
+
+    @Test("public collections reject response next links outside the originating scope")
+    func publicCollectionResponseNextScope() async throws {
+        let listBody = """
+        {
+          "data": [],
+          "links": {
+            "self":"https://api.example.test/v1/reviewSubmissions",
+            "next":"https://evil.example/v1/reviewSubmissions?cursor=next"
+          },
+          "meta": {"paging":{"total":0,"limit":25,"nextCursor":"next"}}
+        }
+        """
+        let itemBody = """
+        {
+          "data": [],
+          "links": {
+            "self":"https://api.example.test/v1/reviewSubmissions/sub-1/items",
+            "next":"https://api.example.test/v1/reviewSubmissions/sub-2/items?cursor=next"
+          },
+          "meta": {"paging":{"total":0,"limit":25,"nextCursor":"next"}}
+        }
+        """
+        let cases: [(String, [String: Value], String)] = [
+            ("review_submissions_list", ["app_id": .string("app-1")], listBody),
+            ("review_submissions_list_items", ["submission_id": .string("sub-1")], itemBody)
+        ]
+        for (tool, arguments, body) in cases {
+            let transport = TestHTTPTransport(responses: [.init(statusCode: 200, body: body)])
+            let worker = try await makeReviewSubmissionsWorker(transport: transport)
+            let result = try await worker.handleTool(.init(name: tool, arguments: arguments))
+            #expect(result.isError == true)
         }
     }
 
@@ -993,6 +1075,12 @@ struct ReviewSubmissionsWorkerContractTests {
             #expect(createPayload["operationCommitted"] == .bool(true))
             #expect(createPayload["retrySafe"] == .bool(false))
             #expect(createPayload["platform"] == platform)
+            let cause = try reviewSubmissionObject(createPayload["cause"])
+            #expect(cause["type"] == .string("mutation_unverified"))
+            #expect(cause["method"] == .string("POST"))
+            #expect(cause["expectedStatusCode"] == .int(201))
+            #expect(cause["statusCode"] == .int(201))
+            #expect(try reviewSubmissionObject(cause["cause"])["type"] == .string("parsing"))
             let inspection = try reviewSubmissionObject(createPayload["inspection"])
             let arguments = try reviewSubmissionObject(inspection["arguments"])
             if platform == .string("IOS") {
@@ -1014,6 +1102,10 @@ struct ReviewSubmissionsWorkerContractTests {
         )
         #expect(networkDetails["write_outcome"] == .string("unknown"))
         #expect(networkDetails["platform"] == .string("MAC_OS"))
+        let networkCause = try reviewSubmissionObject(networkDetails["cause"])
+        #expect(networkCause["type"] == .string("mutation_unknown"))
+        #expect(networkCause["method"] == .string("POST"))
+        #expect(networkCause["outcomeUnknown"] == .bool(true))
         let networkInspection = try reviewSubmissionObject(networkDetails["inspection"])
         let networkArguments = try reviewSubmissionObject(networkInspection["arguments"])
         #expect(networkArguments["platforms"] == .string("MAC_OS"))
@@ -1079,7 +1171,13 @@ struct ReviewSubmissionsWorkerContractTests {
             arguments: ["app_id": .string("app-1")]
         ))
         #expect(create.isError == true)
-        #expect(try reviewSubmissionObject(create.structuredContent)["operationCommitState"] == .string("committed_unverified"))
+        let createPayload = try reviewSubmissionObject(create.structuredContent)
+        #expect(createPayload["operationCommitState"] == .string("committed_unverified"))
+        let createCause = try reviewSubmissionObject(createPayload["cause"])
+        #expect(createCause["type"] == .string("mutation_unverified"))
+        #expect(createCause["method"] == .string("POST"))
+        #expect(createCause["expectedStatusCode"] == .int(201))
+        #expect(createCause["statusCode"] == .int(200))
 
         let updateTransport = TestHTTPTransport(responses: [
             .init(statusCode: 200, body: reviewSubmissionMembershipBody(itemIDs: ["item-1"])),

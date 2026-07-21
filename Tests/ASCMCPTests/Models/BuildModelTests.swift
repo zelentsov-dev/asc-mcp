@@ -132,7 +132,7 @@ struct BuildModelTests {
         let included = try JSONDecoder().decode(ASCBuildIncludedResource.self, from: json)
         if case .buildBetaDetail(let detail) = included {
             #expect(detail.id == "bbd-1")
-            #expect(detail.attributes.autoNotifyEnabled == true)
+            #expect(detail.attributes?.autoNotifyEnabled == true)
         } else {
             Issue.record("Expected buildBetaDetail")
         }

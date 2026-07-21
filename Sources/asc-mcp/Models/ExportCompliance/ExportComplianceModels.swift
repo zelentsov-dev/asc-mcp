@@ -4,12 +4,17 @@ import Foundation
 
 struct ASCExportComplianceDeclarationsResponse: Codable, Sendable {
     let data: [ASCExportComplianceDeclaration]
-    let links: ASCPagedDocumentLinks?
+    let links: ASCPagedDocumentLinks
     let meta: ASCPagingInformation?
 }
 
 struct ASCExportComplianceDeclarationResponse: Codable, Sendable {
     let data: ASCExportComplianceDeclaration
+    let links: ASCExportComplianceDocumentLinks
+}
+
+struct ASCExportComplianceDocumentLinks: Codable, Sendable {
+    let `self`: String
 }
 
 struct ASCExportComplianceDeclaration: Codable, Sendable {
@@ -36,6 +41,7 @@ struct ASCExportComplianceDeclaration: Codable, Sendable {
 
 struct ASCExportComplianceDocumentResponse: Codable, Sendable {
     let data: ASCExportComplianceDocument
+    let links: ASCExportComplianceDocumentLinks
 }
 
 struct ASCExportComplianceDocument: Codable, Sendable {

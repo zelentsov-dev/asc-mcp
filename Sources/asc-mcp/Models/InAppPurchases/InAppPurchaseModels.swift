@@ -47,8 +47,8 @@ public struct CreateInAppPurchaseV2Request: Codable, Sendable {
         public let name: String
         public let productId: String
         public let inAppPurchaseType: String
-        public let reviewNote: String?
-        public let familySharable: Bool?
+        public let reviewNote: ASCNullable<String>?
+        public let familySharable: ASCNullable<Bool>?
     }
 
     public struct CreateIAPRelationships: Codable, Sendable {
@@ -71,9 +71,9 @@ public struct UpdateInAppPurchaseV2Request: Codable, Sendable {
     }
 
     public struct UpdateIAPAttributes: Codable, Sendable {
-        public let name: String?
-        public let reviewNote: String?
-        public let familySharable: Bool?
+        public let name: ASCNullable<String>?
+        public let reviewNote: ASCNullable<String>?
+        public let familySharable: ASCNullable<Bool>?
     }
 }
 

@@ -19,7 +19,7 @@ extension WinBackOffersWorker {
             let response: ASCWinBackOffersResponse
             let endpoint = "/v1/subscriptions/\(try ASCPathSegment.encode(subscriptionId))/winBackOffers"
             let query = [
-                "limit": String(min(max(arguments["limit"]?.intValue ?? 25, 1), 200))
+                "limit": String(try validatedCommerceLimit(arguments["limit"], defaultValue: 25, maximum: 200))
             ]
 
             if let nextUrl = try paginationURL(from: arguments["next_url"]) {
@@ -217,10 +217,7 @@ extension WinBackOffersWorker {
             return MCPResult.jsonObject(result)
 
         } catch {
-            return CallTool.Result(
-                content: [MCPContent.text("Error: Failed to create win-back offer: \(error.localizedDescription)")],
-                isError: true
-            )
+            return MCPResult.error(error, prefix: "Failed to create win-back offer")
         }
     }
 
@@ -351,10 +348,7 @@ extension WinBackOffersWorker {
             return MCPResult.jsonObject(result)
 
         } catch {
-            return CallTool.Result(
-                content: [MCPContent.text("Error: Failed to update win-back offer: \(error.localizedDescription)")],
-                isError: true
-            )
+            return MCPResult.error(error, prefix: "Failed to update win-back offer")
         }
     }
 
@@ -399,7 +393,7 @@ extension WinBackOffersWorker {
             let response: ASCWinBackOfferPricesResponse
             let endpoint = "/v1/winBackOffers/\(try ASCPathSegment.encode(winbackOfferId))/prices"
             let query = [
-                "limit": String(min(max(arguments["limit"]?.intValue ?? 25, 1), 200))
+                "limit": String(try validatedCommerceLimit(arguments["limit"], defaultValue: 25, maximum: 200))
             ]
 
             if let nextUrl = try paginationURL(from: arguments["next_url"]) {

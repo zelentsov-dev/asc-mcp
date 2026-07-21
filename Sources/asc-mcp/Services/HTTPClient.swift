@@ -69,7 +69,12 @@ public actor HTTPClient {
         return try await get(page.path, parameters: page.parameters)
     }
 
-    /// Performs GET request to App Store Connect API
+    /// Performs a GET request that must return HTTP 200.
+    /// - Parameters:
+    ///   - endpoint: Root-relative App Store Connect API path.
+    ///   - parameters: Query parameters to append to the request.
+    /// - Returns: Raw response body.
+    /// - Throws: `ASCError` when endpoint validation, authentication, transport, status validation, or retry handling fails.
     public func get(_ endpoint: String, parameters: [String: String] = [:]) async throws -> Data {
         let response = try await request(.GET, endpoint: endpoint, parameters: parameters)
         guard response.statusCode == 200 else {
@@ -81,9 +86,24 @@ public actor HTTPClient {
         return response.data
     }
 
-    /// Performs POST request to App Store Connect API
-    public func post(_ endpoint: String, body: Data? = nil) async throws -> Data {
-        try await postReceipt(endpoint, body: body).data
+    /// Performs a POST request and validates its exact success status.
+    /// - Parameters:
+    ///   - endpoint: Root-relative App Store Connect API path.
+    ///   - body: Optional raw request body.
+    ///   - expectedStatusCode: Exact successful status required by the Apple operation contract.
+    /// - Returns: Raw response body after exact-status and HTTP 204 body validation.
+    /// - Throws: `ASCError`, including an indeterminate or committed-but-unverified mutation state when applicable.
+    public func post(
+        _ endpoint: String,
+        body: Data? = nil,
+        expectedStatusCode: Int = 201
+    ) async throws -> Data {
+        let receipt = try await postReceipt(endpoint, body: body)
+        return try Self.validatedMutationData(
+            receipt,
+            method: .POST,
+            expectedStatusCode: expectedStatusCode
+        )
     }
 
     func postReceipt(_ endpoint: String, body: Data? = nil) async throws -> ASCMutationReceipt {
@@ -91,9 +111,24 @@ public actor HTTPClient {
         return ASCMutationReceipt(data: response.data, statusCode: response.statusCode)
     }
 
-    /// Performs PATCH request to App Store Connect API
-    public func patch(_ endpoint: String, body: Data) async throws -> Data {
-        try await patchReceipt(endpoint, body: body).data
+    /// Performs a PATCH request and validates its exact success status.
+    /// - Parameters:
+    ///   - endpoint: Root-relative App Store Connect API path.
+    ///   - body: Raw request body.
+    ///   - expectedStatusCode: Exact successful status required by the Apple operation contract.
+    /// - Returns: Raw response body after exact-status and HTTP 204 body validation.
+    /// - Throws: `ASCError`, including an indeterminate or committed-but-unverified mutation state when applicable.
+    public func patch(
+        _ endpoint: String,
+        body: Data,
+        expectedStatusCode: Int = 200
+    ) async throws -> Data {
+        let receipt = try await patchReceipt(endpoint, body: body)
+        return try Self.validatedMutationData(
+            receipt,
+            method: .PATCH,
+            expectedStatusCode: expectedStatusCode
+        )
     }
 
     func patchReceipt(_ endpoint: String, body: Data) async throws -> ASCMutationReceipt {
@@ -101,15 +136,34 @@ public actor HTTPClient {
         return ASCMutationReceipt(data: response.data, statusCode: response.statusCode)
     }
 
-    /// Performs PUT request to App Store Connect API
-    public func put(_ endpoint: String, body: Data) async throws -> Data {
-        return try await request(.PUT, endpoint: endpoint, body: body).data
+    /// Performs a PUT request and validates its exact success status.
+    /// - Parameters:
+    ///   - endpoint: Root-relative App Store Connect API path.
+    ///   - body: Raw request body.
+    ///   - expectedStatusCode: Exact successful status required by the Apple operation contract.
+    /// - Returns: Raw response body after exact-status and HTTP 204 body validation.
+    /// - Throws: `ASCError` when request, status, or response-body validation fails.
+    public func put(
+        _ endpoint: String,
+        body: Data,
+        expectedStatusCode: Int = 200
+    ) async throws -> Data {
+        let response = try await request(.PUT, endpoint: endpoint, body: body)
+        let receipt = ASCMutationReceipt(data: response.data, statusCode: response.statusCode)
+        return try Self.validatedMutationData(
+            receipt,
+            method: .PUT,
+            expectedStatusCode: expectedStatusCode
+        )
     }
 
-    /// Performs DELETE request to App Store Connect API
+    /// Performs a DELETE request that must return an empty HTTP 204 response.
+    /// - Parameter endpoint: Root-relative App Store Connect API path.
+    /// - Returns: The empty response body.
+    /// - Throws: `ASCError`, including an indeterminate or committed-but-unverified deletion state when applicable.
     public func delete(_ endpoint: String) async throws -> Data {
         let receipt = try await deleteReceipt(endpoint)
-        guard receipt.statusCode == 204 else {
+        guard receipt.statusCode == 204, receipt.data.isEmpty else {
             throw ASCError.deleteCommittedUnverified(statusCode: receipt.statusCode)
         }
         return receipt.data
@@ -120,10 +174,15 @@ public actor HTTPClient {
         return ASCDeleteReceipt(data: response.data, statusCode: response.statusCode)
     }
 
-    /// Performs DELETE request with body (for relationship endpoints)
+    /// Performs a relationship DELETE request that must return an empty HTTP 204 response.
+    /// - Parameters:
+    ///   - endpoint: Root-relative App Store Connect API path.
+    ///   - body: Raw relationship request body.
+    /// - Returns: The empty response body.
+    /// - Throws: `ASCError`, including an indeterminate or committed-but-unverified deletion state when applicable.
     public func delete(_ endpoint: String, body: Data) async throws -> Data {
         let receipt = try await deleteReceipt(endpoint, body: body)
-        guard receipt.statusCode == 204 else {
+        guard receipt.statusCode == 204, receipt.data.isEmpty else {
             throw ASCError.deleteCommittedUnverified(statusCode: receipt.statusCode)
         }
         return receipt.data
@@ -205,13 +264,15 @@ public actor HTTPClient {
             do {
                 (data, httpResponse) = try await transport.data(for: request)
             } catch let error as ASCError {
-                if method == .DELETE,
-                   let outcomeUnknown = Self.deleteOutcomeUnknownError(from: error) {
+                if let outcomeUnknown = Self.mutationOutcomeUnknownError(
+                    method: method,
+                    from: error
+                ) {
                     throw outcomeUnknown
                 }
                 throw error
             } catch {
-                if error is CancellationError, method != .DELETE {
+                if error is CancellationError, !method.isNonIdempotentMutation {
                     throw CancellationError()
                 }
                 if attempt < maxAttempts - 1 && retriesAmbiguousFailures {
@@ -223,8 +284,10 @@ public actor HTTPClient {
 
                 logger.error("Network request failed: \(error.localizedDescription)")
                 let networkError = ASCError.network("HTTP request failed: \(error.localizedDescription)")
-                if method == .DELETE,
-                   let outcomeUnknown = Self.deleteOutcomeUnknownError(from: networkError) {
+                if let outcomeUnknown = Self.mutationOutcomeUnknownError(
+                    method: method,
+                    from: networkError
+                ) {
                     throw outcomeUnknown
                 }
                 throw networkError
@@ -272,8 +335,10 @@ public actor HTTPClient {
             } else {
                 responseError = .api(errorMessage, httpResponse.statusCode)
             }
-            if method == .DELETE,
-               let outcomeUnknown = Self.deleteOutcomeUnknownError(from: responseError) {
+            if let outcomeUnknown = Self.mutationOutcomeUnknownError(
+                method: method,
+                from: responseError
+            ) {
                 throw outcomeUnknown
             }
             throw responseError
@@ -282,23 +347,63 @@ public actor HTTPClient {
         throw ASCError.network("Maximum retry attempts exceeded before a request was sent")
     }
 
-    private static func deleteOutcomeUnknownError(from error: ASCError) -> ASCError? {
-        if case .deleteOutcomeUnknown = error {
-            return nil
-        }
-
+    private static func mutationOutcomeUnknownError(
+        method: HTTPMethod,
+        from error: ASCError
+    ) -> ASCError? {
+        guard method.isNonIdempotentMutation else { return nil }
         switch error {
+        case .mutationOutcomeUnknown, .deleteOutcomeUnknown:
+            return nil
         case .network(let message):
-            return .deleteOutcomeUnknown(.network(message))
+            return outcomeUnknownError(method: method, cause: .network(message))
         case .api(let message, let statusCode)
-            where statusCode == 408 || (500...599).contains(statusCode):
-            return .deleteOutcomeUnknown(.api(message, statusCode))
+            where (300...399).contains(statusCode)
+                || statusCode == 408
+                || statusCode >= 500:
+            return outcomeUnknownError(method: method, cause: .api(message, statusCode))
         case .apiResponse(_, let statusCode)
-            where statusCode == 408 || (500...599).contains(statusCode):
-            return .deleteOutcomeUnknown(error)
+            where (300...399).contains(statusCode)
+                || statusCode == 408
+                || statusCode >= 500:
+            return outcomeUnknownError(method: method, cause: error)
         default:
             return nil
         }
+    }
+
+    private static func outcomeUnknownError(
+        method: HTTPMethod,
+        cause: ASCError
+    ) -> ASCError {
+        if method == .DELETE {
+            return .deleteOutcomeUnknown(cause)
+        }
+        return .mutationOutcomeUnknown(method: method.rawValue, cause: cause)
+    }
+
+    private static func validatedMutationData(
+        _ receipt: ASCMutationReceipt,
+        method: HTTPMethod,
+        expectedStatusCode: Int
+    ) throws -> Data {
+        guard receipt.statusCode == expectedStatusCode else {
+            throw ASCError.mutationCommittedUnverified(
+                method: method.rawValue,
+                expectedStatusCode: expectedStatusCode,
+                actualStatusCode: receipt.statusCode,
+                cause: nil
+            )
+        }
+        guard expectedStatusCode != 204 || receipt.data.isEmpty else {
+            throw ASCError.mutationCommittedUnverified(
+                method: method.rawValue,
+                expectedStatusCode: expectedStatusCode,
+                actualStatusCode: receipt.statusCode,
+                cause: .parsing("HTTP 204 response must not contain a response body")
+            )
+        }
+        return receipt.data
     }
 
     /// Calculates retry delay with exponential backoff
@@ -388,6 +493,10 @@ private enum HTTPMethod: String {
     case PUT = "PUT"
     case PATCH = "PATCH"
     case DELETE = "DELETE"
+
+    var isNonIdempotentMutation: Bool {
+        self == .POST || self == .PATCH || self == .DELETE
+    }
 }
 
 private extension HTTPURLResponse {
@@ -420,7 +529,13 @@ extension HTTPClient {
         }
     }
 
-    /// Decodes JSON response into specified type
+    /// Fetches an HTTP 200 JSON resource and decodes it as the requested type.
+    /// - Parameters:
+    ///   - endpoint: Root-relative App Store Connect API path.
+    ///   - parameters: Query parameters to append to the request.
+    ///   - type: Expected response type.
+    /// - Returns: Decoded response value.
+    /// - Throws: `ASCError` when request, status, or decoding fails.
     public func get<T: Decodable & Sendable>(_ endpoint: String, parameters: [String: String] = [:], as type: T.Type) async throws -> T {
         let data = try await get(endpoint, parameters: parameters)
 
@@ -431,8 +546,20 @@ extension HTTPClient {
         }
     }
 
-    /// POST request with JSON body encoding
-    public func post<T: Codable & Sendable, R: Codable & Sendable>(_ endpoint: String, body: T, as responseType: R.Type) async throws -> R {
+    /// Encodes a JSON body, performs an exact-status POST, and decodes the response.
+    /// - Parameters:
+    ///   - endpoint: Root-relative App Store Connect API path.
+    ///   - body: Encodable request body.
+    ///   - expectedStatusCode: Exact successful status required by the Apple operation contract.
+    ///   - responseType: Expected response type.
+    /// - Returns: Decoded response value.
+    /// - Throws: `ASCError`, including an indeterminate or committed-but-unverified mutation state when applicable.
+    public func post<T: Codable & Sendable, R: Codable & Sendable>(
+        _ endpoint: String,
+        body: T,
+        expectedStatusCode: Int = 201,
+        as responseType: R.Type
+    ) async throws -> R {
         let bodyData: Data
         do {
             bodyData = try JSONEncoder().encode(body)
@@ -440,17 +567,38 @@ extension HTTPClient {
             throw ASCError.parsing("Failed to encode request body: \(error.localizedDescription)")
         }
 
-        let responseData = try await post(endpoint, body: bodyData)
+        let responseData = try await post(
+            endpoint,
+            body: bodyData,
+            expectedStatusCode: expectedStatusCode
+        )
 
         do {
             return try JSONDecoder().decode(responseType, from: responseData)
         } catch {
-            throw ASCError.parsing("Failed to decode \(responseType): \(error.localizedDescription)")
+            throw ASCError.mutationCommittedUnverified(
+                method: HTTPMethod.POST.rawValue,
+                expectedStatusCode: expectedStatusCode,
+                actualStatusCode: expectedStatusCode,
+                cause: .parsing("Failed to decode \(responseType): \(error.localizedDescription)")
+            )
         }
     }
 
-    /// PATCH request for updating resources
-    public func patch<T: Codable & Sendable, R: Codable & Sendable>(_ endpoint: String, body: T, as responseType: R.Type) async throws -> R {
+    /// Encodes a JSON body, performs an exact-status PATCH, and decodes the response.
+    /// - Parameters:
+    ///   - endpoint: Root-relative App Store Connect API path.
+    ///   - body: Encodable request body.
+    ///   - expectedStatusCode: Exact successful status required by the Apple operation contract.
+    ///   - responseType: Expected response type.
+    /// - Returns: Decoded response value.
+    /// - Throws: `ASCError`, including an indeterminate or committed-but-unverified mutation state when applicable.
+    public func patch<T: Codable & Sendable, R: Codable & Sendable>(
+        _ endpoint: String,
+        body: T,
+        expectedStatusCode: Int = 200,
+        as responseType: R.Type
+    ) async throws -> R {
         let bodyData: Data
         do {
             bodyData = try JSONEncoder().encode(body)
@@ -458,17 +606,38 @@ extension HTTPClient {
             throw ASCError.parsing("Failed to encode request body: \(error.localizedDescription)")
         }
 
-        let responseData = try await request(.PATCH, endpoint: endpoint, body: bodyData).data
+        let responseData = try await patch(
+            endpoint,
+            body: bodyData,
+            expectedStatusCode: expectedStatusCode
+        )
 
         do {
             return try JSONDecoder().decode(responseType, from: responseData)
         } catch {
-            throw ASCError.parsing("Failed to decode \(responseType): \(error.localizedDescription)")
+            throw ASCError.mutationCommittedUnverified(
+                method: HTTPMethod.PATCH.rawValue,
+                expectedStatusCode: expectedStatusCode,
+                actualStatusCode: expectedStatusCode,
+                cause: .parsing("Failed to decode \(responseType): \(error.localizedDescription)")
+            )
         }
     }
 
-    /// PUT request with JSON encoding
-    public func put<T: Codable & Sendable, R: Codable & Sendable>(_ endpoint: String, body: T, as responseType: R.Type) async throws -> R {
+    /// Encodes a JSON body, performs an exact-status PUT, and decodes the response.
+    /// - Parameters:
+    ///   - endpoint: Root-relative App Store Connect API path.
+    ///   - body: Encodable request body.
+    ///   - expectedStatusCode: Exact successful status required by the Apple operation contract.
+    ///   - responseType: Expected response type.
+    /// - Returns: Decoded response value.
+    /// - Throws: `ASCError` when encoding, request, status, or decoding fails.
+    public func put<T: Codable & Sendable, R: Codable & Sendable>(
+        _ endpoint: String,
+        body: T,
+        expectedStatusCode: Int = 200,
+        as responseType: R.Type
+    ) async throws -> R {
         let bodyData: Data
         do {
             bodyData = try JSONEncoder().encode(body)
@@ -476,16 +645,30 @@ extension HTTPClient {
             throw ASCError.parsing("Failed to encode request body: \(error.localizedDescription)")
         }
 
-        let responseData = try await put(endpoint, body: bodyData)
+        let responseData = try await put(
+            endpoint,
+            body: bodyData,
+            expectedStatusCode: expectedStatusCode
+        )
 
         do {
             return try JSONDecoder().decode(responseType, from: responseData)
         } catch {
-            throw ASCError.parsing("Failed to decode \(responseType): \(error.localizedDescription)")
+            throw ASCError.mutationCommittedUnverified(
+                method: HTTPMethod.PUT.rawValue,
+                expectedStatusCode: expectedStatusCode,
+                actualStatusCode: expectedStatusCode,
+                cause: .parsing("Failed to decode \(responseType): \(error.localizedDescription)")
+            )
         }
     }
 
-    /// DELETE request with JSON body encoding
+    /// Encodes a relationship body and performs a DELETE requiring an empty HTTP 204 response.
+    /// - Parameters:
+    ///   - endpoint: Root-relative App Store Connect API path.
+    ///   - body: Encodable relationship request body.
+    /// - Returns: The empty response body.
+    /// - Throws: `ASCError`, including an indeterminate or committed-but-unverified deletion state when applicable.
     public func delete<T: Codable & Sendable>(_ endpoint: String, body: T) async throws -> Data {
         let bodyData: Data
         do {

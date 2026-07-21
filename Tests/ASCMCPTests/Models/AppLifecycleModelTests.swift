@@ -5,7 +5,12 @@ import Foundation
 @Suite("AppLifecycle Model Tests")
 struct AppLifecycleModelTests {
     @Test func createVersionRequest() throws {
-        let request = CreateAppStoreVersionRequest(platform: "IOS", versionString: "2.0", releaseType: "MANUAL", earliestReleaseDate: nil, appId: "app-1")
+        let request = CreateAppStoreVersionRequest(
+            platform: "IOS",
+            versionString: "2.0",
+            releaseType: .string("MANUAL"),
+            appId: "app-1"
+        )
         let data = try JSONEncoder().encode(request)
         let decoded = try JSONDecoder().decode(CreateAppStoreVersionRequest.self, from: data)
         #expect(decoded.data.attributes.versionString == "2.0")

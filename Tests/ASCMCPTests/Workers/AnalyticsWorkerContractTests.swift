@@ -357,6 +357,29 @@ struct AnalyticsWorkerContractTests {
         #expect(result.isError == true)
         #expect(await transport.requestCount() == 2)
     }
+
+    @Test("analytics report request creation preserves unknown mutation state")
+    func reportRequestCreatePreservesUnknownMutationState() async throws {
+        let transport = TestHTTPTransport(responses: [
+            .init(statusCode: 500, body: #"{"errors":[{"status":"500","detail":"unavailable"}]}"#)
+        ])
+        let worker = try await analyticsContractWorker(transport: transport)
+
+        let result = try await worker.handleTool(CallTool.Parameters(
+            name: "analytics_create_report_request",
+            arguments: [
+                "app_id": .string("app-1"),
+                "access_type": .string("ONGOING")
+            ]
+        ))
+
+        let payload = try analyticsContractObject(result.structuredContent)
+        #expect(result.isError == true)
+        #expect(payload["operationCommitState"] == .string("unknown"))
+        #expect(payload["outcomeUnknown"] == .bool(true))
+        #expect(payload["retrySafe"] == .bool(false))
+        #expect(await transport.requestCount() == 1)
+    }
 }
 
 private func analyticsContractWorker(transport: TestHTTPTransport) async throws -> AnalyticsWorker {

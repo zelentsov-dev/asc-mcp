@@ -9,9 +9,19 @@ extension PreReleaseVersionsWorker {
     func listPreReleaseVersions(_ params: CallTool.Parameters) async throws -> CallTool.Result {
         let arguments = params.arguments
 
+        let limit: Int
+        if let value = arguments?["limit"] {
+            guard let parsed = value.intValue, (1...200).contains(parsed) else {
+                return MCPResult.error("'limit' must be an integer from 1 through 200")
+            }
+            limit = parsed
+        } else {
+            limit = 25
+        }
+
         do {
             let response: ASCPreReleaseVersionsResponse
-            var queryParams: [String: String] = [:]
+            var queryParams: [String: String] = ["limit": String(limit)]
 
             if let appId = arguments?["app_id"]?.stringValue {
                 queryParams["filter[app]"] = appId
@@ -32,12 +42,6 @@ extension PreReleaseVersionsWorker {
             if let sort = arguments?["sort"]?.stringValue {
                 queryParams["sort"] = sort
             }
-            if let limit = arguments?["limit"]?.intValue {
-                queryParams["limit"] = String(min(max(limit, 1), 200))
-            } else {
-                queryParams["limit"] = "25"
-            }
-
             if let nextUrl = try paginationURL(from: arguments?["next_url"]) {
                 response = try await httpClient.getPage(
                     nextUrl,
@@ -125,10 +129,19 @@ extension PreReleaseVersionsWorker {
             )
         }
 
+        let limit: Int
+        if let value = arguments["limit"] {
+            guard let parsed = value.intValue, (1...200).contains(parsed) else {
+                return MCPResult.error("'limit' must be an integer from 1 through 200")
+            }
+            limit = parsed
+        } else {
+            limit = 25
+        }
+
         do {
             let endpoint = "/v1/preReleaseVersions/\(try ASCPathSegment.encode(preReleaseVersionId))/builds"
-            let limit = arguments["limit"]?.intValue ?? 25
-            let queryParams = ["limit": String(min(max(limit, 1), 200))]
+            let queryParams = ["limit": String(limit)]
             let response: ASCBuildsResponse
 
             if let nextUrl = try paginationURL(from: arguments["next_url"]) {

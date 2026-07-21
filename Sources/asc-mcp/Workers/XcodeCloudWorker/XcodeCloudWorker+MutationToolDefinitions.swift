@@ -8,7 +8,7 @@ extension XcodeCloudWorker {
             description: "Preview or permanently delete an Xcode Cloud product. Preview is the default. Permanent deletion requires the latest dynamic receipt plus the exact current product name, workflow count, build-run count, and confirm_permanent_deletion=true.",
             inputSchema: xcMutationObjectSchema(
                 properties: [
-                    "product_id": xcMutationIDSchema("Xcode Cloud product ID"),
+                    "product_id": xcMutationResourceIDSchema("Xcode Cloud product ID"),
                     "confirm_permanent_deletion": xcMutationBooleanSchema("Must be true to execute permanent deletion"),
                     "confirmation_receipt": xcMutationIDSchema("Dynamic receipt from the latest preview"),
                     "expected_product_name": xcMutationStringSchema("Exact current product name from the latest preview"),
@@ -42,7 +42,7 @@ extension XcodeCloudWorker {
             description: "Preview or permanently delete an Xcode Cloud workflow. Preview is the default. Permanent deletion requires the latest dynamic receipt plus the exact current workflow name, build-run count, and confirm_permanent_deletion=true.",
             inputSchema: xcMutationObjectSchema(
                 properties: [
-                    "workflow_id": xcMutationIDSchema("Xcode Cloud workflow ID"),
+                    "workflow_id": xcMutationResourceIDSchema("Xcode Cloud workflow ID"),
                     "confirm_permanent_deletion": xcMutationBooleanSchema("Must be true to execute permanent deletion"),
                     "confirmation_receipt": xcMutationIDSchema("Dynamic receipt from the latest preview"),
                     "expected_workflow_name": xcMutationStringSchema("Exact current workflow name from the latest preview"),
@@ -99,13 +99,13 @@ private extension XcodeCloudWorker {
                 isCreate ? "Path to the Xcode project or workspace container" : "Container path; null clears the attribute",
                 nullable: !isCreate
             ),
-            "xcode_version_id": xcMutationIDSchema("Compatible Xcode version ID"),
-            "macos_version_id": xcMutationIDSchema("Compatible macOS version ID")
+            "xcode_version_id": xcMutationResourceIDSchema("Compatible Xcode version ID"),
+            "macos_version_id": xcMutationResourceIDSchema("Compatible macOS version ID")
         ]
 
         if isCreate {
-            properties["product_id"] = xcMutationIDSchema("Xcode Cloud product ID")
-            properties["repository_id"] = xcMutationIDSchema("SCM repository ID")
+            properties["product_id"] = xcMutationResourceIDSchema("Xcode Cloud product ID")
+            properties["repository_id"] = xcMutationResourceIDSchema("SCM repository ID")
             return xcMutationObjectSchema(
                 properties: properties,
                 required: [
@@ -115,7 +115,7 @@ private extension XcodeCloudWorker {
             )
         }
 
-        properties["workflow_id"] = xcMutationIDSchema("Xcode Cloud workflow ID")
+        properties["workflow_id"] = xcMutationResourceIDSchema("Xcode Cloud workflow ID")
         return xcMutationObjectSchema(properties: properties, required: ["workflow_id"])
     }
 
@@ -287,6 +287,15 @@ private extension XcodeCloudWorker {
             "type": .string("string"),
             "description": .string(description),
             "minLength": .int(1)
+        ])
+    }
+
+    func xcMutationResourceIDSchema(_ description: String) -> Value {
+        .object([
+            "type": .string("string"),
+            "description": .string("\(description); canonical App Store Connect resource ID"),
+            "minLength": .int(1),
+            "pattern": .string(#"^(?!\.{1,2}$)[A-Za-z0-9._~-]+$"#)
         ])
     }
 

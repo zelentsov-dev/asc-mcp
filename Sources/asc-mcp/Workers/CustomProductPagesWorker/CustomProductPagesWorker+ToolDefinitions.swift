@@ -58,7 +58,9 @@ extension CustomProductPagesWorker {
                     "name": nullableStringSchema("Replacement name, or null to clear Apple's nullable field"),
                     "visible": nullableBooleanSchema("Replacement visibility, or null to clear Apple's nullable field")
                 ],
-                required: ["page_id"]
+                required: ["page_id"],
+                minimumProperties: 2,
+                anyRequired: ["name", "visible"]
             )
         )
     }
@@ -266,7 +268,9 @@ extension CustomProductPagesWorker {
 
     private func objectSchema(
         properties: [String: Value],
-        required: [String] = []
+        required: [String] = [],
+        minimumProperties: Int? = nil,
+        anyRequired: [String] = []
     ) -> Value {
         var schema: [String: Value] = [
             "type": .string("object"),
@@ -275,6 +279,14 @@ extension CustomProductPagesWorker {
         ]
         if !required.isEmpty {
             schema["required"] = .array(required.map(Value.string))
+        }
+        if let minimumProperties {
+            schema["minProperties"] = .int(minimumProperties)
+        }
+        if !anyRequired.isEmpty {
+            schema["anyOf"] = .array(anyRequired.map { field in
+                .object(["required": .array([.string(field)])])
+            })
         }
         return .object(schema)
     }

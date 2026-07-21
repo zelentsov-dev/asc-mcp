@@ -17,7 +17,9 @@ extension WinBackOffersWorker {
                     ]),
                     "limit": .object([
                         "type": .string("integer"),
-                        "description": .string("Max results (default: 25, max: 200)")
+                        "description": .string("Max results (default: 25, max: 200)"),
+                        "minimum": .int(1),
+                        "maximum": .int(200)
                     ]),
                     "next_url": .object([
                         "type": .string("string"),
@@ -182,7 +184,9 @@ extension WinBackOffersWorker {
                     ]),
                     "limit": .object([
                         "type": .string("integer"),
-                        "description": .string("Max results (default: 25, max: 200)")
+                        "description": .string("Max results (default: 25, max: 200)"),
+                        "minimum": .int(1),
+                        "maximum": .int(200)
                     ]),
                     "next_url": .object([
                         "type": .string("string"),
