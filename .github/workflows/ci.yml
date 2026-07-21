@@ -6,25 +6,59 @@ on:
     tags: ['v*']
   pull_request:
     branches: [main, develop]
+  schedule:
+    - cron: '17 5 * * 1'
+  workflow_dispatch:
 
 permissions:
   contents: read
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  group: ${{ github.workflow }}-${{ (github.event_name == 'pull_request' || github.ref == 'refs/heads/develop') && github.ref || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' || github.ref == 'refs/heads/develop' }}
 
 jobs:
-  build-and-test:
-    name: Build & Test
-    runs-on: macos-15
-    timeout-minutes: 20
+  promotion-lineage:
+    name: Promotion Lineage
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - name: Checkout
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           persist-credentials: false
           fetch-depth: 0
+          ref: ${{ (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && 'refs/heads/main' || github.ref }}
+
+      - name: Reject forced protected branch updates
+        if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop') && github.event.forced
+        run: |
+          echo 'Protected branch history must not be force-pushed.' >&2
+          exit 1
+
+      - name: Validate main promotion source
+        if: github.event_name == 'pull_request' && github.base_ref == 'main'
+        shell: bash
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          HEAD_REF: ${{ github.head_ref }}
+          HEAD_REPOSITORY: ${{ github.event.pull_request.head.repo.full_name }}
+          CURRENT_REPOSITORY: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+
+          if [[ "$HEAD_REF" != "develop" || "$HEAD_REPOSITORY" != "$CURRENT_REPOSITORY" ]]; then
+            echo "Pull requests into main must come from this repository's develop branch." >&2
+            exit 1
+          fi
+
+          git cat-file -e "$BASE_SHA^{commit}"
+          git cat-file -e "$HEAD_SHA^{commit}"
+          if ! git merge-base --is-ancestor "$BASE_SHA" "$HEAD_SHA"; then
+            echo "develop must contain the current main base before promotion." >&2
+            exit 1
+          fi
 
       - name: Validate release tag
         if: startsWith(github.ref, 'refs/tags/')
@@ -43,9 +77,19 @@ jobs:
             exit 1
           fi
 
+          tag_subject="$(git for-each-ref --format='%(contents:subject)' "refs/tags/$tag")"
+          if [[ "$tag_subject" != "$tag" ]]; then
+            echo "Annotated tag subject must exactly match the tag name: $tag" >&2
+            exit 1
+          fi
+
+          git fetch --no-tags origin +refs/heads/main:refs/remotes/origin/main
           tag_commit="$(git rev-parse "refs/tags/$tag^{commit}")"
-          if ! git merge-base --is-ancestor "$tag_commit" refs/remotes/origin/main; then
-            echo "Release tag commit must be an ancestor of origin/main: $tag_commit" >&2
+          main_commit="$(git rev-parse refs/remotes/origin/main)"
+          if [[ "$tag_commit" != "$main_commit" ]]; then
+            echo "Release tag must point to the current origin/main commit." >&2
+            echo "tag:  $tag_commit" >&2
+            echo "main: $main_commit" >&2
             exit 1
           fi
 
@@ -61,9 +105,14 @@ jobs:
             echo "README must contain the release Mint pin: $readme_pin" >&2
             exit 1
           fi
-          if grep -Eo 'mint install zelentsov-dev/asc-mcp@v[0-9]+\.[0-9]+\.[0-9]+' README.md \
-            | grep -Fvxq "$readme_pin"; then
-            echo "README contains a stale Mint release pin; every release pin must use $tag" >&2
+          stale_pin="$(
+            grep -Eo 'mint install zelentsov-dev/asc-mcp@v[0-9]+\.[0-9]+\.[0-9]+' README.md \
+              | grep -Fvx "$readme_pin" \
+              | head -n 1 \
+              || true
+          )"
+          if [[ -n "$stale_pin" ]]; then
+            echo "README contains a stale Mint release pin: $stale_pin" >&2
             exit 1
           fi
 
@@ -77,55 +126,146 @@ jobs:
             }
             END { exit(found ? 0 : 1) }
           ' CHANGELOG.md; then
-            echo "CHANGELOG.md must contain a section for [$version]" >&2
+            echo "CHANGELOG.md must contain a dated section for [$version]" >&2
             exit 1
           fi
+
+  tests:
+    name: Tests
+    needs: promotion-lineage
+    runs-on: macos-15
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+          ref: ${{ (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && 'refs/heads/main' || github.ref }}
 
       - name: Select Xcode
         run: sudo xcode-select -s /Applications/Xcode_26.2.app
 
-      - name: Build
-        run: swift build --disable-automatic-resolution
+      - name: Run tests
+        shell: bash
+        run: |
+          set -o pipefail
+          swift test --disable-automatic-resolution 2>&1 \
+            | tee "$RUNNER_TEMP/asc_mcp_tests.log"
 
-      - name: Release build
-        run: swift build --disable-automatic-resolution -c release 2>&1 | tee /tmp/asc_mcp_release.log
+      - name: Publish test summary
+        if: always()
+        shell: bash
+        env:
+          TEST_JOB_STATUS: ${{ job.status }}
+        run: |
+          {
+            echo '## Tests'
+            echo "- Status: $TEST_JOB_STATUS"
+            echo "- Ref: $GITHUB_REF_NAME"
+            echo "- Run attempt: $GITHUB_RUN_ATTEMPT"
+            if [[ -s "$RUNNER_TEMP/asc_mcp_tests.log" ]]; then
+              echo '<details><summary>Failure indicators</summary>'
+              echo
+              echo '```text'
+              grep -Ei 'error:|failed|failure|✘' "$RUNNER_TEMP/asc_mcp_tests.log" \
+                | tail -n 40 \
+                || true
+              echo '```'
+              echo '</details>'
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload test log
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: test-log-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/asc_mcp_tests.log
+          if-no-files-found: warn
+          retention-days: 30
+
+  release-contract:
+    name: Release & Apple Contract
+    needs: promotion-lineage
+    runs-on: macos-15
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+          ref: ${{ (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && 'refs/heads/main' || github.ref }}
+
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode_26.2.app
+
+      - name: Build release binary
+        shell: bash
+        run: |
+          set -o pipefail
+          swift build --disable-automatic-resolution -c release 2>&1 \
+            | tee "$RUNNER_TEMP/asc_mcp_release.log"
 
       - name: Fail on release warnings
-        run: '! grep -q "warning:" /tmp/asc_mcp_release.log'
+        shell: bash
+        run: |
+          if grep -n 'warning:' "$RUNNER_TEMP/asc_mcp_release.log"; then
+            echo 'Release build emitted compiler warnings.' >&2
+            exit 1
+          fi
+
+      - name: Verify release binary
+        shell: bash
+        run: |
+          set -euo pipefail
+          expected_version="$(awk -F'"' '/static let current =/ { print $2 }' Sources/asc-mcp/Core/ServerVersion.swift)"
+          test "$(.build/release/asc-mcp --version)" = "asc-mcp $expected_version"
 
       - name: OpenAPI coverage tooling smoke
         run: |
-          swift run --disable-automatic-resolution asc-mcp openapi-coverage \
+          .build/release/asc-mcp openapi-coverage \
             --spec Tests/ASCMCPTests/Fixtures/openapi_minimal.oas.json \
-            --output /tmp/asc_openapi_coverage.md \
+            --output "$RUNNER_TEMP/asc_openapi_coverage.md" \
             --generated-at 2026-05-07
-          test -s /tmp/asc_openapi_coverage.md
+          test -s "$RUNNER_TEMP/asc_openapi_coverage.md"
 
       - name: App Store Connect operation contract
+        shell: bash
         run: |
-          rm -rf /tmp/asc_openapi_contract
-          mkdir -p /tmp/asc_openapi_contract
+          set -euo pipefail
+
+          contract_directory="$RUNNER_TEMP/asc_openapi_contract"
+          rm -rf "$contract_directory"
+          mkdir -p "$contract_directory"
           curl --fail --show-error --silent --location \
             --proto '=https' --proto-redir '=https' \
             --connect-timeout 15 --max-time 120 \
             --retry 3 --retry-delay 2 --retry-all-errors \
-            --output /tmp/asc_openapi_contract/spec.zip \
+            --output "$contract_directory/spec.zip" \
             https://developer.apple.com/sample-code/app-store-connect/app-store-connect-openapi-specification.zip
-          spec_entry="$(unzip -Z1 /tmp/asc_openapi_contract/spec.zip | grep -E '(^|/)openapi\.oas[^/]*\.json$')"
+          shasum -a 256 "$contract_directory/spec.zip" \
+            > "$contract_directory/specification.sha256"
+
+          spec_entry="$(
+            unzip -Z1 "$contract_directory/spec.zip" \
+              | grep -E '(^|/)openapi\.oas[^/]*\.json$'
+          )"
           test -n "$spec_entry"
-          test "$(echo "$spec_entry" | grep -c .)" -eq 1
-          unzip -p /tmp/asc_openapi_contract/spec.zip "$spec_entry" \
-            > /tmp/asc_openapi_contract/openapi.oas.json
-          swift run --disable-automatic-resolution asc-mcp openapi-contract-check \
-            --spec /tmp/asc_openapi_contract/openapi.oas.json \
-            --json-output /tmp/asc_openapi_contract/report.json \
-            --markdown-output /tmp/asc_openapi_contract/report.md \
+          test "$(printf '%s\n' "$spec_entry" | grep -c .)" -eq 1
+          unzip -p "$contract_directory/spec.zip" "$spec_entry" \
+            > "$contract_directory/openapi.oas.json"
+
+          .build/release/asc-mcp openapi-contract-check \
+            --spec "$contract_directory/openapi.oas.json" \
+            --json-output "$contract_directory/report.json" \
+            --markdown-output "$contract_directory/report.md" \
             --strict
-          mkdir -p /tmp/asc_openapi_contract/relocated
-          cp .build/release/asc-mcp /tmp/asc_openapi_contract/relocated/
-          cp -R .build/release/asc-mcp_asc-mcp.bundle /tmp/asc_openapi_contract/relocated/
-          /tmp/asc_openapi_contract/relocated/asc-mcp openapi-contract-check \
-            --spec /tmp/asc_openapi_contract/openapi.oas.json \
+
+          mkdir -p "$contract_directory/relocated"
+          cp .build/release/asc-mcp "$contract_directory/relocated/"
+          cp -R .build/release/asc-mcp_asc-mcp.bundle "$contract_directory/relocated/"
+          "$contract_directory/relocated/asc-mcp" openapi-contract-check \
+            --spec "$contract_directory/openapi.oas.json" \
             --strict
 
       - name: Verify generated OpenAPI coverage
@@ -133,54 +273,230 @@ jobs:
         run: |
           set -euo pipefail
 
+          contract_directory="$RUNNER_TEMP/asc_openapi_contract"
           generated_at="$(awk '$1 == "Generated:" { print $2; exit }' ASC-OPENAPI-COVERAGE-GENERATED.md)"
           if [[ ! "$generated_at" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]]; then
-            echo "ASC-OPENAPI-COVERAGE-GENERATED.md must contain a valid Generated date" >&2
+            echo 'ASC-OPENAPI-COVERAGE-GENERATED.md must contain a valid Generated date.' >&2
             exit 1
           fi
 
-          swift run --disable-automatic-resolution asc-mcp openapi-coverage \
-            --spec /tmp/asc_openapi_contract/openapi.oas.json \
-            --output /tmp/asc_openapi_contract/coverage.md \
+          .build/release/asc-mcp openapi-coverage \
+            --spec "$contract_directory/openapi.oas.json" \
+            --output "$contract_directory/coverage.md" \
             --generated-at "$generated_at"
           diff --unified ASC-OPENAPI-COVERAGE-GENERATED.md \
-            /tmp/asc_openapi_contract/coverage.md
+            "$contract_directory/coverage.md"
 
-      - name: Upload operation contract report
+      - name: Upload operation contract reports
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: app-store-connect-operation-contract-${{ github.run_attempt }}
+          name: app-store-connect-operation-contract-${{ github.run_id }}-${{ github.run_attempt }}
           path: |
-            /tmp/asc_openapi_contract/report.json
-            /tmp/asc_openapi_contract/report.md
-            /tmp/asc_mcp_release.log
+            ${{ runner.temp }}/asc_openapi_contract/report.json
+            ${{ runner.temp }}/asc_openapi_contract/report.md
+            ${{ runner.temp }}/asc_openapi_contract/specification.sha256
+            ${{ runner.temp }}/asc_mcp_release.log
           if-no-files-found: warn
           retention-days: 30
 
-      - name: Test
-        run: swift test --disable-automatic-resolution
-
-      - name: App Store Connect release contract
-        if: startsWith(github.ref, 'refs/tags/')
-        run: |
-          /tmp/asc_openapi_contract/relocated/asc-mcp openapi-contract-check \
-            --spec /tmp/asc_openapi_contract/openapi.oas.json \
-            --strict
-
-      - name: Publish job summary
+      - name: Publish contract summary
         if: always()
         shell: bash
         env:
-          CI_JOB_STATUS: ${{ job.status }}
-          CI_REF_NAME: ${{ github.ref_name }}
-          CI_RUN_ATTEMPT: ${{ github.run_attempt }}
+          CONTRACT_JOB_STATUS: ${{ job.status }}
         run: |
           printf '%s\n' \
-            '## asc-mcp CI' \
-            "- Status: $CI_JOB_STATUS" \
-            "- Ref: $CI_REF_NAME" \
-            "- Run attempt: $CI_RUN_ATTEMPT" \
+            '## Release & Apple Contract' \
+            "- Status: $CONTRACT_JOB_STATUS" \
+            "- Ref: $GITHUB_REF_NAME" \
+            "- Run attempt: $GITHUB_RUN_ATTEMPT" \
             '- Contract mode: strict' \
-            '- Artifact includes contract reports and the release build log.' \
+            '- Artifacts: contract reports and release build log' \
             >> "$GITHUB_STEP_SUMMARY"
+
+  publish-release:
+    name: Mint MCP Smoke & Publish Release
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [promotion-lineage, tests, release-contract]
+    runs-on: macos-15
+    timeout-minutes: 30
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+          ref: ${{ github.ref }}
+
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode_26.2.app
+
+      - name: Install tagged release through Mint
+        shell: bash
+        run: |
+          set -euo pipefail
+          brew install mint
+          mint install "zelentsov-dev/asc-mcp@$GITHUB_REF_NAME" --force
+
+      - name: Run installed MCP smoke
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="${GITHUB_REF_NAME#v}"
+          test "$("$HOME/.mint/bin/asc-mcp" --version)" = "asc-mcp $version"
+          python3 Scripts/ci/mcp_stdio_smoke.py \
+            --binary "$HOME/.mint/bin/asc-mcp" \
+            --expected-version "$version" \
+            --expected-tool-count 502 \
+            --expected-prefix xcode_cloud_ \
+            --expected-prefix-count 42 \
+            --error-tool xcode_cloud_workflows_create \
+            | tee "$RUNNER_TEMP/mcp-smoke.json"
+
+      - name: Prepare release notes
+        id: notes
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          version="${GITHUB_REF_NAME#v}"
+          heading="## [$version]"
+          notes_path="$RUNNER_TEMP/release-notes.md"
+          awk -v heading="$heading" '
+            index($0, heading " - ") == 1 { capture = 1; next }
+            capture && /^## \[/ { exit }
+            capture { print }
+          ' CHANGELOG.md > "$notes_path"
+          if ! grep -q '[^[:space:]]' "$notes_path"; then
+            echo "Unable to extract release notes for $GITHUB_REF_NAME." >&2
+            exit 1
+          fi
+          echo "path=$notes_path" >> "$GITHUB_OUTPUT"
+
+      - name: Upload release smoke evidence
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: release-smoke-${{ github.ref_name }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/mcp-smoke.json
+            ${{ steps.notes.outputs.path }}
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Create or validate draft release
+        id: draft
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          NOTES_PATH: ${{ steps.notes.outputs.path }}
+        run: |
+          set -euo pipefail
+
+          releases_path="$RUNNER_TEMP/releases.json"
+          gh api "repos/$GITHUB_REPOSITORY/releases?per_page=100" > "$releases_path"
+          release_count="$(jq --arg tag "$GITHUB_REF_NAME" '[.[] | select(.tag_name == $tag)] | length' "$releases_path")"
+          if [[ "$release_count" -gt 1 ]]; then
+            echo "Multiple releases use tag $GITHUB_REF_NAME." >&2
+            exit 1
+          fi
+
+          if [[ "$release_count" -eq 1 ]]; then
+            release_id="$(jq -r --arg tag "$GITHUB_REF_NAME" '.[] | select(.tag_name == $tag) | .id' "$releases_path")"
+            release_name="$(jq -r --arg tag "$GITHUB_REF_NAME" '.[] | select(.tag_name == $tag) | .name' "$releases_path")"
+            is_draft="$(jq -r --arg tag "$GITHUB_REF_NAME" '.[] | select(.tag_name == $tag) | .draft' "$releases_path")"
+            is_prerelease="$(jq -r --arg tag "$GITHUB_REF_NAME" '.[] | select(.tag_name == $tag) | .prerelease' "$releases_path")"
+            if [[ "$release_name" != "$GITHUB_REF_NAME" || "$is_prerelease" != "false" ]]; then
+              echo "Existing release metadata does not match $GITHUB_REF_NAME." >&2
+              exit 1
+            fi
+            echo "release-id=$release_id" >> "$GITHUB_OUTPUT"
+            if [[ "$is_draft" == "false" ]]; then
+              if ! jq -e \
+                --arg tag "$GITHUB_REF_NAME" \
+                --rawfile body "$NOTES_PATH" \
+                '.[] | select(.tag_name == $tag) | .body == $body' \
+                "$releases_path" > /dev/null; then
+                echo "Published release notes differ from CHANGELOG.md." >&2
+                exit 1
+              fi
+              echo 'already-published=true' >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+            gh release edit "$GITHUB_REF_NAME" \
+              --repo "$GITHUB_REPOSITORY" \
+              --title "$GITHUB_REF_NAME" \
+              --notes-file "$NOTES_PATH" \
+              --prerelease=false
+            exit 0
+          fi
+
+          gh release create "$GITHUB_REF_NAME" \
+            --repo "$GITHUB_REPOSITORY" \
+            --verify-tag \
+            --draft \
+            --title "$GITHUB_REF_NAME" \
+            --target main \
+            --notes-file "$NOTES_PATH"
+
+          gh api "repos/$GITHUB_REPOSITORY/releases?per_page=100" > "$releases_path"
+          release_id="$(jq -r --arg tag "$GITHUB_REF_NAME" '.[] | select(.tag_name == $tag) | .id' "$releases_path")"
+          if [[ ! "$release_id" =~ ^[0-9]+$ ]]; then
+            echo "Unable to resolve the draft release ID for $GITHUB_REF_NAME." >&2
+            exit 1
+          fi
+          echo "release-id=$release_id" >> "$GITHUB_OUTPUT"
+
+      - name: Verify draft release
+        if: steps.draft.outputs.already-published != 'true'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          NOTES_PATH: ${{ steps.notes.outputs.path }}
+          RELEASE_ID: ${{ steps.draft.outputs.release-id }}
+        run: |
+          set -euo pipefail
+
+          release_path="$RUNNER_TEMP/draft-release.json"
+          gh api "repos/$GITHUB_REPOSITORY/releases/$RELEASE_ID" > "$release_path"
+          jq -e \
+            --arg tag "$GITHUB_REF_NAME" \
+            --rawfile body "$NOTES_PATH" \
+            '.tag_name == $tag and
+             .name == $tag and
+             .body == $body and
+             .draft == true and
+             .prerelease == false and
+             .target_commitish == "main"' \
+            "$release_path" > /dev/null
+
+      - name: Publish immutable release
+        if: steps.draft.outputs.already-published != 'true'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release edit "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --draft=false --latest
+
+      - name: Verify published release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          NOTES_PATH: ${{ steps.notes.outputs.path }}
+          RELEASE_ID: ${{ steps.draft.outputs.release-id }}
+        run: |
+          set -euo pipefail
+
+          release_path="$RUNNER_TEMP/published-release.json"
+          gh api "repos/$GITHUB_REPOSITORY/releases/$RELEASE_ID" > "$release_path"
+          jq -e \
+            --arg tag "$GITHUB_REF_NAME" \
+            --rawfile body "$NOTES_PATH" \
+            '.tag_name == $tag and
+             .name == $tag and
+             .body == $body and
+             .draft == false and
+             .prerelease == false and
+             .target_commitish == "main"' \
+            "$release_path" > /dev/null
