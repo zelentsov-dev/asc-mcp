@@ -239,7 +239,7 @@ private enum IAPLegacyCase: String, CaseIterable, Sendable, CustomTestStringConv
 
     var statusCode: Int {
         switch self {
-        case .createLocalization: 201
+        case .createLocalization, .submit: 201
         case .deleteLocalization, .deleteImage: 204
         default: 200
         }
@@ -251,12 +251,14 @@ private enum IAPLegacyCase: String, CaseIterable, Sendable, CustomTestStringConv
             #"{"data":[],"links":{"self":"https://api.example.test/v2/inAppPurchases/iap-1/inAppPurchaseLocalizations?limit=25"}}"#
         case .createLocalization, .updateLocalization:
             #"{"data":{"type":"inAppPurchaseLocalizations","id":"loc-1","attributes":{"locale":"en-US","name":"Premium","description":"Copy"}}}"#
-        case .deleteLocalization, .deleteImage, .submit:
+        case .deleteLocalization, .deleteImage:
             ""
         case .getImage:
             #"{"data":{"type":"inAppPurchaseImages","id":"image-1","attributes":{"fileSize":5,"fileName":"image.png","state":"APPROVED"}}}"#
         case .listImages:
             #"{"data":[],"links":{"self":"https://api.example.test/v2/inAppPurchases/iap-1/images?limit=25"}}"#
+        case .submit:
+            #"{"data":{"type":"inAppPurchaseSubmissions","id":"submission-1"}}"#
         }
     }
 

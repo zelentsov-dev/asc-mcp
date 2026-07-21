@@ -223,8 +223,8 @@ private enum SubscriptionLegacyCase: String, CaseIterable, Sendable, CustomTestS
 
     var statusCode: Int {
         switch self {
-        case .createLocalization, .createGroupLocalization, .submitGroup: 201
-        case .deleteLocalization, .deleteGroupLocalization, .deleteImage, .submit: 204
+        case .createLocalization, .createGroupLocalization, .submit, .submitGroup: 201
+        case .deleteLocalization, .deleteGroupLocalization, .deleteImage: 204
         default: 200
         }
     }
@@ -237,7 +237,7 @@ private enum SubscriptionLegacyCase: String, CaseIterable, Sendable, CustomTestS
             #"{"data":{"type":"subscriptionLocalizations","id":"localization-1","attributes":{"locale":"en-US","name":"Premium","description":"Copy"}}}"#
         case .getLocalization:
             #"{"data":{"type":"subscriptionLocalizations","id":"localization-1","attributes":{"locale":"en-US","name":"Premium","description":"Copy"}}}"#
-        case .deleteLocalization, .deleteGroupLocalization, .deleteImage, .submit:
+        case .deleteLocalization, .deleteGroupLocalization, .deleteImage:
             ""
         case .listGroupLocalizations:
             #"{"data":[],"links":{"self":"https://api.example.test/v1/subscriptionGroups/group-1/subscriptionGroupLocalizations?limit=25"}}"#
@@ -247,6 +247,8 @@ private enum SubscriptionLegacyCase: String, CaseIterable, Sendable, CustomTestS
             #"{"data":[],"links":{"self":"https://api.example.test/v1/subscriptions/subscription-1/images?limit=25"}}"#
         case .getImage:
             #"{"data":{"type":"subscriptionImages","id":"image-1","attributes":{"fileSize":5,"fileName":"image.png","state":"APPROVED"}}}"#
+        case .submit:
+            #"{"data":{"type":"subscriptionSubmissions","id":"submission-1"}}"#
         case .submitGroup:
             #"{"data":{"type":"subscriptionGroupSubmissions","id":"submission-1"}}"#
         }

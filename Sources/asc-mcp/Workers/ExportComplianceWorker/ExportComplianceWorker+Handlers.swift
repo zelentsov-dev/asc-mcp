@@ -1185,7 +1185,7 @@ private extension ExportComplianceWorker {
             _ = try httpClient.validatedScopedLink(
                 value,
                 scope: PaginationScope(
-                    path: "/v1/\(collection)/\(try ASCPathSegment.encode(id))",
+                    path: "/v1/\(try ASCPathSegment.encode(collection))/\(try ASCPathSegment.encode(id))",
                     allowedParameters: []
                 )
             )

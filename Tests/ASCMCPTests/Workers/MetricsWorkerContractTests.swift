@@ -389,7 +389,7 @@ struct MetricsWorkerContractTests {
             name: "metrics_get_diagnostic_logs",
             arguments: [
                 "signature_id": .string("signature-1"),
-                "limit": .int(500)
+                "limit": .int(200)
             ]
         ))
 

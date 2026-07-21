@@ -1177,7 +1177,7 @@ struct ReviewSubmissionsWorkerContractTests {
         #expect(createCause["type"] == .string("mutation_unverified"))
         #expect(createCause["method"] == .string("POST"))
         #expect(createCause["expectedStatusCode"] == .int(201))
-        #expect(createCause["statusCode"] == .int(200))
+        #expect(createCause["statusCode"] == .int(201))
 
         let updateTransport = TestHTTPTransport(responses: [
             .init(statusCode: 200, body: reviewSubmissionMembershipBody(itemIDs: ["item-1"])),
