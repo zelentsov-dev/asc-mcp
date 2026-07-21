@@ -67,7 +67,8 @@ struct AppsWorkerReliabilityTests {
         let schema = try appsReliabilityValueObject(tool.outputSchema)
         let properties = try appsReliabilityValueObject(schema["properties"])
         let totalCount = try appsReliabilityValueObject(properties["totalCount"])
-        let types = try #require(totalCount["type"]?.arrayValue?.compactMap(\.stringValue))
+        let typeValues = try #require(totalCount["type"]?.arrayValue)
+        let types = typeValues.compactMap(\.stringValue)
 
         #expect(types == ["integer", "null"])
     }
@@ -273,7 +274,8 @@ struct AppsWorkerReliabilityTests {
         let scalar = try appsReliabilityValueObject(alternatives[0])
         let array = try appsReliabilityValueObject(alternatives[1])
         let items = try appsReliabilityValueObject(array["items"])
-        let enumValues = try #require(items["enum"]?.arrayValue?.compactMap(\.stringValue))
+        let enumItems = try #require(items["enum"]?.arrayValue)
+        let enumValues = enumItems.compactMap(\.stringValue)
         #expect(scalar["pattern"]?.stringValue != nil)
         #expect(enumValues.count == 25)
         #expect(enumValues.contains("appStoreVersions"))
