@@ -127,10 +127,8 @@ extension BuildUploadsWorker {
             return MCPResult.error("Required parameter 'build_upload_id' is missing")
         }
 
-        let buildUploadID: String
-        let endpoint: String
         do {
-            buildUploadID = try canonicalIdentifier(
+            let buildUploadID = try canonicalIdentifier(
                 arguments["build_upload_id"],
                 field: "build_upload_id"
             )

@@ -430,12 +430,13 @@ extension BuildUploadsWorker {
                 receipts: []
             )
         }
-        if initialState == "UPLOAD_COMPLETE" || initialState == "COMPLETE" {
+        if let completedState = initialState,
+           completedState == "UPLOAD_COMPLETE" || completedState == "COMPLETE" {
             guard let fileChecksum = file.attributes?.sourceFileChecksums?.file,
                   let hash = fileChecksum.hash,
                   !hash.isEmpty else {
                 return completedStateChecksumFailureResult(
-                    "Apple reported \(initialState), but omitted sourceFileChecksums.file MD5 evidence.",
+                    "Apple reported \(completedState), but omitted sourceFileChecksums.file MD5 evidence.",
                     parent: parent,
                     file: file,
                     snapshot: snapshot,
@@ -445,7 +446,7 @@ extension BuildUploadsWorker {
             }
             guard fileChecksum.algorithm == "MD5" else {
                 return completedStateChecksumFailureResult(
-                    "Apple reported \(initialState), but sourceFileChecksums.file does not use MD5.",
+                    "Apple reported \(completedState), but sourceFileChecksums.file does not use MD5.",
                     parent: parent,
                     file: file,
                     snapshot: snapshot,
@@ -455,7 +456,7 @@ extension BuildUploadsWorker {
             }
             guard hash.caseInsensitiveCompare(snapshot.md5Checksum) == .orderedSame else {
                 return completedStateChecksumFailureResult(
-                    "Apple reported \(initialState), but its file MD5 does not match the immutable snapshot.",
+                    "Apple reported \(completedState), but its file MD5 does not match the immutable snapshot.",
                     parent: parent,
                     file: file,
                     snapshot: snapshot,
@@ -705,9 +706,10 @@ extension BuildUploadsWorker {
                     return .committedUnverified(receipt.statusCode)
                 }
                 return .deleted
-            } catch let error as ASCError where error.httpStatusCode == 404 {
-                return .alreadyAbsent
             } catch {
+                if Self.isNotFoundASCError(error) {
+                    return .alreadyAbsent
+                }
                 let disposition = ASCNonIdempotentWriteRecovery.failureDisposition(for: error, phase: .request)
                 switch disposition {
                 case .rejected:
@@ -719,6 +721,16 @@ extension BuildUploadsWorker {
                 }
             }
         }.value
+    }
+
+    private static func isNotFoundASCError(_ error: Error) -> Bool {
+        guard let error = error as? ASCError else { return false }
+        switch error {
+        case .api(_, 404), .apiResponse(_, 404):
+            return true
+        default:
+            return false
+        }
     }
 
     private func preCommitFailureResult(
