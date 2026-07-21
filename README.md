@@ -29,7 +29,7 @@
 
 ## Overview
 
-**asc-mcp** is a Swift-based MCP server that bridges [Claude](https://claude.ai) (or any MCP-compatible host) with the [App Store Connect API](https://developer.apple.com/documentation/appstoreconnectapi). It exposes **490 tools** across 33 App Store tool domains + 2 core domains, enabling you to automate your entire iOS/macOS release workflow through natural language.
+**asc-mcp** is a Swift-based MCP server that bridges [Claude](https://claude.ai) (or any MCP-compatible host) with the [App Store Connect API](https://developer.apple.com/documentation/appstoreconnectapi). It exposes **502 tools** across 33 App Store tool domains + 2 core domains, enabling you to automate your entire iOS/macOS release workflow through natural language.
 
 ### Key capabilities
 
@@ -49,14 +49,14 @@
 - **Analytics & Metrics** — sales/financial reports, analytics reports, performance metrics, TestFlight usage metrics, diagnostics
 - **Metadata management** — localized descriptions, keywords, What's New across all locales
 - **MCP 2025-11-25 surface** — tool annotations, output schemas for stable tools, structured JSON results, and safe result-size metadata
-- **OpenAPI contract tooling** — compare the live 490-tool worker catalog and semantic manifest with Apple's official App Store Connect OpenAPI specification
+- **OpenAPI contract tooling** — compare the live 502-tool worker catalog and semantic manifest with Apple's official App Store Connect OpenAPI specification
 
 ## Quick Start
 
 ```bash
 # 1. Install via Mint
 brew install mint
-mint install zelentsov-dev/asc-mcp@v4.0.0
+mint install zelentsov-dev/asc-mcp@v4.1.0
 
 # 2. Add to Claude Code with env vars (simplest setup)
 claude mcp add asc-mcp \
@@ -88,7 +88,7 @@ Or use a JSON config file — see [Configuration](#configuration) below.
 brew install mint
 
 # Install asc-mcp from GitHub
-mint install zelentsov-dev/asc-mcp@v4.0.0
+mint install zelentsov-dev/asc-mcp@v4.1.0
 
 # Register in Claude Code
 claude mcp add asc-mcp -- ~/.mint/bin/asc-mcp
@@ -99,14 +99,18 @@ To install a specific branch or tag:
 ```bash
 mint install zelentsov-dev/asc-mcp@main      # main branch
 mint install zelentsov-dev/asc-mcp@develop    # develop branch
-mint install zelentsov-dev/asc-mcp@v4.0.0    # specific tag
+mint install zelentsov-dev/asc-mcp@v4.1.0    # specific tag
 ```
 
 To update to the latest version:
 
 ```bash
-mint install zelentsov-dev/asc-mcp@v4.0.0 --force
+mint install zelentsov-dev/asc-mcp@v4.1.0 --force
 ```
+
+### Migrating from v4.0.x
+
+Version 4.1 keeps every existing tool name, required input, projection key, and array shape. Xcode Cloud read tools now reject undocumented arguments and validate returned links, paging, relationship lineage, and included resources more strictly. New `*Present` projection fields distinguish Apple-omitted arrays from present empty arrays while legacy array fields remain arrays. Newly exposed nested `*_limit` inputs must be paired with their matching `include` value, and continuation calls must repeat the original request scope unchanged. The new product and workflow delete tools default to a safe preview and require the latest preview receipt plus exact inventory confirmation before permanent deletion.
 
 ### Migrating from v3.18.x
 
@@ -385,7 +389,7 @@ Add to `~/.codeium/windsurf/mcp_config.json`:
 }
 ```
 
-> **Note:** Windsurf has a 100-tool limit. The server exposes 490 tools by default, so you must use `--workers` to select a subset. See [Worker Filtering](#worker-filtering) below.
+> **Note:** Windsurf has a 100-tool limit. The server exposes 502 tools by default, so you must use `--workers` to select a subset. See [Worker Filtering](#worker-filtering) below.
 
 </details>
 
@@ -394,7 +398,7 @@ Add to `~/.codeium/windsurf/mcp_config.json`:
 
 ### Worker Filtering
 
-The server exposes **490 tools** across 33 App Store tool domains + 2 core domains. Some MCP clients impose a tool limit (e.g., Windsurf caps at 100). Use the 35 `--workers` filter keys to enable only the workers you need:
+The server exposes **502 tools** across 33 App Store tool domains + 2 core domains. Some MCP clients impose a tool limit (e.g., Windsurf caps at 100). Use the 35 `--workers` filter keys to enable only the workers you need:
 
 ```bash
 # Only load apps, builds, and version lifecycle tools
@@ -445,13 +449,13 @@ swift run asc-mcp openapi-contract-check \
   --strict
 ```
 
-The manifest is pinned to Apple API 4.4.1 by version, SHA-256, path count, and operation count. It currently maps 464 Apple operations, explicitly defers 436, and scopes out 363, covering all 1,263 operations without overlap. CI fails when the Apple document changes, a mapped operation moves or disappears, a public tool or worker drifts from the manifest, an input field loses its binding, response lineage becomes invalid, or a deferred decision expires. Unexposed optional Apple parameters are warnings so they remain visible in the generated backlog.
+The manifest is pinned to Apple API 4.4.1 by version, SHA-256, path count, and operation count. It currently maps 476 Apple operations, explicitly defers 424, and scopes out 363, covering all 1,263 operations without overlap. CI fails when the Apple document changes, a mapped operation moves or disappears, a public tool or worker drifts from the manifest, an input field loses its binding, response lineage becomes invalid, or a deferred decision expires. Unexposed optional Apple parameters are warnings so they remain visible in the generated backlog.
 
-Manifest schema v2 also accounts for every optional Apple query and request-body input as publicly bound, internally controlled, intentionally omitted with a reviewed reason, or still unclassified. The checked-in `optionalInputCoveragePin` records the exact current totals and a SHA-256 digest of the sorted input identities and dispositions; `--strict` rejects a missing pin or any count- or identity-level drift. The pin makes phased remediation auditable and regression-safe, but it is not a claim that every optional Apple input is already public. The v4.0.0 pin is 2,756 total: 1,041 bound, 40 internally controlled, 1,675 intentionally omitted, and 0 unclassified. Its identity SHA-256 is `d23f48816b9bc0b19933ae9f65cf4d737918730b1247f8949a802007055bd4a2`.
+Manifest schema v2 also accounts for every optional Apple query and request-body input as publicly bound, internally controlled, intentionally omitted with a reviewed reason, or still unclassified. The checked-in `optionalInputCoveragePin` records the exact current totals and a SHA-256 digest of the sorted input identities and dispositions; `--strict` rejects a missing pin or any count- or identity-level drift. The pin makes phased remediation auditable and regression-safe, but it is not a claim that every optional Apple input is already public. The v4.1.0 pin is 2,905 total: 1,103 bound, 40 internally controlled, 1,762 intentionally omitted, and 0 unclassified. Its identity SHA-256 is `733827d5ad0fc66d541bdd51922567a7f7cd7a941b882ca2e89a0ea6d6a1cfee`.
 
 `--strict` is the merge- and tag-time release gate. Every declared `target` or `broken` tool remains an error in reports, and a regression test pins their exact state. The current baseline has no `target` or `broken` implementations and no implementation drift, so any implementation that leaves `asBuilt`, any structural contract error, or any optional-input coverage drift blocks both merges and releases. `--structural-strict` remains available only for local phased remediation work.
 
-This gate proves operation identity, top-level MCP field ownership, required Apple inputs, typed internal values, and response source/pointer lineage. Full MCP type/enum/range parity and complete typed response schemas remain separate optimization phases; the current mapping status is 457 partial and 33 deprecated.
+This gate proves operation identity, top-level MCP field ownership, required Apple inputs, typed internal values, and response source/pointer lineage. Full MCP type/enum/range parity and complete typed response schemas remain separate optimization phases; the current mapping status is 469 partial and 33 deprecated.
 
 The older `openapi-coverage` command remains available for the high-level domain report in [`ASC-OPENAPI-COVERAGE-GENERATED.md`](ASC-OPENAPI-COVERAGE-GENERATED.md). The operation contract is the authoritative release gate.
 
@@ -464,7 +468,7 @@ The older `openapi-coverage` command remains available for the high-level domain
 | `apps` | `apps_` | 10 | App listing, metadata, localizations, search keyword IDs |
 | `accessibility` | `accessibility_` | 6 | App Store accessibility declarations |
 | `webhooks` | `webhooks_` | 11 | Webhook notifications, delivery diagnostics, and receiver helpers |
-| `xcode_cloud` | `xcode_cloud_` | 30 | Xcode Cloud products, workflows, build runs, artifacts, issues, test results, and SCM |
+| `xcode_cloud` | `xcode_cloud_` | 42 | Xcode Cloud products, workflow management, build runs, artifacts, issues, test results, and SCM |
 | `builds` | `builds_` | 4 | Build management |
 | `build_uploads` | `build_uploads_` | 10 | Build upload parents, files, safe transfers, and recovery |
 | `build_processing` | `builds_get_processing_*`, `builds_update_encryption`, `builds_check_readiness` | 4 | Build states, encryption |
@@ -501,20 +505,20 @@ When connected to an LLM client, tool definitions consume context tokens. Here's
 
 | Configuration | Tools | ~Tokens |
 |---|---:|---:|
-| All workers (default) | 490 | **~60,000** |
+| All workers (default) | 502 | **~60,000** |
 | Release workflow: `apps,builds,export_compliance,versions,reviews` | ~72 | ~8,900 |
 | Monetization: `apps,iap,subscriptions,pricing` | 184 | ~21,100 |
 | TestFlight: `apps,builds,beta_groups,beta_testers` | ~63 | ~7,100 |
 | Marketing: `apps,screenshots,custom_pages,ppo,promoted` | ~78 | ~8,800 |
 | `--workers apps` | 17 | ~2,100 |
 
-**Heaviest workers:** Subscriptions (99 tools), InAppPurchases (59 tools), Xcode Cloud (30 tools), Screenshots (19 tools), Provisioning (17 tools).
+**Heaviest workers:** Subscriptions (99 tools), InAppPurchases (59 tools), Xcode Cloud (42 tools), Screenshots (19 tools), Provisioning (17 tools).
 
 For 200K-context clients, ~60K tokens is about 30% of the window. Exact cost depends on the MCP host's serialization and tokenizer. For clients with smaller context windows, use `--workers` to reduce the footprint.
 
 ## Available Tools
 
-**490 tools** organized across 33 App Store tool domains + 2 core domains (use the 35 `--workers` filter keys — see [Worker Filtering](#worker-filtering)):
+**502 tools** organized across 33 App Store tool domains + 2 core domains (use the 35 `--workers` filter keys — see [Worker Filtering](#worker-filtering)):
 
 <details>
 <summary><strong>Company Management</strong> — 3 tools</summary>
@@ -591,21 +595,31 @@ For 200K-context clients, ~60K tokens is about 30% of the window. Exact cost dep
 </details>
 
 <details>
-<summary><strong>Xcode Cloud</strong> — 30 tools</summary>
+<summary><strong>Xcode Cloud</strong> — 42 tools</summary>
 
 | Tool | Description |
 |------|-------------|
 | `xcode_cloud_products_list` | List Xcode Cloud products |
 | `xcode_cloud_products_get` | Get an Xcode Cloud product |
+| `xcode_cloud_products_delete` | Preview or permanently delete an Xcode Cloud product with confirmation safeguards |
+| `xcode_cloud_app_product_get` | Get the Xcode Cloud product associated with an app |
+| `xcode_cloud_product_app_get` | Get the app associated with an Xcode Cloud product |
+| `xcode_cloud_product_primary_repositories_list` | List primary repositories attached to a product |
+| `xcode_cloud_product_additional_repositories_list` | List additional repositories attached to a product |
 | `xcode_cloud_product_workflows_list` | List workflows for a product |
 | `xcode_cloud_product_build_runs_list` | List build runs for a product |
 | `xcode_cloud_workflows_get` | Get a workflow |
+| `xcode_cloud_workflows_create` | Create an Xcode Cloud workflow |
+| `xcode_cloud_workflows_update` | Update an Xcode Cloud workflow |
+| `xcode_cloud_workflows_delete` | Preview or permanently delete a workflow with confirmation safeguards |
+| `xcode_cloud_workflow_repository_get` | Get the repository used by a workflow |
 | `xcode_cloud_workflow_build_runs_list` | List build runs for a workflow |
 | `xcode_cloud_build_runs_get` | Get a build run |
 | `xcode_cloud_build_runs_start` | Start or rebuild an Xcode Cloud build |
 | `xcode_cloud_build_run_actions_list` | List build actions for a run |
 | `xcode_cloud_build_run_builds_list` | List App Store Connect builds created by a run |
 | `xcode_cloud_actions_get` | Get a build action |
+| `xcode_cloud_action_build_run_get` | Get the build run that owns a build action |
 | `xcode_cloud_action_artifacts_list` | List artifacts for an action |
 | `xcode_cloud_action_issues_list` | List issues for an action |
 | `xcode_cloud_action_test_results_list` | List test results for an action |
@@ -614,8 +628,10 @@ For 200K-context clients, ~60K tokens is about 30% of the window. Exact cost dep
 | `xcode_cloud_test_results_get` | Get a test result |
 | `xcode_cloud_xcode_versions_list` | List available Xcode versions |
 | `xcode_cloud_xcode_versions_get` | Get an Xcode version |
+| `xcode_cloud_xcode_version_macos_versions_list` | List macOS versions compatible with an Xcode version |
 | `xcode_cloud_macos_versions_list` | List available macOS versions |
 | `xcode_cloud_macos_versions_get` | Get a macOS version |
+| `xcode_cloud_macos_version_xcode_versions_list` | List Xcode versions compatible with a macOS version |
 | `xcode_cloud_scm_providers_list` | List SCM providers |
 | `xcode_cloud_scm_providers_get` | Get an SCM provider |
 | `xcode_cloud_scm_provider_repositories_list` | List repositories for an SCM provider |
