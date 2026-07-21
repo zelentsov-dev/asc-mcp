@@ -821,14 +821,16 @@ struct WebhooksWorkerTests {
 
         for name in ["webhooks_redeliver", "webhooks_ping"] {
             let tool = try #require(tools.first { $0.name == name })
-            #expect(tool.description.contains("Mutating, non-idempotent"))
+            let description = try #require(tool.description)
+            #expect(description.contains("Mutating, non-idempotent"))
             #expect(tool.annotations.readOnlyHint == false)
             #expect(tool.annotations.idempotentHint == false)
         }
 
         let triage = try #require(tools.first { $0.name == "webhooks_triage_event" })
-        #expect(triage.description.contains("Recommendations are labeled `read_only` or `mutating`"))
-        #expect(triage.description.contains("never executes them"))
+        let triageDescription = try #require(triage.description)
+        #expect(triageDescription.contains("Recommendations are labeled `read_only` or `mutating`"))
+        #expect(triageDescription.contains("never executes them"))
     }
 
     @Test("triage rejects noncanonical recommendation identifiers from payload and direct arguments")
