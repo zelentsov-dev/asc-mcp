@@ -123,7 +123,7 @@ enum ASCCoverageInventory {
                 "beta recruitment criteria",
                 "beta app clip invocation/localization APIs"
             ],
-            notes: "Core TestFlight administration and dedicated beta feedback retrieval are covered; recruitment criteria and beta App Clip APIs remain the main gaps."
+            notes: "Core TestFlight administration, resumable build uploads, and dedicated beta feedback retrieval are covered; recruitment criteria and beta App Clip APIs remain the main gaps."
         ),
         ASCCoverageArea(
             name: "Webhook notifications",
