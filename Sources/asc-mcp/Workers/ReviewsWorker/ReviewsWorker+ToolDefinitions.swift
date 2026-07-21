@@ -50,7 +50,8 @@ extension ReviewsWorker {
                         "type": .string("string"),
                         "description": .string("One Apple ISO 3166-1 alpha-3 territory code (USA, RUS, DEU, JPN)"),
                         "minLength": .int(3),
-                        "maxLength": .int(3)
+                        "maxLength": .int(3),
+                        "pattern": .string(reviewTerritoryPattern())
                     ]),
                     "territories": .object([
                         "type": .string("array"),
@@ -58,7 +59,8 @@ extension ReviewsWorker {
                         "items": .object([
                             "type": .string("string"),
                             "minLength": .int(3),
-                            "maxLength": .int(3)
+                            "maxLength": .int(3),
+                            "pattern": .string(reviewTerritoryPattern())
                         ]),
                         "minItems": .int(1),
                         "uniqueItems": .bool(true)
@@ -139,7 +141,8 @@ extension ReviewsWorker {
                         "type": .string("string"),
                         "description": .string("Filter by one Apple ISO 3166-1 alpha-3 territory code (e.g., USA, RUS, DEU)"),
                         "minLength": .int(3),
-                        "maxLength": .int(3)
+                        "maxLength": .int(3),
+                        "pattern": .string(reviewTerritoryPattern())
                     ]),
                     "territories": .object([
                         "type": .string("array"),
@@ -147,7 +150,8 @@ extension ReviewsWorker {
                         "items": .object([
                             "type": .string("string"),
                             "minLength": .int(3),
-                            "maxLength": .int(3)
+                            "maxLength": .int(3),
+                            "pattern": .string(reviewTerritoryPattern())
                         ]),
                         "minItems": .int(1),
                         "uniqueItems": .bool(true)
@@ -196,7 +200,8 @@ extension ReviewsWorker {
                     ]),
                     "territory": .object([
                         "type": .string("string"),
-                        "description": .string("Filter by Apple's ISO 3166-1 alpha-3 territory code (e.g., USA, RUS, DEU) or 'all' for all territories")
+                        "description": .string("Filter by an Apple-supported three-letter territory code (e.g., USA, RUS, DEU) or 'all' for all territories"),
+                        "pattern": .string(reviewTerritoryPattern(includingAll: true))
                     ]),
                     "has_published_response": .object([
                         "type": .string("boolean"),
@@ -222,7 +227,7 @@ extension ReviewsWorker {
                     ]),
                     "response_body": .object([
                         "type": .string("string"),
-                        "description": .string("Developer response text (max 5000 characters)")
+                        "description": .string("Developer response text")
                     ])
                 ]),
                 "required": .array([.string("review_id"), .string("response_body")])
@@ -323,5 +328,23 @@ extension ReviewsWorker {
                 ])
             ])
         ])
+    }
+
+    private func reviewTerritoryPattern(includingAll: Bool = false) -> String {
+        let values = includingAll
+            ? ["all"] + SandboxTesterTerritoryValues.all
+            : SandboxTesterTerritoryValues.all
+        let alternatives = values.map { value in
+            value.map { character in
+                let scalar = String(character)
+                let uppercase = scalar.uppercased()
+                let lowercase = scalar.lowercased()
+                if uppercase == lowercase {
+                    return NSRegularExpression.escapedPattern(for: scalar)
+                }
+                return "[\(uppercase)\(lowercase)]"
+            }.joined()
+        }.joined(separator: "|")
+        return "^(?:\(alternatives))$"
     }
 }

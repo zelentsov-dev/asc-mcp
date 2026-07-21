@@ -111,8 +111,19 @@ struct HTTPTransportRedirectSafetyTests {
             }
             Issue.record("Expected the original HTTP 307 response")
         } catch let error as ASCError {
-            guard case .apiResponse(let response, let statusCode) = error else {
-                Issue.record("Expected an App Store Connect API response, got \(error)")
+            let cause: ASCError
+            switch (method, error) {
+            case ("DELETE", .deleteOutcomeUnknown(let underlying)):
+                cause = underlying
+            case (_, .mutationOutcomeUnknown(let actualMethod, let underlying)):
+                #expect(actualMethod == method)
+                cause = underlying
+            default:
+                Issue.record("Expected a typed unknown mutation outcome, got \(error)")
+                return
+            }
+            guard case .apiResponse(let response, let statusCode) = cause else {
+                Issue.record("Expected the original App Store Connect redirect response, got \(cause)")
                 return
             }
             #expect(statusCode == 307)

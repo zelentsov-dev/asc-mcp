@@ -118,6 +118,7 @@ extension BetaTestersWorker {
                 "properties": .object([
                     "email": .object([
                         "type": .string("string"),
+                        "format": .string("email"),
                         "description": .string("Email address of the beta tester")
                     ]),
                     "first_name": .object([
@@ -180,7 +181,10 @@ extension BetaTestersWorker {
                     ]),
                     "limit": .object([
                         "type": .string("integer"),
-                        "description": .string("Max results (default: 25, max: 200)")
+                        "description": .string("Max results (default: 25, max: 200)"),
+                        "minimum": .int(1),
+                        "maximum": .int(200),
+                        "default": .int(25)
                     ]),
                     "next_url": .object([
                         "type": .string("string"),
@@ -228,8 +232,10 @@ extension BetaTestersWorker {
                         "type": .string("array"),
                         "description": .string("Array of beta group IDs to add the tester to"),
                         "items": .object([
-                            "type": .string("string")
-                        ])
+                            "type": .string("string"),
+                            "minLength": .int(1)
+                        ]),
+                        "minItems": .int(1)
                     ])
                 ]),
                 "required": .array([.string("beta_tester_id"), .string("group_ids")])
@@ -252,8 +258,10 @@ extension BetaTestersWorker {
                         "type": .string("array"),
                         "description": .string("Array of beta group IDs to remove the tester from"),
                         "items": .object([
-                            "type": .string("string")
-                        ])
+                            "type": .string("string"),
+                            "minLength": .int(1)
+                        ]),
+                        "minItems": .int(1)
                     ])
                 ]),
                 "required": .array([.string("beta_tester_id"), .string("group_ids")])
@@ -276,8 +284,10 @@ extension BetaTestersWorker {
                         "type": .string("array"),
                         "description": .string("Array of build IDs to assign to the tester"),
                         "items": .object([
-                            "type": .string("string")
-                        ])
+                            "type": .string("string"),
+                            "minLength": .int(1)
+                        ]),
+                        "minItems": .int(1)
                     ])
                 ]),
                 "required": .array([.string("beta_tester_id"), .string("build_ids")])
@@ -300,8 +310,10 @@ extension BetaTestersWorker {
                         "type": .string("array"),
                         "description": .string("Array of build IDs to remove from the tester"),
                         "items": .object([
-                            "type": .string("string")
-                        ])
+                            "type": .string("string"),
+                            "minLength": .int(1)
+                        ]),
+                        "minItems": .int(1)
                     ])
                 ]),
                 "required": .array([.string("beta_tester_id"), .string("build_ids")])

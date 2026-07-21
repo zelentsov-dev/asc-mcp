@@ -58,6 +58,21 @@ struct ToolMetadataPolicyTests {
         #expect(promotedReorder.annotations.idempotentHint == true)
     }
 
+    @Test("direct Apple DELETE mappings are destructive")
+    func directAppleDeletesAreDestructive() throws {
+        let manifest = try ASCOperationManifestBundle.loadBundled()
+        let directDeletes = manifest.tools.filter { mapping in
+            mapping.kind == .direct &&
+                !mapping.operations.isEmpty &&
+                mapping.operations.allSatisfy { $0.method.lowercased() == "delete" }
+        }
+
+        #expect(!directDeletes.isEmpty)
+        for mapping in directDeletes {
+            #expect(mapping.effect == .destructive, "Expected destructive effect for \(mapping.tool)")
+        }
+    }
+
     @Test("IAP version image collection remains read-only metadata")
     func iapVersionImageCollectionRemainsReadOnly() async throws {
         let client = try await TestFactory.makeHTTPClient()
@@ -164,6 +179,7 @@ struct ToolMetadataPolicyTests {
             "custom_pages_remove_search_keywords",
             "iap_delete_version_image",
             "iap_delete_version_localization",
+            "provisioning_disable_capability",
             "review_submissions_cancel",
             "review_submissions_remove_item",
             "review_submissions_submit",

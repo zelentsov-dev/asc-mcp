@@ -215,6 +215,88 @@ struct InAppPurchasesV3WorkerTests {
         #expect(future["price_point_id"] == .string("iap-pp-future"))
     }
 
+    @Test("IAP pricing summary exhausts manual and automatic pagination")
+    func pricingSummaryExhaustsAllPages() async throws {
+        let manualNext = try iapPricingContinuationURL(
+            path: "/v1/inAppPurchasePriceSchedules/schedule-1/manualPrices",
+            cursor: "manual-next"
+        )
+        let automaticNext = try iapPricingContinuationURL(
+            path: "/v1/inAppPurchasePriceSchedules/schedule-1/automaticPrices",
+            cursor: "automatic-next"
+        )
+        let transport = TestHTTPTransport(responses: [
+            .init(statusCode: 200, body: #"{"data":{"type":"inAppPurchasePriceSchedules","id":"schedule-1"}}"#),
+            .init(statusCode: 200, body: """
+            {
+              "data": [{
+                "type": "inAppPurchasePrices",
+                "id": "price-expired",
+                "attributes": {"startDate": "2020-01-01", "endDate": "2020-12-31", "manual": true},
+                "relationships": {
+                  "territory": {"data": {"type": "territories", "id": "USA"}},
+                  "inAppPurchasePricePoint": {"data": {"type": "inAppPurchasePricePoints", "id": "point-expired"}}
+                }
+              }],
+              "links": {"next": "\(manualNext)"}
+            }
+            """),
+            .init(statusCode: 200, body: """
+            {
+              "data": [{
+                "type": "inAppPurchasePrices",
+                "id": "price-current-page-two",
+                "attributes": {"startDate": "2021-01-01", "manual": true},
+                "relationships": {
+                  "territory": {"data": {"type": "territories", "id": "USA"}},
+                  "inAppPurchasePricePoint": {"data": {"type": "inAppPurchasePricePoints", "id": "point-current"}}
+                }
+              }],
+              "included": [
+                {"type": "territories", "id": "USA", "attributes": {"currency": "USD"}},
+                {"type": "inAppPurchasePricePoints", "id": "point-current", "attributes": {"customerPrice": "4.99", "proceeds": "3.50"}}
+              ],
+              "links": {"next": null}
+            }
+            """),
+            .init(statusCode: 200, body: """
+            {
+              "data": [{
+                "type": "inAppPurchasePrices",
+                "id": "price-future",
+                "attributes": {"startDate": "2099-01-01", "manual": false},
+                "relationships": {
+                  "territory": {"data": {"type": "territories", "id": "USA"}},
+                  "inAppPurchasePricePoint": {"data": {"type": "inAppPurchasePricePoints", "id": "point-future"}}
+                }
+              }],
+              "links": {"next": "\(automaticNext)"}
+            }
+            """),
+            .init(statusCode: 200, body: #"{"data":[],"links":{"next":null}}"#)
+        ])
+        let worker = try await makeIAPWorker(transport: transport)
+
+        let result = try await worker.handleTool(CallTool.Parameters(
+            name: "iap_pricing_summary",
+            arguments: ["iap_id": .string("iap-1"), "territory_id": .string("USA")]
+        ))
+
+        #expect(result.isError != true)
+        #expect(await transport.requestCount() == 5)
+        let requests = await transport.recordedRequests()
+        #expect(iapQueryItems(requests[2])["cursor"] == "manual-next")
+        #expect(iapQueryItems(requests[4])["cursor"] == "automatic-next")
+        let root = try iapObject(result.structuredContent)
+        #expect(root["manual_pages_fetched"] == .int(2))
+        #expect(root["automatic_pages_fetched"] == .int(2))
+        #expect(root["complete"] == .bool(true))
+        #expect(root["truncated"] == .bool(false))
+        let current = try iapObject(root["current_price"])
+        #expect(current["id"] == .string("price-current-page-two"))
+        #expect(current["customer_price"] == .string("4.99"))
+    }
+
     @Test("IAP offer code prices support territory filter and normalized price fields")
     func offerCodePricesSupportTerritoryFilter() async throws {
         let transport = TestHTTPTransport(responses: [
@@ -278,6 +360,141 @@ struct InAppPurchasesV3WorkerTests {
         #expect(result.isError == true)
         #expect(await transport.requestCount() == 0)
         #expect(iapText(result).contains("same count"))
+    }
+
+    @Test("IAP create and update preserve explicit null and reject update no-op")
+    func iapWritesPreserveExplicitNull() async throws {
+        let response = #"{"data":{"type":"inAppPurchases","id":"iap-1","attributes":{}}}"#
+        let transport = TestHTTPTransport(responses: [
+            .init(statusCode: 201, body: response),
+            .init(statusCode: 200, body: response)
+        ])
+        let worker = try await makeIAPWorker(transport: transport)
+
+        let created = try await worker.handleTool(CallTool.Parameters(
+            name: "iap_create",
+            arguments: [
+                "app_id": .string("app-1"),
+                "name": .string("Coins"),
+                "product_id": .string("coins"),
+                "iap_type": .string("CONSUMABLE"),
+                "review_note": .null,
+                "family_sharable": .null
+            ]
+        ))
+        let updated = try await worker.handleTool(CallTool.Parameters(
+            name: "iap_update",
+            arguments: [
+                "iap_id": .string("iap-1"),
+                "name": .null,
+                "review_note": .null,
+                "family_sharable": .null
+            ]
+        ))
+        let noOp = try await worker.handleTool(CallTool.Parameters(
+            name: "iap_update",
+            arguments: ["iap_id": .string("iap-1")]
+        ))
+
+        #expect(created.isError != true)
+        #expect(updated.isError != true)
+        #expect(noOp.isError == true)
+        #expect(await transport.requestCount() == 2)
+        let bodies = await transport.recordedBodyStrings()
+        let createAttributes = try iapRequestAttributes(bodies[0])
+        #expect(createAttributes["reviewNote"] is NSNull)
+        #expect(createAttributes["familySharable"] is NSNull)
+        let updateAttributes = try iapRequestAttributes(bodies[1])
+        #expect(Set(updateAttributes.keys) == ["name", "reviewNote", "familySharable"])
+        #expect(updateAttributes.values.allSatisfy { $0 is NSNull })
+    }
+
+    @Test("IAP active updates require a value and preserve explicit null")
+    func activeUpdatesPreserveExplicitNull() async throws {
+        let transport = TestHTTPTransport(responses: [
+            .init(statusCode: 200, body: #"{"data":{"type":"inAppPurchaseOfferCodes","id":"offer-1","attributes":{}}}"#),
+            .init(statusCode: 200, body: #"{"data":{"type":"inAppPurchaseOfferCodeOneTimeUseCodes","id":"batch-1","attributes":{}}}"#),
+            .init(statusCode: 200, body: #"{"data":{"type":"inAppPurchaseOfferCodeCustomCodes","id":"custom-1","attributes":{}}}"#)
+        ])
+        let worker = try await makeIAPWorker(transport: transport)
+        let calls: [(String, String, String)] = [
+            ("iap_update_offer_code", "offer_code_id", "offer-1"),
+            ("iap_update_one_time_code", "one_time_code_id", "batch-1"),
+            ("iap_update_custom_code", "custom_code_id", "custom-1")
+        ]
+
+        for (tool, idKey, id) in calls {
+            let result = try await worker.handleTool(CallTool.Parameters(
+                name: tool,
+                arguments: [idKey: .string(id), "active": .null]
+            ))
+            #expect(result.isError != true)
+        }
+        let missing = try await worker.handleTool(CallTool.Parameters(
+            name: "iap_update_offer_code",
+            arguments: ["offer_code_id": .string("offer-1")]
+        ))
+
+        #expect(missing.isError == true)
+        #expect(await transport.requestCount() == 3)
+        let bodies = await transport.recordedBodyStrings()
+        for body in bodies {
+            let attributes = try iapRequestAttributes(body)
+            #expect(attributes["active"] is NSNull)
+        }
+    }
+
+    @Test("IAP offer eligibility and one-time environment reject unsupported values")
+    func offerEnumsRejectUnsupportedValues() async throws {
+        let transport = TestHTTPTransport(responses: [])
+        let worker = try await makeIAPWorker(transport: transport)
+
+        let eligibility = try await worker.handleTool(CallTool.Parameters(
+            name: "iap_create_offer_code",
+            arguments: [
+                "iap_id": .string("iap-1"),
+                "name": .string("Launch"),
+                "customer_eligibilities": .array([.string("NEW")]),
+                "territory_ids": .array([.string("USA")]),
+                "price_point_ids": .array([.string("point-1")])
+            ]
+        ))
+        let environment = try await worker.handleTool(CallTool.Parameters(
+            name: "iap_generate_one_time_codes",
+            arguments: [
+                "offer_code_id": .string("offer-1"),
+                "number_of_codes": .int(1),
+                "expiration_date": .string("2026-12-31"),
+                "environment": .string("TEST")
+            ]
+        ))
+
+        #expect(eligibility.isError == true)
+        #expect(environment.isError == true)
+        #expect(await transport.requestCount() == 0)
+    }
+
+    @Test("IAP one-time code generation preserves explicit null environment")
+    func oneTimeEnvironmentPreservesExplicitNull() async throws {
+        let transport = TestHTTPTransport(responses: [
+            .init(statusCode: 201, body: #"{"data":{"type":"inAppPurchaseOfferCodeOneTimeUseCodes","id":"batch-1","attributes":{}}}"#)
+        ])
+        let worker = try await makeIAPWorker(transport: transport)
+
+        let result = try await worker.handleTool(CallTool.Parameters(
+            name: "iap_generate_one_time_codes",
+            arguments: [
+                "offer_code_id": .string("offer-1"),
+                "number_of_codes": .int(1),
+                "expiration_date": .string("2026-12-31"),
+                "environment": .null
+            ]
+        ))
+
+        #expect(result.isError != true)
+        let body = try #require(await transport.recordedBodyStrings().first)
+        let attributes = try iapRequestAttributes(body)
+        #expect(attributes["environment"] is NSNull)
     }
 
     @Test("one-time code values use the non-paginated CSV contract losslessly")
@@ -446,6 +663,43 @@ struct InAppPurchasesV3WorkerTests {
             for values in enumSets {
                 #expect(values == expected)
             }
+        }
+    }
+
+    @Test("IAP schemas expose nullable writes and bounded offer enums")
+    func schemasExposeNullableWritesAndOfferEnums() async throws {
+        let worker = try await makeIAPWorker(transport: TestHTTPTransport(responses: []))
+        let tools = await worker.getTools()
+
+        for toolName in ["iap_create", "iap_update"] {
+            let tool = try #require(tools.first { $0.name == toolName })
+            let properties = try iapObject(try iapObject(tool.inputSchema)["properties"])
+            #expect(Set(try iapArray(try iapObject(properties["review_note"])["type"]).compactMap(\.stringValue)) == ["string", "null"])
+            #expect(Set(try iapArray(try iapObject(properties["family_sharable"])["type"]).compactMap(\.stringValue)) == ["boolean", "null"])
+        }
+
+        let offer = try #require(tools.first { $0.name == "iap_create_offer_code" })
+        let offerProperties = try iapObject(try iapObject(offer.inputSchema)["properties"])
+        let eligibilities = try iapObject(offerProperties["customer_eligibilities"])
+        let eligibilityItems = try iapObject(eligibilities["items"])
+        #expect(eligibilities["minItems"] == .int(1))
+        #expect(eligibilities["uniqueItems"] == .bool(true))
+        #expect(Set(try iapArray(eligibilityItems["enum"]).compactMap(\.stringValue)) == ["NON_SPENDER", "ACTIVE_SPENDER", "CHURNED_SPENDER"])
+
+        let generate = try #require(tools.first { $0.name == "iap_generate_one_time_codes" })
+        let generateProperties = try iapObject(try iapObject(generate.inputSchema)["properties"])
+        let environment = try iapObject(generateProperties["environment"])
+        #expect(Set(try iapArray(environment["type"]).compactMap(\.stringValue)) == ["string", "null"])
+        let environmentValues = try iapArray(environment["enum"])
+        #expect(Set(environmentValues.compactMap(\.stringValue)) == ["PRODUCTION", "SANDBOX"])
+        #expect(environmentValues.contains(.null))
+
+        for toolName in ["iap_update_offer_code", "iap_update_one_time_code", "iap_update_custom_code"] {
+            let tool = try #require(tools.first { $0.name == toolName })
+            let root = try iapObject(tool.inputSchema)
+            let properties = try iapObject(root["properties"])
+            #expect(Set(try iapArray(root["required"]).compactMap(\.stringValue)).contains("active"))
+            #expect(Set(try iapArray(try iapObject(properties["active"])["type"]).compactMap(\.stringValue)) == ["boolean", "null"])
         }
     }
 
@@ -652,6 +906,70 @@ struct InAppPurchasesV3WorkerTests {
         #expect(listRoot["page_is_last"] == .bool(false))
         #expect(listRoot["next_url"] == .string(nextURL))
     }
+
+    @Test("IAP mutation failures retain commit-state semantics")
+    func mutationFailuresRetainCommitState() async throws {
+        let unknownTransport = TestHTTPTransport(responses: [])
+        let unknownWorker = try await makeIAPWorker(transport: unknownTransport)
+        let unknown = try await unknownWorker.handleTool(.init(
+            name: "iap_update",
+            arguments: ["iap_id": .string("iap-1"), "name": .string("Updated")]
+        ))
+
+        #expect(unknown.isError == true)
+        let unknownRoot = try iapObject(unknown.structuredContent)
+        #expect(unknownRoot["operationCommitState"] == .string("unknown"))
+        #expect(unknownRoot["outcomeUnknown"] == .bool(true))
+        #expect(unknownRoot["retrySafe"] == .bool(false))
+
+        let unverifiedTransport = TestHTTPTransport(responses: [
+            .init(statusCode: 200, body: "not-json")
+        ])
+        let unverifiedWorker = try await makeIAPWorker(transport: unverifiedTransport)
+        let unverified = try await unverifiedWorker.handleTool(.init(
+            name: "iap_update_offer_code",
+            arguments: ["offer_code_id": .string("offer-1"), "active": .bool(false)]
+        ))
+
+        #expect(unverified.isError == true)
+        let unverifiedRoot = try iapObject(unverified.structuredContent)
+        #expect(unverifiedRoot["operationCommitState"] == .string("committed_unverified"))
+        #expect(unverifiedRoot["operationCommitted"] == .bool(true))
+        #expect(unverifiedRoot["retrySafe"] == .bool(false))
+    }
+
+    @Test("IAP limits reject present invalid values before network")
+    func limitsRejectInvalidValuesBeforeNetwork() async throws {
+        let transport = TestHTTPTransport(responses: [])
+        let worker = try await makeIAPWorker(transport: transport)
+        let cases: [(String, [String: Value])] = [
+            ("iap_list", ["app_id": .string("app-1"), "limit": .int(0)]),
+            ("iap_list_price_points", ["iap_id": .string("iap-1"), "limit": .int(8001)]),
+            ("iap_list_offer_codes", ["iap_id": .string("iap-1"), "limit": .int(201)]),
+            ("iap_list_images", ["iap_id": .string("iap-1"), "limit": .string("25")])
+        ]
+
+        for (name, arguments) in cases {
+            let result = try await worker.handleTool(.init(name: name, arguments: arguments))
+            #expect(result.isError == true)
+        }
+        #expect(await transport.requestCount() == 0)
+    }
+
+    @Test("IAP limit schemas publish the runtime bounds")
+    func limitSchemasPublishRuntimeBounds() async throws {
+        let worker = try await makeIAPWorker(transport: TestHTTPTransport(responses: []))
+        let largeLimitTools: Set<String> = ["iap_list_price_points", "iap_list_price_point_equalizations"]
+
+        for tool in await worker.getTools() {
+            let root = try iapObject(tool.inputSchema)
+            let properties = try iapObject(root["properties"])
+            guard let limitValue = properties["limit"] else { continue }
+            let limit = try iapObject(limitValue)
+            #expect(limit["minimum"] == .int(1))
+            #expect(limit["maximum"] == .int(largeLimitTools.contains(tool.name) ? 8000 : 200))
+        }
+    }
 }
 
 private func makeIAPWorker(transport: TestHTTPTransport) async throws -> InAppPurchasesWorker {
@@ -669,6 +987,29 @@ private func iapQueryItems(_ request: URLRequest) -> [String: String] {
     return Dictionary(uniqueKeysWithValues: (components?.queryItems ?? []).compactMap { item in
         item.value.map { (item.name, $0) }
     })
+}
+
+private func iapPricingContinuationURL(path: String, cursor: String) throws -> String {
+    var components = URLComponents()
+    components.scheme = "https"
+    components.host = "api.example.test"
+    components.path = path
+    components.queryItems = [
+        .init(name: "filter[territory]", value: "USA"),
+        .init(name: "include", value: "inAppPurchasePricePoint,territory"),
+        .init(name: "fields[inAppPurchasePrices]", value: "startDate,endDate,manual,inAppPurchasePricePoint,territory"),
+        .init(name: "fields[inAppPurchasePricePoints]", value: "customerPrice,proceeds,territory,equalizations"),
+        .init(name: "fields[territories]", value: "currency"),
+        .init(name: "limit", value: "200"),
+        .init(name: "cursor", value: cursor)
+    ]
+    return try #require(components.url?.absoluteString)
+}
+
+private func iapRequestAttributes(_ body: String) throws -> [String: Any] {
+    let root = try #require(JSONSerialization.jsonObject(with: Data(body.utf8)) as? [String: Any])
+    let data = try #require(root["data"] as? [String: Any])
+    return try #require(data["attributes"] as? [String: Any])
 }
 
 private func iapObject(_ value: Value?) throws -> [String: Value] {

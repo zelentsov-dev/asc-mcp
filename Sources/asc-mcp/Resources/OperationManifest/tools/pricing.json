@@ -130,6 +130,34 @@
             "jsonPointer": "/included"
           },
           {
+            "outputField": "availability.territory_availabilities_included_count",
+            "localRole": "Count included territory availability resources returned by Apple."
+          },
+          {
+            "outputField": "availability.territory_availabilities_total",
+            "operationId": "appAvailabilitiesV2_createInstance",
+            "jsonPointer": "/data/relationships/territoryAvailabilities/meta/paging/total"
+          },
+          {
+            "outputField": "availability.territory_availabilities_limit",
+            "operationId": "appAvailabilitiesV2_createInstance",
+            "jsonPointer": "/data/relationships/territoryAvailabilities/meta/paging/limit"
+          },
+          {
+            "outputField": "availability.territory_availabilities_related_url",
+            "operationId": "appAvailabilitiesV2_createInstance",
+            "jsonPointer": "/data/relationships/territoryAvailabilities/links/related"
+          },
+          {
+            "outputField": "availability.territory_availabilities_relationship_url",
+            "operationId": "appAvailabilitiesV2_createInstance",
+            "jsonPointer": "/data/relationships/territoryAvailabilities/links/self"
+          },
+          {
+            "outputField": "availability.territory_availabilities_truncated",
+            "localRole": "Compare Apple's relationship total with the included resource count; emit null when Apple omits paging total."
+          },
+          {
             "outputField": "submitted_existing_territory_availability_count",
             "localRole": "Count the validated existing relationship IDs submitted to Apple."
           },
@@ -177,7 +205,7 @@
           "operationId": "apps_appAvailabilityV2_getToOneRelated",
           "location": "query",
           "appleName": "limit[territoryAvailabilities]",
-          "localRole": "clamped to Apple's maximum of 50 and enables the matching include when supplied"
+          "localRole": "validated as an integer from 1 through 50 and enables the matching include when supplied"
         }
       ],
       "response": {
@@ -218,6 +246,10 @@
             "outputField": "availability.territory_availabilities",
             "operationId": "apps_appAvailabilityV2_getToOneRelated",
             "jsonPointer": "/included"
+          },
+          {
+            "outputField": "availability.territory_availabilities_included_count",
+            "localRole": "Count included territory availability resources returned by Apple."
           },
           {
             "outputField": "availability.territory_availabilities_total",
@@ -283,7 +315,7 @@
           "operationId": "appAvailabilitiesV2_getInstance",
           "location": "query",
           "appleName": "limit[territoryAvailabilities]",
-          "localRole": "clamped to Apple's maximum of 50 and enables the matching include when supplied"
+          "localRole": "validated as an integer from 1 through 50 and enables the matching include when supplied"
         }
       ],
       "response": {
@@ -324,6 +356,10 @@
             "outputField": "availability.territory_availabilities",
             "operationId": "appAvailabilitiesV2_getInstance",
             "jsonPointer": "/included"
+          },
+          {
+            "outputField": "availability.territory_availabilities_included_count",
+            "localRole": "Count included territory availability resources returned by Apple."
           },
           {
             "outputField": "availability.territory_availabilities_total",
@@ -426,6 +462,12 @@
             "outputField": "price_schedule.base_territory_id",
             "operationId": "apps_appPriceSchedule_getToOneRelated",
             "jsonPointer": "/data/relationships/baseTerritory/data/id"
+          },
+          {
+            "outputField": "price_schedule.base_territory",
+            "operationId": "apps_appPriceSchedule_getToOneRelated",
+            "jsonPointer": "/included",
+            "localRole": "Select the included territory matching the baseTerritory relationship linkage."
           },
           {
             "outputField": "price_schedule.manual_prices",

@@ -519,7 +519,9 @@ struct BetaAppWorkerContractTests {
         #expect(result.isError == true)
         let root = try betaAppContractObject(result.structuredContent)
         #expect(root["operationCommitted"] == .bool(true))
+        #expect(root["operationCommitState"] == .string("committed_unverified"))
         #expect(root["retrySafe"] == .bool(false))
+        #expect(root["inspectionRequired"] == .bool(true))
         #expect(root["submissionId"] == .string("submission-created"))
         #expect(root["submissionIdKnown"] == .bool(true))
         #expect(root["requestedBuildId"] == .string("build-1"))
@@ -547,6 +549,7 @@ struct BetaAppWorkerContractTests {
         #expect(result.isError == true)
         let root = try betaAppContractObject(result.structuredContent)
         #expect(root["operationCommitted"] == .bool(true))
+        #expect(root["operationCommitState"] == .string("committed_unverified"))
         #expect(root["retrySafe"] == .bool(false))
         #expect(await transport.requestCount() == 1)
     }
@@ -566,9 +569,15 @@ struct BetaAppWorkerContractTests {
         #expect(result.isError == true)
         let root = try betaAppContractObject(result.structuredContent)
         #expect(root["operationCommitted"] == .bool(true))
+        #expect(root["operationCommitState"] == .string("committed_unverified"))
         #expect(root["retrySafe"] == .bool(false))
         #expect(root["submissionIdKnown"] == .bool(false))
         #expect(root["requestedBuildId"] == .string("build-1"))
+        let details = try betaAppContractObject(root["details"])
+        #expect(details["type"] == .string("mutation_unverified"))
+        #expect(details["method"] == .string("POST"))
+        #expect(details["expectedStatusCode"] == .int(201))
+        #expect(details["statusCode"] == .int(201))
         #expect(await transport.requestCount() == 1)
     }
 
@@ -1198,20 +1207,21 @@ struct BetaAppWorkerContractTests {
         #expect(query["limit"] == "25")
     }
 
-    @Test("localization list rejects a malformed limit before network")
-    func localizationListRejectsMalformedLimit() async throws {
+    @Test("localization list rejects malformed and out-of-range limits before network")
+    func localizationListRejectsInvalidLimit() async throws {
         let transport = TestHTTPTransport(responses: [])
         let worker = BetaAppWorker(httpClient: try await makeBetaAppContractClient(transport))
 
-        let result = try await worker.handleTool(CallTool.Parameters(
-            name: "beta_app_list_localizations",
-            arguments: [
-                "app_id": .string("app-1"),
-                "limit": .string("25")
-            ]
-        ))
-
-        #expect(result.isError == true)
+        for limit in [Value.string("25"), .int(0), .int(201)] {
+            let result = try await worker.handleTool(CallTool.Parameters(
+                name: "beta_app_list_localizations",
+                arguments: [
+                    "app_id": .string("app-1"),
+                    "limit": limit
+                ]
+            ))
+            #expect(result.isError == true)
+        }
         #expect(await transport.requestCount() == 0)
     }
 
@@ -1231,7 +1241,7 @@ struct BetaAppWorkerContractTests {
             name: "beta_app_list_localizations",
             arguments: [
                 "app_id": .string("app-1"),
-                "limit": .int(500),
+                "limit": .int(200),
                 "next_url": .string(betaAppContractPaginationURL(path: path, parameters: explicitParameters))
             ]
         ))
@@ -1303,7 +1313,7 @@ struct BetaAppWorkerContractTests {
                 name: "beta_app_list_localizations",
                 arguments: [
                     "app_id": .string("app-1"),
-                    "limit": .int(500),
+                    "limit": .int(200),
                     "next_url": .string(invalidURL)
                 ]
             ))
@@ -1327,7 +1337,7 @@ struct BetaAppWorkerContractTests {
         let arguments: [String: Value] = [
             "build_id": .array([.string("build-1"), .string("build-2")]),
             "review_state": .array([.string("WAITING_FOR_REVIEW"), .string("IN_REVIEW")]),
-            "limit": .int(500)
+            "limit": .int(200)
         ]
         let acceptedTransport = TestHTTPTransport(responses: [
             .init(statusCode: 200, body: betaAppSubmissionPage())
@@ -1429,7 +1439,7 @@ struct BetaAppWorkerContractTests {
             name: "beta_app_list_submissions",
             arguments: [
                 "build_id": .array([.string("build-1"), .string("build-2")]),
-                "limit": .int(500),
+                "limit": .int(200),
                 "next_url": .string(betaAppContractPaginationURL(path: path, parameters: documentedInjection))
             ]
         ))

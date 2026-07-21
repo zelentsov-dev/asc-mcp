@@ -81,6 +81,6 @@ public struct UpdateIntroductoryOfferRequest: Codable, Sendable {
     }
 
     public struct Attributes: Codable, Sendable {
-        public let endDate: String?
+        public let endDate: NullableAttributeValue?
     }
 }

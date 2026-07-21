@@ -61,17 +61,17 @@ extension ReviewsWorker {
     struct CustomerReview: Codable, Sendable {
         let id: String
         let type: String
-        let attributes: ReviewAttributes
+        let attributes: ReviewAttributes?
         let relationships: ReviewRelationships?
         let links: ResourceLinks?
     }
     
     struct ReviewAttributes: Codable, Sendable {
-        let rating: Int
+        let rating: Int?
         let title: String?
         let body: String?
-        let reviewerNickname: String
-        let createdDate: String
+        let reviewerNickname: String?
+        let createdDate: String?
         let territory: String?
     }
     
@@ -112,7 +112,7 @@ extension ReviewsWorker {
     }
     
     struct Paging: Codable, Sendable {
-        let total: Int
+        let total: Int?
         let limit: Int
     }
     
@@ -204,19 +204,23 @@ extension ReviewsWorker {
         _ review: CustomerReview,
         includedResponses: [String: CustomerReviewResponse] = [:]
     ) -> [String: Any] {
-        var dict: [String: Any] = [
-            "id": review.id,
-            "rating": review.attributes.rating,
-            "reviewer": review.attributes.reviewerNickname,
-            "created_date": review.attributes.createdDate
-        ]
-        if let title = review.attributes.title {
+        var dict: [String: Any] = ["id": review.id]
+        if let rating = review.attributes?.rating {
+            dict["rating"] = rating
+        }
+        if let reviewer = review.attributes?.reviewerNickname {
+            dict["reviewer"] = reviewer
+        }
+        if let createdDate = review.attributes?.createdDate {
+            dict["created_date"] = createdDate
+        }
+        if let title = review.attributes?.title {
             dict["title"] = title
         }
-        if let body = review.attributes.body {
+        if let body = review.attributes?.body {
             dict["body"] = body
         }
-        if let territory = review.attributes.territory {
+        if let territory = review.attributes?.territory {
             dict["territory"] = territory
         }
         if let responseID = review.relationships?.response?.data?.id {

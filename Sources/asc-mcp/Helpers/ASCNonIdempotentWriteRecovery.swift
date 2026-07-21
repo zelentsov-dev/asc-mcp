@@ -82,6 +82,10 @@ enum ASCNonIdempotentWriteRecovery {
             return .outcomeUnknown
         }
         switch ascError {
+        case .mutationCommittedUnverified, .deleteCommittedUnverified:
+            return .committedUnverified
+        case .mutationOutcomeUnknown, .deleteOutcomeUnknown:
+            return .outcomeUnknown
         case .api(_, let statusCode)
             where (400...499).contains(statusCode) && statusCode != 408:
             return .rejected

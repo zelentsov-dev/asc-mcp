@@ -23,10 +23,10 @@ struct CreateAppStoreVersionRequest: Codable, Sendable {
         struct Attributes: Codable, Sendable {
             let platform: String
             let versionString: String
-            let copyright: String?
-            let reviewType: String?
-            let releaseType: String?
-            let earliestReleaseDate: String?
+            let copyright: NullableAttributeValue?
+            let reviewType: NullableAttributeValue?
+            let releaseType: NullableAttributeValue?
+            let earliestReleaseDate: NullableAttributeValue?
             let usesIdfa: NullableAttributeValue?
         }
         struct Relationships: Codable, Sendable {
@@ -37,10 +37,10 @@ struct CreateAppStoreVersionRequest: Codable, Sendable {
     init(
         platform: String,
         versionString: String,
-        copyright: String? = nil,
-        reviewType: String? = nil,
-        releaseType: String?,
-        earliestReleaseDate: String?,
+        copyright: NullableAttributeValue? = nil,
+        reviewType: NullableAttributeValue? = nil,
+        releaseType: NullableAttributeValue? = nil,
+        earliestReleaseDate: NullableAttributeValue? = nil,
         usesIdfa: NullableAttributeValue? = nil,
         appId: String
     ) {

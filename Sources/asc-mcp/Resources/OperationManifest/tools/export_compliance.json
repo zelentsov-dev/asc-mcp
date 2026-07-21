@@ -193,7 +193,7 @@
           }
         ]
       },
-      "note": "Uses builds_updateInstance as the replacement documented by Apple at https://developer.apple.com/documentation/appstoreconnectapi/patch-v1-builds-_id_. Pinned OpenAPI 4.4.1 omits a deprecated flag for the direct relationship PATCH, while current Apple DocC marks it deprecated at https://developer.apple.com/documentation/appstoreconnectapi/patch-v1-builds-_id_-relationships-appencryptiondeclaration and directs clients to Modify a build. The pinned-spec-deprecated declaration-to-build POST also remains deferred. Any ambiguous update or failed post-verification is an unverified mutation with retrySafe=false."
+      "note": "Uses builds_updateInstance as the replacement documented by Apple at https://developer.apple.com/documentation/appstoreconnectapi/patch-v1-builds-_id_ and accepts only that operation's exact HTTP 200 response. Pinned OpenAPI 4.4.1 omits a deprecated flag for the direct relationship PATCH, while current Apple DocC marks it deprecated at https://developer.apple.com/documentation/appstoreconnectapi/patch-v1-builds-_id_-relationships-appencryptiondeclaration and directs clients to Modify a build; its HTTP 204 contract is not used here. The pinned-spec-deprecated declaration-to-build POST also remains deferred. Any ambiguous update or failed post-verification is an unverified mutation with retrySafe=false."
     },
     {
       "tool": "export_compliance_check_release_readiness",
@@ -329,7 +329,7 @@
           { "outputField": "inspection", "localRole": "For committed-unverified or commit-unknown outcomes, call export_compliance_list_declarations with the original app_id before any retry." }
         ]
       },
-      "note": "Sends exactly the four required questionnaire attributes and required app linkage from OpenAPI 4.4.1; obsolete platform, usesEncryption, and compliance-code inputs are not exposed. The non-idempotent POST distinguishes committed-but-unverified success, unknown commit state, and deterministic rejection so an ambiguous response never invites a blind duplicate create."
+      "note": "Sends exactly the four required questionnaire attributes and required app linkage from OpenAPI 4.4.1; obsolete platform, usesEncryption, and compliance-code inputs are not exposed. A confirmed response requires the mandatory configured-origin canonical resource self-link. The non-idempotent POST distinguishes committed-but-unverified success, unknown commit state, and deterministic rejection so an ambiguous response never invites a blind duplicate create."
     },
     {
       "tool": "export_compliance_create_document",
@@ -581,7 +581,7 @@
         "sources": [{ "operationId": "appEncryptionDeclarations_getInstance", "statusCode": "200", "mediaType": "application/json" }],
         "fields": [{ "outputField": "declaration", "operationId": "appEncryptionDeclarations_getInstance", "jsonPointer": "/data" }]
       },
-      "note": "Omits deprecated platform, usesEncryption, uploadedDate, documentUrl, documentName, and documentType attributes."
+      "note": "Omits deprecated platform, usesEncryption, uploadedDate, documentUrl, documentName, and documentType attributes. The required document self-link must resolve to the returned canonical declaration on the configured origin."
     },
     {
       "tool": "export_compliance_get_document",
@@ -611,7 +611,7 @@
         "sources": [{ "operationId": "appEncryptionDeclarationDocuments_getInstance", "statusCode": "200", "mediaType": "application/json" }],
         "fields": [{ "outputField": "document", "localRole": "Redact downloadUrl and expose download availability only when Apple actually returns a URL; omit asset-token and upload-operation availability claims because those fields were not requested." }]
       },
-      "note": "The public result contains no signed URL, asset token, upload operation URL, or request header, and it does not emit false or zero availability claims for unrequested fields."
+      "note": "The public result contains no signed URL, asset token, upload operation URL, or request header, and it does not emit false or zero availability claims for unrequested fields. The required document self-link must resolve to the returned canonical document on the configured origin."
     },
     {
       "tool": "export_compliance_inspect_document",
@@ -733,7 +733,7 @@
           { "outputField": "next_url", "operationId": "apps_appEncryptionDeclarations_getToManyRelated", "jsonPointer": "/links/next" }
         ]
       },
-      "note": "Strict pagination rejects cross-app paths, changed projection, a caller-supplied limit that differs from the continuation, invalid or duplicate limit or cursor parameters, and unknown query names. A continuation call can use only app_id plus the unmodified next_url even when the first page used a nondefault limit."
+      "note": "Strict pagination rejects cross-app paths, changed projection, a caller-supplied limit that differs from the continuation, invalid or duplicate limit or cursor parameters, and unknown query names. A continuation call can use only app_id plus the unmodified next_url even when the first page used a nondefault limit. Apple responses require collection links, stay on the configured app path, preserve strict next-link query and cursor lineage, stay within the effective requested limit and paging metadata, and reject invalid or duplicate declaration identities."
     },
     {
       "tool": "export_compliance_update_document",
@@ -769,7 +769,7 @@
           { "outputField": "inspection", "localRole": "For committed-unverified or commit-unknown outcomes, call export_compliance_get_document with the same document_id before any retry." }
         ]
       },
-      "note": "Requires at least one update field and preserves missing versus explicit JSON null for both optional Apple attributes without promising server-side reversal semantics. The PATCH distinguishes committed-but-unverified success, unknown commit state, and deterministic rejection."
+      "note": "Requires at least one update field and preserves missing versus explicit JSON null for both optional Apple attributes without promising server-side reversal semantics. A confirmed response requires the mandatory configured-origin canonical resource self-link. The PATCH distinguishes committed-but-unverified success, unknown commit state, and deterministic rejection."
     },
     {
       "tool": "export_compliance_upload_document",

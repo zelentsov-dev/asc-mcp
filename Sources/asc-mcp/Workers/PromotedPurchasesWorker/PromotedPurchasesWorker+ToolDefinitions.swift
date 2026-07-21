@@ -121,7 +121,6 @@ extension PromotedPurchasesWorker {
                         "description": .string("Every current promoted purchase ID in the desired order"),
                         "items": promotedCanonicalIDSchema("Promoted purchase ID"),
                         "minItems": .int(1),
-                        "maxItems": .int(200),
                         "uniqueItems": .bool(true)
                     ])
                 ]),
@@ -175,17 +174,16 @@ extension PromotedPurchasesWorker {
     func uploadPromotedPurchaseImageTool() -> Tool {
         return Tool(
             name: "promoted_upload_image",
-            description: "Deprecated: promoted purchase image endpoints are absent from pinned executable OpenAPI 4.4.1. Returns migration guidance for iap_*_image or subscriptions_*_image tools without calling Apple.",
+            description: "Deprecated: promoted purchase image endpoints are absent from pinned executable OpenAPI 4.4.1. Returns migration guidance for active version-scoped IAP or subscription image tools without calling Apple.",
             inputSchema: .object([
                 "type": .string("object"),
                 "properties": .object([
-                    "promoted_purchase_id": .object([
-                        "type": .string("string"),
-                        "description": .string("Promoted purchase ID to upload image for")
-                    ]),
+                    "promoted_purchase_id": promotedCanonicalIDSchema("Promoted purchase ID to upload image for"),
                     "file_path": .object([
                         "type": .string("string"),
-                        "description": .string("Absolute path to the image file on disk")
+                        "minLength": .int(1),
+                        "pattern": .string(#"^\S(?:[\s\S]*\S)?$"#),
+                        "description": .string("Non-empty file path retained only as migration context")
                     ])
                 ]),
                 "required": .array([.string("promoted_purchase_id"), .string("file_path")]),
@@ -204,14 +202,11 @@ extension PromotedPurchasesWorker {
     func getPromotedPurchaseImageTool() -> Tool {
         return Tool(
             name: "promoted_get_image",
-            description: "Deprecated: promoted purchase image endpoints are absent from pinned executable OpenAPI 4.4.1. Returns migration guidance for iap_*_image or subscriptions_*_image tools without calling Apple.",
+            description: "Deprecated: promoted purchase image endpoints are absent from pinned executable OpenAPI 4.4.1. Returns migration guidance for active version-scoped IAP or subscription image tools without calling Apple.",
             inputSchema: .object([
                 "type": .string("object"),
                 "properties": .object([
-                    "image_id": .object([
-                        "type": .string("string"),
-                        "description": .string("Promoted purchase image ID")
-                    ])
+                    "image_id": promotedCanonicalIDSchema("Promoted purchase image ID")
                 ]),
                 "required": .array([.string("image_id")]),
                 "additionalProperties": .bool(false)
@@ -222,14 +217,11 @@ extension PromotedPurchasesWorker {
     func deletePromotedPurchaseImageTool() -> Tool {
         return Tool(
             name: "promoted_delete_image",
-            description: "Deprecated: promoted purchase image endpoints are absent from pinned executable OpenAPI 4.4.1. Returns migration guidance for iap_*_image or subscriptions_*_image tools without calling Apple.",
+            description: "Deprecated: promoted purchase image endpoints are absent from pinned executable OpenAPI 4.4.1. Returns migration guidance for active version-scoped IAP or subscription image tools without calling Apple.",
             inputSchema: .object([
                 "type": .string("object"),
                 "properties": .object([
-                    "image_id": .object([
-                        "type": .string("string"),
-                        "description": .string("Promoted purchase image ID to delete")
-                    ])
+                    "image_id": promotedCanonicalIDSchema("Promoted purchase image ID to delete")
                 ]),
                 "required": .array([.string("image_id")]),
                 "additionalProperties": .bool(false)
@@ -247,14 +239,11 @@ extension PromotedPurchasesWorker {
     func getPromotedPurchaseImageForPurchaseTool() -> Tool {
         return Tool(
             name: "promoted_get_image_for_purchase",
-            description: "Deprecated: the promoted purchase image relationship is absent from pinned executable OpenAPI 4.4.1. Returns migration guidance for product-scoped image tools without calling Apple.",
+            description: "Deprecated: the promoted purchase image relationship is absent from pinned executable OpenAPI 4.4.1. Returns migration guidance for active version-scoped IAP or subscription image tools without calling Apple.",
             inputSchema: .object([
                 "type": .string("object"),
                 "properties": .object([
-                    "promoted_purchase_id": .object([
-                        "type": .string("string"),
-                        "description": .string("Promoted purchase ID")
-                    ])
+                    "promoted_purchase_id": promotedCanonicalIDSchema("Promoted purchase ID")
                 ]),
                 "required": .array([.string("promoted_purchase_id")]),
                 "additionalProperties": .bool(false)

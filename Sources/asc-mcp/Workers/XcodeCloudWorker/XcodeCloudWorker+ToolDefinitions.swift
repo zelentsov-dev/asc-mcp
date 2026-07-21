@@ -9,7 +9,7 @@ extension XcodeCloudWorker {
             inputSchema: baseSchema(
                 properties: listProperties([
                     "product_type": enumListSchema("Filter by one or more product types", values: ["APP", "FRAMEWORK"]),
-                    "app_id": stringListSchema("Filter by one or more related App Store Connect app IDs"),
+                    "app_id": identifierListSchema("Filter by one or more related App Store Connect app IDs"),
                     "include": includeSchema("Related resources to include", values: ["app", "bundleId", "primaryRepositories"]),
                     "primary_repositories_limit": integerSchema(
                         "Maximum included primary repositories; requires include=primaryRepositories",
@@ -61,7 +61,7 @@ extension XcodeCloudWorker {
             inputSchema: baseSchema(
                 properties: listProperties([
                     "product_id": nonEmptyStringSchema("Xcode Cloud product ID"),
-                    "build_id": stringListSchema("Filter by one or more related App Store Connect build IDs"),
+                    "build_id": identifierListSchema("Filter by one or more related App Store Connect build IDs"),
                     "sort": enumListSchema("Sort by one or more build number expressions", values: ["number", "-number"]),
                     "include": includeSchema("Related resources to include", values: ["builds", "workflow", "product", "sourceBranchOrTag", "destinationBranch", "pullRequest"]),
                     "builds_limit": integerSchema(
@@ -96,7 +96,7 @@ extension XcodeCloudWorker {
             inputSchema: baseSchema(
                 properties: listProperties([
                     "workflow_id": nonEmptyStringSchema("Xcode Cloud workflow ID"),
-                    "build_id": stringListSchema("Filter by one or more related App Store Connect build IDs"),
+                    "build_id": identifierListSchema("Filter by one or more related App Store Connect build IDs"),
                     "sort": enumListSchema("Sort by one or more build number expressions", values: ["number", "-number"]),
                     "include": includeSchema("Related resources to include", values: ["builds", "workflow", "product", "sourceBranchOrTag", "destinationBranch", "pullRequest"]),
                     "builds_limit": integerSchema(
@@ -178,11 +178,11 @@ extension XcodeCloudWorker {
                         "Filter by one or more build audience types",
                         values: ["INTERNAL_ONLY", "APP_STORE_ELIGIBLE"]
                     ),
-                    "pre_release_version_ids": stringListSchema("Filter by one or more pre-release version IDs"),
-                    "app_ids": stringListSchema("Filter by one or more App Store Connect app IDs"),
-                    "beta_group_ids": stringListSchema("Filter by one or more beta group IDs"),
-                    "app_store_version_ids": stringListSchema("Filter by one or more App Store version IDs"),
-                    "build_ids": stringListSchema("Filter by one or more build IDs"),
+                    "pre_release_version_ids": identifierListSchema("Filter by one or more pre-release version IDs"),
+                    "app_ids": identifierListSchema("Filter by one or more App Store Connect app IDs"),
+                    "beta_group_ids": identifierListSchema("Filter by one or more beta group IDs"),
+                    "app_store_version_ids": identifierListSchema("Filter by one or more App Store version IDs"),
+                    "build_ids": identifierListSchema("Filter by one or more build IDs"),
                     "uses_non_exempt_encryption_set": boolSchema("Filter by whether the usesNonExemptEncryption attribute is present"),
                     "include": includeSchema(
                         "Related resources to include",
@@ -420,7 +420,7 @@ extension XcodeCloudWorker {
             inputSchema: baseSchema(
                 properties: listProperties([
                     "provider_id": nonEmptyStringSchema("SCM provider ID"),
-                    "repository_id": stringListSchema("Filter by one or more repository IDs"),
+                    "repository_id": identifierListSchema("Filter by one or more repository IDs"),
                     "include": includeSchema("Related resources to include", values: ["scmProvider", "defaultBranch"])
                 ]),
                 required: ["provider_id"]
@@ -434,7 +434,7 @@ extension XcodeCloudWorker {
             description: "List repositories available to Xcode Cloud.",
             inputSchema: baseSchema(
                 properties: listProperties([
-                    "repository_id": stringListSchema("Filter by one or more repository IDs"),
+                    "repository_id": identifierListSchema("Filter by one or more repository IDs"),
                     "include": includeSchema("Related resources to include", values: ["scmProvider", "defaultBranch"])
                 ])
             )
@@ -545,8 +545,9 @@ extension XcodeCloudWorker {
     private func nonEmptyStringSchema(_ description: String) -> Value {
         .object([
             "type": .string("string"),
-            "description": .string(description),
-            "minLength": .int(1)
+            "description": .string("\(description); canonical App Store Connect resource ID"),
+            "minLength": .int(1),
+            "pattern": .string(#"^(?!\.{1,2}$)[A-Za-z0-9._~-]+$"#)
         ])
     }
 
@@ -579,6 +580,17 @@ extension XcodeCloudWorker {
 
     private func stringListSchema(_ description: String) -> Value {
         listSchema(description: description, item: .object(["type": .string("string"), "minLength": .int(1)]))
+    }
+
+    private func identifierListSchema(_ description: String) -> Value {
+        listSchema(
+            description: description,
+            item: .object([
+                "type": .string("string"),
+                "minLength": .int(1),
+                "pattern": .string(#"^(?!\.{1,2}$)[A-Za-z0-9._~-]+$"#)
+            ])
+        )
     }
 
     private func enumListSchema(_ description: String, values: [String]) -> Value {

@@ -353,11 +353,14 @@ extension AppInfoWorker {
 
     private func stringOrArrayEnumSchema(_ description: String, values: [String]) -> Value {
         let enumValues = Value.array(values.map(Value.string))
+        let alternatives = values.map { NSRegularExpression.escapedPattern(for: $0) }.joined(separator: "|")
+        let scalarPattern = "^\\s*(?:\(alternatives))(?:\\s*,\\s*(?:\(alternatives)))*\\s*$"
         return .object([
             "description": .string(description),
             "oneOf": .array([
                 .object([
-                    "type": .string("string")
+                    "type": .string("string"),
+                    "pattern": .string(scalarPattern)
                 ]),
                 .object([
                     "type": .string("array"),

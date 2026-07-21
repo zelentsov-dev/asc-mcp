@@ -257,7 +257,7 @@
           }
         ]
       },
-      "note": "Exact related-resource list projecting current Build expiration, minimum OS, audience, processing, and encryption attributes."
+      "note": "Exact related-resource list projecting current Build expiration, minimum OS, audience, processing, and encryption attributes, with limits outside 1 through 200 rejected before network access."
     }
   ],
   "implementationAliases": []

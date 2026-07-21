@@ -11,9 +11,9 @@ struct BuildBetaDetailModelTests {
         let detail = try JSONDecoder().decode(ASCBuildBetaDetail.self, from: json)
         #expect(detail.id == "bbd-1")
         #expect(detail.type == "buildBetaDetails")
-        #expect(detail.attributes.autoNotifyEnabled == true)
-        #expect(detail.attributes.internalBuildState == "PROCESSING")
-        #expect(detail.attributes.externalBuildState == "IN_BETA_TESTING")
+        #expect(detail.attributes?.autoNotifyEnabled == true)
+        #expect(detail.attributes?.internalBuildState == "PROCESSING")
+        #expect(detail.attributes?.externalBuildState == "IN_BETA_TESTING")
     }
 
     @Test func decodeBetaDetailMinimal() throws {
@@ -22,9 +22,9 @@ struct BuildBetaDetailModelTests {
         """.data(using: .utf8)!
         let detail = try JSONDecoder().decode(ASCBuildBetaDetail.self, from: json)
         #expect(detail.id == "bbd-2")
-        #expect(detail.attributes.autoNotifyEnabled == nil)
-        #expect(detail.attributes.internalBuildState == nil)
-        #expect(detail.attributes.externalBuildState == nil)
+        #expect(detail.attributes?.autoNotifyEnabled == nil)
+        #expect(detail.attributes?.internalBuildState == nil)
+        #expect(detail.attributes?.externalBuildState == nil)
     }
 
     @Test func betaBuildLocalization() throws {
@@ -34,8 +34,8 @@ struct BuildBetaDetailModelTests {
         let loc = try JSONDecoder().decode(ASCBetaBuildLocalization.self, from: json)
         #expect(loc.id == "bbl-1")
         #expect(loc.type == "betaBuildLocalizations")
-        #expect(loc.attributes.locale == "en-US")
-        #expect(loc.attributes.whatsNew == "Beta fixes")
+        #expect(loc.attributes?.locale == "en-US")
+        #expect(loc.attributes?.whatsNew == "Beta fixes")
     }
 
     @Test func betaBuildLocalizationWithBuildRelationship() throws {
@@ -43,8 +43,8 @@ struct BuildBetaDetailModelTests {
         {"type":"betaBuildLocalizations","id":"bbl-2","attributes":{"locale":"de-DE","whatsNew":"Neue Features"},"relationships":{"build":{"data":{"type":"builds","id":"build-1"}}}}
         """.data(using: .utf8)!
         let loc = try JSONDecoder().decode(ASCBetaBuildLocalization.self, from: json)
-        #expect(loc.attributes.locale == "de-DE")
-        #expect(loc.attributes.whatsNew == "Neue Features")
+        #expect(loc.attributes?.locale == "de-DE")
+        #expect(loc.attributes?.whatsNew == "Neue Features")
         #expect(loc.relationships?.build?.data?.type == "builds")
         #expect(loc.relationships?.build?.data?.id == "build-1")
     }
@@ -56,9 +56,9 @@ struct BuildBetaDetailModelTests {
         let group = try JSONDecoder().decode(ASCBetaGroup.self, from: json)
         #expect(group.id == "bg-1")
         #expect(group.type == "betaGroups")
-        #expect(group.attributes.name == "Internal Testers")
-        #expect(group.attributes.isInternalGroup == true)
-        #expect(group.attributes.publicLinkEnabled == false)
+        #expect(group.attributes?.name == "Internal Testers")
+        #expect(group.attributes?.isInternalGroup == true)
+        #expect(group.attributes?.publicLinkEnabled == false)
     }
 
     @Test func betaGroupFullAttributes() throws {
@@ -66,10 +66,10 @@ struct BuildBetaDetailModelTests {
         {"type":"betaGroups","id":"bg-2","attributes":{"name":"External","isInternalGroup":false,"hasAccessToAllBuilds":true,"publicLinkEnabled":true,"publicLinkLimit":100,"publicLinkLimitEnabled":true,"feedbackEnabled":true}}
         """.data(using: .utf8)!
         let group = try JSONDecoder().decode(ASCBetaGroup.self, from: json)
-        #expect(group.attributes.hasAccessToAllBuilds == true)
-        #expect(group.attributes.publicLinkLimit == 100)
-        #expect(group.attributes.publicLinkLimitEnabled == true)
-        #expect(group.attributes.feedbackEnabled == true)
+        #expect(group.attributes?.hasAccessToAllBuilds == true)
+        #expect(group.attributes?.publicLinkLimit == 100)
+        #expect(group.attributes?.publicLinkLimitEnabled == true)
+        #expect(group.attributes?.feedbackEnabled == true)
     }
 
     @Test func betaTester() throws {
@@ -79,10 +79,10 @@ struct BuildBetaDetailModelTests {
         let tester = try JSONDecoder().decode(ASCBetaTester.self, from: json)
         #expect(tester.id == "bt-1")
         #expect(tester.type == "betaTesters")
-        #expect(tester.attributes.email == "test@test.com")
-        #expect(tester.attributes.firstName == "John")
-        #expect(tester.attributes.lastName == "Doe")
-        #expect(tester.attributes.state == "ACCEPTED")
+        #expect(tester.attributes?.email == "test@test.com")
+        #expect(tester.attributes?.firstName == "John")
+        #expect(tester.attributes?.lastName == "Doe")
+        #expect(tester.attributes?.state == "ACCEPTED")
     }
 
     @Test func betaTesterAppDevices() throws {
@@ -90,7 +90,7 @@ struct BuildBetaDetailModelTests {
         {"type":"betaTesters","id":"bt-devices","attributes":{"appDevices":[{"model":"iPhone17,1","platform":"IOS","osVersion":"18.0","appBuildVersion":"42"},{"model":"Mac15,3","platform":"MAC_OS","osVersion":"15.0","appBuildVersion":"43"},{"platform":"TV_OS"},{"platform":"WATCH_OS"},{"platform":"VISION_OS"}]}}
         """.data(using: .utf8)!
         let tester = try JSONDecoder().decode(ASCBetaTester.self, from: json)
-        let devices = try #require(tester.attributes.appDevices)
+        let devices = try #require(tester.attributes?.appDevices)
 
         #expect(devices.count == 5)
         #expect(devices.compactMap(\.platform) == [.iOS, .macOS, .tvOS, .watchOS, .visionOS])
@@ -115,10 +115,10 @@ struct BuildBetaDetailModelTests {
         {"type":"betaTesters","id":"bt-2","attributes":{}}
         """.data(using: .utf8)!
         let tester = try JSONDecoder().decode(ASCBetaTester.self, from: json)
-        #expect(tester.attributes.email == nil)
-        #expect(tester.attributes.firstName == nil)
-        #expect(tester.attributes.state == nil)
-        #expect(tester.attributes.appDevices == nil)
+        #expect(tester.attributes?.email == nil)
+        #expect(tester.attributes?.firstName == nil)
+        #expect(tester.attributes?.state == nil)
+        #expect(tester.attributes?.appDevices == nil)
     }
 
     @Test func betaIncludedResourceBuild() throws {
@@ -141,7 +141,7 @@ struct BuildBetaDetailModelTests {
         let included = try JSONDecoder().decode(ASCBetaIncludedResource.self, from: json)
         if case .betaBuildLocalization(let loc) = included {
             #expect(loc.id == "bbl-1")
-            #expect(loc.attributes.locale == "en-US")
+            #expect(loc.attributes?.locale == "en-US")
         } else {
             Issue.record("Expected localization")
         }
@@ -175,7 +175,7 @@ struct BuildBetaDetailModelTests {
         """.data(using: .utf8)!
         let response = try JSONDecoder().decode(ASCBetaGroupsResponse.self, from: json)
         #expect(response.data.count == 2)
-        #expect(response.data[0].attributes.name == "G1")
+        #expect(response.data[0].attributes?.name == "G1")
     }
 
     @Test func betaTestersResponse() throws {
@@ -184,7 +184,7 @@ struct BuildBetaDetailModelTests {
         """.data(using: .utf8)!
         let response = try JSONDecoder().decode(ASCBetaTestersResponse.self, from: json)
         #expect(response.data.count == 1)
-        #expect(response.data[0].attributes.email == "a@b.com")
+        #expect(response.data[0].attributes?.email == "a@b.com")
     }
 
     @Test func buildBetaDetailResponse() throws {
@@ -193,6 +193,32 @@ struct BuildBetaDetailModelTests {
         """.data(using: .utf8)!
         let response = try JSONDecoder().decode(ASCBuildBetaDetailResponse.self, from: json)
         #expect(response.data.id == "bbd-1")
-        #expect(response.data.attributes.autoNotifyEnabled == false)
+        #expect(response.data.attributes?.autoNotifyEnabled == false)
+    }
+
+    @Test func sparseTestFlightResourcesDecodeWithoutAttributes() throws {
+        let decoder = JSONDecoder()
+
+        let detail = try decoder.decode(
+            ASCBuildBetaDetail.self,
+            from: #"{"type":"buildBetaDetails","id":"detail-1"}"#.data(using: .utf8)!
+        )
+        let localization = try decoder.decode(
+            ASCBetaBuildLocalization.self,
+            from: #"{"type":"betaBuildLocalizations","id":"localization-1"}"#.data(using: .utf8)!
+        )
+        let group = try decoder.decode(
+            ASCBetaGroup.self,
+            from: #"{"type":"betaGroups","id":"group-1"}"#.data(using: .utf8)!
+        )
+        let tester = try decoder.decode(
+            ASCBetaTester.self,
+            from: #"{"type":"betaTesters","id":"tester-1"}"#.data(using: .utf8)!
+        )
+
+        #expect(detail.attributes == nil)
+        #expect(localization.attributes == nil)
+        #expect(group.attributes == nil)
+        #expect(tester.attributes == nil)
     }
 }

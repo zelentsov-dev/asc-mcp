@@ -287,6 +287,53 @@ struct WebhooksWorkerTests {
         }
     }
 
+    @Test("update schema exposes every nullable Apple patch attribute")
+    func updateSchemaExposesNullableAttributes() async throws {
+        let worker = WebhooksWorker(httpClient: try await TestFactory.makeHTTPClient())
+        let tool = try #require(await worker.getTools().first { $0.name == "webhooks_update" })
+        let root = try #require(tool.inputSchema.objectValue)
+        let properties = try #require(root["properties"]?.objectValue)
+
+        for (field, concreteType) in [
+            ("enabled", "boolean"),
+            ("event_types", "array"),
+            ("name", "string"),
+            ("secret", "string"),
+            ("url", "string")
+        ] {
+            let schema = try #require(properties[field]?.objectValue)
+            let types = try #require(schema["type"]?.arrayValue)
+            #expect(Set(types.compactMap(\.stringValue)) == Set([concreteType, "null"]))
+        }
+    }
+
+    @Test("webhook collection limits reject invalid present values")
+    func collectionLimitsRejectInvalidValues() async throws {
+        for (tool, idField) in [
+            ("webhooks_list", "app_id"),
+            ("webhooks_list_deliveries", "webhook_id")
+        ] {
+            for invalid in [Value.int(0), .int(201), .string("25")] {
+                let transport = TestHTTPTransport(responses: [])
+                let client = await HTTPClient(
+                    jwtService: try TestFactory.makeJWTService(),
+                    baseURL: "https://api.example.test",
+                    transport: transport,
+                    maxRetries: 1
+                )
+                let worker = WebhooksWorker(httpClient: client)
+                let result = try await worker.handleTool(.init(
+                    name: tool,
+                    arguments: [idField: .string("resource-1"), "limit": invalid]
+                ))
+
+                #expect(result.isError == true)
+                #expect(textContent(result).contains("limit must be an integer from 1 through 200"))
+                #expect(await transport.requestCount() == 0)
+            }
+        }
+    }
+
     @Test("create accepts a strong hex-like webhook secret without returning it")
     func createAcceptsStrongSecretWithoutReturningIt() async throws {
         let transport = TestHTTPTransport(responses: [
@@ -334,6 +381,60 @@ struct WebhooksWorkerTests {
         let structuredData = try JSONEncoder().encode(structured)
         let structuredText = try #require(String(data: structuredData, encoding: .utf8))
         #expect(!structuredText.contains(secret))
+    }
+
+    @Test("webhook mutations preserve machine-readable recovery state")
+    func webhookMutationsPreserveRecoveryState() async throws {
+        let secret = "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08"
+        let createTransport = TestHTTPTransport(responses: [
+            .init(statusCode: 500, body: #"{"errors":[{"status":"500","detail":"unavailable"}]}"#)
+        ])
+        let createClient = await HTTPClient(
+            jwtService: try TestFactory.makeJWTService(),
+            baseURL: "https://api.example.test",
+            transport: createTransport,
+            maxRetries: 1
+        )
+        let createWorker = WebhooksWorker(httpClient: createClient)
+        let create = try await createWorker.handleTool(.init(
+            name: "webhooks_create",
+            arguments: [
+                "app_id": .string("app-1"),
+                "name": .string("Release events"),
+                "url": .string("https://example.com/webhook"),
+                "secret": .string(secret),
+                "event_types": .array([.string("APP_STORE_VERSION_APP_VERSION_STATE_UPDATED")])
+            ]
+        ))
+        let createPayload = try structuredObject(create)
+        #expect(create.isError == true)
+        #expect(createPayload["operationCommitState"] == .string("unknown"))
+        #expect(createPayload["outcomeUnknown"] == .bool(true))
+        #expect(createPayload["retrySafe"] == .bool(false))
+
+        let updateTransport = TestHTTPTransport(responses: [
+            .init(statusCode: 204, body: "")
+        ])
+        let updateClient = await HTTPClient(
+            jwtService: try TestFactory.makeJWTService(),
+            baseURL: "https://api.example.test",
+            transport: updateTransport,
+            maxRetries: 1
+        )
+        let updateWorker = WebhooksWorker(httpClient: updateClient)
+        let update = try await updateWorker.handleTool(.init(
+            name: "webhooks_update",
+            arguments: [
+                "webhook_id": .string("webhook-1"),
+                "enabled": .bool(false)
+            ]
+        ))
+        let updatePayload = try structuredObject(update)
+        #expect(update.isError == true)
+        #expect(updatePayload["operationCommitState"] == .string("committed_unverified"))
+        #expect(updatePayload["operationCommitted"] == .bool(true))
+        #expect(updatePayload["outcomeUnknown"] == .bool(false))
+        #expect(updatePayload["retrySafe"] == .bool(false))
     }
 
     @Test("request models encode Apple OpenAPI JSON API shape")
@@ -521,6 +622,44 @@ struct WebhooksWorkerTests {
         #expect(result.isError == true)
         #expect(textContent(result).contains("At least one update field is required"))
         #expect(await transport.requestCount() == 0)
+    }
+
+    @Test("update preserves explicit null for every nullable Apple attribute")
+    func updatePreservesExplicitNullAttributes() async throws {
+        let transport = TestHTTPTransport(responses: [
+            .init(statusCode: 200, body: #"{"data":{"type":"webhooks","id":"webhook-1"}}"#)
+        ])
+        let client = await HTTPClient(
+            jwtService: try TestFactory.makeJWTService(),
+            baseURL: "https://api.example.test",
+            transport: transport,
+            maxRetries: 1
+        )
+        let worker = WebhooksWorker(httpClient: client)
+
+        let result = try await worker.handleTool(
+            CallTool.Parameters(
+                name: "webhooks_update",
+                arguments: [
+                    "webhook_id": .string("webhook-1"),
+                    "enabled": .null,
+                    "event_types": .null,
+                    "name": .null,
+                    "secret": .null,
+                    "url": .null
+                ]
+            )
+        )
+
+        #expect(result.isError != true)
+        let request = try #require(await transport.recordedRequests().first)
+        let body = try #require(request.httpBody)
+        let root = try #require(JSONSerialization.jsonObject(with: body) as? [String: Any])
+        let data = try #require(root["data"] as? [String: Any])
+        let attributes = try #require(data["attributes"] as? [String: Any])
+        for field in ["enabled", "eventTypes", "name", "secret", "url"] {
+            #expect(attributes[field] is NSNull)
+        }
     }
 
     @Test("verify signature validates Apple x-apple-signature HMAC")

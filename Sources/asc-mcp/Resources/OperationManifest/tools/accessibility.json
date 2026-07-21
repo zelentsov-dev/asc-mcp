@@ -141,6 +141,8 @@
         "fields": [
           { "outputField": "success", "localRole": "successfulRead" },
           { "outputField": "accessibility_declarations", "operationId": "apps_accessibilityDeclarations_getToManyRelated", "jsonPointer": "/data" },
+          { "outputField": "count", "localRole": "Count resources in the returned page." },
+          { "outputField": "total", "operationId": "apps_accessibilityDeclarations_getToManyRelated", "jsonPointer": "/meta/paging/total" },
           { "outputField": "next_url", "operationId": "apps_accessibilityDeclarations_getToManyRelated", "jsonPointer": "/links/next" }
         ]
       },
@@ -174,6 +176,8 @@
           { "outputField": "success", "localRole": "successfulRead" },
           { "outputField": "relationships", "operationId": "apps_accessibilityDeclarations_getToManyRelationship", "jsonPointer": "/data" },
           { "outputField": "declaration_ids", "operationId": "apps_accessibilityDeclarations_getToManyRelationship", "jsonPointer": "/data/*/id" },
+          { "outputField": "count", "localRole": "Count relationship linkages in the returned page." },
+          { "outputField": "total", "operationId": "apps_accessibilityDeclarations_getToManyRelationship", "jsonPointer": "/meta/paging/total" },
           { "outputField": "next_url", "operationId": "apps_accessibilityDeclarations_getToManyRelationship", "jsonPointer": "/links/next" }
         ]
       },

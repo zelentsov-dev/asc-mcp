@@ -25,22 +25,23 @@ extension AppLifecycleWorker {
                         "description": .string("Version number (e.g., 1.2.0)")
                     ]),
                     "release_type": .object([
-                        "type": .string("string"),
+                        "type": .array([.string("string"), .string("null")]),
                         "description": .string("Release type after approval"),
-                        "enum": .array([.string("MANUAL"), .string("AFTER_APPROVAL"), .string("SCHEDULED")])
+                        "enum": .array([.string("MANUAL"), .string("AFTER_APPROVAL"), .string("SCHEDULED"), .null])
                     ]),
                     "earliest_release_date": .object([
-                        "type": .string("string"),
+                        "type": .array([.string("string"), .string("null")]),
+                        "format": .string("date-time"),
                         "description": .string("Earliest release date for SCHEDULED release (ISO 8601)")
                     ]),
                     "copyright": .object([
-                        "type": .string("string"),
+                        "type": .array([.string("string"), .string("null")]),
                         "description": .string("Copyright text")
                     ]),
                     "review_type": .object([
-                        "type": .string("string"),
+                        "type": .array([.string("string"), .string("null")]),
                         "description": .string("Review flow type"),
-                        "enum": .array([.string("APP_STORE"), .string("NOTARIZATION")])
+                        "enum": .array([.string("APP_STORE"), .string("NOTARIZATION"), .null])
                     ]),
                     "uses_idfa": .object([
                         "type": .array([.string("boolean"), .string("null")]),
@@ -251,6 +252,7 @@ extension AppLifecycleWorker {
                     ]),
                     "earliest_release_date": .object([
                         "type": .array([.string("string"), .string("null")]),
+                        "format": .string("date-time"),
                         "description": .string("Earliest release date for SCHEDULED release (ISO 8601)")
                     ]),
                     "copyright": .object([

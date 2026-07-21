@@ -214,7 +214,12 @@ extension CustomProductPagesWorker {
             return customPageMutationFailure(
                 operation: "create_page",
                 phase: .acceptedResponse,
-                error: error,
+                error: customPageAcceptedMutationError(
+                    error,
+                    method: "POST",
+                    expectedStatusCode: 201,
+                    actualStatusCode: receipt.statusCode
+                ),
                 identifiers: createPageRecoveryIdentifiers(
                     appID: appID,
                     name: name,
@@ -307,7 +312,12 @@ extension CustomProductPagesWorker {
             return customPageMutationFailure(
                 operation: "update_page",
                 phase: .acceptedResponse,
-                error: error,
+                error: customPageAcceptedMutationError(
+                    error,
+                    method: "PATCH",
+                    expectedStatusCode: 200,
+                    actualStatusCode: receipt.statusCode
+                ),
                 identifiers: updatePageRecoveryIdentifiers(pageID: pageID, name: name, visible: visible),
                 inspection: getInspection(
                     tool: "custom_pages_get",
@@ -532,7 +542,12 @@ extension CustomProductPagesWorker {
             return customPageMutationFailure(
                 operation: "create_version",
                 phase: .acceptedResponse,
-                error: error,
+                error: customPageAcceptedMutationError(
+                    error,
+                    method: "POST",
+                    expectedStatusCode: 201,
+                    actualStatusCode: receipt.statusCode
+                ),
                 identifiers: createVersionRecoveryIdentifiers(pageID: pageID, deepLink: deepLink),
                 inspection: listInspection(
                     tool: "custom_pages_list_versions",
@@ -617,7 +632,12 @@ extension CustomProductPagesWorker {
             return customPageMutationFailure(
                 operation: "update_version",
                 phase: .acceptedResponse,
-                error: error,
+                error: customPageAcceptedMutationError(
+                    error,
+                    method: "PATCH",
+                    expectedStatusCode: 200,
+                    actualStatusCode: receipt.statusCode
+                ),
                 identifiers: updateVersionRecoveryIdentifiers(versionID: versionID, deepLink: deepLink),
                 inspection: getInspection(
                     tool: "custom_pages_get_version",
@@ -799,7 +819,12 @@ extension CustomProductPagesWorker {
             return customPageMutationFailure(
                 operation: "create_localization",
                 phase: .acceptedResponse,
-                error: error,
+                error: customPageAcceptedMutationError(
+                    error,
+                    method: "POST",
+                    expectedStatusCode: 201,
+                    actualStatusCode: receipt.statusCode
+                ),
                 identifiers: createLocalizationRecoveryIdentifiers(
                     versionID: versionID,
                     locale: locale,
@@ -895,7 +920,12 @@ extension CustomProductPagesWorker {
             return customPageMutationFailure(
                 operation: "update_localization",
                 phase: .acceptedResponse,
-                error: error,
+                error: customPageAcceptedMutationError(
+                    error,
+                    method: "PATCH",
+                    expectedStatusCode: 200,
+                    actualStatusCode: receipt.statusCode
+                ),
                 identifiers: updateLocalizationRecoveryIdentifiers(
                     localizationID: localizationID,
                     promotionalText: promotionalText
@@ -1107,7 +1137,12 @@ private extension CustomProductPagesWorker {
                 return customPageMutationFailure(
                     operation: operation,
                     phase: .acceptedResponse,
-                    error: ASCError.api("Search keyword relationship POST expected HTTP 204", receipt.statusCode),
+                    error: customPageAcceptedMutationError(
+                        ASCError.api("Search keyword relationship POST expected HTTP 204", receipt.statusCode),
+                        method: "POST",
+                        expectedStatusCode: 204,
+                        actualStatusCode: receipt.statusCode
+                    ),
                     identifiers: ["localizationId": localizationID, "keywordIds": keywordIDs],
                     inspection: inspection
                 )
@@ -1880,6 +1915,7 @@ private extension CustomProductPagesWorker {
         payload["mutationAttempted"] = true
         payload["retrySafe"] = disposition == .rejected
         payload["error"] = Redactor.redact(error.localizedDescription)
+        payload["cause"] = customPageMutationCause(error, phase: phase)
         payload["inspection"] = inspection
         payload["recovery"] = [
             "action": disposition == .rejected ? "correct_request_before_retry" : "inspect_before_retry",
@@ -1909,6 +1945,48 @@ private extension CustomProductPagesWorker {
             text = "Error: Apple accepted the custom product page mutation, but its exact result was not verified. Inspect before retrying."
         }
         return MCPResult.jsonObject(payload, text: text, isError: true)
+    }
+
+    func customPageAcceptedMutationError(
+        _ error: Error,
+        method: String,
+        expectedStatusCode: Int,
+        actualStatusCode: Int
+    ) -> ASCError {
+        let cause: ASCError
+        if let ascError = error as? ASCError {
+            if case .mutationCommittedUnverified = ascError {
+                return ascError
+            }
+            cause = ascError
+        } else {
+            cause = .parsing(Redactor.redact(error.localizedDescription))
+        }
+        return .mutationCommittedUnverified(
+            method: method,
+            expectedStatusCode: expectedStatusCode,
+            actualStatusCode: actualStatusCode,
+            cause: cause
+        )
+    }
+
+    func customPageMutationCause(
+        _ error: Error,
+        phase: ASCNonIdempotentWriteFailurePhase
+    ) -> Value {
+        if let ascError = error as? ASCError {
+            return ascError.structuredValue
+        }
+        if error is CancellationError {
+            return .object([
+                "type": .string("cancellation"),
+                "message": .string("The request was cancelled before its write outcome was confirmed")
+            ])
+        }
+        return .object([
+            "type": .string(phase == .request ? "request" : "response_validation"),
+            "message": .string(Redactor.redact(error.localizedDescription))
+        ])
     }
 
     func getInspection(

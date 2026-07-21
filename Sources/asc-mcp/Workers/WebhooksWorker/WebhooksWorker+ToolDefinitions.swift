@@ -9,7 +9,7 @@ extension WebhooksWorker {
             inputSchema: baseSchema(
                 properties: [
                     "app_id": stringSchema("App ID whose webhooks should be listed"),
-                    "limit": integerSchema("Max results (default: 25, max: 200)"),
+                    "limit": collectionLimitSchema("Max results (default: 25, max: 200)"),
                     "include_app": boolSchema("Include related app resource when Apple returns it"),
                     "next_url": stringSchema("Apple continuation URL from the previous response. Repeat every originating list control, including the effective/default limit, filters, sort, include, fields, and nested limits when supported; the exact query and a non-empty cursor are validated.")
                 ],
@@ -57,11 +57,11 @@ extension WebhooksWorker {
             inputSchema: baseSchema(
                 properties: [
                     "webhook_id": stringSchema("Webhook ID to update"),
-                    "name": stringSchema("New webhook name"),
-                    "url": stringSchema("Absolute HTTPS callback URL to replace the current URL. URL user info (user/password) and fragments are not allowed; custom ports, paths, and query parameters are supported."),
-                    "secret": webhookSecretSchema("New cryptographically random webhook secret of at least 32 characters, such as a 32-byte random value encoded as hex or Base64. The secret is never returned by this tool."),
-                    "event_types": eventTypesSchema("Replacement webhook event type list"),
-                    "enabled": boolSchema("Whether the webhook should be enabled")
+                    "name": nullableStringSchema("New webhook name, or null to clear Apple's nullable value"),
+                    "url": nullableStringSchema("Absolute HTTPS callback URL to replace the current URL, or null to clear Apple's nullable value. URL user info (user/password) and fragments are not allowed; custom ports, paths, and query parameters are supported."),
+                    "secret": nullableWebhookSecretSchema("New cryptographically random webhook secret of at least 32 characters, or null to clear Apple's nullable value. The secret is never returned by this tool."),
+                    "event_types": nullableEventTypesSchema("Replacement webhook event type list, or null to clear Apple's nullable value"),
+                    "enabled": nullableBoolSchema("Whether the webhook should be enabled, or null to clear Apple's nullable value")
                 ],
                 required: ["webhook_id"]
             )
@@ -92,7 +92,7 @@ extension WebhooksWorker {
                     "created_after": stringSchema("Filter deliveries created at or after this ISO-8601 date-time"),
                     "created_before": stringSchema("Filter deliveries created before this ISO-8601 date-time"),
                     "include_event": boolSchema("Include related webhook event resources (default: true)"),
-                    "limit": integerSchema("Max results (default: 25, max: 200)"),
+                    "limit": collectionLimitSchema("Max results (default: 25, max: 200)"),
                     "next_url": stringSchema("Apple continuation URL from the previous response. Repeat every originating list control, including the effective/default limit, filters, sort, include, fields, and nested limits when supported; the exact query and a non-empty cursor are validated.")
                 ],
                 required: ["webhook_id"]
@@ -218,6 +218,21 @@ extension WebhooksWorker {
         ])
     }
 
+    private func nullableWebhookSecretSchema(_ description: String) -> Value {
+        .object([
+            "type": .array([.string("string"), .string("null")]),
+            "description": .string(description),
+            "minLength": .int(Self.minimumWebhookSecretLength)
+        ])
+    }
+
+    private func nullableStringSchema(_ description: String) -> Value {
+        .object([
+            "type": .array([.string("string"), .string("null")]),
+            "description": .string(description)
+        ])
+    }
+
     private func integerSchema(_ description: String) -> Value {
         .object([
             "type": .string("integer"),
@@ -225,9 +240,25 @@ extension WebhooksWorker {
         ])
     }
 
+    private func collectionLimitSchema(_ description: String) -> Value {
+        .object([
+            "type": .string("integer"),
+            "description": .string(description),
+            "minimum": .int(1),
+            "maximum": .int(200)
+        ])
+    }
+
     private func boolSchema(_ description: String) -> Value {
         .object([
             "type": .string("boolean"),
+            "description": .string(description)
+        ])
+    }
+
+    private func nullableBoolSchema(_ description: String) -> Value {
+        .object([
+            "type": .array([.string("boolean"), .string("null")]),
             "description": .string(description)
         ])
     }
@@ -248,6 +279,19 @@ extension WebhooksWorker {
                 "type": .string("string"),
                 "enum": .array(ASCWebhookEventTypes.all.map(Value.string))
             ])
+        ])
+    }
+
+    private func nullableEventTypesSchema(_ description: String) -> Value {
+        .object([
+            "type": .array([.string("array"), .string("null")]),
+            "description": .string(description),
+            "items": .object([
+                "type": .string("string"),
+                "enum": .array(ASCWebhookEventTypes.all.map(Value.string))
+            ]),
+            "minItems": .int(1),
+            "uniqueItems": .bool(true)
         ])
     }
 }

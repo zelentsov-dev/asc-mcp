@@ -19,8 +19,9 @@ public struct ASCApp: Codable, Sendable {
         public let subscriptionStatusUrlVersion: String?
         public let subscriptionStatusUrlForSandbox: String?
         public let subscriptionStatusUrlVersionForSandbox: String?
-        public let availableInNewTerritories: Bool?
+        public let accessibilityUrl: String?
         public let contentRightsDeclaration: String?
+        public let streamlinedPurchasingEnabled: Bool?
     }
     
     public struct Relationships: Codable, Sendable {
@@ -189,7 +190,7 @@ public struct ASCAppsResponse: Codable, Sendable {
         public let paging: Paging
         
         public struct Paging: Codable, Sendable {
-            public let total: Int
+            public let total: Int?
             public let limit: Int
         }
     }
@@ -231,9 +232,12 @@ extension ASCApp {
 }
 
 extension ASCAppsResponse {
-    /// Total number of apps
-    public var totalCount: Int {
-        return meta?.paging.total ?? data.count
+    /// Apple-reported total, or the current page count only when the page is terminal
+    public var totalCount: Int? {
+        if let total = meta?.paging.total {
+            return total
+        }
+        return links.next == nil ? data.count : nil
     }
     
     /// Whether there is a next page

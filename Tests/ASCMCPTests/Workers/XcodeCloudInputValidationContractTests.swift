@@ -19,6 +19,29 @@ struct XcodeCloudInputValidationContractTests {
         }
     }
 
+    @Test("every public resource identifier schema matches runtime canonical-ID validation")
+    func resourceIdentifierSchemasAreCanonical() async throws {
+        let worker = XcodeCloudWorker(httpClient: try await TestFactory.makeHTTPClient())
+        let tools = await worker.getTools()
+        let expectedPattern = #"^(?!\.{1,2}$)[A-Za-z0-9._~-]+$"#
+
+        for tool in tools {
+            guard case .object(let schema) = tool.inputSchema,
+                  case .object(let properties)? = schema["properties"] else {
+                Issue.record("Expected object properties for \(tool.name)")
+                continue
+            }
+            for (field, value) in properties where field.hasSuffix("_id") || field.hasSuffix("_ids") {
+                for itemSchema in xcodeCloudIdentifierItemSchemas(value) {
+                    #expect(
+                        itemSchema["pattern"] == .string(expectedPattern),
+                        "Schema/runtime canonical-ID drift for \(tool.name).\(field)"
+                    )
+                }
+            }
+        }
+    }
+
     @Test("unknown arguments fail before transport")
     func unknownArgumentsFailBeforeTransport() async throws {
         for invocation in [
@@ -124,6 +147,30 @@ private struct XcodeCloudIDValidationInvocation {
     let tool: String
     let idField: String
     let arguments: [String: Value]
+}
+
+private func xcodeCloudIdentifierItemSchemas(_ value: Value) -> [[String: Value]] {
+    guard case .object(let schema) = value else {
+        Issue.record("Expected identifier schema object")
+        return []
+    }
+    guard case .array(let alternatives)? = schema["oneOf"] else {
+        return [schema]
+    }
+    return alternatives.compactMap { alternative in
+        guard case .object(let candidate) = alternative else {
+            Issue.record("Expected identifier schema alternative")
+            return nil
+        }
+        if candidate["type"] == .string("array") {
+            guard case .object(let items)? = candidate["items"] else {
+                Issue.record("Expected identifier array item schema")
+                return nil
+            }
+            return items
+        }
+        return candidate
+    }
 }
 
 private func xcodeCloudListValidationInvocations() -> [XcodeCloudValidationInvocation] {

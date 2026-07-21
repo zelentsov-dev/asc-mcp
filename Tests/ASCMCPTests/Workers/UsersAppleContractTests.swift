@@ -40,6 +40,69 @@ struct UsersAppleContractTests {
             try #require(tools.first { $0.name == "users_invite" })
         )
         #expect(invite["provisioning_allowed"] != nil)
+        guard case .object(let email)? = invite["email"] else {
+            throw UsersAppleContractTestFailure.expectedObject
+        }
+        #expect(email["format"] == .string("email"))
+        for field in ["all_apps_visible", "provisioning_allowed"] {
+            guard case .object(let property)? = invite[field],
+                  case .array(let types)? = property["type"] else {
+                Issue.record("Expected nullable invitation schema for \(field)")
+                continue
+            }
+            #expect(Set(types.compactMap(\.stringValue)) == ["boolean", "null"])
+        }
+
+        let visibleApps = try usersContractProperties(
+            try #require(tools.first { $0.name == "users_list_visible_apps" })
+        )
+        guard case .object(let visibleAppsLimit)? = visibleApps["limit"] else {
+            Issue.record("Expected visible-app limit schema")
+            return
+        }
+        #expect(visibleAppsLimit["minimum"] == .int(1))
+        #expect(visibleAppsLimit["maximum"] == .int(200))
+    }
+
+    @Test("users_invite rejects malformed email addresses before network")
+    func invitationEmailIsValidated() async throws {
+        let transport = TestHTTPTransport(responses: [])
+        let worker = try await usersContractWorker(transport: transport)
+
+        for email in ["invalid", "@example.com", "user@"] {
+            var arguments = usersInviteArguments(roles: [.string("DEVELOPER")])
+            arguments["email"] = .string(email)
+            let result = try await worker.handleTool(CallTool.Parameters(
+                name: "users_invite",
+                arguments: arguments
+            ))
+            #expect(result.isError == true)
+        }
+
+        #expect(await transport.requestCount() == 0)
+    }
+
+    @Test("users_list_visible_apps exposes Apple's paging total")
+    func visibleAppsPagingTotalIsPreserved() async throws {
+        let transport = TestHTTPTransport(responses: [
+            .init(statusCode: 200, body: """
+            {
+              "data": [],
+              "links": {"self": "https://api.example.test/v1/users/user-1/visibleApps"},
+              "meta": {"paging": {"total": 7, "limit": 25}}
+            }
+            """)
+        ])
+        let worker = try await usersContractWorker(transport: transport)
+
+        let result = try await worker.handleTool(CallTool.Parameters(
+            name: "users_list_visible_apps",
+            arguments: ["user_id": .string("user-1")]
+        ))
+
+        #expect(result.isError != true)
+        let payload = try usersContractObject(result.structuredContent)
+        #expect(payload["total"] == .int(7))
     }
 
     @Test("users_list sends all current controls and preserves included apps and relationship IDs")
@@ -180,11 +243,128 @@ struct UsersAppleContractTests {
         let linkages = try #require(visibleApps["data"] as? [[String: Any]])
         #expect(attributes["provisioningAllowed"] as? Bool == true)
         #expect(linkages.compactMap { $0["id"] as? String } == ["app-9"])
+        #expect(linkages.allSatisfy { $0["type"] as? String == "apps" })
 
         let payload = try usersContractObject(result.structuredContent)
         let invitation = try usersContractObject(payload["invitation"])
         #expect(invitation["provisioningAllowed"]?.boolValue == true)
         #expect(try usersContractStrings(invitation["visibleAppIds"]) == ["app-9"])
+    }
+
+    @Test("users_invite preserves omitted and explicit-null access controls")
+    func invitationAccessControlTriState() async throws {
+        let transport = TestHTTPTransport(responses: [
+            usersInviteContractResponse(),
+            usersInviteContractResponse()
+        ])
+        let worker = try await usersContractWorker(transport: transport)
+
+        let omitted = try await worker.handleTool(CallTool.Parameters(
+            name: "users_invite",
+            arguments: usersInviteArguments(roles: [.string("DEVELOPER")])
+        ))
+        let explicitNull = try await worker.handleTool(CallTool.Parameters(
+            name: "users_invite",
+            arguments: [
+                "email": .string("new@example.com"),
+                "first_name": .string("New"),
+                "last_name": .string("User"),
+                "roles": .array([.string("DEVELOPER")]),
+                "all_apps_visible": .null,
+                "provisioning_allowed": .null
+            ]
+        ))
+
+        #expect(omitted.isError != true)
+        #expect(explicitNull.isError != true)
+        let requests = await transport.recordedRequests()
+        #expect(requests.count == 2)
+
+        let omittedBody = try usersContractBody(try #require(requests.first))
+        let omittedData = try usersContractDictionary(omittedBody["data"])
+        let omittedAttributes = try usersContractDictionary(omittedData["attributes"])
+        #expect(omittedAttributes.keys.contains("allAppsVisible") == false)
+        #expect(omittedAttributes.keys.contains("provisioningAllowed") == false)
+
+        let nullBody = try usersContractBody(try #require(requests.last))
+        let nullData = try usersContractDictionary(nullBody["data"])
+        let nullAttributes = try usersContractDictionary(nullData["attributes"])
+        #expect(nullAttributes["allAppsVisible"] is NSNull)
+        #expect(nullAttributes["provisioningAllowed"] is NSNull)
+    }
+
+    @Test("users_list_visible_apps rejects out-of-range limit before network")
+    func visibleAppsLimitValidation() async throws {
+        let transport = TestHTTPTransport(responses: [])
+        let worker = try await usersContractWorker(transport: transport)
+
+        for limit in [0, 201] {
+            let result = try await worker.handleTool(CallTool.Parameters(
+                name: "users_list_visible_apps",
+                arguments: [
+                    "user_id": .string("user-1"),
+                    "limit": .int(limit)
+                ]
+            ))
+            #expect(result.isError == true)
+        }
+
+        #expect(await transport.requestCount() == 0)
+    }
+
+    @Test("users_add_visible_apps accepts Apple's exact 204 relationship response")
+    func visibleAppsRelationshipStatus() async throws {
+        let transport = TestHTTPTransport(responses: [
+            .init(statusCode: 204, body: "")
+        ])
+        let worker = try await usersContractWorker(transport: transport)
+
+        let result = try await worker.handleTool(CallTool.Parameters(
+            name: "users_add_visible_apps",
+            arguments: [
+                "user_id": .string("user-1"),
+                "app_ids": .array([.string("app-1")])
+            ]
+        ))
+
+        #expect(result.isError != true)
+        let request = try #require(await transport.recordedRequests().first)
+        #expect(request.httpMethod == "POST")
+        #expect(request.url?.path == "/v1/users/user-1/relationships/visibleApps")
+        let body = try usersContractBody(request)
+        let linkages = try #require(body["data"] as? [[String: Any]])
+        #expect(linkages.compactMap { $0["id"] as? String } == ["app-1"])
+        #expect(linkages.allSatisfy { $0["type"] as? String == "apps" })
+    }
+
+    @Test("users_add_visible_apps preserves an unverified 204 relationship response")
+    func visibleAppsRelationshipUnverifiedStatus() async throws {
+        let transport = TestHTTPTransport(responses: [
+            .init(statusCode: 204, body: #"{"unexpected":true}"#)
+        ])
+        let worker = try await usersContractWorker(transport: transport)
+
+        let result = try await worker.handleTool(CallTool.Parameters(
+            name: "users_add_visible_apps",
+            arguments: [
+                "user_id": .string("user-1"),
+                "app_ids": .array([.string("app-1")])
+            ]
+        ))
+
+        #expect(result.isError == true)
+        let root = try usersContractObject(result.structuredContent)
+        #expect(root["operationCommitState"] == .string("committed_unverified"))
+        #expect(root["operationCommitted"] == .bool(true))
+        #expect(root["outcomeUnknown"] == .bool(false))
+        #expect(root["retrySafe"] == .bool(false))
+        #expect(root["inspectionRequired"] == .bool(true))
+        let details = try usersContractObject(root["details"])
+        #expect(details["type"] == .string("mutation_unverified"))
+        #expect(details["method"] == .string("POST"))
+        #expect(details["expectedStatusCode"] == .int(204))
+        #expect(details["statusCode"] == .int(204))
+        #expect(await transport.requestCount() == 1)
     }
 
     @Test("User write tools reject malformed role and app ID arrays before the network")

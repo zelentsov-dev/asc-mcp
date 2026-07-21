@@ -10,12 +10,28 @@ import MCP
 
 extension ReviewsWorker {
 
+    private static let supportedReviewTerritories = Set(SandboxTesterTerritoryValues.all)
+
     private struct ReviewCollectionOptions {
         let queryParameters: [String: String]
     }
 
     private struct ReviewLookupResponse: Codable, Sendable {
         let data: CustomerReview
+    }
+
+    private func committedUnverifiedReviewMutation(
+        _ error: Error,
+        method: String,
+        statusCode: Int
+    ) -> ASCError {
+        let cause = error as? ASCError ?? .parsing(Redactor.redact(error.localizedDescription))
+        return .mutationCommittedUnverified(
+            method: method,
+            expectedStatusCode: statusCode,
+            actualStatusCode: statusCode,
+            cause: cause
+        )
     }
 
     private struct ReviewExistenceResponse: Codable, Sendable {
@@ -37,6 +53,7 @@ extension ReviewsWorker {
         let reviewsScanned: Int
         let uniqueReviewsScanned: Int
         let duplicatesSkipped: Int
+        let unaggregatableReviewsSkipped: Int
         let pagesFetched: Int
     }
 
@@ -63,6 +80,7 @@ extension ReviewsWorker {
         var reviewsScanned = 0
         var uniqueReviewsScanned = 0
         var duplicatesSkipped = 0
+        var unaggregatableReviewsSkipped = 0
         var pagesFetched = 0
         var seenNextURLs: Set<String> = []
         var totalCount = 0
@@ -83,7 +101,10 @@ extension ReviewsWorker {
             pagesFetched += 1
             reviewsScanned += page.data.count
 
-            let oldestDate = page.data.compactMap { parseReviewDate($0.attributes.createdDate) }.min()
+            let oldestDate = page.data.compactMap { review -> Date? in
+                guard let createdDate = review.attributes?.createdDate else { return nil }
+                return parseReviewDate(createdDate)
+            }.min()
             for review in page.data {
                 guard seenReviewIDs.insert(review.id).inserted else {
                     duplicatesSkipped += 1
@@ -91,20 +112,29 @@ extension ReviewsWorker {
                 }
                 uniqueReviewsScanned += 1
 
+                guard let attributes = review.attributes,
+                      let rating = attributes.rating else {
+                    unaggregatableReviewsSkipped += 1
+                    continue
+                }
                 if let startDate {
-                    guard let reviewDate = parseReviewDate(review.attributes.createdDate),
-                          reviewDate >= startDate,
+                    guard let createdDate = attributes.createdDate,
+                          let reviewDate = parseReviewDate(createdDate) else {
+                        unaggregatableReviewsSkipped += 1
+                        continue
+                    }
+                    guard reviewDate >= startDate,
                           reviewDate <= now else {
                         continue
                     }
                 }
 
                 totalCount += 1
-                totalRating += review.attributes.rating
-                ratingDistribution[review.attributes.rating, default: 0] += 1
-                let reviewTerritory = review.attributes.territory ?? "Unknown"
+                totalRating += rating
+                ratingDistribution[rating, default: 0] += 1
+                let reviewTerritory = attributes.territory ?? "Unknown"
                 territories[reviewTerritory, default: TerritoryAccumulator()].count += 1
-                territories[reviewTerritory, default: TerritoryAccumulator()].ratingTotal += review.attributes.rating
+                territories[reviewTerritory, default: TerritoryAccumulator()].ratingTotal += rating
             }
 
             if let startDate,
@@ -149,6 +179,7 @@ extension ReviewsWorker {
             reviewsScanned: reviewsScanned,
             uniqueReviewsScanned: uniqueReviewsScanned,
             duplicatesSkipped: duplicatesSkipped,
+            unaggregatableReviewsSkipped: unaggregatableReviewsSkipped,
             pagesFetched: pagesFetched
         )
     }
@@ -265,7 +296,7 @@ extension ReviewsWorker {
         if let value = arguments["territory"] {
             guard let rawTerritory = value.stringValue,
                   let territory = normalizedReviewTerritory(rawTerritory) else {
-                throw ASCError.parsing("territory must be a three-letter ISO 3166-1 alpha-3 code")
+                throw ASCError.parsing("territory must be an Apple-supported three-letter territory code")
             }
             return [territory]
         }
@@ -281,7 +312,7 @@ extension ReviewsWorker {
         }
         let territories = rawTerritories.compactMap(normalizedReviewTerritory)
         guard territories.count == rawTerritories.count else {
-            throw ASCError.parsing("territories must contain only three-letter ISO 3166-1 alpha-3 codes")
+            throw ASCError.parsing("territories must contain only Apple-supported three-letter territory codes")
         }
         guard Set(territories).count == territories.count else {
             throw ASCError.parsing("territories must not contain duplicates")
@@ -291,7 +322,7 @@ extension ReviewsWorker {
 
     private func normalizedReviewTerritory(_ value: String) -> String? {
         let normalized = value.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
-        guard normalized.range(of: "^[A-Z]{3}$", options: .regularExpression) != nil else {
+        guard Self.supportedReviewTerritories.contains(normalized) else {
             return nil
         }
         return normalized
@@ -487,7 +518,7 @@ extension ReviewsWorker {
                 territory = normalized
             } else {
                 return CallTool.Result(
-                    content: [MCPContent.text("Error: territory must be 'all' or a three-letter ISO 3166-1 alpha-3 code")],
+                    content: [MCPContent.text("Error: territory must be 'all' or an Apple-supported three-letter territory code")],
                     isError: true
                 )
             }
@@ -532,8 +563,9 @@ extension ReviewsWorker {
                 "reviews_scanned": collection.reviewsScanned,
                 "unique_reviews_scanned": collection.uniqueReviewsScanned,
                 "duplicates_skipped": collection.duplicatesSkipped,
+                "unaggregatable_reviews_skipped": collection.unaggregatableReviewsSkipped,
                 "pages_fetched": collection.pagesFetched,
-                "complete": true,
+                "complete": collection.unaggregatableReviewsSkipped == 0,
                 "average_rating": Double(String(format: "%.2f", stats.averageRating)) ?? stats.averageRating,
                 "rating_distribution": ratingDist
             ]
@@ -586,13 +618,6 @@ extension ReviewsWorker {
             )
         }
 
-        if responseBody.count > 5000 {
-            return CallTool.Result(
-                content: [MCPContent.text("Error: Response body exceeds 5000 characters limit")],
-                isError: true
-            )
-        }
-
         do {
             let request = CreateReviewResponseRequest(
                 data: CreateReviewResponseRequest.RequestData(
@@ -612,7 +637,27 @@ extension ReviewsWorker {
 
             let bodyData = try JSONEncoder().encode(request)
             let responseRaw = try await httpClient.post("/v1/customerReviewResponses", body: bodyData)
-            let responseData = try JSONDecoder().decode(ReviewResponseData.self, from: responseRaw)
+            let responseData: ReviewResponseData
+            do {
+                responseData = try JSONDecoder().decode(ReviewResponseData.self, from: responseRaw)
+                try ASCNonIdempotentWriteRecovery.validateResourceIdentity(
+                    type: responseData.data.type,
+                    id: responseData.data.id,
+                    expectedType: "customerReviewResponses",
+                    context: "Apple customer review response create response"
+                )
+                if let review = responseData.data.relationships?.review?.data {
+                    try ASCNonIdempotentWriteRecovery.validateResourceIdentity(
+                        type: review.type,
+                        id: review.id,
+                        expectedType: "customerReviews",
+                        expectedID: reviewId,
+                        context: "Apple customer review response relationship"
+                    )
+                }
+            } catch {
+                throw committedUnverifiedReviewMutation(error, method: "POST", statusCode: 201)
+            }
 
             let result: [String: Any] = [
                 "success": true,
@@ -622,10 +667,7 @@ extension ReviewsWorker {
             return MCPResult.jsonObject(result)
 
         } catch {
-            return CallTool.Result(
-                content: [MCPContent.text("Error: Failed to create response: \(error.localizedDescription)")],
-                isError: true
-            )
+            return MCPResult.error(error, prefix: "Failed to create response")
         }
     }
 

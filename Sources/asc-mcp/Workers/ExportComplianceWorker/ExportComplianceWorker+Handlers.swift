@@ -13,7 +13,7 @@ extension ExportComplianceWorker {
     func listDeclarations(_ params: CallTool.Parameters) async throws -> CallTool.Result {
         do {
             let arguments = try exportComplianceArguments(params)
-            let appID = try exportComplianceString(arguments, "app_id")
+            let appID = try exportComplianceIdentifier(arguments, "app_id")
             let path = "/v1/apps/\(try ASCPathSegment.encode(appID))/appEncryptionDeclarations"
             let requestedLimit = try exportComplianceLimit(arguments["limit"])
             let nextURL = try paginationURL(from: arguments["next_url"])
@@ -32,21 +32,13 @@ extension ExportComplianceWorker {
                 "fields[appEncryptionDeclarations]": exportComplianceDeclarationFields,
                 "limit": String(limit)
             ]
+            let paginationScope = PaginationScope.strict(path: path, query: query)
 
             let response: ASCExportComplianceDeclarationsResponse
             if let nextURL {
                 response = try await httpClient.getPage(
                     nextURL,
-                    scope: PaginationScope(
-                        path: path,
-                        requiredParameters: query,
-                        allowedParameters: [
-                            "fields[appEncryptionDeclarations]",
-                            "limit",
-                            "cursor"
-                        ],
-                        requiredNonEmptyParameters: ["cursor"]
-                    ),
+                    scope: paginationScope,
                     as: ASCExportComplianceDeclarationsResponse.self
                 )
             } else {
@@ -56,6 +48,12 @@ extension ExportComplianceWorker {
                     as: ASCExportComplianceDeclarationsResponse.self
                 )
             }
+            try validateExportComplianceDeclarationCollection(
+                response,
+                expectedPath: path,
+                requestedLimit: limit,
+                paginationScope: paginationScope
+            )
 
             let declarations = response.data.map(exportComplianceDeclarationDictionary)
             var result: [String: Any] = [
@@ -66,7 +64,7 @@ extension ExportComplianceWorker {
             if let total = response.meta?.paging?.total {
                 result["total"] = total
             }
-            if let nextURL = response.links?.next {
+            if let nextURL = response.links.next {
                 result["next_url"] = nextURL
             }
             return MCPResult.jsonObject(result)
@@ -78,7 +76,7 @@ extension ExportComplianceWorker {
     func getDeclaration(_ params: CallTool.Parameters) async throws -> CallTool.Result {
         do {
             let arguments = try exportComplianceArguments(params)
-            let declarationID = try exportComplianceString(arguments, "declaration_id")
+            let declarationID = try exportComplianceIdentifier(arguments, "declaration_id")
             let declaration = try await fetchDeclaration(declarationID)
             return MCPResult.jsonObject([
                 "success": true,
@@ -94,7 +92,7 @@ extension ExportComplianceWorker {
         let request: ExportComplianceCreateDeclarationRequest
         do {
             let arguments = try exportComplianceArguments(params)
-            appID = try exportComplianceString(arguments, "app_id")
+            appID = try exportComplianceIdentifier(arguments, "app_id")
             let appDescription = try exportComplianceString(arguments, "app_description")
             let containsProprietaryCryptography = try exportComplianceBoolean(
                 arguments,
@@ -138,18 +136,52 @@ extension ExportComplianceWorker {
             do {
                 response = try JSONDecoder().decode(ASCExportComplianceDeclarationResponse.self, from: data)
             } catch {
+                let mutationError = exportComplianceAcceptedMutationError(
+                    error,
+                    method: "POST",
+                    expectedStatusCode: 201,
+                    actualStatusCode: 201
+                )
                 return exportComplianceDeclarationCreationFailure(
                     appID: appID,
                     state: .committedUnverified,
-                    reason: "Apple accepted the declaration create request but returned an unreadable response: \(error.localizedDescription)"
+                    reason: "Apple accepted the declaration create request but returned an unreadable response: \(error.localizedDescription)",
+                    cause: mutationError
                 )
             }
             guard response.data.type == "appEncryptionDeclarations",
                   exportComplianceHasUsableResourceID(response.data.id) else {
+                let mutationError = exportComplianceAcceptedMutationError(
+                    ASCError.parsing("Apple returned an unexpected declaration resource"),
+                    method: "POST",
+                    expectedStatusCode: 201,
+                    actualStatusCode: 201
+                )
                 return exportComplianceDeclarationCreationFailure(
                     appID: appID,
                     state: .committedUnverified,
-                    reason: "Apple returned an unexpected declaration resource after accepting the create request."
+                    reason: "Apple returned an unexpected declaration resource after accepting the create request.",
+                    cause: mutationError
+                )
+            }
+            do {
+                try validateExportComplianceResourceSelf(
+                    response.links.`self`,
+                    collection: "appEncryptionDeclarations",
+                    id: response.data.id
+                )
+            } catch {
+                let mutationError = exportComplianceAcceptedMutationError(
+                    error,
+                    method: "POST",
+                    expectedStatusCode: 201,
+                    actualStatusCode: 201
+                )
+                return exportComplianceDeclarationCreationFailure(
+                    appID: appID,
+                    state: .committedUnverified,
+                    reason: "Apple accepted the declaration create request but returned an invalid resource self-link.",
+                    cause: mutationError
                 )
             }
             return MCPResult.jsonObject([
@@ -164,7 +196,8 @@ extension ExportComplianceWorker {
             return exportComplianceDeclarationCreationFailure(
                 appID: appID,
                 state: state,
-                reason: "The declaration create request did not return a confirmed resource: \(error.localizedDescription)"
+                reason: "The declaration create request did not return a confirmed resource: \(error.localizedDescription)",
+                cause: error
             )
         }
     }
@@ -174,7 +207,7 @@ extension ExportComplianceWorker {
         let filePath: String
         do {
             let arguments = try exportComplianceArguments(params)
-            declarationID = try exportComplianceString(arguments, "declaration_id")
+            declarationID = try exportComplianceIdentifier(arguments, "declaration_id")
             filePath = try exportComplianceFilePath(arguments, "file_path")
         } catch {
             return exportComplianceError("Invalid document reservation input", error)
@@ -223,7 +256,7 @@ extension ExportComplianceWorker {
     func getDocument(_ params: CallTool.Parameters) async throws -> CallTool.Result {
         do {
             let arguments = try exportComplianceArguments(params)
-            let documentID = try exportComplianceString(arguments, "document_id")
+            let documentID = try exportComplianceIdentifier(arguments, "document_id")
             let document = try await fetchDocument(documentID, includeUploadOperations: false)
             return MCPResult.jsonObject([
                 "success": true,
@@ -240,7 +273,7 @@ extension ExportComplianceWorker {
         let request: ExportComplianceUpdateDocumentRequest
         do {
             let arguments = try exportComplianceArguments(params)
-            documentID = try exportComplianceString(arguments, "document_id")
+            documentID = try exportComplianceIdentifier(arguments, "document_id")
             endpoint = "/v1/appEncryptionDeclarationDocuments/\(try ASCPathSegment.encode(documentID))"
             let checksum = try exportComplianceNullableString(arguments["source_file_checksum"], field: "source_file_checksum")
             let uploaded = try exportComplianceNullableBoolean(arguments["uploaded"], field: "uploaded")
@@ -272,18 +305,52 @@ extension ExportComplianceWorker {
             do {
                 response = try JSONDecoder().decode(ASCExportComplianceDocumentResponse.self, from: data)
             } catch {
+                let mutationError = exportComplianceAcceptedMutationError(
+                    error,
+                    method: "PATCH",
+                    expectedStatusCode: 200,
+                    actualStatusCode: 200
+                )
                 return exportComplianceDocumentUpdateFailure(
                     documentID: documentID,
                     state: .committedUnverified,
-                    reason: "Apple accepted the document update but returned an unreadable response: \(error.localizedDescription)"
+                    reason: "Apple accepted the document update but returned an unreadable response: \(error.localizedDescription)",
+                    cause: mutationError
                 )
             }
             guard response.data.id == documentID,
                   response.data.type == "appEncryptionDeclarationDocuments" else {
+                let mutationError = exportComplianceAcceptedMutationError(
+                    ASCError.parsing("Apple returned an unexpected encryption document resource"),
+                    method: "PATCH",
+                    expectedStatusCode: 200,
+                    actualStatusCode: 200
+                )
                 return exportComplianceDocumentUpdateFailure(
                     documentID: documentID,
                     state: .committedUnverified,
-                    reason: "Apple returned an unexpected document resource after accepting the update request."
+                    reason: "Apple returned an unexpected document resource after accepting the update request.",
+                    cause: mutationError
+                )
+            }
+            do {
+                try validateExportComplianceResourceSelf(
+                    response.links.`self`,
+                    collection: "appEncryptionDeclarationDocuments",
+                    id: response.data.id
+                )
+            } catch {
+                let mutationError = exportComplianceAcceptedMutationError(
+                    error,
+                    method: "PATCH",
+                    expectedStatusCode: 200,
+                    actualStatusCode: 200
+                )
+                return exportComplianceDocumentUpdateFailure(
+                    documentID: documentID,
+                    state: .committedUnverified,
+                    reason: "Apple accepted the document update but returned an invalid resource self-link.",
+                    cause: mutationError
                 )
             }
             return MCPResult.jsonObject([
@@ -297,7 +364,8 @@ extension ExportComplianceWorker {
             return exportComplianceDocumentUpdateFailure(
                 documentID: documentID,
                 state: exportComplianceMutationState(for: error),
-                reason: "The document update did not return a confirmed resource: \(error.localizedDescription)"
+                reason: "The document update did not return a confirmed resource: \(error.localizedDescription)",
+                cause: error
             )
         }
     }
@@ -308,7 +376,7 @@ extension ExportComplianceWorker {
         let expectedChecksum: String
         do {
             let arguments = try exportComplianceArguments(params)
-            documentID = try exportComplianceString(arguments, "document_id")
+            documentID = try exportComplianceIdentifier(arguments, "document_id")
             filePath = try exportComplianceFilePath(arguments, "file_path")
             expectedChecksum = try exportComplianceMD5(arguments, "source_file_checksum")
         } catch {
@@ -446,7 +514,7 @@ extension ExportComplianceWorker {
     func inspectDocument(_ params: CallTool.Parameters) async throws -> CallTool.Result {
         do {
             let arguments = try exportComplianceArguments(params)
-            let declarationID = try exportComplianceString(arguments, "declaration_id")
+            let declarationID = try exportComplianceIdentifier(arguments, "declaration_id")
             let declaration = try await fetchDeclaration(declarationID)
             guard let document = try await fetchDocumentForDeclaration(declarationID) else {
                 return MCPResult.jsonObject([
@@ -476,7 +544,7 @@ extension ExportComplianceWorker {
     func getBuildDeclaration(_ params: CallTool.Parameters) async throws -> CallTool.Result {
         do {
             let arguments = try exportComplianceArguments(params)
-            let buildID = try exportComplianceString(arguments, "build_id")
+            let buildID = try exportComplianceIdentifier(arguments, "build_id")
             _ = try await fetchBuild(buildID)
             guard let declaration = try await fetchBuildDeclaration(buildID) else {
                 return MCPResult.jsonObject([
@@ -501,8 +569,8 @@ extension ExportComplianceWorker {
         let declarationID: String
         do {
             let arguments = try exportComplianceArguments(params)
-            buildID = try exportComplianceString(arguments, "build_id")
-            declarationID = try exportComplianceString(arguments, "declaration_id")
+            buildID = try exportComplianceIdentifier(arguments, "build_id")
+            declarationID = try exportComplianceIdentifier(arguments, "declaration_id")
         } catch {
             return exportComplianceError("Invalid build declaration attachment input", error)
         }
@@ -550,9 +618,10 @@ extension ExportComplianceWorker {
         do {
             _ = try await httpClient.patch(
                 "/v1/builds/\(try ASCPathSegment.encode(buildID))",
-                body: try JSONEncoder().encode(request)
+                body: try JSONEncoder().encode(request),
+                expectedStatusCode: 200
             )
-        } catch {
+        } catch let mutationError {
             do {
                 if let attached = try await fetchBuildDeclaration(buildID),
                    attached.id == declarationID {
@@ -568,23 +637,32 @@ extension ExportComplianceWorker {
                 return exportComplianceUnverifiedAttachment(
                     buildID: buildID,
                     declarationID: declarationID,
-                    reason: "The build update had no confirmed response, and relationship reconciliation failed: \(error.localizedDescription)"
+                    reason: "The build update had no confirmed response, and relationship reconciliation failed: \(error.localizedDescription)",
+                    cause: mutationError
                 )
             }
             return exportComplianceUnverifiedAttachment(
                 buildID: buildID,
                 declarationID: declarationID,
-                reason: "The build update had no confirmed response, and the intended declaration could not be verified."
+                reason: "The build update had no confirmed response, and the intended declaration could not be verified.",
+                cause: mutationError
             )
         }
 
         do {
             guard let attached = try await fetchBuildDeclaration(buildID),
                   attached.id == declarationID else {
+                let mutationError = exportComplianceAcceptedMutationError(
+                    ASCError.parsing("The build relationship did not match the requested declaration"),
+                    method: "PATCH",
+                    expectedStatusCode: 200,
+                    actualStatusCode: 200
+                )
                 return exportComplianceUnverifiedAttachment(
                     buildID: buildID,
                     declarationID: declarationID,
-                    reason: "The build relationship could not be verified after the update."
+                    reason: "The build relationship could not be verified after the update.",
+                    cause: mutationError
                 )
             }
             return MCPResult.jsonObject([
@@ -594,10 +672,17 @@ extension ExportComplianceWorker {
                 "declaration": exportComplianceDeclarationDictionary(attached)
             ])
         } catch {
+            let mutationError = exportComplianceAcceptedMutationError(
+                error,
+                method: "PATCH",
+                expectedStatusCode: 200,
+                actualStatusCode: 200
+            )
             return exportComplianceUnverifiedAttachment(
                 buildID: buildID,
                 declarationID: declarationID,
-                reason: "The update succeeded, but relationship verification failed: \(error.localizedDescription)"
+                reason: "The update succeeded, but relationship verification failed: \(error.localizedDescription)",
+                cause: mutationError
             )
         }
     }
@@ -605,7 +690,7 @@ extension ExportComplianceWorker {
     func checkReleaseReadiness(_ params: CallTool.Parameters) async throws -> CallTool.Result {
         do {
             let arguments = try exportComplianceArguments(params)
-            let buildID = try exportComplianceString(arguments, "build_id")
+            let buildID = try exportComplianceIdentifier(arguments, "build_id")
             let build = try await fetchBuild(buildID)
             let appID = build.relationships?.app?.data?.id
             let processingState = build.attributes.processingState
@@ -936,13 +1021,18 @@ extension ExportComplianceWorker {
                 )
             },
             decodeResource: { data in
-                let document = try JSONDecoder()
+                let response = try JSONDecoder()
                     .decode(ASCExportComplianceDocumentResponse.self, from: data)
-                    .data
+                let document = response.data
                 guard document.type == "appEncryptionDeclarationDocuments",
                       exportComplianceHasUsableResourceID(document.id) else {
                     throw ExportComplianceInputError("Apple returned an unexpected document resource")
                 }
+                try validateExportComplianceResourceSelf(
+                    response.links.`self`,
+                    collection: "appEncryptionDeclarationDocuments",
+                    id: document.id
+                )
                 return document
             },
             makeCommitBody: { id, checksum in
@@ -1003,6 +1093,11 @@ extension ExportComplianceWorker {
               response.data.type == "appEncryptionDeclarations" else {
             throw ExportComplianceInputError("Apple returned an unexpected declaration resource")
         }
+        try validateExportComplianceResourceSelf(
+            response.links.`self`,
+            collection: "appEncryptionDeclarations",
+            id: response.data.id
+        )
         return response.data
     }
 
@@ -1023,6 +1118,11 @@ extension ExportComplianceWorker {
               response.data.type == "appEncryptionDeclarationDocuments" else {
             throw ExportComplianceInputError("Apple returned an unexpected document resource")
         }
+        try validateExportComplianceResourceSelf(
+            response.links.`self`,
+            collection: "appEncryptionDeclarationDocuments",
+            id: response.data.id
+        )
         return response.data
     }
 
@@ -1039,6 +1139,11 @@ extension ExportComplianceWorker {
                   exportComplianceHasUsableResourceID(response.data.id) else {
                 throw ExportComplianceInputError("Apple returned an unexpected document resource")
             }
+            try validateExportComplianceResourceSelf(
+                response.links.`self`,
+                collection: "appEncryptionDeclarationDocuments",
+                id: response.data.id
+            )
             return response.data
         } catch let error as ASCError where exportComplianceHTTPStatus(error) == 404 {
             return nil
@@ -1058,9 +1163,95 @@ extension ExportComplianceWorker {
                   exportComplianceHasUsableResourceID(response.data.id) else {
                 throw ExportComplianceInputError("Apple returned an unexpected declaration resource")
             }
+            try validateExportComplianceResourceSelf(
+                response.links.`self`,
+                collection: "appEncryptionDeclarations",
+                id: response.data.id
+            )
             return response.data
         } catch let error as ASCError where exportComplianceHTTPStatus(error) == 404 {
             return nil
+        }
+    }
+}
+
+private extension ExportComplianceWorker {
+    func validateExportComplianceResourceSelf(
+        _ value: String,
+        collection: String,
+        id: String
+    ) throws {
+        do {
+            _ = try httpClient.validatedScopedLink(
+                value,
+                scope: PaginationScope(
+                    path: "/v1/\(try ASCPathSegment.encode(collection))/\(try ASCPathSegment.encode(id))",
+                    allowedParameters: []
+                )
+            )
+        } catch {
+            throw ASCError.parsing("Apple returned an out-of-scope required resource links.self")
+        }
+    }
+
+    func validateExportComplianceDeclarationCollection(
+        _ response: ASCExportComplianceDeclarationsResponse,
+        expectedPath: String,
+        requestedLimit: Int,
+        paginationScope: PaginationScope
+    ) throws {
+        do {
+            _ = try httpClient.validatedScopedLink(
+                response.links.`self`,
+                scope: PaginationScope(path: expectedPath)
+            )
+        } catch {
+            throw ASCError.parsing("Apple returned an out-of-scope required links.self for export-compliance declarations")
+        }
+
+        let nextRequest: PaginationRequest?
+        if let next = response.links.next {
+            do {
+                nextRequest = try httpClient.validatedScopedLink(next, scope: paginationScope)
+            } catch {
+                throw ASCError.parsing("Apple returned an out-of-scope links.next for export-compliance declarations")
+            }
+        } else {
+            nextRequest = nil
+        }
+
+        guard response.data.count <= requestedLimit else {
+            throw ASCError.parsing("Apple returned more export-compliance declarations than the requested limit")
+        }
+        if let meta = response.meta {
+            guard let paging = meta.paging,
+                  paging.limit == requestedLimit else {
+                throw ASCError.parsing("Apple returned export-compliance paging metadata outside the requested limit")
+            }
+            if let total = paging.total, total < response.data.count {
+                throw ASCError.parsing("Apple returned an export-compliance paging total below the page count")
+            }
+            if let cursor = paging.nextCursor {
+                guard !cursor.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+                      nextRequest?.parameters["cursor"] == cursor else {
+                    throw ASCError.parsing("Apple returned inconsistent export-compliance cursor metadata")
+                }
+            }
+        }
+
+        var identities = Set<String>()
+        for declaration in response.data {
+            guard declaration.type == "appEncryptionDeclarations",
+                  exportComplianceHasUsableResourceID(declaration.id),
+                  identities.insert(declaration.id).inserted else {
+                throw ASCError.parsing("Apple returned an invalid or duplicate export-compliance declaration identity")
+            }
+            if let document = declaration.relationships?.appEncryptionDeclarationDocument?.data {
+                guard document.type == "appEncryptionDeclarationDocuments",
+                      exportComplianceHasUsableResourceID(document.id) else {
+                    throw ASCError.parsing("Apple returned an invalid export-compliance document relationship")
+                }
+            }
         }
     }
 }
@@ -1312,25 +1503,34 @@ private func exportComplianceUploadResult(
 private func exportComplianceUnverifiedAttachment(
     buildID: String,
     declarationID: String,
-    reason: String
+    reason: String,
+    cause: Error
 ) -> CallTool.Result {
     let safeReason = Redactor.redact(reason)
+    let state = exportComplianceMutationState(for: cause)
+    var details: [String: Value] = [
+        "attachmentState": .string("unverified"),
+        "operationCommitState": .string(state.operationCommitState),
+        "outcomeUnknown": .bool(state == .commitUnknown),
+        "retrySafe": .bool(state.retrySafe),
+        "build_id": .string(buildID),
+        "declaration_id": .string(declarationID),
+        "cause": exportComplianceStructuredCause(cause),
+        "inspection": .object([
+            "tool": .string("export_compliance_get_build_declaration"),
+            "arguments": .object(["build_id": .string(buildID)])
+        ])
+    ]
+    if state == .committedUnverified {
+        details["operationCommitted"] = .bool(true)
+    }
     return MCPResult.error(
         safeReason,
-        details: .object([
-            "attachmentState": .string("unverified"),
-            "retrySafe": .bool(false),
-            "build_id": .string(buildID),
-            "declaration_id": .string(declarationID),
-            "inspection": .object([
-                "tool": .string("export_compliance_get_build_declaration"),
-                "arguments": .object(["build_id": .string(buildID)])
-            ])
-        ])
+        details: .object(details)
     )
 }
 
-private enum ExportComplianceMutationState: String {
+private enum ExportComplianceMutationState: String, Equatable {
     case committedUnverified = "committed_unverified"
     case commitUnknown = "commit_unknown"
     case rejected
@@ -1361,6 +1561,15 @@ private enum ExportComplianceMutationState: String {
             return false
         }
     }
+
+    var operationCommitState: String {
+        switch self {
+        case .commitUnknown:
+            return "unknown"
+        case .committedUnverified, .rejected:
+            return rawValue
+        }
+    }
 }
 
 private func exportComplianceMutationState(for error: Error) -> ExportComplianceMutationState {
@@ -1371,6 +1580,10 @@ private func exportComplianceMutationState(for error: Error) -> ExportCompliance
     case .deleteCommittedUnverified:
         return .committedUnverified
     case .deleteOutcomeUnknown:
+        return .commitUnknown
+    case .mutationCommittedUnverified:
+        return .committedUnverified
+    case .mutationOutcomeUnknown:
         return .commitUnknown
     case .network(_):
         return .commitUnknown
@@ -1386,15 +1599,22 @@ private func exportComplianceMutationState(for error: Error) -> ExportCompliance
 private func exportComplianceDeclarationCreationFailure(
     appID: String,
     state: ExportComplianceMutationState,
-    reason: String
+    reason: String,
+    cause: Error
 ) -> CallTool.Result {
     let safeReason = Redactor.redact(reason)
     var details: [String: Value] = [
         "creationState": .string(state.rawValue),
+        "operationCommitState": .string(state.operationCommitState),
+        "outcomeUnknown": .bool(state == .commitUnknown),
         "commitConfirmed": .bool(state.commitConfirmed),
         "declarationIdKnown": .bool(false),
-        "retrySafe": .bool(state.retrySafe)
+        "retrySafe": .bool(state.retrySafe),
+        "cause": exportComplianceStructuredCause(cause)
     ]
+    if state == .committedUnverified {
+        details["operationCommitted"] = .bool(true)
+    }
     if state.needsInspection {
         details["inspection"] = .object([
             "tool": .string("export_compliance_list_declarations"),
@@ -1410,14 +1630,21 @@ private func exportComplianceDeclarationCreationFailure(
 private func exportComplianceDocumentUpdateFailure(
     documentID: String,
     state: ExportComplianceMutationState,
-    reason: String
+    reason: String,
+    cause: Error
 ) -> CallTool.Result {
     let safeReason = Redactor.redact(reason)
     var details: [String: Value] = [
         "updateState": .string(state.rawValue),
+        "operationCommitState": .string(state.operationCommitState),
+        "outcomeUnknown": .bool(state == .commitUnknown),
         "commitConfirmed": .bool(state.commitConfirmed),
-        "retrySafe": .bool(state.retrySafe)
+        "retrySafe": .bool(state.retrySafe),
+        "cause": exportComplianceStructuredCause(cause)
     ]
+    if state == .committedUnverified {
+        details["operationCommitted"] = .bool(true)
+    }
     if state.needsInspection {
         details["inspection"] = .object([
             "tool": .string("export_compliance_get_document"),
@@ -1428,6 +1655,45 @@ private func exportComplianceDocumentUpdateFailure(
         safeReason,
         details: .object(details)
     )
+}
+
+private func exportComplianceAcceptedMutationError(
+    _ error: Error,
+    method: String,
+    expectedStatusCode: Int,
+    actualStatusCode: Int
+) -> ASCError {
+    let cause: ASCError
+    if let ascError = error as? ASCError {
+        if case .mutationCommittedUnverified = ascError {
+            return ascError
+        }
+        cause = ascError
+    } else {
+        cause = .parsing(Redactor.redact(error.localizedDescription))
+    }
+    return .mutationCommittedUnverified(
+        method: method,
+        expectedStatusCode: expectedStatusCode,
+        actualStatusCode: actualStatusCode,
+        cause: cause
+    )
+}
+
+private func exportComplianceStructuredCause(_ error: Error) -> Value {
+    if let ascError = error as? ASCError {
+        return ascError.structuredValue
+    }
+    if error is CancellationError {
+        return .object([
+            "type": .string("cancellation"),
+            "message": .string("The request was cancelled before its write outcome was confirmed")
+        ])
+    }
+    return .object([
+        "type": .string("request"),
+        "message": .string(Redactor.redact(error.localizedDescription))
+    ])
 }
 
 // MARK: - Validation
@@ -1461,6 +1727,20 @@ private func exportComplianceBoolean(
         throw ExportComplianceInputError("Parameter '\(field)' must be a boolean")
     }
     return value
+}
+
+private func exportComplianceIdentifier(
+    _ arguments: [String: Value],
+    _ field: String
+) throws -> String {
+    let identifier = try exportComplianceString(arguments, field)
+    let encoded = try ASCPathSegment.encode(identifier, field: field)
+    guard encoded == identifier else {
+        throw ExportComplianceInputError(
+            "Parameter '\(field)' must be a canonical App Store Connect resource ID"
+        )
+    }
+    return identifier
 }
 
 private func exportComplianceFilePath(
@@ -1523,7 +1803,7 @@ private func exportComplianceHasUsableResourceID(_ id: String) -> Bool {
           id == id.trimmingCharacters(in: .whitespacesAndNewlines) else {
         return false
     }
-    return (try? ASCPathSegment.encode(id)) != nil
+    return (try? ASCPathSegment.encode(id)) == id
 }
 
 private func exportComplianceNullableString(
@@ -1560,6 +1840,10 @@ private func exportComplianceHTTPStatus(_ error: ASCError) -> Int? {
         return statusCode
     case .deleteOutcomeUnknown(let cause):
         return exportComplianceHTTPStatus(cause)
+    case .mutationOutcomeUnknown(_, let cause):
+        return exportComplianceHTTPStatus(cause)
+    case .mutationCommittedUnverified(_, _, let actualStatusCode, _):
+        return actualStatusCode
     default:
         return nil
     }

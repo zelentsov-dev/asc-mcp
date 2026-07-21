@@ -5,7 +5,7 @@ import Foundation
 @Suite("App Model Tests")
 struct AppModelTests {
     let appJSON = """
-    {"id":"app-1","type":"apps","attributes":{"name":"My App","bundleId":"com.test","sku":"SKU1","primaryLocale":"en-US","isOrEverWasMadeForKids":false,"availableInNewTerritories":true}}
+    {"id":"app-1","type":"apps","attributes":{"name":"My App","bundleId":"com.test","sku":"SKU1","primaryLocale":"en-US","isOrEverWasMadeForKids":false,"accessibilityUrl":"https://example.com/accessibility","streamlinedPurchasingEnabled":true}}
     """.data(using: .utf8)!
 
     @Test func decodeApp() throws {
@@ -21,7 +21,8 @@ struct AppModelTests {
         #expect(app.attributes?.sku == "SKU1")
         #expect(app.attributes?.primaryLocale == "en-US")
         #expect(app.attributes?.isOrEverWasMadeForKids == false)
-        #expect(app.attributes?.availableInNewTerritories == true)
+        #expect(app.attributes?.accessibilityUrl == "https://example.com/accessibility")
+        #expect(app.attributes?.streamlinedPurchasingEnabled == true)
     }
 
     @Test func appDisplayNameExtension() throws {
@@ -125,6 +126,23 @@ struct AppModelTests {
         let response = try JSONDecoder().decode(ASCAppsResponse.self, from: json)
         #expect(response.totalCount == 1)
         #expect(response.meta == nil)
+    }
+
+    @Test func appsResponsePagingTotalIsOptional() throws {
+        let json = """
+        {"data":[{"id":"a1","type":"apps"}],"links":{"self":"https://api.example.com/apps"},"meta":{"paging":{"limit":10}}}
+        """.data(using: .utf8)!
+        let response = try JSONDecoder().decode(ASCAppsResponse.self, from: json)
+        #expect(response.meta?.paging.total == nil)
+        #expect(response.totalCount == 1)
+    }
+
+    @Test func appsResponseDoesNotInventTotalBeforeLastPage() throws {
+        let json = """
+        {"data":[{"id":"a1","type":"apps"}],"links":{"self":"https://api.example.com/apps","next":"https://api.example.com/apps?cursor=2"},"meta":{"paging":{"limit":10}}}
+        """.data(using: .utf8)!
+        let response = try JSONDecoder().decode(ASCAppsResponse.self, from: json)
+        #expect(response.totalCount == nil)
     }
 
     @Test func appResponseSingle() throws {

@@ -58,7 +58,7 @@
           "sourceKind": "requestBody",
           "operationId": "appEvents_createInstance",
           "jsonPointer": "/data/attributes/purchaseRequirement",
-          "localRole": "Accept only NO_COST_ASSOCIATED, IN_APP_PURCHASE, or explicit null before network access."
+          "localRole": "Forward any non-null string or explicit null using Apple's nullable purchaseRequirement attribute."
         },
         {
           "toolField": "primary_locale",
@@ -107,7 +107,7 @@
           }
         ]
       },
-      "note": "The current create contract exposes every Apple 4.4.1 attribute, preserves explicit null, validates each non-null deep link as an absolute URI, restricts purchase requirements to the current supported values, strictly validates territory schedules, and rejects malformed values before network access; partial only because the tool has no outputSchema."
+      "note": "The current create contract exposes every Apple 4.4.1 attribute, preserves explicit null, validates each non-null deep link as an absolute URI, forwards Apple's unconstrained purchase-requirement string, strictly validates territory schedules, and rejects malformed values before network access; partial only because the tool has no outputSchema."
     },
     {
       "tool": "app_events_create_localization",
@@ -611,7 +611,7 @@
           "sourceKind": "requestBody",
           "operationId": "appEvents_updateInstance",
           "jsonPointer": "/data/attributes/purchaseRequirement",
-          "localRole": "Accept only NO_COST_ASSOCIATED, IN_APP_PURCHASE, or explicit null before network access."
+          "localRole": "Forward any non-null string or explicit null using Apple's nullable purchaseRequirement attribute."
         },
         {
           "toolField": "primary_locale",
@@ -660,7 +660,7 @@
           }
         ]
       },
-      "note": "The current update contract exposes every Apple 4.4.1 writable attribute, preserves explicit null, validates each non-null deep link as an absolute URI, restricts purchase requirements to the current supported values, strictly validates territory schedules, and rejects no-op or malformed updates before network access; partial only because the tool has no outputSchema."
+      "note": "The current update contract exposes every Apple 4.4.1 writable attribute, preserves explicit null, validates each non-null deep link as an absolute URI, forwards Apple's unconstrained purchase-requirement string, strictly validates territory schedules, and rejects no-op or malformed updates before network access; partial only because the tool has no outputSchema."
     },
     {
       "tool": "app_events_update_localization",

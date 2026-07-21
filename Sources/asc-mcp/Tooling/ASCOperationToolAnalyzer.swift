@@ -758,6 +758,16 @@ struct ASCOperationToolAnalyzer: Sendable {
         let readMethods: Set<String> = ["get", "head", "options", "trace"]
         let manifestReadOnly = mapping.effect == .read || mapping.effect == .local
 
+        if mapping.kind == .direct,
+           methods == Set(["delete"]),
+           mapping.effect != .destructive {
+            return [error(
+                .toolAppleEffectMismatch,
+                "A direct Apple DELETE operation must be published as destructive.",
+                tool: mapping.tool
+            )]
+        }
+
         if methods.isSubset(of: readMethods) && !manifestReadOnly {
             return [warning(
                 .toolAppleEffectMismatch,

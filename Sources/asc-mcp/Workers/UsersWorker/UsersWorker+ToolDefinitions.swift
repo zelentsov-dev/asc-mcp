@@ -75,22 +75,22 @@ extension UsersWorker {
                         "description": .string("User resource ID")
                     ]),
                     "roles": .object([
-                        "type": .string("array"),
+                        "type": .array([.string("array"), .string("null")]),
                         "items": .object([
                             "type": .string("string"),
                             "enum": .array(UsersWorker.assignableRoles.map(Value.string))
                         ]),
                         "minItems": .int(1),
                         "uniqueItems": .bool(true),
-                        "description": .string("Roles or permissions to assign. ACCESS_TO_REPORTS is deprecated by Apple but remains accepted for backward compatibility.")
+                        "description": .string("Roles or permissions to assign, or null for Apple's explicit nullable value. ACCESS_TO_REPORTS is deprecated by Apple but remains accepted for backward compatibility.")
                     ]),
                     "all_apps_visible": .object([
-                        "type": .string("boolean"),
-                        "description": .string("Whether the user can access all apps")
+                        "type": .array([.string("boolean"), .string("null")]),
+                        "description": .string("Whether the user can access all apps, or null for Apple's explicit nullable value")
                     ]),
                     "provisioning_allowed": .object([
-                        "type": .string("boolean"),
-                        "description": .string("Whether the user's role can access provisioning on the Apple Developer website")
+                        "type": .array([.string("boolean"), .string("null")]),
+                        "description": .string("Whether the user's role can access provisioning on the Apple Developer website, or null for Apple's explicit nullable value")
                     ]),
                     "visible_app_ids": .object([
                         "type": .string("array"),
@@ -130,6 +130,7 @@ extension UsersWorker {
                 "properties": .object([
                     "email": .object([
                         "type": .string("string"),
+                        "format": .string("email"),
                         "description": .string("Email address of the user to invite")
                     ]),
                     "first_name": .object([
@@ -151,12 +152,12 @@ extension UsersWorker {
                         "description": .string("Roles to assign. ACCESS_TO_REPORTS is deprecated by Apple but remains accepted for backward compatibility.")
                     ]),
                     "all_apps_visible": .object([
-                        "type": .string("boolean"),
-                        "description": .string("Whether user can see all apps (default: true)")
+                        "type": .array([.string("boolean"), .string("null")]),
+                        "description": .string("Whether user can see all apps; omit to leave the Apple field absent, or pass null explicitly")
                     ]),
                     "provisioning_allowed": .object([
-                        "type": .string("boolean"),
-                        "description": .string("Whether the invited role can access provisioning on the Apple Developer website")
+                        "type": .array([.string("boolean"), .string("null")]),
+                        "description": .string("Whether the invited role can access provisioning on the Apple Developer website; omit or pass null explicitly")
                     ]),
                     "visible_app_ids": .object([
                         "type": .string("array"),
@@ -235,6 +236,8 @@ extension UsersWorker {
                     ]),
                     "limit": .object([
                         "type": .string("integer"),
+                        "minimum": .int(1),
+                        "maximum": .int(200),
                         "description": .string("Max results (default: 25, max: 200)")
                     ]),
                     "next_url": .object([

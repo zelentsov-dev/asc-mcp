@@ -120,12 +120,13 @@ extension ReviewSubmissionsWorker {
             if let platforms {
                 query["filter[platform]"] = platforms.joined(separator: ",")
             }
+            let paginationScope = strictPaginationScope(path: path, query: query)
 
             let response: ASCReviewSubmissionsResponse
             if let nextURL = try paginationURL(from: arguments["next_url"]) {
                 response = try await httpClient.getPage(
                     nextURL,
-                    scope: strictPaginationScope(path: path, query: query),
+                    scope: paginationScope,
                     as: ASCReviewSubmissionsResponse.self
                 )
             } else {
@@ -144,11 +145,13 @@ extension ReviewSubmissionsWorker {
             try validatePagingInformation(
                 response.meta,
                 pageCount: response.data.count,
+                requestedLimit: limit,
                 context: "review submissions list"
             )
             try validateCursorNextConsistency(
                 response.meta,
                 nextURL: response.links.next,
+                paginationScope: paginationScope,
                 context: "review submissions list"
             )
             try validateIncludedResources(
@@ -312,7 +315,12 @@ extension ReviewSubmissionsWorker {
         } catch {
             return committedUnverifiedMutationFailure(
                 operation: "create",
-                reason: error,
+                reason: acceptedMutationError(
+                    error,
+                    method: "POST",
+                    expectedStatusCode: 201,
+                    actualStatusCode: receipt.statusCode
+                ),
                 identifiers: identifiers,
                 inspection: inspection
             )
@@ -334,12 +342,13 @@ extension ReviewSubmissionsWorker {
             let path = "/v1/reviewSubmissions/\(try ASCPathSegment.encode(submissionID))/items"
             var query = itemListQuery()
             query["limit"] = String(limit)
+            let paginationScope = strictPaginationScope(path: path, query: query)
 
             let response: ASCReviewSubmissionItemsResponse
             if let nextURL = try paginationURL(from: arguments["next_url"]) {
                 response = try await httpClient.getPage(
                     nextURL,
-                    scope: strictPaginationScope(path: path, query: query),
+                    scope: paginationScope,
                     as: ASCReviewSubmissionItemsResponse.self
                 )
             } else {
@@ -358,11 +367,13 @@ extension ReviewSubmissionsWorker {
             try validatePagingInformation(
                 response.meta,
                 pageCount: response.data.count,
+                requestedLimit: limit,
                 context: "review submission items list"
             )
             try validateCursorNextConsistency(
                 response.meta,
                 nextURL: response.links.next,
+                paginationScope: paginationScope,
                 context: "review submission items list"
             )
             try validateIncludedResources(
@@ -477,7 +488,12 @@ extension ReviewSubmissionsWorker {
         } catch {
             return committedUnverifiedMutationFailure(
                 operation: "add_item",
-                reason: error,
+                reason: acceptedMutationError(
+                    error,
+                    method: "POST",
+                    expectedStatusCode: 201,
+                    actualStatusCode: receipt.statusCode
+                ),
                 identifiers: identifiers,
                 inspection: inspection
             )
@@ -606,7 +622,12 @@ extension ReviewSubmissionsWorker {
         } catch {
             return committedUnverifiedMutationFailure(
                 operation: "update_item",
-                reason: error,
+                reason: acceptedMutationError(
+                    error,
+                    method: "PATCH",
+                    expectedStatusCode: 200,
+                    actualStatusCode: receipt.statusCode
+                ),
                 identifiers: identifiers,
                 inspection: inspection
             )
@@ -780,7 +801,12 @@ extension ReviewSubmissionsWorker {
         } catch {
             return committedUnverifiedMutationFailure(
                 operation: action,
-                reason: error,
+                reason: acceptedMutationError(
+                    error,
+                    method: "PATCH",
+                    expectedStatusCode: 200,
+                    actualStatusCode: receipt.statusCode
+                ),
                 identifiers: identifiers,
                 inspection: inspection
             )
@@ -851,11 +877,13 @@ extension ReviewSubmissionsWorker {
             try validatePagingInformation(
                 response.meta,
                 pageCount: response.data.count,
+                requestedLimit: 200,
                 context: "review item membership preflight"
             )
             try validateCursorNextConsistency(
                 response.meta,
                 nextURL: response.links.next,
+                paginationScope: scope,
                 context: "review item membership preflight"
             )
             if let total = response.meta?.paging.total {
@@ -1064,7 +1092,10 @@ extension ReviewSubmissionsWorker {
               string == string.trimmingCharacters(in: .whitespacesAndNewlines) else {
             throw ReviewSubmissionArgumentError("'\(field)' must be a non-empty canonical identifier")
         }
-        _ = try ASCPathSegment.encode(string, field: field)
+        let encoded = try ASCPathSegment.encode(string, field: field)
+        guard encoded == string else {
+            throw ReviewSubmissionArgumentError("'\(field)' must be a canonical App Store Connect resource ID")
+        }
         return string
     }
 
@@ -1073,28 +1104,14 @@ extension ReviewSubmissionsWorker {
         expectedPath: String,
         context: String
     ) throws {
-        guard !value.isEmpty,
-              value == value.trimmingCharacters(in: .whitespacesAndNewlines),
-              !value.unicodeScalars.contains(where: { CharacterSet.controlCharacters.contains($0) }) else {
-            throw ASCError.parsing("Apple returned an invalid required links.self in \(context)")
+        do {
+            _ = try httpClient.validatedScopedLink(
+                value,
+                scope: PaginationScope(path: expectedPath)
+            )
+        } catch {
+            throw ASCError.parsing("Apple returned an out-of-scope required links.self in \(context)")
         }
-        guard let components = URLComponents(string: value),
-              components.fragment == nil,
-              components.user == nil,
-              components.password == nil else {
-            throw ASCError.parsing("Apple returned an invalid required links.self URI in \(context)")
-        }
-        if components.scheme != nil || components.host != nil {
-            guard components.scheme == "https",
-                  let host = components.host,
-                  !host.isEmpty else {
-                throw ASCError.parsing("Apple returned a non-HTTPS required links.self URI in \(context)")
-            }
-        }
-        guard components.percentEncodedPath == expectedPath else {
-            throw ASCError.parsing("Apple returned a required links.self path outside \(context)")
-        }
-        _ = try validatedASCAPIEndpoint(components.percentEncodedPath)
     }
 
     private func validateSubmissions(
@@ -1292,14 +1309,21 @@ extension ReviewSubmissionsWorker {
     private func validatePagingInformation(
         _ meta: ASCReviewSubmissionPagingInformation?,
         pageCount: Int,
+        requestedLimit: Int? = nil,
         context: String
     ) throws {
-        guard let paging = meta?.paging else { return }
-        guard paging.limit > 0 else {
-            throw ASCError.parsing("Apple returned a non-positive paging limit in \(context)")
+        if let requestedLimit, pageCount > requestedLimit {
+            throw ASCError.parsing("Apple returned more resources than the requested limit in \(context)")
         }
-        guard paging.limit >= pageCount else {
-            throw ASCError.parsing("Apple returned paging limit below the page count in \(context)")
+        guard let paging = meta?.paging else { return }
+        if let requestedLimit {
+            guard paging.limit == requestedLimit else {
+                throw ASCError.parsing("Apple returned paging metadata outside the requested limit in \(context)")
+            }
+        } else {
+            guard paging.limit > 0, pageCount <= paging.limit else {
+                throw ASCError.parsing("Apple returned invalid paging metadata in \(context)")
+            }
         }
         if let total = paging.total, total < pageCount {
             throw ASCError.parsing("Apple returned paging total below the page count in \(context)")
@@ -1309,14 +1333,25 @@ extension ReviewSubmissionsWorker {
     private func validateCursorNextConsistency(
         _ meta: ASCReviewSubmissionPagingInformation?,
         nextURL: String?,
+        paginationScope: PaginationScope,
         context: String
     ) throws {
+        let nextRequest: PaginationRequest?
+        if let nextURL {
+            do {
+                nextRequest = try httpClient.validatedScopedLink(nextURL, scope: paginationScope)
+            } catch {
+                throw ASCError.parsing("Apple returned an out-of-scope links.next in \(context)")
+            }
+        } else {
+            nextRequest = nil
+        }
         guard let cursor = meta?.paging.nextCursor else { return }
         guard !cursor.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
             throw ASCError.parsing("Apple returned an empty paging cursor in \(context)")
         }
-        guard nextURL != nil else {
-            throw ASCError.parsing("Apple returned a paging cursor without links.next in \(context)")
+        guard nextRequest?.parameters["cursor"] == cursor else {
+            throw ASCError.parsing("Apple returned a paging cursor that does not match links.next in \(context)")
         }
     }
 
@@ -1621,6 +1656,29 @@ extension ReviewSubmissionsWorker {
         )
     }
 
+    private func acceptedMutationError(
+        _ error: Error,
+        method: String,
+        expectedStatusCode: Int,
+        actualStatusCode: Int
+    ) -> ASCError {
+        let cause: ASCError
+        if let ascError = error as? ASCError {
+            if case .mutationCommittedUnverified = ascError {
+                return ascError
+            }
+            cause = ascError
+        } else {
+            cause = .parsing(Redactor.redact(error.localizedDescription))
+        }
+        return .mutationCommittedUnverified(
+            method: method,
+            expectedStatusCode: expectedStatusCode,
+            actualStatusCode: actualStatusCode,
+            cause: cause
+        )
+    }
+
     private func encodeMutationBody<T: Encodable>(_ value: T) throws -> Data {
         do {
             return try JSONEncoder().encode(value)
@@ -1688,6 +1746,7 @@ extension ReviewSubmissionsWorker {
             details["inspectionRequired"] = .bool(true)
         case .committedUnverified:
             details["operationCommitted"] = .bool(true)
+            details["outcomeUnknown"] = .bool(false)
             details["inspectionRequired"] = .bool(true)
         }
         return MCPResult.error(

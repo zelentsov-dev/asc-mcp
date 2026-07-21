@@ -30,13 +30,15 @@ extension ReviewsWorker {
         }
         
         return reviews.enumerated().map { index, review in
-            """
-            \(index + 1). Rating: \(String(repeating: "⭐", count: review.attributes.rating))
-               Title: \(review.attributes.title ?? "No title")
-               Review: \(review.attributes.body ?? "No content")
-               By: \(review.attributes.reviewerNickname)
-               Date: \(formatDate(review.attributes.createdDate))
-               Territory: \(review.attributes.territory ?? "Unknown")
+            let attributes = review.attributes
+            let rating = attributes?.rating.map { String(repeating: "⭐", count: $0) } ?? "Unknown"
+            return """
+            \(index + 1). Rating: \(rating)
+               Title: \(attributes?.title ?? "No title")
+               Review: \(attributes?.body ?? "No content")
+               By: \(attributes?.reviewerNickname ?? "Unknown")
+               Date: \(attributes?.createdDate.map { formatDate($0) } ?? "Unknown")
+               Territory: \(attributes?.territory ?? "Unknown")
                ID: \(review.id)
             """
         }.joined(separator: "\n\n")
@@ -106,35 +108,38 @@ extension ReviewsWorker {
         let filteredReviews: [CustomerReview]
         if let startDate {
             filteredReviews = reviews.filter { review in
-                guard let reviewDate = parseReviewDate(review.attributes.createdDate) else { return false }
+                guard let attributes = review.attributes,
+                      attributes.rating != nil,
+                      let createdDate = attributes.createdDate,
+                      let reviewDate = parseReviewDate(createdDate) else { return false }
                 return reviewDate >= startDate && reviewDate <= now
             }
         } else {
-            filteredReviews = reviews
+            filteredReviews = reviews.filter { $0.attributes?.rating != nil }
         }
 
         let totalCount = filteredReviews.count
 
         // Calculate average rating
-        let totalRating = filteredReviews.reduce(0) { $0 + $1.attributes.rating }
+        let totalRating = filteredReviews.reduce(0) { $0 + ($1.attributes?.rating ?? 0) }
         let averageRating = totalCount > 0 ? Double(totalRating) / Double(totalCount) : 0.0
 
         // Calculate rating distribution
         var ratingDistribution: [Int: Int] = [:]
         for rating in 1...5 {
-            ratingDistribution[rating] = filteredReviews.filter { $0.attributes.rating == rating }.count
+            ratingDistribution[rating] = filteredReviews.filter { $0.attributes?.rating == rating }.count
         }
 
         // Calculate territory statistics
         var territoryMap: [String: [CustomerReview]] = [:]
         for review in filteredReviews {
-            let territory = review.attributes.territory ?? "Unknown"
+            let territory = review.attributes?.territory ?? "Unknown"
             territoryMap[territory, default: []].append(review)
         }
 
         let topTerritories = territoryMap
             .map { territory, reviews in
-                let avgRating = Double(reviews.reduce(0) { $0 + $1.attributes.rating }) / Double(reviews.count)
+                let avgRating = Double(reviews.reduce(0) { $0 + ($1.attributes?.rating ?? 0) }) / Double(reviews.count)
                 return TerritoryStats(
                     territory: territory,
                     count: reviews.count,

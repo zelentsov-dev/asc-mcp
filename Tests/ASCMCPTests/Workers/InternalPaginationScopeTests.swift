@@ -112,7 +112,7 @@ struct InternalPaginationScopeTests {
             "AppEventsWorker": 2,
             "AppInfoWorker": 2,
             "AppLifecycleWorker": 3,
-            "AppsWorker": 9,
+            "AppsWorker": 10,
             "BetaFeedbackWorker": 2,
             "BetaGroupsWorker": 3,
             "BetaLicenseAgreementsWorker": 1,
@@ -158,7 +158,7 @@ struct InternalPaginationScopeTests {
             strictScopeCount += workerStrictScopeCount
         }
 
-        #expect(strictScopeCount == 61)
+        #expect(strictScopeCount == 62)
         #expect(scopedLinkScopeCounts == expectedScopedLinkScopeCounts)
     }
 }

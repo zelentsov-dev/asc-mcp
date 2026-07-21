@@ -78,23 +78,32 @@ extension SubscriptionsWorker {
                         "description": .string("Unique product identifier")
                     ]),
                     "subscription_period": .object([
-                        "type": .string("string"),
-                        "description": .string("Period: ONE_WEEK, ONE_MONTH, TWO_MONTHS, THREE_MONTHS, SIX_MONTHS, ONE_YEAR")
+                        "type": .array([.string("string"), .string("null")]),
+                        "description": .string("Optional period, or null to preserve Apple's explicit nullable value"),
+                        "enum": .array([
+                            .string("ONE_WEEK"),
+                            .string("ONE_MONTH"),
+                            .string("TWO_MONTHS"),
+                            .string("THREE_MONTHS"),
+                            .string("SIX_MONTHS"),
+                            .string("ONE_YEAR"),
+                            .null
+                        ])
                     ]),
                     "family_sharable": .object([
-                        "type": .string("boolean"),
-                        "description": .string("Enable Family Sharing")
+                        "type": .array([.string("boolean"), .string("null")]),
+                        "description": .string("Enable Family Sharing, or null to preserve Apple's explicit nullable value")
                     ]),
                     "group_level": .object([
-                        "type": .string("integer"),
-                        "description": .string("Level within the subscription group (1 = highest)")
+                        "type": .array([.string("integer"), .string("null")]),
+                        "description": .string("Level within the subscription group, or null to preserve Apple's explicit nullable value")
                     ]),
                     "review_note": .object([
-                        "type": .string("string"),
-                        "description": .string("Notes for App Review")
+                        "type": .array([.string("string"), .string("null")]),
+                        "description": .string("Notes for App Review, or null to preserve Apple's explicit nullable value")
                     ])
                 ]),
-                "required": .array([.string("group_id"), .string("name"), .string("product_id"), .string("subscription_period")])
+                "required": .array([.string("group_id"), .string("name"), .string("product_id")])
             ])
         )
     }
@@ -105,6 +114,7 @@ extension SubscriptionsWorker {
             description: "Update an existing subscription",
             inputSchema: .object([
                 "type": .string("object"),
+                "additionalProperties": .bool(false),
                 "minProperties": .int(2),
                 "properties": .object([
                     "subscription_id": .object([
@@ -112,20 +122,20 @@ extension SubscriptionsWorker {
                         "description": .string("Subscription ID")
                     ]),
                     "name": .object([
-                        "type": .string("string"),
-                        "description": .string("New reference name")
+                        "type": .array([.string("string"), .string("null")]),
+                        "description": .string("New reference name, or null to clear")
                     ]),
                     "family_sharable": .object([
-                        "type": .string("boolean"),
-                        "description": .string("Enable Family Sharing")
+                        "type": .array([.string("boolean"), .string("null")]),
+                        "description": .string("Enable Family Sharing, or null to clear")
                     ]),
                     "group_level": .object([
-                        "type": .string("integer"),
-                        "description": .string("Level within the subscription group")
+                        "type": .array([.string("integer"), .string("null")]),
+                        "description": .string("Level within the subscription group, or null to clear")
                     ]),
                     "review_note": .object([
-                        "type": .string("string"),
-                        "description": .string("Notes for App Review")
+                        "type": .array([.string("string"), .string("null")]),
+                        "description": .string("Notes for App Review, or null to clear")
                     ]),
                     "subscription_period": .object([
                         "type": .array([.string("string"), .string("null")]),
@@ -324,9 +334,15 @@ extension SubscriptionsWorker {
                         "type": .string("string"),
                         "description": .string("Filter by subscription price point ID")
                     ]),
+                    "plan_types": subscriptionEnumListSchema(
+                        "Filter by one or more Apple subscription plan types",
+                        values: ASCSubscriptionPlanType.allCases.map(\.rawValue)
+                    ),
                     "limit": .object([
                         "type": .string("integer"),
-                        "description": .string("Max results (default: 25, max: 200)")
+                        "description": .string("Max results (default: 25, max: 200)"),
+                        "minimum": .int(1),
+                        "maximum": .int(200)
                     ]),
                     "next_url": .object([
                         "type": .string("string"),
@@ -353,9 +369,16 @@ extension SubscriptionsWorker {
                         "type": .string("string"),
                         "description": .string("Filter by territory ID (e.g. USA, GBR). Recommended for AI-friendly output.")
                     ]),
+                    "upfront_price_point_ids": subscriptionStringListSchema("Filter by one or more upfront price point IDs"),
+                    "plan_types": subscriptionEnumListSchema(
+                        "Filter by one or more Apple subscription plan types",
+                        values: ASCSubscriptionPlanType.allCases.map(\.rawValue)
+                    ),
                     "limit": .object([
                         "type": .string("integer"),
-                        "description": .string("Max results (default: 25, max: 8000)")
+                        "description": .string("Max results (default: 25, max: 8000)"),
+                        "minimum": .int(1),
+                        "maximum": .int(8000)
                     ]),
                     "next_url": .object([
                         "type": .string("string"),
@@ -439,7 +462,9 @@ extension SubscriptionsWorker {
                     ]),
                     "limit": .object([
                         "type": .string("integer"),
-                        "description": .string("Max results (default: 25, max: 200)")
+                        "description": .string("Max results (default: 25, max: 200)"),
+                        "minimum": .int(1),
+                        "maximum": .int(200)
                     ]),
                     "next_url": .object([
                         "type": .string("string"),
@@ -702,7 +727,9 @@ extension SubscriptionsWorker {
                     ]),
                     "limit": .object([
                         "type": .string("integer"),
-                        "description": .string("Max results (default: 25, max: 200)")
+                        "description": .string("Max results (default: 25, max: 200)"),
+                        "minimum": .int(1),
+                        "maximum": .int(200)
                     ]),
                     "next_url": .object([
                         "type": .string("string"),

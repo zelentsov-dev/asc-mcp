@@ -101,10 +101,7 @@ extension AppsWorker {
                         "type": .string("string"),
                         "description": .string("App Store Connect app ID")
                     ]),
-                    "include": .object([
-                        "type": .string("string"),
-                        "description": .string("Additional related data to include")
-                    ])
+                    "include": appDetailsIncludeProperty()
                 ]),
                 "required": .array([.string("app_id")])
             ])
@@ -184,9 +181,9 @@ extension AppsWorker {
                 Get app metadata (description, whatsNew, keywords, etc.) for a version and localization.
 
                 Behavior:
-                - Without locale: returns ALL locales in one request
+                - Without locale: follows every Apple page and returns ALL locales
                 - Without version_id: auto-selects version by appVersionState, then platform (priority: PREPARE_FOR_SUBMISSION > REJECTED > METADATA_REJECTED > READY_FOR_DISTRIBUTION; legacy READY_FOR_SALE remains supported)
-                - include_media: false by default, media loaded only on request
+                - include_media: false by default; requires locale because media belongs to one localization
                 """,
             inputSchema: .object([
                 "type": .string("object"),
@@ -214,7 +211,7 @@ extension AppsWorker {
                     ]),
                     "include_media": .object([
                         "type": .string("boolean"),
-                        "description": .string("Include screenshots and videos in response (default: false)")
+                        "description": .string("Include screenshots and videos for the explicit locale (default: false; requires locale)")
                     ])
                 ]),
                 "required": .array([.string("app_id")])
@@ -375,5 +372,37 @@ extension AppsWorker {
             schema["deprecated"] = .bool(true)
         }
         return .object(schema)
+    }
+
+    private func appDetailsIncludeProperty() -> Value {
+        let allowedValues = [
+            "appEncryptionDeclarations", "appStoreIcon", "ciProduct", "betaGroups", "appStoreVersions",
+            "preReleaseVersions", "betaAppLocalizations", "builds", "betaLicenseAgreement",
+            "betaAppReviewDetail", "appInfos", "appClips", "endUserLicenseAgreement", "inAppPurchases",
+            "subscriptionGroups", "gameCenterEnabledVersions", "appCustomProductPages", "inAppPurchasesV2",
+            "promotedPurchases", "appEvents", "reviewSubmissions", "subscriptionGracePeriod",
+            "gameCenterDetail", "appStoreVersionExperimentsV2", "androidToIosAppMappingDetails"
+        ]
+        let tokenPattern = allowedValues
+            .map(NSRegularExpression.escapedPattern(for:))
+            .joined(separator: "|")
+        return .object([
+            "description": .string("Related resources to include. Accepts an array or a comma-separated compatibility form."),
+            "oneOf": .array([
+                .object([
+                    "type": .string("string"),
+                    "pattern": .string("^(?:\(tokenPattern))(?:,(?:\(tokenPattern)))*$")
+                ]),
+                .object([
+                    "type": .string("array"),
+                    "items": .object([
+                        "type": .string("string"),
+                        "enum": .array(allowedValues.map(Value.string))
+                    ]),
+                    "minItems": .int(1),
+                    "uniqueItems": .bool(true)
+                ])
+            ])
+        ])
     }
 }

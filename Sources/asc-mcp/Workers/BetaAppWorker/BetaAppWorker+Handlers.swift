@@ -136,10 +136,7 @@ extension BetaAppWorker {
             return MCPResult.jsonObject(result)
 
         } catch {
-            return CallTool.Result(
-                content: [MCPContent.text("Error: Failed to create beta app localization: \(error.localizedDescription)")],
-                isError: true
-            )
+            return MCPResult.error(error, prefix: "Failed to create beta app localization")
         }
     }
 
@@ -241,10 +238,7 @@ extension BetaAppWorker {
             return MCPResult.jsonObject(result)
 
         } catch {
-            return CallTool.Result(
-                content: [MCPContent.text("Error: Failed to update beta app localization: \(error.localizedDescription)")],
-                isError: true
-            )
+            return MCPResult.error(error, prefix: "Failed to update beta app localization")
         }
     }
 
@@ -325,12 +319,12 @@ extension BetaAppWorker {
         } catch let error as ASCError {
             let ambiguousOutcome: Bool
             switch error {
-            case .deleteCommittedUnverified:
+            case .deleteCommittedUnverified, .mutationCommittedUnverified:
                 return MCPResult.error(
                     error,
                     prefix: "Failed to submit build for beta review"
                 )
-            case .deleteOutcomeUnknown:
+            case .deleteOutcomeUnknown, .mutationOutcomeUnknown:
                 ambiguousOutcome = true
             case .network:
                 ambiguousOutcome = true
@@ -340,18 +334,18 @@ extension BetaAppWorker {
                 ambiguousOutcome = false
             }
             if ambiguousOutcome {
-                return unknownSubmissionCommitFailure(error.localizedDescription, requestedBuildID: buildId)
+                return unknownSubmissionCommitFailure(error, requestedBuildID: buildId)
             }
             return MCPResult.error("Failed to submit build for beta review: \(error.localizedDescription)")
         } catch {
-            return unknownSubmissionCommitFailure(error.localizedDescription, requestedBuildID: buildId)
+            return unknownSubmissionCommitFailure(error, requestedBuildID: buildId)
         }
 
         let response: ASCBetaAppReviewSubmissionResponse
         do {
             response = try JSONDecoder().decode(ASCBetaAppReviewSubmissionResponse.self, from: responseData)
         } catch {
-            return committedSubmissionDecodeFailure(error.localizedDescription, requestedBuildID: buildId)
+            return committedSubmissionDecodeFailure(error, requestedBuildID: buildId)
         }
 
         guard response.data.type == "betaAppReviewSubmissions",
@@ -677,10 +671,7 @@ extension BetaAppWorker {
             return MCPResult.jsonObject(result)
 
         } catch {
-            return CallTool.Result(
-                content: [MCPContent.text("Error: Failed to update beta app review details: \(error.localizedDescription)")],
-                isError: true
-            )
+            return MCPResult.error(error, prefix: "Failed to update beta app review details")
         }
     }
 
@@ -846,12 +837,22 @@ extension BetaAppWorker {
         requestedBuildID: String
     ) -> CallTool.Result {
         let safeMessage = Redactor.redact(message)
+        let committedError = ASCError.mutationCommittedUnverified(
+            method: "POST",
+            expectedStatusCode: 201,
+            actualStatusCode: 201,
+            cause: .parsing(safeMessage)
+        )
         return MCPResult.jsonObject(
             [
                 "success": false,
                 "error": safeMessage,
+                "details": committedError.structuredValue,
                 "operationCommitted": true,
+                "operationCommitState": "committed_unverified",
+                "outcomeUnknown": false,
                 "retrySafe": false,
+                "inspectionRequired": true,
                 "submissionId": submission.id,
                 "submissionIdKnown": true,
                 "requestedBuildId": requestedBuildID,
@@ -867,12 +868,22 @@ extension BetaAppWorker {
         requestedBuildID: String
     ) -> CallTool.Result {
         let safeMessage = Redactor.redact(message)
+        let committedError = ASCError.mutationCommittedUnverified(
+            method: "POST",
+            expectedStatusCode: 201,
+            actualStatusCode: 201,
+            cause: .parsing(safeMessage)
+        )
         return MCPResult.jsonObject(
             [
                 "success": false,
                 "error": safeMessage,
+                "details": committedError.structuredValue,
                 "operationCommitted": true,
+                "operationCommitState": "committed_unverified",
+                "outcomeUnknown": false,
                 "retrySafe": false,
+                "inspectionRequired": true,
                 "submissionIdKnown": false,
                 "requestedBuildId": requestedBuildID,
                 "inspection": submissionInspection(for: requestedBuildID)
@@ -883,16 +894,26 @@ extension BetaAppWorker {
     }
 
     private func committedSubmissionDecodeFailure(
-        _ message: String,
+        _ error: Error,
         requestedBuildID: String
     ) -> CallTool.Result {
-        let safeMessage = Redactor.redact(message)
+        let safeMessage = Redactor.redact(error.localizedDescription)
+        let committedError = ASCError.mutationCommittedUnverified(
+            method: "POST",
+            expectedStatusCode: 201,
+            actualStatusCode: 201,
+            cause: .parsing("Failed to decode beta app review submission response: \(safeMessage)")
+        )
         return MCPResult.jsonObject(
             [
                 "success": false,
                 "error": safeMessage,
+                "details": committedError.structuredValue,
                 "operationCommitted": true,
+                "operationCommitState": "committed_unverified",
+                "outcomeUnknown": false,
                 "retrySafe": false,
+                "inspectionRequired": true,
                 "submissionIdKnown": false,
                 "requestedBuildId": requestedBuildID,
                 "inspection": submissionInspection(for: requestedBuildID)
@@ -903,20 +924,24 @@ extension BetaAppWorker {
     }
 
     private func unknownSubmissionCommitFailure(
-        _ message: String,
+        _ error: Error,
         requestedBuildID: String
     ) -> CallTool.Result {
-        let safeMessage = Redactor.redact(message)
+        let safeMessage = Redactor.redact(error.localizedDescription)
+        var payload: [String: Any] = [
+            "success": false,
+            "error": safeMessage,
+            "operationCommitState": "unknown",
+            "retrySafe": false,
+            "submissionIdKnown": false,
+            "requestedBuildId": requestedBuildID,
+            "inspection": submissionInspection(for: requestedBuildID)
+        ]
+        if let ascError = error as? ASCError {
+            payload["details"] = ascError.structuredValue
+        }
         return MCPResult.jsonObject(
-            [
-                "success": false,
-                "error": safeMessage,
-                "operationCommitState": "unknown",
-                "retrySafe": false,
-                "submissionIdKnown": false,
-                "requestedBuildId": requestedBuildID,
-                "inspection": submissionInspection(for: requestedBuildID)
-            ],
+            payload,
             text: "Error: The beta review submission request outcome is unknown. Inspect existing submissions before retrying.",
             isError: true
         )
@@ -1026,7 +1051,10 @@ extension BetaAppWorker {
         guard let limit = value.intValue else {
             throw BetaAppArgumentError("limit must be an integer")
         }
-        return min(max(limit, 1), 200)
+        guard (1...200).contains(limit) else {
+            throw BetaAppArgumentError("limit must be an integer from 1 through 200")
+        }
+        return limit
     }
 
     private static let localizationFields = "feedbackEmail,marketingUrl,privacyPolicyUrl,tvOsPrivacyPolicy,description,locale"

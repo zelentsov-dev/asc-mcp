@@ -10,7 +10,7 @@ struct ExportComplianceWorkerContractTests {
         let transport = TestHTTPTransport(responses: [
             .init(
                 statusCode: 200,
-                body: #"{"data":[{"type":"appEncryptionDeclarations","id":"declaration-1","attributes":{"appDescription":"Encrypted chat","appEncryptionDeclarationState":"APPROVED","codeValue":"CCATS-1"}}],"links":{"self":"https://api.example.test/v1/apps/app%2Fone/appEncryptionDeclarations","next":"https://api.example.test/v1/apps/app%2Fone/appEncryptionDeclarations?fields%5BappEncryptionDeclarations%5D=appDescription%2CcreatedDate%2Cexempt%2CcontainsProprietaryCryptography%2CcontainsThirdPartyCryptography%2CavailableOnFrenchStore%2CappEncryptionDeclarationState%2CcodeValue%2CappEncryptionDeclarationDocument&limit=37&cursor=next-page"},"meta":{"paging":{"total":4,"limit":37}}}"#
+                body: #"{"data":[{"type":"appEncryptionDeclarations","id":"declaration-1","attributes":{"appDescription":"Encrypted chat","appEncryptionDeclarationState":"APPROVED","codeValue":"CCATS-1"}}],"links":{"self":"https://api.example.test/v1/apps/app-one/appEncryptionDeclarations","next":"https://api.example.test/v1/apps/app-one/appEncryptionDeclarations?fields%5BappEncryptionDeclarations%5D=appDescription%2CcreatedDate%2Cexempt%2CcontainsProprietaryCryptography%2CcontainsThirdPartyCryptography%2CavailableOnFrenchStore%2CappEncryptionDeclarationState%2CcodeValue%2CappEncryptionDeclarationDocument&limit=37&cursor=next-page"},"meta":{"paging":{"total":4,"limit":37}}}"#
             )
         ])
         let worker = try await exportComplianceWorker(apiTransport: transport)
@@ -57,7 +57,7 @@ struct ExportComplianceWorkerContractTests {
     @Test("continuation preserves a validated nondefault limit when limit is omitted")
     func nondefaultLimitContinuation() async throws {
         let transport = TestHTTPTransport(responses: [
-            .init(statusCode: 200, body: #"{"data":[],"meta":{"paging":{"total":4,"limit":37}}}"#)
+            .init(statusCode: 200, body: #"{"data":[],"links":{"self":"https://api.example.test/v1/apps/app-1/appEncryptionDeclarations"},"meta":{"paging":{"total":4,"limit":37}}}"#)
         ])
         let worker = try await exportComplianceWorker(apiTransport: transport)
         let nextURL = exportComplianceNextURL(
@@ -89,6 +89,170 @@ struct ExportComplianceWorkerContractTests {
         ))
         #expect(mismatch.isError == true)
         #expect(await mismatchTransport.requestCount() == 0)
+    }
+
+    @Test("list fails closed on malformed Apple pagination, cardinality, and identity")
+    func listResponseValidation() async throws {
+        let validSelf = exportComplianceNextURL(appID: "app-1", limit: 1, additions: [:])
+        let wrongNext = exportComplianceNextURL(
+            appID: "another-app",
+            limit: 1,
+            additions: ["cursor": "next-page"]
+        )
+        let actualNext = exportComplianceNextURL(
+            appID: "app-1",
+            limit: 1,
+            additions: ["cursor": "actual-cursor"]
+        )
+        let invalidResponses: [(body: String, limit: Int)] = [
+            (#"{"data":[]}"#, 1),
+            (#"{"data":[],"links":{"self":"https://api.example.test/v1/apps/another-app/appEncryptionDeclarations"}}"#, 1),
+            (#"{"data":[{"type":"appEncryptionDeclarations","id":"one"},{"type":"appEncryptionDeclarations","id":"two"}],"links":{"self":"\#(validSelf)"}}"#, 1),
+            (#"{"data":[{"type":"appEncryptionDeclarations","id":"same"},{"type":"appEncryptionDeclarations","id":"same"}],"links":{"self":"\#(validSelf)"}}"#, 2),
+            (#"{"data":[{"type":"unexpected","id":"one"}],"links":{"self":"\#(validSelf)"}}"#, 1),
+            (#"{"data":[],"links":{"self":"\#(validSelf)","next":"\#(wrongNext)"}}"#, 1),
+            (#"{"data":[],"links":{"self":"\#(validSelf)","next":"\#(actualNext)"},"meta":{"paging":{"limit":1,"nextCursor":"reported-cursor"}}}"#, 1)
+        ]
+
+        for invalid in invalidResponses {
+            let transport = TestHTTPTransport(responses: [
+                .init(statusCode: 200, body: invalid.body)
+            ])
+            let worker = try await exportComplianceWorker(apiTransport: transport)
+            let result = try await worker.handleTool(.init(
+                name: "export_compliance_list_declarations",
+                arguments: ["app_id": .string("app-1"), "limit": .int(invalid.limit)]
+            ))
+
+            #expect(result.isError == true)
+            #expect(await transport.requestCount() == 1)
+        }
+    }
+
+    @Test("all tools reject undeclared arguments before transport")
+    func unknownArgumentsRejected() async throws {
+        let transport = TestHTTPTransport(responses: [])
+        let worker = try await exportComplianceWorker(apiTransport: transport)
+        let tools = await worker.getTools()
+
+        for tool in tools {
+            let result = try await worker.handleTool(.init(
+                name: tool.name,
+                arguments: ["unexpected": .bool(true)]
+            ))
+            #expect(result.isError == true)
+        }
+        #expect(await transport.requestCount() == 0)
+    }
+
+    @Test("every input ID publishes and enforces the canonical path-segment contract")
+    func canonicalIdentifierSchemaAndRuntimeParity() async throws {
+        let transport = TestHTTPTransport(responses: [])
+        let worker = try await exportComplianceWorker(apiTransport: transport)
+        let canonicalPattern = #"^(?!\.{1,2}$)[A-Za-z0-9._~-]+$"#
+        let tools = await worker.getTools()
+
+        for tool in tools {
+            let schema = try exportComplianceValueObject(tool.inputSchema)
+            let properties = try exportComplianceValueObject(schema["properties"])
+            for (name, value) in properties where name.hasSuffix("_id") {
+                let identifier = try exportComplianceValueObject(value)
+                #expect(identifier["minLength"] == .int(1))
+                #expect(identifier["pattern"] == .string(canonicalPattern))
+            }
+        }
+
+        var invalidCreate = exportComplianceDeclarationCreateArguments()
+        invalidCreate["app_id"] = .string("идентификатор")
+        let calls: [CallTool.Parameters] = [
+            .init(name: "export_compliance_list_declarations", arguments: ["app_id": .string("bad id")]),
+            .init(name: "export_compliance_get_declaration", arguments: ["declaration_id": .string(".")]),
+            .init(name: "export_compliance_create_declaration", arguments: invalidCreate),
+            .init(
+                name: "export_compliance_create_document",
+                arguments: ["declaration_id": .string(".."), "file_path": .string("/tmp/export.pdf")]
+            ),
+            .init(name: "export_compliance_get_document", arguments: ["document_id": .string("bad/document")]),
+            .init(
+                name: "export_compliance_update_document",
+                arguments: ["document_id": .string("bad%2Fdocument"), "uploaded": .bool(true)]
+            ),
+            .init(
+                name: "export_compliance_upload_document",
+                arguments: [
+                    "document_id": .string("bad document"),
+                    "file_path": .string("/tmp/export.pdf"),
+                    "source_file_checksum": .string(exportComplianceHelloMD5)
+                ]
+            ),
+            .init(name: "export_compliance_inspect_document", arguments: ["declaration_id": .string("bad\\id")]),
+            .init(name: "export_compliance_get_build_declaration", arguments: ["build_id": .string("bad?id")]),
+            .init(
+                name: "export_compliance_attach_build_declaration",
+                arguments: ["build_id": .string("bad#id"), "declaration_id": .string("declaration-1")]
+            ),
+            .init(
+                name: "export_compliance_attach_build_declaration",
+                arguments: ["build_id": .string("build-1"), "declaration_id": .string("bad id")]
+            ),
+            .init(name: "export_compliance_check_release_readiness", arguments: ["build_id": .string(" build-1 ")])
+        ]
+
+        for call in calls {
+            #expect(try await worker.handleTool(call).isError == true)
+        }
+        #expect(await transport.requestCount() == 0)
+    }
+
+    @Test("single-resource responses require canonical configured-origin self links")
+    func singleResourceSelfLinkValidation() async throws {
+        let declarationBody = exportComplianceDeclarationResponse(
+            id: "declaration-1",
+            state: "CREATED"
+        ).replacingOccurrences(
+            of: "/appEncryptionDeclarations/declaration-1\"",
+            with: "/appEncryptionDeclarations/another-declaration\""
+        )
+        let declarationTransport = TestHTTPTransport(responses: [
+            .init(statusCode: 200, body: declarationBody)
+        ])
+        let declarationWorker = try await exportComplianceWorker(apiTransport: declarationTransport)
+        let declaration = try await declarationWorker.handleTool(.init(
+            name: "export_compliance_get_declaration",
+            arguments: ["declaration_id": .string("declaration-1")]
+        ))
+        #expect(declaration.isError == true)
+
+        let documentBody = exportComplianceDocumentResponse(
+            id: "document-1",
+            fileName: "export.pdf",
+            state: "COMPLETE"
+        ).replacingOccurrences(
+            of: "/appEncryptionDeclarationDocuments/document-1\"",
+            with: "/appEncryptionDeclarationDocuments/another-document\""
+        )
+        let documentTransport = TestHTTPTransport(responses: [
+            .init(statusCode: 200, body: documentBody)
+        ])
+        let documentWorker = try await exportComplianceWorker(apiTransport: documentTransport)
+        let document = try await documentWorker.handleTool(.init(
+            name: "export_compliance_get_document",
+            arguments: ["document_id": .string("document-1")]
+        ))
+        #expect(document.isError == true)
+
+        let createTransport = TestHTTPTransport(responses: [
+            .init(statusCode: 201, body: declarationBody)
+        ])
+        let createWorker = try await exportComplianceWorker(apiTransport: createTransport)
+        let create = try await createWorker.handleTool(.init(
+            name: "export_compliance_create_declaration",
+            arguments: exportComplianceDeclarationCreateArguments()
+        ))
+        let createDetails = try exportComplianceErrorDetails(create)
+        #expect(create.isError == true)
+        #expect(createDetails["creationState"] == .string("committed_unverified"))
+        #expect(createDetails["retrySafe"] == .bool(false))
     }
 
     @Test("declaration create sends exact required questionnaire body")
@@ -171,7 +335,7 @@ struct ExportComplianceWorkerContractTests {
         let malformedInspection = try exportComplianceValueObject(malformedDetails["inspection"])
         #expect(malformedInspection["tool"] == .string("export_compliance_list_declarations"))
 
-        for invalidID in ["", "   ", " declaration-1 "] {
+        for invalidID in ["", "   ", " declaration-1 ", "bad id", "идентификатор"] {
             let identityTransport = TestHTTPTransport(responses: [
                 .init(
                     statusCode: 201,
@@ -681,6 +845,11 @@ struct ExportComplianceWorkerContractTests {
             $0.name == "export_compliance_update_document"
         })
         let schema = try exportComplianceValueObject(tool.inputSchema)
+        #expect(schema["minProperties"] == .int(2))
+        #expect(schema["anyOf"]?.arrayValue?.count == 2)
+        let publishedSchema = try exportComplianceValueObject(ToolMetadataPolicy.apply(to: tool).inputSchema)
+        #expect(publishedSchema["minProperties"] == .int(2))
+        #expect(publishedSchema["anyOf"] == nil)
         let properties = try exportComplianceValueObject(schema["properties"])
         for field in ["source_file_checksum", "uploaded"] {
             let fieldSchema = try exportComplianceValueObject(properties[field])
@@ -1367,6 +1536,28 @@ struct ExportComplianceWorkerContractTests {
         ] as NSDictionary)
         let payload = try exportComplianceObject(result.structuredContent)
         #expect(payload["attachmentVerified"] == .bool(true))
+        #expect(payload["reconciledAfterUpdate"] == nil)
+    }
+
+    @Test("attachment accepts exact build-update 200 and does not treat 204 as direct success")
+    func attachBuildDeclarationExactStatus() async throws {
+        let transport = TestHTTPTransport(responses: [
+            .init(statusCode: 200, body: exportComplianceDeclarationResponse(id: "decl-1", state: "APPROVED")),
+            .init(statusCode: 200, body: exportComplianceDocumentResponse(id: "document-1", fileName: "export.pdf", state: "COMPLETE")),
+            .init(statusCode: 204, body: ""),
+            .init(statusCode: 404, body: exportComplianceAPIError(404))
+        ])
+        let worker = try await exportComplianceWorker(apiTransport: transport)
+        let result = try await worker.handleTool(.init(
+            name: "export_compliance_attach_build_declaration",
+            arguments: ["build_id": .string("build-1"), "declaration_id": .string("decl-1")]
+        ))
+
+        #expect(result.isError == true)
+        #expect(await transport.recordedRequests().map(\.httpMethod) == ["GET", "GET", "PATCH", "GET"])
+        let details = try exportComplianceErrorDetails(result)
+        #expect(details["attachmentState"] == .string("unverified"))
+        #expect(details["retrySafe"] == .bool(false))
     }
 
     @Test("attachment manifest uses Apple's nondeprecated build update replacement")
@@ -1742,7 +1933,7 @@ private func exportComplianceDeclarationResponse(
     exempt: Bool? = nil
 ) -> String {
     let exemptValue = exempt.map { String($0) } ?? "null"
-    return #"{"data":{"type":"appEncryptionDeclarations","id":"\#(id)","attributes":{"appDescription":"Encrypted app","createdDate":"2026-07-20T00:00:00Z","exempt":\#(exemptValue),"containsProprietaryCryptography":true,"containsThirdPartyCryptography":false,"availableOnFrenchStore":true,"appEncryptionDeclarationState":"\#(state)","codeValue":"CCATS-1"}}}"#
+    return #"{"data":{"type":"appEncryptionDeclarations","id":"\#(id)","attributes":{"appDescription":"Encrypted app","createdDate":"2026-07-20T00:00:00Z","exempt":\#(exemptValue),"containsProprietaryCryptography":true,"containsThirdPartyCryptography":false,"availableOnFrenchStore":true,"appEncryptionDeclarationState":"\#(state)","codeValue":"CCATS-1"}},"links":{"self":"https://api.example.test/v1/appEncryptionDeclarations/\#(id)"}}"#
 }
 
 private func exportComplianceDocumentResponse(
@@ -1769,7 +1960,7 @@ private func exportComplianceDocumentResponse(
     let errors = includeDeliverySecrets
         ? #"[{"code":"UPLOAD_FAILED","description":"Retry https://upload.example.test/chunk?signed=signed-secret with token=header-secret"}]"#
         : "[]"
-    return #"{"data":{"type":"appEncryptionDeclarationDocuments","id":"\#(id)","attributes":{"fileSize":5,"fileName":"\#(fileName)","assetDeliveryState":{"state":\#(stateValue),"errors":\#(errors),"warnings":[]}\#(operations)\#(secrets)\#(checksumValue)}}}"#
+    return #"{"data":{"type":"appEncryptionDeclarationDocuments","id":"\#(id)","attributes":{"fileSize":5,"fileName":"\#(fileName)","assetDeliveryState":{"state":\#(stateValue),"errors":\#(errors),"warnings":[]}\#(operations)\#(secrets)\#(checksumValue)}},"links":{"self":"https://api.example.test/v1/appEncryptionDeclarationDocuments/\#(id)"}}"#
 }
 
 private func exportComplianceBuildResponse(

@@ -14,7 +14,7 @@ extension WebhooksWorker {
 
         do {
             let response: ASCWebhooksResponse
-            var query = defaultListQuery(arguments: arguments)
+            var query = try defaultListQuery(arguments: arguments)
             if arguments["include_app"]?.boolValue == true {
                 query["include"] = "app"
             }
@@ -118,7 +118,7 @@ extension WebhooksWorker {
                 "webhook": formatWebhook(response.data)
             ])
         } catch {
-            return MCPResult.error("Failed to create webhook: \(error.localizedDescription)")
+            return MCPResult.error(error, prefix: "Failed to create webhook")
         }
     }
 
@@ -132,24 +132,12 @@ extension WebhooksWorker {
             return MCPResult.error("Required parameter 'webhook_id' is missing")
         }
 
-        let eventTypes = parseEventTypes(arguments["event_types"])
-        if let eventTypes, !validateEventTypes(eventTypes) {
-            return MCPResult.error("Parameter 'event_types' contains unsupported App Store Connect webhook event type")
+        let attributes: ASCWebhookUpdateRequest.Attributes
+        do {
+            attributes = try webhookUpdateAttributes(arguments)
+        } catch {
+            return MCPResult.error(error)
         }
-        if let url = arguments["url"]?.stringValue, !validateWebhookURL(url) {
-            return MCPResult.error(webhookURLValidationMessage)
-        }
-        if let secret = arguments["secret"]?.stringValue, !validateWebhookSecret(secret) {
-            return MCPResult.error(webhookSecretValidationMessage)
-        }
-
-        let attributes = ASCWebhookUpdateRequest.Attributes(
-            enabled: arguments["enabled"]?.boolValue,
-            eventTypes: eventTypes,
-            name: arguments["name"]?.stringValue,
-            secret: arguments["secret"]?.stringValue,
-            url: arguments["url"]?.stringValue
-        )
         guard attributes.hasChanges else {
             return MCPResult.error("At least one update field is required: name, url, secret, event_types, enabled")
         }
@@ -162,7 +150,7 @@ extension WebhooksWorker {
                 "webhook": formatWebhook(response.data)
             ])
         } catch {
-            return MCPResult.error("Failed to update webhook: \(error.localizedDescription)")
+            return MCPResult.error(error, prefix: "Failed to update webhook")
         }
     }
 
@@ -199,7 +187,7 @@ extension WebhooksWorker {
 
         do {
             let response: ASCWebhookDeliveriesResponse
-            var query = defaultListQuery(arguments: arguments)
+            var query = try defaultListQuery(arguments: arguments)
             if let deliveryState = arguments["delivery_state"]?.stringValue {
                 query["filter[deliveryState]"] = deliveryState
             }
@@ -257,7 +245,7 @@ extension WebhooksWorker {
                 "events": response.included?.map(formatEvent) ?? []
             ])
         } catch {
-            return MCPResult.error("Failed to redeliver webhook delivery: \(error.localizedDescription)")
+            return MCPResult.error(error, prefix: "Failed to redeliver webhook delivery")
         }
     }
 
@@ -282,13 +270,18 @@ extension WebhooksWorker {
                 ]
             ])
         } catch {
-            return MCPResult.error("Failed to ping webhook: \(error.localizedDescription)")
+            return MCPResult.error(error, prefix: "Failed to ping webhook")
         }
     }
 
-    private func defaultListQuery(arguments: [String: Value]) -> [String: String] {
-        let limit = arguments["limit"]?.intValue ?? 25
-        return ["limit": String(min(max(limit, 1), 200))]
+    private func defaultListQuery(arguments: [String: Value]) throws -> [String: String] {
+        guard let value = arguments["limit"] else {
+            return ["limit": "25"]
+        }
+        guard let limit = value.intValue, (1...200).contains(limit) else {
+            throw ASCError.parsing("limit must be an integer from 1 through 200")
+        }
+        return ["limit": String(limit)]
     }
 
     private func parseEventTypes(_ value: Value?) -> [String]? {
@@ -297,6 +290,59 @@ extension WebhooksWorker {
 
     private func validateEventTypes(_ eventTypes: [String]) -> Bool {
         !eventTypes.isEmpty && eventTypes.allSatisfy { ASCWebhookEventTypes.all.contains($0) }
+    }
+
+    private func webhookUpdateAttributes(
+        _ arguments: [String: Value]
+    ) throws -> ASCWebhookUpdateRequest.Attributes {
+        var values: [String: JSONValue] = [:]
+
+        if let enabled = arguments["enabled"] {
+            if enabled.isNull {
+                values["enabled"] = .null
+            } else if let boolean = enabled.boolValue {
+                values["enabled"] = .bool(boolean)
+            } else {
+                throw ASCError.parsing("Parameter 'enabled' must be a boolean or null")
+            }
+        }
+
+        if let eventTypes = arguments["event_types"] {
+            if eventTypes.isNull {
+                values["eventTypes"] = .null
+            } else {
+                guard let array = eventTypes.arrayValue else {
+                    throw ASCError.parsing("Parameter 'event_types' must be an array of strings or null")
+                }
+                let strings = array.compactMap(\.stringValue)
+                guard strings.count == array.count,
+                      validateEventTypes(strings),
+                      Set(strings).count == strings.count else {
+                    throw ASCError.parsing("Parameter 'event_types' must contain unique supported App Store Connect webhook event types")
+                }
+                values["eventTypes"] = .array(strings.map(JSONValue.string))
+            }
+        }
+
+        for key in ["name", "secret", "url"] {
+            guard let value = arguments[key] else { continue }
+            if value.isNull {
+                values[key] = .null
+                continue
+            }
+            guard let string = value.stringValue else {
+                throw ASCError.parsing("Parameter '\(key)' must be a string or null")
+            }
+            if key == "url", !validateWebhookURL(string) {
+                throw ASCError.parsing(webhookURLValidationMessage)
+            }
+            if key == "secret", !validateWebhookSecret(string) {
+                throw ASCError.parsing(webhookSecretValidationMessage)
+            }
+            values[key] = .string(string)
+        }
+
+        return ASCWebhookUpdateRequest.Attributes(values: values)
     }
 
     private func validateWebhookURL(_ value: String) -> Bool {

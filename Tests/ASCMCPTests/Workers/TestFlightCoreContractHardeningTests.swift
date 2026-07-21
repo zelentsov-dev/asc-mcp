@@ -231,6 +231,31 @@ struct TestFlightCoreContractHardeningTests {
         #expect(attributes["iosBuildsAvailableForAppleVision"] as? Bool == false)
     }
 
+    @Test("beta group update preserves explicit null")
+    func betaGroupUpdatePreservesExplicitNull() async throws {
+        let transport = TestHTTPTransport(responses: [
+            .init(statusCode: 200, body: #"{"data":{"type":"betaGroups","id":"group-1"}}"#)
+        ])
+        let worker = try await testFlightBetaGroupsWorker(transport)
+
+        let result = try await worker.handleTool(CallTool.Parameters(
+            name: "beta_groups_update",
+            arguments: [
+                "group_id": .string("group-1"),
+                "public_link_limit": .null,
+                "feedback_enabled": .null
+            ]
+        ))
+
+        #expect(result.isError != true)
+        let body = try testFlightBody(try #require(await transport.recordedRequests().first))
+        let data = try testFlightDictionary(body["data"])
+        let attributes = try testFlightDictionary(data["attributes"])
+        #expect(attributes["publicLinkLimit"] is NSNull)
+        #expect(attributes["feedbackEnabled"] is NSNull)
+        #expect(Set(attributes.keys) == ["publicLinkLimit", "feedbackEnabled"])
+    }
+
     @Test("beta tester can be created without a group")
     func betaTesterCreateWithoutGroup() async throws {
         let transport = TestHTTPTransport(responses: [
@@ -248,6 +273,252 @@ struct TestFlightCoreContractHardeningTests {
         let body = try testFlightBody(request)
         let data = try testFlightDictionary(body["data"])
         #expect(data["relationships"] == nil)
+    }
+
+    @Test("beta tester create rejects malformed email before network")
+    func betaTesterCreateRejectsMalformedEmail() async throws {
+        let transport = TestHTTPTransport(responses: [])
+        let worker = try await testFlightBetaTestersWorker(transport)
+
+        let result = try await worker.handleTool(CallTool.Parameters(
+            name: "beta_testers_create",
+            arguments: ["email": .string("not-an-email")]
+        ))
+
+        #expect(result.isError == true)
+        #expect(await transport.requestCount() == 0)
+    }
+
+    @Test("relationship ID arrays reject mixed values atomically")
+    func relationshipIDArraysRejectMixedValues() async throws {
+        let transport = TestHTTPTransport(responses: [])
+        let invalidIDs: Value = .array([.string("valid-id"), .int(7)])
+
+        let groupsWorker = try await testFlightBetaGroupsWorker(transport)
+        for (tool, field) in [
+            ("beta_groups_add_testers", "tester_ids"),
+            ("beta_groups_remove_testers", "tester_ids"),
+            ("beta_groups_add_builds", "build_ids"),
+            ("beta_groups_remove_builds", "build_ids")
+        ] {
+            let result = try await groupsWorker.handleTool(.init(
+                name: tool,
+                arguments: ["group_id": .string("group-1"), field: invalidIDs]
+            ))
+            #expect(result.isError == true)
+        }
+
+        let testersWorker = try await testFlightBetaTestersWorker(transport)
+        for (tool, field) in [
+            ("beta_testers_add_to_groups", "group_ids"),
+            ("beta_testers_remove_from_groups", "group_ids"),
+            ("beta_testers_add_to_builds", "build_ids"),
+            ("beta_testers_remove_from_builds", "build_ids")
+        ] {
+            let result = try await testersWorker.handleTool(.init(
+                name: tool,
+                arguments: ["beta_tester_id": .string("tester-1"), field: invalidIDs]
+            ))
+            #expect(result.isError == true)
+        }
+
+        let buildsWorker = BuildBetaDetailsWorker(httpClient: try await testFlightClient(transport))
+        for (tool, field) in [
+            ("builds_add_to_beta_groups", "group_ids"),
+            ("builds_add_individual_testers", "beta_tester_ids"),
+            ("builds_remove_individual_testers", "beta_tester_ids")
+        ] {
+            let result = try await buildsWorker.handleTool(.init(
+                name: tool,
+                arguments: ["build_id": .string("build-1"), field: invalidIDs]
+            ))
+            #expect(result.isError == true)
+        }
+
+        #expect(await transport.requestCount() == 0)
+    }
+
+    @Test("relationship creates require Apple's exact 204 status")
+    func relationshipCreatesRequireExact204() async throws {
+        let groupTesterTransport = TestHTTPTransport(responses: [.init(statusCode: 201, body: "")])
+        let groupTesterWorker = try await testFlightBetaGroupsWorker(groupTesterTransport)
+        let groupTesterResult = try await groupTesterWorker.handleTool(.init(
+            name: "beta_groups_add_testers",
+            arguments: ["group_id": .string("group-1"), "tester_ids": .array([.string("tester-1")])]
+        ))
+        try testFlightExpectUnverified204(groupTesterResult)
+
+        let groupBuildTransport = TestHTTPTransport(responses: [.init(statusCode: 201, body: "")])
+        let groupBuildWorker = try await testFlightBetaGroupsWorker(groupBuildTransport)
+        let groupBuildResult = try await groupBuildWorker.handleTool(.init(
+            name: "beta_groups_add_builds",
+            arguments: ["group_id": .string("group-1"), "build_ids": .array([.string("build-1")])]
+        ))
+        try testFlightExpectUnverified204(groupBuildResult)
+
+        let buildGroupTransport = TestHTTPTransport(responses: [.init(statusCode: 201, body: "")])
+        let buildGroupWorker = BuildBetaDetailsWorker(httpClient: try await testFlightClient(buildGroupTransport))
+        let buildGroupResult = try await buildGroupWorker.handleTool(.init(
+            name: "builds_add_to_beta_groups",
+            arguments: ["build_id": .string("build-1"), "group_ids": .array([.string("group-1")])]
+        ))
+        try testFlightExpectUnverified204(buildGroupResult)
+
+        let buildTesterTransport = TestHTTPTransport(responses: [.init(statusCode: 201, body: "")])
+        let buildTesterWorker = BuildBetaDetailsWorker(httpClient: try await testFlightClient(buildTesterTransport))
+        let buildTesterResult = try await buildTesterWorker.handleTool(.init(
+            name: "builds_add_individual_testers",
+            arguments: ["build_id": .string("build-1"), "beta_tester_ids": .array([.string("tester-1")])]
+        ))
+        try testFlightExpectUnverified204(buildTesterResult)
+
+        let testerGroupTransport = TestHTTPTransport(responses: [.init(statusCode: 201, body: "")])
+        let testerGroupWorker = try await testFlightBetaTestersWorker(testerGroupTransport)
+        let testerGroupResult = try await testerGroupWorker.handleTool(.init(
+            name: "beta_testers_add_to_groups",
+            arguments: ["beta_tester_id": .string("tester-1"), "group_ids": .array([.string("group-1")])]
+        ))
+        try testFlightExpectUnverified204(testerGroupResult)
+
+        let testerBuildTransport = TestHTTPTransport(responses: [.init(statusCode: 201, body: "")])
+        let testerBuildWorker = try await testFlightBetaTestersWorker(testerBuildTransport)
+        let testerBuildResult = try await testerBuildWorker.handleTool(.init(
+            name: "beta_testers_add_to_builds",
+            arguments: ["beta_tester_id": .string("tester-1"), "build_ids": .array([.string("build-1")])]
+        ))
+        try testFlightExpectUnverified204(testerBuildResult)
+    }
+
+    @Test("resource patch decode failures preserve committed-unverified state")
+    func resourcePatchDecodeFailuresPreserveMutationState() async throws {
+        let betaDetailTransport = TestHTTPTransport(responses: [
+            .init(statusCode: 200, body: #"{"data":"#)
+        ])
+        let betaDetailWorker = BuildBetaDetailsWorker(httpClient: try await testFlightClient(betaDetailTransport))
+        let betaDetailResult = try await betaDetailWorker.handleTool(.init(
+            name: "builds_update_beta_detail",
+            arguments: ["beta_detail_id": .string("detail-1"), "auto_notify": .bool(true)]
+        ))
+        try testFlightExpectMutationUnverified(
+            betaDetailResult,
+            method: "PATCH",
+            expectedStatusCode: 200,
+            statusCode: 200
+        )
+
+        let processingTransport = TestHTTPTransport(responses: [
+            .init(statusCode: 200, body: #"{"data":"#)
+        ])
+        let processingWorker = try await testFlightBuildProcessingWorker(processingTransport)
+        let processingResult = try await processingWorker.handleTool(.init(
+            name: "builds_update_encryption",
+            arguments: [
+                "build_id": .string("build-1"),
+                "uses_non_exempt_encryption": .bool(false)
+            ]
+        ))
+        try testFlightExpectMutationUnverified(
+            processingResult,
+            method: "PATCH",
+            expectedStatusCode: 200,
+            statusCode: 200
+        )
+
+        let licenseTransport = TestHTTPTransport(responses: [
+            .init(statusCode: 200, body: #"{"data":"#)
+        ])
+        let licenseWorker = BetaLicenseAgreementsWorker(httpClient: try await testFlightClient(licenseTransport))
+        let licenseResult = try await licenseWorker.handleTool(.init(
+            name: "beta_license_update",
+            arguments: [
+                "beta_license_agreement_id": .string("license-1"),
+                "agreement_text": .string("Terms")
+            ]
+        ))
+        try testFlightExpectMutationUnverified(
+            licenseResult,
+            method: "PATCH",
+            expectedStatusCode: 200,
+            statusCode: 200
+        )
+    }
+
+    @Test("related collection limits fail closed outside Apple's range")
+    func relatedCollectionLimitsFailClosed() async throws {
+        let transport = TestHTTPTransport(responses: [])
+        let buildWorker = BuildBetaDetailsWorker(httpClient: try await testFlightClient(transport))
+        for tool in [
+            "builds_list_beta_localizations",
+            "builds_get_beta_groups",
+            "builds_get_beta_testers",
+            "builds_list_individual_testers"
+        ] {
+            let result = try await buildWorker.handleTool(.init(
+                name: tool,
+                arguments: ["build_id": .string("build-1"), "limit": .int(201)]
+            ))
+            #expect(result.isError == true)
+        }
+
+        let groupWorker = try await testFlightBetaGroupsWorker(transport)
+        let groupResult = try await groupWorker.handleTool(.init(
+            name: "beta_groups_list_testers",
+            arguments: ["group_id": .string("group-1"), "limit": .int(0)]
+        ))
+        #expect(groupResult.isError == true)
+
+        let groupListResult = try await groupWorker.handleTool(.init(
+            name: "beta_groups_list",
+            arguments: ["app_id": .string("app-1"), "limit": .string("25")]
+        ))
+        #expect(groupListResult.isError == true)
+
+        let testerWorker = try await testFlightBetaTestersWorker(transport)
+        let testerResult = try await testerWorker.handleTool(.init(
+            name: "beta_testers_list_apps",
+            arguments: ["tester_id": .string("tester-1"), "limit": .string("25")]
+        ))
+        #expect(testerResult.isError == true)
+
+        let testerListResult = try await testerWorker.handleTool(.init(
+            name: "beta_testers_list",
+            arguments: ["limit": .int(201)]
+        ))
+        #expect(testerListResult.isError == true)
+
+        let testerSearchResult = try await testerWorker.handleTool(.init(
+            name: "beta_testers_search",
+            arguments: ["email": .string("person@example.com"), "limit": .int(0)]
+        ))
+        #expect(testerSearchResult.isError == true)
+
+        let buildsWorker = try await testFlightBuildsWorker(transport)
+        let buildsResult = try await buildsWorker.handleTool(.init(
+            name: "builds_list",
+            arguments: ["app_id": .string("app-1"), "limit": .int(500)]
+        ))
+        #expect(buildsResult.isError == true)
+
+        let preReleaseWorker = try await testFlightPreReleaseWorker(transport)
+        let preReleaseResult = try await preReleaseWorker.handleTool(.init(
+            name: "pre_release_list_builds",
+            arguments: ["pre_release_version_id": .string("pre-1"), "limit": .int(-1)]
+        ))
+        #expect(preReleaseResult.isError == true)
+
+        let preReleaseListResult = try await preReleaseWorker.handleTool(.init(
+            name: "pre_release_list",
+            arguments: ["limit": .string("25")]
+        ))
+        #expect(preReleaseListResult.isError == true)
+
+        let licenseWorker = BetaLicenseAgreementsWorker(httpClient: try await testFlightClient(transport))
+        let licenseResult = try await licenseWorker.handleTool(.init(
+            name: "beta_license_list",
+            arguments: ["limit": .int(500)]
+        ))
+        #expect(licenseResult.isError == true)
+        #expect(await transport.requestCount() == 0)
     }
 
     @Test("beta tester create supports direct build assignment")
@@ -478,9 +749,9 @@ struct TestFlightCoreContractHardeningTests {
     func currentModelFieldsDecode() throws {
         let groupData = #"{"type":"betaGroups","id":"group-1","attributes":{"iosBuildsAvailableForAppleSiliconMac":true,"iosBuildsAvailableForAppleVision":false,"publicLinkLimitEnabled":true},"relationships":{"betaRecruitmentCriteria":{"data":{"type":"betaRecruitmentCriteria","id":"criteria-1"}},"betaRecruitmentCriterionCompatibleBuildCheck":{"links":{"related":"https://api.example.test/v1/betaGroups/group-1/betaRecruitmentCriterionCompatibleBuildCheck"}}}}"#.data(using: .utf8)!
         let group = try JSONDecoder().decode(ASCBetaGroup.self, from: groupData)
-        #expect(group.attributes.iosBuildsAvailableForAppleSiliconMac == true)
-        #expect(group.attributes.iosBuildsAvailableForAppleVision == false)
-        #expect(group.attributes.publicLinkLimitEnabled == true)
+        #expect(group.attributes?.iosBuildsAvailableForAppleSiliconMac == true)
+        #expect(group.attributes?.iosBuildsAvailableForAppleVision == false)
+        #expect(group.attributes?.publicLinkLimitEnabled == true)
         #expect(group.relationships?.betaRecruitmentCriteria?.data?.id == "criteria-1")
         #expect(group.relationships?.betaRecruitmentCriterionCompatibleBuildCheck?.links?.related != nil)
 
@@ -496,8 +767,11 @@ struct TestFlightCoreContractHardeningTests {
         let testerWorker = try await testFlightBetaTestersWorker(transport)
         let testerTools = await testerWorker.getTools()
         let createTester = try #require(testerTools.first { $0.name == "beta_testers_create" })
+        let createTesterProperties = try testFlightProperties(createTester)
         #expect(try testFlightRequired(createTester) == ["email"])
-        #expect(try testFlightProperties(createTester)["build_ids"] != nil)
+        #expect(createTesterProperties["build_ids"] != nil)
+        let emailSchema = try testFlightObject(try #require(createTesterProperties["email"]))
+        #expect(emailSchema["format"] == .string("email"))
 
         let buildsWorker = try await testFlightBuildsWorker(transport)
         let buildTools = await buildsWorker.getTools()
@@ -508,7 +782,16 @@ struct TestFlightCoreContractHardeningTests {
         let groupsWorker = try await testFlightBetaGroupsWorker(transport)
         let groupTools = await groupsWorker.getTools()
         let updateGroup = try #require(groupTools.first { $0.name == "beta_groups_update" })
-        #expect(try testFlightProperties(updateGroup)["ios_builds_available_for_apple_vision"] != nil)
+        let updateGroupProperties = try testFlightProperties(updateGroup)
+        #expect(updateGroupProperties["ios_builds_available_for_apple_vision"] != nil)
+        let listGroupTesters = try #require(groupTools.first { $0.name == "beta_groups_list_testers" })
+        let listGroupTesterProperties = try testFlightProperties(listGroupTesters)
+        let limitSchema = try testFlightObject(try #require(listGroupTesterProperties["limit"]))
+        #expect(limitSchema["minimum"] == .int(1))
+        #expect(limitSchema["maximum"] == .int(200))
+        #expect(limitSchema["default"] == .int(25))
+        let nullableLimit = try testFlightObject(try #require(updateGroupProperties["public_link_limit"]))
+        #expect(nullableLimit["type"] == .array([.string("integer"), .string("null")]))
     }
 }
 
@@ -588,6 +871,31 @@ private func testFlightRequired(_ tool: Tool) throws -> [String] {
         throw TestFlightCoreContractFailure.expectedArray
     }
     return values.compactMap(\.stringValue)
+}
+
+private func testFlightExpectUnverified204(_ result: CallTool.Result) throws {
+    try testFlightExpectMutationUnverified(
+        result,
+        method: "POST",
+        expectedStatusCode: 204,
+        statusCode: 201
+    )
+}
+
+private func testFlightExpectMutationUnverified(
+    _ result: CallTool.Result,
+    method: String,
+    expectedStatusCode: Int,
+    statusCode: Int
+) throws {
+    #expect(result.isError == true)
+    let payload = try testFlightObject(result.structuredContent)
+    let details = try testFlightObject(payload["details"])
+    #expect(payload["operationCommitState"] == .string("committed_unverified"))
+    #expect(details["type"] == .string("mutation_unverified"))
+    #expect(details["method"] == .string(method))
+    #expect(details["expectedStatusCode"] == .int(expectedStatusCode))
+    #expect(details["statusCode"] == .int(statusCode))
 }
 
 private enum TestFlightCoreContractFailure: Error {

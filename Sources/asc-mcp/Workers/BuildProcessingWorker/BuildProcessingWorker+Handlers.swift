@@ -83,6 +83,7 @@ extension BuildProcessingWorker {
             )
         }
 
+        let response: ASCBuildResponse
         do {
             let updateRequest = UpdateBuildProcessingRequest(
                 data: UpdateBuildProcessingRequest.UpdateBuildProcessingData(
@@ -94,31 +95,41 @@ extension BuildProcessingWorker {
                 )
             )
 
-            let response: ASCBuildResponse = try await httpClient.patch(
+            response = try await httpClient.patch(
                 "/v1/builds/\(try ASCPathSegment.encode(buildId))",
                 body: updateRequest,
                 as: ASCBuildResponse.self
             )
-
-            let encodedBuild = try JSONEncoder().encode(response.data)
-            let build = try JSONSerialization.jsonObject(with: encodedBuild) as? [String: Any] ?? [:]
-
-            let result: [String: Any] = [
-                "success": true,
-                "build": build,
-                "buildId": response.data.id,
-                "usesNonExemptEncryption": response.data.attributes.usesNonExemptEncryption.jsonSafe,
-                "message": "Build encryption compliance updated successfully"
-            ]
-
-            return MCPResult.jsonObject(result)
-
         } catch {
-            return CallTool.Result(
-                content: [MCPContent.text("Failed to update build encryption compliance: \(error.localizedDescription)")],
-                isError: true
+            return MCPResult.error(error, prefix: "Failed to update build encryption compliance")
+        }
+
+        let build: [String: Any]
+        do {
+            let encodedBuild = try JSONEncoder().encode(response.data)
+            build = try JSONSerialization.jsonObject(with: encodedBuild) as? [String: Any] ?? [:]
+        } catch {
+            let committedError = ASCError.mutationCommittedUnverified(
+                method: "PATCH",
+                expectedStatusCode: 200,
+                actualStatusCode: 200,
+                cause: .parsing("Failed to encode the accepted build response: \(error.localizedDescription)")
+            )
+            return MCPResult.error(
+                committedError,
+                prefix: "Failed to verify updated build encryption compliance"
             )
         }
+
+        let result: [String: Any] = [
+            "success": true,
+            "build": build,
+            "buildId": response.data.id,
+            "usesNonExemptEncryption": response.data.attributes.usesNonExemptEncryption.jsonSafe,
+            "message": "Build encryption compliance updated successfully"
+        ]
+
+        return MCPResult.jsonObject(result)
     }
 
     /// Checks current processing status of a build (non-blocking, single check)
@@ -225,9 +236,9 @@ extension BuildProcessingWorker {
                     switch item {
                     case .buildBetaDetail(let detail):
                         betaDetails = [
-                            "autoNotifyEnabled": detail.attributes.autoNotifyEnabled ?? false,
-                            "internalBuildState": detail.attributes.internalBuildState ?? "",
-                            "externalBuildState": detail.attributes.externalBuildState ?? ""
+                            "autoNotifyEnabled": detail.attributes?.autoNotifyEnabled ?? false,
+                            "internalBuildState": detail.attributes?.internalBuildState ?? "",
+                            "externalBuildState": detail.attributes?.externalBuildState ?? ""
                         ]
                     default:
                         break

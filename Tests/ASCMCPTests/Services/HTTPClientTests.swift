@@ -163,6 +163,41 @@ struct HTTPClientTests {
         #expect(await transport.requestCount() == 2)
     }
 
+    @Test("generic DELETE rejects a non-empty HTTP 204 response body")
+    func genericDeleteRejectsNonEmpty204Response() async throws {
+        for includesRequestBody in [false, true] {
+            let transport = ScriptedHTTPTransport(steps: [
+                .response(statusCode: 204, headers: [:], body: #"{"unexpected":true}"#)
+            ])
+            let client = await HTTPClient(
+                jwtService: try TestFactory.makeJWTService(),
+                baseURL: "https://api.example.test",
+                transport: transport,
+                maxRetries: 2
+            )
+
+            do {
+                if includesRequestBody {
+                    _ = try await client.delete(
+                        "/v1/resources/resource-1/relationships/apps",
+                        body: Data(#"{"data":[]}"#.utf8)
+                    )
+                } else {
+                    _ = try await client.delete("/v1/resources/resource-1")
+                }
+                Issue.record("Expected a committed-unverified DELETE response")
+            } catch let error as ASCError {
+                guard case .deleteCommittedUnverified(let statusCode) = error else {
+                    Issue.record("Expected deleteCommittedUnverified, got \(error)")
+                    continue
+                }
+                #expect(statusCode == 204)
+            }
+
+            #expect(await transport.requestCount() == 1)
+        }
+    }
+
     @Test(
         "generic DELETE treats unexpected successful status as committed but unverified",
         arguments: [200, 201, 202, 206, 299]
@@ -374,6 +409,39 @@ struct HTTPClientTests {
         #expect(await transport.requestCount() == 2)
     }
 
+    @Test("typed PUT decode failures are committed but unverified")
+    func typedPutDecodeFailureIsCommittedUnverified() async throws {
+        let transport = ScriptedHTTPTransport(steps: [
+            .response(statusCode: 200, headers: [:], body: #"{"unexpected":true}"#)
+        ])
+        let client = await HTTPClient(
+            jwtService: try TestFactory.makeJWTService(),
+            baseURL: "https://api.example.test",
+            transport: transport,
+            maxRetries: 2
+        )
+
+        do {
+            let _: MutationDocument = try await client.put(
+                "/v1/resources/resource-1",
+                body: MutationRequest(value: "requested"),
+                as: MutationDocument.self
+            )
+            Issue.record("Expected committed-unverified PUT decode failure")
+        } catch let error as ASCError {
+            guard case .mutationCommittedUnverified(
+                method: "PUT",
+                expectedStatusCode: 200,
+                actualStatusCode: 200,
+                cause: .some(.parsing(let message))
+            ) = error else {
+                Issue.record("Expected typed committed-unverified PUT error, got \(error)")
+                return
+            }
+            #expect(message.contains("MutationDocument"))
+        }
+    }
+
     @Test("mutation receipts preserve the exact successful status")
     func mutationReceiptsPreserveExactSuccessfulStatus() async throws {
         let transport = ScriptedHTTPTransport(steps: [
@@ -395,6 +463,211 @@ struct HTTPClientTests {
         #expect(update.statusCode == 200)
         #expect(String(data: update.data, encoding: .utf8)?.contains("updated") == true)
         #expect(await transport.requestCount() == 2)
+    }
+
+    @Test("generic POST and PATCH require their Apple default success statuses")
+    func genericMutationsRequireExactDefaultSuccessStatuses() async throws {
+        for (method, unexpectedStatusCode, expectedStatusCode) in [
+            ("POST", 200, 201),
+            ("PATCH", 204, 200)
+        ] {
+            let transport = ScriptedHTTPTransport(steps: [
+                .response(statusCode: unexpectedStatusCode, headers: [:], body: #"{"data":{}}"#)
+            ])
+            let client = await HTTPClient(
+                jwtService: try TestFactory.makeJWTService(),
+                baseURL: "https://api.example.test",
+                transport: transport,
+                maxRetries: 2
+            )
+
+            do {
+                if method == "POST" {
+                    _ = try await client.post("/v1/resources", body: Data())
+                } else {
+                    _ = try await client.patch("/v1/resources/resource-1", body: Data())
+                }
+                Issue.record("Expected exact-status validation for \(method)")
+            } catch let error as ASCError {
+                guard case .mutationCommittedUnverified(
+                    let actualMethod,
+                    let actualExpectedStatusCode,
+                    let actualStatusCode,
+                    nil
+                ) = error else {
+                    Issue.record("Expected committed-unverified \(method), got \(error)")
+                    continue
+                }
+                #expect(actualMethod == method)
+                #expect(actualExpectedStatusCode == expectedStatusCode)
+                #expect(actualStatusCode == unexpectedStatusCode)
+            }
+
+            #expect(await transport.requestCount() == 1)
+        }
+    }
+
+    @Test("relationship mutations can require Apple's exact 204 status")
+    func relationshipMutationsAcceptExplicit204() async throws {
+        let transport = ScriptedHTTPTransport(steps: [
+            .response(statusCode: 204, headers: [:], body: ""),
+            .response(statusCode: 204, headers: [:], body: "")
+        ])
+        let client = await HTTPClient(
+            jwtService: try TestFactory.makeJWTService(),
+            baseURL: "https://api.example.test",
+            transport: transport,
+            maxRetries: 2
+        )
+
+        let created = try await client.post(
+            "/v1/resources/resource-1/relationships/items",
+            body: Data(),
+            expectedStatusCode: 204
+        )
+        let replaced = try await client.patch(
+            "/v1/resources/resource-1/relationships/items",
+            body: Data(),
+            expectedStatusCode: 204
+        )
+
+        #expect(created.isEmpty)
+        #expect(replaced.isEmpty)
+        #expect(await transport.requestCount() == 2)
+    }
+
+    @Test("HTTP 204 mutation responses reject an impossible response body")
+    func relationshipMutationRejectsNonEmpty204Body() async throws {
+        let transport = ScriptedHTTPTransport(steps: [
+            .response(statusCode: 204, headers: [:], body: #"{"unexpected":true}"#)
+        ])
+        let client = await HTTPClient(
+            jwtService: try TestFactory.makeJWTService(),
+            baseURL: "https://api.example.test",
+            transport: transport,
+            maxRetries: 2
+        )
+
+        do {
+            _ = try await client.post(
+                "/v1/resources/resource-1/relationships/items",
+                body: Data(),
+                expectedStatusCode: 204
+            )
+            Issue.record("Expected a committed-unverified 204 response")
+        } catch let error as ASCError {
+            guard case .mutationCommittedUnverified(
+                method: "POST",
+                expectedStatusCode: 204,
+                actualStatusCode: 204,
+                cause: .some(.parsing(let message))
+            ) = error else {
+                Issue.record("Expected a typed committed-unverified 204 response, got \(error)")
+                return
+            }
+            #expect(message.contains("must not contain"))
+        }
+    }
+
+    @Test("accepted mutation with an undecodable document is committed but unverified")
+    func typedMutationDecodeFailureIsCommittedUnverified() async throws {
+        let transport = ScriptedHTTPTransport(steps: [
+            .response(statusCode: 201, headers: [:], body: #"{"unexpected":true}"#)
+        ])
+        let client = await HTTPClient(
+            jwtService: try TestFactory.makeJWTService(),
+            baseURL: "https://api.example.test",
+            transport: transport,
+            maxRetries: 2
+        )
+
+        do {
+            let _: MutationDocument = try await client.post(
+                "/v1/resources",
+                body: MutationRequest(value: "requested"),
+                as: MutationDocument.self
+            )
+            Issue.record("Expected committed-unverified decode failure")
+        } catch let error as ASCError {
+            guard case .mutationCommittedUnverified(
+                method: "POST",
+                expectedStatusCode: 201,
+                actualStatusCode: 201,
+                cause: .some(.parsing(let message))
+            ) = error else {
+                Issue.record("Expected typed committed-unverified error, got \(error)")
+                return
+            }
+            #expect(message.contains("MutationDocument"))
+        }
+    }
+
+    @Test("typed PATCH decode failures are committed but unverified")
+    func typedPatchDecodeFailureIsCommittedUnverified() async throws {
+        let transport = ScriptedHTTPTransport(steps: [
+            .response(statusCode: 200, headers: [:], body: #"{"unexpected":true}"#)
+        ])
+        let client = await HTTPClient(
+            jwtService: try TestFactory.makeJWTService(),
+            baseURL: "https://api.example.test",
+            transport: transport,
+            maxRetries: 2
+        )
+
+        do {
+            let _: MutationDocument = try await client.patch(
+                "/v1/resources/resource-1",
+                body: MutationRequest(value: "requested"),
+                as: MutationDocument.self
+            )
+            Issue.record("Expected committed-unverified PATCH decode failure")
+        } catch let error as ASCError {
+            guard case .mutationCommittedUnverified(
+                method: "PATCH",
+                expectedStatusCode: 200,
+                actualStatusCode: 200,
+                cause: .some(.parsing(let message))
+            ) = error else {
+                Issue.record("Expected typed committed-unverified PATCH error, got \(error)")
+                return
+            }
+            #expect(message.contains("MutationDocument"))
+        }
+    }
+
+    @Test("POST and PATCH do not repeat ambiguous network failures")
+    func mutationsDoNotRetryNetworkFailures() async throws {
+        for method in ["POST", "PATCH"] {
+            let transport = ScriptedHTTPTransport(steps: [
+                .networkFailure,
+                .response(statusCode: 200, headers: [:], body: #"{"data":{}}"#)
+            ])
+            let client = await HTTPClient(
+                jwtService: try TestFactory.makeJWTService(),
+                baseURL: "https://api.example.test",
+                transport: transport,
+                maxRetries: 2
+            )
+
+            do {
+                if method == "POST" {
+                    _ = try await client.postReceipt("/v1/resources", body: Data())
+                } else {
+                    _ = try await client.patchReceipt("/v1/resources/resource-1", body: Data())
+                }
+                Issue.record("Expected an ambiguous network outcome for \(method)")
+            } catch let error as ASCError {
+                guard case .mutationOutcomeUnknown(let actualMethod, let cause) = error,
+                      case .network(let message) = cause else {
+                    Issue.record("Expected a typed unknown mutation outcome for \(method), got \(error)")
+                    continue
+                }
+                #expect(actualMethod == method)
+                #expect(message.contains("HTTP request failed"))
+            }
+
+            #expect(await transport.requestCount() == 1)
+        }
     }
 
     @Test("POST and PATCH do not repeat ambiguous server failures")
@@ -423,10 +696,12 @@ struct HTTPClientTests {
                 }
                 Issue.record("Expected HTTP 500 for \(method)")
             } catch let error as ASCError {
-                guard case .apiResponse(_, let statusCode) = error else {
-                    Issue.record("Expected a typed API response error for \(method), got \(error)")
+                guard case .mutationOutcomeUnknown(let actualMethod, let cause) = error,
+                      case .apiResponse(_, let statusCode) = cause else {
+                    Issue.record("Expected a typed unknown mutation outcome for \(method), got \(error)")
                     continue
                 }
+                #expect(actualMethod == method)
                 #expect(statusCode == 500)
             }
 
@@ -517,6 +792,18 @@ struct HTTPClientTests {
         let rateLimit = await client.getLastRateLimitInfo()
         #expect(rateLimit?.retryAfterSeconds == 0)
     }
+}
+
+private struct MutationRequest: Codable, Sendable {
+    let value: String
+}
+
+private struct MutationDocument: Codable, Sendable {
+    let data: MutationResource
+}
+
+private struct MutationResource: Codable, Sendable {
+    let id: String
 }
 
 private actor MockHTTPTransport: HTTPTransport {

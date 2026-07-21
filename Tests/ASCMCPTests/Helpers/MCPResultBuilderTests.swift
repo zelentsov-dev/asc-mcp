@@ -90,11 +90,13 @@ struct MCPResultBuilderTests {
         #expect(payload["operationCommitState"] == .string("unknown"))
         #expect(payload["outcomeUnknown"] == .bool(true))
         #expect(payload["retrySafe"] == .bool(false))
+        #expect(payload["inspectionRequired"] == .bool(true))
         #expect(details["type"] == .string("delete_unknown"))
         #expect(details["method"] == .string("DELETE"))
         #expect(details["operationCommitState"] == .string("unknown"))
         #expect(details["outcomeUnknown"] == .bool(true))
         #expect(details["retrySafe"] == .bool(false))
+        #expect(details["inspectionRequired"] == .bool(true))
         #expect(try exactJSONMirror(from: normalized) == structuredJSON(from: normalized))
         #expect(MCPResult.normalizeForTransport(normalized) == normalized)
     }
@@ -118,6 +120,7 @@ struct MCPResultBuilderTests {
 
         #expect(payload["operationCommitState"] == .string("committed_unverified"))
         #expect(payload["operationCommitted"] == .bool(true))
+        #expect(payload["outcomeUnknown"] == .bool(false))
         #expect(payload["retrySafe"] == .bool(false))
         #expect(payload["inspectionRequired"] == .bool(true))
         #expect(details["type"] == .string("delete_unverified"))
@@ -125,6 +128,7 @@ struct MCPResultBuilderTests {
         #expect(details["statusCode"] == .int(202))
         #expect(details["operationCommitState"] == .string("committed_unverified"))
         #expect(details["operationCommitted"] == .bool(true))
+        #expect(details["outcomeUnknown"] == .bool(false))
         #expect(details["retrySafe"] == .bool(false))
         #expect(details["inspectionRequired"] == .bool(true))
         #expect(humanText.contains("api_token=[REDACTED]"))
@@ -135,6 +139,47 @@ struct MCPResultBuilderTests {
         #expect(!structured.contains("short-secret"))
         #expect(mirror == structured)
         #expect(MCPResult.normalizeForTransport(normalized) == normalized)
+    }
+
+    @Test("typed mutation errors expose unknown and committed-unverified states")
+    func typedMutationErrorsExposeRecoveryStates() throws {
+        let unknown = MCPResult.error(
+            ASCError.mutationOutcomeUnknown(
+                method: "POST",
+                cause: .api("upstream unavailable", 503)
+            )
+        )
+        let unverified = MCPResult.error(
+            ASCError.mutationCommittedUnverified(
+                method: "PATCH",
+                expectedStatusCode: 200,
+                actualStatusCode: 202,
+                cause: nil
+            )
+        )
+
+        guard case .object(let unknownPayload)? = unknown.structuredContent,
+              case .object(let unknownDetails)? = unknownPayload["details"],
+              case .object(let unverifiedPayload)? = unverified.structuredContent,
+              case .object(let unverifiedDetails)? = unverifiedPayload["details"] else {
+            Issue.record("Expected structured mutation recovery states")
+            return
+        }
+
+        #expect(unknownPayload["operationCommitState"] == .string("unknown"))
+        #expect(unknownPayload["outcomeUnknown"] == .bool(true))
+        #expect(unknownPayload["retrySafe"] == .bool(false))
+        #expect(unknownPayload["inspectionRequired"] == .bool(true))
+        #expect(unknownDetails["type"] == .string("mutation_unknown"))
+        #expect(unknownDetails["method"] == .string("POST"))
+        #expect(unverifiedPayload["operationCommitState"] == .string("committed_unverified"))
+        #expect(unverifiedPayload["operationCommitted"] == .bool(true))
+        #expect(unverifiedPayload["outcomeUnknown"] == .bool(false))
+        #expect(unverifiedPayload["inspectionRequired"] == .bool(true))
+        #expect(unverifiedDetails["type"] == .string("mutation_unverified"))
+        #expect(unverifiedDetails["method"] == .string("PATCH"))
+        #expect(unverifiedDetails["expectedStatusCode"] == .int(200))
+        #expect(unverifiedDetails["statusCode"] == .int(202))
     }
 
     @Test("error normalization preserves machine status without exposing credentials")

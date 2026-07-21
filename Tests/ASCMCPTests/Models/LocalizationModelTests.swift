@@ -116,6 +116,15 @@ struct LocalizationModelTests {
         #expect(response.data[1].locale == "ru-RU")
     }
 
+    @Test func localizationsResponsePagingTotalIsOptional() throws {
+        let json = """
+        {"data":[],"links":{"self":"https://api.example.com/locs"},"meta":{"paging":{"limit":10}}}
+        """.data(using: .utf8)!
+        let response = try JSONDecoder().decode(ASCAppStoreVersionLocalizationsResponse.self, from: json)
+        #expect(response.meta?.paging?.total == nil)
+        #expect(response.meta?.paging?.limit == 10)
+    }
+
     @Test func localizationResponseSingle() throws {
         let json = """
         {"data":{"id":"l1","type":"appStoreVersionLocalizations","attributes":{"locale":"en-US","whatsNew":"Bug fixes"}}}

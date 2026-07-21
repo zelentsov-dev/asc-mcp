@@ -1289,11 +1289,11 @@ extension InAppPurchasesWorker {
     private func iapVersionedMutationOutcomeIsUnknown(_ error: Error) -> Bool {
         guard let error = error as? ASCError else { return true }
         switch error {
-        case .network, .deleteOutcomeUnknown:
+        case .network, .deleteOutcomeUnknown, .mutationOutcomeUnknown:
             return true
         case .api(_, let statusCode), .apiResponse(_, let statusCode):
             return statusCode == 408 || (500...599).contains(statusCode)
-        case .deleteCommittedUnverified:
+        case .deleteCommittedUnverified, .mutationCommittedUnverified:
             return true
         case .authentication, .configuration, .parsing:
             return false

@@ -28,7 +28,52 @@ struct AppsWorkerReliabilityTests {
         #expect(appsReliabilityQueryValue(request, "limit") == "25")
     }
 
-    @Test("apps list pagination preserves clamped limit sort and filters")
+    @Test("apps list projects current App attributes")
+    func appsListProjectsCurrentAttributes() async throws {
+        let transport = TestHTTPTransport(responses: [
+            .init(statusCode: 200, body: """
+            {
+              "data": [{
+                "type": "apps",
+                "id": "app-1",
+                "attributes": {
+                  "name": "Example",
+                  "accessibilityUrl": "https://example.test/accessibility",
+                  "streamlinedPurchasingEnabled": true
+                }
+              }],
+              "links": {"self": "https://api.example.test/v1/apps"}
+            }
+            """)
+        ])
+        let worker = try await makeAppsReliabilityWorker(transport)
+
+        let result = try await worker.handleTool(.init(name: "apps_list", arguments: [:]))
+
+        #expect(result.isError != true)
+        let payload = try appsReliabilityObject(result)
+        let app = try #require((payload["apps"] as? [[String: Any]])?.first)
+        let attributes = try #require(app["attributes"] as? [String: Any])
+        #expect(attributes["accessibilityUrl"] as? String == "https://example.test/accessibility")
+        #expect(attributes["streamlinedPurchasingEnabled"] as? Bool == true)
+        #expect(attributes["availableInNewTerritories"] == nil)
+    }
+
+    @Test("apps list output schema allows an unknown Apple total")
+    func appsListOutputSchemaAllowsNullTotal() async throws {
+        let worker = try await makeAppsReliabilityWorker(TestHTTPTransport(responses: []))
+        let rawTool = try #require(await worker.getTools().first { $0.name == "apps_list" })
+        let tool = ToolMetadataPolicy.apply(to: rawTool)
+        let schema = try appsReliabilityValueObject(tool.outputSchema)
+        let properties = try appsReliabilityValueObject(schema["properties"])
+        let totalCount = try appsReliabilityValueObject(properties["totalCount"])
+        let typeValues = try #require(totalCount["type"]?.arrayValue)
+        let types = typeValues.compactMap(\.stringValue)
+
+        #expect(types == ["integer", "null"])
+    }
+
+    @Test("apps list pagination preserves explicit limit sort and filters")
     func appsListPaginationPreservesControls() async throws {
         let nextURL = "https://api.example.test/v1/apps?cursor=next&limit=200&sort=-name&filter%5BbundleId%5D=com.example.app"
         let transport = TestHTTPTransport(responses: [
@@ -37,7 +82,7 @@ struct AppsWorkerReliabilityTests {
         ])
         let worker = try await makeAppsReliabilityWorker(transport)
         let arguments: [String: Value] = [
-            "limit": .int(500),
+            "limit": .int(200),
             "sort": .string("-name"),
             "bundle_id": .string("com.example.app")
         ]
@@ -49,6 +94,7 @@ struct AppsWorkerReliabilityTests {
 
         #expect(first.isError != true)
         #expect(second.isError != true)
+        #expect(try appsReliabilityObject(first)["totalCount"] is NSNull)
         let requests = await transport.recordedRequests()
         #expect(requests.count == 2)
         for request in requests {
@@ -62,7 +108,7 @@ struct AppsWorkerReliabilityTests {
     func appsListPaginationRejectsControlDrift() async throws {
         let cases: [([String: Value], String)] = [
             (
-                ["limit": .int(500), "sort": .string("-name")],
+                ["limit": .int(200), "sort": .string("-name")],
                 "https://api.example.test/v1/apps?cursor=next&limit=200"
             ),
             (
@@ -78,6 +124,32 @@ struct AppsWorkerReliabilityTests {
             continuationArguments["next_url"] = .string(nextURL)
 
             let result = try await worker.handleTool(.init(name: "apps_list", arguments: continuationArguments))
+
+            #expect(result.isError == true)
+            #expect(await transport.requestCount() == 0)
+        }
+    }
+
+    @Test("present invalid app and localization limits fail before network")
+    func invalidLimitsFailBeforeNetwork() async throws {
+        let calls = [
+            CallTool.Parameters(name: "apps_list", arguments: ["limit": .int(0)]),
+            CallTool.Parameters(name: "apps_list", arguments: ["limit": .string("25")]),
+            CallTool.Parameters(
+                name: "apps_list_localizations",
+                arguments: [
+                    "app_id": .string("app-1"),
+                    "version_id": .string("ver-1"),
+                    "limit": .int(201)
+                ]
+            )
+        ]
+
+        for call in calls {
+            let transport = TestHTTPTransport(responses: [])
+            let worker = try await makeAppsReliabilityWorker(transport)
+
+            let result = try await worker.handleTool(call)
 
             #expect(result.isError == true)
             #expect(await transport.requestCount() == 0)
@@ -126,6 +198,16 @@ struct AppsWorkerReliabilityTests {
         #expect(try appsReliabilityFixedQueries(manifest, "apps_update_metadata", "appStoreVersions_appStoreVersionLocalizations_getToManyRelated")["fields[appStoreVersionLocalizations]"] == .array([
             .string("locale"), .string("appStoreVersion")
         ]))
+
+        let metadataMapping = try #require(manifest.mapping(for: "apps_get_metadata"))
+        let metadataFields = Set(metadataMapping.response.fields.map(\.outputField))
+        #expect(metadataFields.isSuperset(of: ["localization", "localizations", "totalLocalizations"]))
+        let localizationMapping = try #require(manifest.mapping(for: "apps_list_localizations"))
+        let localizationFields = Set(localizationMapping.response.fields.map(\.outputField))
+        #expect(localizationFields.isSuperset(of: ["appId", "versionId", "count", "totalLocalizations"]))
+        let appsListMapping = try #require(manifest.mapping(for: "apps_list"))
+        let appsListFields = Set(appsListMapping.response.fields.map(\.outputField))
+        #expect(appsListFields.isSuperset(of: ["count", "totalCount", "hasNextPage", "links"]))
     }
 
     @Test("app details preserve included resources and relationship cardinality")
@@ -136,7 +218,14 @@ struct AppsWorkerReliabilityTests {
               "data": {
                 "type": "apps",
                 "id": "app-1",
-                "attributes": { "name": "Example", "bundleId": "com.example.app", "sku": "EXAMPLE", "primaryLocale": "en-US" },
+                "attributes": {
+                  "name": "Example",
+                  "bundleId": "com.example.app",
+                  "sku": "EXAMPLE",
+                  "primaryLocale": "en-US",
+                  "accessibilityUrl": "https://example.test/accessibility",
+                  "streamlinedPurchasingEnabled": true
+                },
                 "relationships": {
                   "appStoreVersions": { "data": [{ "type": "appStoreVersions", "id": "ver-1" }] },
                   "betaLicenseAgreement": { "data": { "type": "betaLicenseAgreements", "id": "license-1" } },
@@ -159,6 +248,7 @@ struct AppsWorkerReliabilityTests {
         #expect(result.isError != true)
         let payload = try appsReliabilityObject(result)
         let app = try #require(payload["app"] as? [String: Any])
+        let attributes = try #require(app["attributes"] as? [String: Any])
         let relationships = try #require(app["relationships"] as? [String: Any])
         let versions = try #require(relationships["appStoreVersions"] as? [String: Any])
         let license = try #require(relationships["betaLicenseAgreement"] as? [String: Any])
@@ -169,6 +259,47 @@ struct AppsWorkerReliabilityTests {
         #expect(icon["data"] is NSNull)
         #expect(webhooks["data"] is [[String: Any]])
         #expect((payload["included"] as? [[String: Any]])?.first?["id"] as? String == "ver-1")
+        #expect(attributes["accessibilityUrl"] as? String == "https://example.test/accessibility")
+        #expect(attributes["streamlinedPurchasingEnabled"] as? Bool == true)
+        #expect(attributes["availableInNewTerritories"] == nil)
+    }
+
+    @Test("app details include publishes exact enums and rejects invalid tokens")
+    func appDetailsIncludeIsFailClosed() async throws {
+        let schemaWorker = try await makeAppsReliabilityWorker(TestHTTPTransport(responses: []))
+        let tool = try #require(await schemaWorker.getTools().first { $0.name == "apps_get_details" })
+        let properties = try appsReliabilityProperties(tool)
+        let include = try appsReliabilityValueObject(properties["include"])
+        let alternatives = try #require(include["oneOf"]?.arrayValue)
+        let scalar = try appsReliabilityValueObject(alternatives[0])
+        let array = try appsReliabilityValueObject(alternatives[1])
+        let items = try appsReliabilityValueObject(array["items"])
+        let enumItems = try #require(items["enum"]?.arrayValue)
+        let enumValues = enumItems.compactMap(\.stringValue)
+        #expect(scalar["pattern"]?.stringValue != nil)
+        #expect(enumValues.count == 25)
+        #expect(enumValues.contains("appStoreVersions"))
+        #expect(enumValues.contains("androidToIosAppMappingDetails"))
+
+        let invalidValues: [Value] = [
+            .string(""),
+            .string("appStoreVersions,unknown"),
+            .string("appStoreVersions,appStoreVersions"),
+            .string("appStoreVersions, appInfos"),
+            .array([.string("appStoreVersions"), .int(1)])
+        ]
+        for includeValue in invalidValues {
+            let transport = TestHTTPTransport(responses: [])
+            let worker = try await makeAppsReliabilityWorker(transport)
+
+            let result = try await worker.handleTool(.init(
+                name: "apps_get_details",
+                arguments: ["app_id": .string("app-1"), "include": includeValue]
+            ))
+
+            #expect(result.isError == true)
+            #expect(await transport.requestCount() == 0)
+        }
     }
 
     @Test("version and localization lists request current ownership fields")
@@ -201,6 +332,48 @@ struct AppsWorkerReliabilityTests {
         #expect(appsReliabilityQueryValue(requests[1], "fields[appStoreVersions]") == "app")
         #expect(appsReliabilityQueryValue(requests[2], "fields[appStoreVersionLocalizations]") == "locale,description,whatsNew,keywords,promotionalText,supportUrl,marketingUrl,appStoreVersion")
         #expect(appsReliabilityQueryValue(requests[2], "limit") == "200")
+    }
+
+    @Test("localization list distinguishes page count from an unknown total")
+    func localizationListReportsHonestCounts() async throws {
+        let nextURL = "https://api.example.test/v1/appStoreVersions/ver-1/appStoreVersionLocalizations?cursor=next"
+        let transport = TestHTTPTransport(responses: [
+            .init(statusCode: 200, body: versionResponse(id: "ver-1", appId: "app-1")),
+            .init(statusCode: 200, body: localizationPage(
+                id: "loc-1",
+                versionId: "ver-1",
+                next: nextURL
+            ))
+        ])
+        let worker = try await makeAppsReliabilityWorker(transport)
+
+        let result = try await worker.handleTool(.init(
+            name: "apps_list_localizations",
+            arguments: ["app_id": .string("app-1"), "version_id": .string("ver-1")]
+        ))
+
+        #expect(result.isError != true)
+        let payload = try appsReliabilityObject(result)
+        #expect(payload["count"] as? Int == 1)
+        #expect(payload["totalLocalizations"] is NSNull)
+        #expect(payload["next_url"] as? String == nextURL)
+
+        let totalTransport = TestHTTPTransport(responses: [
+            .init(statusCode: 200, body: versionResponse(id: "ver-1", appId: "app-1")),
+            .init(statusCode: 200, body: localizationPage(
+                id: "loc-1",
+                versionId: "ver-1",
+                total: 12
+            ))
+        ])
+        let totalWorker = try await makeAppsReliabilityWorker(totalTransport)
+        let totalResult = try await totalWorker.handleTool(.init(
+            name: "apps_list_localizations",
+            arguments: ["app_id": .string("app-1"), "version_id": .string("ver-1")]
+        ))
+        let totalPayload = try appsReliabilityObject(totalResult)
+        #expect(totalPayload["count"] as? Int == 1)
+        #expect(totalPayload["totalLocalizations"] as? Int == 12)
     }
 
     @Test("version list pagination rejects a changed fixed projection")
@@ -298,6 +471,94 @@ struct AppsWorkerReliabilityTests {
         #expect(selected["id"] as? String == "current")
         #expect(selected["appVersionState"] as? String == "PREPARE_FOR_SUBMISSION")
         #expect(selected["appStoreState"] as? String == "READY_FOR_SALE")
+    }
+
+    @Test("metadata without locale follows every localization page")
+    func metadataFollowsEveryLocalizationPage() async throws {
+        let nextURL = "https://api.example.test/v1/appStoreVersions/ver-1/appStoreVersionLocalizations?cursor=page-2&fields%5BappStoreVersionLocalizations%5D=description%2Clocale%2Ckeywords%2CmarketingUrl%2CpromotionalText%2CsupportUrl%2CwhatsNew%2CappStoreVersion&limit=200"
+        let transport = TestHTTPTransport(responses: [
+            .init(statusCode: 200, body: versionResponse(id: "ver-1", appId: "app-1")),
+            .init(statusCode: 200, body: localizationPage(
+                id: "loc-en",
+                versionId: "ver-1",
+                locale: "en-US",
+                next: nextURL
+            )),
+            .init(statusCode: 200, body: localizationPage(
+                id: "loc-ja",
+                versionId: "ver-1",
+                locale: "ja"
+            ))
+        ])
+        let worker = try await makeAppsReliabilityWorker(transport)
+
+        let result = try await worker.handleTool(.init(
+            name: "apps_get_metadata",
+            arguments: ["app_id": .string("app-1"), "version_id": .string("ver-1")]
+        ))
+
+        #expect(result.isError != true)
+        #expect(await transport.requestCount() == 3)
+        let payload = try appsReliabilityObject(result)
+        let localizations = try #require(payload["localizations"] as? [[String: Any]])
+        #expect(localizations.compactMap { $0["locale"] as? String } == ["en-US", "ja"])
+        #expect(payload["totalLocalizations"] as? Int == 2)
+    }
+
+    @Test("metadata exact-locale lookup rejects multiple resources")
+    func metadataExactLocaleRejectsMultipleResources() async throws {
+        let transport = TestHTTPTransport(responses: [
+            .init(statusCode: 200, body: versionResponse(id: "ver-1", appId: "app-1")),
+            .init(statusCode: 200, body: """
+            {
+              "data": [
+                {
+                  "type": "appStoreVersionLocalizations",
+                  "id": "loc-1",
+                  "attributes": {"locale": "en-US"},
+                  "relationships": {"appStoreVersion": {"data": {"type": "appStoreVersions", "id": "ver-1"}}}
+                },
+                {
+                  "type": "appStoreVersionLocalizations",
+                  "id": "loc-2",
+                  "attributes": {"locale": "en-US"},
+                  "relationships": {"appStoreVersion": {"data": {"type": "appStoreVersions", "id": "ver-1"}}}
+                }
+              ]
+            }
+            """)
+        ])
+        let worker = try await makeAppsReliabilityWorker(transport)
+
+        let result = try await worker.handleTool(.init(
+            name: "apps_get_metadata",
+            arguments: [
+                "app_id": .string("app-1"),
+                "version_id": .string("ver-1"),
+                "locale": .string("en-US")
+            ]
+        ))
+
+        #expect(result.isError == true)
+        #expect(appsReliabilityText(result).contains("returned 2 localizations"))
+        #expect(await transport.requestCount() == 2)
+    }
+
+    @Test("metadata media requires an explicit locale before network access")
+    func metadataMediaRequiresLocale() async throws {
+        let transport = TestHTTPTransport(responses: [])
+        let worker = try await makeAppsReliabilityWorker(transport)
+        let tool = try #require(await worker.getTools().first { $0.name == "apps_get_metadata" })
+
+        let result = try await worker.handleTool(.init(
+            name: "apps_get_metadata",
+            arguments: ["app_id": .string("app-1"), "include_media": .bool(true)]
+        ))
+
+        #expect(result.isError == true)
+        #expect(appsReliabilityText(result).contains("requires an explicit 'locale'"))
+        #expect(tool.description?.contains("requires locale") == true)
+        #expect(await transport.requestCount() == 0)
     }
 
     @Test("metadata selection returns a canonical structured error when the app has no versions")
@@ -454,6 +715,44 @@ struct AppsWorkerReliabilityTests {
         #expect(appsReliabilityQueryValue(requests[1], "limit") == "1")
     }
 
+    @Test("accepted localization create and metadata update identity failures are committed unverified")
+    func localizationMutationIdentityFailuresPreserveCommitState() async throws {
+        let createTransport = TestHTTPTransport(responses: [
+            .init(statusCode: 201, body: #"{"data":{"type":"appStoreVersions","id":"loc-1","attributes":{"locale":"en-US"}}}"#)
+        ])
+        let createWorker = try await makeAppsReliabilityWorker(createTransport)
+        let create = try await createWorker.handleTool(.init(
+            name: "apps_create_localization",
+            arguments: ["version_id": .string("ver-1"), "locale": .string("en-US")]
+        ))
+
+        let updateTransport = TestHTTPTransport(responses: [
+            .init(statusCode: 200, body: versionResponse(id: "ver-1", appId: "app-1")),
+            .init(statusCode: 200, body: localizationPage(id: "loc-1", versionId: "ver-1")),
+            .init(statusCode: 200, body: #"{"data":{"type":"appStoreVersionLocalizations","id":"loc-other","attributes":{"locale":"en-US"}}}"#)
+        ])
+        let updateWorker = try await makeAppsReliabilityWorker(updateTransport)
+        let update = try await updateWorker.handleTool(.init(
+            name: "apps_update_metadata",
+            arguments: [
+                "app_id": .string("app-1"),
+                "version_id": .string("ver-1"),
+                "locale": .string("en-US"),
+                "keywords": .string("example")
+            ]
+        ))
+
+        for result in [create, update] {
+            guard case .object(let payload)? = result.structuredContent else {
+                Issue.record("Expected structured mutation failure")
+                continue
+            }
+            #expect(result.isError == true)
+            #expect(payload["operationCommitState"] == .string("committed_unverified"))
+            #expect(payload["retrySafe"] == .bool(false))
+        }
+    }
+
     @Test("metadata update rejects app ownership mismatch before localization lookup")
     func metadataUpdateRejectsOwnershipMismatch() async throws {
         let transport = TestHTTPTransport(responses: [
@@ -473,6 +772,89 @@ struct AppsWorkerReliabilityTests {
 
         #expect(result.isError == true)
         #expect(await transport.requestCount() == 1)
+    }
+
+    @Test("metadata update rejects mismatched localization identity before patch")
+    func metadataUpdateRejectsMismatchedLocalizationIdentity() async throws {
+        let cases = [
+            ("otherLocalizationType", "en-US"),
+            ("appStoreVersionLocalizations", "fr-FR")
+        ]
+
+        for (type, returnedLocale) in cases {
+            let localization = """
+            {
+              "data": [{
+                "type": "\(type)",
+                "id": "loc-1",
+                "attributes": {"locale": "\(returnedLocale)"},
+                "relationships": {
+                  "appStoreVersion": {"data": {"type": "appStoreVersions", "id": "ver-1"}}
+                }
+              }]
+            }
+            """
+            let transport = TestHTTPTransport(responses: [
+                .init(statusCode: 200, body: versionResponse(id: "ver-1", appId: "app-1")),
+                .init(statusCode: 200, body: localization)
+            ])
+            let worker = try await makeAppsReliabilityWorker(transport)
+
+            let result = try await worker.handleTool(.init(
+                name: "apps_update_metadata",
+                arguments: [
+                    "app_id": .string("app-1"),
+                    "version_id": .string("ver-1"),
+                    "locale": .string("en-US"),
+                    "keywords": .string("example")
+                ]
+            ))
+
+            #expect(result.isError == true)
+            #expect(await transport.requestCount() == 2)
+            #expect((await transport.recordedRequests()).allSatisfy { $0.httpMethod == "GET" })
+        }
+    }
+
+    @Test("metadata update rejects ambiguous exact-locale lookup before patch")
+    func metadataUpdateRejectsAmbiguousLocalizationLookup() async throws {
+        let transport = TestHTTPTransport(responses: [
+            .init(statusCode: 200, body: versionResponse(id: "ver-1", appId: "app-1")),
+            .init(statusCode: 200, body: """
+            {
+              "data": [
+                {
+                  "type": "appStoreVersionLocalizations",
+                  "id": "loc-1",
+                  "attributes": {"locale": "en-US"},
+                  "relationships": {"appStoreVersion": {"data": {"type": "appStoreVersions", "id": "ver-1"}}}
+                },
+                {
+                  "type": "appStoreVersionLocalizations",
+                  "id": "loc-2",
+                  "attributes": {"locale": "en-US"},
+                  "relationships": {"appStoreVersion": {"data": {"type": "appStoreVersions", "id": "ver-1"}}}
+                }
+              ]
+            }
+            """)
+        ])
+        let worker = try await makeAppsReliabilityWorker(transport)
+
+        let result = try await worker.handleTool(.init(
+            name: "apps_update_metadata",
+            arguments: [
+                "app_id": .string("app-1"),
+                "version_id": .string("ver-1"),
+                "locale": .string("en-US"),
+                "keywords": .string("example")
+            ]
+        ))
+
+        #expect(result.isError == true)
+        #expect(appsReliabilityText(result).contains("returned 2 localizations"))
+        #expect(await transport.requestCount() == 2)
+        #expect((await transport.recordedRequests()).allSatisfy { $0.httpMethod == "GET" })
     }
 
     @Test("media reads propagate errors")
@@ -740,8 +1122,16 @@ private func versionResponse(id: String, appId: String) -> String {
     #"{"data":{"type":"appStoreVersions","id":"\#(id)","attributes":{"platform":"IOS","versionString":"1.0","appVersionState":"PREPARE_FOR_SUBMISSION"},"relationships":{"app":{"data":{"type":"apps","id":"\#(appId)"}}}}}"#
 }
 
-private func localizationPage(id: String, versionId: String) -> String {
-    #"{"data":[{"type":"appStoreVersionLocalizations","id":"\#(id)","attributes":{"locale":"en-US"},"relationships":{"appStoreVersion":{"data":{"type":"appStoreVersions","id":"\#(versionId)"}}}}]}"#
+private func localizationPage(
+    id: String,
+    versionId: String,
+    locale: String = "en-US",
+    next: String? = nil,
+    total: Int? = nil
+) -> String {
+    let nextField = next.map { #", "next": "\#($0)""# } ?? ""
+    let totalField = total.map { #", "meta":{"paging":{"total":\#($0),"limit":200}}"# } ?? ""
+    return #"{"data":[{"type":"appStoreVersionLocalizations","id":"\#(id)","attributes":{"locale":"\#(locale)"},"relationships":{"appStoreVersion":{"data":{"type":"appStoreVersions","id":"\#(versionId)"}}}}],"links":{"self":"https://api.example.test/v1/appStoreVersions/\#(versionId)/appStoreVersionLocalizations"\#(nextField)}\#(totalField)}"#
 }
 
 private func emptyCollectionPage(selfURL: String, next: String?) -> String {
@@ -780,6 +1170,13 @@ private func appsReliabilityProperties(_ tool: Tool) throws -> [String: Value] {
         throw AppsReliabilityTestError.expectedProperties
     }
     return properties
+}
+
+private func appsReliabilityValueObject(_ value: Value?) throws -> [String: Value] {
+    guard case .object(let object) = value else {
+        throw AppsReliabilityTestError.expectedProperties
+    }
+    return object
 }
 
 private func appsReliabilityFixedQueries(

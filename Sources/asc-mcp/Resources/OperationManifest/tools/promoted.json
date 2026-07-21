@@ -142,7 +142,7 @@
         "sources": [],
         "fields": []
       },
-      "note": "The pinned executable OpenAPI 4.4.1 has no promotedPurchaseImages resource or promotionImage relationship. The handler sends no Apple request and returns a structured deprecation error with current IAP and subscription image replacements."
+      "note": "The pinned executable OpenAPI 4.4.1 has no promotedPurchaseImages resource or promotionImage relationship. The handler sends no Apple request and points only to active version-scoped replacements: iap_get_version_image, iap_list_version_images, iap_upload_version_image, iap_get_version_image_resource, iap_delete_version_image, subscriptions_list_version_images, subscriptions_upload_version_image, subscriptions_get_version_image, and subscriptions_delete_version_image."
     },
     {
       "tool": "promoted_get",
@@ -212,7 +212,7 @@
         "sources": [],
         "fields": []
       },
-      "note": "The pinned executable OpenAPI 4.4.1 has no promotedPurchaseImages resource or promotionImage relationship. The handler sends no Apple request and returns a structured deprecation error with current IAP and subscription image replacements."
+      "note": "The pinned executable OpenAPI 4.4.1 has no promotedPurchaseImages resource or promotionImage relationship. The handler sends no Apple request and points only to active version-scoped replacements: iap_get_version_image, iap_list_version_images, iap_upload_version_image, iap_get_version_image_resource, iap_delete_version_image, subscriptions_list_version_images, subscriptions_upload_version_image, subscriptions_get_version_image, and subscriptions_delete_version_image."
     },
     {
       "tool": "promoted_get_image_for_purchase",
@@ -234,7 +234,7 @@
         "sources": [],
         "fields": []
       },
-      "note": "The pinned executable OpenAPI 4.4.1 has no promotedPurchaseImages resource or promotionImage relationship. The handler sends no Apple request and returns a structured deprecation error with current IAP and subscription image replacements."
+      "note": "The pinned executable OpenAPI 4.4.1 has no promotedPurchaseImages resource or promotionImage relationship. The handler sends no Apple request and points only to active version-scoped replacements: iap_get_version_image, iap_list_version_images, iap_upload_version_image, iap_get_version_image_resource, iap_delete_version_image, subscriptions_list_version_images, subscriptions_upload_version_image, subscriptions_get_version_image, and subscriptions_delete_version_image."
     },
     {
       "tool": "promoted_list",
@@ -384,7 +384,7 @@
           { "outputField": "details.recovery", "localRole": "Executable promoted_list inspection guidance after an unknown or committed-unverified outcome." }
         ]
       },
-      "note": "The MCP field is a real JSON string array containing 1...200 canonical unique IDs. Every relationship page is capped at 200 resources; links.self and links.next must stay in the exact configured-origin or root-relative scope, and each next cursor must be non-empty and advancing. Optional paging metadata must report limit 200, a total no smaller than the page count, and a nextCursor exactly consistent with links.next. The handler exhausts pagination with stable-total and terminal cumulative-count validation and requires exact set-and-count equality with current membership. An identical requested order returns a verified no-op without PATCH. A changed order sends ordered JSON:API linkage objects, accepts only HTTP 204, and returns mutation success only after a second exhaustive relationship read exactly matches the requested order."
+      "note": "The MCP field is a non-empty JSON string array of canonical unique IDs with no artificial item-count maximum; Apple's relationship request schema defines no maxItems. Every relationship page remains capped at 200 resources; links.self and links.next must stay in the exact configured-origin or root-relative scope, and each next cursor must be non-empty and advancing. Optional paging metadata must report limit 200, a total no smaller than the page count, and a nextCursor exactly consistent with links.next. The handler exhausts pagination with stable-total and terminal cumulative-count validation and requires exact set-and-count equality with current membership. An identical requested order returns a verified no-op without PATCH. A changed order sends ordered JSON:API linkage objects, accepts only HTTP 204, and returns mutation success only after a second exhaustive relationship read exactly matches the requested order."
     },
     {
       "tool": "promoted_update",
@@ -477,7 +477,7 @@
         "sources": [],
         "fields": []
       },
-      "note": "The pinned executable OpenAPI 4.4.1 has no promotedPurchaseImages resource or promotionImage relationship. The handler sends no Apple request and returns a structured deprecation error with current IAP and subscription image replacements."
+      "note": "The pinned executable OpenAPI 4.4.1 has no promotedPurchaseImages resource or promotionImage relationship. The handler sends no Apple request and points only to active version-scoped replacements: iap_get_version_image, iap_list_version_images, iap_upload_version_image, iap_get_version_image_resource, iap_delete_version_image, subscriptions_list_version_images, subscriptions_upload_version_image, subscriptions_get_version_image, and subscriptions_delete_version_image."
     }
   ],
   "implementationAliases": []

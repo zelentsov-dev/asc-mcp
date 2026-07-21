@@ -8,7 +8,8 @@
       "sku": "TEST_SKU",
       "primaryLocale": "en-US",
       "isOrEverWasMadeForKids": false,
-      "availableInNewTerritories": true
+      "accessibilityUrl": "https://example.com/accessibility",
+      "streamlinedPurchasingEnabled": true
     },
     "relationships": {
       "appStoreVersions": {
