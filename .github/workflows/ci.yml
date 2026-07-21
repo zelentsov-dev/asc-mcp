@@ -395,8 +395,12 @@ jobs:
         run: |
           set -euo pipefail
 
+          release_pages_path="$RUNNER_TEMP/release-pages.json"
           releases_path="$RUNNER_TEMP/releases.json"
-          gh api "repos/$GITHUB_REPOSITORY/releases?per_page=100" > "$releases_path"
+          gh api --paginate --slurp \
+            "repos/$GITHUB_REPOSITORY/releases?per_page=100" \
+            > "$release_pages_path"
+          jq 'add // []' "$release_pages_path" > "$releases_path"
           release_count="$(jq --arg tag "$GITHUB_REF_NAME" '[.[] | select(.tag_name == $tag)] | length' "$releases_path")"
           if [[ "$release_count" -gt 1 ]]; then
             echo "Multiple releases use tag $GITHUB_REF_NAME." >&2
@@ -425,24 +429,43 @@ jobs:
               echo 'already-published=true' >> "$GITHUB_OUTPUT"
               exit 0
             fi
-            gh release edit "$GITHUB_REF_NAME" \
-              --repo "$GITHUB_REPOSITORY" \
-              --title "$GITHUB_REF_NAME" \
-              --notes-file "$NOTES_PATH" \
-              --prerelease=false
+            update_path="$RUNNER_TEMP/release-update.json"
+            jq -n \
+              --arg name "$GITHUB_REF_NAME" \
+              --rawfile body "$NOTES_PATH" \
+              '{
+                name: $name,
+                body: $body,
+                draft: true,
+                prerelease: false
+              }' > "$update_path"
+            gh api --method PATCH \
+              "repos/$GITHUB_REPOSITORY/releases/$release_id" \
+              --input "$update_path" \
+              > /dev/null
             exit 0
           fi
 
-          gh release create "$GITHUB_REF_NAME" \
-            --repo "$GITHUB_REPOSITORY" \
-            --verify-tag \
-            --draft \
-            --title "$GITHUB_REF_NAME" \
-            --target main \
-            --notes-file "$NOTES_PATH"
+          create_path="$RUNNER_TEMP/release-create.json"
+          created_release_path="$RUNNER_TEMP/created-release.json"
+          jq -n \
+            --arg tag "$GITHUB_REF_NAME" \
+            --rawfile body "$NOTES_PATH" \
+            '{
+              tag_name: $tag,
+              target_commitish: "main",
+              name: $tag,
+              body: $body,
+              draft: true,
+              prerelease: false,
+              generate_release_notes: false
+            }' > "$create_path"
+          gh api --method POST \
+            "repos/$GITHUB_REPOSITORY/releases" \
+            --input "$create_path" \
+            > "$created_release_path"
 
-          gh api "repos/$GITHUB_REPOSITORY/releases?per_page=100" > "$releases_path"
-          release_id="$(jq -r --arg tag "$GITHUB_REF_NAME" '.[] | select(.tag_name == $tag) | .id' "$releases_path")"
+          release_id="$(jq -r '.id' "$created_release_path")"
           if [[ ! "$release_id" =~ ^[0-9]+$ ]]; then
             echo "Unable to resolve the draft release ID for $GITHUB_REF_NAME." >&2
             exit 1
@@ -477,7 +500,16 @@ jobs:
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release edit "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --draft=false --latest
+          RELEASE_ID: ${{ steps.draft.outputs.release-id }}
+        run: |
+          set -euo pipefail
+
+          publish_path="$RUNNER_TEMP/release-publish.json"
+          jq -n '{draft: false, make_latest: "true"}' > "$publish_path"
+          gh api --method PATCH \
+            "repos/$GITHUB_REPOSITORY/releases/$RELEASE_ID" \
+            --input "$publish_path" \
+            > /dev/null
 
       - name: Verify published release
         shell: bash
