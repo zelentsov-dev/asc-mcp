@@ -322,14 +322,10 @@ struct HTTPClientTests {
     func deleteCancellationDuringDefiniteRetryDelayStaysCancellation() async throws {
         for statusCode in [401, 429] {
             let headers = statusCode == 429 ? ["Retry-After": "30"] : [:]
-            let transport = ScriptedHTTPTransport(steps: [
-                .response(
-                    statusCode: statusCode,
-                    headers: headers,
-                    body: #"{"errors":[{"status":"\#(statusCode)","detail":"rejected"}]}"#
-                ),
-                .response(statusCode: 204, headers: [:], body: "")
-            ])
+            let transport = RetryCancellationGateHTTPTransport(
+                statusCode: statusCode,
+                headers: headers
+            )
             let client = await HTTPClient(
                 jwtService: try TestFactory.makeJWTService(),
                 baseURL: "https://api.example.test",
@@ -340,13 +336,9 @@ struct HTTPClientTests {
                 try await client.delete("/v1/resources/resource-1")
             }
 
-            while await transport.requestCount() == 0 {
-                await Task.yield()
-            }
-            for _ in 0..<100 {
-                await Task.yield()
-            }
+            await transport.waitForFirstRequest()
             task.cancel()
+            await transport.releaseFirstResponse()
 
             do {
                 _ = try await task.value
@@ -602,5 +594,74 @@ private actor ScriptedHTTPTransport: HTTPTransport {
 
     func requestCount() -> Int {
         requests.count
+    }
+}
+
+private actor RetryCancellationGateHTTPTransport: HTTPTransport {
+    private let statusCode: Int
+    private let headers: [String: String]
+    private var requests = 0
+    private var requestWaiters: [CheckedContinuation<Void, Never>] = []
+    private var releaseWaiters: [CheckedContinuation<Void, Never>] = []
+    private var released = false
+
+    init(statusCode: Int, headers: [String: String]) {
+        self.statusCode = statusCode
+        self.headers = headers
+    }
+
+    func data(for request: URLRequest) async throws -> (Data, HTTPURLResponse) {
+        requests += 1
+        if requests == 1 {
+            let waiters = requestWaiters
+            requestWaiters.removeAll(keepingCapacity: true)
+            waiters.forEach { $0.resume() }
+            if !released {
+                await withCheckedContinuation { continuation in
+                    releaseWaiters.append(continuation)
+                }
+            }
+            return response(
+                for: request,
+                statusCode: statusCode,
+                headers: headers,
+                body: #"{"errors":[{"status":"\#(statusCode)","detail":"rejected"}]}"#
+            )
+        }
+
+        return response(for: request, statusCode: 204, headers: [:], body: "")
+    }
+
+    func waitForFirstRequest() async {
+        guard requests == 0 else { return }
+        await withCheckedContinuation { continuation in
+            requestWaiters.append(continuation)
+        }
+    }
+
+    func releaseFirstResponse() {
+        released = true
+        let waiters = releaseWaiters
+        releaseWaiters.removeAll(keepingCapacity: true)
+        waiters.forEach { $0.resume() }
+    }
+
+    func requestCount() -> Int {
+        requests
+    }
+
+    private func response(
+        for request: URLRequest,
+        statusCode: Int,
+        headers: [String: String],
+        body: String
+    ) -> (Data, HTTPURLResponse) {
+        let response = HTTPURLResponse(
+            url: request.url ?? URL(string: "https://api.example.test")!,
+            statusCode: statusCode,
+            httpVersion: "HTTP/1.1",
+            headerFields: headers
+        )!
+        return (Data(body.utf8), response)
     }
 }
