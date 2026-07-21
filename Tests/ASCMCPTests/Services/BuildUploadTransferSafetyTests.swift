@@ -103,7 +103,7 @@ struct BuildUploadTransferSafetyTests {
             }
 
             #expect(await transport.requestCount(for: "/upload") == 1)
-            #expect(await transport.recordedMethods() == [method ?? "PUT"])
+            #expect(await transport.recordedMethods() == [(method ?? "PUT").uppercased()])
         }
     }
 
@@ -145,7 +145,7 @@ struct BuildUploadTransferSafetyTests {
             }
 
             #expect(await transport.requestCount(for: "/upload") == 1)
-            #expect(await transport.recordedMethods() == [method ?? "PUT"])
+            #expect(await transport.recordedMethods() == [(method ?? "PUT").uppercased()])
         }
     }
 
