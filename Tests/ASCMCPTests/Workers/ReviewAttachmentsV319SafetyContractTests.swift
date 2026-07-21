@@ -731,10 +731,10 @@ private func reviewAttachmentsV319CollectionResponse(
     selfLimit: Int = 25
 ) -> String {
     let next = nextBaseURL.map {
-        #", "next":"\#($0)/v1/appStoreReviewDetails/review-detail-1/appStoreReviewAttachments?fields%5BappStoreReviewAttachments%5D=\#(reviewAttachmentsV319EncodedReadFields)&limit=25&cursor=next""#
+        #", "next":"\#($0)/v1/appStoreReviewDetails/review-detail-1/appStoreReviewAttachments?fields%5BappStoreReviewAttachments%5D=\#(reviewAttachmentsV319EncodedReadFields)&fields%5BappStoreReviewDetails%5D=appStoreVersion&include=appStoreReviewDetail&limit=25&cursor=next""#
     } ?? ""
     let links = includeLinks
-        ? #", "links":{"self":"\#(selfBaseURL)/v1/appStoreReviewDetails/\#(selfReviewDetailID)/appStoreReviewAttachments?fields%5BappStoreReviewAttachments%5D=\#(reviewAttachmentsV319EncodedReadFields)&limit=\#(selfLimit)"\#(next)}"#
+        ? #", "links":{"self":"\#(selfBaseURL)/v1/appStoreReviewDetails/\#(selfReviewDetailID)/appStoreReviewAttachments?fields%5BappStoreReviewAttachments%5D=\#(reviewAttachmentsV319EncodedReadFields)&fields%5BappStoreReviewDetails%5D=appStoreVersion&include=appStoreReviewDetail&limit=\#(selfLimit)"\#(next)}"#
         : ""
     let nextCursor = nextBaseURL == nil ? "" : #", "nextCursor":"next""#
     return #"{"data":[{"type":"appStoreReviewAttachments","id":"attachment-1","attributes":{"fileSize":5,"fileName":"attachment.bin","sourceFileChecksum":"5d41402abc4b2a76b9719d911017c592","assetDeliveryState":{"state":"COMPLETE"}},"relationships":{"appStoreReviewDetail":{"data":{"type":"appStoreReviewDetails","id":"\#(reviewDetailID)"}}}}]\#(links),"meta":{"paging":{"total":1,"limit":25\#(nextCursor)}}}"#
@@ -743,7 +743,7 @@ private func reviewAttachmentsV319CollectionResponse(
 private let reviewAttachmentsV319EncodedReadFields =
     "fileSize%2CfileName%2CsourceFileChecksum%2CassetDeliveryState%2CappStoreReviewDetail"
 private let reviewAttachmentsV319ReadQuery =
-    "fields%5BappStoreReviewAttachments%5D=\(reviewAttachmentsV319EncodedReadFields)"
+    "fields%5BappStoreReviewAttachments%5D=\(reviewAttachmentsV319EncodedReadFields)&fields%5BappStoreReviewDetails%5D=appStoreVersion&include=appStoreReviewDetail"
 
 private func reviewAttachmentsV319Object(_ value: Value?) throws -> [String: Value] {
     guard case .object(let object) = value else {

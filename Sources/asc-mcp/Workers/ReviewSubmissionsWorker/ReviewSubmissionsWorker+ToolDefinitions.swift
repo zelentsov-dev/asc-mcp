@@ -20,7 +20,7 @@ extension ReviewSubmissionsWorker {
                         values: ASCReviewSubmissionPlatform.allCases.map(\.rawValue)
                     ),
                     "include": stringListSchema(
-                        description: "Apple relationships to include for recovery inspection",
+                        description: "Apple relationships to include for recovery inspection; app is always added for ownership validation",
                         values: Self.submissionIncludes
                     ),
                     "item_limit": integerSchema(

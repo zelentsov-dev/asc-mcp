@@ -59,15 +59,6 @@
           "method": "get",
           "path": "/v1/appStoreReviewAttachments/{id}",
           "role": "primary",
-          "optionalParameterClassifications": [
-            {
-              "location": "query",
-              "appleName": "include",
-              "disposition": "intentionallyOmitted",
-              "reason": "The attachment projection exposes its review-detail relationship ID without expanding reviewer contact or demo-account data.",
-              "reviewAtSpec": "4.4.1"
-            }
-          ],
           "inputs": [
             {
               "sourceKind": "fixed",
@@ -80,6 +71,18 @@
                 "assetDeliveryState",
                 "appStoreReviewDetail"
               ]
+            },
+            {
+              "sourceKind": "fixed",
+              "location": "query",
+              "appleName": "include",
+              "fixedValue": ["appStoreReviewDetail"]
+            },
+            {
+              "sourceKind": "fixed",
+              "location": "query",
+              "appleName": "fields[appStoreReviewDetails]",
+              "fixedValue": ["appStoreVersion"]
             }
           ]
         }
@@ -133,15 +136,6 @@
           "method": "get",
           "path": "/v1/appStoreReviewDetails/{id}/appStoreReviewAttachments",
           "role": "primary",
-          "optionalParameterClassifications": [
-            {
-              "location": "query",
-              "appleName": "include",
-              "disposition": "intentionallyOmitted",
-              "reason": "The list projects each attachment's review-detail relationship ID without repeating reviewer contact or demo-account data in included resources.",
-              "reviewAtSpec": "4.4.1"
-            }
-          ],
           "inputs": [
             {
               "sourceKind": "fixed",
@@ -154,6 +148,18 @@
                 "assetDeliveryState",
                 "appStoreReviewDetail"
               ]
+            },
+            {
+              "sourceKind": "fixed",
+              "location": "query",
+              "appleName": "include",
+              "fixedValue": ["appStoreReviewDetail"]
+            },
+            {
+              "sourceKind": "fixed",
+              "location": "query",
+              "appleName": "fields[appStoreReviewDetails]",
+              "fixedValue": ["appStoreVersion"]
             }
           ]
         }

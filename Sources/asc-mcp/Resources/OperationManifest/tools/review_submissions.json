@@ -236,7 +236,7 @@
         { "toolField": "app_id", "sourceKind": "parameter", "operationId": "reviewSubmissions_getCollection", "location": "query", "appleName": "filter[app]" },
         { "toolField": "states", "sourceKind": "parameter", "operationId": "reviewSubmissions_getCollection", "location": "query", "appleName": "filter[state]" },
         { "toolField": "platforms", "sourceKind": "parameter", "operationId": "reviewSubmissions_getCollection", "location": "query", "appleName": "filter[platform]" },
-        { "toolField": "include", "sourceKind": "parameter", "operationId": "reviewSubmissions_getCollection", "location": "query", "appleName": "include" },
+        { "toolField": "include", "sourceKind": "derived", "operationId": "reviewSubmissions_getCollection", "location": "query", "appleName": "include", "derivedFrom": ["include"], "localRole": "Preserve the caller-selected relationships and always add app so every returned submission can be validated against the required app_id filter." },
         { "toolField": "item_limit", "sourceKind": "parameter", "operationId": "reviewSubmissions_getCollection", "location": "query", "appleName": "limit[items]" },
         { "toolField": "limit", "sourceKind": "parameter", "operationId": "reviewSubmissions_getCollection", "location": "query", "appleName": "limit" },
         { "toolField": "next_url", "sourceKind": "local", "localRole": "Validate the exact origin, collection path, complete originating query, query allowlist, and non-empty cursor." }
@@ -268,7 +268,7 @@
           { "outputField": "total", "operationId": "reviewSubmissions_getCollection", "jsonPointer": "/meta/paging/total" }
         ]
       },
-      "note": "App ownership is mandatory; scalar, strict CSV, and unique-array filters are validated before the request, and continuation URLs preserve every originating query value. Apple collection responses are bounded by the effective requested limit, require scoped self/next links, preserve cursor consistency, and reject invalid or duplicate resource identities."
+      "note": "App ownership is mandatory; scalar, strict CSV, and unique-array filters are validated before the request, and the effective include always contains app even when the caller selects a narrower relationship subset. Continuation URLs preserve every effective originating query value. Apple collection responses are bounded by the effective requested limit, require scoped self/next links, preserve cursor consistency, and reject invalid or duplicate resource identities."
     },
     {
       "tool": "review_submissions_list_items",

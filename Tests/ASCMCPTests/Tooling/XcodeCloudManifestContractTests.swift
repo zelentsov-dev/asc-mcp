@@ -316,11 +316,11 @@ struct XcodeCloudManifestContractTests {
 
         let pin = try #require(manifest.index.optionalInputCoveragePin)
         #expect(pin.total == 2_905)
-        #expect(pin.bound == 1_108)
+        #expect(pin.bound == 1_122)
         #expect(pin.internalControl == 40)
-        #expect(pin.intentionallyOmitted == 1_757)
+        #expect(pin.intentionallyOmitted == 1_743)
         #expect(pin.unclassified == 0)
-        #expect(pin.identitySHA256 == "2e5eb2ebc1f4ae368dcb26fc8cd9de895866e27c6c22fd96f58e4e573e4af368")
+        #expect(pin.identitySHA256 == "c975f4e4eebb62ec87864a73fbf72bb8841f644108e54e6ffb25168bcf2a2766")
     }
 
     @Test("selected projections distinguish relationship self from related URLs")

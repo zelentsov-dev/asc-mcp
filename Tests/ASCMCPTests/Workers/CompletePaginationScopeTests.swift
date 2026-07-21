@@ -320,6 +320,7 @@ private func completePaginationFixtures() -> [CompletePaginationFixture] {
                 ],
                 requiredQuery: [
                     "fields[appStoreVersionLocalizations]": localizationFields,
+                    "include": "appStoreVersion",
                     "limit": "200"
                 ]
             ),
@@ -332,6 +333,7 @@ private func completePaginationFixtures() -> [CompletePaginationFixture] {
                 ],
                 requiredQuery: [
                     "fields[appStoreVersionLocalizations]": localizationFields,
+                    "include": "appStoreVersion",
                     "limit": "73",
                     "filter[locale]": "en-US,ru-RU"
                 ]
@@ -348,6 +350,8 @@ private func completePaginationFixtures() -> [CompletePaginationFixture] {
                 arguments: ["review_detail_id": .string("review-detail-1")],
                 requiredQuery: [
                     "fields[appStoreReviewAttachments]": attachmentFields,
+                    "fields[appStoreReviewDetails]": "appStoreVersion",
+                    "include": "appStoreReviewDetail",
                     "limit": "25"
                 ]
             ),
@@ -358,6 +362,8 @@ private func completePaginationFixtures() -> [CompletePaginationFixture] {
                 ],
                 requiredQuery: [
                     "fields[appStoreReviewAttachments]": attachmentFields,
+                    "fields[appStoreReviewDetails]": "appStoreVersion",
+                    "include": "appStoreReviewDetail",
                     "limit": "73"
                 ]
             ),

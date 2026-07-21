@@ -119,6 +119,8 @@ struct AppLifecycleWorkerContractTests {
         #expect(requests[0].url?.path == "/v1/appStoreVersions/ver-1/appStoreReviewDetail")
         #expect(URLComponents(url: try #require(requests[0].url), resolvingAgainstBaseURL: false)?
             .queryItems?.first(where: { $0.name == "fields[appStoreReviewDetails]" })?.value == "appStoreVersion")
+        #expect(URLComponents(url: try #require(requests[0].url), resolvingAgainstBaseURL: false)?
+            .queryItems?.first(where: { $0.name == "include" })?.value == "appStoreVersion")
         #expect(requests[1].url?.path == "/v1/appStoreReviewDetails/review-1")
         let body = try #require(await transport.recordedBodyStrings().last)
         #expect(body.contains(#""notes":"Updated""#))
@@ -582,6 +584,10 @@ struct AppLifecycleWorkerContractTests {
         ])
         #expect(URLComponents(url: try #require(requests[1].url), resolvingAgainstBaseURL: false)?
             .queryItems?.first(where: { $0.name == "fields[appInfos]" })?.value == "state,app")
+        #expect(URLComponents(url: try #require(requests[1].url), resolvingAgainstBaseURL: false)?
+            .queryItems?.first(where: { $0.name == "include" })?.value == "app")
+        #expect(URLComponents(url: try #require(requests[0].url), resolvingAgainstBaseURL: false)?
+            .queryItems?.first(where: { $0.name == "include" })?.value == "app")
         let patchBody = try #require(await transport.recordedBodyStrings().last)
         #expect(patchBody.contains(#""id":"age-1""#))
         #expect(patchBody.contains(#""socialMedia":true"#))
@@ -595,7 +601,7 @@ struct AppLifecycleWorkerContractTests {
 
     @Test("legacy age rating scans every App Info page before selection")
     func ageRatingScansEveryAppInfoPage() async throws {
-        let nextURL = "https://api.example.test/v1/apps/app-1/appInfos?fields%5BappInfos%5D=state%2Capp&limit=200&cursor=page-2"
+        let nextURL = "https://api.example.test/v1/apps/app-1/appInfos?fields%5BappInfos%5D=state%2Capp&include=app&limit=200&cursor=page-2"
         let transport = TestHTTPTransport(responses: [
             .init(statusCode: 200, body: versionWithAppBody(id: "ver-1", state: "PREPARE_FOR_SUBMISSION")),
             .init(statusCode: 200, body: """
@@ -604,7 +610,7 @@ struct AppLifecycleWorkerContractTests {
                 { "type": "appInfos", "id": "info-live", "attributes": { "state": "ACCEPTED" }, "relationships": { "app": { "data": { "type": "apps", "id": "app-1" } } } }
               ],
               "links": {
-                "self": "https://api.example.test/v1/apps/app-1/appInfos?fields%5BappInfos%5D=state%2Capp&limit=200",
+                "self": "https://api.example.test/v1/apps/app-1/appInfos?fields%5BappInfos%5D=state%2Capp&include=app&limit=200",
                 "next": "\(nextURL)"
               }
             }
@@ -615,7 +621,7 @@ struct AppLifecycleWorkerContractTests {
                 { "type": "appInfos", "id": "info-next", "attributes": { "state": "PREPARE_FOR_SUBMISSION" }, "relationships": { "app": { "data": { "type": "apps", "id": "app-1" } } } }
               ],
               "links": {
-                "self": "https://api.example.test/v1/apps/app-1/appInfos?fields%5BappInfos%5D=state%2Capp&limit=200&cursor=page-2"
+                "self": "https://api.example.test/v1/apps/app-1/appInfos?fields%5BappInfos%5D=state%2Capp&include=app&limit=200&cursor=page-2"
               }
             }
             """),
@@ -647,7 +653,7 @@ struct AppLifecycleWorkerContractTests {
 
     @Test("legacy age rating rejects ambiguity found on a later App Info page")
     func ageRatingRejectsLaterPageAmbiguity() async throws {
-        let nextURL = "https://api.example.test/v1/apps/app-1/appInfos?fields%5BappInfos%5D=state%2Capp&limit=200&cursor=page-2"
+        let nextURL = "https://api.example.test/v1/apps/app-1/appInfos?fields%5BappInfos%5D=state%2Capp&include=app&limit=200&cursor=page-2"
         let transport = TestHTTPTransport(responses: [
             .init(statusCode: 200, body: versionWithAppBody(id: "ver-1", state: "ACCEPTED")),
             .init(statusCode: 200, body: """
@@ -656,7 +662,7 @@ struct AppLifecycleWorkerContractTests {
                 { "type": "appInfos", "id": "info-accepted", "attributes": { "state": "ACCEPTED" }, "relationships": { "app": { "data": { "type": "apps", "id": "app-1" } } } }
               ],
               "links": {
-                "self": "https://api.example.test/v1/apps/app-1/appInfos?fields%5BappInfos%5D=state%2Capp&limit=200",
+                "self": "https://api.example.test/v1/apps/app-1/appInfos?fields%5BappInfos%5D=state%2Capp&include=app&limit=200",
                 "next": "\(nextURL)"
               }
             }
@@ -667,7 +673,7 @@ struct AppLifecycleWorkerContractTests {
                 { "type": "appInfos", "id": "info-accepted-2", "attributes": { "state": "ACCEPTED" }, "relationships": { "app": { "data": { "type": "apps", "id": "app-1" } } } }
               ],
               "links": {
-                "self": "https://api.example.test/v1/apps/app-1/appInfos?fields%5BappInfos%5D=state%2Capp&limit=200&cursor=page-2"
+                "self": "https://api.example.test/v1/apps/app-1/appInfos?fields%5BappInfos%5D=state%2Capp&include=app&limit=200&cursor=page-2"
               }
             }
             """)
@@ -754,7 +760,8 @@ struct AppLifecycleWorkerContractTests {
             versionWithAppBody(type: "apps", id: "ver-1", state: "PREPARE_FOR_SUBMISSION"),
             versionWithAppBody(id: "ver-other", state: "PREPARE_FOR_SUBMISSION"),
             versionWithAppBody(id: "ver-1", state: "PREPARE_FOR_SUBMISSION", appType: "users"),
-            versionWithAppBody(id: "ver-1", state: "PREPARE_FOR_SUBMISSION", appId: " ")
+            versionWithAppBody(id: "ver-1", state: "PREPARE_FOR_SUBMISSION", appId: " "),
+            #"{"data":{"type":"appStoreVersions","id":"ver-1","attributes":{"appVersionState":"PREPARE_FOR_SUBMISSION"}}}"#
         ]
 
         for response in versionResponses {
@@ -777,6 +784,7 @@ struct AppLifecycleWorkerContractTests {
         let appInfoResponses = [
             #"{"data":[{"type":"apps","id":"info-1","attributes":{"state":"PREPARE_FOR_SUBMISSION"}}],"links":{"self":"https://api.example.test/v1/apps/app-1/appInfos"}}"#,
             #"{"data":[{"type":"appInfos","id":"","attributes":{"state":"PREPARE_FOR_SUBMISSION"}}],"links":{"self":"https://api.example.test/v1/apps/app-1/appInfos"}}"#,
+            #"{"data":[{"type":"appInfos","id":"info-1","attributes":{"state":"PREPARE_FOR_SUBMISSION"}}],"links":{"self":"https://api.example.test/v1/apps/app-1/appInfos"}}"#,
             #"{"data":[{"type":"appInfos","id":"info-1","attributes":{"state":"PREPARE_FOR_SUBMISSION"},"relationships":{"app":{"data":{"type":"apps","id":"app-other"}}}}],"links":{"self":"https://api.example.test/v1/apps/app-1/appInfos"}}"#,
             #"{"data":[{"type":"appInfos","id":"info-1","attributes":{"state":"ACCEPTED"},"relationships":{"app":{"data":{"type":"apps","id":"app-1"}}}},{"type":"appInfos","id":"info-1","attributes":{"state":"PREPARE_FOR_SUBMISSION"},"relationships":{"app":{"data":{"type":"apps","id":"app-1"}}}}],"links":{"self":"https://api.example.test/v1/apps/app-1/appInfos"}}"#
         ]

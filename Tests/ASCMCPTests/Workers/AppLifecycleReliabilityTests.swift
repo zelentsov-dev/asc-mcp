@@ -18,6 +18,12 @@ struct AppLifecycleReliabilityTests {
         ]))
         #expect(try lifecycleReliabilityFixedQuery(
             manifest,
+            tool: "app_versions_submit_for_review",
+            operationID: "appStoreVersions_getInstance",
+            appleName: "include"
+        ) == .array([.string("app")]))
+        #expect(try lifecycleReliabilityFixedQuery(
+            manifest,
             tool: "app_versions_list",
             operationID: "apps_appStoreVersions_getToManyRelated",
             appleName: "include"
@@ -48,6 +54,24 @@ struct AppLifecycleReliabilityTests {
         ) == .array([
             .string("appStoreVersion")
         ]))
+        #expect(try lifecycleReliabilityFixedQuery(
+            manifest,
+            tool: "app_versions_set_review_details",
+            operationID: "appStoreVersions_appStoreReviewDetail_getToOneRelated",
+            appleName: "include"
+        ) == .array([.string("appStoreVersion")]))
+        #expect(try lifecycleReliabilityFixedQuery(
+            manifest,
+            tool: "app_versions_update_age_rating",
+            operationID: "appStoreVersions_getInstance",
+            appleName: "include"
+        ) == .array([.string("app")]))
+        #expect(try lifecycleReliabilityFixedQuery(
+            manifest,
+            tool: "app_versions_update_age_rating",
+            operationID: "apps_appInfos_getToManyRelated",
+            appleName: "include"
+        ) == .array([.string("app")]))
         #expect(try lifecycleReliabilityFixedQuery(
             manifest,
             tool: "app_versions_update_age_rating",
@@ -572,6 +596,24 @@ struct AppLifecycleReliabilityTests {
         #expect(request.httpMethod == "GET")
         let query = URLComponents(url: try #require(request.url), resolvingAgainstBaseURL: false)?.queryItems ?? []
         #expect(query.first(where: { $0.name == "fields[appStoreVersions]" })?.value == "app,platform,versionString,appVersionState")
+        #expect(query.first(where: { $0.name == "include" })?.value == "app")
+    }
+
+    @Test("submit fails closed when Apple omits app linkage")
+    func submitRejectsMissingOwnershipLinkage() async throws {
+        let transport = TestHTTPTransport(responses: [
+            .init(statusCode: 200, body: #"{"data":{"type":"appStoreVersions","id":"ver-1","attributes":{"platform":"IOS"}}}"#)
+        ])
+        let worker = try await makeLifecycleReliabilityWorker(transport)
+
+        let result = try await worker.handleTool(.init(
+            name: "app_versions_submit_for_review",
+            arguments: ["version_id": .string("ver-1"), "app_id": .string("app-1")]
+        ))
+
+        #expect(result.isError == true)
+        #expect(await transport.requestCount() == 1)
+        #expect((await transport.recordedRequests()).allSatisfy { $0.httpMethod == "GET" })
     }
 }
 
