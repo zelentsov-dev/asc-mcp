@@ -37,7 +37,7 @@
       "tool": "users_cancel_invitation",
       "kind": "direct",
       "status": "partial",
-      "effect": "write",
+      "effect": "destructive",
       "implementationState": "asBuilt",
       "operations": [
         { "operationId": "userInvitations_deleteInstance", "method": "delete", "path": "/v1/userInvitations/{id}", "role": "primary" }
@@ -96,17 +96,18 @@
           "path": "/v1/userInvitations",
           "role": "primary",
           "inputs": [
-            { "sourceKind": "fixed", "jsonPointer": "/data/type", "fixedValue": "userInvitations" }
+            { "sourceKind": "fixed", "jsonPointer": "/data/type", "fixedValue": "userInvitations" },
+            { "sourceKind": "fixed", "jsonPointer": "/data/relationships/visibleApps/data/*/type", "fixedValue": "apps" }
           ]
         }
       ],
       "fields": [
-        { "toolField": "email", "sourceKind": "requestBody", "operationId": "userInvitations_createInstance", "jsonPointer": "/data/attributes/email" },
+        { "toolField": "email", "sourceKind": "requestBody", "operationId": "userInvitations_createInstance", "jsonPointer": "/data/attributes/email", "localRole": "validated as an email address before the request" },
         { "toolField": "first_name", "sourceKind": "requestBody", "operationId": "userInvitations_createInstance", "jsonPointer": "/data/attributes/firstName" },
         { "toolField": "last_name", "sourceKind": "requestBody", "operationId": "userInvitations_createInstance", "jsonPointer": "/data/attributes/lastName" },
         { "toolField": "roles", "sourceKind": "requestBody", "operationId": "userInvitations_createInstance", "jsonPointer": "/data/attributes/roles", "localRole": "validated as a non-empty unique array against Apple 4.4.1 UserRole values" },
-        { "toolField": "all_apps_visible", "sourceKind": "requestBody", "operationId": "userInvitations_createInstance", "jsonPointer": "/data/attributes/allAppsVisible", "localRole": "defaults to true when omitted" },
-        { "toolField": "provisioning_allowed", "sourceKind": "requestBody", "operationId": "userInvitations_createInstance", "jsonPointer": "/data/attributes/provisioningAllowed" },
+        { "toolField": "all_apps_visible", "sourceKind": "requestBody", "operationId": "userInvitations_createInstance", "jsonPointer": "/data/attributes/allAppsVisible", "localRole": "preserves omission, explicit null, and Boolean values" },
+        { "toolField": "provisioning_allowed", "sourceKind": "requestBody", "operationId": "userInvitations_createInstance", "jsonPointer": "/data/attributes/provisioningAllowed", "localRole": "preserves omission, explicit null, and Boolean values" },
         { "toolField": "visible_app_ids", "sourceKind": "requestBody", "operationId": "userInvitations_createInstance", "jsonPointer": "/data/relationships/visibleApps/data/*/id", "localRole": "explicit arrays are validated for non-empty unique string IDs and preserved, including an explicit empty relationship" }
       ],
       "response": {
@@ -214,7 +215,8 @@
         ],
         "fields": [
           { "outputField": "apps", "operationId": "users_visibleApps_getToManyRelated", "jsonPointer": "/data" },
-          { "outputField": "next_url", "operationId": "users_visibleApps_getToManyRelated", "jsonPointer": "/links/next" }
+          { "outputField": "next_url", "operationId": "users_visibleApps_getToManyRelated", "jsonPointer": "/links/next" },
+          { "outputField": "total", "operationId": "users_visibleApps_getToManyRelated", "jsonPointer": "/meta/paging/total" }
         ]
       },
       "note": "Covers every non-fieldset Apple 4.4.1 input for the related visible-app collection. The formatter intentionally returns a stable selected app projection."
@@ -223,7 +225,7 @@
       "tool": "users_remove",
       "kind": "direct",
       "status": "partial",
-      "effect": "write",
+      "effect": "destructive",
       "implementationState": "asBuilt",
       "operations": [
         { "operationId": "users_deleteInstance", "method": "delete", "path": "/v1/users/{id}", "role": "primary" }
@@ -246,7 +248,7 @@
       "tool": "users_remove_visible_apps",
       "kind": "direct",
       "status": "partial",
-      "effect": "write",
+      "effect": "destructive",
       "implementationState": "asBuilt",
       "operations": [
         {
@@ -295,9 +297,9 @@
       "fields": [
         { "toolField": "user_id", "sourceKind": "parameter", "operationId": "users_updateInstance", "location": "path", "appleName": "id" },
         { "toolField": "user_id", "sourceKind": "requestBody", "operationId": "users_updateInstance", "jsonPointer": "/data/id" },
-        { "toolField": "roles", "sourceKind": "requestBody", "operationId": "users_updateInstance", "jsonPointer": "/data/attributes/roles", "localRole": "validated against Apple 4.4.1 UserRole values; ACCESS_TO_REPORTS remains accepted with a deprecation warning" },
-        { "toolField": "all_apps_visible", "sourceKind": "requestBody", "operationId": "users_updateInstance", "jsonPointer": "/data/attributes/allAppsVisible" },
-        { "toolField": "provisioning_allowed", "sourceKind": "requestBody", "operationId": "users_updateInstance", "jsonPointer": "/data/attributes/provisioningAllowed" },
+        { "toolField": "roles", "sourceKind": "requestBody", "operationId": "users_updateInstance", "jsonPointer": "/data/attributes/roles", "localRole": "preserves explicit null or validates a non-empty array against Apple 4.4.1 UserRole values; ACCESS_TO_REPORTS remains accepted with a deprecation warning" },
+        { "toolField": "all_apps_visible", "sourceKind": "requestBody", "operationId": "users_updateInstance", "jsonPointer": "/data/attributes/allAppsVisible", "localRole": "preserves omission, explicit null, and Boolean values" },
+        { "toolField": "provisioning_allowed", "sourceKind": "requestBody", "operationId": "users_updateInstance", "jsonPointer": "/data/attributes/provisioningAllowed", "localRole": "preserves omission, explicit null, and Boolean values" },
         { "toolField": "visible_app_ids", "sourceKind": "requestBody", "operationId": "users_updateInstance", "jsonPointer": "/data/relationships/visibleApps/data/*/id", "localRole": "each non-empty unique ID is encoded as an apps resource linkage; an empty array clears the relationship" }
       ],
       "response": {

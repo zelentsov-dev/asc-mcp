@@ -215,6 +215,44 @@ struct BetaAdministrativeWorkerContractTests {
         #expect(root["request_id"] == .string("clear-1"))
     }
 
+    @Test("sandbox mutations preserve committed-unverified state")
+    func sandboxMutationsPreserveCommittedUnverifiedState() async throws {
+        let updateTransport = TestHTTPTransport(responses: [
+            .init(statusCode: 204, body: "")
+        ])
+        let updateWorker = SandboxTestersWorker(
+            httpClient: try await makeBetaAdministrativeClient(updateTransport)
+        )
+        let update = try await updateWorker.handleTool(CallTool.Parameters(
+            name: "sandbox_update",
+            arguments: [
+                "sandbox_tester_id": .string("tester-1"),
+                "interrupt_purchases": .bool(true)
+            ]
+        ))
+        let updatePayload = try betaAdministrativeObject(update.structuredContent)
+        #expect(update.isError == true)
+        #expect(updatePayload["operationCommitState"] == .string("committed_unverified"))
+        #expect(updatePayload["operationCommitted"] == .bool(true))
+        #expect(updatePayload["retrySafe"] == .bool(false))
+
+        let clearTransport = TestHTTPTransport(responses: [
+            .init(statusCode: 200, body: #"{"data":{"type":"sandboxTestersClearPurchaseHistoryRequest","id":"clear-1"}}"#)
+        ])
+        let clearWorker = SandboxTestersWorker(
+            httpClient: try await makeBetaAdministrativeClient(clearTransport)
+        )
+        let clear = try await clearWorker.handleTool(CallTool.Parameters(
+            name: "sandbox_clear_purchase_history",
+            arguments: ["sandbox_tester_ids": .array([.string("tester-1")])]
+        ))
+        let clearPayload = try betaAdministrativeObject(clear.structuredContent)
+        #expect(clear.isError == true)
+        #expect(clearPayload["operationCommitState"] == .string("committed_unverified"))
+        #expect(clearPayload["operationCommitted"] == .bool(true))
+        #expect(clearPayload["retrySafe"] == .bool(false))
+    }
+
     @Test("beta administrative schemas expose nullable writes and collection bounds")
     func betaAdministrativeSchemasExposeContracts() async throws {
         let client = try await TestFactory.makeHTTPClient()

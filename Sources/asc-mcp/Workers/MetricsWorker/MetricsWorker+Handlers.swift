@@ -119,11 +119,7 @@ extension MetricsWorker {
                 queryParams["filter[diagnosticType]"] = diagnosticTypes.queryValue
             }
 
-            if let limit = arguments["limit"]?.intValue {
-                queryParams["limit"] = String(min(max(limit, 1), 200))
-            } else {
-                queryParams["limit"] = "25"
-            }
+            queryParams["limit"] = String(try metricsLimit(arguments["limit"], defaultValue: 25))
 
             if let nextUrl = try paginationURL(from: arguments["next_url"]) {
                 response = try await httpClient.getPage(
@@ -160,10 +156,7 @@ extension MetricsWorker {
             return MCPResult.jsonObject(result)
 
         } catch {
-            return CallTool.Result(
-                content: [MCPContent.text("Failed to list build diagnostic signatures: \(error.localizedDescription)")],
-                isError: true
-            )
+            return MCPResult.error(error, prefix: "Failed to list build diagnostic signatures")
         }
     }
 
@@ -181,8 +174,8 @@ extension MetricsWorker {
 
         do {
             var queryParams: [String: String] = [:]
-            if let limit = arguments["limit"]?.intValue {
-                queryParams["limit"] = String(min(max(limit, 1), 200))
+            if arguments["limit"] != nil {
+                queryParams["limit"] = String(try metricsLimit(arguments["limit"], defaultValue: 25))
             }
 
             let data = try await httpClient.getRaw(
@@ -202,11 +195,16 @@ extension MetricsWorker {
             return MCPResult.jsonObject(result)
 
         } catch {
-            return CallTool.Result(
-                content: [MCPContent.text("Failed to get diagnostic logs: \(error.localizedDescription)")],
-                isError: true
-            )
+            return MCPResult.error(error, prefix: "Failed to get diagnostic logs")
         }
+    }
+
+    private func metricsLimit(_ value: Value?, defaultValue: Int) throws -> Int {
+        guard let value else { return defaultValue }
+        guard let limit = value.intValue, (1...200).contains(limit) else {
+            throw ASCError.parsing("limit must be an integer from 1 through 200")
+        }
+        return limit
     }
 
     // MARK: - Formatting
@@ -348,6 +346,13 @@ extension MetricsWorker {
     private func formatMetric(_ metric: ASCMetric) -> [String: Any] {
         var dict: [String: Any] = [:]
         dict["identifier"] = metric.identifier.jsonSafe
+        dict["goal_keys"] = (metric.goalKeys ?? []).map { goalKey in
+            [
+                "goal_key": goalKey.goalKey.jsonSafe,
+                "lower_bound": goalKey.lowerBound.jsonSafe,
+                "upper_bound": goalKey.upperBound.jsonSafe
+            ]
+        }
         if let unit = metric.unit {
             dict["unit"] = [
                 "identifier": unit.identifier.jsonSafe,

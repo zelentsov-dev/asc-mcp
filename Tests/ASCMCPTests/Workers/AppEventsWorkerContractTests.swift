@@ -16,6 +16,16 @@ struct AppEventsWorkerContractTests {
         #expect(list["include"] != nil)
         #expect(list["localizations_limit"] != nil)
         #expect(list["next_url"] != nil)
+        for field in ["event_states", "include"] {
+            let variants = try #require(list[field]?.objectValue?["oneOf"]?.arrayValue)
+            let scalar = try appEventsContractObject(try #require(variants.first))
+            #expect(scalar["pattern"]?.stringValue?.isEmpty == false)
+        }
+        let eventStateVariants = try #require(list["event_states"]?.objectValue?["oneOf"]?.arrayValue)
+        let eventStateScalar = try appEventsContractObject(try #require(eventStateVariants.first))
+        let eventStatePattern = try #require(eventStateScalar["pattern"]?.stringValue)
+        #expect("DRAFT, READY_FOR_REVIEW".range(of: eventStatePattern, options: .regularExpression) != nil)
+        #expect("DRAFT, INVALID".range(of: eventStatePattern, options: .regularExpression) == nil)
 
         let localizationList = try appEventsContractProperties(
             try #require(tools.first { $0.name == "app_events_list_localizations" })
@@ -31,12 +41,11 @@ struct AppEventsWorkerContractTests {
         #expect(update["priority"] != nil)
         #expect(update["territory_schedules"]?.objectValue?["oneOf"]?.arrayValue?.count == 3)
         #expect(update["deep_link"]?.objectValue?["format"]?.stringValue == "uri")
-        let purchaseValues = try #require(update["purchase_requirement"]?.objectValue?["enum"]?.arrayValue)
-        #expect(purchaseValues.compactMap(\.stringValue) == ["NO_COST_ASSOCIATED", "IN_APP_PURCHASE"])
-        #expect(purchaseValues.contains { $0.isNull })
-        let createPurchaseValues = try #require(create["purchase_requirement"]?.objectValue?["enum"]?.arrayValue)
-        #expect(createPurchaseValues.compactMap(\.stringValue) == ["NO_COST_ASSOCIATED", "IN_APP_PURCHASE"])
-        #expect(createPurchaseValues.contains { $0.isNull })
+        for properties in [create, update] {
+            let purchase = try #require(properties["purchase_requirement"]?.objectValue)
+            #expect(purchase["type"]?.arrayValue?.compactMap(\.stringValue) == ["string", "null"])
+            #expect(purchase["enum"] == nil)
+        }
     }
 
     @Test("current collection controls map to Apple query names")
@@ -64,8 +73,8 @@ struct AppEventsWorkerContractTests {
                 "event_states": .array([.string("DRAFT"), .string("READY_FOR_REVIEW")]),
                 "event_ids": .string("event-1,event-2"),
                 "include": .array([.string("localizations")]),
-                "limit": .int(500),
-                "localizations_limit": .int(90)
+                "limit": .int(200),
+                "localizations_limit": .int(50)
             ]
         ))
 
@@ -113,9 +122,9 @@ struct AppEventsWorkerContractTests {
             arguments: [
                 "event_id": .string("event-1"),
                 "include": .array([.string("appEvent"), .string("appEventScreenshots"), .string("appEventVideoClips")]),
-                "limit": .int(300),
-                "screenshots_limit": .int(75),
-                "video_clips_limit": .int(80)
+                "limit": .int(200),
+                "screenshots_limit": .int(50),
+                "video_clips_limit": .int(50)
             ]
         ))
 
@@ -215,7 +224,77 @@ struct AppEventsWorkerContractTests {
                 "deep_link": .string("events launch")
             ]
         ))
-        let invalidCreatePurchaseRequirement = try await worker.handleTool(CallTool.Parameters(
+        #expect(invalidSchedule.isError == true)
+        #expect(noOpEvent.isError == true)
+        #expect(noOpLocalization.isError == true)
+        #expect(invalidCreateDeepLink.isError == true)
+        #expect(invalidUpdateDeepLink.isError == true)
+        #expect(await transport.requestCount() == 0)
+    }
+
+    @Test("present invalid collection limits fail before network")
+    func invalidLimitsFailBeforeNetwork() async throws {
+        let cases: [(String, [String: Value])] = [
+            ("app_events_list", ["app_id": .string("app-1"), "limit": .int(0)]),
+            ("app_events_list", ["app_id": .string("app-1"), "localizations_limit": .string("50")]),
+            ("app_events_get", ["event_id": .string("event-1"), "localizations_limit": .int(51)]),
+            ("app_events_list_localizations", ["event_id": .string("event-1"), "limit": .int(201)]),
+            ("app_events_list_localizations", ["event_id": .string("event-1"), "screenshots_limit": .int(0)]),
+            ("app_events_list_localizations", ["event_id": .string("event-1"), "video_clips_limit": .string("50")])
+        ]
+
+        for (tool, arguments) in cases {
+            let transport = TestHTTPTransport(responses: [])
+            let worker = try await appEventsContractWorker(transport: transport)
+
+            let result = try await worker.handleTool(.init(name: tool, arguments: arguments))
+
+            #expect(result.isError == true)
+            #expect(await transport.requestCount() == 0)
+        }
+    }
+
+    @Test("accepted create and update identity failures are committed unverified")
+    func mutationIdentityFailuresPreserveCommitState() async throws {
+        let createTransport = TestHTTPTransport(responses: [
+            .init(statusCode: 201, body: #"{"data":{"type":"apps","id":"event-1"}}"#)
+        ])
+        let createWorker = try await appEventsContractWorker(transport: createTransport)
+        let create = try await createWorker.handleTool(.init(
+            name: "app_events_create",
+            arguments: ["app_id": .string("app-1"), "reference_name": .string("Launch")]
+        ))
+
+        let updateTransport = TestHTTPTransport(responses: [
+            .init(statusCode: 200, body: #"{"data":{"type":"appEventLocalizations","id":"loc-other"}}"#)
+        ])
+        let updateWorker = try await appEventsContractWorker(transport: updateTransport)
+        let update = try await updateWorker.handleTool(.init(
+            name: "app_events_update_localization",
+            arguments: ["localization_id": .string("loc-1"), "name": .string("Launch")]
+        ))
+
+        for result in [create, update] {
+            let payload = try appEventsContractObject(result.structuredContent)
+            #expect(result.isError == true)
+            #expect(payload["operationCommitState"] == .string("committed_unverified"))
+            #expect(payload["retrySafe"] == .bool(false))
+        }
+    }
+
+    @Test("purchase requirement forwards arbitrary Apple strings on create and update")
+    func purchaseRequirementIsUnconstrained() async throws {
+        let transport = TestHTTPTransport(responses: [
+            .init(statusCode: 201, body: """
+            {"data":{"type":"appEvents","id":"event-1","attributes":{"referenceName":"Launch","purchaseRequirement":"SUBSCRIPTION"}}}
+            """),
+            .init(statusCode: 200, body: """
+            {"data":{"type":"appEvents","id":"event-1","attributes":{"referenceName":"Launch","purchaseRequirement":"IN_APP_PURCHASE_OR_SUBSCRIPTION"}}}
+            """)
+        ])
+        let worker = try await appEventsContractWorker(transport: transport)
+
+        let create = try await worker.handleTool(CallTool.Parameters(
             name: "app_events_create",
             arguments: [
                 "app_id": .string("app-1"),
@@ -223,7 +302,7 @@ struct AppEventsWorkerContractTests {
                 "purchase_requirement": .string("SUBSCRIPTION")
             ]
         ))
-        let invalidUpdatePurchaseRequirement = try await worker.handleTool(CallTool.Parameters(
+        let update = try await worker.handleTool(CallTool.Parameters(
             name: "app_events_update",
             arguments: [
                 "event_id": .string("event-1"),
@@ -231,14 +310,20 @@ struct AppEventsWorkerContractTests {
             ]
         ))
 
-        #expect(invalidSchedule.isError == true)
-        #expect(noOpEvent.isError == true)
-        #expect(noOpLocalization.isError == true)
-        #expect(invalidCreateDeepLink.isError == true)
-        #expect(invalidUpdateDeepLink.isError == true)
-        #expect(invalidCreatePurchaseRequirement.isError == true)
-        #expect(invalidUpdatePurchaseRequirement.isError == true)
-        #expect(await transport.requestCount() == 0)
+        #expect(create.isError != true)
+        #expect(update.isError != true)
+        let requests = await transport.recordedRequests()
+        let createRequest = try #require(requests.first)
+        let updateRequest = try #require(requests.last)
+        #expect(try appEventsContractAttributes(createRequest)["purchaseRequirement"] as? String == "SUBSCRIPTION")
+        #expect(try appEventsContractAttributes(updateRequest)["purchaseRequirement"] as? String == "IN_APP_PURCHASE_OR_SUBSCRIPTION")
+
+        let manifest = try ASCOperationManifestBundle.loadBundled()
+        for toolName in ["app_events_create", "app_events_update"] {
+            let mapping = try #require(manifest.mapping(for: toolName))
+            let purchaseRequirement = try #require(mapping.fields.first { $0.toolField == "purchase_requirement" })
+            #expect(purchaseRequirement.localRole?.contains("any non-null string") == true)
+        }
     }
 
     @Test("localization update sends explicit null")

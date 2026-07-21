@@ -82,10 +82,13 @@ struct AppLifecycleReliabilityTests {
         #expect(list["limit"]?.objectValue?["minimum"]?.intValue == 1)
         #expect(list["limit"]?.objectValue?["maximum"]?.intValue == 200)
         #expect(list["limit"]?.objectValue?["default"]?.intValue == 25)
-        #expect(create["copyright"] != nil)
-        #expect(create["review_type"] != nil)
+        for field in ["release_type", "earliest_release_date", "copyright", "review_type"] {
+            #expect(create[field]?.objectValue?["type"]?.arrayValue?.compactMap(\.stringValue) == ["string", "null"])
+        }
+        #expect(create["earliest_release_date"]?.objectValue?["format"]?.stringValue == "date-time")
         #expect(update["review_type"]?.objectValue?["type"]?.arrayValue?.compactMap(\.stringValue) == ["string", "null"])
         #expect(update["downloadable"]?.objectValue?["type"]?.arrayValue?.compactMap(\.stringValue) == ["boolean", "null"])
+        #expect(update["earliest_release_date"]?.objectValue?["format"]?.stringValue == "date-time")
         #expect(age["kids_age_band"]?.objectValue?["type"]?.arrayValue?.compactMap(\.stringValue) == ["string", "null"])
         #expect(tools.contains { $0.name == "app_versions_delete_phased_release" })
         #expect(Set(deletePhased.inputSchema.objectValue?["required"]?.arrayValue?.compactMap(\.stringValue) ?? []) == [
@@ -122,28 +125,102 @@ struct AppLifecycleReliabilityTests {
         #expect(query.first(where: { $0.name == "limit" })?.value == "25")
     }
 
-    @Test("create version sends copyright and review type")
-    func createVersionSendsCurrentAttributes() async throws {
-        let transport = TestHTTPTransport(responses: [
+    @Test("create version preserves omitted, null, and concrete nullable attributes")
+    func createVersionPreservesNullableTriState() async throws {
+        let omittedTransport = TestHTTPTransport(responses: [
             .init(statusCode: 201, body: #"{"data":{"type":"appStoreVersions","id":"ver-1"}}"#)
         ])
+        let omittedWorker = try await makeLifecycleReliabilityWorker(omittedTransport)
+        let omittedResult = try await omittedWorker.handleTool(.init(
+            name: "app_versions_create",
+            arguments: [
+                "app_id": .string("app-1"),
+                "platform": .string("IOS"),
+                "version_string": .string("2.0")
+            ]
+        ))
+
+        let nullTransport = TestHTTPTransport(responses: [
+            .init(statusCode: 201, body: #"{"data":{"type":"appStoreVersions","id":"ver-2"}}"#)
+        ])
+        let nullWorker = try await makeLifecycleReliabilityWorker(nullTransport)
+        let nullResult = try await nullWorker.handleTool(.init(
+            name: "app_versions_create",
+            arguments: [
+                "app_id": .string("app-1"),
+                "platform": .string("IOS"),
+                "version_string": .string("2.1"),
+                "release_type": .null,
+                "earliest_release_date": .null,
+                "copyright": .null,
+                "review_type": .null,
+                "uses_idfa": .null
+            ]
+        ))
+
+        let valueTransport = TestHTTPTransport(responses: [
+            .init(statusCode: 201, body: #"{"data":{"type":"appStoreVersions","id":"ver-3"}}"#)
+        ])
+        let valueWorker = try await makeLifecycleReliabilityWorker(valueTransport)
+        let valueResult = try await valueWorker.handleTool(.init(
+            name: "app_versions_create",
+            arguments: [
+                "app_id": .string("app-1"),
+                "platform": .string("IOS"),
+                "version_string": .string("2.2"),
+                "release_type": .string("SCHEDULED"),
+                "earliest_release_date": .string("2026-09-01T12:00:00Z"),
+                "copyright": .string("2026 Example"),
+                "review_type": .string("APP_STORE"),
+                "uses_idfa": .bool(false)
+            ]
+        ))
+
+        #expect(omittedResult.isError != true)
+        #expect(nullResult.isError != true)
+        #expect(valueResult.isError != true)
+
+        let omitted = try lifecycleReliabilityRequestAttributes(try #require(await omittedTransport.recordedBodyStrings().first))
+        #expect(Set(omitted.keys) == ["platform", "versionString"])
+
+        let null = try lifecycleReliabilityRequestAttributes(try #require(await nullTransport.recordedBodyStrings().first))
+        for field in ["releaseType", "earliestReleaseDate", "copyright", "reviewType", "usesIdfa"] {
+            #expect(null[field] is NSNull)
+        }
+
+        let value = try lifecycleReliabilityRequestAttributes(try #require(await valueTransport.recordedBodyStrings().first))
+        #expect(value["releaseType"] as? String == "SCHEDULED")
+        #expect(value["earliestReleaseDate"] as? String == "2026-09-01T12:00:00Z")
+        #expect(value["copyright"] as? String == "2026 Example")
+        #expect(value["reviewType"] as? String == "APP_STORE")
+        #expect(value["usesIdfa"] as? Bool == false)
+    }
+
+    @Test("version date-time inputs reject invalid values before network access")
+    func versionDateTimeValidation() async throws {
+        let transport = TestHTTPTransport(responses: [])
         let worker = try await makeLifecycleReliabilityWorker(transport)
 
-        let result = try await worker.handleTool(.init(
+        let create = try await worker.handleTool(.init(
             name: "app_versions_create",
             arguments: [
                 "app_id": .string("app-1"),
                 "platform": .string("IOS"),
                 "version_string": .string("2.0"),
-                "copyright": .string("2026 Example"),
-                "review_type": .string("APP_STORE")
+                "earliest_release_date": .string("2026-09-01")
+            ]
+        ))
+        let update = try await worker.handleTool(.init(
+            name: "app_versions_update",
+            arguments: [
+                "version_id": .string("ver-1"),
+                "earliest_release_date": .string("tomorrow")
             ]
         ))
 
-        #expect(result.isError != true)
-        let attributes = try lifecycleReliabilityRequestAttributes(try #require(await transport.recordedBodyStrings().first))
-        #expect(attributes["copyright"] as? String == "2026 Example")
-        #expect(attributes["reviewType"] as? String == "APP_STORE")
+        #expect(create.isError == true)
+        #expect(update.isError == true)
+        #expect(await transport.requestCount() == 0)
     }
 
     @Test("update version preserves nullable tri-state and exposes current state")
@@ -181,6 +258,84 @@ struct AppLifecycleReliabilityTests {
         #expect(version["app_store_state"] as? String == "READY_FOR_SALE")
         #expect(version["copyright"] as? String == "2026 Example")
         #expect(version["earliest_release_date"] as? String == "2026-08-01T00:00:00Z")
+    }
+
+    @Test("attach build requires Apple's 204 relationship status")
+    func attachBuildExactStatus() async throws {
+        let acceptedTransport = TestHTTPTransport(responses: [.init(statusCode: 204, body: "")])
+        let acceptedWorker = try await makeLifecycleReliabilityWorker(acceptedTransport)
+        let accepted = try await acceptedWorker.handleTool(.init(
+            name: "app_versions_attach_build",
+            arguments: ["version_id": .string("ver-1"), "build_id": .string("build-1")]
+        ))
+
+        let rejectedTransport = TestHTTPTransport(responses: [.init(statusCode: 200, body: "")])
+        let rejectedWorker = try await makeLifecycleReliabilityWorker(rejectedTransport)
+        let rejected = try await rejectedWorker.handleTool(.init(
+            name: "app_versions_attach_build",
+            arguments: ["version_id": .string("ver-1"), "build_id": .string("build-1")]
+        ))
+
+        #expect(accepted.isError != true)
+        #expect(rejected.isError == true)
+        let payload = try lifecycleReliabilityStructuredObject(rejected)
+        #expect(payload["operationCommitState"] == .string("committed_unverified"))
+        #expect(payload["operationCommitted"] == .bool(true))
+        #expect(payload["outcomeUnknown"] == .bool(false))
+        #expect(payload["retrySafe"] == .bool(false))
+        #expect(payload["inspectionRequired"] == .bool(true))
+    }
+
+    @Test("create mutation catch preserves committed-unverified and unknown states")
+    func createMutationCatchPreservesCommitState() async throws {
+        let transport = TestHTTPTransport(responses: [
+            .init(statusCode: 202, body: #"{"data":{"type":"appStoreVersions","id":"ver-1"}}"#)
+        ])
+        let worker = try await makeLifecycleReliabilityWorker(transport)
+
+        let result = try await worker.handleTool(.init(
+            name: "app_versions_create",
+            arguments: [
+                "app_id": .string("app-1"),
+                "platform": .string("IOS"),
+                "version_string": .string("2.0")
+            ]
+        ))
+
+        #expect(result.isError == true)
+        let payload = try lifecycleReliabilityStructuredObject(result)
+        #expect(payload["operationCommitState"] == .string("committed_unverified"))
+        #expect(payload["operationCommitted"] == .bool(true))
+        #expect(payload["outcomeUnknown"] == .bool(false))
+        #expect(payload["retrySafe"] == .bool(false))
+        #expect(payload["inspectionRequired"] == .bool(true))
+        let details = try lifecycleReliabilityValueObject(payload["details"])
+        #expect(details["type"] == .string("mutation_unverified"))
+        #expect(details["method"] == .string("POST"))
+        #expect(details["statusCode"] == .int(202))
+
+        let unknownTransport = TestHTTPTransport(responses: [
+            .init(statusCode: 503, body: lifecycleReliabilityAPIError(503))
+        ])
+        let unknownWorker = try await makeLifecycleReliabilityWorker(unknownTransport)
+        let unknownResult = try await unknownWorker.handleTool(.init(
+            name: "app_versions_create",
+            arguments: [
+                "app_id": .string("app-1"),
+                "platform": .string("IOS"),
+                "version_string": .string("2.0")
+            ]
+        ))
+
+        #expect(unknownResult.isError == true)
+        let unknownPayload = try lifecycleReliabilityStructuredObject(unknownResult)
+        #expect(unknownPayload["operationCommitState"] == .string("unknown"))
+        #expect(unknownPayload["outcomeUnknown"] == .bool(true))
+        #expect(unknownPayload["retrySafe"] == .bool(false))
+        #expect(unknownPayload["inspectionRequired"] == .bool(true))
+        let unknownDetails = try lifecycleReliabilityValueObject(unknownPayload["details"])
+        #expect(unknownDetails["type"] == .string("mutation_unknown"))
+        #expect(unknownDetails["method"] == .string("POST"))
     }
 
     @Test("kids age band preserves explicit null")

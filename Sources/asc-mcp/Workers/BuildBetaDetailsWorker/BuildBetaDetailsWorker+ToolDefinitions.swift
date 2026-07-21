@@ -33,8 +33,8 @@ extension BuildBetaDetailsWorker {
                         "description": .string("Beta detail ID")
                     ]),
                     "auto_notify": .object([
-                        "type": .string("boolean"),
-                        "description": .string("Automatically notify testers")
+                        "type": .array([.string("boolean"), .string("null")]),
+                        "description": .string("Automatically notify testers, or null to clear the setting")
                     ]),
                     "internal_build_state": .object([
                         "type": .string("string"),
@@ -70,8 +70,8 @@ extension BuildBetaDetailsWorker {
                         "description": .string("Locale code (e.g. en-US, ru-RU, de-DE, ja, zh-Hans)")
                     ]),
                     "whats_new": .object([
-                        "type": .string("string"),
-                        "description": .string("What's New text for TestFlight (max 4000 characters)")
+                        "type": .array([.string("string"), .string("null")]),
+                        "description": .string("What's New text for TestFlight (max 4000 characters), or null to clear it")
                     ]),
                     "feedback_email": .object([
                         "type": .string("string"),
@@ -112,7 +112,10 @@ extension BuildBetaDetailsWorker {
                     ]),
                     "limit": .object([
                         "type": .string("integer"),
-                        "description": .string("Maximum number of localizations to return (1-200)")
+                        "description": .string("Maximum number of localizations to return (1-200)"),
+                        "minimum": .int(1),
+                        "maximum": .int(200),
+                        "default": .int(50)
                     ]),
                     "next_url": .object([
                         "type": .string("string"),
@@ -185,7 +188,10 @@ extension BuildBetaDetailsWorker {
                     ]),
                     "limit": .object([
                         "type": .string("integer"),
-                        "description": .string("Maximum number of testers to return (1-200)")
+                        "description": .string("Maximum number of testers to return (1-200)"),
+                        "minimum": .int(1),
+                        "maximum": .int(200),
+                        "default": .int(50)
                     ]),
                     "next_url": .object([
                         "type": .string("string"),
@@ -212,8 +218,10 @@ extension BuildBetaDetailsWorker {
                         "type": .string("array"),
                         "description": .string("Array of beta group IDs to add the build to"),
                         "items": .object([
-                            "type": .string("string")
-                        ])
+                            "type": .string("string"),
+                            "minLength": .int(1)
+                        ]),
+                        "minItems": .int(1)
                     ])
                 ]),
                 "required": .array([.string("build_id"), .string("group_ids")])
@@ -253,8 +261,10 @@ extension BuildBetaDetailsWorker {
                         "type": .string("array"),
                         "description": .string("Array of beta tester IDs to add to the build"),
                         "items": .object([
-                            "type": .string("string")
-                        ])
+                            "type": .string("string"),
+                            "minLength": .int(1)
+                        ]),
+                        "minItems": .int(1)
                     ])
                 ]),
                 "required": .array([.string("build_id"), .string("beta_tester_ids")])
@@ -277,8 +287,10 @@ extension BuildBetaDetailsWorker {
                         "type": .string("array"),
                         "description": .string("Array of beta tester IDs to remove from the build"),
                         "items": .object([
-                            "type": .string("string")
-                        ])
+                            "type": .string("string"),
+                            "minLength": .int(1)
+                        ]),
+                        "minItems": .int(1)
                     ])
                 ]),
                 "required": .array([.string("build_id"), .string("beta_tester_ids")])
@@ -299,7 +311,10 @@ extension BuildBetaDetailsWorker {
                     ]),
                     "limit": .object([
                         "type": .string("integer"),
-                        "description": .string("Maximum number of testers to return (1-200)")
+                        "description": .string("Maximum number of testers to return (1-200)"),
+                        "minimum": .int(1),
+                        "maximum": .int(200),
+                        "default": .int(50)
                     ]),
                     "next_url": .object([
                         "type": .string("string"),

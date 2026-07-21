@@ -115,9 +115,9 @@ extension BuildsWorker {
             return [
                 "id": detail.id,
                 "type": detail.type,
-                "autoNotifyEnabled": detail.attributes.autoNotifyEnabled.jsonSafe,
-                "internalBuildState": detail.attributes.internalBuildState.jsonSafe,
-                "externalBuildState": detail.attributes.externalBuildState.jsonSafe
+                "autoNotifyEnabled": (detail.attributes?.autoNotifyEnabled).jsonSafe,
+                "internalBuildState": (detail.attributes?.internalBuildState).jsonSafe,
+                "externalBuildState": (detail.attributes?.externalBuildState).jsonSafe
             ]
         case .buildUpload(let upload):
             return formatIncludedBuildUpload(upload)
@@ -140,17 +140,17 @@ extension BuildsWorker {
             return [
                 "id": group.id,
                 "type": group.type,
-                "name": group.attributes.name.jsonSafe,
-                "isInternalGroup": group.attributes.isInternalGroup.jsonSafe
+                "name": (group.attributes?.name).jsonSafe,
+                "isInternalGroup": (group.attributes?.isInternalGroup).jsonSafe
             ]
         case .betaTester(let tester):
             return [
                 "id": tester.id,
                 "type": tester.type,
-                "email": tester.attributes.email.jsonSafe,
-                "firstName": tester.attributes.firstName.jsonSafe,
-                "lastName": tester.attributes.lastName.jsonSafe,
-                "appDevices": tester.attributes.appDevices.map { devices in
+                "email": (tester.attributes?.email).jsonSafe,
+                "firstName": (tester.attributes?.firstName).jsonSafe,
+                "lastName": (tester.attributes?.lastName).jsonSafe,
+                "appDevices": (tester.attributes?.appDevices).map { devices in
                     devices.map { device in
                         [
                             "model": device.model.jsonSafe,

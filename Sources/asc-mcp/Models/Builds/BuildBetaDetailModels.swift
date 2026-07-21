@@ -12,7 +12,7 @@ public struct ASCBuildBetaDetailResponse: Codable, Sendable {
 public struct ASCBuildBetaDetail: Codable, Sendable {
     public let type: String
     public let id: String
-    public let attributes: BuildBetaDetailAttributes
+    public let attributes: BuildBetaDetailAttributes?
     public let relationships: BuildBetaDetailRelationships?
 }
 
@@ -47,7 +47,7 @@ public struct ASCBetaBuildLocalizationResponse: Codable, Sendable {
 public struct ASCBetaBuildLocalization: Codable, Sendable {
     public let type: String
     public let id: String
-    public let attributes: BetaBuildLocalizationAttributes
+    public let attributes: BetaBuildLocalizationAttributes?
     public let relationships: BetaBuildLocalizationRelationships?
 }
 
@@ -75,7 +75,7 @@ public struct ASCBetaGroupsResponse: Codable, Sendable {
 public struct ASCBetaGroup: Codable, Sendable {
     public let type: String
     public let id: String
-    public let attributes: BetaGroupAttributes
+    public let attributes: BetaGroupAttributes?
     public let relationships: BetaGroupRelationships?
 }
 
@@ -117,7 +117,7 @@ public struct ASCBetaTestersResponse: Codable, Sendable {
 public struct ASCBetaTester: Codable, Sendable {
     public let type: String
     public let id: String
-    public let attributes: BetaTesterAttributes
+    public let attributes: BetaTesterAttributes?
     public let relationships: BetaTesterRelationships?
 }
 
@@ -212,7 +212,7 @@ public struct CreateBetaBuildLocalizationRequest: Codable, Sendable {
 
     public struct CreateBetaBuildLocalizationAttributes: Codable, Sendable {
         public let locale: String
-        public let whatsNew: String?
+        public let whatsNew: ASCNullable<String>?
     }
     
     public struct CreateBetaBuildLocalizationRelationships: Codable, Sendable {
@@ -235,7 +235,7 @@ public struct UpdateBetaBuildLocalizationRequest: Codable, Sendable {
     }
     
     public struct BetaBuildLocalizationUpdateAttributes: Codable, Sendable {
-        public let whatsNew: String?
+        public let whatsNew: ASCNullable<String>?
     }
 }
 
@@ -292,13 +292,13 @@ public struct UpdateBetaGroupRequest: Codable, Sendable {
     }
 
     public struct UpdateBetaGroupAttributes: Codable, Sendable {
-        public let name: String?
-        public let publicLinkEnabled: Bool?
-        public let publicLinkLimitEnabled: Bool?
-        public let publicLinkLimit: Int?
-        public let feedbackEnabled: Bool?
-        public let iosBuildsAvailableForAppleSiliconMac: Bool?
-        public let iosBuildsAvailableForAppleVision: Bool?
+        public let name: ASCNullable<String>?
+        public let publicLinkEnabled: ASCNullable<Bool>?
+        public let publicLinkLimitEnabled: ASCNullable<Bool>?
+        public let publicLinkLimit: ASCNullable<Int>?
+        public let feedbackEnabled: ASCNullable<Bool>?
+        public let iosBuildsAvailableForAppleSiliconMac: ASCNullable<Bool>?
+        public let iosBuildsAvailableForAppleVision: ASCNullable<Bool>?
     }
 }
 
@@ -318,7 +318,7 @@ public struct UpdateBuildBetaDetailRequest: Codable, Sendable {
     }
     
     public struct BuildBetaDetailUpdateAttributes: Codable, Sendable {
-        public let autoNotifyEnabled: Bool?
+        public let autoNotifyEnabled: ASCNullable<Bool>?
     }
 }
 

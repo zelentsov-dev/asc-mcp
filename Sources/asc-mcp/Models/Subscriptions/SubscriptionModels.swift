@@ -127,10 +127,10 @@ public struct CreateSubscriptionRequest: Codable, Sendable {
     public struct Attributes: Codable, Sendable {
         public let name: String
         public let productId: String
-        public let subscriptionPeriod: String
-        public let familySharable: Bool?
-        public let groupLevel: Int?
-        public let reviewNote: String?
+        public let subscriptionPeriod: ASCNullable<String>?
+        public let familySharable: ASCNullable<Bool>?
+        public let groupLevel: ASCNullable<Int>?
+        public let reviewNote: ASCNullable<String>?
     }
 
     public struct Relationships: Codable, Sendable {
@@ -153,11 +153,11 @@ public struct UpdateSubscriptionRequest: Codable, Sendable {
     }
 
     public struct Attributes: Codable, Sendable {
-        public let name: String?
-        public let familySharable: Bool?
-        public let groupLevel: Int?
-        public let reviewNote: String?
-        public let subscriptionPeriod: NullableAttributeValue?
+        public let name: ASCNullable<String>?
+        public let familySharable: ASCNullable<Bool>?
+        public let groupLevel: ASCNullable<Int>?
+        public let reviewNote: ASCNullable<String>?
+        public let subscriptionPeriod: ASCNullable<String>?
     }
 }
 

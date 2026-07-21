@@ -67,10 +67,19 @@ extension AppLifecycleWorker {
         }
 
         do {
-            let releaseType = arguments["release_type"]?.stringValue ?? "MANUAL"
-            let earliestDate = arguments["earliest_release_date"]?.stringValue
-            let copyright = arguments["copyright"]?.stringValue
-            let reviewType = arguments["review_type"]?.stringValue
+            let releaseType = try nullableString(
+                "release_type",
+                from: arguments,
+                allowedValues: ["MANUAL", "AFTER_APPROVAL", "SCHEDULED"]
+            )
+            let earliestDate = try nullableString("earliest_release_date", from: arguments)
+            try validateNullableDateTime(earliestDate, name: "earliest_release_date")
+            let copyright = try nullableString("copyright", from: arguments)
+            let reviewType = try nullableString(
+                "review_type",
+                from: arguments,
+                allowedValues: ["APP_STORE", "NOTARIZATION"]
+            )
             let usesIdfa = try nullableBool("uses_idfa", from: arguments)
 
             let request = CreateAppStoreVersionRequest(
@@ -131,10 +140,7 @@ extension AppLifecycleWorker {
             return MCPResult.jsonObject(result)
 
         } catch {
-            return CallTool.Result(
-                content: [MCPContent.text("Error: Failed to create version: \(error.localizedDescription)")],
-                isError: true
-            )
+            return MCPResult.error(error, prefix: "Failed to create version")
         }
     }
 
@@ -475,6 +481,7 @@ extension AppLifecycleWorker {
                 allowedValues: ["MANUAL", "AFTER_APPROVAL", "SCHEDULED"]
             )
             let earliestDate = try nullableString("earliest_release_date", from: arguments)
+            try validateNullableDateTime(earliestDate, name: "earliest_release_date")
             let copyright = try nullableString("copyright", from: arguments)
             let versionString = try nullableString("version_string", from: arguments)
             let reviewType = try nullableString(
@@ -554,10 +561,7 @@ extension AppLifecycleWorker {
             return MCPResult.jsonObject(result)
 
         } catch {
-            return CallTool.Result(
-                content: [MCPContent.text("Error: Failed to update version: \(error.localizedDescription)")],
-                isError: true
-            )
+            return MCPResult.error(error, prefix: "Failed to update version")
         }
     }
 
@@ -580,7 +584,8 @@ extension AppLifecycleWorker {
             let bodyData = try JSONEncoder().encode(request)
             _ = try await httpClient.patch(
                 "/v1/appStoreVersions/\(try ASCPathSegment.encode(versionId))/relationships/build",
-                body: bodyData
+                body: bodyData,
+                expectedStatusCode: 204
             )
 
             let result: [String: Any] = [
@@ -591,10 +596,7 @@ extension AppLifecycleWorker {
             return MCPResult.jsonObject(result)
 
         } catch {
-            return CallTool.Result(
-                content: [MCPContent.text("Error: Failed to attach build: \(error.localizedDescription)")],
-                isError: true
-            )
+            return MCPResult.error(error, prefix: "Failed to attach build")
         }
     }
 
@@ -781,7 +783,7 @@ extension AppLifecycleWorker {
                     error: error
                 )
             }
-            return MCPResult.error("Failed to submit for review: \(error.localizedDescription)")
+            return MCPResult.error(error, prefix: "Failed to submit for review")
         }
     }
 
@@ -790,18 +792,40 @@ extension AppLifecycleWorker {
         failedStep: String,
         error: any Error
     ) -> CallTool.Result {
-        MCPResult.jsonObject(
-            [
-                "success": false,
-                "partial_success": true,
-                "submission_id": submissionId,
-                "failed_step": failedStep,
-                "error": error.localizedDescription,
-                "recovery_tools": [
-                    "app_versions_cancel_review"
-                ],
-                "message": "Review submission was created, but the submit flow failed before completion. This MCP has no review-submission inspection or resume tool; use app_versions_cancel_review with review_submission_id set to the returned submission_id before retrying."
-            ],
+        var payload: [String: Value] = [
+            "success": .bool(false),
+            "partial_success": .bool(true),
+            "submission_id": .string(submissionId),
+            "failed_step": .string(failedStep),
+            "error": .string(Redactor.redact(error.localizedDescription)),
+            "recovery_tools": .array([.string("app_versions_cancel_review")]),
+            "message": .string("Review submission was created, but the submit flow failed before completion. This MCP has no review-submission inspection or resume tool; use app_versions_cancel_review with review_submission_id set to the returned submission_id before retrying.")
+        ]
+
+        if let ascError = error as? ASCError {
+            payload["details"] = ascError.structuredValue
+            switch ascError {
+            case .mutationOutcomeUnknown:
+                payload["operationCommitState"] = .string("unknown")
+                payload["outcomeUnknown"] = .bool(true)
+                payload["retrySafe"] = .bool(false)
+                payload["inspectionRequired"] = .bool(true)
+            case .mutationCommittedUnverified:
+                payload["operationCommitState"] = .string("committed_unverified")
+                payload["operationCommitted"] = .bool(true)
+                payload["outcomeUnknown"] = .bool(false)
+                payload["retrySafe"] = .bool(false)
+                payload["inspectionRequired"] = .bool(true)
+            default:
+                break
+            }
+        } else {
+            payload["details"] = .null
+        }
+
+        return MCPResult.json(
+            .object(payload),
+            text: "Error: Failed to submit for review: \(Redactor.redact(error.localizedDescription))",
             isError: true
         )
     }
@@ -854,10 +878,7 @@ extension AppLifecycleWorker {
             return MCPResult.jsonObject(result)
 
         } catch {
-            return CallTool.Result(
-                content: [MCPContent.text("Error: Failed to cancel review: \(error.localizedDescription)")],
-                isError: true
-            )
+            return MCPResult.error(error, prefix: "Failed to cancel review")
         }
     }
 
@@ -921,10 +942,7 @@ extension AppLifecycleWorker {
             return MCPResult.jsonObject(result)
 
         } catch {
-            return CallTool.Result(
-                content: [MCPContent.text("Error: Failed to create phased release: \(error.localizedDescription)")],
-                isError: true
-            )
+            return MCPResult.error(error, prefix: "Failed to create phased release")
         }
     }
 
@@ -1030,10 +1048,7 @@ extension AppLifecycleWorker {
             return MCPResult.jsonObject(result)
 
         } catch {
-            return CallTool.Result(
-                content: [MCPContent.text("Error: Failed to update phased release: \(error.localizedDescription)")],
-                isError: true
-            )
+            return MCPResult.error(error, prefix: "Failed to update phased release")
         }
     }
 
@@ -1205,7 +1220,7 @@ extension AppLifecycleWorker {
             return MCPResult.jsonObject(result)
 
         } catch {
-            return MCPResult.error("Failed to release version: \(error.localizedDescription)")
+            return MCPResult.error(error, prefix: "Failed to release version")
         }
     }
 
@@ -1386,10 +1401,7 @@ extension AppLifecycleWorker {
             return MCPResult.jsonObject(result)
 
         } catch {
-            return CallTool.Result(
-                content: [MCPContent.text("Error: Failed to set review details: \(error.localizedDescription)")],
-                isError: true
-            )
+            return MCPResult.error(error, prefix: "Failed to set review details")
         }
     }
 
@@ -1653,10 +1665,7 @@ extension AppLifecycleWorker {
             return MCPResult.jsonObject(result)
 
         } catch {
-            return CallTool.Result(
-                content: [MCPContent.text("Error: Failed to update age rating: \(error.localizedDescription)")],
-                isError: true
-            )
+            return MCPResult.error(error, prefix: "Failed to update age rating")
         }
     }
 
@@ -2079,7 +2088,9 @@ private extension AppLifecycleWorker {
         payload["success"] = false
         payload["operationCommitState"] = "committed_unverified"
         payload["operationCommitted"] = true
+        payload["outcomeUnknown"] = false
         payload["retrySafe"] = false
+        payload["inspectionRequired"] = true
         payload["error"] = Redactor.redact(reason)
         payload["inspection"] = inspection
         return MCPResult.jsonObject(
@@ -2192,6 +2203,8 @@ private extension AppLifecycleWorker {
             return .committedUnverified
         case .deleteOutcomeUnknown:
             return .commitUnknown
+        case .mutationOutcomeUnknown, .mutationCommittedUnverified:
+            return .rejected
         case .network:
             return .rejected
         case .api(_, _), .apiResponse(_, _):
@@ -2229,6 +2242,24 @@ private extension AppLifecycleWorker {
             throw AppLifecycleArgumentError("\(name) must be null or one of: \(allowedValues.sorted().joined(separator: ", "))")
         }
         return .string(string)
+    }
+
+    func validateNullableDateTime(_ value: NullableAttributeValue?, name: String) throws {
+        guard let value, case .string(let string) = value else {
+            return
+        }
+        guard isISO8601DateTime(string) else {
+            throw AppLifecycleArgumentError("\(name) must be null or a valid ISO 8601 date-time string")
+        }
+    }
+
+    func isISO8601DateTime(_ value: String) -> Bool {
+        let formatter = ISO8601DateFormatter()
+        if formatter.date(from: value) != nil {
+            return true
+        }
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        return formatter.date(from: value) != nil
     }
 
     func nullableBool(_ name: String, from arguments: [String: Value]) throws -> NullableAttributeValue? {

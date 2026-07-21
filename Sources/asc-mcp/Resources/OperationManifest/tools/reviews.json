@@ -74,7 +74,7 @@
           }
         ]
       },
-      "note": "Apple POST creates or replaces the response for the related review and projects Apple's current responseBody, lastModifiedDate, state, and review relationship. Partial because the local 5000-character limit is stricter than OpenAPI 4.4.1 and the tool has no declared output schema."
+      "note": "Apple POST creates or replaces the response for the related review and projects Apple's current responseBody, lastModifiedDate, state, and review relationship. Partial because the tool has no declared output schema."
     },
     {
       "tool": "reviews_delete_response",
@@ -206,7 +206,7 @@
           }
         ]
       },
-      "note": "Stable review projection with response relationship presence. Sparse fieldsets follow the manifest-wide policy; include is intentionally omitted because related response lookup has a dedicated tool and the review already contains its territory attribute."
+      "note": "Stable review projection with response relationship presence; fields backed by optional Apple attributes are omitted when absent. Sparse fieldsets follow the manifest-wide policy; include is intentionally omitted because related response lookup has a dedicated tool and the review already contains its territory attribute."
     },
     {
       "tool": "reviews_get_response",
@@ -375,7 +375,8 @@
           "sourceKind": "parameter",
           "operationId": "apps_customerReviews_getToManyRelated",
           "location": "query",
-          "appleName": "filter[territory]"
+          "appleName": "filter[territory]",
+          "localRole": "caseInsensitiveInputNormalizedAndValidatedAgainstAppleTerritoryEnum"
         },
         {
           "toolField": "territories",
@@ -383,7 +384,7 @@
           "operationId": "apps_customerReviews_getToManyRelated",
           "location": "query",
           "appleName": "filter[territory]",
-          "localRole": "commaSeparatedArrayQuery"
+          "localRole": "caseInsensitiveInputsNormalizedAndValidatedAgainstAppleTerritoryEnumThenEncodedAsCommaSeparatedArrayQuery"
         },
         {
           "toolField": "sort",
@@ -432,7 +433,7 @@
             "outputField": "reviews",
             "operationId": "apps_customerReviews_getToManyRelated",
             "jsonPointer": "/data",
-            "localRole": "reviewProjection"
+            "localRole": "reviewProjectionOmittingOptionalAttributesAbsentFromAppleResources"
           },
           {
             "outputField": "reviews.response",
@@ -518,7 +519,8 @@
           "sourceKind": "parameter",
           "operationId": "appStoreVersions_customerReviews_getToManyRelated",
           "location": "query",
-          "appleName": "filter[territory]"
+          "appleName": "filter[territory]",
+          "localRole": "caseInsensitiveInputNormalizedAndValidatedAgainstAppleTerritoryEnum"
         },
         {
           "toolField": "territories",
@@ -526,7 +528,7 @@
           "operationId": "appStoreVersions_customerReviews_getToManyRelated",
           "location": "query",
           "appleName": "filter[territory]",
-          "localRole": "commaSeparatedArrayQuery"
+          "localRole": "caseInsensitiveInputsNormalizedAndValidatedAgainstAppleTerritoryEnumThenEncodedAsCommaSeparatedArrayQuery"
         },
         {
           "toolField": "sort",
@@ -575,7 +577,7 @@
             "outputField": "reviews",
             "operationId": "appStoreVersions_customerReviews_getToManyRelated",
             "jsonPointer": "/data",
-            "localRole": "reviewProjection"
+            "localRole": "reviewProjectionOmittingOptionalAttributesAbsentFromAppleResources"
           },
           {
             "outputField": "reviews.response",
@@ -674,7 +676,7 @@
           "operationId": "apps_customerReviews_getToManyRelated",
           "location": "query",
           "appleName": "filter[territory]",
-          "localRole": "valueAllOmitsAppleFilter"
+          "localRole": "valueAllOmitsAppleFilterOtherwiseCaseInsensitiveInputIsNormalizedAndValidatedAgainstAppleTerritoryEnum"
         },
         {
           "toolField": "has_published_response",
@@ -733,12 +735,16 @@
             "localRole": "duplicateReviewIdCountExcludedFromAggregation"
           },
           {
+            "outputField": "unaggregatable_reviews_skipped",
+            "localRole": "uniqueReviewCountExcludedBecauseAppleOmittedRatingOrRequiredPeriodDate"
+          },
+          {
             "outputField": "pages_fetched",
             "localRole": "paginationRequestCount"
           },
           {
             "outputField": "complete",
-            "localRole": "requestedPeriodCompleteness"
+            "localRole": "requestedPeriodCompletenessAndNoUnaggregatableSparseReviews"
           },
           {
             "outputField": "period_start",
@@ -762,7 +768,7 @@
           }
         ]
       },
-      "note": "The handler validates and normalizes inputs, then streams Apple pagination into deduplicated numeric accumulators for the requested rolling UTC period. Fixed descending sort, territory and published-response filters are protected on every continuation; repeated or invalid next URLs fail instead of returning partial results. last_quarter remains a compatibility alias for last_3_months."
+      "note": "The handler validates and normalizes inputs, then streams Apple pagination into deduplicated numeric accumulators for the requested rolling UTC period. Fixed descending sort, territory and published-response filters are protected on every continuation; repeated or invalid next URLs fail instead of returning partial results. Spec-valid reviews missing a rating or required period date are counted as unaggregatable and make complete false instead of failing the response. last_quarter remains a compatibility alias for last_3_months."
     },
     {
       "tool": "reviews_summarizations",

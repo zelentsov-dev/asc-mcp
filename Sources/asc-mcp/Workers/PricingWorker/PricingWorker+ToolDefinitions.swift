@@ -21,7 +21,10 @@ extension PricingWorker {
                 "properties": .object([
                     "limit": .object([
                         "type": .string("integer"),
-                        "description": .string("Max results (default: 200, max: 200)")
+                        "description": .string("Max results (default: 200, max: 200)"),
+                        "minimum": .int(1),
+                        "maximum": .int(200),
+                        "default": .int(200)
                     ]),
                     "next_url": .object([
                         "type": .string("string"),
@@ -79,7 +82,10 @@ extension PricingWorker {
                     ]),
                     "limit": .object([
                         "type": .string("integer"),
-                        "description": .string("Max results (default: 50, max: 200)")
+                        "description": .string("Max results (default: 50, max: 200)"),
+                        "minimum": .int(1),
+                        "maximum": .int(200),
+                        "default": .int(50)
                     ]),
                     "next_url": .object([
                         "type": .string("string"),
@@ -185,7 +191,10 @@ extension PricingWorker {
                     ]),
                     "limit": .object([
                         "type": .string("integer"),
-                        "description": .string("Max results (default: 50, max: 200)")
+                        "description": .string("Max results (default: 50, max: 200)"),
+                        "minimum": .int(1),
+                        "maximum": .int(200),
+                        "default": .int(50)
                     ]),
                     "next_url": .object([
                         "type": .string("string"),
@@ -297,7 +306,10 @@ extension PricingWorker {
                     ]),
                     "limit": .object([
                         "type": .string("integer"),
-                        "description": .string("Max results (default: 50, max: 200)")
+                        "description": .string("Max results (default: 50, max: 200)"),
+                        "minimum": .int(1),
+                        "maximum": .int(200),
+                        "default": .int(50)
                     ]),
                     "next_url": .object([
                         "type": .string("string"),

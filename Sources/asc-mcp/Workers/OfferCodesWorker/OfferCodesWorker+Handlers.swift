@@ -19,7 +19,7 @@ extension OfferCodesWorker {
             let response: ASCOfferCodesResponse
             let endpoint = "/v1/subscriptions/\(try ASCPathSegment.encode(subscriptionId))/offerCodes"
             let query = [
-                "limit": String(min(max(arguments["limit"]?.intValue ?? 25, 1), 200))
+                "limit": String(try validatedCommerceLimit(arguments["limit"], defaultValue: 25, maximum: 200))
             ]
 
             if let nextUrl = try paginationURL(from: arguments["next_url"]) {
@@ -236,10 +236,7 @@ extension OfferCodesWorker {
             return MCPResult.jsonObject(result)
 
         } catch {
-            return CallTool.Result(
-                content: [MCPContent.text("Error: Failed to create offer code: \(error.localizedDescription)")],
-                isError: true
-            )
+            return MCPResult.error(error, prefix: "Failed to create offer code")
         }
     }
 
@@ -254,12 +251,16 @@ extension OfferCodesWorker {
             )
         }
 
+        guard let active = nullableOfferCodeActive(arguments["active"]) else {
+            return MCPResult.error("Required parameter 'active' must be a Boolean or null")
+        }
+
         do {
             let request = UpdateOfferCodeRequest(
                 data: UpdateOfferCodeRequest.UpdateData(
                     id: offerCodeId,
                     attributes: UpdateOfferCodeRequest.Attributes(
-                        active: arguments["active"]?.boolValue
+                        active: active
                     )
                 )
             )
@@ -280,10 +281,7 @@ extension OfferCodesWorker {
             return MCPResult.jsonObject(result)
 
         } catch {
-            return CallTool.Result(
-                content: [MCPContent.text("Error: Failed to update offer code: \(error.localizedDescription)")],
-                isError: true
-            )
+            return MCPResult.error(error, prefix: "Failed to update offer code")
         }
     }
 
@@ -303,7 +301,7 @@ extension OfferCodesWorker {
                 data: UpdateOfferCodeRequest.UpdateData(
                     id: offerCodeId,
                     attributes: UpdateOfferCodeRequest.Attributes(
-                        active: false
+                        active: .value(false)
                     )
                 )
             )
@@ -325,10 +323,7 @@ extension OfferCodesWorker {
             return MCPResult.jsonObject(result)
 
         } catch {
-            return CallTool.Result(
-                content: [MCPContent.text("Error: Failed to deactivate offer code: \(error.localizedDescription)")],
-                isError: true
-            )
+            return MCPResult.error(error, prefix: "Failed to deactivate offer code")
         }
     }
 
@@ -347,7 +342,7 @@ extension OfferCodesWorker {
             let response: ASCOfferCodePricesResponse
             let endpoint = "/v1/subscriptionOfferCodes/\(try ASCPathSegment.encode(offerCodeId))/prices"
             let query = [
-                "limit": String(min(max(arguments["limit"]?.intValue ?? 25, 1), 200))
+                "limit": String(try validatedCommerceLimit(arguments["limit"], defaultValue: 25, maximum: 200))
             ]
 
             if let nextUrl = try paginationURL(from: arguments["next_url"]) {
@@ -450,10 +445,7 @@ extension OfferCodesWorker {
             return MCPResult.jsonObject(result)
 
         } catch {
-            return CallTool.Result(
-                content: [MCPContent.text("Error: Failed to generate one-time codes: \(error.localizedDescription)")],
-                isError: true
-            )
+            return MCPResult.error(error, prefix: "Failed to generate one-time codes")
         }
     }
 
@@ -472,7 +464,7 @@ extension OfferCodesWorker {
             let response: ASCOneTimeUseCodesResponse
             let endpoint = "/v1/subscriptionOfferCodes/\(try ASCPathSegment.encode(offerCodeId))/oneTimeUseCodes"
             let query = [
-                "limit": String(min(max(arguments["limit"]?.intValue ?? 25, 1), 200))
+                "limit": String(try validatedCommerceLimit(arguments["limit"], defaultValue: 25, maximum: 200))
             ]
 
             if let nextUrl = try paginationURL(from: arguments["next_url"]) {
@@ -562,10 +554,7 @@ extension OfferCodesWorker {
             return MCPResult.jsonObject(result)
 
         } catch {
-            return CallTool.Result(
-                content: [MCPContent.text("Error: Failed to create custom code: \(error.localizedDescription)")],
-                isError: true
-            )
+            return MCPResult.error(error, prefix: "Failed to create custom code")
         }
     }
 
@@ -619,7 +608,7 @@ extension OfferCodesWorker {
                 data: UpdateOfferCodeCustomCodeRequest.UpdateData(
                     id: customCodeId,
                     attributes: UpdateOfferCodeCustomCodeRequest.Attributes(
-                        active: false
+                        active: .value(false)
                     )
                 )
             )
@@ -641,11 +630,21 @@ extension OfferCodesWorker {
             return MCPResult.jsonObject(result)
 
         } catch {
-            return CallTool.Result(
-                content: [MCPContent.text("Error: Failed to deactivate custom code: \(error.localizedDescription)")],
-                isError: true
-            )
+            return MCPResult.error(error, prefix: "Failed to deactivate custom code")
         }
+    }
+
+    private func nullableOfferCodeActive(_ value: Value?) -> ASCNullable<Bool>? {
+        guard let value else {
+            return nil
+        }
+        if case .null = value {
+            return .null
+        }
+        guard let bool = value.boolValue else {
+            return nil
+        }
+        return .value(bool)
     }
 
     // MARK: - Formatting

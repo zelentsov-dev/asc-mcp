@@ -135,7 +135,7 @@
           }
         ]
       },
-      "note": "Supports Apple scalar-or-array app filtering, pagination, total, and app relationship linkage projection."
+      "note": "Supports Apple scalar-or-array app filtering, pagination, total, app relationship linkage projection, and fail-closed 1 through 200 limit validation."
     },
     {
       "tool": "beta_license_update",

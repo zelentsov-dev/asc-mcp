@@ -34,6 +34,13 @@
           "metrics": [
             {
               "identifier": "diskSpaceUsed",
+              "goalKeys": [
+                {
+                  "goalKey": "storageP90",
+                  "lowerBound": 0,
+                  "upperBound": 200
+                }
+              ],
               "unit": {
                 "identifier": "megabytes",
                 "displayName": "MB"

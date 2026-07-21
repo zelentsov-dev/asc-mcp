@@ -113,7 +113,9 @@ extension ExportComplianceWorker {
                         "description": .string("Upload completion flag, or JSON null to send an explicit nullable value")
                     ])
                 ],
-                required: ["document_id"]
+                required: ["document_id"],
+                minimumProperties: 2,
+                anyRequired: ["source_file_checksum", "uploaded"]
             )
         )
     }
@@ -185,19 +187,34 @@ extension ExportComplianceWorker {
     }
 }
 
-private func exportComplianceSchema(properties: [String: Value], required: [String]) -> Value {
-    .object([
+private func exportComplianceSchema(
+    properties: [String: Value],
+    required: [String],
+    minimumProperties: Int? = nil,
+    anyRequired: [String] = []
+) -> Value {
+    var schema: [String: Value] = [
         "type": .string("object"),
         "properties": .object(properties),
         "required": .array(required.map(Value.string)),
         "additionalProperties": .bool(false)
-    ])
+    ]
+    if let minimumProperties {
+        schema["minProperties"] = .int(minimumProperties)
+    }
+    if !anyRequired.isEmpty {
+        schema["anyOf"] = .array(anyRequired.map { field in
+            .object(["required": .array([.string(field)])])
+        })
+    }
+    return .object(schema)
 }
 
 private func exportComplianceID(_ description: String) -> Value {
     .object([
         "type": .string("string"),
         "minLength": .int(1),
+        "pattern": .string(#"^(?!\.{1,2}$)[A-Za-z0-9._~-]+$"#),
         "description": .string(description)
     ])
 }

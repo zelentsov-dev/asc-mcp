@@ -42,11 +42,18 @@ struct InAppPurchaseModelTests {
     }
 
     @Test func updateIAPRequest() throws {
-        let request = UpdateInAppPurchaseV2Request(data: .init(id: "iap-1", attributes: .init(name: "Updated", reviewNote: "New note", familySharable: true)))
+        let request = UpdateInAppPurchaseV2Request(data: .init(
+            id: "iap-1",
+            attributes: .init(
+                name: .value("Updated"),
+                reviewNote: .value("New note"),
+                familySharable: .value(true)
+            )
+        ))
         let data = try JSONEncoder().encode(request)
         let decoded = try JSONDecoder().decode(UpdateInAppPurchaseV2Request.self, from: data)
         #expect(decoded.data.id == "iap-1")
-        #expect(decoded.data.attributes.name == "Updated")
+        #expect(decoded.data.attributes.name == .value("Updated"))
     }
 
     @Test func iapResponseSingle() throws {

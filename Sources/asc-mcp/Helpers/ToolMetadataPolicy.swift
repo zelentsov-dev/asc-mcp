@@ -130,6 +130,7 @@ enum ToolMetadataPolicy {
         "_upload",
         "_generate",
         "_deactivate",
+        "_disable",
         "_delete",
         "_remove",
         "_revoke",
@@ -260,7 +261,9 @@ enum ToolMetadataPolicy {
             "details": .object([:]),
             "apps": .object(["type": .string("array"), "items": appSummarySchema]),
             "count": .object(["type": .string("integer")]),
-            "totalCount": .object(["type": .string("integer")]),
+            "totalCount": .object([
+                "type": .array([.string("integer"), .string("null")])
+            ]),
             "hasNextPage": .object(["type": .string("boolean")]),
             "next_url": .object(["type": .string("string")])
         ]),

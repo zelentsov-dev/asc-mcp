@@ -415,7 +415,8 @@
           { "outputField": "custom_product_page.appId", "operationId": "appCustomProductPages_updateInstance", "jsonPointer": "/data/relationships/app/data/id", "localRole": "Returned only after parent relationship validation." },
           { "outputField": "custom_product_page.state", "localRole": "Legacy compatibility placeholder set to null." }
         ]
-      }
+      },
+      "note": "The closed input schema and runtime both require at least one mutable field, name or visible, in addition to page_id."
     },
     {
       "tool": "custom_pages_update_localization",

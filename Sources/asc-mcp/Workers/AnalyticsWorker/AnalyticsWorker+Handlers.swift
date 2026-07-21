@@ -271,7 +271,12 @@ extension AnalyticsWorker {
             )
         }
         let summaryOnly = arguments["summary_only"]?.boolValue ?? true
-        let limit = min(max(arguments["limit"]?.intValue ?? 25, 1), 200)
+        let limit: Int
+        do {
+            limit = try Self.collectionLimit(arguments["limit"])
+        } catch {
+            return MCPResult.error(error)
+        }
         let appIdFilter: String?
         if let rawAppId = arguments["app_id"]?.stringValue {
             guard let normalizedAppId = Self.nonEmptyIdentifier(rawAppId) else {
@@ -475,7 +480,12 @@ extension AnalyticsWorker {
         }
 
         let summaryOnly = arguments["summary_only"]?.boolValue ?? true
-        let limit = min(max(arguments["limit"]?.intValue ?? 25, 1), 200)
+        let limit: Int
+        do {
+            limit = try Self.collectionLimit(arguments["limit"])
+        } catch {
+            return MCPResult.error(error)
+        }
 
         do {
             let queryParams: [String: String] = [
@@ -653,10 +663,7 @@ extension AnalyticsWorker {
             return MCPResult.jsonObject(result)
 
         } catch {
-            return CallTool.Result(
-                content: [MCPContent.text("Failed to create analytics report request: \(error.localizedDescription)")],
-                isError: true
-            )
+            return MCPResult.error(error, prefix: "Failed to create analytics report request")
         }
     }
 

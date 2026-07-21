@@ -104,7 +104,6 @@ extension UsersWorker {
                 isError: true
             )
         }
-
         do {
             var queryParams: [String: String] = [:]
             queryParams["include"] = try commaSeparated(
@@ -153,40 +152,39 @@ extension UsersWorker {
             return MCPResult.error("Required parameter 'user_id' is missing")
         }
 
-        let roles: [String]?
+        let roles: ASCNullable<[String]>?
         if let rolesValue = arguments["roles"] {
-            do {
-                roles = try validatedStringArray(
-                    rolesValue,
-                    name: "roles",
-                    allowEmpty: false,
-                    allowedValues: Set(UsersWorker.assignableRoles)
-                )
-            } catch {
-                return MCPResult.error(error.localizedDescription)
+            if rolesValue.isNull {
+                roles = .null
+            } else {
+                do {
+                    roles = .value(try validatedStringArray(
+                        rolesValue,
+                        name: "roles",
+                        allowEmpty: false,
+                        allowedValues: Set(UsersWorker.assignableRoles)
+                    ))
+                } catch {
+                    return MCPResult.error(error.localizedDescription)
+                }
             }
         } else {
             roles = nil
         }
 
-        let allAppsVisible: Bool?
-        if let value = arguments["all_apps_visible"] {
-            guard let parsed = value.boolValue else {
-                return MCPResult.error("'all_apps_visible' must be a boolean")
-            }
-            allAppsVisible = parsed
-        } else {
-            allAppsVisible = nil
-        }
-
-        let provisioningAllowed: Bool?
-        if let value = arguments["provisioning_allowed"] {
-            guard let parsed = value.boolValue else {
-                return MCPResult.error("'provisioning_allowed' must be a boolean")
-            }
-            provisioningAllowed = parsed
-        } else {
-            provisioningAllowed = nil
+        let allAppsVisible: ASCNullable<Bool>?
+        let provisioningAllowed: ASCNullable<Bool>?
+        do {
+            allAppsVisible = try nullableBool(
+                arguments["all_apps_visible"],
+                name: "all_apps_visible"
+            )
+            provisioningAllowed = try nullableBool(
+                arguments["provisioning_allowed"],
+                name: "provisioning_allowed"
+            )
+        } catch {
+            return MCPResult.error(error.localizedDescription)
         }
 
         let visibleAppIds: [String]?
@@ -222,9 +220,9 @@ extension UsersWorker {
                 data: UpdateUserRequest.UpdateUserData(
                     id: userId,
                     attributes: UpdateUserRequest.UpdateUserAttributes(
-                        roles: roles,
-                        allAppsVisible: allAppsVisible,
-                        provisioningAllowed: provisioningAllowed
+                        nullableRoles: roles,
+                        nullableAllAppsVisible: allAppsVisible,
+                        nullableProvisioningAllowed: provisioningAllowed
                     ),
                     relationships: relationships
                 )
@@ -242,8 +240,8 @@ extension UsersWorker {
                 "success": true,
                 "user": user
             ] as [String: Any]
-            if let roles,
-               !UsersWorker.deprecatedRoles.isDisjoint(with: roles) {
+            if case .value(let roleValues)? = roles,
+               !UsersWorker.deprecatedRoles.isDisjoint(with: roleValues) {
                 result["warnings"] = [
                     "ACCESS_TO_REPORTS is deprecated by Apple and remains accepted only for backward compatibility."
                 ]
@@ -253,10 +251,7 @@ extension UsersWorker {
             return MCPResult.jsonObject(result)
 
         } catch {
-            return CallTool.Result(
-                content: [MCPContent.text("Failed to update user: \(error.localizedDescription)")],
-                isError: true
-            )
+            return MCPResult.error(error, prefix: "Failed to update user")
         }
     }
 
@@ -303,10 +298,13 @@ extension UsersWorker {
                 isError: true
             )
         }
+        guard isValidEmail(email) else {
+            return MCPResult.error("'email' must be a valid email address")
+        }
 
         let roles: [String]
-        let allAppsVisible: Bool
-        let provisioningAllowed: Bool?
+        let allAppsVisible: ASCNullable<Bool>?
+        let provisioningAllowed: ASCNullable<Bool>?
         let visibleAppIds: [String]?
         do {
             roles = try validatedStringArray(
@@ -315,11 +313,11 @@ extension UsersWorker {
                 allowEmpty: false,
                 allowedValues: Set(UsersWorker.assignableRoles)
             )
-            allAppsVisible = try optionalBool(
+            allAppsVisible = try nullableBool(
                 arguments["all_apps_visible"],
                 name: "all_apps_visible"
-            ) ?? true
-            provisioningAllowed = try optionalBool(
+            )
+            provisioningAllowed = try nullableBool(
                 arguments["provisioning_allowed"],
                 name: "provisioning_allowed"
             )
@@ -352,8 +350,8 @@ extension UsersWorker {
                         firstName: firstName,
                         lastName: lastName,
                         roles: roles,
-                        allAppsVisible: allAppsVisible,
-                        provisioningAllowed: provisioningAllowed
+                        nullableAllAppsVisible: allAppsVisible,
+                        nullableProvisioningAllowed: provisioningAllowed
                     ),
                     relationships: relationships
                 )
@@ -381,10 +379,7 @@ extension UsersWorker {
             return MCPResult.jsonObject(result)
 
         } catch {
-            return CallTool.Result(
-                content: [MCPContent.text("Failed to invite user: \(error.localizedDescription)")],
-                isError: true
-            )
+            return MCPResult.error(error, prefix: "Failed to invite user")
         }
     }
 
@@ -518,8 +513,13 @@ extension UsersWorker {
 
         do {
             let endpoint = "/v1/users/\(try ASCPathSegment.encode(userId))/visibleApps"
-            let limit = arguments["limit"]?.intValue ?? 25
-            let queryParams = ["limit": String(min(max(limit, 1), 200))]
+            let limit = try boundedInteger(
+                arguments["limit"],
+                name: "limit",
+                range: 1...200,
+                defaultValue: 25
+            ) ?? 25
+            let queryParams = ["limit": String(limit)]
             let response: ASCAppsResponse
 
             if let nextUrl = try paginationURL(from: arguments["next_url"]) {
@@ -545,6 +545,9 @@ extension UsersWorker {
             ]
             if let next = response.links.next {
                 result["next_url"] = next
+            }
+            if let total = response.meta?.paging.total {
+                result["total"] = total
             }
 
             return MCPResult.jsonObject(result)
@@ -581,15 +584,21 @@ extension UsersWorker {
             return MCPResult.error(error.localizedDescription)
         }
 
+        let bodyData: Data
         do {
             let request = BetaGroupRelationshipRequest(
                 data: appIds.map { ASCResourceIdentifier(type: "apps", id: $0) }
             )
+            bodyData = try JSONEncoder().encode(request)
+        } catch {
+            return MCPResult.error(error, prefix: "Failed to encode visible apps relationship request")
+        }
 
-            let bodyData = try JSONEncoder().encode(request)
+        do {
             _ = try await httpClient.post(
                 "/v1/users/\(try ASCPathSegment.encode(userId))/relationships/visibleApps",
-                body: bodyData
+                body: bodyData,
+                expectedStatusCode: 204
             )
 
             let result = [
@@ -600,10 +609,7 @@ extension UsersWorker {
             return MCPResult.jsonObject(result)
 
         } catch {
-            return CallTool.Result(
-                content: [MCPContent.text("Failed to add visible apps: \(error.localizedDescription)")],
-                isError: true
-            )
+            return MCPResult.error(error, prefix: "Failed to add visible apps")
         }
     }
 
@@ -631,12 +637,17 @@ extension UsersWorker {
             return MCPResult.error(error.localizedDescription)
         }
 
+        let bodyData: Data
         do {
             let request = BetaGroupRelationshipRequest(
                 data: appIds.map { ASCResourceIdentifier(type: "apps", id: $0) }
             )
+            bodyData = try JSONEncoder().encode(request)
+        } catch {
+            return MCPResult.error(error, prefix: "Failed to encode visible apps relationship request")
+        }
 
-            let bodyData = try JSONEncoder().encode(request)
+        do {
             _ = try await httpClient.delete(
                 "/v1/users/\(try ASCPathSegment.encode(userId))/relationships/visibleApps",
                 body: bodyData
@@ -717,14 +728,26 @@ extension UsersWorker {
         return integer
     }
 
-    private func optionalBool(_ value: Value?, name: String) throws -> Bool? {
+    private func nullableBool(_ value: Value?, name: String) throws -> ASCNullable<Bool>? {
         guard let value else {
             return nil
         }
-        guard let boolean = value.boolValue else {
-            throw UsersInputValidationError("'\(name)' must be a boolean")
+        if value.isNull {
+            return .null
         }
-        return boolean
+        guard let boolean = value.boolValue else {
+            throw UsersInputValidationError("'\(name)' must be a boolean or null")
+        }
+        return .value(boolean)
+    }
+
+    private func isValidEmail(_ value: String) -> Bool {
+        let range = NSRange(value.startIndex..<value.endIndex, in: value)
+        let regex = try? NSRegularExpression(pattern: #"^[^@\s]+@[^@\s]+$"#)
+        guard let match = regex?.firstMatch(in: value, range: range) else {
+            return false
+        }
+        return match.range == range
     }
 
     private func commaSeparated(

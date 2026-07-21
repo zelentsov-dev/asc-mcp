@@ -6,6 +6,7 @@ import Foundation
 public struct ASCBundleIdsResponse: Codable, Sendable {
     public let data: [ASCBundleId]
     public let links: ASCPagedDocumentLinks?
+    public let meta: ASCPagingInformation?
 }
 
 /// Bundle ID single response
@@ -17,7 +18,7 @@ public struct ASCBundleIdResponse: Codable, Sendable {
 public struct ASCBundleId: Codable, Sendable {
     public let type: String
     public let id: String
-    public let attributes: BundleIdAttributes
+    public let attributes: BundleIdAttributes?
 }
 
 /// Bundle ID attributes
@@ -41,7 +42,46 @@ public struct CreateBundleIdRequest: Codable, Sendable {
         public let name: String
         public let identifier: String
         public let platform: String
-        public let seedId: String?
+        public let seedId: ASCNullable<String>?
+
+        /// Creates bundle ID attributes from ordinary optional values.
+        public init(name: String, identifier: String, platform: String, seedId: String?) {
+            self.name = name
+            self.identifier = identifier
+            self.platform = platform
+            self.seedId = seedId.map { .value($0) }
+        }
+
+        /// Creates bundle ID attributes while preserving omission and explicit null.
+        public init(
+            name: String,
+            identifier: String,
+            platform: String,
+            nullableSeedId: ASCNullable<String>?
+        ) {
+            self.name = name
+            self.identifier = identifier
+            self.platform = platform
+            self.seedId = nullableSeedId
+        }
+
+        enum CodingKeys: String, CodingKey {
+            case name
+            case identifier
+            case platform
+            case seedId
+        }
+
+        /// Decodes bundle ID attributes while preserving an explicit null seed ID.
+        /// - Parameter decoder: Decoder containing the bundle ID attributes.
+        /// - Throws: A decoding error when a present attribute has an invalid type.
+        public init(from decoder: Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            name = try container.decode(String.self, forKey: .name)
+            identifier = try container.decode(String.self, forKey: .identifier)
+            platform = try container.decode(String.self, forKey: .platform)
+            seedId = try container.decodeASCNullable(String.self, forKey: .seedId)
+        }
     }
 }
 
@@ -51,6 +91,7 @@ public struct CreateBundleIdRequest: Codable, Sendable {
 public struct ASCDevicesResponse: Codable, Sendable {
     public let data: [ASCDevice]
     public let links: ASCPagedDocumentLinks?
+    public let meta: ASCPagingInformation?
 }
 
 /// Device single response
@@ -62,7 +103,7 @@ public struct ASCDeviceResponse: Codable, Sendable {
 public struct ASCDevice: Codable, Sendable {
     public let type: String
     public let id: String
-    public let attributes: DeviceAttributes
+    public let attributes: DeviceAttributes?
 }
 
 /// Device attributes
@@ -103,8 +144,37 @@ public struct UpdateDeviceRequest: Codable, Sendable {
     }
 
     public struct UpdateDeviceAttributes: Codable, Sendable {
-        public let name: String?
-        public let status: String?
+        public let name: ASCNullable<String>?
+        public let status: ASCNullable<String>?
+
+        /// Creates device update attributes from ordinary optional values.
+        public init(name: String? = nil, status: String? = nil) {
+            self.name = name.map { .value($0) }
+            self.status = status.map { .value($0) }
+        }
+
+        /// Creates device update attributes while preserving omission and explicit null.
+        public init(
+            nullableName: ASCNullable<String>?,
+            nullableStatus: ASCNullable<String>?
+        ) {
+            self.name = nullableName
+            self.status = nullableStatus
+        }
+
+        enum CodingKeys: String, CodingKey {
+            case name
+            case status
+        }
+
+        /// Decodes device update attributes while preserving explicit null values.
+        /// - Parameter decoder: Decoder containing the device update attributes.
+        /// - Throws: A decoding error when a present attribute has an invalid type.
+        public init(from decoder: Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            name = try container.decodeASCNullable(String.self, forKey: .name)
+            status = try container.decodeASCNullable(String.self, forKey: .status)
+        }
     }
 }
 
@@ -114,13 +184,14 @@ public struct UpdateDeviceRequest: Codable, Sendable {
 public struct ASCCertificatesResponse: Codable, Sendable {
     public let data: [ASCCertificate]
     public let links: ASCPagedDocumentLinks?
+    public let meta: ASCPagingInformation?
 }
 
 /// Certificate resource
 public struct ASCCertificate: Codable, Sendable {
     public let type: String
     public let id: String
-    public let attributes: CertificateAttributes
+    public let attributes: CertificateAttributes?
 }
 
 /// Certificate attributes
@@ -141,13 +212,14 @@ public struct CertificateAttributes: Codable, Sendable {
 public struct ASCProfilesResponse: Codable, Sendable {
     public let data: [ASCProfile]
     public let links: ASCPagedDocumentLinks?
+    public let meta: ASCPagingInformation?
 }
 
 /// Profile resource
 public struct ASCProfile: Codable, Sendable {
     public let type: String
     public let id: String
-    public let attributes: ProfileAttributes
+    public let attributes: ProfileAttributes?
 }
 
 /// Profile attributes
@@ -219,6 +291,7 @@ public struct CreateProfileRequest: Codable, Sendable {
 public struct ASCBundleIdCapabilitiesResponse: Codable, Sendable {
     public let data: [ASCBundleIdCapability]
     public let links: ASCPagedDocumentLinks?
+    public let meta: ASCPagingInformation?
 }
 
 /// Single bundle ID capability response
@@ -230,7 +303,7 @@ public struct ASCBundleIdCapabilityResponse: Codable, Sendable {
 public struct ASCBundleIdCapability: Codable, Sendable {
     public let type: String
     public let id: String
-    public let attributes: BundleIdCapabilityAttributes
+    public let attributes: BundleIdCapabilityAttributes?
 }
 
 /// Bundle ID capability attributes
@@ -275,7 +348,36 @@ public struct EnableCapabilityRequest: Codable, Sendable {
 
     public struct EnableCapabilityAttributes: Codable, Sendable {
         public let capabilityType: String
-        public let settings: [CapabilitySetting]?
+        public let settings: ASCNullable<[CapabilitySetting]>?
+
+        /// Creates capability attributes from ordinary optional settings.
+        public init(capabilityType: String, settings: [CapabilitySetting]?) {
+            self.capabilityType = capabilityType
+            self.settings = settings.map { .value($0) }
+        }
+
+        /// Creates capability attributes while preserving omission and explicit null.
+        public init(
+            capabilityType: String,
+            nullableSettings: ASCNullable<[CapabilitySetting]>?
+        ) {
+            self.capabilityType = capabilityType
+            self.settings = nullableSettings
+        }
+
+        enum CodingKeys: String, CodingKey {
+            case capabilityType
+            case settings
+        }
+
+        /// Decodes capability attributes while preserving explicit null settings.
+        /// - Parameter decoder: Decoder containing capability attributes.
+        /// - Throws: A decoding error when a present attribute has an invalid type.
+        public init(from decoder: Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            capabilityType = try container.decode(String.self, forKey: .capabilityType)
+            settings = try container.decodeASCNullable([CapabilitySetting].self, forKey: .settings)
+        }
     }
 
     public struct EnableCapabilityRelationships: Codable, Sendable {

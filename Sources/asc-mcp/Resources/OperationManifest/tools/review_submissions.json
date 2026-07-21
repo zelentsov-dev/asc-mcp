@@ -268,7 +268,7 @@
           { "outputField": "total", "operationId": "reviewSubmissions_getCollection", "jsonPointer": "/meta/paging/total" }
         ]
       },
-      "note": "App ownership is mandatory; scalar, strict CSV, and unique-array filters are validated before the request, and continuation URLs preserve every originating query value."
+      "note": "App ownership is mandatory; scalar, strict CSV, and unique-array filters are validated before the request, and continuation URLs preserve every originating query value. Apple collection responses are bounded by the effective requested limit, require scoped self/next links, preserve cursor consistency, and reject invalid or duplicate resource identities."
     },
     {
       "tool": "review_submissions_list_items",
@@ -315,7 +315,7 @@
           { "outputField": "total", "operationId": "reviewSubmissions_items_getToManyRelated", "jsonPointer": "/meta/paging/total" }
         ]
       },
-      "note": "All Apple relationship identity fields are requested so legacy PPO and scoped Game Center items remain identifiable, while compound includes stay limited to the eight relationships this worker can add; the linkage-only twin endpoint remains deferred."
+      "note": "All Apple relationship identity fields are requested so legacy PPO and scoped Game Center items remain identifiable, while compound includes stay limited to the eight relationships this worker can add; the linkage-only twin endpoint remains deferred. Apple collection responses are bounded by the effective requested limit, require scoped self/next links, preserve cursor consistency, and reject invalid or duplicate resource identities."
     },
     {
       "tool": "review_submissions_remove_item",

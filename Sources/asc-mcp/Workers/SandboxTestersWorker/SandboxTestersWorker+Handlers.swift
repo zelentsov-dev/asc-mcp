@@ -11,8 +11,16 @@ extension SandboxTestersWorker {
 
         do {
             let endpoint = "/v2/sandboxTesters"
-            let limit = arguments?["limit"]?.intValue ?? 25
-            let queryParams = ["limit": String(min(max(limit, 1), 200))]
+            let limit: Int
+            if let value = arguments?["limit"] {
+                guard let requested = value.intValue, (1...200).contains(requested) else {
+                    throw ASCError.parsing("limit must be an integer from 1 through 200")
+                }
+                limit = requested
+            } else {
+                limit = 25
+            }
+            let queryParams = ["limit": String(limit)]
             let response: ASCSandboxTestersResponse
 
             if let nextUrl = try paginationURL(from: arguments?["next_url"]) {
@@ -46,10 +54,7 @@ extension SandboxTestersWorker {
             return MCPResult.jsonObject(result)
 
         } catch {
-            return CallTool.Result(
-                content: [MCPContent.text("Error: Failed to list sandbox testers: \(error.localizedDescription)")],
-                isError: true
-            )
+            return MCPResult.error(error, prefix: "Failed to list sandbox testers")
         }
     }
 
@@ -122,10 +127,7 @@ extension SandboxTestersWorker {
             return MCPResult.jsonObject(result)
 
         } catch {
-            return CallTool.Result(
-                content: [MCPContent.text("Error: Failed to update sandbox tester: \(error.localizedDescription)")],
-                isError: true
-            )
+            return MCPResult.error(error, prefix: "Failed to update sandbox tester")
         }
     }
 
@@ -185,10 +187,7 @@ extension SandboxTestersWorker {
             return MCPResult.jsonObject(result)
 
         } catch {
-            return CallTool.Result(
-                content: [MCPContent.text("Error: Failed to clear purchase history: \(error.localizedDescription)")],
-                isError: true
-            )
+            return MCPResult.error(error, prefix: "Failed to clear purchase history")
         }
     }
 

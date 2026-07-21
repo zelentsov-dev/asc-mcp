@@ -9,6 +9,16 @@ extension BetaLicenseAgreementsWorker {
     func listBetaLicenseAgreements(_ params: CallTool.Parameters) async throws -> CallTool.Result {
         let arguments = params.arguments
 
+        let limit: Int
+        if let value = arguments?["limit"] {
+            guard let parsed = value.intValue, (1...200).contains(parsed) else {
+                return MCPResult.error("'limit' must be an integer from 1 through 200")
+            }
+            limit = parsed
+        } else {
+            limit = 25
+        }
+
         do {
             let response: ASCBetaLicenseAgreementsResponse
             var queryParams: [String: String] = [:]
@@ -16,11 +26,7 @@ extension BetaLicenseAgreementsWorker {
             if let appIDs = try commaSeparatedAppIDs(arguments?["app_id"]) {
                 queryParams["filter[app]"] = appIDs
             }
-            if let limit = arguments?["limit"]?.intValue {
-                queryParams["limit"] = String(min(max(limit, 1), 200))
-            } else {
-                queryParams["limit"] = "25"
-            }
+            queryParams["limit"] = String(limit)
 
             if let nextUrl = try paginationURL(from: arguments?["next_url"]) {
                 response = try await httpClient.getPage(
@@ -147,10 +153,7 @@ extension BetaLicenseAgreementsWorker {
             return MCPResult.jsonObject(result)
 
         } catch {
-            return CallTool.Result(
-                content: [MCPContent.text("Error: Failed to update beta license agreement: \(error.localizedDescription)")],
-                isError: true
-            )
+            return MCPResult.error(error, prefix: "Failed to update beta license agreement")
         }
     }
 

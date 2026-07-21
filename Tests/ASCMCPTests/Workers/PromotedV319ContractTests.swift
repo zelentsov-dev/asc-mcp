@@ -26,7 +26,7 @@ struct PromotedV319ContractTests {
         let identifiers = try promotedV319Object(reorderProperties["promoted_purchase_ids"])
         #expect(identifiers["type"] == .string("array"))
         #expect(identifiers["minItems"] == .int(1))
-        #expect(identifiers["maxItems"] == .int(200))
+        #expect(identifiers["maxItems"] == nil)
         #expect(identifiers["uniqueItems"] == .bool(true))
         let canonicalIDPattern = #"^(?!\.{1,2}$)[A-Za-z0-9._~-]+$"#
         let identifierItems = try promotedV319Object(identifiers["items"])
@@ -468,6 +468,12 @@ struct PromotedV319ContractTests {
         let wrongStatusRoot = try promotedV319Object(wrongStatus.structuredContent)
         #expect(wrongStatusRoot["operationCommitState"] == .string("committed_unverified"))
         #expect(wrongStatusRoot["inspectionRequired"] == .bool(true))
+        let wrongStatusDetails = try promotedV319Object(wrongStatusRoot["details"])
+        let wrongStatusCause = try promotedV319Object(wrongStatusDetails["cause"])
+        #expect(wrongStatusCause["type"] == .string("mutation_unverified"))
+        #expect(wrongStatusCause["method"] == .string("PATCH"))
+        #expect(wrongStatusCause["expectedStatusCode"] == .int(204))
+        #expect(wrongStatusCause["statusCode"] == .int(200))
         #expect(await wrongStatusTransport.requestCount() == 2)
 
         let mismatchTransport = TestHTTPTransport(responses: [
@@ -533,6 +539,11 @@ struct PromotedV319ContractTests {
         let createRoot = try promotedV319Object(create.structuredContent)
         #expect(createRoot["operationCommitState"] == .string("committed_unverified"))
         let createDetails = try promotedV319Object(createRoot["details"])
+        let createCause = try promotedV319Object(createDetails["cause"])
+        #expect(createCause["type"] == .string("mutation_unverified"))
+        #expect(createCause["method"] == .string("POST"))
+        #expect(createCause["expectedStatusCode"] == .int(201))
+        #expect(createCause["statusCode"] == .int(200))
         let createRecovery = try promotedV319Object(createDetails["recovery"])
         #expect(try promotedV319Object(createRecovery["list_candidates"])["tool"] == .string("promoted_list"))
         let candidateScope = try promotedV319Object(createRecovery["candidate_scope"])
@@ -940,6 +951,10 @@ struct PromotedV319ContractTests {
         let unknownRoot = try promotedV319Object(unknown.structuredContent)
         #expect(unknownRoot["operationCommitState"] == .string("unknown"))
         #expect(unknownRoot["outcomeUnknown"] == .bool(true))
+        let unknownDetails = try promotedV319Object(unknownRoot["details"])
+        let unknownCause = try promotedV319Object(unknownDetails["cause"])
+        #expect(unknownCause["type"] == .string("mutation_unknown"))
+        #expect(unknownCause["method"] == .string("PATCH"))
 
         let rejectedTransport = TestHTTPTransport(responses: [
             .init(
@@ -1067,15 +1082,6 @@ struct PromotedV319ContractTests {
                 ]
             ),
             .init(
-                name: "promoted_reorder",
-                arguments: [
-                    "app_id": .string("app-1"),
-                    "promoted_purchase_ids": .array((0...200).map {
-                        .string("promoted-\($0)")
-                    })
-                ]
-            ),
-            .init(
                 name: "promoted_list",
                 arguments: [
                     "app_id": .string("app-1"),
@@ -1089,6 +1095,48 @@ struct PromotedV319ContractTests {
             #expect(try await worker.handleTool(call).isError == true)
         }
         #expect(await transport.requestCount() == 0)
+    }
+
+    @Test("reorder accepts more than 200 unique IDs and paginates membership preflight")
+    func reorderHasNoArtificialInputMaximum() async throws {
+        let identifiers = (0...200).map { "promoted-\($0)" }
+        let transport = TestHTTPTransport(responses: [
+            .init(
+                statusCode: 200,
+                body: promotedV319LinkagePage(
+                    ids: Array(identifiers.prefix(200)),
+                    cursor: nil,
+                    nextCursor: "page-2",
+                    total: identifiers.count
+                )
+            ),
+            .init(
+                statusCode: 200,
+                body: promotedV319LinkagePage(
+                    ids: Array(identifiers.dropFirst(200)),
+                    cursor: "page-2",
+                    nextCursor: nil,
+                    total: identifiers.count
+                )
+            )
+        ])
+        let worker = PromotedPurchasesWorker(
+            httpClient: try await promotedV319Client(transport),
+            uploadService: UploadService()
+        )
+        let result = try await worker.handleTool(.init(
+            name: "promoted_reorder",
+            arguments: [
+                "app_id": .string("app-1"),
+                "promoted_purchase_ids": .array(identifiers.map(Value.string))
+            ]
+        ))
+
+        #expect(result.isError != true)
+        #expect(await transport.recordedRequests().map(\.httpMethod) == ["GET", "GET"])
+        let payload = try promotedV319Object(result.structuredContent)
+        #expect(payload["operationCommitState"] == .string("not_attempted"))
+        #expect(payload["changed"] == .bool(false))
     }
 
     @Test("operation manifest maps reorder and exact mutation statuses")

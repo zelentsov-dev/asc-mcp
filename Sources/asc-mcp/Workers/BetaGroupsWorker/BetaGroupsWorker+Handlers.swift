@@ -16,18 +16,22 @@ extension BetaGroupsWorker {
             )
         }
 
+        let limit: Int
+        if let value = arguments["limit"] {
+            guard let parsed = value.intValue, (1...200).contains(parsed) else {
+                return MCPResult.error("'limit' must be an integer from 1 through 200")
+            }
+            limit = parsed
+        } else {
+            limit = 25
+        }
+
         do {
             let response: ASCBetaGroupsResponse
             var queryParams: [String: String] = [
-                "filter[app]": appId
+                "filter[app]": appId,
+                "limit": String(limit)
             ]
-
-            if let limitValue = arguments["limit"],
-               let limit = limitValue.intValue {
-                queryParams["limit"] = String(min(max(limit, 1), 200))
-            } else {
-                queryParams["limit"] = "25"
-            }
 
             if let isInternalValue = arguments["is_internal"],
                let isInternal = isInternalValue.boolValue {
@@ -177,10 +181,7 @@ extension BetaGroupsWorker {
             return MCPResult.jsonObject(result)
 
         } catch {
-            return CallTool.Result(
-                content: [MCPContent.text("Error: Failed to create beta group: \(error.localizedDescription)")],
-                isError: true
-            )
+            return MCPResult.error(error, prefix: "Failed to create beta group")
         }
     }
 
@@ -209,19 +210,26 @@ extension BetaGroupsWorker {
             return MCPResult.error("At least one updatable beta group field is required")
         }
 
+        let updateAttributes: UpdateBetaGroupRequest.UpdateBetaGroupAttributes
+        do {
+            updateAttributes = UpdateBetaGroupRequest.UpdateBetaGroupAttributes(
+                name: try nullableValue(arguments["name"], name: "name") { $0.stringValue },
+                publicLinkEnabled: try nullableValue(arguments["public_link_enabled"], name: "public_link_enabled") { $0.boolValue },
+                publicLinkLimitEnabled: try nullableValue(arguments["public_link_limit_enabled"], name: "public_link_limit_enabled") { $0.boolValue },
+                publicLinkLimit: try nullableValue(arguments["public_link_limit"], name: "public_link_limit") { $0.intValue },
+                feedbackEnabled: try nullableValue(arguments["feedback_enabled"], name: "feedback_enabled") { $0.boolValue },
+                iosBuildsAvailableForAppleSiliconMac: try nullableValue(arguments["ios_builds_available_for_apple_silicon_mac"], name: "ios_builds_available_for_apple_silicon_mac") { $0.boolValue },
+                iosBuildsAvailableForAppleVision: try nullableValue(arguments["ios_builds_available_for_apple_vision"], name: "ios_builds_available_for_apple_vision") { $0.boolValue }
+            )
+        } catch {
+            return MCPResult.error(error.localizedDescription)
+        }
+
         do {
             let request = UpdateBetaGroupRequest(
                 data: UpdateBetaGroupRequest.UpdateBetaGroupData(
                     id: groupId,
-                    attributes: UpdateBetaGroupRequest.UpdateBetaGroupAttributes(
-                        name: arguments["name"]?.stringValue,
-                        publicLinkEnabled: arguments["public_link_enabled"]?.boolValue,
-                        publicLinkLimitEnabled: arguments["public_link_limit_enabled"]?.boolValue,
-                        publicLinkLimit: arguments["public_link_limit"]?.intValue,
-                        feedbackEnabled: arguments["feedback_enabled"]?.boolValue,
-                        iosBuildsAvailableForAppleSiliconMac: arguments["ios_builds_available_for_apple_silicon_mac"]?.boolValue,
-                        iosBuildsAvailableForAppleVision: arguments["ios_builds_available_for_apple_vision"]?.boolValue
-                    )
+                    attributes: updateAttributes
                 )
             )
 
@@ -241,10 +249,7 @@ extension BetaGroupsWorker {
             return MCPResult.jsonObject(result)
 
         } catch {
-            return CallTool.Result(
-                content: [MCPContent.text("Error: Failed to update beta group: \(error.localizedDescription)")],
-                isError: true
-            )
+            return MCPResult.error(error, prefix: "Failed to update beta group")
         }
     }
 
@@ -290,9 +295,11 @@ extension BetaGroupsWorker {
         }
 
         let testerIds = testerIdsArray.compactMap { $0.stringValue }
-        guard !testerIds.isEmpty else {
+        guard !testerIds.isEmpty,
+              testerIds.count == testerIdsArray.count,
+              testerIds.allSatisfy({ !$0.isEmpty }) else {
             return CallTool.Result(
-                content: [MCPContent.text("Error: 'tester_ids' must contain at least one tester ID")],
+                content: [MCPContent.text("Error: 'tester_ids' must contain only non-empty tester ID strings")],
                 isError: true
             )
         }
@@ -305,7 +312,8 @@ extension BetaGroupsWorker {
             let bodyData = try JSONEncoder().encode(request)
             _ = try await httpClient.post(
                 "/v1/betaGroups/\(try ASCPathSegment.encode(groupId))/relationships/betaTesters",
-                body: bodyData
+                body: bodyData,
+                expectedStatusCode: 204
             )
 
             let result = [
@@ -316,10 +324,7 @@ extension BetaGroupsWorker {
             return MCPResult.jsonObject(result)
 
         } catch {
-            return CallTool.Result(
-                content: [MCPContent.text("Error: Failed to add testers: \(error.localizedDescription)")],
-                isError: true
-            )
+            return MCPResult.error(error, prefix: "Failed to add testers")
         }
     }
 
@@ -338,9 +343,11 @@ extension BetaGroupsWorker {
         }
 
         let testerIds = testerIdsArray.compactMap { $0.stringValue }
-        guard !testerIds.isEmpty else {
+        guard !testerIds.isEmpty,
+              testerIds.count == testerIdsArray.count,
+              testerIds.allSatisfy({ !$0.isEmpty }) else {
             return CallTool.Result(
-                content: [MCPContent.text("Error: 'tester_ids' must contain at least one tester ID")],
+                content: [MCPContent.text("Error: 'tester_ids' must contain only non-empty tester ID strings")],
                 isError: true
             )
         }
@@ -380,10 +387,19 @@ extension BetaGroupsWorker {
             )
         }
 
+        let limit: Int
+        if let value = arguments["limit"] {
+            guard let parsed = value.intValue, (1...200).contains(parsed) else {
+                return MCPResult.error("'limit' must be an integer from 1 through 200")
+            }
+            limit = parsed
+        } else {
+            limit = 25
+        }
+
         do {
             let endpoint = "/v1/betaGroups/\(try ASCPathSegment.encode(groupId))/betaTesters"
-            let limit = arguments["limit"]?.intValue ?? 25
-            let queryParams = ["limit": String(min(max(limit, 1), 200))]
+            let queryParams = ["limit": String(limit)]
             let response: ASCBetaTestersResponse
 
             // Check for pagination URL
@@ -441,9 +457,11 @@ extension BetaGroupsWorker {
         }
 
         let buildIds = buildIdsArray.compactMap { $0.stringValue }
-        guard !buildIds.isEmpty else {
+        guard !buildIds.isEmpty,
+              buildIds.count == buildIdsArray.count,
+              buildIds.allSatisfy({ !$0.isEmpty }) else {
             return CallTool.Result(
-                content: [MCPContent.text("Error: 'build_ids' must contain at least one build ID")],
+                content: [MCPContent.text("Error: 'build_ids' must contain only non-empty build ID strings")],
                 isError: true
             )
         }
@@ -456,7 +474,8 @@ extension BetaGroupsWorker {
             let bodyData = try JSONEncoder().encode(request)
             _ = try await httpClient.post(
                 "/v1/betaGroups/\(try ASCPathSegment.encode(groupId))/relationships/builds",
-                body: bodyData
+                body: bodyData,
+                expectedStatusCode: 204
             )
 
             let result = [
@@ -467,10 +486,7 @@ extension BetaGroupsWorker {
             return MCPResult.jsonObject(result)
 
         } catch {
-            return CallTool.Result(
-                content: [MCPContent.text("Error: Failed to add builds: \(error.localizedDescription)")],
-                isError: true
-            )
+            return MCPResult.error(error, prefix: "Failed to add builds")
         }
     }
 
@@ -489,9 +505,11 @@ extension BetaGroupsWorker {
         }
 
         let buildIds = buildIdsArray.compactMap { $0.stringValue }
-        guard !buildIds.isEmpty else {
+        guard !buildIds.isEmpty,
+              buildIds.count == buildIdsArray.count,
+              buildIds.allSatisfy({ !$0.isEmpty }) else {
             return CallTool.Result(
-                content: [MCPContent.text("Error: 'build_ids' must contain at least one build ID")],
+                content: [MCPContent.text("Error: 'build_ids' must contain only non-empty build ID strings")],
                 isError: true
             )
         }
@@ -525,12 +543,12 @@ extension BetaGroupsWorker {
         return [
             "id": tester.id,
             "type": tester.type,
-            "email": tester.attributes.email.jsonSafe,
-            "firstName": tester.attributes.firstName.jsonSafe,
-            "lastName": tester.attributes.lastName.jsonSafe,
-            "inviteType": tester.attributes.inviteType.jsonSafe,
-            "state": tester.attributes.state.jsonSafe,
-            "appDevices": tester.attributes.appDevices.map { devices in
+            "email": (tester.attributes?.email).jsonSafe,
+            "firstName": (tester.attributes?.firstName).jsonSafe,
+            "lastName": (tester.attributes?.lastName).jsonSafe,
+            "inviteType": (tester.attributes?.inviteType).jsonSafe,
+            "state": (tester.attributes?.state).jsonSafe,
+            "appDevices": (tester.attributes?.appDevices).map { devices in
                 devices.map { device in
                     [
                         "model": device.model.jsonSafe,
@@ -547,18 +565,18 @@ extension BetaGroupsWorker {
         return [
             "id": group.id,
             "type": group.type,
-            "name": group.attributes.name.jsonSafe,
-            "createdDate": group.attributes.createdDate.jsonSafe,
-            "isInternalGroup": group.attributes.isInternalGroup.jsonSafe,
-            "hasAccessToAllBuilds": group.attributes.hasAccessToAllBuilds.jsonSafe,
-            "publicLinkEnabled": group.attributes.publicLinkEnabled.jsonSafe,
-            "publicLinkLimit": group.attributes.publicLinkLimit.jsonSafe,
-            "publicLinkLimitEnabled": group.attributes.publicLinkLimitEnabled.jsonSafe,
-            "publicLink": group.attributes.publicLink.jsonSafe,
-            "publicLinkId": group.attributes.publicLinkId.jsonSafe,
-            "feedbackEnabled": group.attributes.feedbackEnabled.jsonSafe,
-            "iosBuildsAvailableForAppleSiliconMac": group.attributes.iosBuildsAvailableForAppleSiliconMac.jsonSafe,
-            "iosBuildsAvailableForAppleVision": group.attributes.iosBuildsAvailableForAppleVision.jsonSafe,
+            "name": (group.attributes?.name).jsonSafe,
+            "createdDate": (group.attributes?.createdDate).jsonSafe,
+            "isInternalGroup": (group.attributes?.isInternalGroup).jsonSafe,
+            "hasAccessToAllBuilds": (group.attributes?.hasAccessToAllBuilds).jsonSafe,
+            "publicLinkEnabled": (group.attributes?.publicLinkEnabled).jsonSafe,
+            "publicLinkLimit": (group.attributes?.publicLinkLimit).jsonSafe,
+            "publicLinkLimitEnabled": (group.attributes?.publicLinkLimitEnabled).jsonSafe,
+            "publicLink": (group.attributes?.publicLink).jsonSafe,
+            "publicLinkId": (group.attributes?.publicLinkId).jsonSafe,
+            "feedbackEnabled": (group.attributes?.feedbackEnabled).jsonSafe,
+            "iosBuildsAvailableForAppleSiliconMac": (group.attributes?.iosBuildsAvailableForAppleSiliconMac).jsonSafe,
+            "iosBuildsAvailableForAppleVision": (group.attributes?.iosBuildsAvailableForAppleVision).jsonSafe,
             "relationships": formatBetaGroupRelationships(group.relationships)
         ]
     }
@@ -603,4 +621,31 @@ extension BetaGroupsWorker {
         }
         return strings.joined(separator: ",")
     }
+
+    private func nullableValue<T: Codable & Sendable>(
+        _ value: Value?,
+        name: String,
+        extract: (Value) -> T?
+    ) throws -> ASCNullable<T>? {
+        guard let value else {
+            return nil
+        }
+        if value.isNull {
+            return .null
+        }
+        guard let extracted = extract(value) else {
+            throw BetaGroupsArgumentError("'\(name)' has an invalid value type")
+        }
+        return .value(extracted)
+    }
+}
+
+private struct BetaGroupsArgumentError: LocalizedError {
+    let message: String
+
+    init(_ message: String) {
+        self.message = message
+    }
+
+    var errorDescription: String? { message }
 }

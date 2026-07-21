@@ -19,7 +19,7 @@ struct InAppPurchaseImagesContractTests {
             name: "iap_list_images",
             arguments: [
                 "iap_id": .string("iap-1"),
-                "limit": .int(250)
+                "limit": .int(200)
             ]
         ))
 

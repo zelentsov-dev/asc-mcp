@@ -54,8 +54,15 @@ public struct ASCMetricCategory: Codable, Sendable {
 
 public struct ASCMetric: Codable, Sendable {
     public let identifier: String?
+    public let goalKeys: [ASCMetricGoalKey]?
     public let unit: ASCMetricUnit?
     public let datasets: [ASCMetricDataset]?
+}
+
+public struct ASCMetricGoalKey: Codable, Sendable {
+    public let goalKey: String?
+    public let lowerBound: Int?
+    public let upperBound: Int?
 }
 
 public struct ASCMetricUnit: Codable, Sendable {

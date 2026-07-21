@@ -302,7 +302,7 @@
         { "toolField": "version_id", "sourceKind": "parameter", "operationId": "appStoreVersions_getInstance", "location": "path", "appleName": "id" },
         { "toolField": "version_state", "sourceKind": "local", "localRole": "selectVersionByAppVersionStateWithDeprecatedAppStoreStateFallback" },
         { "toolField": "platform", "sourceKind": "local", "localRole": "selectOrValidateVersionPlatform" },
-        { "toolField": "include_media", "sourceKind": "local", "localRole": "enableConditionalMediaReads" }
+        { "toolField": "include_media", "sourceKind": "local", "localRole": "enableConditionalMediaReadsOnlyWhenLocaleIsExplicit" }
       ],
       "response": {
         "mode": "aggregate",
@@ -316,12 +316,14 @@
         "fields": [
           { "outputField": "success", "localRole": "successfulAggregate" },
           { "outputField": "version", "localRole": "resolvedVersionProjection" },
+          { "outputField": "localization", "operationId": "appStoreVersions_appStoreVersionLocalizations_getToManyRelated", "jsonPointer": "/data/*", "localRole": "singleExactLocaleProjection" },
           { "outputField": "localizations", "operationId": "appStoreVersions_appStoreVersionLocalizations_getToManyRelated", "jsonPointer": "/data" },
+          { "outputField": "totalLocalizations", "localRole": "completedLocalizationCount" },
           { "outputField": "appPreviewSets", "operationId": "appStoreVersionLocalizations_appPreviewSets_getToManyRelated", "jsonPointer": "/data" },
           { "outputField": "screenshotSets", "operationId": "appStoreVersionLocalizations_appScreenshotSets_getToManyRelated", "jsonPointer": "/data" }
         ]
       },
-      "note": "Partial because the tool aggregates several Apple operations; version resolution follows all collection pages, prefers appVersionState with deprecated appStoreState fallback, validates ownership, and propagates media failures."
+      "note": "Partial because the tool aggregates several Apple operations; version resolution and localization retrieval follow every Apple page, state selection prefers appVersionState with deprecated appStoreState fallback, ownership is validated, an exact-locale lookup must resolve to exactly one matching resource, and include_media requires an explicit locale."
     },
     {
       "tool": "apps_list",
@@ -382,10 +384,14 @@
         "fields": [
           { "outputField": "success", "localRole": "successfulRead" },
           { "outputField": "apps", "operationId": "apps_getCollection", "jsonPointer": "/data" },
+          { "outputField": "count", "localRole": "currentPageResourceCount" },
+          { "outputField": "totalCount", "operationId": "apps_getCollection", "jsonPointer": "/meta/paging/total", "localRole": "applePagingTotalOrTerminalPageCountOtherwiseNull" },
+          { "outputField": "hasNextPage", "localRole": "nextLinkPresence" },
+          { "outputField": "links", "operationId": "apps_getCollection", "jsonPointer": "/links" },
           { "outputField": "next_url", "operationId": "apps_getCollection", "jsonPointer": "/links/next" }
         ]
       },
-      "note": "Partial because the public projection intentionally exposes only a subset of current App attributes and collection query controls."
+      "note": "Partial because the public projection intentionally exposes only a subset of current App attributes and collection query controls. count is the current page size; totalCount uses Apple paging.total, falls back to count only on a terminal page, and is null when Apple omits total while another page exists."
     },
     {
       "tool": "apps_list_localizations",
@@ -451,11 +457,15 @@
         ],
         "fields": [
           { "outputField": "success", "localRole": "successfulRead" },
+          { "outputField": "appId", "localRole": "validatedAppIdentifier" },
+          { "outputField": "versionId", "localRole": "validatedVersionIdentifier" },
+          { "outputField": "count", "localRole": "currentPageResourceCount" },
+          { "outputField": "totalLocalizations", "operationId": "appStoreVersions_appStoreVersionLocalizations_getToManyRelated", "jsonPointer": "/meta/paging/total", "localRole": "applePagingTotalOrTerminalPageCountOtherwiseNull" },
           { "outputField": "localizations", "operationId": "appStoreVersions_appStoreVersionLocalizations_getToManyRelated", "jsonPointer": "/data" },
           { "outputField": "next_url", "operationId": "appStoreVersions_appStoreVersionLocalizations_getToManyRelated", "jsonPointer": "/links/next" }
         ]
       },
-      "note": "The handler validates app-to-version ownership, then returns only localizations whose appStoreVersion linkage matches version_id."
+      "note": "The handler validates app-to-version ownership, then returns only localizations whose appStoreVersion linkage matches version_id. count is the current page size; totalLocalizations uses Apple paging.total, falls back to count only on a terminal page, and is null when Apple omits total while another page exists."
     },
     {
       "tool": "apps_list_search_keywords",
@@ -767,7 +777,7 @@
           { "outputField": "updatedFields", "localRole": "providedAttributeNames" }
         ]
       },
-      "note": "The handler validates app-to-version and version-to-localization ownership, preserves omitted versus explicit-null localization attributes, then patches the resolved localization."
+      "note": "The handler validates app-to-version ownership and requires the filter to resolve exactly one resource whose type, locale attribute, and version linkage all match before PATCH. It preserves omitted versus explicit-null localization attributes, then patches the resolved localization."
     }
   ],
   "implementationAliases": []

@@ -22,7 +22,7 @@
         { "toolField": "name", "sourceKind": "requestBody", "operationId": "bundleIds_createInstance", "jsonPointer": "/data/attributes/name" },
         { "toolField": "identifier", "sourceKind": "requestBody", "operationId": "bundleIds_createInstance", "jsonPointer": "/data/attributes/identifier" },
         { "toolField": "platform", "sourceKind": "requestBody", "operationId": "bundleIds_createInstance", "jsonPointer": "/data/attributes/platform" },
-        { "toolField": "seed_id", "sourceKind": "requestBody", "operationId": "bundleIds_createInstance", "jsonPointer": "/data/attributes/seedId" }
+        { "toolField": "seed_id", "sourceKind": "requestBody", "operationId": "bundleIds_createInstance", "jsonPointer": "/data/attributes/seedId", "localRole": "preserves omission, explicit null, and string values" }
       ],
       "response": {
         "mode": "projection",
@@ -50,7 +50,8 @@
           "inputs": [
             { "sourceKind": "fixed", "jsonPointer": "/data/type", "fixedValue": "profiles" },
             { "sourceKind": "fixed", "jsonPointer": "/data/relationships/bundleId/data/type", "fixedValue": "bundleIds" },
-            { "sourceKind": "fixed", "jsonPointer": "/data/relationships/certificates/data/*/type", "fixedValue": "certificates" }
+            { "sourceKind": "fixed", "jsonPointer": "/data/relationships/certificates/data/*/type", "fixedValue": "certificates" },
+            { "sourceKind": "fixed", "jsonPointer": "/data/relationships/devices/data/*/type", "fixedValue": "devices" }
           ]
         }
       ],
@@ -76,7 +77,7 @@
       "tool": "provisioning_delete_bundle_id",
       "kind": "direct",
       "status": "partial",
-      "effect": "write",
+      "effect": "destructive",
       "implementationState": "asBuilt",
       "operations": [
         { "operationId": "bundleIds_deleteInstance", "method": "delete", "path": "/v1/bundleIds/{id}", "role": "primary" }
@@ -99,7 +100,7 @@
       "tool": "provisioning_delete_profile",
       "kind": "direct",
       "status": "partial",
-      "effect": "write",
+      "effect": "destructive",
       "implementationState": "asBuilt",
       "operations": [
         { "operationId": "profiles_deleteInstance", "method": "delete", "path": "/v1/profiles/{id}", "role": "primary" }
@@ -122,7 +123,7 @@
       "tool": "provisioning_disable_capability",
       "kind": "direct",
       "status": "partial",
-      "effect": "write",
+      "effect": "destructive",
       "implementationState": "asBuilt",
       "operations": [
         { "operationId": "bundleIdCapabilities_deleteInstance", "method": "delete", "path": "/v1/bundleIdCapabilities/{id}", "role": "primary" }
@@ -162,7 +163,7 @@
       "fields": [
         { "toolField": "bundle_id_resource_id", "sourceKind": "requestBody", "operationId": "bundleIdCapabilities_createInstance", "jsonPointer": "/data/relationships/bundleId/data/id" },
         { "toolField": "capability_type", "sourceKind": "requestBody", "operationId": "bundleIdCapabilities_createInstance", "jsonPointer": "/data/attributes/capabilityType" },
-        { "toolField": "settings", "sourceKind": "requestBody", "operationId": "bundleIdCapabilities_createInstance", "jsonPointer": "/data/attributes/settings", "localRole": "JSON string type-checked and decoded locally as an array before request encoding" }
+        { "toolField": "settings", "sourceKind": "requestBody", "operationId": "bundleIdCapabilities_createInstance", "jsonPointer": "/data/attributes/settings", "localRole": "native array input preserving omission, explicit null, and array values; nested fields reject unknown keys and enforce Apple 4.4.1 enums and scalar types" }
       ],
       "response": {
         "mode": "projection",
@@ -173,7 +174,7 @@
           { "outputField": "capability", "operationId": "bundleIdCapabilities_createInstance", "jsonPointer": "/data" }
         ]
       },
-      "note": "Exact Apple create operation. Settings remain a JSON-encoded string input, while the response preserves enabledByDefault, visible, enabled, and supportsWildcard flags."
+      "note": "Exact Apple create operation. Settings use Apple's nullable array contract, while the response preserves empty arrays and enabledByDefault, visible, enabled, and supportsWildcard flags."
     },
     {
       "tool": "provisioning_get_bundle_id",
@@ -368,7 +369,8 @@
         ],
         "fields": [
           { "outputField": "bundle_ids", "operationId": "bundleIds_getCollection", "jsonPointer": "/data" },
-          { "outputField": "next_url", "operationId": "bundleIds_getCollection", "jsonPointer": "/links/next" }
+          { "outputField": "next_url", "operationId": "bundleIds_getCollection", "jsonPointer": "/links/next" },
+          { "outputField": "total", "operationId": "bundleIds_getCollection", "jsonPointer": "/meta/paging/total" }
         ]
       },
       "note": "All Apple 4.4.1 collection filters, sort, limit, and continuation are exposed. Sparse fields follow the global projection policy; includes and their nested limits are intentionally omitted."
@@ -394,7 +396,8 @@
         ],
         "fields": [
           { "outputField": "capabilities", "operationId": "bundleIds_bundleIdCapabilities_getToManyRelated", "jsonPointer": "/data" },
-          { "outputField": "next_url", "operationId": "bundleIds_bundleIdCapabilities_getToManyRelated", "jsonPointer": "/links/next" }
+          { "outputField": "next_url", "operationId": "bundleIds_bundleIdCapabilities_getToManyRelated", "jsonPointer": "/links/next" },
+          { "outputField": "total", "operationId": "bundleIds_bundleIdCapabilities_getToManyRelated", "jsonPointer": "/meta/paging/total" }
         ]
       },
       "note": "Apple 4.4.1 limit and continuation are honored. Capability settings preserve enabledByDefault, visible, enabled, and supportsWildcard; sparse fields follow the global projection policy."
@@ -438,7 +441,8 @@
         ],
         "fields": [
           { "outputField": "certificates", "operationId": "certificates_getCollection", "jsonPointer": "/data" },
-          { "outputField": "next_url", "operationId": "certificates_getCollection", "jsonPointer": "/links/next" }
+          { "outputField": "next_url", "operationId": "certificates_getCollection", "jsonPointer": "/links/next" },
+          { "outputField": "total", "operationId": "certificates_getCollection", "jsonPointer": "/meta/paging/total" }
         ]
       },
       "note": "All Apple 4.4.1 certificate filters, sort, limit, and continuation are exposed. Lists intentionally omit certificateContent and passTypeId resources; detail lookup returns certificateContent."
@@ -469,7 +473,8 @@
         ],
         "fields": [
           { "outputField": "devices", "operationId": "devices_getCollection", "jsonPointer": "/data" },
-          { "outputField": "next_url", "operationId": "devices_getCollection", "jsonPointer": "/links/next" }
+          { "outputField": "next_url", "operationId": "devices_getCollection", "jsonPointer": "/links/next" },
+          { "outputField": "total", "operationId": "devices_getCollection", "jsonPointer": "/meta/paging/total" }
         ]
       },
       "note": "All Apple 4.4.1 device filters, sort, limit, and continuation are exposed, including UNIVERSAL platform support. Sparse fields follow the global projection policy."
@@ -527,7 +532,8 @@
         ],
         "fields": [
           { "outputField": "profiles", "operationId": "profiles_getCollection", "jsonPointer": "/data" },
-          { "outputField": "next_url", "operationId": "profiles_getCollection", "jsonPointer": "/links/next" }
+          { "outputField": "next_url", "operationId": "profiles_getCollection", "jsonPointer": "/links/next" },
+          { "outputField": "total", "operationId": "profiles_getCollection", "jsonPointer": "/meta/paging/total" }
         ]
       },
       "note": "All Apple 4.4.1 profile filters, sort, limit, and continuation are exposed. Lists intentionally omit profileContent and relationship resources; detail/create responses return profileContent."
@@ -569,7 +575,7 @@
       "tool": "provisioning_revoke_certificate",
       "kind": "direct",
       "status": "partial",
-      "effect": "write",
+      "effect": "destructive",
       "implementationState": "asBuilt",
       "operations": [
         { "operationId": "certificates_deleteInstance", "method": "delete", "path": "/v1/certificates/{id}", "role": "primary" }
@@ -608,8 +614,8 @@
       "fields": [
         { "toolField": "device_id", "sourceKind": "parameter", "operationId": "devices_updateInstance", "location": "path", "appleName": "id" },
         { "toolField": "device_id", "sourceKind": "requestBody", "operationId": "devices_updateInstance", "jsonPointer": "/data/id" },
-        { "toolField": "name", "sourceKind": "requestBody", "operationId": "devices_updateInstance", "jsonPointer": "/data/attributes/name" },
-        { "toolField": "status", "sourceKind": "requestBody", "operationId": "devices_updateInstance", "jsonPointer": "/data/attributes/status" }
+        { "toolField": "name", "sourceKind": "requestBody", "operationId": "devices_updateInstance", "jsonPointer": "/data/attributes/name", "localRole": "preserves omission, explicit null, and string values" },
+        { "toolField": "status", "sourceKind": "requestBody", "operationId": "devices_updateInstance", "jsonPointer": "/data/attributes/status", "localRole": "preserves omission, explicit null, and validated ENABLED or DISABLED values" }
       ],
       "response": {
         "mode": "projection",

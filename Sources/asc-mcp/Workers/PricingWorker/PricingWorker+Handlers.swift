@@ -20,8 +20,8 @@ extension PricingWorker {
 
         do {
             let endpoint = "/v1/territories"
-            let limit = arguments?["limit"]?.intValue ?? 200
-            let queryParams = ["limit": String(min(max(limit, 1), 200))]
+            let limit = try validatedListLimit(arguments?["limit"], defaultValue: 200)
+            let queryParams = ["limit": String(limit)]
             let response: ASCTerritoriesResponse
 
             if let nextUrl = try paginationURL(from: arguments?["next_url"]) {
@@ -112,11 +112,12 @@ extension PricingWorker {
 
         do {
             let response: ASCAppPricePointsV3Response
+            let limit = try validatedListLimit(arguments["limit"], defaultValue: 50)
 
             let endpoint = "/v1/apps/\(try ASCPathSegment.encode(appId))/appPricePoints"
             var queryParams: [String: String] = [
                 "include": "territory",
-                "limit": String(min(max(arguments["limit"]?.intValue ?? 50, 1), 200))
+                "limit": String(limit)
             ]
             if let territoryId = arguments["territory_id"]?.stringValue {
                 queryParams["filter[territory]"] = territoryId
@@ -182,8 +183,18 @@ extension PricingWorker {
         }
 
         do {
-            let manualPricesLimit = min(max(arguments["manual_prices_limit"]?.intValue ?? 50, 1), 50)
-            let automaticPricesLimit = min(max(arguments["automatic_prices_limit"]?.intValue ?? 50, 1), 50)
+            let manualPricesLimit = try validatedListLimit(
+                arguments["manual_prices_limit"],
+                defaultValue: 50,
+                maximum: 50,
+                field: "manual_prices_limit"
+            )
+            let automaticPricesLimit = try validatedListLimit(
+                arguments["automatic_prices_limit"],
+                defaultValue: 50,
+                maximum: 50,
+                field: "automatic_prices_limit"
+            )
             let response: ASCAppPriceScheduleResponse = try await httpClient.get(
                 "/v1/apps/\(try ASCPathSegment.encode(appId))/appPriceSchedule",
                 parameters: [
@@ -350,6 +361,14 @@ extension PricingWorker {
                 body: request,
                 as: ASCAppPriceScheduleResponse.self
             )
+            try validateAcceptedPricingMutationResource(
+                type: response.data.type,
+                id: response.data.id,
+                expectedType: "appPriceSchedules",
+                method: "POST",
+                statusCode: 201,
+                context: "Apple price schedule create response"
+            )
 
             var schedule: [String: Any] = [
                 "id": response.data.id,
@@ -369,10 +388,7 @@ extension PricingWorker {
             return MCPResult.jsonObject(result)
 
         } catch {
-            return CallTool.Result(
-                content: [MCPContent.text("Failed to set price schedule: \(error.localizedDescription)")],
-                isError: true
-            )
+            return MCPResult.error(error, prefix: "Failed to set price schedule")
         }
     }
 
@@ -392,6 +408,7 @@ extension PricingWorker {
 
         do {
             let response: ASCTerritoryAvailabilitiesResponse
+            let limit = try validatedListLimit(arguments["limit"], defaultValue: 50)
             let availability: ASCAppAvailabilityV2Response = try await httpClient.get(
                 "/v1/apps/\(try ASCPathSegment.encode(appId))/appAvailabilityV2",
                 as: ASCAppAvailabilityV2Response.self
@@ -399,7 +416,7 @@ extension PricingWorker {
             let endpoint = "/v2/appAvailabilities/\(try ASCPathSegment.encode(availability.data.id))/territoryAvailabilities"
             let queryParams = [
                 "include": "territory",
-                "limit": String(min(max(arguments["limit"]?.intValue ?? 50, 1), 200))
+                "limit": String(limit)
             ]
 
             if let nextUrl = try paginationURL(from: arguments["next_url"]) {
@@ -518,6 +535,14 @@ extension PricingWorker {
                 body: request,
                 as: ASCAppAvailabilityV2Response.self
             )
+            try validateAcceptedPricingMutationResource(
+                type: response.data.type,
+                id: response.data.id,
+                expectedType: "appAvailabilities",
+                method: "POST",
+                statusCode: 201,
+                context: "Apple app availability create response"
+            )
 
             let result: [String: Any] = [
                 "success": true,
@@ -529,10 +554,7 @@ extension PricingWorker {
             return MCPResult.jsonObject(result)
 
         } catch {
-            return CallTool.Result(
-                content: [MCPContent.text("Failed to create app availability: \(error.localizedDescription)")],
-                isError: true
-            )
+            return MCPResult.error(error, prefix: "Failed to create app availability")
         }
     }
 
@@ -585,11 +607,12 @@ extension PricingWorker {
 
         do {
             let response: ASCTerritoryAvailabilitiesResponse
+            let limit = try validatedListLimit(arguments["limit"], defaultValue: 50)
 
             let endpoint = "/v2/appAvailabilities/\(try ASCPathSegment.encode(availabilityId))/territoryAvailabilities"
             let queryParams = [
                 "include": "territory",
-                "limit": String(min(max(arguments["limit"]?.intValue ?? 50, 1), 200))
+                "limit": String(limit)
             ]
 
             if let nextUrl = try paginationURL(from: arguments["next_url"]) {
@@ -729,7 +752,12 @@ extension PricingWorker {
             return [:]
         }
 
-        let limit = min(max(arguments["territory_availabilities_limit"]?.intValue ?? 50, 1), 50)
+        let limit = try validatedListLimit(
+            arguments["territory_availabilities_limit"],
+            defaultValue: 50,
+            maximum: 50,
+            field: "territory_availabilities_limit"
+        )
         return [
             "include": "territoryAvailabilities",
             "limit[territoryAvailabilities]": String(limit)
@@ -808,6 +836,21 @@ extension PricingWorker {
             throw PricingArgumentError("'\(field)' must be a boolean or null")
         }
         return boolean
+    }
+
+    private func validatedListLimit(
+        _ value: Value?,
+        defaultValue: Int,
+        maximum: Int = 200,
+        field: String = "limit"
+    ) throws -> Int {
+        guard let value else {
+            return defaultValue
+        }
+        guard let limit = value.intValue, (1...maximum).contains(limit) else {
+            throw PricingArgumentError("'\(field)' must be an integer from 1 through \(maximum)")
+        }
+        return limit
     }
 
     private func priceScheduleInputs(_ arguments: [String: Value]) throws -> [PriceScheduleInput] {
@@ -949,6 +992,32 @@ extension PricingWorker {
         }
 
         return result
+    }
+
+    private func validateAcceptedPricingMutationResource(
+        type: String,
+        id: String,
+        expectedType: String,
+        method: String,
+        statusCode: Int,
+        context: String
+    ) throws {
+        do {
+            try ASCNonIdempotentWriteRecovery.validateResourceIdentity(
+                type: type,
+                id: id,
+                expectedType: expectedType,
+                context: context
+            )
+        } catch {
+            let cause = error as? ASCError ?? .parsing(Redactor.redact(error.localizedDescription))
+            throw ASCError.mutationCommittedUnverified(
+                method: method,
+                expectedStatusCode: statusCode,
+                actualStatusCode: statusCode,
+                cause: cause
+            )
+        }
     }
 
 }

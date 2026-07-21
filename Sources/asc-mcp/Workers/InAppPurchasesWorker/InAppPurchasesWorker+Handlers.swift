@@ -75,7 +75,7 @@ extension InAppPurchasesWorker {
             }
 
             var queryParams = selection
-            queryParams["limit"] = String(min(max(arguments["limit"]?.intValue ?? 25, 1), 200))
+            queryParams["limit"] = String(try validatedCommerceLimit(arguments["limit"], defaultValue: 25, maximum: 200))
             let endpoint = "/v1/apps/\(try ASCPathSegment.encode(appId))/inAppPurchasesV2"
 
             if let nextUrl = try paginationURL(from: arguments["next_url"]) {
@@ -170,14 +170,16 @@ extension InAppPurchasesWorker {
         }
 
         do {
+            let reviewNote = try nullableIAPString("review_note", from: arguments)
+            let familySharable = try nullableIAPBool("family_sharable", from: arguments)
             let request = CreateInAppPurchaseV2Request(
                 data: CreateInAppPurchaseV2Request.CreateIAPData(
                     attributes: CreateInAppPurchaseV2Request.CreateIAPAttributes(
                         name: name,
                         productId: productId,
                         inAppPurchaseType: iapType,
-                        reviewNote: arguments["review_note"]?.stringValue,
-                        familySharable: arguments["family_sharable"]?.boolValue
+                        reviewNote: reviewNote,
+                        familySharable: familySharable
                     ),
                     relationships: CreateInAppPurchaseV2Request.CreateIAPRelationships(
                         app: CreateInAppPurchaseV2Request.AppRelationship(
@@ -203,10 +205,7 @@ extension InAppPurchasesWorker {
             return MCPResult.jsonObject(result)
 
         } catch {
-            return CallTool.Result(
-                content: [MCPContent.text("Error: Failed to create IAP: \(error.localizedDescription)")],
-                isError: true
-            )
+            return MCPResult.error(error, prefix: "Failed to create IAP")
         }
     }
 
@@ -222,14 +221,22 @@ extension InAppPurchasesWorker {
             )
         }
 
+        let mutableFields: Set<String> = ["name", "review_note", "family_sharable"]
+        guard arguments.keys.contains(where: mutableFields.contains) else {
+            return MCPResult.error("At least one mutable in-app purchase field is required")
+        }
+
         do {
+            let name = try nullableIAPString("name", from: arguments)
+            let reviewNote = try nullableIAPString("review_note", from: arguments)
+            let familySharable = try nullableIAPBool("family_sharable", from: arguments)
             let request = UpdateInAppPurchaseV2Request(
                 data: UpdateInAppPurchaseV2Request.UpdateIAPData(
                     id: iapId,
                     attributes: UpdateInAppPurchaseV2Request.UpdateIAPAttributes(
-                        name: arguments["name"]?.stringValue,
-                        reviewNote: arguments["review_note"]?.stringValue,
-                        familySharable: arguments["family_sharable"]?.boolValue
+                        name: name,
+                        reviewNote: reviewNote,
+                        familySharable: familySharable
                     )
                 )
             )
@@ -250,11 +257,40 @@ extension InAppPurchasesWorker {
             return MCPResult.jsonObject(result)
 
         } catch {
-            return CallTool.Result(
-                content: [MCPContent.text("Error: Failed to update IAP: \(error.localizedDescription)")],
-                isError: true
-            )
+            return MCPResult.error(error, prefix: "Failed to update IAP")
         }
+    }
+
+    private func nullableIAPString(
+        _ name: String,
+        from arguments: [String: Value]
+    ) throws -> ASCNullable<String>? {
+        guard let value = arguments[name] else {
+            return nil
+        }
+        if case .null = value {
+            return .null
+        }
+        guard let string = value.stringValue else {
+            throw IAPWriteInputError("\(name) must be a string or null")
+        }
+        return .value(string)
+    }
+
+    private func nullableIAPBool(
+        _ name: String,
+        from arguments: [String: Value]
+    ) throws -> ASCNullable<Bool>? {
+        guard let value = arguments[name] else {
+            return nil
+        }
+        if case .null = value {
+            return .null
+        }
+        guard let bool = value.boolValue else {
+            throw IAPWriteInputError("\(name) must be a Boolean or null")
+        }
+        return .value(bool)
     }
 
     /// Deletes an in-app purchase
@@ -300,7 +336,7 @@ extension InAppPurchasesWorker {
             let response: ASCInAppPurchaseLocalizationsResponse
             let endpoint = "/v2/inAppPurchases/\(try ASCPathSegment.encode(iapId))/inAppPurchaseLocalizations"
             let query = [
-                "limit": String(min(max(arguments["limit"]?.intValue ?? 25, 1), 200))
+                "limit": String(try validatedCommerceLimit(arguments["limit"], defaultValue: 25, maximum: 200))
             ]
 
             if let nextUrl = try paginationURL(from: arguments["next_url"]) {
@@ -378,7 +414,7 @@ extension InAppPurchasesWorker {
             }
 
             var queryParams = selection
-            queryParams["limit"] = String(min(max(arguments["limit"]?.intValue ?? 25, 1), 200))
+            queryParams["limit"] = String(try validatedCommerceLimit(arguments["limit"], defaultValue: 25, maximum: 200))
             let endpoint = "/v1/apps/\(try ASCPathSegment.encode(appId))/subscriptionGroups"
 
             if let nextUrl = try paginationURL(from: arguments["next_url"]) {
@@ -523,7 +559,7 @@ extension InAppPurchasesWorker {
             return MCPResult.jsonObject(result)
 
         } catch {
-            return MCPResult.error("Failed to create IAP localization: \(error.localizedDescription)")
+            return MCPResult.error(error, prefix: "Failed to create IAP localization")
         }
     }
 
@@ -573,7 +609,7 @@ extension InAppPurchasesWorker {
             return MCPResult.jsonObject(result)
 
         } catch {
-            return MCPResult.error("Failed to update IAP localization: \(error.localizedDescription)")
+            return MCPResult.error(error, prefix: "Failed to update IAP localization")
         }
     }
 
@@ -655,10 +691,7 @@ extension InAppPurchasesWorker {
             return MCPResult.jsonObject(result)
 
         } catch {
-            return CallTool.Result(
-                content: [MCPContent.text("Failed to submit IAP for review: \(error.localizedDescription)")],
-                isError: true
-            )
+            return MCPResult.error(error, prefix: "Failed to submit IAP for review")
         }
     }
 
@@ -680,7 +713,7 @@ extension InAppPurchasesWorker {
             let response: ASCIAPPricePointsResponse
             let endpoint = "/v2/inAppPurchases/\(try ASCPathSegment.encode(iapId))/pricePoints"
             var query = [
-                "limit": String(min(max(arguments["limit"]?.intValue ?? 50, 1), 200))
+                "limit": String(try validatedCommerceLimit(arguments["limit"], defaultValue: 50, maximum: 8000))
             ]
             if let territory = arguments["territory"]?.stringValue {
                 query["filter[territory]"] = territory
@@ -891,10 +924,7 @@ extension InAppPurchasesWorker {
             return MCPResult.jsonObject(result)
 
         } catch {
-            return CallTool.Result(
-                content: [MCPContent.text("Error: Failed to set IAP price schedule: \(error.localizedDescription)")],
-                isError: true
-            )
+            return MCPResult.error(error, prefix: "Failed to set IAP price schedule")
         }
     }
 
@@ -963,10 +993,7 @@ extension InAppPurchasesWorker {
             return MCPResult.jsonObject(result)
 
         } catch {
-            return CallTool.Result(
-                content: [MCPContent.text("Error: Failed to set IAP availability: \(error.localizedDescription)")],
-                isError: true
-            )
+            return MCPResult.error(error, prefix: "Failed to set IAP availability")
         }
     }
 
@@ -1331,7 +1358,7 @@ extension InAppPurchasesWorker {
             let response: ASCIAPImagesResponse
             let endpoint = "/v2/inAppPurchases/\(try ASCPathSegment.encode(iapId))/images"
             let query = [
-                "limit": String(min(max(arguments["limit"]?.intValue ?? 25, 1), 200))
+                "limit": String(try validatedCommerceLimit(arguments["limit"], defaultValue: 25, maximum: 200))
             ]
 
             if let nextUrl = try paginationURL(from: arguments["next_url"]) {
@@ -1554,4 +1581,14 @@ extension InAppPurchasesWorker {
         }
         return result
     }
+}
+
+private struct IAPWriteInputError: LocalizedError, Sendable {
+    let message: String
+
+    init(_ message: String) {
+        self.message = message
+    }
+
+    var errorDescription: String? { message }
 }

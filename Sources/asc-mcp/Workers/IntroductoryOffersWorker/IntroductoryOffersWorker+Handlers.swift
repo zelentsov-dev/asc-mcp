@@ -19,7 +19,7 @@ extension IntroductoryOffersWorker {
             let response: ASCIntroductoryOffersResponse
             let endpoint = "/v1/subscriptions/\(try ASCPathSegment.encode(subscriptionId))/introductoryOffers"
             var query = [
-                "limit": String(min(max(arguments["limit"]?.intValue ?? 25, 1), 200))
+                "limit": String(try validatedCommerceLimit(arguments["limit"], defaultValue: 25, maximum: 200))
             ]
             if let territory = arguments["filter_territory"]?.stringValue {
                 query["filter[territory]"] = territory
@@ -150,10 +150,7 @@ extension IntroductoryOffersWorker {
             return MCPResult.jsonObject(result)
 
         } catch {
-            return CallTool.Result(
-                content: [MCPContent.text("Error: Failed to create introductory offer: \(error.localizedDescription)")],
-                isError: true
-            )
+            return MCPResult.error(error, prefix: "Failed to create introductory offer")
         }
     }
 
@@ -168,12 +165,17 @@ extension IntroductoryOffersWorker {
             )
         }
 
+        guard arguments.keys.contains("end_date") else {
+            return MCPResult.error("Required parameter 'end_date' is missing")
+        }
+
         do {
+            let endDate = try nullableIntroductoryOfferDate("end_date", from: arguments)
             let request = UpdateIntroductoryOfferRequest(
                 data: UpdateIntroductoryOfferRequest.UpdateData(
                     id: introOfferId,
                     attributes: UpdateIntroductoryOfferRequest.Attributes(
-                        endDate: arguments["end_date"]?.stringValue
+                        endDate: endDate
                     )
                 )
             )
@@ -194,10 +196,7 @@ extension IntroductoryOffersWorker {
             return MCPResult.jsonObject(result)
 
         } catch {
-            return CallTool.Result(
-                content: [MCPContent.text("Error: Failed to update introductory offer: \(error.localizedDescription)")],
-                isError: true
-            )
+            return MCPResult.error(error, prefix: "Failed to update introductory offer")
         }
     }
 

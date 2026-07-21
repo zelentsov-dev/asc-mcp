@@ -19,7 +19,7 @@ extension PromotionalOffersWorker {
             let response: ASCPromotionalOffersResponse
             let endpoint = "/v1/subscriptions/\(try ASCPathSegment.encode(subscriptionId))/promotionalOffers"
             let query = [
-                "limit": String(min(max(arguments["limit"]?.intValue ?? 25, 1), 200))
+                "limit": String(try validatedCommerceLimit(arguments["limit"], defaultValue: 25, maximum: 200))
             ]
 
             if let nextUrl = try paginationURL(from: arguments["next_url"]) {
@@ -251,10 +251,7 @@ extension PromotionalOffersWorker {
             return MCPResult.jsonObject(result)
 
         } catch {
-            return CallTool.Result(
-                content: [MCPContent.text("Error: Failed to create promotional offer: \(error.localizedDescription)")],
-                isError: true
-            )
+            return MCPResult.error(error, prefix: "Failed to create promotional offer")
         }
     }
 
@@ -367,10 +364,7 @@ extension PromotionalOffersWorker {
             return MCPResult.jsonObject(result)
 
         } catch {
-            return CallTool.Result(
-                content: [MCPContent.text("Error: Failed to update promotional offer: \(error.localizedDescription)")],
-                isError: true
-            )
+            return MCPResult.error(error, prefix: "Failed to update promotional offer")
         }
     }
 
@@ -415,7 +409,7 @@ extension PromotionalOffersWorker {
             let response: ASCPromotionalOfferPricesResponse
             let endpoint = "/v1/subscriptionPromotionalOffers/\(try ASCPathSegment.encode(promotionalOfferId))/prices"
             let query = [
-                "limit": String(min(max(arguments["limit"]?.intValue ?? 25, 1), 200))
+                "limit": String(try validatedCommerceLimit(arguments["limit"], defaultValue: 25, maximum: 200))
             ]
 
             if let nextUrl = try paginationURL(from: arguments["next_url"]) {
