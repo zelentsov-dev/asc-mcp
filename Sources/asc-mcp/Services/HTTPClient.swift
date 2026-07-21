@@ -406,7 +406,7 @@ extension HTTPClient {
     ///   - type: Response type expected from the originating collection.
     /// - Returns: Decoded response for the validated next page.
     /// - Throws: `ASCError` when validation, transport, or decoding fails.
-    public func getPage<T: Codable & Sendable>(
+    public func getPage<T: Decodable & Sendable>(
         _ nextURL: String,
         scope: PaginationScope,
         as type: T.Type
@@ -421,7 +421,7 @@ extension HTTPClient {
     }
 
     /// Decodes JSON response into specified type
-    public func get<T: Codable & Sendable>(_ endpoint: String, parameters: [String: String] = [:], as type: T.Type) async throws -> T {
+    public func get<T: Decodable & Sendable>(_ endpoint: String, parameters: [String: String] = [:], as type: T.Type) async throws -> T {
         let data = try await get(endpoint, parameters: parameters)
 
         do {

@@ -75,6 +75,22 @@ public struct ASCRelationship: Codable, Sendable {
 public struct ASCRelationshipMultiple: Codable, Sendable {
     public let links: ASCRelationshipLinks?
     public let data: [ASCResourceIdentifier]?
+    public let meta: ASCPagingInformation?
+
+    /// Creates a to-many relationship with optional linkage, links, and paging metadata.
+    /// - Parameters:
+    ///   - links: Apple relationship links, when present.
+    ///   - data: Related resource identifiers, when present.
+    ///   - meta: Relationship paging metadata, when present.
+    public init(
+        links: ASCRelationshipLinks?,
+        data: [ASCResourceIdentifier]?,
+        meta: ASCPagingInformation? = nil
+    ) {
+        self.links = links
+        self.data = data
+        self.meta = meta
+    }
 }
 
 /// Resource identifier

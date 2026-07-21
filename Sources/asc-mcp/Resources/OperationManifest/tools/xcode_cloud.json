@@ -102,10 +102,14 @@
         ],
         "fields": [
           { "outputField": "action", "operationId": "ciBuildActions_getInstance", "jsonPointer": "/data" },
+          { "outputField": "action.buildRunRelationshipUrl", "operationId": "ciBuildActions_getInstance", "jsonPointer": "/data/relationships/buildRun/links/self", "localRole": "Selected projection of JSON:API relationship self; buildRunUrl remains the related-resource URL." },
+          { "outputField": "action.artifactsRelationshipUrl", "operationId": "ciBuildActions_getInstance", "jsonPointer": "/data/relationships/artifacts/links/self", "localRole": "Selected projection of JSON:API relationship self; artifactsUrl remains the related-resource URL." },
+          { "outputField": "action.issuesRelationshipUrl", "operationId": "ciBuildActions_getInstance", "jsonPointer": "/data/relationships/issues/links/self", "localRole": "Selected projection of JSON:API relationship self; issuesUrl remains the related-resource URL." },
+          { "outputField": "action.testResultsRelationshipUrl", "operationId": "ciBuildActions_getInstance", "jsonPointer": "/data/relationships/testResults/links/self", "localRole": "Selected projection of JSON:API relationship self; testResultsUrl remains the related-resource URL." },
           { "outputField": "included", "operationId": "ciBuildActions_getInstance", "jsonPointer": "/included" }
         ]
       },
-      "note": "The include mapping is exact; sparse fields are omitted and the resource is reformatted as an MCP projection."
+      "note": "The include mapping is exact; sparse fields are omitted. The tool has no MCP output schema and returns a selected action projection that keeps each documented links.related URL as *Url and links.self URL as *RelationshipUrl."
     },
     {
       "tool": "xcode_cloud_artifacts_get",
@@ -152,12 +156,16 @@
         ],
         "fields": [
           { "outputField": "actions", "operationId": "ciBuildRuns_actions_getToManyRelated", "jsonPointer": "/data" },
+          { "outputField": "actions.*.buildRunRelationshipUrl", "operationId": "ciBuildRuns_actions_getToManyRelated", "jsonPointer": "/data/*/relationships/buildRun/links/self", "localRole": "Selected projection of JSON:API relationship self; buildRunUrl remains the related-resource URL." },
+          { "outputField": "actions.*.artifactsRelationshipUrl", "operationId": "ciBuildRuns_actions_getToManyRelated", "jsonPointer": "/data/*/relationships/artifacts/links/self", "localRole": "Selected projection of JSON:API relationship self; artifactsUrl remains the related-resource URL." },
+          { "outputField": "actions.*.issuesRelationshipUrl", "operationId": "ciBuildRuns_actions_getToManyRelated", "jsonPointer": "/data/*/relationships/issues/links/self", "localRole": "Selected projection of JSON:API relationship self; issuesUrl remains the related-resource URL." },
+          { "outputField": "actions.*.testResultsRelationshipUrl", "operationId": "ciBuildRuns_actions_getToManyRelated", "jsonPointer": "/data/*/relationships/testResults/links/self", "localRole": "Selected projection of JSON:API relationship self; testResultsUrl remains the related-resource URL." },
           { "outputField": "included", "operationId": "ciBuildRuns_actions_getToManyRelated", "jsonPointer": "/included" },
           { "outputField": "next_url", "operationId": "ciBuildRuns_actions_getToManyRelated", "jsonPointer": "/links/next" },
           { "outputField": "total", "operationId": "ciBuildRuns_actions_getToManyRelated", "jsonPointer": "/meta/paging/total" }
         ]
       },
-      "note": "Exact path/include/limit mapping; sparse action/build-run fields are not exposed."
+      "note": "Exact path/include/limit mapping; sparse action/build-run fields are not exposed. The tool has no MCP output schema and returns selected action projections that keep links.related as *Url and links.self as *RelationshipUrl."
     },
     {
       "tool": "xcode_cloud_build_run_builds_list",
@@ -170,15 +178,7 @@
           "operationId": "ciBuildRuns_builds_getToManyRelated",
           "method": "get",
           "path": "/v1/ciBuildRuns/{id}/builds",
-          "role": "primary",
-          "optionalParameterClassifications": [
-            { "location": "query", "appleName": "include", "disposition": "intentionallyOmitted", "reason": "The compact build decoder does not support every Apple resource type allowed by this include parameter, so exposing it would turn valid responses into decoding failures.", "reviewAtSpec": "4.4.1" },
-            { "location": "query", "appleName": "limit[individualTesters]", "disposition": "intentionallyOmitted", "reason": "The individualTesters relationship is not included by this compact projection, so its nested expansion limit is inapplicable.", "reviewAtSpec": "4.4.1" },
-            { "location": "query", "appleName": "limit[betaGroups]", "disposition": "intentionallyOmitted", "reason": "The betaGroups relationship is not included by this compact projection, so its nested expansion limit is inapplicable.", "reviewAtSpec": "4.4.1" },
-            { "location": "query", "appleName": "limit[betaBuildLocalizations]", "disposition": "intentionallyOmitted", "reason": "The betaBuildLocalizations relationship is not included by this compact projection, so its nested expansion limit is inapplicable.", "reviewAtSpec": "4.4.1" },
-            { "location": "query", "appleName": "limit[icons]", "disposition": "intentionallyOmitted", "reason": "The icons relationship is not included by this compact projection, so its nested expansion limit is inapplicable.", "reviewAtSpec": "4.4.1" },
-            { "location": "query", "appleName": "limit[buildBundles]", "disposition": "intentionallyOmitted", "reason": "The buildBundles relationship is not included by this compact projection, so its nested expansion limit is inapplicable.", "reviewAtSpec": "4.4.1" }
-          ]
+          "role": "primary"
         }
       ],
       "fields": [
@@ -199,6 +199,12 @@
         { "toolField": "build_ids", "sourceKind": "parameter", "operationId": "ciBuildRuns_builds_getToManyRelated", "location": "query", "appleName": "filter[id]" },
         { "toolField": "uses_non_exempt_encryption_set", "sourceKind": "parameter", "operationId": "ciBuildRuns_builds_getToManyRelated", "location": "query", "appleName": "exists[usesNonExemptEncryption]" },
         { "toolField": "sort", "sourceKind": "parameter", "operationId": "ciBuildRuns_builds_getToManyRelated", "location": "query", "appleName": "sort" },
+        { "toolField": "include", "sourceKind": "parameter", "operationId": "ciBuildRuns_builds_getToManyRelated", "location": "query", "appleName": "include" },
+        { "toolField": "individual_testers_limit", "sourceKind": "parameter", "operationId": "ciBuildRuns_builds_getToManyRelated", "location": "query", "appleName": "limit[individualTesters]" },
+        { "toolField": "beta_groups_limit", "sourceKind": "parameter", "operationId": "ciBuildRuns_builds_getToManyRelated", "location": "query", "appleName": "limit[betaGroups]" },
+        { "toolField": "beta_build_localizations_limit", "sourceKind": "parameter", "operationId": "ciBuildRuns_builds_getToManyRelated", "location": "query", "appleName": "limit[betaBuildLocalizations]" },
+        { "toolField": "icons_limit", "sourceKind": "parameter", "operationId": "ciBuildRuns_builds_getToManyRelated", "location": "query", "appleName": "limit[icons]" },
+        { "toolField": "build_bundles_limit", "sourceKind": "parameter", "operationId": "ciBuildRuns_builds_getToManyRelated", "location": "query", "appleName": "limit[buildBundles]" },
         { "toolField": "next_url", "sourceKind": "local", "localRole": "paginationContinuation" }
       ],
       "response": {
@@ -208,11 +214,25 @@
         ],
         "fields": [
           { "outputField": "builds", "operationId": "ciBuildRuns_builds_getToManyRelated", "jsonPointer": "/data" },
+          { "outputField": "builds.*.preReleaseVersionRelationshipUrl", "operationId": "ciBuildRuns_builds_getToManyRelated", "jsonPointer": "/data/*/relationships/preReleaseVersion/links/self", "localRole": "Selected projection of JSON:API relationship self; preReleaseVersionUrl remains the related-resource URL." },
+          { "outputField": "builds.*.individualTestersRelationshipUrl", "operationId": "ciBuildRuns_builds_getToManyRelated", "jsonPointer": "/data/*/relationships/individualTesters/links/self", "localRole": "Selected projection of JSON:API relationship self; individualTestersUrl remains the related-resource URL." },
+          { "outputField": "builds.*.betaGroupsRelationshipUrl", "operationId": "ciBuildRuns_builds_getToManyRelated", "jsonPointer": "/data/*/relationships/betaGroups/links/self", "localRole": "Selected projection of JSON:API relationship self; betaGroupsUrl remains the related-resource URL." },
+          { "outputField": "builds.*.betaBuildLocalizationsRelationshipUrl", "operationId": "ciBuildRuns_builds_getToManyRelated", "jsonPointer": "/data/*/relationships/betaBuildLocalizations/links/self", "localRole": "Selected projection of JSON:API relationship self; betaBuildLocalizationsUrl remains the related-resource URL." },
+          { "outputField": "builds.*.appEncryptionDeclarationRelationshipUrl", "operationId": "ciBuildRuns_builds_getToManyRelated", "jsonPointer": "/data/*/relationships/appEncryptionDeclaration/links/self", "localRole": "Selected projection of JSON:API relationship self; appEncryptionDeclarationUrl remains the related-resource URL." },
+          { "outputField": "builds.*.betaAppReviewSubmissionRelationshipUrl", "operationId": "ciBuildRuns_builds_getToManyRelated", "jsonPointer": "/data/*/relationships/betaAppReviewSubmission/links/self", "localRole": "Selected projection of JSON:API relationship self; betaAppReviewSubmissionUrl remains the related-resource URL." },
+          { "outputField": "builds.*.appRelationshipUrl", "operationId": "ciBuildRuns_builds_getToManyRelated", "jsonPointer": "/data/*/relationships/app/links/self", "localRole": "Selected projection of JSON:API relationship self; appUrl remains the related-resource URL." },
+          { "outputField": "builds.*.buildBetaDetailRelationshipUrl", "operationId": "ciBuildRuns_builds_getToManyRelated", "jsonPointer": "/data/*/relationships/buildBetaDetail/links/self", "localRole": "Selected projection of JSON:API relationship self; buildBetaDetailUrl remains the related-resource URL." },
+          { "outputField": "builds.*.appStoreVersionRelationshipUrl", "operationId": "ciBuildRuns_builds_getToManyRelated", "jsonPointer": "/data/*/relationships/appStoreVersion/links/self", "localRole": "Selected projection of JSON:API relationship self; appStoreVersionUrl remains the related-resource URL." },
+          { "outputField": "builds.*.iconsRelationshipUrl", "operationId": "ciBuildRuns_builds_getToManyRelated", "jsonPointer": "/data/*/relationships/icons/links/self", "localRole": "Selected projection of JSON:API relationship self; iconsUrl remains the related-resource URL." },
+          { "outputField": "builds.*.perfPowerMetricsRelationshipUrl", "localRole": "Stable null projection because Apple 4.4.1 defines links.related but no links.self for this relationship; perfPowerMetricsUrl preserves the documented related URL." },
+          { "outputField": "builds.*.diagnosticSignaturesRelationshipUrl", "operationId": "ciBuildRuns_builds_getToManyRelated", "jsonPointer": "/data/*/relationships/diagnosticSignatures/links/self", "localRole": "Selected projection of JSON:API relationship self; diagnosticSignaturesUrl remains the related-resource URL." },
+          { "outputField": "builds.*.buildBundlesUrl", "localRole": "Stable null compatibility projection because Apple 4.4.1 defines no links object for the buildBundles relationship." },
+          { "outputField": "builds.*.buildUploadUrl", "localRole": "Stable null compatibility projection because Apple 4.4.1 defines no links object for the buildUpload relationship." },
           { "outputField": "next_url", "operationId": "ciBuildRuns_builds_getToManyRelated", "jsonPointer": "/links/next" },
           { "outputField": "total", "operationId": "ciBuildRuns_builds_getToManyRelated", "jsonPointer": "/meta/paging/total" }
         ]
       },
-      "note": "Apple 4.4.1 build filters, sort expressions, top-level limit, total, and continuation are exposed. Sparse fields follow the global policy; include and its dependent nested limits remain explicitly omitted because the compact decoder does not support every allowed included resource type."
+      "note": "Apple 4.4.1 build filters, sort expressions, include values, relationship limits, top-level limit, total, and continuation are exposed. Each relationship limit is accepted only with its matching include; sparse fields follow the global family policy. The tool has no MCP output schema and returns a selected build projection: documented links.related values remain *Url, documented links.self values are *RelationshipUrl, perfPowerMetricsRelationshipUrl is null because that relationship has no self link, and legacy buildBundlesUrl/buildUploadUrl compatibility keys are null because those relationships define no links."
     },
     {
       "tool": "xcode_cloud_build_runs_get",
@@ -225,15 +245,13 @@
           "operationId": "ciBuildRuns_getInstance",
           "method": "get",
           "path": "/v1/ciBuildRuns/{id}",
-          "role": "primary",
-          "optionalParameterClassifications": [
-            { "location": "query", "appleName": "limit[builds]", "disposition": "intentionallyOmitted", "reason": "Embedded build cardinality is not a substitute for pagination; callers can enumerate the full relationship with xcode_cloud_build_run_builds_list.", "reviewAtSpec": "4.4.1" }
-          ]
+          "role": "primary"
         }
       ],
       "fields": [
         { "toolField": "build_run_id", "sourceKind": "parameter", "operationId": "ciBuildRuns_getInstance", "location": "path", "appleName": "id" },
-        { "toolField": "include", "sourceKind": "parameter", "operationId": "ciBuildRuns_getInstance", "location": "query", "appleName": "include" }
+        { "toolField": "include", "sourceKind": "parameter", "operationId": "ciBuildRuns_getInstance", "location": "query", "appleName": "include" },
+        { "toolField": "builds_limit", "sourceKind": "parameter", "operationId": "ciBuildRuns_getInstance", "location": "query", "appleName": "limit[builds]" }
       ],
       "response": {
         "mode": "projection",
@@ -242,10 +260,12 @@
         ],
         "fields": [
           { "outputField": "buildRun", "operationId": "ciBuildRuns_getInstance", "jsonPointer": "/data" },
+          { "outputField": "buildRun.buildsRelationshipUrl", "operationId": "ciBuildRuns_getInstance", "jsonPointer": "/data/relationships/builds/links/self", "localRole": "Selected projection of JSON:API relationship self; buildsUrl remains the related-resource URL." },
+          { "outputField": "buildRun.actionsRelationshipUrl", "operationId": "ciBuildRuns_getInstance", "jsonPointer": "/data/relationships/actions/links/self", "localRole": "Selected projection of JSON:API relationship self; actionsUrl remains the related-resource URL." },
           { "outputField": "included", "operationId": "ciBuildRuns_getInstance", "jsonPointer": "/included" }
         ]
       },
-      "note": "The include mapping is exact; sparse fields are omitted, and callers use the dedicated paginated relationship tool instead of tuning an embedded build limit."
+      "note": "The include and dependent builds_limit mappings are exact; sparse fields follow the global family policy. The tool has no MCP output schema and returns a selected build-run projection that keeps links.related as *Url and links.self as *RelationshipUrl."
     },
     {
       "tool": "xcode_cloud_build_runs_start",
@@ -273,7 +293,7 @@
         { "toolField": "build_run_id", "sourceKind": "requestBody", "operationId": "ciBuildRuns_createInstance", "jsonPointer": "/data/relationships/buildRun/data/id", "localRole": "exactlyOneRunSelector" },
         { "toolField": "source_branch_or_tag_id", "sourceKind": "requestBody", "operationId": "ciBuildRuns_createInstance", "jsonPointer": "/data/relationships/sourceBranchOrTag/data/id", "localRole": "atMostOneSourceSelector" },
         { "toolField": "pull_request_id", "sourceKind": "requestBody", "operationId": "ciBuildRuns_createInstance", "jsonPointer": "/data/relationships/pullRequest/data/id", "localRole": "atMostOneSourceSelector" },
-        { "toolField": "clean", "sourceKind": "requestBody", "operationId": "ciBuildRuns_createInstance", "jsonPointer": "/data/attributes/clean" }
+        { "toolField": "clean", "sourceKind": "requestBody", "operationId": "ciBuildRuns_createInstance", "jsonPointer": "/data/attributes/clean", "localRole": "Maps concrete Boolean values. Apple's explicit-null variant is intentionally omitted from the public Boolean schema because omission has the same default-selection semantics." }
       ],
       "response": {
         "mode": "projection",
@@ -281,10 +301,13 @@
           { "operationId": "ciBuildRuns_createInstance", "statusCode": "201", "mediaType": "application/json" }
         ],
         "fields": [
-          { "outputField": "buildRun", "operationId": "ciBuildRuns_createInstance", "jsonPointer": "/data" }
+          { "outputField": "buildRun", "operationId": "ciBuildRuns_createInstance", "jsonPointer": "/data" },
+          { "outputField": "buildRun.buildsRelationshipUrl", "operationId": "ciBuildRuns_createInstance", "jsonPointer": "/data/relationships/builds/links/self", "localRole": "Selected projection of JSON:API relationship self; buildsUrl remains the related-resource URL." },
+          { "outputField": "buildRun.actionsRelationshipUrl", "operationId": "ciBuildRuns_createInstance", "jsonPointer": "/data/relationships/actions/links/self", "localRole": "Selected projection of JSON:API relationship self; actionsUrl remains the related-resource URL." },
+          { "outputField": "included", "operationId": "ciBuildRuns_createInstance", "jsonPointer": "/included", "localRole": "Preserved only when Apple returns a validated non-empty included resource array." }
         ]
       },
-      "note": "Exact Apple request fields. Runtime preflight requires exactly one of workflow_id and build_run_id; source_branch_or_tag_id and pull_request_id remain mutually exclusive. Conditional JSON Schema keywords are intentionally omitted for broad MCP client compatibility."
+      "note": "Exact Apple request fields. Runtime preflight requires exactly one of workflow_id and build_run_id; source_branch_or_tag_id and pull_request_id remain mutually exclusive. Apple permits explicit null for optional clean; that variant is intentionally omitted because MCP omission has the same default-selection semantics. Conditional JSON Schema keywords are intentionally omitted for broad MCP client compatibility. The tool has no MCP output schema; its selected committed build-run projection keeps links.related as *Url and links.self as *RelationshipUrl, and validated non-empty included resources are preserved."
     },
     {
       "tool": "xcode_cloud_issues_get",
@@ -320,15 +343,13 @@
           "operationId": "ciMacOsVersions_getInstance",
           "method": "get",
           "path": "/v1/ciMacOsVersions/{id}",
-          "role": "primary",
-          "optionalParameterClassifications": [
-            { "location": "query", "appleName": "limit[xcodeVersions]", "disposition": "intentionallyOmitted", "reason": "The projection exposes Xcode version relationship IDs and URL; callers use the Xcode versions list/get tools instead of tuning an embedded relationship limit.", "reviewAtSpec": "4.4.1" }
-          ]
+          "role": "primary"
         }
       ],
       "fields": [
         { "toolField": "macos_version_id", "sourceKind": "parameter", "operationId": "ciMacOsVersions_getInstance", "location": "path", "appleName": "id" },
-        { "toolField": "include", "sourceKind": "parameter", "operationId": "ciMacOsVersions_getInstance", "location": "query", "appleName": "include" }
+        { "toolField": "include", "sourceKind": "parameter", "operationId": "ciMacOsVersions_getInstance", "location": "query", "appleName": "include" },
+        { "toolField": "xcode_versions_limit", "sourceKind": "parameter", "operationId": "ciMacOsVersions_getInstance", "location": "query", "appleName": "limit[xcodeVersions]" }
       ],
       "response": {
         "mode": "projection",
@@ -337,10 +358,11 @@
         ],
         "fields": [
           { "outputField": "macOSVersion", "operationId": "ciMacOsVersions_getInstance", "jsonPointer": "/data" },
+          { "outputField": "macOSVersion.xcodeVersionsRelationshipUrl", "operationId": "ciMacOsVersions_getInstance", "jsonPointer": "/data/relationships/xcodeVersions/links/self", "localRole": "Selected projection of JSON:API relationship self; xcodeVersionsUrl remains the related-resource URL." },
           { "outputField": "included", "operationId": "ciMacOsVersions_getInstance", "jsonPointer": "/included" }
         ]
       },
-      "note": "The include mapping is exact; sparse fields are omitted and related Xcode versions remain available through their list/get tools."
+      "note": "The include and dependent xcode_versions_limit mappings are exact; sparse fields follow the global family policy. The tool has no MCP output schema and its selected projection keeps xcodeVersionsUrl from links.related and xcodeVersionsRelationshipUrl from links.self."
     },
     {
       "tool": "xcode_cloud_macos_versions_list",
@@ -353,15 +375,13 @@
           "operationId": "ciMacOsVersions_getCollection",
           "method": "get",
           "path": "/v1/ciMacOsVersions",
-          "role": "primary",
-          "optionalParameterClassifications": [
-            { "location": "query", "appleName": "limit[xcodeVersions]", "disposition": "intentionallyOmitted", "reason": "The projection exposes Xcode version relationship IDs and URL; callers use the Xcode versions list/get tools instead of tuning an embedded relationship limit.", "reviewAtSpec": "4.4.1" }
-          ]
+          "role": "primary"
         }
       ],
       "fields": [
         { "toolField": "limit", "sourceKind": "parameter", "operationId": "ciMacOsVersions_getCollection", "location": "query", "appleName": "limit" },
         { "toolField": "include", "sourceKind": "parameter", "operationId": "ciMacOsVersions_getCollection", "location": "query", "appleName": "include" },
+        { "toolField": "xcode_versions_limit", "sourceKind": "parameter", "operationId": "ciMacOsVersions_getCollection", "location": "query", "appleName": "limit[xcodeVersions]" },
         { "toolField": "next_url", "sourceKind": "local", "localRole": "paginationContinuation" }
       ],
       "response": {
@@ -371,12 +391,13 @@
         ],
         "fields": [
           { "outputField": "macOSVersions", "operationId": "ciMacOsVersions_getCollection", "jsonPointer": "/data" },
+          { "outputField": "macOSVersions.*.xcodeVersionsRelationshipUrl", "operationId": "ciMacOsVersions_getCollection", "jsonPointer": "/data/*/relationships/xcodeVersions/links/self", "localRole": "Selected projection of JSON:API relationship self; xcodeVersionsUrl remains the related-resource URL." },
           { "outputField": "included", "operationId": "ciMacOsVersions_getCollection", "jsonPointer": "/included" },
           { "outputField": "next_url", "operationId": "ciMacOsVersions_getCollection", "jsonPointer": "/links/next" },
           { "outputField": "total", "operationId": "ciMacOsVersions_getCollection", "jsonPointer": "/meta/paging/total" }
         ]
       },
-      "note": "The top-level limit and include map exactly; sparse fields are omitted and related Xcode versions remain available through their list/get tools."
+      "note": "The top-level limit, include, and dependent xcode_versions_limit map exactly; sparse fields follow the global family policy. The tool has no MCP output schema and its selected projections keep xcodeVersionsUrl from links.related and xcodeVersionsRelationshipUrl from links.self."
     },
     {
       "tool": "xcode_cloud_product_build_runs_list",
@@ -389,10 +410,7 @@
           "operationId": "ciProducts_buildRuns_getToManyRelated",
           "method": "get",
           "path": "/v1/ciProducts/{id}/buildRuns",
-          "role": "primary",
-          "optionalParameterClassifications": [
-            { "location": "query", "appleName": "limit[builds]", "disposition": "intentionallyOmitted", "reason": "Embedded build cardinality is not a substitute for paginating build runs and their build relationship; the projection preserves relationship IDs and URLs.", "reviewAtSpec": "4.4.1" }
-          ]
+          "role": "primary"
         }
       ],
       "fields": [
@@ -400,6 +418,7 @@
         { "toolField": "build_id", "sourceKind": "parameter", "operationId": "ciProducts_buildRuns_getToManyRelated", "location": "query", "appleName": "filter[builds]" },
         { "toolField": "sort", "sourceKind": "parameter", "operationId": "ciProducts_buildRuns_getToManyRelated", "location": "query", "appleName": "sort" },
         { "toolField": "include", "sourceKind": "parameter", "operationId": "ciProducts_buildRuns_getToManyRelated", "location": "query", "appleName": "include" },
+        { "toolField": "builds_limit", "sourceKind": "parameter", "operationId": "ciProducts_buildRuns_getToManyRelated", "location": "query", "appleName": "limit[builds]" },
         { "toolField": "limit", "sourceKind": "parameter", "operationId": "ciProducts_buildRuns_getToManyRelated", "location": "query", "appleName": "limit" },
         { "toolField": "next_url", "sourceKind": "local", "localRole": "paginationContinuation" }
       ],
@@ -410,12 +429,14 @@
         ],
         "fields": [
           { "outputField": "buildRuns", "operationId": "ciProducts_buildRuns_getToManyRelated", "jsonPointer": "/data" },
+          { "outputField": "buildRuns.*.buildsRelationshipUrl", "operationId": "ciProducts_buildRuns_getToManyRelated", "jsonPointer": "/data/*/relationships/builds/links/self", "localRole": "Selected projection of JSON:API relationship self; buildsUrl remains the related-resource URL." },
+          { "outputField": "buildRuns.*.actionsRelationshipUrl", "operationId": "ciProducts_buildRuns_getToManyRelated", "jsonPointer": "/data/*/relationships/actions/links/self", "localRole": "Selected projection of JSON:API relationship self; actionsUrl remains the related-resource URL." },
           { "outputField": "included", "operationId": "ciProducts_buildRuns_getToManyRelated", "jsonPointer": "/included" },
           { "outputField": "next_url", "operationId": "ciProducts_buildRuns_getToManyRelated", "jsonPointer": "/links/next" },
           { "outputField": "total", "operationId": "ciProducts_buildRuns_getToManyRelated", "jsonPointer": "/meta/paging/total" }
         ]
       },
-      "note": "The build filter, sort, include, and top-level limit map exactly; sparse fields and the embedded builds limit are intentionally omitted."
+      "note": "The build filter, sort, include, dependent builds_limit, and top-level limit map exactly; sparse fields follow the global family policy. The tool has no MCP output schema and returns selected build-run projections that keep links.related as *Url and links.self as *RelationshipUrl."
     },
     {
       "tool": "xcode_cloud_product_workflows_list",
@@ -439,12 +460,14 @@
         ],
         "fields": [
           { "outputField": "workflows", "operationId": "ciProducts_workflows_getToManyRelated", "jsonPointer": "/data" },
+          { "outputField": "workflows.*.repositoryRelationshipUrl", "operationId": "ciProducts_workflows_getToManyRelated", "jsonPointer": "/data/*/relationships/repository/links/self", "localRole": "Selected projection of JSON:API relationship self; repositoryUrl remains the related-resource URL." },
+          { "outputField": "workflows.*.buildRunsRelationshipUrl", "operationId": "ciProducts_workflows_getToManyRelated", "jsonPointer": "/data/*/relationships/buildRuns/links/self", "localRole": "Selected projection of JSON:API relationship self; buildRunsUrl remains the related-resource URL." },
           { "outputField": "included", "operationId": "ciProducts_workflows_getToManyRelated", "jsonPointer": "/included" },
           { "outputField": "next_url", "operationId": "ciProducts_workflows_getToManyRelated", "jsonPointer": "/links/next" },
           { "outputField": "total", "operationId": "ciProducts_workflows_getToManyRelated", "jsonPointer": "/meta/paging/total" }
         ]
       },
-      "note": "Exact exposed mapping, but sparse fields are omitted; Apple workflow create/update/delete operations are not represented by public tools."
+      "note": "Exact exposed mapping; sparse fields follow the global family policy. The tool has no MCP output schema and returns selected workflow projections that keep links.related as *Url and links.self as *RelationshipUrl."
     },
     {
       "tool": "xcode_cloud_products_get",
@@ -457,15 +480,13 @@
           "operationId": "ciProducts_getInstance",
           "method": "get",
           "path": "/v1/ciProducts/{id}",
-          "role": "primary",
-          "optionalParameterClassifications": [
-            { "location": "query", "appleName": "limit[primaryRepositories]", "disposition": "intentionallyOmitted", "reason": "The projection preserves primary repository IDs and URL; callers use SCM repository tools instead of tuning a partial embedded relationship.", "reviewAtSpec": "4.4.1" }
-          ]
+          "role": "primary"
         }
       ],
       "fields": [
         { "toolField": "product_id", "sourceKind": "parameter", "operationId": "ciProducts_getInstance", "location": "path", "appleName": "id" },
-        { "toolField": "include", "sourceKind": "parameter", "operationId": "ciProducts_getInstance", "location": "query", "appleName": "include" }
+        { "toolField": "include", "sourceKind": "parameter", "operationId": "ciProducts_getInstance", "location": "query", "appleName": "include" },
+        { "toolField": "primary_repositories_limit", "sourceKind": "parameter", "operationId": "ciProducts_getInstance", "location": "query", "appleName": "limit[primaryRepositories]" }
       ],
       "response": {
         "mode": "projection",
@@ -474,10 +495,15 @@
         ],
         "fields": [
           { "outputField": "product", "operationId": "ciProducts_getInstance", "jsonPointer": "/data" },
+          { "outputField": "product.appRelationshipUrl", "operationId": "ciProducts_getInstance", "jsonPointer": "/data/relationships/app/links/self", "localRole": "Selected projection of JSON:API relationship self; appUrl remains the related-resource URL." },
+          { "outputField": "product.workflowsRelationshipUrl", "operationId": "ciProducts_getInstance", "jsonPointer": "/data/relationships/workflows/links/self", "localRole": "Selected projection of JSON:API relationship self; workflowsUrl remains the related-resource URL." },
+          { "outputField": "product.primaryRepositoriesRelationshipUrl", "operationId": "ciProducts_getInstance", "jsonPointer": "/data/relationships/primaryRepositories/links/self", "localRole": "Selected projection of JSON:API relationship self; primaryRepositoriesUrl remains the related-resource URL." },
+          { "outputField": "product.additionalRepositoriesRelationshipUrl", "operationId": "ciProducts_getInstance", "jsonPointer": "/data/relationships/additionalRepositories/links/self", "localRole": "Selected projection of JSON:API relationship self; additionalRepositoriesUrl remains the related-resource URL." },
+          { "outputField": "product.buildRunsRelationshipUrl", "operationId": "ciProducts_getInstance", "jsonPointer": "/data/relationships/buildRuns/links/self", "localRole": "Selected projection of JSON:API relationship self; buildRunsUrl remains the related-resource URL." },
           { "outputField": "included", "operationId": "ciProducts_getInstance", "jsonPointer": "/included" }
         ]
       },
-      "note": "The include mapping is exact; sparse fields and the embedded primary repositories limit are intentionally omitted."
+      "note": "The include and dependent primary_repositories_limit mappings are exact; sparse fields follow the global family policy. The tool has no MCP output schema and returns a selected product projection that keeps links.related as *Url and links.self as *RelationshipUrl."
     },
     {
       "tool": "xcode_cloud_products_list",
@@ -490,16 +516,14 @@
           "operationId": "ciProducts_getCollection",
           "method": "get",
           "path": "/v1/ciProducts",
-          "role": "primary",
-          "optionalParameterClassifications": [
-            { "location": "query", "appleName": "limit[primaryRepositories]", "disposition": "intentionallyOmitted", "reason": "The projection preserves primary repository IDs and URL; callers use SCM repository tools instead of tuning a partial embedded relationship.", "reviewAtSpec": "4.4.1" }
-          ]
+          "role": "primary"
         }
       ],
       "fields": [
         { "toolField": "product_type", "sourceKind": "parameter", "operationId": "ciProducts_getCollection", "location": "query", "appleName": "filter[productType]" },
         { "toolField": "app_id", "sourceKind": "parameter", "operationId": "ciProducts_getCollection", "location": "query", "appleName": "filter[app]" },
         { "toolField": "include", "sourceKind": "parameter", "operationId": "ciProducts_getCollection", "location": "query", "appleName": "include" },
+        { "toolField": "primary_repositories_limit", "sourceKind": "parameter", "operationId": "ciProducts_getCollection", "location": "query", "appleName": "limit[primaryRepositories]" },
         { "toolField": "limit", "sourceKind": "parameter", "operationId": "ciProducts_getCollection", "location": "query", "appleName": "limit" },
         { "toolField": "next_url", "sourceKind": "local", "localRole": "paginationContinuation" }
       ],
@@ -510,12 +534,17 @@
         ],
         "fields": [
           { "outputField": "products", "operationId": "ciProducts_getCollection", "jsonPointer": "/data" },
+          { "outputField": "products.*.appRelationshipUrl", "operationId": "ciProducts_getCollection", "jsonPointer": "/data/*/relationships/app/links/self", "localRole": "Selected projection of JSON:API relationship self; appUrl remains the related-resource URL." },
+          { "outputField": "products.*.workflowsRelationshipUrl", "operationId": "ciProducts_getCollection", "jsonPointer": "/data/*/relationships/workflows/links/self", "localRole": "Selected projection of JSON:API relationship self; workflowsUrl remains the related-resource URL." },
+          { "outputField": "products.*.primaryRepositoriesRelationshipUrl", "operationId": "ciProducts_getCollection", "jsonPointer": "/data/*/relationships/primaryRepositories/links/self", "localRole": "Selected projection of JSON:API relationship self; primaryRepositoriesUrl remains the related-resource URL." },
+          { "outputField": "products.*.additionalRepositoriesRelationshipUrl", "operationId": "ciProducts_getCollection", "jsonPointer": "/data/*/relationships/additionalRepositories/links/self", "localRole": "Selected projection of JSON:API relationship self; additionalRepositoriesUrl remains the related-resource URL." },
+          { "outputField": "products.*.buildRunsRelationshipUrl", "operationId": "ciProducts_getCollection", "jsonPointer": "/data/*/relationships/buildRuns/links/self", "localRole": "Selected projection of JSON:API relationship self; buildRunsUrl remains the related-resource URL." },
           { "outputField": "included", "operationId": "ciProducts_getCollection", "jsonPointer": "/included" },
           { "outputField": "next_url", "operationId": "ciProducts_getCollection", "jsonPointer": "/links/next" },
           { "outputField": "total", "operationId": "ciProducts_getCollection", "jsonPointer": "/meta/paging/total" }
         ]
       },
-      "note": "The exposed filters, include, and top-level limit map exactly; sparse fields and the embedded primary repositories limit are intentionally omitted, and Apple product deletion has no public tool."
+      "note": "The exposed filters, include, dependent primary_repositories_limit, and top-level limit map exactly; sparse fields follow the global family policy. The tool has no MCP output schema and returns selected product projections that keep links.related as *Url and links.self as *RelationshipUrl."
     },
     {
       "tool": "xcode_cloud_scm_git_references_get",
@@ -565,12 +594,14 @@
         ],
         "fields": [
           { "outputField": "repositories", "operationId": "scmProviders_repositories_getToManyRelated", "jsonPointer": "/data" },
+          { "outputField": "repositories.*.gitReferencesRelationshipUrl", "operationId": "scmProviders_repositories_getToManyRelated", "jsonPointer": "/data/*/relationships/gitReferences/links/self", "localRole": "Selected projection of JSON:API relationship self; gitReferencesUrl remains the related-resource URL." },
+          { "outputField": "repositories.*.pullRequestsRelationshipUrl", "operationId": "scmProviders_repositories_getToManyRelated", "jsonPointer": "/data/*/relationships/pullRequests/links/self", "localRole": "Selected projection of JSON:API relationship self; pullRequestsUrl remains the related-resource URL." },
           { "outputField": "included", "operationId": "scmProviders_repositories_getToManyRelated", "jsonPointer": "/included" },
           { "outputField": "next_url", "operationId": "scmProviders_repositories_getToManyRelated", "jsonPointer": "/links/next" },
           { "outputField": "total", "operationId": "scmProviders_repositories_getToManyRelated", "jsonPointer": "/meta/paging/total" }
         ]
       },
-      "note": "Exact exposed filter/include/limit mapping; Apple sparse fields are omitted."
+      "note": "Exact exposed filter/include/limit mapping; Apple sparse fields are omitted. The tool has no MCP output schema and returns selected repository projections that keep links.related as *Url and links.self as *RelationshipUrl."
     },
     {
       "tool": "xcode_cloud_scm_providers_get",
@@ -590,10 +621,11 @@
           { "operationId": "scmProviders_getInstance", "statusCode": "200", "mediaType": "application/json" }
         ],
         "fields": [
-          { "outputField": "provider", "operationId": "scmProviders_getInstance", "jsonPointer": "/data" }
+          { "outputField": "provider", "operationId": "scmProviders_getInstance", "jsonPointer": "/data" },
+          { "outputField": "provider.repositoriesRelationshipUrl", "operationId": "scmProviders_getInstance", "jsonPointer": "/data/relationships/repositories/links/self", "localRole": "Selected projection of JSON:API relationship self; repositoriesUrl remains the related-resource URL." }
         ]
       },
-      "note": "The selected projection keeps scmProviderType.kind as the stable scalar and also exposes displayName and isOnPremise; links-only repositories remain available through repositoriesUrl."
+      "note": "The tool has no MCP output schema. Its selected projection keeps scmProviderType.kind as the stable scalar, exposes displayName and isOnPremise, and preserves the links-only repository relationship as repositoriesUrl from links.related plus repositoriesRelationshipUrl from links.self."
     },
     {
       "tool": "xcode_cloud_scm_providers_list",
@@ -615,11 +647,12 @@
         ],
         "fields": [
           { "outputField": "providers", "operationId": "scmProviders_getCollection", "jsonPointer": "/data" },
+          { "outputField": "providers.*.repositoriesRelationshipUrl", "operationId": "scmProviders_getCollection", "jsonPointer": "/data/*/relationships/repositories/links/self", "localRole": "Selected projection of JSON:API relationship self; repositoriesUrl remains the related-resource URL." },
           { "outputField": "next_url", "operationId": "scmProviders_getCollection", "jsonPointer": "/links/next" },
           { "outputField": "total", "operationId": "scmProviders_getCollection", "jsonPointer": "/meta/paging/total" }
         ]
       },
-      "note": "The selected projection keeps scmProviderType.kind as the stable scalar, exposes displayName and isOnPremise, and preserves links-only repositoriesUrl; limit and pagination map exactly."
+      "note": "Limit and pagination map exactly. The tool has no MCP output schema; its selected projections keep scmProviderType.kind, displayName, isOnPremise, and the links-only repository relationship as repositoriesUrl from links.related plus repositoriesRelationshipUrl from links.self."
     },
     {
       "tool": "xcode_cloud_scm_pull_requests_get",
@@ -666,10 +699,12 @@
         ],
         "fields": [
           { "outputField": "repository", "operationId": "scmRepositories_getInstance", "jsonPointer": "/data" },
+          { "outputField": "repository.gitReferencesRelationshipUrl", "operationId": "scmRepositories_getInstance", "jsonPointer": "/data/relationships/gitReferences/links/self", "localRole": "Selected projection of JSON:API relationship self; gitReferencesUrl remains the related-resource URL." },
+          { "outputField": "repository.pullRequestsRelationshipUrl", "operationId": "scmRepositories_getInstance", "jsonPointer": "/data/relationships/pullRequests/links/self", "localRole": "Selected projection of JSON:API relationship self; pullRequestsUrl remains the related-resource URL." },
           { "outputField": "included", "operationId": "scmRepositories_getInstance", "jsonPointer": "/included" }
         ]
       },
-      "note": "The include mapping is exact; sparse fields are omitted and the response is projected."
+      "note": "The include mapping is exact and sparse fields are omitted. The tool has no MCP output schema and returns a selected repository projection that keeps links.related as *Url and links.self as *RelationshipUrl."
     },
     {
       "tool": "xcode_cloud_scm_repositories_list",
@@ -693,12 +728,14 @@
         ],
         "fields": [
           { "outputField": "repositories", "operationId": "scmRepositories_getCollection", "jsonPointer": "/data" },
+          { "outputField": "repositories.*.gitReferencesRelationshipUrl", "operationId": "scmRepositories_getCollection", "jsonPointer": "/data/*/relationships/gitReferences/links/self", "localRole": "Selected projection of JSON:API relationship self; gitReferencesUrl remains the related-resource URL." },
+          { "outputField": "repositories.*.pullRequestsRelationshipUrl", "operationId": "scmRepositories_getCollection", "jsonPointer": "/data/*/relationships/pullRequests/links/self", "localRole": "Selected projection of JSON:API relationship self; pullRequestsUrl remains the related-resource URL." },
           { "outputField": "included", "operationId": "scmRepositories_getCollection", "jsonPointer": "/included" },
           { "outputField": "next_url", "operationId": "scmRepositories_getCollection", "jsonPointer": "/links/next" },
           { "outputField": "total", "operationId": "scmRepositories_getCollection", "jsonPointer": "/meta/paging/total" }
         ]
       },
-      "note": "Exact exposed id/include/limit mapping; Apple sparse fields are omitted."
+      "note": "Exact exposed id/include/limit mapping; Apple sparse fields are omitted. The tool has no MCP output schema and returns selected repository projections that keep links.related as *Url and links.self as *RelationshipUrl."
     },
     {
       "tool": "xcode_cloud_scm_repository_git_references_list",
@@ -792,10 +829,7 @@
           "operationId": "ciWorkflows_buildRuns_getToManyRelated",
           "method": "get",
           "path": "/v1/ciWorkflows/{id}/buildRuns",
-          "role": "primary",
-          "optionalParameterClassifications": [
-            { "location": "query", "appleName": "limit[builds]", "disposition": "intentionallyOmitted", "reason": "Embedded build cardinality is not a substitute for paginating build runs and their build relationship; the projection preserves relationship IDs and URLs.", "reviewAtSpec": "4.4.1" }
-          ]
+          "role": "primary"
         }
       ],
       "fields": [
@@ -803,6 +837,7 @@
         { "toolField": "build_id", "sourceKind": "parameter", "operationId": "ciWorkflows_buildRuns_getToManyRelated", "location": "query", "appleName": "filter[builds]" },
         { "toolField": "sort", "sourceKind": "parameter", "operationId": "ciWorkflows_buildRuns_getToManyRelated", "location": "query", "appleName": "sort" },
         { "toolField": "include", "sourceKind": "parameter", "operationId": "ciWorkflows_buildRuns_getToManyRelated", "location": "query", "appleName": "include" },
+        { "toolField": "builds_limit", "sourceKind": "parameter", "operationId": "ciWorkflows_buildRuns_getToManyRelated", "location": "query", "appleName": "limit[builds]" },
         { "toolField": "limit", "sourceKind": "parameter", "operationId": "ciWorkflows_buildRuns_getToManyRelated", "location": "query", "appleName": "limit" },
         { "toolField": "next_url", "sourceKind": "local", "localRole": "paginationContinuation" }
       ],
@@ -813,12 +848,14 @@
         ],
         "fields": [
           { "outputField": "buildRuns", "operationId": "ciWorkflows_buildRuns_getToManyRelated", "jsonPointer": "/data" },
+          { "outputField": "buildRuns.*.buildsRelationshipUrl", "operationId": "ciWorkflows_buildRuns_getToManyRelated", "jsonPointer": "/data/*/relationships/builds/links/self", "localRole": "Selected projection of JSON:API relationship self; buildsUrl remains the related-resource URL." },
+          { "outputField": "buildRuns.*.actionsRelationshipUrl", "operationId": "ciWorkflows_buildRuns_getToManyRelated", "jsonPointer": "/data/*/relationships/actions/links/self", "localRole": "Selected projection of JSON:API relationship self; actionsUrl remains the related-resource URL." },
           { "outputField": "included", "operationId": "ciWorkflows_buildRuns_getToManyRelated", "jsonPointer": "/included" },
           { "outputField": "next_url", "operationId": "ciWorkflows_buildRuns_getToManyRelated", "jsonPointer": "/links/next" },
           { "outputField": "total", "operationId": "ciWorkflows_buildRuns_getToManyRelated", "jsonPointer": "/meta/paging/total" }
         ]
       },
-      "note": "The exposed build filter, sort, include, and top-level limit map exactly; sparse fields and the embedded builds limit are intentionally omitted."
+      "note": "The exposed build filter, sort, include, dependent builds_limit, and top-level limit map exactly; sparse fields follow the global family policy. The tool has no MCP output schema and returns selected build-run projections that keep links.related as *Url and links.self as *RelationshipUrl."
     },
     {
       "tool": "xcode_cloud_workflows_get",
@@ -840,10 +877,12 @@
         ],
         "fields": [
           { "outputField": "workflow", "operationId": "ciWorkflows_getInstance", "jsonPointer": "/data" },
+          { "outputField": "workflow.repositoryRelationshipUrl", "operationId": "ciWorkflows_getInstance", "jsonPointer": "/data/relationships/repository/links/self", "localRole": "Selected projection of JSON:API relationship self; repositoryUrl remains the related-resource URL." },
+          { "outputField": "workflow.buildRunsRelationshipUrl", "operationId": "ciWorkflows_getInstance", "jsonPointer": "/data/relationships/buildRuns/links/self", "localRole": "Selected projection of JSON:API relationship self; buildRunsUrl remains the related-resource URL." },
           { "outputField": "included", "operationId": "ciWorkflows_getInstance", "jsonPointer": "/included" }
         ]
       },
-      "note": "The include mapping is exact; sparse fields are omitted. Apple 4.4.1 workflow create/update/delete operations have no public MCP tools."
+      "note": "The include mapping is exact; sparse fields follow the global family policy. The tool has no MCP output schema and returns a selected workflow projection that keeps links.related as *Url and links.self as *RelationshipUrl."
     },
     {
       "tool": "xcode_cloud_xcode_versions_get",
@@ -856,15 +895,13 @@
           "operationId": "ciXcodeVersions_getInstance",
           "method": "get",
           "path": "/v1/ciXcodeVersions/{id}",
-          "role": "primary",
-          "optionalParameterClassifications": [
-            { "location": "query", "appleName": "limit[macOsVersions]", "disposition": "intentionallyOmitted", "reason": "The projection exposes macOS version relationship IDs and URL; callers use the macOS versions list/get tools instead of tuning an embedded relationship limit.", "reviewAtSpec": "4.4.1" }
-          ]
+          "role": "primary"
         }
       ],
       "fields": [
         { "toolField": "xcode_version_id", "sourceKind": "parameter", "operationId": "ciXcodeVersions_getInstance", "location": "path", "appleName": "id" },
-        { "toolField": "include", "sourceKind": "parameter", "operationId": "ciXcodeVersions_getInstance", "location": "query", "appleName": "include" }
+        { "toolField": "include", "sourceKind": "parameter", "operationId": "ciXcodeVersions_getInstance", "location": "query", "appleName": "include" },
+        { "toolField": "macos_versions_limit", "sourceKind": "parameter", "operationId": "ciXcodeVersions_getInstance", "location": "query", "appleName": "limit[macOsVersions]" }
       ],
       "response": {
         "mode": "projection",
@@ -873,10 +910,11 @@
         ],
         "fields": [
           { "outputField": "xcodeVersion", "operationId": "ciXcodeVersions_getInstance", "jsonPointer": "/data" },
+          { "outputField": "xcodeVersion.macOSVersionsRelationshipUrl", "operationId": "ciXcodeVersions_getInstance", "jsonPointer": "/data/relationships/macOsVersions/links/self", "localRole": "Selected projection of JSON:API relationship self; macOSVersionsUrl remains the related-resource URL." },
           { "outputField": "included", "operationId": "ciXcodeVersions_getInstance", "jsonPointer": "/included" }
         ]
       },
-      "note": "The include mapping is exact; sparse fields are omitted and related macOS versions remain available through their list/get tools."
+      "note": "The include and dependent macos_versions_limit mappings are exact; sparse fields follow the global family policy. The tool has no MCP output schema and its selected projection keeps macOSVersionsUrl from links.related and macOSVersionsRelationshipUrl from links.self."
     },
     {
       "tool": "xcode_cloud_xcode_versions_list",
@@ -889,15 +927,13 @@
           "operationId": "ciXcodeVersions_getCollection",
           "method": "get",
           "path": "/v1/ciXcodeVersions",
-          "role": "primary",
-          "optionalParameterClassifications": [
-            { "location": "query", "appleName": "limit[macOsVersions]", "disposition": "intentionallyOmitted", "reason": "The projection exposes macOS version relationship IDs and URL; callers use the macOS versions list/get tools instead of tuning an embedded relationship limit.", "reviewAtSpec": "4.4.1" }
-          ]
+          "role": "primary"
         }
       ],
       "fields": [
         { "toolField": "limit", "sourceKind": "parameter", "operationId": "ciXcodeVersions_getCollection", "location": "query", "appleName": "limit" },
         { "toolField": "include", "sourceKind": "parameter", "operationId": "ciXcodeVersions_getCollection", "location": "query", "appleName": "include" },
+        { "toolField": "macos_versions_limit", "sourceKind": "parameter", "operationId": "ciXcodeVersions_getCollection", "location": "query", "appleName": "limit[macOsVersions]" },
         { "toolField": "next_url", "sourceKind": "local", "localRole": "paginationContinuation" }
       ],
       "response": {
@@ -907,12 +943,600 @@
         ],
         "fields": [
           { "outputField": "xcodeVersions", "operationId": "ciXcodeVersions_getCollection", "jsonPointer": "/data" },
+          { "outputField": "xcodeVersions.*.macOSVersionsRelationshipUrl", "operationId": "ciXcodeVersions_getCollection", "jsonPointer": "/data/*/relationships/macOsVersions/links/self", "localRole": "Selected projection of JSON:API relationship self; macOSVersionsUrl remains the related-resource URL." },
           { "outputField": "included", "operationId": "ciXcodeVersions_getCollection", "jsonPointer": "/included" },
           { "outputField": "next_url", "operationId": "ciXcodeVersions_getCollection", "jsonPointer": "/links/next" },
           { "outputField": "total", "operationId": "ciXcodeVersions_getCollection", "jsonPointer": "/meta/paging/total" }
         ]
       },
-      "note": "The top-level limit and include map exactly; sparse fields are omitted and related macOS versions remain available through their list/get tools."
+      "note": "The top-level limit, include, and dependent macos_versions_limit map exactly; sparse fields follow the global family policy. The tool has no MCP output schema and its selected projections keep macOSVersionsUrl from links.related and macOSVersionsRelationshipUrl from links.self."
+    },
+    {
+      "tool": "xcode_cloud_app_product_get",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        { "operationId": "apps_ciProduct_getToOneRelated", "method": "get", "path": "/v1/apps/{id}/ciProduct", "role": "primary" }
+      ],
+      "fields": [
+        { "toolField": "app_id", "sourceKind": "parameter", "operationId": "apps_ciProduct_getToOneRelated", "location": "path", "appleName": "id" },
+        { "toolField": "include", "sourceKind": "parameter", "operationId": "apps_ciProduct_getToOneRelated", "location": "query", "appleName": "include" },
+        { "toolField": "primary_repositories_limit", "sourceKind": "parameter", "operationId": "apps_ciProduct_getToOneRelated", "location": "query", "appleName": "limit[primaryRepositories]" }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [{ "operationId": "apps_ciProduct_getToOneRelated", "statusCode": "200", "mediaType": "application/json" }],
+        "fields": [
+          { "outputField": "product", "operationId": "apps_ciProduct_getToOneRelated", "jsonPointer": "/data" },
+          { "outputField": "product.appRelationshipUrl", "operationId": "apps_ciProduct_getToOneRelated", "jsonPointer": "/data/relationships/app/links/self", "localRole": "Selected projection of JSON:API relationship self; appUrl remains the related-resource URL." },
+          { "outputField": "product.workflowsRelationshipUrl", "operationId": "apps_ciProduct_getToOneRelated", "jsonPointer": "/data/relationships/workflows/links/self", "localRole": "Selected projection of JSON:API relationship self; workflowsUrl remains the related-resource URL." },
+          { "outputField": "product.primaryRepositoriesRelationshipUrl", "operationId": "apps_ciProduct_getToOneRelated", "jsonPointer": "/data/relationships/primaryRepositories/links/self", "localRole": "Selected projection of JSON:API relationship self; primaryRepositoriesUrl remains the related-resource URL." },
+          { "outputField": "product.additionalRepositoriesRelationshipUrl", "operationId": "apps_ciProduct_getToOneRelated", "jsonPointer": "/data/relationships/additionalRepositories/links/self", "localRole": "Selected projection of JSON:API relationship self; additionalRepositoriesUrl remains the related-resource URL." },
+          { "outputField": "product.buildRunsRelationshipUrl", "operationId": "apps_ciProduct_getToOneRelated", "jsonPointer": "/data/relationships/buildRuns/links/self", "localRole": "Selected projection of JSON:API relationship self; buildRunsUrl remains the related-resource URL." },
+          { "outputField": "included", "operationId": "apps_ciProduct_getToOneRelated", "jsonPointer": "/included" },
+          { "outputField": "self_url", "operationId": "apps_ciProduct_getToOneRelated", "jsonPointer": "/links/self" }
+        ]
+      },
+      "note": "Exact related-resource GET with validated product identity, include lineage, and dependent primary-repository cardinality. Sparse fields follow the global family policy. The tool has no MCP output schema and returns a selected product projection that keeps links.related as *Url and links.self as *RelationshipUrl."
+    },
+    {
+      "tool": "xcode_cloud_action_build_run_get",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        { "operationId": "ciBuildActions_buildRun_getToOneRelated", "method": "get", "path": "/v1/ciBuildActions/{id}/buildRun", "role": "primary" }
+      ],
+      "fields": [
+        { "toolField": "action_id", "sourceKind": "parameter", "operationId": "ciBuildActions_buildRun_getToOneRelated", "location": "path", "appleName": "id" },
+        { "toolField": "include", "sourceKind": "parameter", "operationId": "ciBuildActions_buildRun_getToOneRelated", "location": "query", "appleName": "include" },
+        { "toolField": "builds_limit", "sourceKind": "parameter", "operationId": "ciBuildActions_buildRun_getToOneRelated", "location": "query", "appleName": "limit[builds]" }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [{ "operationId": "ciBuildActions_buildRun_getToOneRelated", "statusCode": "200", "mediaType": "application/json" }],
+        "fields": [
+          { "outputField": "buildRun", "operationId": "ciBuildActions_buildRun_getToOneRelated", "jsonPointer": "/data" },
+          { "outputField": "buildRun.buildsRelationshipUrl", "operationId": "ciBuildActions_buildRun_getToOneRelated", "jsonPointer": "/data/relationships/builds/links/self", "localRole": "Selected projection of JSON:API relationship self; buildsUrl remains the related-resource URL." },
+          { "outputField": "buildRun.actionsRelationshipUrl", "operationId": "ciBuildActions_buildRun_getToOneRelated", "jsonPointer": "/data/relationships/actions/links/self", "localRole": "Selected projection of JSON:API relationship self; actionsUrl remains the related-resource URL." },
+          { "outputField": "included", "operationId": "ciBuildActions_buildRun_getToOneRelated", "jsonPointer": "/included" },
+          { "outputField": "self_url", "operationId": "ciBuildActions_buildRun_getToOneRelated", "jsonPointer": "/links/self" }
+        ]
+      },
+      "note": "Exact related-resource GET with validated build-run identity, include lineage, and dependent build cardinality. Sparse fields follow the global family policy. The tool has no MCP output schema and returns a selected build-run projection that keeps links.related as *Url and links.self as *RelationshipUrl."
+    },
+    {
+      "tool": "xcode_cloud_macos_version_xcode_versions_list",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        { "operationId": "ciMacOsVersions_xcodeVersions_getToManyRelated", "method": "get", "path": "/v1/ciMacOsVersions/{id}/xcodeVersions", "role": "primary" }
+      ],
+      "fields": [
+        { "toolField": "macos_version_id", "sourceKind": "parameter", "operationId": "ciMacOsVersions_xcodeVersions_getToManyRelated", "location": "path", "appleName": "id" },
+        { "toolField": "limit", "sourceKind": "parameter", "operationId": "ciMacOsVersions_xcodeVersions_getToManyRelated", "location": "query", "appleName": "limit" },
+        { "toolField": "include", "sourceKind": "parameter", "operationId": "ciMacOsVersions_xcodeVersions_getToManyRelated", "location": "query", "appleName": "include" },
+        { "toolField": "macos_versions_limit", "sourceKind": "parameter", "operationId": "ciMacOsVersions_xcodeVersions_getToManyRelated", "location": "query", "appleName": "limit[macOsVersions]" },
+        { "toolField": "next_url", "sourceKind": "local", "localRole": "Strict continuation for the original parent, include, limits, and configured App Store Connect origin." }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [{ "operationId": "ciMacOsVersions_xcodeVersions_getToManyRelated", "statusCode": "200", "mediaType": "application/json" }],
+        "fields": [
+          { "outputField": "xcodeVersions", "operationId": "ciMacOsVersions_xcodeVersions_getToManyRelated", "jsonPointer": "/data" },
+          { "outputField": "xcodeVersions.*.macOSVersionsRelationshipUrl", "operationId": "ciMacOsVersions_xcodeVersions_getToManyRelated", "jsonPointer": "/data/*/relationships/macOsVersions/links/self", "localRole": "Selected projection of JSON:API relationship self; macOSVersionsUrl remains the related-resource URL." },
+          { "outputField": "included", "operationId": "ciMacOsVersions_xcodeVersions_getToManyRelated", "jsonPointer": "/included" },
+          { "outputField": "next_url", "operationId": "ciMacOsVersions_xcodeVersions_getToManyRelated", "jsonPointer": "/links/next" },
+          { "outputField": "total", "operationId": "ciMacOsVersions_xcodeVersions_getToManyRelated", "jsonPointer": "/meta/paging/total" }
+        ]
+      },
+      "note": "Exact paginated related-resource collection; macos_versions_limit is accepted only with include=macOsVersions. Sparse fields follow the global family policy. The tool has no MCP output schema and its selected projections keep macOSVersionsUrl from links.related and macOSVersionsRelationshipUrl from links.self."
+    },
+    {
+      "tool": "xcode_cloud_product_additional_repositories_list",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        { "operationId": "ciProducts_additionalRepositories_getToManyRelated", "method": "get", "path": "/v1/ciProducts/{id}/additionalRepositories", "role": "primary" }
+      ],
+      "fields": [
+        { "toolField": "product_id", "sourceKind": "parameter", "operationId": "ciProducts_additionalRepositories_getToManyRelated", "location": "path", "appleName": "id" },
+        { "toolField": "repository_id", "sourceKind": "parameter", "operationId": "ciProducts_additionalRepositories_getToManyRelated", "location": "query", "appleName": "filter[id]" },
+        { "toolField": "limit", "sourceKind": "parameter", "operationId": "ciProducts_additionalRepositories_getToManyRelated", "location": "query", "appleName": "limit" },
+        { "toolField": "include", "sourceKind": "parameter", "operationId": "ciProducts_additionalRepositories_getToManyRelated", "location": "query", "appleName": "include" },
+        { "toolField": "next_url", "sourceKind": "local", "localRole": "Strict continuation for the original parent, filter, include, limit, and configured App Store Connect origin." }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [{ "operationId": "ciProducts_additionalRepositories_getToManyRelated", "statusCode": "200", "mediaType": "application/json" }],
+        "fields": [
+          { "outputField": "repositories", "operationId": "ciProducts_additionalRepositories_getToManyRelated", "jsonPointer": "/data" },
+          { "outputField": "repositories.*.gitReferencesRelationshipUrl", "operationId": "ciProducts_additionalRepositories_getToManyRelated", "jsonPointer": "/data/*/relationships/gitReferences/links/self", "localRole": "Selected projection of JSON:API relationship self; gitReferencesUrl remains the related-resource URL." },
+          { "outputField": "repositories.*.pullRequestsRelationshipUrl", "operationId": "ciProducts_additionalRepositories_getToManyRelated", "jsonPointer": "/data/*/relationships/pullRequests/links/self", "localRole": "Selected projection of JSON:API relationship self; pullRequestsUrl remains the related-resource URL." },
+          { "outputField": "included", "operationId": "ciProducts_additionalRepositories_getToManyRelated", "jsonPointer": "/included" },
+          { "outputField": "next_url", "operationId": "ciProducts_additionalRepositories_getToManyRelated", "jsonPointer": "/links/next" },
+          { "outputField": "total", "operationId": "ciProducts_additionalRepositories_getToManyRelated", "jsonPointer": "/meta/paging/total" }
+        ]
+      },
+      "note": "Exact paginated related-resource collection with ID filtering and validated included SCM provider/default-branch lineage. Sparse fields follow the global family policy. The tool has no MCP output schema and returns selected repository projections that keep links.related as *Url and links.self as *RelationshipUrl."
+    },
+    {
+      "tool": "xcode_cloud_product_app_get",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "ciProducts_app_getToOneRelated",
+          "method": "get",
+          "path": "/v1/ciProducts/{id}/app",
+          "role": "primary",
+          "optionalParameterClassifications": [
+            { "location": "query", "appleName": "include", "disposition": "intentionallyOmitted", "reason": "This tool is a compact product-to-app membership projection; apps_get_details, apps_get_metadata, and domain-specific app tools replace the very large transitive app include graph.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[appEncryptionDeclarations]", "disposition": "intentionallyOmitted", "reason": "The compact membership projection does not include appEncryptionDeclarations; use the existing app and export-compliance tools.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[betaGroups]", "disposition": "intentionallyOmitted", "reason": "The compact membership projection does not include betaGroups; use the existing beta group tools.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[appStoreVersions]", "disposition": "intentionallyOmitted", "reason": "The compact membership projection does not include appStoreVersions; use apps_list_versions and version tools.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[preReleaseVersions]", "disposition": "intentionallyOmitted", "reason": "The compact membership projection does not include preReleaseVersions; use the existing pre-release tools.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[betaAppLocalizations]", "disposition": "intentionallyOmitted", "reason": "The compact membership projection does not include betaAppLocalizations; use the existing beta app tools.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[builds]", "disposition": "intentionallyOmitted", "reason": "The compact membership projection does not include builds; use the existing build tools.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[appInfos]", "disposition": "intentionallyOmitted", "reason": "The compact membership projection does not include appInfos; use the existing app info tools.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[appClips]", "disposition": "intentionallyOmitted", "reason": "The compact membership projection does not include appClips; this unrelated graph is outside the membership lookup.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[inAppPurchases]", "disposition": "intentionallyOmitted", "reason": "The compact membership projection does not include inAppPurchases; use the existing IAP tools.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[subscriptionGroups]", "disposition": "intentionallyOmitted", "reason": "The compact membership projection does not include subscriptionGroups; use the existing subscription tools.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[gameCenterEnabledVersions]", "disposition": "intentionallyOmitted", "reason": "The compact membership projection does not include gameCenterEnabledVersions; this unrelated graph is outside the membership lookup.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[appCustomProductPages]", "disposition": "intentionallyOmitted", "reason": "The compact membership projection does not include appCustomProductPages; use the existing custom page tools.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[inAppPurchasesV2]", "disposition": "intentionallyOmitted", "reason": "The compact membership projection does not include inAppPurchasesV2; use the existing IAP tools.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[promotedPurchases]", "disposition": "intentionallyOmitted", "reason": "The compact membership projection does not include promotedPurchases; use the existing promoted purchase tools.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[appEvents]", "disposition": "intentionallyOmitted", "reason": "The compact membership projection does not include appEvents; use the existing app event tools.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[reviewSubmissions]", "disposition": "intentionallyOmitted", "reason": "The compact membership projection does not include reviewSubmissions; use the existing review submission tools.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[appStoreVersionExperimentsV2]", "disposition": "intentionallyOmitted", "reason": "The compact membership projection does not include appStoreVersionExperimentsV2; use the existing product page optimization tools.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[androidToIosAppMappingDetails]", "disposition": "intentionallyOmitted", "reason": "The compact membership projection does not include androidToIosAppMappingDetails; this unrelated graph is outside the membership lookup.", "reviewAtSpec": "4.4.1" }
+          ]
+        }
+      ],
+      "fields": [
+        { "toolField": "product_id", "sourceKind": "parameter", "operationId": "ciProducts_app_getToOneRelated", "location": "path", "appleName": "id" }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [{ "operationId": "ciProducts_app_getToOneRelated", "statusCode": "200", "mediaType": "application/json" }],
+        "fields": [
+          { "outputField": "app", "operationId": "ciProducts_app_getToOneRelated", "jsonPointer": "/data", "localRole": "Compact identity and membership projection containing id, type, selected app attributes, and optional canonical resource URL." },
+          { "outputField": "self_url", "operationId": "ciProducts_app_getToOneRelated", "jsonPointer": "/links/self" }
+        ]
+      },
+      "note": "This endpoint proves the product-to-app membership and returns a compact app projection. The enormous optional include graph and its nested limits are intentionally delegated to existing typed app/domain tools; sparse fields follow the global family policy."
+    },
+    {
+      "tool": "xcode_cloud_product_primary_repositories_list",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        { "operationId": "ciProducts_primaryRepositories_getToManyRelated", "method": "get", "path": "/v1/ciProducts/{id}/primaryRepositories", "role": "primary" }
+      ],
+      "fields": [
+        { "toolField": "product_id", "sourceKind": "parameter", "operationId": "ciProducts_primaryRepositories_getToManyRelated", "location": "path", "appleName": "id" },
+        { "toolField": "repository_id", "sourceKind": "parameter", "operationId": "ciProducts_primaryRepositories_getToManyRelated", "location": "query", "appleName": "filter[id]" },
+        { "toolField": "limit", "sourceKind": "parameter", "operationId": "ciProducts_primaryRepositories_getToManyRelated", "location": "query", "appleName": "limit" },
+        { "toolField": "include", "sourceKind": "parameter", "operationId": "ciProducts_primaryRepositories_getToManyRelated", "location": "query", "appleName": "include" },
+        { "toolField": "next_url", "sourceKind": "local", "localRole": "Strict continuation for the original parent, filter, include, limit, and configured App Store Connect origin." }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [{ "operationId": "ciProducts_primaryRepositories_getToManyRelated", "statusCode": "200", "mediaType": "application/json" }],
+        "fields": [
+          { "outputField": "repositories", "operationId": "ciProducts_primaryRepositories_getToManyRelated", "jsonPointer": "/data" },
+          { "outputField": "repositories.*.gitReferencesRelationshipUrl", "operationId": "ciProducts_primaryRepositories_getToManyRelated", "jsonPointer": "/data/*/relationships/gitReferences/links/self", "localRole": "Selected projection of JSON:API relationship self; gitReferencesUrl remains the related-resource URL." },
+          { "outputField": "repositories.*.pullRequestsRelationshipUrl", "operationId": "ciProducts_primaryRepositories_getToManyRelated", "jsonPointer": "/data/*/relationships/pullRequests/links/self", "localRole": "Selected projection of JSON:API relationship self; pullRequestsUrl remains the related-resource URL." },
+          { "outputField": "included", "operationId": "ciProducts_primaryRepositories_getToManyRelated", "jsonPointer": "/included" },
+          { "outputField": "next_url", "operationId": "ciProducts_primaryRepositories_getToManyRelated", "jsonPointer": "/links/next" },
+          { "outputField": "total", "operationId": "ciProducts_primaryRepositories_getToManyRelated", "jsonPointer": "/meta/paging/total" }
+        ]
+      },
+      "note": "Exact paginated related-resource collection with ID filtering and validated included SCM provider/default-branch lineage. Sparse fields follow the global family policy. The tool has no MCP output schema and returns selected repository projections that keep links.related as *Url and links.self as *RelationshipUrl."
+    },
+    {
+      "tool": "xcode_cloud_workflow_repository_get",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        { "operationId": "ciWorkflows_repository_getToOneRelated", "method": "get", "path": "/v1/ciWorkflows/{id}/repository", "role": "primary" }
+      ],
+      "fields": [
+        { "toolField": "workflow_id", "sourceKind": "parameter", "operationId": "ciWorkflows_repository_getToOneRelated", "location": "path", "appleName": "id" },
+        { "toolField": "include", "sourceKind": "parameter", "operationId": "ciWorkflows_repository_getToOneRelated", "location": "query", "appleName": "include" }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [{ "operationId": "ciWorkflows_repository_getToOneRelated", "statusCode": "200", "mediaType": "application/json" }],
+        "fields": [
+          { "outputField": "repository", "operationId": "ciWorkflows_repository_getToOneRelated", "jsonPointer": "/data" },
+          { "outputField": "repository.gitReferencesRelationshipUrl", "operationId": "ciWorkflows_repository_getToOneRelated", "jsonPointer": "/data/relationships/gitReferences/links/self", "localRole": "Selected projection of JSON:API relationship self; gitReferencesUrl remains the related-resource URL." },
+          { "outputField": "repository.pullRequestsRelationshipUrl", "operationId": "ciWorkflows_repository_getToOneRelated", "jsonPointer": "/data/relationships/pullRequests/links/self", "localRole": "Selected projection of JSON:API relationship self; pullRequestsUrl remains the related-resource URL." },
+          { "outputField": "included", "operationId": "ciWorkflows_repository_getToOneRelated", "jsonPointer": "/included" },
+          { "outputField": "self_url", "operationId": "ciWorkflows_repository_getToOneRelated", "jsonPointer": "/links/self" }
+        ]
+      },
+      "note": "Exact related-resource GET with canonical repository identity and validated SCM provider/default-branch include lineage. Sparse fields follow the global family policy. The tool has no MCP output schema and returns a selected repository projection that keeps links.related as *Url and links.self as *RelationshipUrl."
+    },
+    {
+      "tool": "xcode_cloud_xcode_version_macos_versions_list",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        { "operationId": "ciXcodeVersions_macOsVersions_getToManyRelated", "method": "get", "path": "/v1/ciXcodeVersions/{id}/macOsVersions", "role": "primary" }
+      ],
+      "fields": [
+        { "toolField": "xcode_version_id", "sourceKind": "parameter", "operationId": "ciXcodeVersions_macOsVersions_getToManyRelated", "location": "path", "appleName": "id" },
+        { "toolField": "limit", "sourceKind": "parameter", "operationId": "ciXcodeVersions_macOsVersions_getToManyRelated", "location": "query", "appleName": "limit" },
+        { "toolField": "include", "sourceKind": "parameter", "operationId": "ciXcodeVersions_macOsVersions_getToManyRelated", "location": "query", "appleName": "include" },
+        { "toolField": "xcode_versions_limit", "sourceKind": "parameter", "operationId": "ciXcodeVersions_macOsVersions_getToManyRelated", "location": "query", "appleName": "limit[xcodeVersions]" },
+        { "toolField": "next_url", "sourceKind": "local", "localRole": "Strict continuation for the original parent, include, limits, and configured App Store Connect origin." }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [{ "operationId": "ciXcodeVersions_macOsVersions_getToManyRelated", "statusCode": "200", "mediaType": "application/json" }],
+        "fields": [
+          { "outputField": "macOSVersions", "operationId": "ciXcodeVersions_macOsVersions_getToManyRelated", "jsonPointer": "/data" },
+          { "outputField": "macOSVersions.*.xcodeVersionsRelationshipUrl", "operationId": "ciXcodeVersions_macOsVersions_getToManyRelated", "jsonPointer": "/data/*/relationships/xcodeVersions/links/self", "localRole": "Selected projection of JSON:API relationship self; xcodeVersionsUrl remains the related-resource URL." },
+          { "outputField": "included", "operationId": "ciXcodeVersions_macOsVersions_getToManyRelated", "jsonPointer": "/included" },
+          { "outputField": "next_url", "operationId": "ciXcodeVersions_macOsVersions_getToManyRelated", "jsonPointer": "/links/next" },
+          { "outputField": "total", "operationId": "ciXcodeVersions_macOsVersions_getToManyRelated", "jsonPointer": "/meta/paging/total" }
+        ]
+      },
+      "note": "Exact paginated related-resource collection; xcode_versions_limit is accepted only with include=xcodeVersions. Sparse fields follow the global family policy. The tool has no MCP output schema and its selected projections keep xcodeVersionsUrl from links.related and xcodeVersionsRelationshipUrl from links.self."
+    },
+    {
+      "tool": "xcode_cloud_products_delete",
+      "kind": "compound",
+      "status": "partial",
+      "effect": "destructive",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "ciProducts_getInstance",
+          "method": "get",
+          "path": "/v1/ciProducts/{id}",
+          "role": "supporting",
+          "condition": "Every call refreshes the exact product identity and name before previewing or attempting deletion.",
+          "optionalParameterClassifications": [
+            {
+              "location": "query",
+              "appleName": "include",
+              "disposition": "intentionallyOmitted",
+              "reason": "Deletion preflight validates only the exact product identity and current name; it inventories workflows and build runs through dedicated fully paginated supporting operations.",
+              "reviewAtSpec": "4.4.1"
+            },
+            {
+              "location": "query",
+              "appleName": "limit[primaryRepositories]",
+              "disposition": "intentionallyOmitted",
+              "reason": "Primary repositories are not included by the exact deletion identity preflight.",
+              "reviewAtSpec": "4.4.1"
+            }
+          ]
+        },
+        {
+          "operationId": "ciProducts_workflows_getToManyRelated",
+          "method": "get",
+          "path": "/v1/ciProducts/{id}/workflows",
+          "role": "supporting",
+          "condition": "Every call inventories all workflow identities across strict pagination before previewing or attempting deletion.",
+          "inputs": [
+            { "sourceKind": "fixed", "location": "query", "appleName": "limit", "fixedValue": 200 },
+            { "sourceKind": "fixed", "location": "query", "appleName": "fields[ciWorkflows]", "fixedValue": ["name"] }
+          ],
+          "optionalParameterClassifications": [
+            {
+              "location": "query",
+              "appleName": "include",
+              "disposition": "intentionallyOmitted",
+              "reason": "The deletion receipt needs the complete direct workflow identity inventory, not expanded workflow relationships.",
+              "reviewAtSpec": "4.4.1"
+            }
+          ]
+        },
+        {
+          "operationId": "ciProducts_buildRuns_getToManyRelated",
+          "method": "get",
+          "path": "/v1/ciProducts/{id}/buildRuns",
+          "role": "supporting",
+          "condition": "Every call inventories all build-run identities across strict pagination before previewing or attempting deletion.",
+          "inputs": [
+            { "sourceKind": "fixed", "location": "query", "appleName": "limit", "fixedValue": 200 },
+            { "sourceKind": "fixed", "location": "query", "appleName": "fields[ciBuildRuns]", "fixedValue": ["number"] }
+          ],
+          "optionalParameterClassifications": [
+            {
+              "location": "query",
+              "appleName": "filter[builds]",
+              "disposition": "intentionallyOmitted",
+              "reason": "Deletion impact must inventory every build run for the product rather than a caller-selected build subset.",
+              "reviewAtSpec": "4.4.1"
+            },
+            {
+              "location": "query",
+              "appleName": "sort",
+              "disposition": "intentionallyOmitted",
+              "reason": "The confirmation digest sorts validated identities locally, so Apple response ordering cannot affect the receipt.",
+              "reviewAtSpec": "4.4.1"
+            },
+            {
+              "location": "query",
+              "appleName": "include",
+              "disposition": "intentionallyOmitted",
+              "reason": "The deletion receipt needs the complete direct build-run identity inventory, not expanded relationships.",
+              "reviewAtSpec": "4.4.1"
+            },
+            {
+              "location": "query",
+              "appleName": "limit[builds]",
+              "disposition": "intentionallyOmitted",
+              "reason": "Build resources are not included by the deletion inventory request.",
+              "reviewAtSpec": "4.4.1"
+            }
+          ]
+        },
+        { "operationId": "ciProducts_deleteInstance", "method": "delete", "path": "/v1/ciProducts/{id}", "role": "primary" }
+      ],
+      "fields": [
+        { "toolField": "product_id", "sourceKind": "parameter", "operationId": "ciProducts_getInstance", "location": "path", "appleName": "id" },
+        { "toolField": "product_id", "sourceKind": "parameter", "operationId": "ciProducts_workflows_getToManyRelated", "location": "path", "appleName": "id" },
+        { "toolField": "product_id", "sourceKind": "parameter", "operationId": "ciProducts_buildRuns_getToManyRelated", "location": "path", "appleName": "id" },
+        { "toolField": "product_id", "sourceKind": "parameter", "operationId": "ciProducts_deleteInstance", "location": "path", "appleName": "id" },
+        { "toolField": "confirm_permanent_deletion", "sourceKind": "local", "localRole": "Must be true together with every fresh preview receipt before DELETE is attempted." },
+        { "toolField": "confirmation_receipt", "sourceKind": "local", "localRole": "Must match the checksum-bound receipt over the latest product identity/name plus the exact sorted workflow-ID and build-run-ID inventories." },
+        { "toolField": "expected_product_name", "sourceKind": "local", "localRole": "Must exactly match the latest preflight product name." },
+        { "toolField": "expected_workflow_count", "sourceKind": "local", "localRole": "Must exactly match the fully paginated latest workflow count." },
+        { "toolField": "expected_build_run_count", "sourceKind": "local", "localRole": "Must exactly match the fully paginated latest build-run count." }
+      ],
+      "response": {
+        "mode": "local",
+        "sources": [
+          { "operationId": "ciProducts_getInstance", "statusCode": "200", "mediaType": "application/json" },
+          { "operationId": "ciProducts_workflows_getToManyRelated", "statusCode": "200", "mediaType": "application/json" },
+          { "operationId": "ciProducts_buildRuns_getToManyRelated", "statusCode": "200", "mediaType": "application/json" },
+          { "operationId": "ciProducts_deleteInstance", "statusCode": "204" }
+        ],
+        "fields": [
+          { "outputField": "previewOnly", "localRole": "True when the call performs fresh read-only product and cardinality preflight without sending DELETE." },
+          { "outputField": "confirmation", "localRole": "Fresh checksum-bound receipt over the exact sorted workflow/build-run identity inventories, plus the exact product name and public impact counts." },
+          { "outputField": "success", "localRole": "True for a preview or an exact empty HTTP 204 deletion response; mutation fields distinguish the two states." },
+          { "outputField": "deleted", "localRole": "True only after Apple's exact empty HTTP 204 response." },
+          { "outputField": "operationCommitState", "localRole": "committed only for exact empty 204; not_attempted, rejected, unknown, or committed_unverified otherwise." },
+          { "outputField": "inspectionRequired", "localRole": "True for unknown or committed_unverified outcomes." },
+          { "outputField": "inspection", "localRole": "Executable xcode_cloud_products_get exact-target inspection before any retry." },
+          { "outputField": "retrySafe", "localRole": "False for every attempted deletion, including unknown and committed_unverified outcomes." },
+          { "outputField": "statusCode", "localRole": "Exact verified 204 status on committed deletion." }
+        ]
+      },
+      "note": "Permanent deletion is a two-step safety contract: every call refreshes exact identity and fully paginates workflow and build-run inventories with fixed limit=200 sparse requests. The receipt hashes the canonical product identity/name and exact sorted length-delimited workflow/build-run IDs, while the caller must also echo the public name/count confirmations. Exact empty 204 is the only committed success. Ambiguous or malformed accepted outcomes preserve product_id and xcode_cloud_products_get recovery guidance and are never replayed automatically."
+    },
+    {
+      "tool": "xcode_cloud_workflows_create",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "write",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "ciWorkflows_createInstance",
+          "method": "post",
+          "path": "/v1/ciWorkflows",
+          "role": "primary",
+          "inputs": [
+            { "sourceKind": "fixed", "jsonPointer": "/data/type", "fixedValue": "ciWorkflows" },
+            { "sourceKind": "fixed", "jsonPointer": "/data/relationships/product/data/type", "fixedValue": "ciProducts" },
+            { "sourceKind": "fixed", "jsonPointer": "/data/relationships/repository/data/type", "fixedValue": "scmRepositories" },
+            { "sourceKind": "fixed", "jsonPointer": "/data/relationships/xcodeVersion/data/type", "fixedValue": "ciXcodeVersions" },
+            { "sourceKind": "fixed", "jsonPointer": "/data/relationships/macOsVersion/data/type", "fixedValue": "ciMacOsVersions" }
+          ]
+        }
+      ],
+      "fields": [
+        { "toolField": "name", "sourceKind": "requestBody", "operationId": "ciWorkflows_createInstance", "jsonPointer": "/data/attributes/name" },
+        { "toolField": "description", "sourceKind": "requestBody", "operationId": "ciWorkflows_createInstance", "jsonPointer": "/data/attributes/description" },
+        { "toolField": "branch_start_condition", "sourceKind": "requestBody", "operationId": "ciWorkflows_createInstance", "jsonPointer": "/data/attributes/branchStartCondition", "localRole": "Preserves explicit JSON null distinctly from omission for Apple's nullable optional condition." },
+        { "toolField": "tag_start_condition", "sourceKind": "requestBody", "operationId": "ciWorkflows_createInstance", "jsonPointer": "/data/attributes/tagStartCondition", "localRole": "Preserves explicit JSON null distinctly from omission for Apple's nullable optional condition." },
+        { "toolField": "pull_request_start_condition", "sourceKind": "requestBody", "operationId": "ciWorkflows_createInstance", "jsonPointer": "/data/attributes/pullRequestStartCondition", "localRole": "Preserves explicit JSON null distinctly from omission for Apple's nullable optional condition." },
+        { "toolField": "scheduled_start_condition", "sourceKind": "requestBody", "operationId": "ciWorkflows_createInstance", "jsonPointer": "/data/attributes/scheduledStartCondition", "localRole": "Preserves explicit JSON null distinctly from omission for Apple's nullable optional condition." },
+        { "toolField": "manual_branch_start_condition", "sourceKind": "requestBody", "operationId": "ciWorkflows_createInstance", "jsonPointer": "/data/attributes/manualBranchStartCondition", "localRole": "Preserves explicit JSON null distinctly from omission for Apple's nullable optional condition." },
+        { "toolField": "manual_tag_start_condition", "sourceKind": "requestBody", "operationId": "ciWorkflows_createInstance", "jsonPointer": "/data/attributes/manualTagStartCondition", "localRole": "Preserves explicit JSON null distinctly from omission for Apple's nullable optional condition." },
+        { "toolField": "manual_pull_request_start_condition", "sourceKind": "requestBody", "operationId": "ciWorkflows_createInstance", "jsonPointer": "/data/attributes/manualPullRequestStartCondition", "localRole": "Preserves explicit JSON null distinctly from omission for Apple's nullable optional condition." },
+        { "toolField": "actions", "sourceKind": "requestBody", "operationId": "ciWorkflows_createInstance", "jsonPointer": "/data/attributes/actions" },
+        { "toolField": "is_enabled", "sourceKind": "requestBody", "operationId": "ciWorkflows_createInstance", "jsonPointer": "/data/attributes/isEnabled" },
+        { "toolField": "is_locked_for_editing", "sourceKind": "requestBody", "operationId": "ciWorkflows_createInstance", "jsonPointer": "/data/attributes/isLockedForEditing", "localRole": "Preserves explicit JSON null distinctly from omission." },
+        { "toolField": "clean", "sourceKind": "requestBody", "operationId": "ciWorkflows_createInstance", "jsonPointer": "/data/attributes/clean" },
+        { "toolField": "container_file_path", "sourceKind": "requestBody", "operationId": "ciWorkflows_createInstance", "jsonPointer": "/data/attributes/containerFilePath" },
+        { "toolField": "product_id", "sourceKind": "requestBody", "operationId": "ciWorkflows_createInstance", "jsonPointer": "/data/relationships/product/data/id" },
+        { "toolField": "repository_id", "sourceKind": "requestBody", "operationId": "ciWorkflows_createInstance", "jsonPointer": "/data/relationships/repository/data/id" },
+        { "toolField": "xcode_version_id", "sourceKind": "requestBody", "operationId": "ciWorkflows_createInstance", "jsonPointer": "/data/relationships/xcodeVersion/data/id" },
+        { "toolField": "macos_version_id", "sourceKind": "requestBody", "operationId": "ciWorkflows_createInstance", "jsonPointer": "/data/relationships/macOsVersion/data/id" }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [{ "operationId": "ciWorkflows_createInstance", "statusCode": "201", "mediaType": "application/json" }],
+        "fields": [
+          { "outputField": "workflow", "operationId": "ciWorkflows_createInstance", "jsonPointer": "/data", "localRole": "Returned only after exact 201, canonical workflow identity, canonical links, and exact requested relationship lineage validation." },
+          { "outputField": "self_url", "operationId": "ciWorkflows_createInstance", "jsonPointer": "/links/self", "localRole": "Validated canonical document self URL for the created workflow." },
+          { "outputField": "included", "operationId": "ciWorkflows_createInstance", "jsonPointer": "/included", "localRole": "Preserved when present, including an empty array, only after typed identity, duplicate, relationship, and link validation." },
+          { "outputField": "operationCommitState", "localRole": "committed for a validated 201, rejected for a definitive rejection, unknown for request ambiguity, or committed_unverified for an invalid accepted response." },
+          { "outputField": "operationCommitted", "localRole": "True only for committed or committed_unverified; null for unknown." },
+          { "outputField": "inspectionRequired", "localRole": "True for unknown or committed_unverified outcomes." },
+          { "outputField": "inspection", "localRole": "Executable xcode_cloud_product_workflows_list guidance scoped to the requested product; observed membership does not by itself attribute an ambiguous create." },
+          { "outputField": "identifiers", "localRole": "Validated requested product and repository relationship identifiers retained for recovery." },
+          { "outputField": "retrySafe", "localRole": "False for every mutation outcome; inspect before any retry." },
+          { "outputField": "statusCode", "localRole": "Exact verified 201 status." }
+        ]
+      },
+      "note": "Complete Apple 4.4.1 workflow-create body, including every start-condition/action attribute and required relationship. Nullable optional create attributes preserve omission versus explicit null. Success requires exact 201 plus canonical identity, document self_url, resource links, requested relationship lineage, and strict validation of Apple's optional included resource union; valid included presence is preserved exactly. Ambiguous or malformed accepted outcomes fail closed with product-scoped inspection and no automatic replay."
+    },
+    {
+      "tool": "xcode_cloud_workflows_update",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "write",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "ciWorkflows_updateInstance",
+          "method": "patch",
+          "path": "/v1/ciWorkflows/{id}",
+          "role": "primary",
+          "inputs": [
+            { "sourceKind": "derived", "jsonPointer": "/data/id", "derivedFrom": ["workflow_id"], "localRole": "Copy the validated path identifier into the JSON:API resource body." },
+            { "sourceKind": "fixed", "jsonPointer": "/data/type", "fixedValue": "ciWorkflows" },
+            { "sourceKind": "fixed", "jsonPointer": "/data/relationships/xcodeVersion/data/type", "fixedValue": "ciXcodeVersions", "localRole": "Present only with xcode_version_id." },
+            { "sourceKind": "fixed", "jsonPointer": "/data/relationships/macOsVersion/data/type", "fixedValue": "ciMacOsVersions", "localRole": "Present only with macos_version_id." }
+          ]
+        }
+      ],
+      "fields": [
+        { "toolField": "workflow_id", "sourceKind": "parameter", "operationId": "ciWorkflows_updateInstance", "location": "path", "appleName": "id" },
+        { "toolField": "name", "sourceKind": "requestBody", "operationId": "ciWorkflows_updateInstance", "jsonPointer": "/data/attributes/name", "localRole": "Preserves value, explicit JSON null, and omission as three distinct states." },
+        { "toolField": "description", "sourceKind": "requestBody", "operationId": "ciWorkflows_updateInstance", "jsonPointer": "/data/attributes/description", "localRole": "Preserves value, explicit JSON null, and omission as three distinct states." },
+        { "toolField": "branch_start_condition", "sourceKind": "requestBody", "operationId": "ciWorkflows_updateInstance", "jsonPointer": "/data/attributes/branchStartCondition", "localRole": "Preserves object, explicit JSON null, and omission as three distinct states." },
+        { "toolField": "tag_start_condition", "sourceKind": "requestBody", "operationId": "ciWorkflows_updateInstance", "jsonPointer": "/data/attributes/tagStartCondition", "localRole": "Preserves object, explicit JSON null, and omission as three distinct states." },
+        { "toolField": "pull_request_start_condition", "sourceKind": "requestBody", "operationId": "ciWorkflows_updateInstance", "jsonPointer": "/data/attributes/pullRequestStartCondition", "localRole": "Preserves object, explicit JSON null, and omission as three distinct states." },
+        { "toolField": "scheduled_start_condition", "sourceKind": "requestBody", "operationId": "ciWorkflows_updateInstance", "jsonPointer": "/data/attributes/scheduledStartCondition", "localRole": "Preserves object, explicit JSON null, and omission as three distinct states." },
+        { "toolField": "manual_branch_start_condition", "sourceKind": "requestBody", "operationId": "ciWorkflows_updateInstance", "jsonPointer": "/data/attributes/manualBranchStartCondition", "localRole": "Preserves object, explicit JSON null, and omission as three distinct states." },
+        { "toolField": "manual_tag_start_condition", "sourceKind": "requestBody", "operationId": "ciWorkflows_updateInstance", "jsonPointer": "/data/attributes/manualTagStartCondition", "localRole": "Preserves object, explicit JSON null, and omission as three distinct states." },
+        { "toolField": "manual_pull_request_start_condition", "sourceKind": "requestBody", "operationId": "ciWorkflows_updateInstance", "jsonPointer": "/data/attributes/manualPullRequestStartCondition", "localRole": "Preserves object, explicit JSON null, and omission as three distinct states." },
+        { "toolField": "actions", "sourceKind": "requestBody", "operationId": "ciWorkflows_updateInstance", "jsonPointer": "/data/attributes/actions", "localRole": "Preserves array, explicit JSON null, and omission as three distinct states." },
+        { "toolField": "is_enabled", "sourceKind": "requestBody", "operationId": "ciWorkflows_updateInstance", "jsonPointer": "/data/attributes/isEnabled", "localRole": "Preserves Boolean, explicit JSON null, and omission as three distinct states." },
+        { "toolField": "is_locked_for_editing", "sourceKind": "requestBody", "operationId": "ciWorkflows_updateInstance", "jsonPointer": "/data/attributes/isLockedForEditing", "localRole": "Preserves Boolean, explicit JSON null, and omission as three distinct states." },
+        { "toolField": "clean", "sourceKind": "requestBody", "operationId": "ciWorkflows_updateInstance", "jsonPointer": "/data/attributes/clean", "localRole": "Preserves Boolean, explicit JSON null, and omission as three distinct states." },
+        { "toolField": "container_file_path", "sourceKind": "requestBody", "operationId": "ciWorkflows_updateInstance", "jsonPointer": "/data/attributes/containerFilePath", "localRole": "Preserves string, explicit JSON null, and omission as three distinct states." },
+        { "toolField": "xcode_version_id", "sourceKind": "requestBody", "operationId": "ciWorkflows_updateInstance", "jsonPointer": "/data/relationships/xcodeVersion/data/id" },
+        { "toolField": "macos_version_id", "sourceKind": "requestBody", "operationId": "ciWorkflows_updateInstance", "jsonPointer": "/data/relationships/macOsVersion/data/id" }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [{ "operationId": "ciWorkflows_updateInstance", "statusCode": "200", "mediaType": "application/json" }],
+        "fields": [
+          { "outputField": "workflow", "operationId": "ciWorkflows_updateInstance", "jsonPointer": "/data", "localRole": "Returned only after exact 200, exact workflow identity/path, canonical links, and requested patch lineage validation." },
+          { "outputField": "self_url", "operationId": "ciWorkflows_updateInstance", "jsonPointer": "/links/self", "localRole": "Validated canonical document self URL for the updated workflow." },
+          { "outputField": "included", "operationId": "ciWorkflows_updateInstance", "jsonPointer": "/included", "localRole": "Preserved when present, including an empty array, only after typed identity, duplicate, relationship, and link validation." },
+          { "outputField": "operationCommitState", "localRole": "committed for a validated 200, rejected for a definitive rejection, unknown for request ambiguity, or committed_unverified for an invalid accepted response." },
+          { "outputField": "operationCommitted", "localRole": "True only for committed or committed_unverified; null for unknown." },
+          { "outputField": "inspectionRequired", "localRole": "True for unknown or committed_unverified outcomes." },
+          { "outputField": "inspection", "localRole": "Executable xcode_cloud_workflows_get exact-target inspection before any retry." },
+          { "outputField": "identifiers", "localRole": "Validated workflow identifier retained for recovery." },
+          { "outputField": "retrySafe", "localRole": "False for every attempted update; inspect before any retry." },
+          { "outputField": "statusCode", "localRole": "Exact verified 200 status." }
+        ]
+      },
+      "note": "Complete mutable Apple 4.4.1 workflow PATCH contract. Every nullable attribute preserves value, explicit null, and omission independently; empty patches fail before network I/O. Exact 200 plus identity/path/request-lineage, document self_url, and strict optional included-union validation is required for committed success; valid included presence is preserved exactly. Ambiguous or malformed accepted outcomes fail closed with exact-target inspection."
+    },
+    {
+      "tool": "xcode_cloud_workflows_delete",
+      "kind": "compound",
+      "status": "partial",
+      "effect": "destructive",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "ciWorkflows_getInstance",
+          "method": "get",
+          "path": "/v1/ciWorkflows/{id}",
+          "role": "supporting",
+          "condition": "Every call refreshes the exact workflow identity and name before previewing or attempting deletion.",
+          "optionalParameterClassifications": [
+            {
+              "location": "query",
+              "appleName": "include",
+              "disposition": "intentionallyOmitted",
+              "reason": "Deletion preflight validates only the exact workflow identity and current name; it inventories build runs through the dedicated fully paginated supporting operation.",
+              "reviewAtSpec": "4.4.1"
+            }
+          ]
+        },
+        {
+          "operationId": "ciWorkflows_buildRuns_getToManyRelated",
+          "method": "get",
+          "path": "/v1/ciWorkflows/{id}/buildRuns",
+          "role": "supporting",
+          "condition": "Every call inventories all build-run identities across strict pagination before previewing or attempting deletion.",
+          "inputs": [
+            { "sourceKind": "fixed", "location": "query", "appleName": "limit", "fixedValue": 200 },
+            { "sourceKind": "fixed", "location": "query", "appleName": "fields[ciBuildRuns]", "fixedValue": ["number"] }
+          ],
+          "optionalParameterClassifications": [
+            {
+              "location": "query",
+              "appleName": "filter[builds]",
+              "disposition": "intentionallyOmitted",
+              "reason": "Deletion impact must inventory every build run for the workflow rather than a caller-selected build subset.",
+              "reviewAtSpec": "4.4.1"
+            },
+            {
+              "location": "query",
+              "appleName": "sort",
+              "disposition": "intentionallyOmitted",
+              "reason": "The confirmation digest sorts validated identities locally, so Apple response ordering cannot affect the receipt.",
+              "reviewAtSpec": "4.4.1"
+            },
+            {
+              "location": "query",
+              "appleName": "include",
+              "disposition": "intentionallyOmitted",
+              "reason": "The deletion receipt needs the complete direct build-run identity inventory, not expanded relationships.",
+              "reviewAtSpec": "4.4.1"
+            },
+            {
+              "location": "query",
+              "appleName": "limit[builds]",
+              "disposition": "intentionallyOmitted",
+              "reason": "Build resources are not included by the deletion inventory request.",
+              "reviewAtSpec": "4.4.1"
+            }
+          ]
+        },
+        { "operationId": "ciWorkflows_deleteInstance", "method": "delete", "path": "/v1/ciWorkflows/{id}", "role": "primary" }
+      ],
+      "fields": [
+        { "toolField": "workflow_id", "sourceKind": "parameter", "operationId": "ciWorkflows_getInstance", "location": "path", "appleName": "id" },
+        { "toolField": "workflow_id", "sourceKind": "parameter", "operationId": "ciWorkflows_buildRuns_getToManyRelated", "location": "path", "appleName": "id" },
+        { "toolField": "workflow_id", "sourceKind": "parameter", "operationId": "ciWorkflows_deleteInstance", "location": "path", "appleName": "id" },
+        { "toolField": "confirm_permanent_deletion", "sourceKind": "local", "localRole": "Must be true together with every fresh preview receipt before DELETE is attempted." },
+        { "toolField": "confirmation_receipt", "sourceKind": "local", "localRole": "Must match the checksum-bound receipt over the latest workflow identity/name plus the exact sorted build-run-ID inventory." },
+        { "toolField": "expected_workflow_name", "sourceKind": "local", "localRole": "Must exactly match the latest preflight workflow name." },
+        { "toolField": "expected_build_run_count", "sourceKind": "local", "localRole": "Must exactly match the fully paginated latest build-run count." }
+      ],
+      "response": {
+        "mode": "local",
+        "sources": [
+          { "operationId": "ciWorkflows_getInstance", "statusCode": "200", "mediaType": "application/json" },
+          { "operationId": "ciWorkflows_buildRuns_getToManyRelated", "statusCode": "200", "mediaType": "application/json" },
+          { "operationId": "ciWorkflows_deleteInstance", "statusCode": "204" }
+        ],
+        "fields": [
+          { "outputField": "previewOnly", "localRole": "True when the call performs fresh read-only workflow and cardinality preflight without sending DELETE." },
+          { "outputField": "confirmation", "localRole": "Fresh checksum-bound receipt over the exact sorted build-run identity inventory, plus the exact workflow name and public impact count." },
+          { "outputField": "success", "localRole": "True for a preview or an exact empty HTTP 204 deletion response; mutation fields distinguish the two states." },
+          { "outputField": "deleted", "localRole": "True only after Apple's exact empty HTTP 204 response." },
+          { "outputField": "operationCommitState", "localRole": "committed only for exact empty 204; not_attempted, rejected, unknown, or committed_unverified otherwise." },
+          { "outputField": "inspectionRequired", "localRole": "True for unknown or committed_unverified outcomes." },
+          { "outputField": "inspection", "localRole": "Executable xcode_cloud_workflows_get exact-target inspection before any retry." },
+          { "outputField": "retrySafe", "localRole": "False for every attempted deletion, including unknown and committed_unverified outcomes." },
+          { "outputField": "statusCode", "localRole": "Exact verified 204 status on committed deletion." }
+        ]
+      },
+      "note": "Permanent deletion is a two-step safety contract: every call refreshes exact identity and fully paginates the build-run inventory with a fixed limit=200 sparse request. The receipt hashes the canonical workflow identity/name and exact sorted length-delimited build-run IDs, while the caller must also echo the public name/count confirmations. Exact empty 204 is the only committed success. Ambiguous or malformed accepted outcomes preserve workflow_id and xcode_cloud_workflows_get recovery guidance and are never replayed automatically."
     }
   ],
   "implementationAliases": []

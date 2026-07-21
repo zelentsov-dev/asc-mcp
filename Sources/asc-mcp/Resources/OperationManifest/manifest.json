@@ -7,12 +7,12 @@
     "operationCount": 1263
   },
   "optionalInputCoveragePin": {
-    "total": 2756,
-    "bound": 1041,
+    "total": 2905,
+    "bound": 1103,
     "internalControl": 40,
-    "intentionallyOmitted": 1675,
+    "intentionallyOmitted": 1762,
     "unclassified": 0,
-    "identitySHA256": "d23f48816b9bc0b19933ae9f65cf4d737918730b1247f8949a802007055bd4a2"
+    "identitySHA256": "733827d5ad0fc66d541bdd51922567a7f7cd7a941b882ca2e89a0ea6d6a1cfee"
   },
   "optionalParameterFamilyRules": [
     {
@@ -1279,14 +1279,6 @@
       "reviewAtSpec": "4.4.1"
     },
     {
-      "id": "deferred.apps_ciProduct_getToOneRelated",
-      "operationId": "apps_ciProduct_getToOneRelated",
-      "disposition": "deferred",
-      "reason": "The `apps` resource-group capability is not yet exposed by asc-mcp.",
-      "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
-    },
-    {
       "id": "deferred.apps_gameCenterDetail_getToOneRelated",
       "operationId": "apps_gameCenterDetail_getToOneRelated",
       "disposition": "deferred",
@@ -1522,7 +1514,7 @@
       "id": "deferred.apps_ciProduct_getToOneRelationship",
       "operationId": "apps_ciProduct_getToOneRelationship",
       "disposition": "deferred",
-      "reason": "The `apps` resource-group capability is not yet exposed by asc-mcp.",
+      "reason": "This ID-only linkage endpoint is intentionally deferred because xcode_cloud_app_product_get is a functional superset that returns the same product identity together with validated product attributes and relationship context.",
       "owner": "asc-mcp",
       "reviewAtSpec": "4.4.1"
     },
@@ -2367,18 +2359,10 @@
       "reviewAtSpec": "4.4.1"
     },
     {
-      "id": "deferred.ciBuildActions_buildRun_getToOneRelated",
-      "operationId": "ciBuildActions_buildRun_getToOneRelated",
-      "disposition": "deferred",
-      "reason": "The `ciBuildActions` resource-group capability is not yet exposed by asc-mcp.",
-      "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
-    },
-    {
       "id": "deferred.ciBuildActions_artifacts_getToManyRelationship",
       "operationId": "ciBuildActions_artifacts_getToManyRelationship",
       "disposition": "deferred",
-      "reason": "The `ciBuildActions` resource-group capability is not yet exposed by asc-mcp.",
+      "reason": "This ID-only linkage endpoint is intentionally deferred because xcode_cloud_action_artifacts_list is a functional superset that returns artifact identities together with artifact attributes and pagination.",
       "owner": "asc-mcp",
       "reviewAtSpec": "4.4.1"
     },
@@ -2386,7 +2370,7 @@
       "id": "deferred.ciBuildActions_buildRun_getToOneRelationship",
       "operationId": "ciBuildActions_buildRun_getToOneRelationship",
       "disposition": "deferred",
-      "reason": "The `ciBuildActions` resource-group capability is not yet exposed by asc-mcp.",
+      "reason": "This ID-only linkage endpoint is intentionally deferred because xcode_cloud_action_build_run_get is a functional superset that returns the build-run identity together with validated build-run attributes and requested related resources.",
       "owner": "asc-mcp",
       "reviewAtSpec": "4.4.1"
     },
@@ -2394,7 +2378,7 @@
       "id": "deferred.ciBuildActions_issues_getToManyRelationship",
       "operationId": "ciBuildActions_issues_getToManyRelationship",
       "disposition": "deferred",
-      "reason": "The `ciBuildActions` resource-group capability is not yet exposed by asc-mcp.",
+      "reason": "This ID-only linkage endpoint is intentionally deferred because xcode_cloud_action_issues_list is a functional superset that returns issue identities together with issue attributes and pagination.",
       "owner": "asc-mcp",
       "reviewAtSpec": "4.4.1"
     },
@@ -2402,7 +2386,7 @@
       "id": "deferred.ciBuildActions_testResults_getToManyRelationship",
       "operationId": "ciBuildActions_testResults_getToManyRelationship",
       "disposition": "deferred",
-      "reason": "The `ciBuildActions` resource-group capability is not yet exposed by asc-mcp.",
+      "reason": "This ID-only linkage endpoint is intentionally deferred because xcode_cloud_action_test_results_list is a functional superset that returns test-result identities together with result attributes and pagination.",
       "owner": "asc-mcp",
       "reviewAtSpec": "4.4.1"
     },
@@ -2410,7 +2394,7 @@
       "id": "deferred.ciBuildRuns_actions_getToManyRelationship",
       "operationId": "ciBuildRuns_actions_getToManyRelationship",
       "disposition": "deferred",
-      "reason": "The `ciBuildRuns` resource-group capability is not yet exposed by asc-mcp.",
+      "reason": "This ID-only linkage endpoint is intentionally deferred because xcode_cloud_build_run_actions_list is a functional superset that returns action identities together with action attributes, included resources, and pagination.",
       "owner": "asc-mcp",
       "reviewAtSpec": "4.4.1"
     },
@@ -2418,7 +2402,7 @@
       "id": "deferred.ciBuildRuns_builds_getToManyRelationship",
       "operationId": "ciBuildRuns_builds_getToManyRelationship",
       "disposition": "deferred",
-      "reason": "The `ciBuildRuns` resource-group capability is not yet exposed by asc-mcp.",
+      "reason": "This ID-only linkage endpoint is intentionally deferred because xcode_cloud_build_run_builds_list is a functional superset that returns build identities together with build attributes and pagination.",
       "owner": "asc-mcp",
       "reviewAtSpec": "4.4.1"
     },
@@ -2426,47 +2410,7 @@
       "id": "deferred.ciMacOsVersions_xcodeVersions_getToManyRelationship",
       "operationId": "ciMacOsVersions_xcodeVersions_getToManyRelationship",
       "disposition": "deferred",
-      "reason": "The `ciMacOsVersions` resource-group capability is not yet exposed by asc-mcp.",
-      "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
-    },
-    {
-      "id": "deferred.ciMacOsVersions_xcodeVersions_getToManyRelated",
-      "operationId": "ciMacOsVersions_xcodeVersions_getToManyRelated",
-      "disposition": "deferred",
-      "reason": "The `ciMacOsVersions` resource-group capability is not yet exposed by asc-mcp.",
-      "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
-    },
-    {
-      "id": "deferred.ciProducts_deleteInstance",
-      "operationId": "ciProducts_deleteInstance",
-      "disposition": "deferred",
-      "reason": "The `ciProducts` resource-group capability is not yet exposed by asc-mcp.",
-      "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
-    },
-    {
-      "id": "deferred.ciProducts_additionalRepositories_getToManyRelated",
-      "operationId": "ciProducts_additionalRepositories_getToManyRelated",
-      "disposition": "deferred",
-      "reason": "The `ciProducts` resource-group capability is not yet exposed by asc-mcp.",
-      "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
-    },
-    {
-      "id": "deferred.ciProducts_app_getToOneRelated",
-      "operationId": "ciProducts_app_getToOneRelated",
-      "disposition": "deferred",
-      "reason": "The `ciProducts` resource-group capability is not yet exposed by asc-mcp.",
-      "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
-    },
-    {
-      "id": "deferred.ciProducts_primaryRepositories_getToManyRelated",
-      "operationId": "ciProducts_primaryRepositories_getToManyRelated",
-      "disposition": "deferred",
-      "reason": "The `ciProducts` resource-group capability is not yet exposed by asc-mcp.",
+      "reason": "This ID-only linkage endpoint is intentionally deferred because xcode_cloud_macos_version_xcode_versions_list is a functional superset that returns Xcode-version identities together with version attributes, included resources, and pagination.",
       "owner": "asc-mcp",
       "reviewAtSpec": "4.4.1"
     },
@@ -2474,7 +2418,7 @@
       "id": "deferred.ciProducts_additionalRepositories_getToManyRelationship",
       "operationId": "ciProducts_additionalRepositories_getToManyRelationship",
       "disposition": "deferred",
-      "reason": "The `ciProducts` resource-group capability is not yet exposed by asc-mcp.",
+      "reason": "This ID-only linkage endpoint is intentionally deferred because xcode_cloud_product_additional_repositories_list is a functional superset that returns repository identities together with repository attributes, included resources, and pagination.",
       "owner": "asc-mcp",
       "reviewAtSpec": "4.4.1"
     },
@@ -2482,7 +2426,7 @@
       "id": "deferred.ciProducts_app_getToOneRelationship",
       "operationId": "ciProducts_app_getToOneRelationship",
       "disposition": "deferred",
-      "reason": "The `ciProducts` resource-group capability is not yet exposed by asc-mcp.",
+      "reason": "This ID-only linkage endpoint is intentionally deferred because xcode_cloud_product_app_get is a functional superset that returns the app identity together with compact membership attributes and canonical resource context.",
       "owner": "asc-mcp",
       "reviewAtSpec": "4.4.1"
     },
@@ -2490,7 +2434,7 @@
       "id": "deferred.ciProducts_buildRuns_getToManyRelationship",
       "operationId": "ciProducts_buildRuns_getToManyRelationship",
       "disposition": "deferred",
-      "reason": "The `ciProducts` resource-group capability is not yet exposed by asc-mcp.",
+      "reason": "This ID-only linkage endpoint is intentionally deferred because xcode_cloud_product_build_runs_list is a functional superset that returns build-run identities together with build-run attributes, included resources, and pagination.",
       "owner": "asc-mcp",
       "reviewAtSpec": "4.4.1"
     },
@@ -2498,7 +2442,7 @@
       "id": "deferred.ciProducts_primaryRepositories_getToManyRelationship",
       "operationId": "ciProducts_primaryRepositories_getToManyRelationship",
       "disposition": "deferred",
-      "reason": "The `ciProducts` resource-group capability is not yet exposed by asc-mcp.",
+      "reason": "This ID-only linkage endpoint is intentionally deferred because xcode_cloud_product_primary_repositories_list is a functional superset that returns repository identities together with repository attributes, included resources, and pagination.",
       "owner": "asc-mcp",
       "reviewAtSpec": "4.4.1"
     },
@@ -2506,31 +2450,7 @@
       "id": "deferred.ciProducts_workflows_getToManyRelationship",
       "operationId": "ciProducts_workflows_getToManyRelationship",
       "disposition": "deferred",
-      "reason": "The `ciProducts` resource-group capability is not yet exposed by asc-mcp.",
-      "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
-    },
-    {
-      "id": "deferred.ciWorkflows_createInstance",
-      "operationId": "ciWorkflows_createInstance",
-      "disposition": "deferred",
-      "reason": "The `ciWorkflows` resource-group capability is not yet exposed by asc-mcp.",
-      "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
-    },
-    {
-      "id": "deferred.ciWorkflows_deleteInstance",
-      "operationId": "ciWorkflows_deleteInstance",
-      "disposition": "deferred",
-      "reason": "The `ciWorkflows` resource-group capability is not yet exposed by asc-mcp.",
-      "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
-    },
-    {
-      "id": "deferred.ciWorkflows_updateInstance",
-      "operationId": "ciWorkflows_updateInstance",
-      "disposition": "deferred",
-      "reason": "The `ciWorkflows` resource-group capability is not yet exposed by asc-mcp.",
+      "reason": "This ID-only linkage endpoint is intentionally deferred because xcode_cloud_product_workflows_list is a functional superset that returns workflow identities together with workflow attributes, included resources, and pagination.",
       "owner": "asc-mcp",
       "reviewAtSpec": "4.4.1"
     },
@@ -2538,7 +2458,7 @@
       "id": "deferred.ciWorkflows_buildRuns_getToManyRelationship",
       "operationId": "ciWorkflows_buildRuns_getToManyRelationship",
       "disposition": "deferred",
-      "reason": "The `ciWorkflows` resource-group capability is not yet exposed by asc-mcp.",
+      "reason": "This ID-only linkage endpoint is intentionally deferred because xcode_cloud_workflow_build_runs_list is a functional superset that returns build-run identities together with build-run attributes, included resources, and pagination.",
       "owner": "asc-mcp",
       "reviewAtSpec": "4.4.1"
     },
@@ -2546,23 +2466,7 @@
       "id": "deferred.ciWorkflows_repository_getToOneRelationship",
       "operationId": "ciWorkflows_repository_getToOneRelationship",
       "disposition": "deferred",
-      "reason": "The `ciWorkflows` resource-group capability is not yet exposed by asc-mcp.",
-      "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
-    },
-    {
-      "id": "deferred.ciWorkflows_repository_getToOneRelated",
-      "operationId": "ciWorkflows_repository_getToOneRelated",
-      "disposition": "deferred",
-      "reason": "The `ciWorkflows` resource-group capability is not yet exposed by asc-mcp.",
-      "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
-    },
-    {
-      "id": "deferred.ciXcodeVersions_macOsVersions_getToManyRelated",
-      "operationId": "ciXcodeVersions_macOsVersions_getToManyRelated",
-      "disposition": "deferred",
-      "reason": "The `ciXcodeVersions` resource-group capability is not yet exposed by asc-mcp.",
+      "reason": "This ID-only linkage endpoint is intentionally deferred because xcode_cloud_workflow_repository_get is a functional superset that returns the repository identity together with repository attributes and validated included resources.",
       "owner": "asc-mcp",
       "reviewAtSpec": "4.4.1"
     },
@@ -2570,7 +2474,7 @@
       "id": "deferred.ciXcodeVersions_macOsVersions_getToManyRelationship",
       "operationId": "ciXcodeVersions_macOsVersions_getToManyRelationship",
       "disposition": "deferred",
-      "reason": "The `ciXcodeVersions` resource-group capability is not yet exposed by asc-mcp.",
+      "reason": "This ID-only linkage endpoint is intentionally deferred because xcode_cloud_xcode_version_macos_versions_list is a functional superset that returns macOS-version identities together with version attributes, included resources, and pagination.",
       "owner": "asc-mcp",
       "reviewAtSpec": "4.4.1"
     },
@@ -3042,7 +2946,7 @@
       "id": "deferred.scmProviders_repositories_getToManyRelationship",
       "operationId": "scmProviders_repositories_getToManyRelationship",
       "disposition": "deferred",
-      "reason": "The `scmProviders` resource-group capability is not yet exposed by asc-mcp.",
+      "reason": "This ID-only linkage endpoint is intentionally deferred because xcode_cloud_scm_provider_repositories_list is a functional superset that returns repository identities together with repository attributes, included resources, and pagination.",
       "owner": "asc-mcp",
       "reviewAtSpec": "4.4.1"
     },
@@ -3050,7 +2954,7 @@
       "id": "deferred.scmRepositories_gitReferences_getToManyRelationship",
       "operationId": "scmRepositories_gitReferences_getToManyRelationship",
       "disposition": "deferred",
-      "reason": "The `scmRepositories` resource-group capability is not yet exposed by asc-mcp.",
+      "reason": "This ID-only linkage endpoint is intentionally deferred because xcode_cloud_scm_repository_git_references_list is a functional superset that returns Git-reference identities together with reference attributes, included resources, and pagination.",
       "owner": "asc-mcp",
       "reviewAtSpec": "4.4.1"
     },
@@ -3058,7 +2962,7 @@
       "id": "deferred.scmRepositories_pullRequests_getToManyRelationship",
       "operationId": "scmRepositories_pullRequests_getToManyRelationship",
       "disposition": "deferred",
-      "reason": "The `scmRepositories` resource-group capability is not yet exposed by asc-mcp.",
+      "reason": "This ID-only linkage endpoint is intentionally deferred because xcode_cloud_scm_repository_pull_requests_list is a functional superset that returns pull-request identities together with pull-request attributes, included resources, and pagination.",
       "owner": "asc-mcp",
       "reviewAtSpec": "4.4.1"
     },
