@@ -1,118 +1,195 @@
 <p align="center">
   <h1 align="center">App Store Connect MCP Server</h1>
   <p align="center">
-    A Model Context Protocol server for the App Store Connect API.<br/>
-    Manage apps, builds, TestFlight, reviews, and more — directly from Claude.
+    A local Model Context Protocol server for the App Store Connect API.<br/>
+    Manage apps, builds, TestFlight, reviews, and more from Codex, Claude, and other MCP clients on macOS.
   </p>
 </p>
 
 <p align="center">
   <a href="https://swift.org"><img src="https://img.shields.io/badge/Swift-6.2+-F05138.svg?style=flat&logo=swift&logoColor=white" alt="Swift 6.2+"></a>
-  <a href="https://developer.apple.com/macos/"><img src="https://img.shields.io/badge/macOS-14.0+-000000.svg?style=flat&logo=apple&logoColor=white" alt="macOS 14.0+"></a>
+  <a href="https://developer.apple.com/macos/"><img src="https://img.shields.io/badge/macOS_15-CI_tested-000000.svg?style=flat&logo=apple&logoColor=white" alt="macOS 15 CI tested"></a>
   <a href="https://modelcontextprotocol.io"><img src="https://img.shields.io/badge/MCP-compatible-4A90D9.svg?style=flat" alt="MCP Compatible"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-yellow.svg?style=flat" alt="MIT License"></a>
   <a href="https://github.com/zelentsov-dev/asc-mcp/actions"><img src="https://github.com/zelentsov-dev/asc-mcp/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
-</p>
-
-<p align="center">
-  <strong>Works with:</strong><br/>
-  <a href="https://claude.ai/code"><img src="https://img.shields.io/badge/Claude_Code-black?style=flat&logo=anthropic&logoColor=white" alt="Claude Code"></a>
-  <a href="https://claude.ai/download"><img src="https://img.shields.io/badge/Claude_Desktop-black?style=flat&logo=anthropic&logoColor=white" alt="Claude Desktop"></a>
-  <a href="https://code.visualstudio.com"><img src="https://img.shields.io/badge/VS_Code-007ACC?style=flat&logo=visualstudiocode&logoColor=white" alt="VS Code"></a>
-  <a href="https://cursor.com"><img src="https://img.shields.io/badge/Cursor-000000?style=flat&logo=cursor&logoColor=white" alt="Cursor"></a>
-  <a href="https://windsurf.com"><img src="https://img.shields.io/badge/Windsurf-0066FF?style=flat" alt="Windsurf"></a>
-  <a href="https://github.com/openai/codex"><img src="https://img.shields.io/badge/Codex_CLI-412991?style=flat&logo=openai&logoColor=white" alt="Codex CLI"></a>
-  <a href="https://ai.google.dev"><img src="https://img.shields.io/badge/Gemini_CLI-4285F4?style=flat&logo=google&logoColor=white" alt="Gemini CLI"></a>
 </p>
 
 ---
 
 ## Overview
 
-**asc-mcp** is a Swift-based MCP server that bridges [Claude](https://claude.ai) (or any MCP-compatible host) with the [App Store Connect API](https://developer.apple.com/documentation/appstoreconnectapi). It exposes **502 tools** across 33 App Store tool domains + 2 core domains, enabling you to automate your entire iOS/macOS release workflow through natural language.
+**asc-mcp** is a Swift-based MCP server that connects a local macOS MCP client to the [App Store Connect API](https://developer.apple.com/documentation/appstoreconnectapi). It exposes **502 tools** across 33 App Store tool domains + 2 core domains, enabling you to automate iOS and macOS release workflows through natural language.
+
+Configuration examples are included for Codex, Claude Code, Claude Desktop, Gemini CLI, VS Code with GitHub Copilot, Continue, Cursor, and Devin Desktop (formerly Windsurf). Client configuration is documented; release CI verifies installation, MCP initialization, and tool discovery on macOS rather than launching every third-party client.
+
+New here? Follow the [Quick Start](#quick-start). The remaining sections are reference material for advanced configuration, tool selection, and contributors.
 
 ### Key capabilities
 
-- **Multi-account** — manage multiple App Store Connect teams from a single server
-- **Full release pipeline** — create versions, attach builds, submit for review, phased rollout
-- **TestFlight automation** — beta groups, testers, recruitment criteria, usage metrics, build distribution, localized What's New
-- **Build management** — track processing, encryption compliance, readiness checks
-- **Build uploads** — create upload parents, reserve and transfer files, inspect recovery state, and monitor processing
-- **Customer reviews** — list, respond, update, delete responses, aggregate statistics
-- **In-app purchases** — CRUD, versioned metadata, price points, availability, offer codes, and review images
-- **Subscriptions** — subscription and group versions, localizations, plan availability, prices, images, offer codes, win-back, intro, and promotional offers
-- **Review submissions** — create a generic App Store review submission, manage its items, submit, or cancel it
-- **Provisioning** — bundle IDs, devices, certificates, profiles, capabilities
-- **Marketing** — screenshots, app previews, custom product pages, A/B testing (PPO), promoted purchases
-- **Accessibility declarations** — manage App Store accessibility support declarations by device family
-- **Webhooks** — manage webhook configurations, inspect delivery diagnostics, verify signatures, parse payloads, and triage events
-- **Analytics & Metrics** — sales/financial reports, analytics reports, performance metrics, TestFlight usage metrics, diagnostics
-- **Metadata management** — localized descriptions, keywords, What's New across all locales
-- **MCP 2025-11-25 surface** — tool annotations, output schemas for stable tools, structured JSON results, and safe result-size metadata
-- **OpenAPI contract tooling** — compare the live 502-tool worker catalog and semantic manifest with Apple's official App Store Connect OpenAPI specification
+- **Release and metadata** — versions, localizations, builds, review submissions, phased rollout, and Xcode Cloud
+- **TestFlight and uploads** — beta groups, testers, feedback, recruitment, build delivery, processing, and export compliance
+- **Monetization** — in-app purchases, subscriptions, pricing, availability, offer codes, and promotional offers
+- **Marketing** — screenshots, previews, custom product pages, product page optimization, and promoted purchases
+- **Accounts and provisioning** — multiple App Store Connect teams, users, bundle IDs, devices, certificates, profiles, and capabilities
+- **Feedback and operations** — customer reviews, webhooks, accessibility declarations, analytics, metrics, and diagnostics
+- **Safer automation** — read-only mode, confirmation safeguards, strict pagination, and mutation recovery guidance
+- **Auditable API coverage** — a versioned Apple OpenAPI contract and release-time drift checks
+
+## Platform Support
+
+`asc-mcp` is a local `stdio` server: the MCP client starts it on the same computer. A client being available on Linux or Windows does not make this Swift server cross-platform.
+
+| Environment | Status | Notes |
+|---|---|---|
+| macOS 15.6+ with Xcode 26.x | **Recommended** | Release CI specifically uses GitHub's macOS 15 runner with Xcode 26.2 |
+| macOS 14.0-15.5 | Declared deployment target only | Build and runtime are unverified; a separately installed Swift 6.2+ toolchain may be needed |
+| Linux | Not supported yet | Porting work and Linux CI are not complete |
+| Windows | Not supported | Current source dependencies and Swift MCP `stdio` transport are not Windows-compatible |
+
+See [Apple's Xcode system requirements](https://developer.apple.com/support/xcode/) for the macOS versions supported by each Xcode release.
+
+Web and cloud sessions do not automatically inherit a local MCP configuration. Run the MCP client locally on a compatible Mac, or use a client feature that explicitly keeps execution on that Mac.
 
 ## Quick Start
 
+The recommended setup stores App Store Connect credentials once in a private local file. MCP clients then need only the path to the `asc-mcp` executable.
+
+### 1. Install asc-mcp
+
 ```bash
-# 1. Install via Mint
 brew install mint
 mint install zelentsov-dev/asc-mcp@v4.1.3
-
-# 2. Add to Claude Code with env vars (simplest setup)
-claude mcp add asc-mcp \
-  -e ASC_KEY_ID=XXXXXXXXXX \
-  -e ASC_ISSUER_ID=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx \
-  -e ASC_PRIVATE_KEY_PATH=/path/to/AuthKey.p8 \
-  -- ~/.mint/bin/asc-mcp
+~/.mint/bin/asc-mcp --version
 ```
 
-Or use a JSON config file — see [Configuration](#configuration) below.
+### 2. Create an App Store Connect API key
 
-## Prerequisites
+1. Open [App Store Connect → Users and Access → Integrations → Team Keys](https://appstoreconnect.apple.com/access/integrations/api).
+2. Generate a key with the least-privileged role that covers your workflow. App Manager or Admin is needed only when the corresponding operations require it.
+3. Download the `.p8` file. Apple allows it to be downloaded only once.
+4. Copy the Key ID and Issuer ID.
 
-| Requirement | Version |
-|-------------|---------|
-| macOS | 14.0+ (Sonoma) |
-| Swift | 6.2+ |
-| Xcode | 26.0+ or a Swift 6.2 toolchain |
-| App Store Connect API Key | [Create one here](https://appstoreconnect.apple.com/access/integrations/api) |
+### 3. Save the credentials locally
+
+Create private configuration directories, then move the downloaded `.p8` file into `~/.keys/`. Replace the source path and filename in the second command:
+
+```bash
+mkdir -p ~/.config/asc-mcp ~/.keys
+chmod 700 ~/.config/asc-mcp ~/.keys
+mv /path/to/downloaded/AuthKey_XXXXXXXXXX.p8 ~/.keys/
+```
+
+Create `~/.config/asc-mcp/companies.json`:
+
+```json
+{
+  "companies": [
+    {
+      "id": "my-company",
+      "name": "My Company",
+      "key_id": "XXXXXXXXXX",
+      "issuer_id": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+      "key_path": "/Users/you/.keys/AuthKey_XXXXXXXXXX.p8"
+    }
+  ]
+}
+```
+
+Replace `/Users/you` with your actual home-directory path. Keep both files outside the repository and restrict access:
+
+```bash
+chmod 600 ~/.config/asc-mcp/companies.json
+chmod 600 /Users/you/.keys/AuthKey_XXXXXXXXXX.p8
+```
+
+> [!CAUTION]
+> Never commit `companies.json`, a `.p8` key, or raw credentials to Git. Revoke the App Store Connect key immediately if it is exposed.
+
+### 4. Connect your MCP client
+
+Choose one client. You do not need to configure every client.
+
+**Codex**
+
+```bash
+codex mcp add asc-mcp -- ~/.mint/bin/asc-mcp
+codex mcp list
+```
+
+**Claude Code**
+
+```bash
+claude mcp add \
+  --transport stdio \
+  --scope user \
+  asc-mcp \
+  -- ~/.mint/bin/asc-mcp
+
+claude mcp get asc-mcp
+claude mcp list
+```
+
+For Claude Desktop, Gemini CLI, VS Code, Continue, Cursor, and Devin Desktop, use the ready-to-copy examples in [MCP Client Setup](#mcp-client-setup).
+
+### 5. Try it
+
+Restart a GUI client after changing its configuration, open its MCP tool list, and ask:
+
+```text
+List my App Store Connect apps.
+```
+
+If the connection or request fails, see [Troubleshooting](#troubleshooting).
 
 ## Installation
 
-### Option A: Mint (recommended)
+### Mint on macOS (recommended)
 
-[Mint](https://github.com/yonaskolb/Mint) is the simplest way to install — one command, no manual cloning.
+[Mint](https://github.com/yonaskolb/Mint) installs the pinned release from source and keeps the executable at `~/.mint/bin/asc-mcp`.
 
 ```bash
-# Install Mint (if you don't have it)
 brew install mint
-
-# Install asc-mcp from GitHub
 mint install zelentsov-dev/asc-mcp@v4.1.3
-
-# Register in Claude Code
-claude mcp add asc-mcp -- ~/.mint/bin/asc-mcp
 ```
 
-To install a specific branch or tag:
-
-```bash
-mint install zelentsov-dev/asc-mcp@main      # main branch
-mint install zelentsov-dev/asc-mcp@develop    # develop branch
-mint install zelentsov-dev/asc-mcp@v4.1.3    # specific tag
-```
-
-To update to the latest version:
+Update or reinstall the pinned release:
 
 ```bash
 mint install zelentsov-dev/asc-mcp@v4.1.3 --force
 ```
 
-### Migrating from v4.0.x
+Stable users should install a version tag. Installing `main` or `develop` is intended only for maintainers and pre-release testing.
+
+### Build from source
+
+Use Xcode 26.x on a compatible macOS version, or install a standalone Swift 6.2+ toolchain.
+
+```bash
+git clone https://github.com/zelentsov-dev/asc-mcp.git
+cd asc-mcp
+swift build -c release
+```
+
+The executable is `.build/release/asc-mcp`. If you copy it elsewhere, also copy the adjacent resource bundle:
+
+```bash
+cp .build/release/asc-mcp /usr/local/bin/asc-mcp
+cp -R .build/release/asc-mcp_asc-mcp.bundle /usr/local/bin/
+```
+
+The bundle contains the versioned OpenAPI operation contract used by release checks.
+
+### Upgrading from an older release
+
+<details>
+<summary><strong>From v4.0.x</strong></summary>
 
 Version 4.1 keeps every existing tool name, required input, projection key, and array shape. Xcode Cloud read tools now reject undocumented arguments and validate returned links, paging, relationship lineage, and included resources more strictly. New `*Present` projection fields distinguish Apple-omitted arrays from present empty arrays while legacy array fields remain arrays. Newly exposed nested `*_limit` inputs must be paired with their matching `include` value, and continuation calls must repeat the original request scope unchanged. The new product and workflow delete tools default to a safe preview and require the latest preview receipt plus exact inventory confirmation before permanent deletion.
 
-### Migrating from v3.18.x
+</details>
+
+<details>
+<summary><strong>From v3.18.x</strong></summary>
 
 Version 4 keeps every existing tool name and worker filter, but destructive Marketing and review-attachment calls now require an exact confirmation ID before any Apple request:
 
@@ -130,73 +207,15 @@ Version 4 keeps every existing tool name and worker filter, but destructive Mark
 
 Remove undocumented top-level arguments from existing Marketing and review-attachment calls. Version 4 rejects unknown keys before any network request instead of silently ignoring them.
 
-### Option B: Build from Source
-
-```bash
-git clone https://github.com/zelentsov-dev/asc-mcp.git
-cd asc-mcp
-swift build -c release
-
-# Register in Claude Code
-claude mcp add asc-mcp -- $(pwd)/.build/release/asc-mcp
-```
-
-> [!TIP]
-> For convenience, copy the binary to a location in your PATH:
-> ```bash
-> cp .build/release/asc-mcp /usr/local/bin/asc-mcp
-> cp -R .build/release/asc-mcp_asc-mcp.bundle /usr/local/bin/
-> ```
-> Keep the resource bundle beside the executable; it contains the versioned OpenAPI operation contract used by release checks.
+</details>
 
 ## Configuration
 
-### 1. App Store Connect API Key
+### Credentials
 
-1. Go to [App Store Connect → Users and Access → Integrations → Team Keys](https://appstoreconnect.apple.com/access/integrations/api)
-2. Click **Generate API Key** — select appropriate role (Admin or App Manager recommended)
-3. Download the `.p8` private key file (you can only download it once!)
-4. Note the **Key ID** and **Issuer ID**
+The default `~/.config/asc-mcp/companies.json` file shown in the Quick Start is recommended because it works consistently for terminal and GUI clients without duplicating secrets in every client configuration.
 
-### 2. Companies Configuration
-
-asc-mcp supports three configuration methods (checked in this order):
-
-#### Option A: Environment Variables (recommended for MCP clients)
-
-**Single company** — simplest setup:
-
-```bash
-export ASC_KEY_ID=XXXXXXXXXX
-export ASC_ISSUER_ID=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
-export ASC_PRIVATE_KEY_PATH=/path/to/AuthKey.p8
-# or pass the key content directly:
-# export ASC_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\nMIGT..."
-# optional:
-# export ASC_COMPANY_NAME="My Company"
-# export ASC_VENDOR_NUMBER=YOUR_VENDOR_NUMBER          # for analytics
-```
-
-**Multiple companies** — numbered variables:
-
-```bash
-export ASC_COMPANY_1_NAME="My Company"
-export ASC_COMPANY_1_KEY_ID=XXXXXXXXXX
-export ASC_COMPANY_1_ISSUER_ID=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
-export ASC_COMPANY_1_KEY_PATH=/path/to/AuthKey1.p8
-export ASC_COMPANY_1_VENDOR_NUMBER=YOUR_VENDOR_NUMBER   # optional, for analytics
-
-export ASC_COMPANY_2_NAME="Client Corp"
-export ASC_COMPANY_2_KEY_ID=YYYYYYYYYY
-export ASC_COMPANY_2_ISSUER_ID=yyyyyyyy-yyyy-yyyy-yyyy-yyyyyyyyyyyy
-export ASC_COMPANY_2_KEY_PATH=/path/to/AuthKey2.p8
-```
-
-> Numbering starts at 1. The server scans while `ASC_COMPANY_{N}_KEY_ID` exists.
-
-#### Option B: JSON Config File
-
-Create `~/.config/asc-mcp/companies.json`:
+For multiple companies, add more entries:
 
 ```json
 {
@@ -211,194 +230,257 @@ Create `~/.config/asc-mcp/companies.json`:
     },
     {
       "id": "client-company",
-      "name": "Client Corp",
+      "name": "Client Company",
       "key_id": "YYYYYYYYYY",
       "issuer_id": "yyyyyyyy-yyyy-yyyy-yyyy-yyyyyyyyyyyy",
-      "key_path": "/Users/you/.keys/AuthKey_YYYYYYYYYY.p8",
-      "vendor_number": "YOUR_VENDOR_NUMBER"
+      "key_path": "/Users/you/.keys/AuthKey_YYYYYYYYYY.p8"
     }
   ]
 }
 ```
 
-> **Note:** `vendor_number` is required for analytics tools (`analytics_sales_report`, `analytics_financial_report`, `analytics_app_summary`). Find it in [App Store Connect → Sales and Trends → Reports](https://appstoreconnect.apple.com/trends/reports).
-
-#### Configuration Priority
-
-The server resolves configuration in this order:
-
-1. `--companies /path/to/companies.json` (CLI argument)
-2. Constructor parameter (programmatic)
-3. `ASC_MCP_COMPANIES=/path/to/companies.json` (env var pointing to JSON file)
-4. Default JSON file paths (`~/.config/asc-mcp/companies.json`, etc.)
-5. `ASC_COMPANY_1_KEY_ID` ... (multi-company env vars)
-6. `ASC_KEY_ID` + `ASC_ISSUER_ID` (single-company env vars)
-
-### 3. MCP Host Configuration
+`vendor_number` is required only for `analytics_sales_report`, `analytics_financial_report`, and `analytics_app_summary`. Find it in [App Store Connect → Sales and Trends → Reports](https://appstoreconnect.apple.com/trends/reports).
 
 <details>
-<summary><strong>Claude Code (CLI)</strong></summary>
+<summary><strong>Environment-variable alternative</strong></summary>
+
+Environment variables are useful for automation, but GUI apps launched from Finder may not inherit your shell environment. The file-based setup above is simpler for most users.
+
+Single company:
 
 ```bash
-claude mcp add asc-mcp -- ~/.mint/bin/asc-mcp
+export ASC_KEY_ID=XXXXXXXXXX
+export ASC_ISSUER_ID=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+export ASC_PRIVATE_KEY_PATH=/Users/you/.keys/AuthKey_XXXXXXXXXX.p8
+export ASC_COMPANY_NAME="My Company"                 # optional
+export ASC_VENDOR_NUMBER=YOUR_VENDOR_NUMBER          # optional, analytics only
 ```
 
-Or add to `.mcp.json` (project) / `.claude/settings.json` (global) with env vars:
+Multiple companies:
 
-```json
-{
-  "mcpServers": {
-    "asc-mcp": {
-      "command": "/path/to/asc-mcp",
-      "env": {
-        "ASC_KEY_ID": "XXXXXXXXXX",
-        "ASC_ISSUER_ID": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
-        "ASC_PRIVATE_KEY_PATH": "/path/to/AuthKey.p8"
-      }
-    }
-  }
-}
+```bash
+export ASC_COMPANY_1_NAME="My Company"
+export ASC_COMPANY_1_KEY_ID=XXXXXXXXXX
+export ASC_COMPANY_1_ISSUER_ID=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+export ASC_COMPANY_1_KEY_PATH=/Users/you/.keys/AuthKey_XXXXXXXXXX.p8
+
+export ASC_COMPANY_2_NAME="Client Company"
+export ASC_COMPANY_2_KEY_ID=YYYYYYYYYY
+export ASC_COMPANY_2_ISSUER_ID=yyyyyyyy-yyyy-yyyy-yyyy-yyyyyyyyyyyy
+export ASC_COMPANY_2_KEY_PATH=/Users/you/.keys/AuthKey_YYYYYYYYYY.p8
 ```
+
+Numbering starts at 1. Each consecutive entry must provide both `ASC_COMPANY_{N}_KEY_ID` and `ASC_COMPANY_{N}_ISSUER_ID`; scanning stops at the first missing pair.
+
+</details>
+
+<details>
+<summary><strong>Configuration resolution order</strong></summary>
+
+The server resolves credentials in this order:
+
+1. `--companies /absolute/path/to/companies.json`
+2. Constructor parameter for programmatic embedding
+3. `ASC_MCP_COMPANIES=/absolute/path/to/companies.json`
+4. Default configuration file locations, including `~/.config/asc-mcp/companies.json`
+5. `ASC_COMPANY_1_KEY_ID` and the other numbered multi-company variables
+6. `ASC_KEY_ID`, `ASC_ISSUER_ID`, and a private-key variable for one company
+
+</details>
+
+## MCP Client Setup
+
+All examples below assume a Mint installation and the recommended `companies.json` credential file. Replace `/Users/you` with your actual home-directory path. GUI clients generally require an absolute executable path.
+
+| Client | Configuration scope | Notes |
+|---|---|---|
+| Codex | User config by CLI; optional trusted-project config | Shared by local Codex clients on the same Mac |
+| Claude Code | `user`, `local`, or `project` scope | `user` is simplest for a personal App Store utility |
+| Claude Desktop | User-level desktop config | Restart after editing |
+| Gemini CLI | User settings | Local `stdio` server |
+| VS Code with GitHub Copilot | User profile or `.vscode/mcp.json` | Confirm server trust on first start |
+| Continue | Workspace `.continue/mcpServers/` | Separate from native VS Code MCP configuration |
+| Cursor | User or project `mcp.json` | Use an absolute command path |
+| Devin Desktop (formerly Windsurf) | User MCP config | Keep no more than 100 active tools |
+
+<details>
+<summary><strong>Codex CLI, IDE extension, and desktop client</strong></summary>
+
+Recommended CLI registration:
+
+```bash
+codex mcp add asc-mcp -- ~/.mint/bin/asc-mcp
+codex mcp list
+codex mcp get asc-mcp --json
+```
+
+The same local MCP configuration is shared by Codex clients on that Mac. The user configuration is `$CODEX_HOME/config.toml`, which defaults to `~/.codex/config.toml`:
+
+```toml
+[mcp_servers.asc-mcp]
+command = "/Users/you/.mint/bin/asc-mcp"
+startup_timeout_sec = 20
+tool_timeout_sec = 60
+enabled = true
+```
+
+For a project-specific setup, place the same table in `.codex/config.toml`; Codex loads project configuration only after the project is trusted. If you use shell credentials instead of `companies.json`, explicitly forward them:
+
+```toml
+env_vars = ["ASC_KEY_ID", "ASC_ISSUER_ID", "ASC_PRIVATE_KEY_PATH"]
+```
+
+Restart a GUI client after changing the configuration, then use its MCP view or `/mcp` to confirm that `asc-mcp` is active. See the [official Codex MCP documentation](https://developers.openai.com/codex/mcp/).
+
+</details>
+
+<details>
+<summary><strong>Claude Code</strong></summary>
+
+Register once for all local projects:
+
+```bash
+claude mcp add \
+  --transport stdio \
+  --scope user \
+  asc-mcp \
+  -- ~/.mint/bin/asc-mcp
+
+claude mcp get asc-mcp
+claude mcp list
+```
+
+Use `--scope local` for only the current project or `--scope project` to create a shared `.mcp.json`. Project servers require trust approval. Never place raw App Store Connect credentials in a committed `.mcp.json`.
+
+Claude stores `user` and `local` MCP entries in `~/.claude.json`; `.claude/settings.json` is not the global MCP registry. Use `/mcp` inside Claude Code to inspect or reconnect the server. See the [official Claude Code MCP documentation](https://code.claude.com/docs/en/mcp).
 
 </details>
 
 <details>
 <summary><strong>Claude Desktop</strong></summary>
 
-Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
+Add the server to `~/Library/Application Support/Claude/claude_desktop_config.json`:
 
 ```json
 {
   "mcpServers": {
     "asc-mcp": {
-      "command": "/path/to/asc-mcp",
-      "env": {
-        "ASC_KEY_ID": "XXXXXXXXXX",
-        "ASC_ISSUER_ID": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
-        "ASC_PRIVATE_KEY_PATH": "/path/to/AuthKey.p8"
-      }
+      "command": "/Users/you/.mint/bin/asc-mcp"
     }
   }
 }
 ```
 
-</details>
-
-<details>
-<summary><strong>Codex CLI</strong></summary>
-
-Add to `~/.codex/config.toml`:
-
-```toml
-[mcp_servers.asc-mcp]
-command = "/path/to/asc-mcp"
-startup_timeout_sec = 20
-tool_timeout_sec = 60
-enabled = true
-```
-
-Set env vars in your shell or use a wrapper script.
+Quit and reopen Claude Desktop after saving the file.
 
 </details>
 
 <details>
 <summary><strong>Gemini CLI</strong></summary>
 
-Add to `~/.gemini/settings.json`:
+Add the server to `~/.gemini/settings.json`:
 
 ```json
 {
   "mcpServers": {
     "asc-mcp": {
-      "command": "/path/to/asc-mcp",
-      "timeout": 60000,
-      "env": {
-        "ASC_KEY_ID": "XXXXXXXXXX",
-        "ASC_ISSUER_ID": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
-        "ASC_PRIVATE_KEY_PATH": "/path/to/AuthKey.p8"
-      }
+      "command": "/Users/you/.mint/bin/asc-mcp"
     }
   }
 }
 ```
 
+The default Gemini MCP timeout is intentionally retained. See the [official Gemini CLI MCP documentation](https://google-gemini.github.io/gemini-cli/docs/tools/mcp-server.html).
+
 </details>
 
 <details>
-<summary><strong>VS Code (Copilot / Continue)</strong></summary>
+<summary><strong>VS Code with GitHub Copilot</strong></summary>
 
-Add to `.vscode/mcp.json`:
+Run **MCP: Add Server** from the Command Palette and choose the user profile for a personal setup. For a workspace setup, create `.vscode/mcp.json`:
 
 ```json
 {
   "servers": {
     "asc-mcp": {
-      "command": "/path/to/asc-mcp",
-      "env": {
-        "ASC_KEY_ID": "XXXXXXXXXX",
-        "ASC_ISSUER_ID": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
-        "ASC_PRIVATE_KEY_PATH": "/path/to/AuthKey.p8"
-      }
+      "type": "stdio",
+      "command": "/Users/you/.mint/bin/asc-mcp"
     }
   }
 }
 ```
+
+Confirm that you trust the local server when VS Code first starts it. Do not commit user-specific paths or secrets in a shared workspace file. See the [official VS Code MCP documentation](https://code.visualstudio.com/docs/agent-customization/mcp-servers).
+
+</details>
+
+<details>
+<summary><strong>Continue</strong></summary>
+
+Continue does not use `.vscode/mcp.json`. Create `.continue/mcpServers/asc-mcp.json` in the workspace:
+
+```json
+{
+  "mcpServers": {
+    "asc-mcp": {
+      "command": "/Users/you/.mint/bin/asc-mcp"
+    }
+  }
+}
+```
+
+MCP tools are available in Continue agent mode. See the [official Continue MCP documentation](https://docs.continue.dev/customize/deep-dives/mcp).
 
 </details>
 
 <details>
 <summary><strong>Cursor</strong></summary>
 
-Add to Cursor settings → MCP Servers:
+Use `~/.cursor/mcp.json` for all projects or `.cursor/mcp.json` for one project:
 
 ```json
 {
   "mcpServers": {
     "asc-mcp": {
-      "command": "/path/to/asc-mcp",
-      "env": {
-        "ASC_KEY_ID": "XXXXXXXXXX",
-        "ASC_ISSUER_ID": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
-        "ASC_PRIVATE_KEY_PATH": "/path/to/AuthKey.p8"
-      }
+      "command": "/Users/you/.mint/bin/asc-mcp"
     }
   }
 }
 ```
+
+Restart or refresh the MCP server from Cursor settings after editing the file. See the [official Cursor MCP documentation](https://cursor.com/docs/mcp).
 
 </details>
 
 <details>
-<summary><strong>Windsurf</strong></summary>
+<summary><strong>Devin Desktop (formerly Windsurf)</strong></summary>
 
-Add to `~/.codeium/windsurf/mcp_config.json`:
+Add the server to `~/.codeium/windsurf/mcp_config.json`. This example enables a 72-tool release subset, below Cascade's 100-tool limit:
 
 ```json
 {
   "mcpServers": {
     "asc-mcp": {
-      "command": "/path/to/asc-mcp",
-      "args": ["--workers", "apps,builds,versions,reviews,beta_groups,iap"],
-      "env": {
-        "ASC_KEY_ID": "XXXXXXXXXX",
-        "ASC_ISSUER_ID": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
-        "ASC_PRIVATE_KEY_PATH": "/path/to/AuthKey.p8"
-      }
+      "command": "/Users/you/.mint/bin/asc-mcp",
+      "args": [
+        "--workers",
+        "apps,builds,export_compliance,versions,reviews"
+      ]
     }
   }
 }
 ```
 
-> **Note:** Windsurf has a 100-tool limit. The server exposes 502 tools by default, so you must use `--workers` to select a subset. See [Worker Filtering](#worker-filtering) below.
+You can also disable individual tools in the client. Server-side worker filtering is recommended because it keeps the active catalog predictable. See the [official Devin Desktop MCP documentation](https://docs.devin.ai/desktop/cascade/mcp).
 
 </details>
 
 > [!IMPORTANT]
-> If the MCP host doesn't inherit your shell PATH, you may need to specify the full path to the binary and ensure `.p8` key paths are absolute.
+> `command` must point to the real executable. GUI clients often do not inherit shell aliases, PATH changes, or environment variables. Use an absolute path and prefer the default `companies.json` credential file.
 
-### Worker Filtering
+## Worker Filtering
 
-The server exposes **502 tools** across 33 App Store tool domains + 2 core domains. Some MCP clients impose a tool limit (e.g., Windsurf caps at 100). Use the 35 `--workers` filter keys to enable only the workers you need:
+The server exposes **502 tools** across 33 App Store tool domains + 2 core domains. Some MCP clients impose a tool limit; Cascade in Devin Desktop currently allows 100 active tools. Use the 35 `--workers` filter keys to enable only the workers you need:
 
 ```bash
 # Only load apps, builds, and version lifecycle tools
@@ -418,7 +500,7 @@ asc-mcp --workers apps,iap,subscriptions,pricing,promoted,review_submissions
 
 When `builds` is enabled, it automatically includes `build_processing` and `build_beta` sub-workers.
 
-### Read-Only Mode
+## Read-Only Mode
 
 Use `--read-only` when you want safe inspection without App Store Connect mutations:
 
@@ -429,7 +511,7 @@ asc-mcp --read-only --workers apps,builds,reviews,analytics
 
 In this mode, read tools such as `*_list`, `*_get`, `*_search`, `*_status`, `*_verify`, `*_parse`, `*_triage`, `auth_*`, analytics, and metrics remain available. Tools that can create, update, upload, submit, release, delete, revoke, clear, cancel, or otherwise mutate App Store Connect are blocked before their worker handler runs. `company_switch` remains available because it changes only the local active company context.
 
-### OpenAPI Contract and Drift Tooling
+## OpenAPI Contract and Drift Tooling
 
 Use the operation-contract command to compare the actual credential-free `WorkerManager` catalog with the semantic manifest and the pinned Apple App Store Connect OpenAPI specification. The production manifest records exact Apple `operationId`, HTTP method, path, invocation-scoped input bindings, typed fixed values, response lineage, local workflows, implementation state, deprecated aliases, and deliberately deferred operations. The command does **not** load App Store Connect credentials or start the MCP server.
 
@@ -499,9 +581,9 @@ The older `openapi-coverage` command remains available for the high-level domain
 | `review_submissions` | `review_submissions_` | 9 | Generic App Store review submissions and submission items |
 | `metrics` | `metrics_` | 9 | Performance metrics, diagnostics, and TestFlight usage metrics |
 
-### Token Cost
+### Tool Catalog Size
 
-When connected to an LLM client, tool definitions consume context tokens. Here's the approximate footprint:
+When an MCP client eagerly loads every tool definition, the approximate schema footprint is:
 
 | Configuration | Tools | ~Tokens |
 |---|---:|---:|
@@ -514,7 +596,7 @@ When connected to an LLM client, tool definitions consume context tokens. Here's
 
 **Heaviest workers:** Subscriptions (99 tools), InAppPurchases (59 tools), Xcode Cloud (42 tools), Screenshots (19 tools), Provisioning (17 tools).
 
-For 200K-context clients, ~60K tokens is about 30% of the window. Exact cost depends on the MCP host's serialization and tokenizer. For clients with smaller context windows, use `--workers` to reduce the footprint.
+Exact cost depends on the MCP host's serialization, tokenizer, and tool-discovery strategy. Modern clients may defer schemas until they are needed. Use `--workers` when the client enforces a tool limit or when you want a smaller, more focused catalog.
 
 ## Available Tools
 
@@ -1282,10 +1364,13 @@ Sources/asc-mcp/
 <details>
 <summary><strong>Server not responding / MCP disconnection</strong></summary>
 
-1. Verify the binary path is correct in your MCP host config
-2. Check that `companies.json` exists and is valid JSON
-3. Ensure `.p8` key file paths are absolute and the files exist
-4. Try running the binary directly to see error output: `.build/release/asc-mcp`
+1. Run `~/.mint/bin/asc-mcp --version` to verify the installation independently of the MCP client.
+2. Verify that the MCP client uses the absolute path to the installed executable.
+3. For Codex, run `codex mcp list` and `codex mcp get asc-mcp --json`.
+4. For Claude Code, run `claude mcp get asc-mcp` and `claude mcp list`.
+5. Check either the configured `companies.json` file or the environment variables used by your chosen setup.
+6. Ensure every `.p8` key path is absolute and the file exists.
+7. Restart GUI clients after changing their MCP configuration, then inspect the client's MCP output log.
 
 </details>
 
@@ -1319,6 +1404,17 @@ Use `builds_get_processing_status` to inspect the current processing state and `
 The HTTP client automatically retries with exponential backoff on 429 responses. If you consistently hit limits, reduce the frequency of API calls or use pagination with smaller page sizes.
 
 </details>
+
+## Getting Help
+
+Before opening a report, search the [existing issues](https://github.com/zelentsov-dev/asc-mcp/issues). If the problem is new, [open an issue](https://github.com/zelentsov-dev/asc-mcp/issues/new/choose) and include:
+
+- macOS version and installation method;
+- MCP client name and version;
+- the selected `--workers` value, if any;
+- the exact error message and the smallest reproducible request.
+
+Remove Key IDs, Issuer IDs, private keys, signed URLs, tokens, and account data from logs before posting them. Report security vulnerabilities privately by following [SECURITY.md](SECURITY.md). For code contributions, see [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Development
 
