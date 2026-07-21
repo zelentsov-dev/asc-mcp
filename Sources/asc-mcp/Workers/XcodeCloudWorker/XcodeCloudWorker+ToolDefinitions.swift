@@ -8,9 +8,14 @@ extension XcodeCloudWorker {
             description: "List Xcode Cloud products. Returns product IDs, names, product type, app relationship, repository relationships, and pagination info.",
             inputSchema: baseSchema(
                 properties: listProperties([
-                    "product_type": enumSchema("Filter by product type", values: ["APP", "FRAMEWORK"]),
-                    "app_id": stringSchema("Filter by related App Store Connect app ID"),
-                    "include": includeSchema("Related resources to include", values: ["app", "bundleId", "primaryRepositories"])
+                    "product_type": enumListSchema("Filter by one or more product types", values: ["APP", "FRAMEWORK"]),
+                    "app_id": stringListSchema("Filter by one or more related App Store Connect app IDs"),
+                    "include": includeSchema("Related resources to include", values: ["app", "bundleId", "primaryRepositories"]),
+                    "primary_repositories_limit": integerSchema(
+                        "Maximum included primary repositories; requires include=primaryRepositories",
+                        minimum: 1,
+                        maximum: 50
+                    )
                 ])
             )
         )
@@ -22,8 +27,13 @@ extension XcodeCloudWorker {
             description: "Get one Xcode Cloud product by ID.",
             inputSchema: baseSchema(
                 properties: [
-                    "product_id": stringSchema("Xcode Cloud product ID"),
-                    "include": includeSchema("Related resources to include", values: ["app", "bundleId", "primaryRepositories"])
+                    "product_id": nonEmptyStringSchema("Xcode Cloud product ID"),
+                    "include": includeSchema("Related resources to include", values: ["app", "bundleId", "primaryRepositories"]),
+                    "primary_repositories_limit": integerSchema(
+                        "Maximum included primary repositories; requires include=primaryRepositories",
+                        minimum: 1,
+                        maximum: 50
+                    )
                 ],
                 required: ["product_id"]
             )
@@ -36,7 +46,7 @@ extension XcodeCloudWorker {
             description: "List workflows for an Xcode Cloud product.",
             inputSchema: baseSchema(
                 properties: listProperties([
-                    "product_id": stringSchema("Xcode Cloud product ID"),
+                    "product_id": nonEmptyStringSchema("Xcode Cloud product ID"),
                     "include": includeSchema("Related resources to include", values: ["product", "repository", "xcodeVersion", "macOsVersion"])
                 ]),
                 required: ["product_id"]
@@ -50,10 +60,15 @@ extension XcodeCloudWorker {
             description: "List Xcode Cloud build runs for a product.",
             inputSchema: baseSchema(
                 properties: listProperties([
-                    "product_id": stringSchema("Xcode Cloud product ID"),
+                    "product_id": nonEmptyStringSchema("Xcode Cloud product ID"),
                     "build_id": stringListSchema("Filter by one or more related App Store Connect build IDs"),
-                    "sort": enumSchema("Sort by build number", values: ["number", "-number"]),
-                    "include": includeSchema("Related resources to include", values: ["builds", "workflow", "product", "sourceBranchOrTag", "destinationBranch", "pullRequest"])
+                    "sort": enumListSchema("Sort by one or more build number expressions", values: ["number", "-number"]),
+                    "include": includeSchema("Related resources to include", values: ["builds", "workflow", "product", "sourceBranchOrTag", "destinationBranch", "pullRequest"]),
+                    "builds_limit": integerSchema(
+                        "Maximum included builds; requires include=builds",
+                        minimum: 1,
+                        maximum: 50
+                    )
                 ]),
                 required: ["product_id"]
             )
@@ -66,7 +81,7 @@ extension XcodeCloudWorker {
             description: "Get one Xcode Cloud workflow by ID, including actions and start-condition summaries.",
             inputSchema: baseSchema(
                 properties: [
-                    "workflow_id": stringSchema("Xcode Cloud workflow ID"),
+                    "workflow_id": nonEmptyStringSchema("Xcode Cloud workflow ID"),
                     "include": includeSchema("Related resources to include", values: ["product", "repository", "xcodeVersion", "macOsVersion"])
                 ],
                 required: ["workflow_id"]
@@ -80,10 +95,15 @@ extension XcodeCloudWorker {
             description: "List Xcode Cloud build runs for a workflow.",
             inputSchema: baseSchema(
                 properties: listProperties([
-                    "workflow_id": stringSchema("Xcode Cloud workflow ID"),
+                    "workflow_id": nonEmptyStringSchema("Xcode Cloud workflow ID"),
                     "build_id": stringListSchema("Filter by one or more related App Store Connect build IDs"),
-                    "sort": enumSchema("Sort by build number", values: ["number", "-number"]),
-                    "include": includeSchema("Related resources to include", values: ["builds", "workflow", "product", "sourceBranchOrTag", "destinationBranch", "pullRequest"])
+                    "sort": enumListSchema("Sort by one or more build number expressions", values: ["number", "-number"]),
+                    "include": includeSchema("Related resources to include", values: ["builds", "workflow", "product", "sourceBranchOrTag", "destinationBranch", "pullRequest"]),
+                    "builds_limit": integerSchema(
+                        "Maximum included builds; requires include=builds",
+                        minimum: 1,
+                        maximum: 50
+                    )
                 ]),
                 required: ["workflow_id"]
             )
@@ -96,8 +116,13 @@ extension XcodeCloudWorker {
             description: "Get one Xcode Cloud build run by ID.",
             inputSchema: baseSchema(
                 properties: [
-                    "build_run_id": stringSchema("Xcode Cloud build run ID"),
-                    "include": includeSchema("Related resources to include", values: ["builds", "workflow", "product", "sourceBranchOrTag", "destinationBranch", "pullRequest"])
+                    "build_run_id": nonEmptyStringSchema("Xcode Cloud build run ID"),
+                    "include": includeSchema("Related resources to include", values: ["builds", "workflow", "product", "sourceBranchOrTag", "destinationBranch", "pullRequest"]),
+                    "builds_limit": integerSchema(
+                        "Maximum included builds; requires include=builds",
+                        minimum: 1,
+                        maximum: 50
+                    )
                 ],
                 required: ["build_run_id"]
             )
@@ -118,7 +143,7 @@ extension XcodeCloudWorker {
             description: "List actions performed during an Xcode Cloud build run.",
             inputSchema: baseSchema(
                 properties: listProperties([
-                    "build_run_id": stringSchema("Xcode Cloud build run ID"),
+                    "build_run_id": nonEmptyStringSchema("Xcode Cloud build run ID"),
                     "include": includeSchema("Related resources to include", values: ["buildRun"])
                 ]),
                 required: ["build_run_id"]
@@ -132,7 +157,7 @@ extension XcodeCloudWorker {
             description: "List App Store Connect/TestFlight builds created by an Xcode Cloud build run.",
             inputSchema: baseSchema(
                 properties: listProperties([
-                    "build_run_id": stringSchema("Xcode Cloud build run ID"),
+                    "build_run_id": nonEmptyStringSchema("Xcode Cloud build run ID"),
                     "version": stringListSchema("Filter by one or more build numbers"),
                     "expired": booleanListSchema("Filter by one or more expiration values"),
                     "processing_state": enumListSchema(
@@ -158,7 +183,41 @@ extension XcodeCloudWorker {
                     "beta_group_ids": stringListSchema("Filter by one or more beta group IDs"),
                     "app_store_version_ids": stringListSchema("Filter by one or more App Store version IDs"),
                     "build_ids": stringListSchema("Filter by one or more build IDs"),
-                    "uses_non_exempt_encryption_set": boolSchema("Filter by whether the encryption declaration exists"),
+                    "uses_non_exempt_encryption_set": boolSchema("Filter by whether the usesNonExemptEncryption attribute is present"),
+                    "include": includeSchema(
+                        "Related resources to include",
+                        values: [
+                            "preReleaseVersion", "individualTesters", "betaGroups",
+                            "betaBuildLocalizations", "appEncryptionDeclaration",
+                            "betaAppReviewSubmission", "app", "buildBetaDetail",
+                            "appStoreVersion", "icons", "buildBundles", "buildUpload"
+                        ]
+                    ),
+                    "individual_testers_limit": integerSchema(
+                        "Maximum included individual testers; requires include=individualTesters",
+                        minimum: 1,
+                        maximum: 50
+                    ),
+                    "beta_groups_limit": integerSchema(
+                        "Maximum included beta groups; requires include=betaGroups",
+                        minimum: 1,
+                        maximum: 50
+                    ),
+                    "beta_build_localizations_limit": integerSchema(
+                        "Maximum included beta build localizations; requires include=betaBuildLocalizations",
+                        minimum: 1,
+                        maximum: 50
+                    ),
+                    "icons_limit": integerSchema(
+                        "Maximum included icons; requires include=icons",
+                        minimum: 1,
+                        maximum: 50
+                    ),
+                    "build_bundles_limit": integerSchema(
+                        "Maximum included build bundles; requires include=buildBundles",
+                        minimum: 1,
+                        maximum: 50
+                    ),
                     "sort": enumListSchema(
                         "Sort by one or more supported build fields",
                         values: ["version", "-version", "uploadedDate", "-uploadedDate", "preReleaseVersion", "-preReleaseVersion"]
@@ -175,7 +234,7 @@ extension XcodeCloudWorker {
             description: "Get one Xcode Cloud build action by ID.",
             inputSchema: baseSchema(
                 properties: [
-                    "action_id": stringSchema("Xcode Cloud build action ID"),
+                    "action_id": nonEmptyStringSchema("Xcode Cloud build action ID"),
                     "include": includeSchema("Related resources to include", values: ["buildRun"])
                 ],
                 required: ["action_id"]
@@ -189,7 +248,7 @@ extension XcodeCloudWorker {
             description: "List artifacts for an Xcode Cloud build action, including file names, sizes, types, and download URLs.",
             inputSchema: baseSchema(
                 properties: listProperties([
-                    "action_id": stringSchema("Xcode Cloud build action ID")
+                    "action_id": nonEmptyStringSchema("Xcode Cloud build action ID")
                 ]),
                 required: ["action_id"]
             )
@@ -202,7 +261,7 @@ extension XcodeCloudWorker {
             description: "List issues for an Xcode Cloud build action.",
             inputSchema: baseSchema(
                 properties: listProperties([
-                    "action_id": stringSchema("Xcode Cloud build action ID")
+                    "action_id": nonEmptyStringSchema("Xcode Cloud build action ID")
                 ]),
                 required: ["action_id"]
             )
@@ -215,7 +274,7 @@ extension XcodeCloudWorker {
             description: "List test results for an Xcode Cloud build action.",
             inputSchema: baseSchema(
                 properties: listProperties([
-                    "action_id": stringSchema("Xcode Cloud build action ID")
+                    "action_id": nonEmptyStringSchema("Xcode Cloud build action ID")
                 ]),
                 required: ["action_id"]
             )
@@ -228,7 +287,7 @@ extension XcodeCloudWorker {
             description: "Get one Xcode Cloud artifact by ID.",
             inputSchema: baseSchema(
                 properties: [
-                    "artifact_id": stringSchema("Xcode Cloud artifact ID")
+                    "artifact_id": nonEmptyStringSchema("Xcode Cloud artifact ID")
                 ],
                 required: ["artifact_id"]
             )
@@ -241,7 +300,7 @@ extension XcodeCloudWorker {
             description: "Get one Xcode Cloud issue by ID.",
             inputSchema: baseSchema(
                 properties: [
-                    "issue_id": stringSchema("Xcode Cloud issue ID")
+                    "issue_id": nonEmptyStringSchema("Xcode Cloud issue ID")
                 ],
                 required: ["issue_id"]
             )
@@ -254,7 +313,7 @@ extension XcodeCloudWorker {
             description: "Get one Xcode Cloud test result by ID.",
             inputSchema: baseSchema(
                 properties: [
-                    "test_result_id": stringSchema("Xcode Cloud test result ID")
+                    "test_result_id": nonEmptyStringSchema("Xcode Cloud test result ID")
                 ],
                 required: ["test_result_id"]
             )
@@ -267,7 +326,12 @@ extension XcodeCloudWorker {
             description: "List Xcode versions available for Xcode Cloud workflows.",
             inputSchema: baseSchema(
                 properties: listProperties([
-                    "include": includeSchema("Related resources to include", values: ["macOsVersions"])
+                    "include": includeSchema("Related resources to include", values: ["macOsVersions"]),
+                    "macos_versions_limit": integerSchema(
+                        "Maximum included macOS versions; requires include=macOsVersions",
+                        minimum: 1,
+                        maximum: 50
+                    )
                 ])
             )
         )
@@ -279,8 +343,13 @@ extension XcodeCloudWorker {
             description: "Get one Xcode Cloud Xcode version by ID.",
             inputSchema: baseSchema(
                 properties: [
-                    "xcode_version_id": stringSchema("Xcode version ID"),
-                    "include": includeSchema("Related resources to include", values: ["macOsVersions"])
+                    "xcode_version_id": nonEmptyStringSchema("Xcode version ID"),
+                    "include": includeSchema("Related resources to include", values: ["macOsVersions"]),
+                    "macos_versions_limit": integerSchema(
+                        "Maximum included macOS versions; requires include=macOsVersions",
+                        minimum: 1,
+                        maximum: 50
+                    )
                 ],
                 required: ["xcode_version_id"]
             )
@@ -293,7 +362,12 @@ extension XcodeCloudWorker {
             description: "List macOS versions available for Xcode Cloud workflows.",
             inputSchema: baseSchema(
                 properties: listProperties([
-                    "include": includeSchema("Related resources to include", values: ["xcodeVersions"])
+                    "include": includeSchema("Related resources to include", values: ["xcodeVersions"]),
+                    "xcode_versions_limit": integerSchema(
+                        "Maximum included Xcode versions; requires include=xcodeVersions",
+                        minimum: 1,
+                        maximum: 50
+                    )
                 ])
             )
         )
@@ -305,8 +379,13 @@ extension XcodeCloudWorker {
             description: "Get one Xcode Cloud macOS version by ID.",
             inputSchema: baseSchema(
                 properties: [
-                    "macos_version_id": stringSchema("macOS version ID"),
-                    "include": includeSchema("Related resources to include", values: ["xcodeVersions"])
+                    "macos_version_id": nonEmptyStringSchema("macOS version ID"),
+                    "include": includeSchema("Related resources to include", values: ["xcodeVersions"]),
+                    "xcode_versions_limit": integerSchema(
+                        "Maximum included Xcode versions; requires include=xcodeVersions",
+                        minimum: 1,
+                        maximum: 50
+                    )
                 ],
                 required: ["macos_version_id"]
             )
@@ -327,7 +406,7 @@ extension XcodeCloudWorker {
             description: "Get one Xcode Cloud SCM provider by ID.",
             inputSchema: baseSchema(
                 properties: [
-                    "provider_id": stringSchema("SCM provider ID")
+                    "provider_id": nonEmptyStringSchema("SCM provider ID")
                 ],
                 required: ["provider_id"]
             )
@@ -340,8 +419,8 @@ extension XcodeCloudWorker {
             description: "List repositories for an Xcode Cloud SCM provider.",
             inputSchema: baseSchema(
                 properties: listProperties([
-                    "provider_id": stringSchema("SCM provider ID"),
-                    "repository_id": stringSchema("Optional repository ID filter"),
+                    "provider_id": nonEmptyStringSchema("SCM provider ID"),
+                    "repository_id": stringListSchema("Filter by one or more repository IDs"),
                     "include": includeSchema("Related resources to include", values: ["scmProvider", "defaultBranch"])
                 ]),
                 required: ["provider_id"]
@@ -355,7 +434,7 @@ extension XcodeCloudWorker {
             description: "List repositories available to Xcode Cloud.",
             inputSchema: baseSchema(
                 properties: listProperties([
-                    "repository_id": stringSchema("Optional repository ID filter"),
+                    "repository_id": stringListSchema("Filter by one or more repository IDs"),
                     "include": includeSchema("Related resources to include", values: ["scmProvider", "defaultBranch"])
                 ])
             )
@@ -368,7 +447,7 @@ extension XcodeCloudWorker {
             description: "Get one Xcode Cloud SCM repository by ID.",
             inputSchema: baseSchema(
                 properties: [
-                    "repository_id": stringSchema("SCM repository ID"),
+                    "repository_id": nonEmptyStringSchema("SCM repository ID"),
                     "include": includeSchema("Related resources to include", values: ["scmProvider", "defaultBranch"])
                 ],
                 required: ["repository_id"]
@@ -382,7 +461,7 @@ extension XcodeCloudWorker {
             description: "List git branch/tag references for an Xcode Cloud SCM repository.",
             inputSchema: baseSchema(
                 properties: listProperties([
-                    "repository_id": stringSchema("SCM repository ID"),
+                    "repository_id": nonEmptyStringSchema("SCM repository ID"),
                     "include": includeSchema("Related resources to include", values: ["repository"])
                 ]),
                 required: ["repository_id"]
@@ -396,7 +475,7 @@ extension XcodeCloudWorker {
             description: "List pull requests for an Xcode Cloud SCM repository.",
             inputSchema: baseSchema(
                 properties: listProperties([
-                    "repository_id": stringSchema("SCM repository ID"),
+                    "repository_id": nonEmptyStringSchema("SCM repository ID"),
                     "include": includeSchema("Related resources to include", values: ["repository"])
                 ]),
                 required: ["repository_id"]
@@ -410,7 +489,7 @@ extension XcodeCloudWorker {
             description: "Get one Xcode Cloud SCM git reference by ID.",
             inputSchema: baseSchema(
                 properties: [
-                    "git_reference_id": stringSchema("SCM git reference ID"),
+                    "git_reference_id": nonEmptyStringSchema("SCM git reference ID"),
                     "include": includeSchema("Related resources to include", values: ["repository"])
                 ],
                 required: ["git_reference_id"]
@@ -424,7 +503,7 @@ extension XcodeCloudWorker {
             description: "Get one Xcode Cloud SCM pull request by ID.",
             inputSchema: baseSchema(
                 properties: [
-                    "pull_request_id": stringSchema("SCM pull request ID"),
+                    "pull_request_id": nonEmptyStringSchema("SCM pull request ID"),
                     "include": includeSchema("Related resources to include", values: ["repository"])
                 ],
                 required: ["pull_request_id"]
@@ -434,15 +513,16 @@ extension XcodeCloudWorker {
 
     private func listProperties(_ extra: [String: Value]) -> [String: Value] {
         var properties = extra
-        properties["limit"] = integerSchema("Max results (default: 25, max: 200)")
-        properties["next_url"] = stringSchema("Pagination URL from a previous response")
+        properties["limit"] = integerSchema("Max results (default: 25, max: 200)", minimum: 1, maximum: 200)
+        properties["next_url"] = paginationURLSchema()
         return properties
     }
 
     private func baseSchema(properties: [String: Value], required: [String] = []) -> Value {
         var schema: [String: Value] = [
             "type": .string("object"),
-            "properties": .object(properties)
+            "properties": .object(properties),
+            "additionalProperties": .bool(false)
         ]
         if !required.isEmpty {
             schema["required"] = .array(required.map(Value.string))
@@ -470,17 +550,23 @@ extension XcodeCloudWorker {
         ])
     }
 
-    private func stringSchema(_ description: String) -> Value {
+    private func paginationURLSchema() -> Value {
         .object([
             "type": .string("string"),
-            "description": .string(description)
+            "description": .string(
+                "Pagination URL from a previous response. Repeat the original parent IDs, filters, include values, sort, and limit unchanged."
+            ),
+            "minLength": .int(1),
+            "format": .string("uri-reference")
         ])
     }
 
-    private func integerSchema(_ description: String) -> Value {
+    private func integerSchema(_ description: String, minimum: Int, maximum: Int) -> Value {
         .object([
             "type": .string("integer"),
-            "description": .string(description)
+            "description": .string(description),
+            "minimum": .int(minimum),
+            "maximum": .int(maximum)
         ])
     }
 
@@ -524,22 +610,7 @@ extension XcodeCloudWorker {
         ])
     }
 
-    private func enumSchema(_ description: String, values: [String]) -> Value {
-        .object([
-            "type": .string("string"),
-            "description": .string(description),
-            "enum": .array(values.map(Value.string))
-        ])
-    }
-
     private func includeSchema(_ description: String, values: [String]) -> Value {
-        .object([
-            "type": .string("array"),
-            "description": .string(description),
-            "items": .object([
-                "type": .string("string"),
-                "enum": .array(values.map(Value.string))
-            ])
-        ])
+        enumListSchema(description, values: values)
     }
 }

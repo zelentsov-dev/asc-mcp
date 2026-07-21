@@ -7,6 +7,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.1.0] - 2026-07-21
+
+### Added
+
+- Added 12 Xcode Cloud tools for workflow create, update, and guarded deletion; guarded product deletion; app, repository, compatible-version, and owning-build-run relationship reads.
+- Added strict typed workflow mutation contracts, including explicit-null PATCH semantics, exact success statuses, canonical resource links, response lineage, and included-resource validation.
+
+### Changed
+
+- Expanded all 30 existing Xcode Cloud tools to the App Store Connect API 4.4.1 contract with documented filters, includes, nested limits, sorting, pagination scope, and both related-resource and relationship-self URLs where Apple exposes them.
+- Xcode Cloud collection and included-resource responses now reject duplicate identities, impossible paging metadata, cross-origin or cross-parent links, malformed cursors, and unrelated included resources before exposing results.
+- The App Store Connect HTTP transport now refuses redirects globally so authenticated requests cannot be replayed to a redirected destination; redirect responses remain available for explicit failure handling.
+
+### Fixed
+
+- Starting an Xcode Cloud build never replays after an ambiguous transport failure and reports accepted-but-unverified or unknown outcomes for uncertain or malformed success responses; bounded retries remain available only after explicit HTTP 401 and 429 responses.
+- Nested Xcode Cloud relationship limits are enforced against returned data even when Apple omits optional paging metadata, and exact request/response limit agreement is required when metadata is present.
+- Product and workflow deletion require a fresh preview receipt bound to the exact target ID and current destructive inventory before the DELETE request is allowed.
+
+### Compatibility
+
+- The public surface grows from 490 to 502 tools; no existing tool or worker filter key is removed or renamed.
+- Existing Xcode Cloud projection keys and array shapes remain available; new `*Present` fields distinguish an Apple-omitted array from a present empty array without breaking existing array consumers.
+- The operation manifest maps 476 Apple operations, explicitly defers 424, and scopes out 363; all 1,263 pinned Apple 4.4.1 operations remain accounted for without overlap.
+- The optional-input pin is fully classified at 2,905 total: 1,103 bound, 40 internally controlled, 1,762 intentionally omitted, and 0 unclassified; its identity SHA-256 is `733827d5ad0fc66d541bdd51922567a7f7cd7a941b882ca2e89a0ea6d6a1cfee`.
+
+### Migration
+
+- Existing Xcode Cloud calls keep their names and required inputs. Remove undocumented arguments, pair newly exposed nested `*_limit` inputs with the matching `include` value, and repeat the original request scope unchanged for continuation calls.
+- Use the default preview mode of `xcode_cloud_products_delete` or `xcode_cloud_workflows_delete`, then pass its latest receipt and exact expected inventory fields together with `confirm_permanent_deletion=true` to execute deletion.
+
 ## [4.0.0] - 2026-07-21
 
 ### Added

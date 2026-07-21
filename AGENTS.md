@@ -49,7 +49,7 @@ Each company needs: `keyID`, `issuerID`, `privateKeyPath` (path to `.p8` file).
 
 **WorkerManager** (`Workers/MainWorker/WorkerManager.swift`) — central registry, routes tool calls by prefix.
 
-**Workers** (39 Swift worker classes; 35 `--workers` filter keys; 490 tools):
+**Workers** (39 Swift worker classes; 35 `--workers` filter keys; 502 tools):
 
 | Worker | Prefix | Tools | Domain |
 |--------|--------|-------|--------|
@@ -58,7 +58,7 @@ Each company needs: `keyID`, `issuerID`, `privateKeyPath` (path to `.p8` file).
 | AppsWorker | `apps_` | 10 | App listing, metadata, localizations, search keyword IDs |
 | AccessibilityWorker | `accessibility_` | 6 | App Store accessibility declarations |
 | WebhooksWorker | `webhooks_` | 11 | Webhook notifications, delivery diagnostics, receiver helpers |
-| XcodeCloudWorker | `xcode_cloud_` | 30 | Xcode Cloud products, workflows, builds, artifacts, issues, test results, SCM |
+| XcodeCloudWorker | `xcode_cloud_` | 42 | Xcode Cloud products, workflow management, builds, artifacts, issues, test results, SCM |
 | BuildsWorker | `builds_` | 4 | Build management |
 | BuildUploadsWorker | `build_uploads_` | 10 | Build upload parents, files, safe transfers, and recovery |
 | BuildBetaDetailsWorker | `builds_*_beta_` | 11 | TestFlight localizations, notifications, beta groups, individual testers |
@@ -95,7 +95,7 @@ Each company needs: `keyID`, `issuerID`, `privateKeyPath` (path to `.p8` file).
 
 1. **Swift 6 Compliance**: All types `Sendable`, proper actor isolation
 2. **JWT Auth**: CryptoKit ES256, tokens expire after 20 min
-3. **Worker Pattern**: 3 files per worker (Main + ToolDefinitions + Handlers)
+3. **Worker Pattern**: 3 core files per worker (Main + ToolDefinitions + Handlers); large workers may add focused mutation, related-resource, input-validation, and response-validation extensions
 4. **Routing**: WorkerManager routes by tool name prefix
 5. **Error Handling**: Custom `ASCError` type
 
@@ -147,10 +147,11 @@ Test infrastructure: `TestFactory` (`Tests/ASCMCPTests/Helpers/TestHelpers.swift
 
 ### Adding New Worker
 
-1. Create directory `Workers/MyWorker/` with 3 files:
+1. Create directory `Workers/MyWorker/` with at least 3 core files:
    - `MyWorker.swift` — class, `getTools()`, `handleTool()` switch
    - `MyWorker+ToolDefinitions.swift` — tool schemas
    - `MyWorker+Handlers.swift` — handler implementations
+   - For a large domain, split focused behavior into additional `+Mutation*`, `+RelatedResource*`, `+InputValidation`, or `+ResponseValidation` extensions.
 2. Create models in `Models/MyDomain/MyModels.swift`
 3. Register in `WorkerManager.swift`: property, init, `registerWorkers()` (ListTools + CallTool), `reinitializeWorkers()`, getter method
 4. Add worker name to `EntryPoint.swift` → `validWorkers` set

@@ -8,13 +8,20 @@ struct XcodeCloudPaginationScopeTests {
     @Test("all Xcode Cloud list continuations preserve their complete originating scope")
     func validContinuationsPreserveCompleteScope() async throws {
         for fixture in xcodeCloudPaginationFixtures() {
-            let transport = TestHTTPTransport(responses: [
-                .init(statusCode: 200, body: #"{"data":[]}"#)
-            ])
             var arguments = fixture.arguments
             var query = fixture.requiredQuery
             query["cursor"] = "next"
             arguments["next_url"] = .string(xcodeCloudPaginationURL(path: fixture.path, query: query))
+            let transport = TestHTTPTransport(responses: [
+                .init(
+                    statusCode: 200,
+                    body: xcodeCloudPaginationResponseBody(
+                        fixture: fixture,
+                        currentCursor: "next",
+                        nextCursor: "after"
+                    )
+                )
+            ])
 
             let result = try await invokeXcodeCloudPaginationFixture(
                 fixture,
@@ -26,6 +33,70 @@ struct XcodeCloudPaginationScopeTests {
             let request = try #require(await transport.recordedRequests().first)
             #expect(request.url?.path == fixture.path)
             #expect(xcodeCloudPaginationQuery(request) == query)
+            guard case .object(let root)? = result.structuredContent else {
+                Issue.record("Expected structured pagination result for \(fixture.toolName)")
+                continue
+            }
+            #expect(root["self_url"] == .string(xcodeCloudPaginationURL(path: fixture.path, query: query)))
+            let responseNextQuery = fixture.requiredQuery.merging(["cursor": "after"]) { _, new in new }
+            #expect(root["next_url"] == .string(
+                xcodeCloudPaginationURL(path: fixture.path, query: responseNextQuery)
+            ))
+        }
+    }
+
+    @Test("all Xcode Cloud list responses reject self and next links outside the requested scope")
+    func responseLinksPreserveRequestedScope() async throws {
+        for fixture in xcodeCloudPaginationFixtures() {
+            let validSelf = xcodeCloudPaginationURL(
+                path: fixture.path,
+                query: fixture.requiredQuery.merging(["cursor": "next"]) { _, new in new }
+            )
+            let validNext = xcodeCloudPaginationURL(
+                path: fixture.path,
+                query: fixture.requiredQuery.merging(["cursor": "after"]) { _, new in new }
+            )
+            let invalidLinks = [
+                (
+                    selfURL: xcodeCloudPaginationURL(
+                        path: fixture.wrongParentPath,
+                        query: fixture.requiredQuery.merging(["cursor": "next"]) { _, new in new }
+                    ),
+                    nextURL: validNext
+                ),
+                (
+                    selfURL: validSelf,
+                    nextURL: xcodeCloudPaginationURL(
+                        path: fixture.wrongParentPath,
+                        query: fixture.requiredQuery.merging(["cursor": "after"]) { _, new in new }
+                    )
+                )
+            ]
+
+            for invalidLink in invalidLinks {
+                let limit = Int(fixture.requiredQuery["limit"] ?? "") ?? 25
+                let response = """
+                {
+                  "data": [],
+                  "links": { "self": "\(invalidLink.selfURL)", "next": "\(invalidLink.nextURL)" },
+                  "meta": { "paging": { "limit": \(limit), "nextCursor": "after" } }
+                }
+                """
+                let transport = TestHTTPTransport(responses: [
+                    .init(statusCode: 200, body: response)
+                ])
+                var arguments = fixture.arguments
+                arguments["next_url"] = .string(validSelf)
+
+                let result = try await invokeXcodeCloudPaginationFixture(
+                    fixture,
+                    arguments: arguments,
+                    transport: transport
+                )
+
+                #expect(result.isError == true, "Expected response-link rejection for \(fixture.toolName)")
+                #expect(await transport.requestCount() == 1)
+            }
         }
     }
 
@@ -134,17 +205,19 @@ private func xcodeCloudPaginationFixtures() -> [XcodeCloudPaginationFixture] {
         XcodeCloudPaginationFixture(
             toolName: "xcode_cloud_products_list",
             arguments: [
-                "product_type": .string("APP"),
-                "app_id": .string("app-1"),
-                "include": .array([.string("app"), .string("primaryRepositories")])
+                "product_type": .array([.string("APP"), .string("FRAMEWORK")]),
+                "app_id": .array([.string("app-1"), .string("app-2")]),
+                "include": .array([.string("app"), .string("primaryRepositories")]),
+                "primary_repositories_limit": .int(2)
             ],
             path: "/v1/ciProducts",
             wrongParentPath: "/v1/ciProducts/other",
             requiredQuery: [
                 "limit": "25",
-                "filter[productType]": "APP",
-                "filter[app]": "app-1",
-                "include": "app,primaryRepositories"
+                "filter[productType]": "APP,FRAMEWORK",
+                "filter[app]": "app-1,app-2",
+                "include": "app,primaryRepositories",
+                "limit[primaryRepositories]": "2"
             ]
         ),
         XcodeCloudPaginationFixture(
@@ -163,8 +236,9 @@ private func xcodeCloudPaginationFixtures() -> [XcodeCloudPaginationFixture] {
             arguments: [
                 "product_id": .string("product-1"),
                 "build_id": .array([.string("build-1"), .string("build-2")]),
-                "sort": .string("-number"),
-                "include": .string("workflow"),
+                "sort": .array([.string("-number"), .string("number")]),
+                "include": .array([.string("builds"), .string("workflow")]),
+                "builds_limit": .int(3),
                 "limit": .int(27)
             ],
             path: "/v1/ciProducts/product-1/buildRuns",
@@ -172,8 +246,9 @@ private func xcodeCloudPaginationFixtures() -> [XcodeCloudPaginationFixture] {
             requiredQuery: [
                 "limit": "27",
                 "filter[builds]": "build-1,build-2",
-                "sort": "-number",
-                "include": "workflow"
+                "sort": "-number,number",
+                "include": "builds,workflow",
+                "limit[builds]": "3"
             ]
         ),
         XcodeCloudPaginationFixture(
@@ -182,7 +257,8 @@ private func xcodeCloudPaginationFixtures() -> [XcodeCloudPaginationFixture] {
                 "workflow_id": .string("workflow-1"),
                 "build_id": .string("build-3"),
                 "sort": .string("number"),
-                "include": .string("product"),
+                "include": .array([.string("builds"), .string("product")]),
+                "builds_limit": .int(4),
                 "limit": .int(28)
             ],
             path: "/v1/ciWorkflows/workflow-1/buildRuns",
@@ -191,7 +267,8 @@ private func xcodeCloudPaginationFixtures() -> [XcodeCloudPaginationFixture] {
                 "limit": "28",
                 "filter[builds]": "build-3",
                 "sort": "number",
-                "include": "product"
+                "include": "builds,product",
+                "limit[builds]": "4"
             ]
         ),
         XcodeCloudPaginationFixture(
@@ -270,17 +347,33 @@ private func xcodeCloudPaginationFixtures() -> [XcodeCloudPaginationFixture] {
         ),
         XcodeCloudPaginationFixture(
             toolName: "xcode_cloud_xcode_versions_list",
-            arguments: ["include": .string("macOsVersions"), "limit": .int(34)],
+            arguments: [
+                "include": .string("macOsVersions"),
+                "macos_versions_limit": .int(5),
+                "limit": .int(34)
+            ],
             path: "/v1/ciXcodeVersions",
             wrongParentPath: "/v1/ciXcodeVersions/other",
-            requiredQuery: ["limit": "34", "include": "macOsVersions"]
+            requiredQuery: [
+                "limit": "34",
+                "include": "macOsVersions",
+                "limit[macOsVersions]": "5"
+            ]
         ),
         XcodeCloudPaginationFixture(
             toolName: "xcode_cloud_macos_versions_list",
-            arguments: ["include": .string("xcodeVersions"), "limit": .int(35)],
+            arguments: [
+                "include": .string("xcodeVersions"),
+                "xcode_versions_limit": .int(6),
+                "limit": .int(35)
+            ],
             path: "/v1/ciMacOsVersions",
             wrongParentPath: "/v1/ciMacOsVersions/other",
-            requiredQuery: ["limit": "35", "include": "xcodeVersions"]
+            requiredQuery: [
+                "limit": "35",
+                "include": "xcodeVersions",
+                "limit[xcodeVersions]": "6"
+            ]
         ),
         XcodeCloudPaginationFixture(
             toolName: "xcode_cloud_scm_providers_list",
@@ -293,7 +386,7 @@ private func xcodeCloudPaginationFixtures() -> [XcodeCloudPaginationFixture] {
             toolName: "xcode_cloud_scm_provider_repositories_list",
             arguments: [
                 "provider_id": .string("provider-1"),
-                "repository_id": .string("repo-1"),
+                "repository_id": .array([.string("repo-1"), .string("repo-2")]),
                 "include": .array([.string("scmProvider"), .string("defaultBranch")]),
                 "limit": .int(37)
             ],
@@ -301,7 +394,7 @@ private func xcodeCloudPaginationFixtures() -> [XcodeCloudPaginationFixture] {
             wrongParentPath: "/v1/scmProviders/provider-2/repositories",
             requiredQuery: [
                 "limit": "37",
-                "filter[id]": "repo-1",
+                "filter[id]": "repo-1,repo-2",
                 "include": "scmProvider,defaultBranch"
             ]
         ),
@@ -374,6 +467,29 @@ private func xcodeCloudPaginationURL(path: String, query: [String: String]) -> S
         preconditionFailure("Unable to construct pagination URL")
     }
     return url.absoluteString
+}
+
+private func xcodeCloudPaginationResponseBody(
+    fixture: XcodeCloudPaginationFixture,
+    currentCursor: String,
+    nextCursor: String
+) -> String {
+    let selfURL = xcodeCloudPaginationURL(
+        path: fixture.path,
+        query: fixture.requiredQuery.merging(["cursor": currentCursor]) { _, new in new }
+    )
+    let nextURL = xcodeCloudPaginationURL(
+        path: fixture.path,
+        query: fixture.requiredQuery.merging(["cursor": nextCursor]) { _, new in new }
+    )
+    let limit = Int(fixture.requiredQuery["limit"] ?? "") ?? 25
+    return """
+    {
+      "data": [],
+      "links": { "self": "\(selfURL)", "next": "\(nextURL)" },
+      "meta": { "paging": { "limit": \(limit), "nextCursor": "\(nextCursor)" } }
+    }
+    """
 }
 
 private func xcodeCloudPaginationQuery(_ request: URLRequest) -> [String: String] {

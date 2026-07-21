@@ -1,7 +1,7 @@
 import Foundation
 import MCP
 
-/// Reads Xcode Cloud products, workflows, build runs, artifacts, issues, test results, and SCM resources.
+/// Manages Xcode Cloud products and workflows, starts builds, and reads CI, artifact, and SCM resources.
 public final class XcodeCloudWorker: Sendable {
     let httpClient: HTTPClient
 
@@ -10,20 +10,30 @@ public final class XcodeCloudWorker: Sendable {
     }
 
     /// Get list of available Xcode Cloud tools.
-    /// - Returns: Tool definitions for Xcode Cloud CI/CD and SCM read workflows plus starting builds.
+    /// - Returns: Tool definitions for Xcode Cloud inspection, workflow management, guarded deletion, and build execution.
     public func getTools() async -> [Tool] {
         [
             productsListTool(),
             productsGetTool(),
+            productsDeleteTool(),
+            appProductGetTool(),
+            productAppGetTool(),
+            productPrimaryRepositoriesListTool(),
+            productAdditionalRepositoriesListTool(),
             productWorkflowsListTool(),
             productBuildRunsListTool(),
             workflowsGetTool(),
+            workflowsCreateTool(),
+            workflowsUpdateTool(),
+            workflowsDeleteTool(),
+            workflowRepositoryGetTool(),
             workflowBuildRunsListTool(),
             buildRunsGetTool(),
             buildRunsStartTool(),
             buildRunActionsListTool(),
             buildRunBuildsListTool(),
             actionsGetTool(),
+            actionBuildRunGetTool(),
             actionArtifactsListTool(),
             actionIssuesListTool(),
             actionTestResultsListTool(),
@@ -32,8 +42,10 @@ public final class XcodeCloudWorker: Sendable {
             testResultsGetTool(),
             xcodeVersionsListTool(),
             xcodeVersionsGetTool(),
+            xcodeVersionMacOSVersionsListTool(),
             macOSVersionsListTool(),
             macOSVersionsGetTool(),
+            macOSVersionXcodeVersionsListTool(),
             scmProvidersListTool(),
             scmProvidersGetTool(),
             scmProviderRepositoriesListTool(),
@@ -51,17 +63,39 @@ public final class XcodeCloudWorker: Sendable {
     /// - Returns: MCP tool result with JSON text and structured content.
     /// - Throws: `MCPError.methodNotFound` for unknown tool names.
     public func handleTool(_ params: CallTool.Parameters) async throws -> CallTool.Result {
+        if let inputError = existingToolInputError(params) {
+            return inputError
+        }
+
         switch params.name {
         case "xcode_cloud_products_list":
             return try await listProducts(params)
         case "xcode_cloud_products_get":
             return try await getProduct(params)
+        case "xcode_cloud_products_delete":
+            return try await deleteProduct(params)
+        case "xcode_cloud_app_product_get":
+            return try await getAppProduct(params)
+        case "xcode_cloud_product_app_get":
+            return try await getProductApp(params)
+        case "xcode_cloud_product_primary_repositories_list":
+            return try await listProductPrimaryRepositories(params)
+        case "xcode_cloud_product_additional_repositories_list":
+            return try await listProductAdditionalRepositories(params)
         case "xcode_cloud_product_workflows_list":
             return try await listProductWorkflows(params)
         case "xcode_cloud_product_build_runs_list":
             return try await listProductBuildRuns(params)
         case "xcode_cloud_workflows_get":
             return try await getWorkflow(params)
+        case "xcode_cloud_workflows_create":
+            return try await createWorkflow(params)
+        case "xcode_cloud_workflows_update":
+            return try await updateWorkflow(params)
+        case "xcode_cloud_workflows_delete":
+            return try await deleteWorkflow(params)
+        case "xcode_cloud_workflow_repository_get":
+            return try await getWorkflowRepository(params)
         case "xcode_cloud_workflow_build_runs_list":
             return try await listWorkflowBuildRuns(params)
         case "xcode_cloud_build_runs_get":
@@ -74,6 +108,8 @@ public final class XcodeCloudWorker: Sendable {
             return try await listBuildRunBuilds(params)
         case "xcode_cloud_actions_get":
             return try await getAction(params)
+        case "xcode_cloud_action_build_run_get":
+            return try await getActionBuildRun(params)
         case "xcode_cloud_action_artifacts_list":
             return try await listActionArtifacts(params)
         case "xcode_cloud_action_issues_list":
@@ -90,10 +126,14 @@ public final class XcodeCloudWorker: Sendable {
             return try await listXcodeVersions(params)
         case "xcode_cloud_xcode_versions_get":
             return try await getXcodeVersion(params)
+        case "xcode_cloud_xcode_version_macos_versions_list":
+            return try await listXcodeVersionMacOSVersions(params)
         case "xcode_cloud_macos_versions_list":
             return try await listMacOSVersions(params)
         case "xcode_cloud_macos_versions_get":
             return try await getMacOSVersion(params)
+        case "xcode_cloud_macos_version_xcode_versions_list":
+            return try await listMacOSVersionXcodeVersions(params)
         case "xcode_cloud_scm_providers_list":
             return try await listScmProviders(params)
         case "xcode_cloud_scm_providers_get":
