@@ -464,6 +464,56 @@ struct MCPResultBuilderTests {
         #expect(try exactJSONMirror(from: result) == structuredJSON(from: result))
     }
 
+    @Test("error normalization preserves recovery semantics and redacts credential URLs")
+    func errorNormalizationPreservesRecoverySemanticsAndRedactsCredentialURLs() throws {
+        let ordinaryURL = "https://developer.apple.com/documentation/appstoreconnectapi"
+        let credentialURL = "https://upload.example.test/chunk?X-Amz-Signature=signed-secret"
+        let templatePageID = "template-page-identifier-1234567890"
+        let credentialLikeID = "api_token_abcdefghijklmnopqrstuvwxyz012345"
+        let raw = CallTool.Result(
+            content: [MCPContent.text("Error: Inspect \(ordinaryURL); upload \(credentialURL).")],
+            structuredContent: .object([
+                "error": .string("Inspect \(ordinaryURL); upload \(credentialURL)."),
+                "action": .string("inspect_before_retry"),
+                "operation": .string("remove_search_keywords"),
+                "confirmation_argument": .string("confirm_attachment_id"),
+                "requested": .object([
+                    "templatePageId": .object([
+                        "state": .string("value"),
+                        "value": .string(templatePageID)
+                    ]),
+                    "templateVersionId": .object([
+                        "state": .string("value"),
+                        "value": .string(credentialLikeID)
+                    ])
+                ])
+            ]),
+            isError: true
+        )
+
+        let normalized = MCPResult.normalizeForTransport(raw)
+
+        guard case .object(let payload)? = normalized.structuredContent,
+              case .object(let requested)? = payload["requested"],
+              case .object(let templatePage)? = requested["templatePageId"],
+              case .object(let templateVersion)? = requested["templateVersionId"] else {
+            Issue.record("Expected normalized recovery payload")
+            return
+        }
+        #expect(payload["action"] == .string("inspect_before_retry"))
+        #expect(payload["operation"] == .string("remove_search_keywords"))
+        #expect(payload["confirmation_argument"] == .string("confirm_attachment_id"))
+        #expect(templatePage["value"] == .string(templatePageID))
+        #expect(templateVersion["value"] == .string("[REDACTED]"))
+        for content in normalized.content {
+            guard case .text(let text, _, _) = content else { continue }
+            #expect(text.contains(ordinaryURL))
+            #expect(text.contains("upload.example.test") == false)
+            #expect(text.contains("signed-secret") == false)
+        }
+        #expect(try exactJSONMirror(from: normalized) == structuredJSON(from: normalized))
+    }
+
     @Test("transport normalization redacts short credential assignments")
     func transportNormalizationRedactsShortCredentialAssignments() throws {
         let raw = CallTool.Result(

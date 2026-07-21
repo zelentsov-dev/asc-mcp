@@ -314,21 +314,26 @@ enum MCPValueSanitizer {
         }
     }
 
-    static func sanitizeError(_ value: Value, key: String? = nil) -> Value {
+    static func sanitizeError(
+        _ value: Value,
+        key: String? = nil,
+        path: [String] = []
+    ) -> Value {
         switch value {
         case .object(let object):
             var sanitized: [String: Value] = [:]
             for (key, child) in object {
+                let childPath = path + [key]
                 sanitized[key] = isSensitiveKey(key)
                     ? .string("[REDACTED]")
-                    : sanitizeError(child, key: key)
+                    : sanitizeError(child, key: key, path: childPath)
             }
             return .object(sanitized)
         case .array(let array):
-            return .array(array.map { sanitizeError($0, key: key) })
+            return .array(array.map { sanitizeError($0, key: key, path: path + ["*"]) })
         case .string(let string):
             return .string(
-                preservesOpaqueIdentifiers(key)
+                preservesOpaqueIdentifiers(key, path: path)
                     ? Redactor.redactPreservingOpaqueIdentifiers(string)
                     : Redactor.redact(string)
             )
@@ -375,7 +380,7 @@ enum MCPValueSanitizer {
             lower.hasSuffix("-ids")
     }
 
-    private static func preservesOpaqueIdentifiers(_ key: String?) -> Bool {
+    private static func preservesOpaqueIdentifiers(_ key: String?, path: [String]) -> Bool {
         guard let key else { return false }
         if isIdentifierKey(key) {
             return true
@@ -395,10 +400,18 @@ enum MCPValueSanitizer {
             normalized == "fingerprintkey" {
             return true
         }
+        if normalized == "value",
+           let parentKey = path.dropLast().last,
+           isIdentifierKey(parentKey) {
+            return true
+        }
         return [
+            "action",
+            "operation",
             "reason",
             "code",
             "failedstep",
+            "confirmationargument",
             "idargument",
             "idsource",
             "recoverytool",

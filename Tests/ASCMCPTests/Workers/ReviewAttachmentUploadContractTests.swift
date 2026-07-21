@@ -503,7 +503,9 @@ struct ReviewAttachmentUploadContractTests {
         let inspectArguments = try reviewAttachmentValueObject(cleanup["inspectArguments"])
         #expect(inspectArguments["attachment_id"] == .string("attachment-1"))
         let text = reviewAttachmentText(result)
-        #expect(text.contains("Inspect this exact attachment"))
+        #expect(text.contains(
+            "Inspect the exact reservation resource id 'attachment-1' before another cleanup attempt."
+        ))
         #expect(text.contains("to retry cleanup") == false)
     }
 
@@ -567,7 +569,9 @@ struct ReviewAttachmentUploadContractTests {
         let inspectArguments = try reviewAttachmentValueObject(cleanup["inspectArguments"])
         #expect(inspectArguments["attachment_id"] == .string("attachment-1"))
         let text = reviewAttachmentText(result)
-        #expect(text.contains("Inspect this exact attachment"))
+        #expect(text.contains(
+            "Inspect the exact reservation resource id 'attachment-1' before another cleanup attempt."
+        ))
         #expect(text.contains("to retry cleanup") == false)
     }
 

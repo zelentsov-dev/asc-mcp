@@ -9,7 +9,13 @@ struct ScreenshotsPaginationScopeTests {
     func preservesExactQueries() async throws {
         for fixture in screenshotPaginationFixtures() {
             let firstPageTransport = TestHTTPTransport(responses: [
-                .init(statusCode: 200, body: screenshotPaginationEmptyResponse(path: fixture.path))
+                .init(
+                    statusCode: 200,
+                    body: screenshotPaginationEmptyResponse(
+                        path: fixture.path,
+                        query: fixture.requiredQuery
+                    )
+                )
             ])
             let firstPageResult = try await invokeScreenshotPaginationFixture(
                 fixture,
@@ -22,12 +28,18 @@ struct ScreenshotsPaginationScopeTests {
             #expect(firstPageRequest.url?.path == fixture.path)
             #expect(screenshotPaginationQuery(firstPageRequest) == fixture.requiredQuery)
 
-            let continuationTransport = TestHTTPTransport(responses: [
-                .init(statusCode: 200, body: screenshotPaginationEmptyResponse(path: fixture.path))
-            ])
             var continuationArguments = fixture.arguments
             var continuationQuery = fixture.requiredQuery
             continuationQuery["cursor"] = "next"
+            let continuationTransport = TestHTTPTransport(responses: [
+                .init(
+                    statusCode: 200,
+                    body: screenshotPaginationEmptyResponse(
+                        path: fixture.path,
+                        query: continuationQuery
+                    )
+                )
+            ])
             continuationArguments["next_url"] = .string(screenshotPaginationURL(
                 path: fixture.path,
                 query: continuationQuery
@@ -49,7 +61,13 @@ struct ScreenshotsPaginationScopeTests {
     func preservesDefaultLimit() async throws {
         for fixture in screenshotDefaultLimitFixtures() {
             let firstPageTransport = TestHTTPTransport(responses: [
-                .init(statusCode: 200, body: screenshotPaginationEmptyResponse(path: fixture.path))
+                .init(
+                    statusCode: 200,
+                    body: screenshotPaginationEmptyResponse(
+                        path: fixture.path,
+                        query: fixture.requiredQuery
+                    )
+                )
             ])
             let firstPageResult = try await invokeScreenshotPaginationFixture(
                 fixture,
@@ -64,7 +82,13 @@ struct ScreenshotsPaginationScopeTests {
             var validQuery = fixture.requiredQuery
             validQuery["cursor"] = "next"
             let validTransport = TestHTTPTransport(responses: [
-                .init(statusCode: 200, body: screenshotPaginationEmptyResponse(path: fixture.path))
+                .init(
+                    statusCode: 200,
+                    body: screenshotPaginationEmptyResponse(
+                        path: fixture.path,
+                        query: validQuery
+                    )
+                )
             ])
             var validArguments = fixture.arguments
             validArguments["next_url"] = .string(screenshotPaginationURL(
@@ -414,8 +438,12 @@ private func screenshotPaginationURL(
     return url.absoluteString
 }
 
-private func screenshotPaginationEmptyResponse(path: String) -> String {
-    #"{"data":[],"links":{"self":"\#(path)"}}"#
+private func screenshotPaginationEmptyResponse(
+    path: String,
+    query: [String: String]
+) -> String {
+    let selfLink = screenshotPaginationURL(path: path, query: query)
+    return #"{"data":[],"links":{"self":"\#(selfLink)"}}"#
 }
 
 private func screenshotPaginationURL(

@@ -8,8 +8,14 @@ struct ScreenshotsOptionalInputsContractTests {
     @Test("screenshot and preview set lists bind Apple media filters")
     func mediaSetListFilters() async throws {
         let transport = TestHTTPTransport(responses: [
-            .init(statusCode: 200, body: #"{"data":[],"links":{"self":"/v1/appStoreVersionLocalizations/version-loc-1/appScreenshotSets"}}"#),
-            .init(statusCode: 200, body: #"{"data":[],"links":{"self":"/v1/appStoreVersionLocalizations/version-loc-1/appPreviewSets"}}"#)
+            .init(
+                statusCode: 200,
+                body: #"{"data":[],"links":{"self":"/v1/appStoreVersionLocalizations/version-loc-1/appScreenshotSets?filter%5BscreenshotDisplayType%5D=APP_IPHONE_67,APP_WATCH_SERIES_10&filter%5BappCustomProductPageLocalization%5D=cpp-loc-1&filter%5BappStoreVersionExperimentTreatmentLocalization%5D=treatment-loc-1,treatment-loc-2&limit=25"}}"#
+            ),
+            .init(
+                statusCode: 200,
+                body: #"{"data":[],"links":{"self":"/v1/appStoreVersionLocalizations/version-loc-1/appPreviewSets?filter%5BpreviewType%5D=IPHONE_67,APPLE_VISION_PRO&filter%5BappCustomProductPageLocalization%5D=cpp-loc-2&filter%5BappStoreVersionExperimentTreatmentLocalization%5D=treatment-loc-3&limit=25"}}"#
+            )
         ])
         let worker = ScreenshotsWorker(
             httpClient: try await screenshotsClient(transport),

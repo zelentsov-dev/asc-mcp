@@ -391,7 +391,15 @@ extension ScreenshotsWorker {
         do {
             snapshot = try await prepareMediaUploadSnapshot(filePath: filePath)
         } catch {
-            return MCPResult.error(error, prefix: "Failed to prepare screenshot upload")
+            let message = error is CancellationError || Task.isCancelled
+                ? "The screenshot upload was cancelled before reservation."
+                : "Failed to prepare screenshot upload: \(error.localizedDescription)"
+            let outcome: UploadTransactionOutcome<ASCScreenshot> = .beforeReservation(message)
+            return UploadTransactionRecovery.result(
+                for: outcome,
+                descriptor: screenshotUploadDescriptor(setID: setID),
+                format: formatScreenshot
+            )
         }
         defer { snapshot.discard() }
 
@@ -996,7 +1004,15 @@ extension ScreenshotsWorker {
         do {
             snapshot = try await prepareMediaUploadSnapshot(filePath: filePath)
         } catch {
-            return MCPResult.error(error, prefix: "Failed to prepare app preview upload")
+            let message = error is CancellationError || Task.isCancelled
+                ? "The app preview upload was cancelled before reservation."
+                : "Failed to prepare app preview upload: \(error.localizedDescription)"
+            let outcome: UploadTransactionOutcome<ASCPreview> = .beforeReservation(message)
+            return UploadTransactionRecovery.result(
+                for: outcome,
+                descriptor: previewUploadDescriptor(setID: setID),
+                format: formatPreview
+            )
         }
         defer { snapshot.discard() }
 

@@ -365,8 +365,10 @@ struct CustomPagesV319ContractTests {
         #expect(await transport.requestCount() == 3)
     }
 
-    @Test("write recovery preserves action and requested nullable template identity")
+    @Test("write recovery preserves action and requested nullable template identities")
     func writeRecoveryRequestedValues() async throws {
+        let templateVersionID = "template-version-id-0123456789"
+        let templatePageID = "template-page-id-0123456789"
         let transport = TestHTTPTransport(responses: [])
         let worker = CustomProductPagesWorker(httpClient: try await cppV319Client(transport))
         let result = try await worker.handleTool(.init(
@@ -376,7 +378,8 @@ struct CustomPagesV319ContractTests {
                 "name": .string("Campaign"),
                 "locale": .string("en-US"),
                 "promotional_text": .null,
-                "template_page_id": .string("template-page-1")
+                "template_version_id": .string(templateVersionID),
+                "template_page_id": .string(templatePageID)
             ]
         ))
         let root = try cppV319Object(result.structuredContent)
@@ -389,10 +392,57 @@ struct CustomPagesV319ContractTests {
         let promotionalText = try cppV319Object(requested["promotionalText"])
         #expect(promotionalText["state"] == .string("null"))
         #expect(promotionalText["value"] == .null)
-        #expect(try cppV319Object(requested["templateVersionId"])["state"] == .string("omitted"))
+        let templateVersion = try cppV319Object(requested["templateVersionId"])
+        #expect(templateVersion["state"] == .string("value"))
+        #expect(templateVersion["value"] == .string(templateVersionID))
         let templatePage = try cppV319Object(requested["templatePageId"])
         #expect(templatePage["state"] == .string("value"))
-        #expect(templatePage["value"] == .string("template-page-1"))
+        #expect(templatePage["value"] == .string(templatePageID))
+    }
+
+    @Test("deterministic create rejection preserves corrective recovery action")
+    func deterministicCreateRejectionRecoveryAction() async throws {
+        let transport = TestHTTPTransport(responses: [
+            .init(
+                statusCode: 422,
+                body: #"{"errors":[{"status":"422","code":"ENTITY_ERROR","title":"Rejected"}]}"#
+            )
+        ])
+        let worker = CustomProductPagesWorker(httpClient: try await cppV319Client(transport))
+        let result = try await worker.handleTool(.init(
+            name: "custom_pages_create",
+            arguments: [
+                "app_id": .string("app-1"),
+                "name": .string("Campaign"),
+                "locale": .string("en-US")
+            ]
+        ))
+        let root = try cppV319Object(result.structuredContent)
+        let recovery = try cppV319Object(root["recovery"])
+        #expect(result.isError == true)
+        #expect(root["operationCommitState"] == .string("rejected"))
+        #expect(root["retrySafe"] == .bool(true))
+        #expect(recovery["action"] == .string("correct_request_before_retry"))
+    }
+
+    @Test("remove keyword failure preserves operation and inspection action")
+    func removeKeywordRecoveryConstants() async throws {
+        let transport = TestHTTPTransport(responses: [])
+        let worker = CustomProductPagesWorker(httpClient: try await cppV319Client(transport))
+        let result = try await worker.handleTool(.init(
+            name: "custom_pages_remove_search_keywords",
+            arguments: [
+                "localization_id": .string("localization-1"),
+                "keyword_ids": .array([.string("keyword-1")]),
+                "confirm_localization_id": .string("localization-1")
+            ]
+        ))
+        let root = try cppV319Object(result.structuredContent)
+        let recovery = try cppV319Object(root["recovery"])
+        #expect(result.isError == true)
+        #expect(root["operation"] == .string("remove_search_keywords"))
+        #expect(root["action"] == .string("remove_search_keywords"))
+        #expect(recovery["action"] == .string("inspect_before_retry"))
     }
 
     @Test("search keyword list maps filters and locks pagination scope")

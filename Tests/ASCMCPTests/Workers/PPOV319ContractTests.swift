@@ -459,21 +459,10 @@ struct PPOV319ContractTests {
 
     @Test("PPO manifest maps every new public operation and keeps legacy experiment V1 closed")
     func ppoV319Manifest() throws {
-        let source = URL(fileURLWithPath: #filePath)
-            .deletingLastPathComponent()
-            .deletingLastPathComponent()
-            .deletingLastPathComponent()
-        let manifestURL = source.appendingPathComponent(
-            "Sources/asc-mcp/Resources/OperationManifest/tools/ppo.json"
-        )
-        let root = try #require(
-            JSONSerialization.jsonObject(with: Data(contentsOf: manifestURL)) as? [String: Any]
-        )
-        let tools = try #require(root["tools"] as? [[String: Any]])
+        let manifest = try ASCOperationManifestBundle.loadBundled()
+        let tools = manifest.tools.filter { $0.tool.hasPrefix("ppo_") }
         #expect(tools.count == 15)
-        let operations = Set(tools.flatMap { tool in
-            (tool["operations"] as? [[String: Any]] ?? []).compactMap { $0["operationId"] as? String }
-        })
+        let operations = Set(tools.flatMap(\.operations).map(\.operationID))
         #expect(operations.contains("appStoreVersions_appStoreVersionExperimentsV2_getToManyRelated"))
         #expect(operations.contains("appStoreVersionExperimentTreatments_getInstance"))
         #expect(operations.contains("appStoreVersionExperimentTreatments_updateInstance"))

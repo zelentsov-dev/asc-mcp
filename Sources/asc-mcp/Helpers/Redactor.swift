@@ -16,6 +16,9 @@ enum Redactor {
     private static let unquotedCredentialAssignmentExpression = try! NSRegularExpression(
         pattern: #"(?i)([\"']?(?:[a-z0-9_-]*(?:password|secret|authorization|bearer|token|credential)[a-z0-9_-]*|private[_-]?key(?:[_-]?(?:path|content))?|api[_-]?key|key[_-]?content)[\"']?\s*[:=]\s*)(?![\"'\[])[^\s,;&{}\[\]]+"#
     )
+    private static let httpURLExpression = try! NSRegularExpression(
+        pattern: #"(?i)https?://[^\s\"'<>]+"#
+    )
 
     private static let semanticIdentifiers: Set<String> = {
         var identifiers: Set<String> = [
@@ -42,6 +45,7 @@ enum Redactor {
     static func redact(_ value: String) -> String {
         var result = value
         result = redactBearerTokens(in: result)
+        result = redactCredentialURLs(in: result)
         result = redactCredentialAssignments(in: result)
         result = redactLongOpaqueIdentifiers(in: result)
         result = redactPrivateKeyPaths(in: result)
@@ -65,6 +69,7 @@ enum Redactor {
     static func redactPreservingOpaqueIdentifiers(_ value: String) -> String {
         var result = value
         result = redactBearerTokens(in: result)
+        result = redactCredentialURLs(in: result)
         result = redactCredentialAssignments(in: result)
         result = redactCredentialLikeIdentifiers(in: result)
         result = redactPrivateKeyPaths(in: result)
@@ -101,6 +106,43 @@ enum Redactor {
             in: result,
             with: "$1[REDACTED]"
         )
+    }
+
+    private static func redactCredentialURLs(in value: String) -> String {
+        let fullRange = NSRange(value.startIndex..<value.endIndex, in: value)
+        let matches = httpURLExpression.matches(in: value, range: fullRange)
+        var result = value
+        for match in matches.reversed() {
+            guard let range = Range(match.range, in: value) else { continue }
+            let matched = String(value[range])
+            let suffix = matched.reversed().prefix { ".,;:!)]}".contains($0) }
+            let candidate = String(matched.dropLast(suffix.count))
+            guard let components = URLComponents(string: candidate),
+                  components.queryItems?.contains(where: { isCredentialQueryName($0.name) }) == true else {
+                continue
+            }
+            let candidateRange = NSRange(
+                location: match.range.location,
+                length: candidate.utf16.count
+            )
+            guard let replacementRange = Range(candidateRange, in: result) else { continue }
+            result.replaceSubrange(replacementRange, with: "[REDACTED_URL]")
+        }
+        return result
+    }
+
+    private static func isCredentialQueryName(_ name: String) -> Bool {
+        let normalized = name.lowercased().replacingOccurrences(
+            of: "[^a-z0-9]",
+            with: "",
+            options: .regularExpression
+        )
+        return isCredentialLikeIdentifier(name) ||
+            normalized == "sig" ||
+            normalized.hasSuffix("sig") ||
+            normalized.contains("signed") ||
+            normalized.contains("signature") ||
+            normalized == "key"
     }
 
     private static func replacingMatches(

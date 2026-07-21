@@ -526,7 +526,8 @@ private func marketingMediaSetCollection(
     parentID: String,
     ids: [String]
 ) -> String {
-    marketingJSON([
+    let path = "/v1/\(parentType)/\(parentID)/\(setType)"
+    return marketingJSON([
         "data": ids.map {
             marketingMediaSetResource(
                 setType: setType,
@@ -538,7 +539,12 @@ private func marketingMediaSetCollection(
                 parentID: parentID
             )
         },
-        "links": ["self": "/v1/\(parentType)/\(parentID)/\(setType)"]
+        "links": [
+            "self": "\(path)?filter%5B\(attributeName)%5D=\(attributeValue)&limit=200"
+        ],
+        "meta": [
+            "paging": ["total": ids.count, "limit": 200]
+        ]
     ])
 }
 
