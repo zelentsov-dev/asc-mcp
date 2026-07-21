@@ -33,7 +33,7 @@ struct SubscriptionsV3WorkerTests {
     @Test("list subscription prices filters by territory and returns price point and currency")
     func listPricesFiltersByTerritoryAndReturnsCurrency() async throws {
         let transport = TestHTTPTransport(responses: [
-            .init(statusCode: 201, body: """
+            .init(statusCode: 200, body: """
             {
               "data": [
                 {
@@ -1111,7 +1111,7 @@ struct SubscriptionsV3WorkerTests {
     @Test("introductory offer creation preserves territory_id for Apple relationship")
     func introductoryOfferCreateKeepsTerritoryID() async throws {
         let transport = TestHTTPTransport(responses: [
-            .init(statusCode: 200, body: """
+            .init(statusCode: 201, body: """
             {
               "data": {
                 "type": "subscriptionIntroductoryOffers",
