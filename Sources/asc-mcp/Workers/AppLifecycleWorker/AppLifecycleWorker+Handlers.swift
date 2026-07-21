@@ -618,7 +618,10 @@ extension AppLifecycleWorker {
         do {
             let versionResponse = try await httpClient.get(
                 "/v1/appStoreVersions/\(try ASCPathSegment.encode(versionId))",
-                parameters: ["fields[appStoreVersions]": "app,platform,versionString,appVersionState"],
+                parameters: [
+                    "fields[appStoreVersions]": "app,platform,versionString,appVersionState",
+                    "include": "app"
+                ],
                 as: ASCAppStoreVersionResponse.self
             )
             try validateVersionResource(
@@ -1509,7 +1512,10 @@ extension AppLifecycleWorker {
             } else if let versionId {
                 let versionResponse = try await httpClient.get(
                     "/v1/appStoreVersions/\(try ASCPathSegment.encode(versionId))",
-                    parameters: ["fields[appStoreVersions]": "app,appVersionState"],
+                    parameters: [
+                        "fields[appStoreVersions]": "app,appVersionState",
+                        "include": "app"
+                    ],
                     as: ASCAppStoreVersionResponse.self
                 )
                 try validateVersionResource(
@@ -1533,6 +1539,7 @@ extension AppLifecycleWorker {
                 let appInfoPath = "/v1/apps/\(try ASCPathSegment.encode(app.id))/appInfos"
                 let appInfoParameters = [
                     "fields[appInfos]": "state,app",
+                    "include": "app",
                     "limit": "200"
                 ]
                 let appInfoScope = PaginationScope.strict(
@@ -1761,7 +1768,10 @@ private extension AppLifecycleWorker {
         do {
             let response = try await httpClient.get(
                 "/v1/appStoreVersions/\(try ASCPathSegment.encode(versionId))/appStoreReviewDetail",
-                parameters: ["fields[appStoreReviewDetails]": "appStoreVersion"],
+                parameters: [
+                    "fields[appStoreReviewDetails]": "appStoreVersion",
+                    "include": "appStoreVersion"
+                ],
                 as: SingleResourceResponse.self
             )
             try validateSingleResource(

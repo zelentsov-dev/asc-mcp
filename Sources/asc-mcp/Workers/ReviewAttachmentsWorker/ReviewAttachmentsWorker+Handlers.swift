@@ -125,18 +125,21 @@ extension ReviewAttachmentsWorker {
 
         do {
             let attachmentID = try reviewAttachmentIdentifier("attachment_id", from: arguments)
+            let query = [
+                "fields[appStoreReviewAttachments]": reviewAttachmentReadFields,
+                "fields[appStoreReviewDetails]": "appStoreVersion",
+                "include": "appStoreReviewDetail"
+            ]
             let response: ASCReviewAttachmentResponse = try await httpClient.get(
                 reviewAttachmentEndpoint(attachmentID),
-                parameters: ["fields[appStoreReviewAttachments]": reviewAttachmentReadFields],
+                parameters: query,
                 as: ASCReviewAttachmentResponse.self
             )
             try validateReviewAttachmentResponse(
                 response,
                 expectedID: attachmentID,
                 requireReviewDetailLineage: true,
-                requiredQuery: [
-                    "fields[appStoreReviewAttachments]": reviewAttachmentReadFields
-                ],
+                requiredQuery: query,
                 httpClient: httpClient,
                 context: "review attachment get response"
             )
@@ -218,6 +221,8 @@ extension ReviewAttachmentsWorker {
             let effectiveLimit = try reviewAttachmentLimit(arguments["limit"])
             let query = [
                 "fields[appStoreReviewAttachments]": reviewAttachmentReadFields,
+                "fields[appStoreReviewDetails]": "appStoreVersion",
+                "include": "appStoreReviewDetail",
                 "limit": String(effectiveLimit)
             ]
             let path = "/v1/appStoreReviewDetails/\(try ASCPathSegment.encode(reviewDetailID, field: "review_detail_id"))/appStoreReviewAttachments"

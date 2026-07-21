@@ -160,9 +160,11 @@ struct AppsWorkerReliabilityTests {
     func manifestRecordsFixedQueries() throws {
         let manifest = try ASCOperationManifestBundle.loadBundled()
 
-        #expect(try appsReliabilityFixedQueries(manifest, "apps_get_metadata", "appStoreVersions_getInstance")["fields[appStoreVersions]"] == .array([
+        let metadataVersion = try appsReliabilityFixedQueries(manifest, "apps_get_metadata", "appStoreVersions_getInstance")
+        #expect(metadataVersion["fields[appStoreVersions]"] == .array([
             .string("app"), .string("platform"), .string("versionString"), .string("appVersionState"), .string("appStoreState")
         ]))
+        #expect(metadataVersion["include"] == .array([.string("app")]))
         let versionCollection = try appsReliabilityFixedQueries(manifest, "apps_get_metadata", "apps_appStoreVersions_getToManyRelated")
         #expect(versionCollection["fields[appStoreVersions]"] == .array([
             .string("platform"), .string("versionString"), .string("appVersionState"), .string("appStoreState"), .string("createdDate")
@@ -174,6 +176,7 @@ struct AppsWorkerReliabilityTests {
             .string("description"), .string("locale"), .string("keywords"), .string("marketingUrl"),
             .string("promotionalText"), .string("supportUrl"), .string("whatsNew"), .string("appStoreVersion")
         ]))
+        #expect(localizations["include"] == .array([.string("appStoreVersion")]))
         #expect(localizations["limit"] == .integer(200))
 
         let previews = try appsReliabilityFixedQueries(manifest, "apps_get_metadata", "appStoreVersionLocalizations_appPreviewSets_getToManyRelated")
@@ -187,17 +190,25 @@ struct AppsWorkerReliabilityTests {
         #expect(screenshots["limit[appScreenshots]"] == .integer(50))
 
         #expect(try appsReliabilityFixedQueries(manifest, "apps_list_versions", "apps_appStoreVersions_getToManyRelated") == versionCollection)
-        #expect(try appsReliabilityFixedQueries(manifest, "apps_list_localizations", "appStoreVersions_getInstance")["fields[appStoreVersions]"] == .array([.string("app")]))
-        #expect(try appsReliabilityFixedQueries(manifest, "apps_list_localizations", "appStoreVersions_appStoreVersionLocalizations_getToManyRelated")["fields[appStoreVersionLocalizations]"] == .array([
+        let localizationVersion = try appsReliabilityFixedQueries(manifest, "apps_list_localizations", "appStoreVersions_getInstance")
+        #expect(localizationVersion["fields[appStoreVersions]"] == .array([.string("app")]))
+        #expect(localizationVersion["include"] == .array([.string("app")]))
+        let localizationList = try appsReliabilityFixedQueries(manifest, "apps_list_localizations", "appStoreVersions_appStoreVersionLocalizations_getToManyRelated")
+        #expect(localizationList["fields[appStoreVersionLocalizations]"] == .array([
             .string("locale"), .string("description"), .string("whatsNew"), .string("keywords"),
             .string("promotionalText"), .string("supportUrl"), .string("marketingUrl"), .string("appStoreVersion")
         ]))
-        #expect(try appsReliabilityFixedQueries(manifest, "apps_update_metadata", "appStoreVersions_getInstance")["fields[appStoreVersions]"] == .array([
+        #expect(localizationList["include"] == .array([.string("appStoreVersion")]))
+        let metadataUpdateVersion = try appsReliabilityFixedQueries(manifest, "apps_update_metadata", "appStoreVersions_getInstance")
+        #expect(metadataUpdateVersion["fields[appStoreVersions]"] == .array([
             .string("app"), .string("platform"), .string("versionString"), .string("appVersionState"), .string("appStoreState")
         ]))
-        #expect(try appsReliabilityFixedQueries(manifest, "apps_update_metadata", "appStoreVersions_appStoreVersionLocalizations_getToManyRelated")["fields[appStoreVersionLocalizations]"] == .array([
+        #expect(metadataUpdateVersion["include"] == .array([.string("app")]))
+        let metadataUpdateLocalization = try appsReliabilityFixedQueries(manifest, "apps_update_metadata", "appStoreVersions_appStoreVersionLocalizations_getToManyRelated")
+        #expect(metadataUpdateLocalization["fields[appStoreVersionLocalizations]"] == .array([
             .string("locale"), .string("appStoreVersion")
         ]))
+        #expect(metadataUpdateLocalization["include"] == .array([.string("appStoreVersion")]))
 
         let metadataMapping = try #require(manifest.mapping(for: "apps_get_metadata"))
         let metadataFields = Set(metadataMapping.response.fields.map(\.outputField))
@@ -330,7 +341,9 @@ struct AppsWorkerReliabilityTests {
         #expect(appsReliabilityQueryValue(requests[0], "fields[appStoreVersions]") == "platform,versionString,appVersionState,appStoreState,createdDate")
         #expect(appsReliabilityQueryValue(requests[0], "limit") == "200")
         #expect(appsReliabilityQueryValue(requests[1], "fields[appStoreVersions]") == "app")
+        #expect(appsReliabilityQueryValue(requests[1], "include") == "app")
         #expect(appsReliabilityQueryValue(requests[2], "fields[appStoreVersionLocalizations]") == "locale,description,whatsNew,keywords,promotionalText,supportUrl,marketingUrl,appStoreVersion")
+        #expect(appsReliabilityQueryValue(requests[2], "include") == "appStoreVersion")
         #expect(appsReliabilityQueryValue(requests[2], "limit") == "200")
     }
 
@@ -418,7 +431,7 @@ struct AppsWorkerReliabilityTests {
         }
     }
 
-    @Test("localization pagination rejects a missing ownership projection")
+    @Test("localization pagination rejects a missing ownership include")
     func localizationPaginationRequiresOwnershipProjection() async throws {
         let transport = TestHTTPTransport(responses: [
             .init(statusCode: 200, body: versionResponse(id: "ver-1", appId: "app-1"))
@@ -430,7 +443,7 @@ struct AppsWorkerReliabilityTests {
             arguments: [
                 "app_id": .string("app-1"),
                 "version_id": .string("ver-1"),
-                "next_url": .string("https://api.example.test/v1/appStoreVersions/ver-1/appStoreVersionLocalizations?cursor=next")
+                "next_url": .string("https://api.example.test/v1/appStoreVersions/ver-1/appStoreVersionLocalizations?cursor=next&fields%5BappStoreVersionLocalizations%5D=locale%2Cdescription%2CwhatsNew%2Ckeywords%2CpromotionalText%2CsupportUrl%2CmarketingUrl%2CappStoreVersion&limit=200")
             ]
         ))
 
@@ -465,6 +478,7 @@ struct AppsWorkerReliabilityTests {
         #expect(query.first(where: { $0.name == "limit" })?.value == "200")
         #expect(query.first(where: { $0.name == "fields[appStoreVersions]" })?.value?.contains("appVersionState") == true)
         #expect(appsReliabilityQueryValue(requests[2], "fields[appStoreVersionLocalizations]") == "description,locale,keywords,marketingUrl,promotionalText,supportUrl,whatsNew,appStoreVersion")
+        #expect(appsReliabilityQueryValue(requests[2], "include") == "appStoreVersion")
         #expect(appsReliabilityQueryValue(requests[2], "limit") == "200")
         let payload = try appsReliabilityObject(result)
         let selected = try #require(payload["version"] as? [String: Any])
@@ -475,7 +489,7 @@ struct AppsWorkerReliabilityTests {
 
     @Test("metadata without locale follows every localization page")
     func metadataFollowsEveryLocalizationPage() async throws {
-        let nextURL = "https://api.example.test/v1/appStoreVersions/ver-1/appStoreVersionLocalizations?cursor=page-2&fields%5BappStoreVersionLocalizations%5D=description%2Clocale%2Ckeywords%2CmarketingUrl%2CpromotionalText%2CsupportUrl%2CwhatsNew%2CappStoreVersion&limit=200"
+        let nextURL = "https://api.example.test/v1/appStoreVersions/ver-1/appStoreVersionLocalizations?cursor=page-2&fields%5BappStoreVersionLocalizations%5D=description%2Clocale%2Ckeywords%2CmarketingUrl%2CpromotionalText%2CsupportUrl%2CwhatsNew%2CappStoreVersion&include=appStoreVersion&limit=200"
         let transport = TestHTTPTransport(responses: [
             .init(statusCode: 200, body: versionResponse(id: "ver-1", appId: "app-1")),
             .init(statusCode: 200, body: localizationPage(
@@ -499,6 +513,9 @@ struct AppsWorkerReliabilityTests {
 
         #expect(result.isError != true)
         #expect(await transport.requestCount() == 3)
+        let requests = await transport.recordedRequests()
+        #expect(appsReliabilityQueryValue(requests[0], "include") == "app")
+        #expect(appsReliabilityQueryValue(requests[1], "include") == "appStoreVersion")
         let payload = try appsReliabilityObject(result)
         let localizations = try #require(payload["localizations"] as? [[String: Any]])
         #expect(localizations.compactMap { $0["locale"] as? String } == ["en-US", "ja"])
@@ -710,8 +727,10 @@ struct AppsWorkerReliabilityTests {
         #expect(attributes["marketingUrl"] is NSNull)
         let requests = await transport.recordedRequests()
         #expect(appsReliabilityQueryValue(requests[0], "fields[appStoreVersions]") == "app,platform,versionString,appVersionState,appStoreState")
+        #expect(appsReliabilityQueryValue(requests[0], "include") == "app")
         #expect(appsReliabilityQueryValue(requests[1], "fields[appStoreVersionLocalizations]") == "locale,appStoreVersion")
         #expect(appsReliabilityQueryValue(requests[1], "filter[locale]") == "en-US")
+        #expect(appsReliabilityQueryValue(requests[1], "include") == "appStoreVersion")
         #expect(appsReliabilityQueryValue(requests[1], "limit") == "1")
     }
 
@@ -772,6 +791,45 @@ struct AppsWorkerReliabilityTests {
 
         #expect(result.isError == true)
         #expect(await transport.requestCount() == 1)
+    }
+
+    @Test("metadata update fails closed when ownership linkage is absent")
+    func metadataUpdateRejectsMissingOwnershipLinkage() async throws {
+        let versionTransport = TestHTTPTransport(responses: [
+            .init(statusCode: 200, body: #"{"data":{"type":"appStoreVersions","id":"ver-1","attributes":{"platform":"IOS","versionString":"1.0","appVersionState":"PREPARE_FOR_SUBMISSION"}}}"#)
+        ])
+        let versionWorker = try await makeAppsReliabilityWorker(versionTransport)
+        let versionResult = try await versionWorker.handleTool(.init(
+            name: "apps_update_metadata",
+            arguments: [
+                "app_id": .string("app-1"),
+                "version_id": .string("ver-1"),
+                "locale": .string("en-US"),
+                "keywords": .string("example")
+            ]
+        ))
+
+        #expect(versionResult.isError == true)
+        #expect(await versionTransport.requestCount() == 1)
+
+        let localizationTransport = TestHTTPTransport(responses: [
+            .init(statusCode: 200, body: versionResponse(id: "ver-1", appId: "app-1")),
+            .init(statusCode: 200, body: #"{"data":[{"type":"appStoreVersionLocalizations","id":"loc-1","attributes":{"locale":"en-US"}}]}"#)
+        ])
+        let localizationWorker = try await makeAppsReliabilityWorker(localizationTransport)
+        let localizationResult = try await localizationWorker.handleTool(.init(
+            name: "apps_update_metadata",
+            arguments: [
+                "app_id": .string("app-1"),
+                "version_id": .string("ver-1"),
+                "locale": .string("en-US"),
+                "keywords": .string("example")
+            ]
+        ))
+
+        #expect(localizationResult.isError == true)
+        #expect(await localizationTransport.requestCount() == 2)
+        #expect((await localizationTransport.recordedRequests()).allSatisfy { $0.httpMethod == "GET" })
     }
 
     @Test("metadata update rejects mismatched localization identity before patch")

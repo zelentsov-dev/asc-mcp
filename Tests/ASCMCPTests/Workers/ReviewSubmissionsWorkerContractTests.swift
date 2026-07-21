@@ -178,7 +178,7 @@ struct ReviewSubmissionsWorkerContractTests {
                 appID: "app-1",
                 states: "READY_FOR_REVIEW,UNRESOLVED_ISSUES",
                 platforms: "IOS,MAC_OS",
-                includes: "items,app,submittedByActor",
+                includes: "app,items,submittedByActor",
                 itemLimit: 17,
                 limit: 125
             ).merging(["cursor": "next-page"]) { _, new in new }
@@ -194,7 +194,7 @@ struct ReviewSubmissionsWorkerContractTests {
                 "app_id": .string("app-1"),
                 "states": .string("READY_FOR_REVIEW, UNRESOLVED_ISSUES"),
                 "platforms": .array([.string("IOS"), .string("MAC_OS")]),
-                "include": .array([.string("items"), .string("app"), .string("submittedByActor")]),
+                "include": .array([.string("items"), .string("submittedByActor")]),
                 "item_limit": .int(17),
                 "limit": .int(125)
             ]
@@ -208,7 +208,7 @@ struct ReviewSubmissionsWorkerContractTests {
             appID: "app-1",
             states: "READY_FOR_REVIEW,UNRESOLVED_ISSUES",
             platforms: "IOS,MAC_OS",
-            includes: "items,app,submittedByActor",
+            includes: "app,items,submittedByActor",
             itemLimit: 17,
             limit: 125
         ))
@@ -1514,7 +1514,7 @@ struct ReviewSubmissionsWorkerContractTests {
             appID: "app-1",
             states: "READY_FOR_REVIEW,IN_REVIEW",
             platforms: "IOS,MAC_OS",
-            includes: "items,submittedByActor",
+            includes: "app,items,submittedByActor",
             itemLimit: 18,
             limit: 90
         )

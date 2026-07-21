@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.1.3] - 2026-07-21
+
+### Fixed
+
+- Restore App Store version metadata reads, localization listing and updates, review-detail resolution, review-attachment reads, review-submission listing and preflight, and legacy age-rating lookup by explicitly requesting the parent relationship linkage that Apple can omit from sparse responses unless `include` is supplied.
+- Preserve strict app and version ownership validation: missing or mismatched linkage still fails locally instead of weakening cross-resource containment checks. Thanks to [@muenzpraeger](https://github.com/muenzpraeger) for the live report and regression analysis in [#6](https://github.com/zelentsov-dev/asc-mcp/pull/6).
+
+### Compatibility
+
+- The public catalog remains at 502 tools with no renamed inputs or removed response fields. Existing callers require no configuration changes.
+
 ## [4.1.2] - 2026-07-21
 
 ### Changed
