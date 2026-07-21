@@ -5,13 +5,26 @@ import Foundation
 /// Promoted purchases list response
 public struct ASCPromotedPurchasesResponse: Codable, Sendable {
     public let data: [ASCPromotedPurchase]
-    public let links: ASCPagedDocumentLinks?
+    public let included: [PromotedPurchaseIncludedResource]?
+    public let links: ASCPagedDocumentLinks
+    public let meta: ASCPagingInformation?
+}
+
+public struct ASCPromotedPurchaseLinkagesResponse: Codable, Sendable {
+    public let data: [ASCResourceIdentifier]
+    public let links: ASCPagedDocumentLinks
+    public let meta: ASCPagingInformation?
 }
 
 /// Single promoted purchase response
 public struct ASCPromotedPurchaseResponse: Codable, Sendable {
     public let data: ASCPromotedPurchase
     public let included: [PromotedPurchaseIncludedResource]?
+    public let links: ASCPromotedPurchaseDocumentLinks
+}
+
+public struct ASCPromotedPurchaseDocumentLinks: Codable, Sendable {
+    public let `self`: String
 }
 
 /// Included resource in promoted purchase response (IAP or subscription)
@@ -51,6 +64,41 @@ public struct PromotedPurchaseAttributes: Codable, Sendable {
     public let visibleForAllUsers: Bool?
     public let enabled: Bool?
     public let state: String?
+
+    private enum CodingKeys: String, CodingKey {
+        case visibleForAllUsers
+        case enabled
+        case state
+    }
+
+    /// Decodes response attributes while rejecting present JSON null Boolean values.
+    /// - Throws: `DecodingError` when a present Boolean attribute is null or has the wrong type.
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        visibleForAllUsers = try Self.decodeOptionalBoolean(
+            .visibleForAllUsers,
+            from: container
+        )
+        enabled = try Self.decodeOptionalBoolean(.enabled, from: container)
+        state = try container.decodeIfPresent(String.self, forKey: .state)
+    }
+
+    private static func decodeOptionalBoolean(
+        _ key: CodingKeys,
+        from container: KeyedDecodingContainer<CodingKeys>
+    ) throws -> Bool? {
+        guard container.contains(key) else { return nil }
+        guard try !container.decodeNil(forKey: key) else {
+            throw DecodingError.valueNotFound(
+                Bool.self,
+                DecodingError.Context(
+                    codingPath: container.codingPath + [key],
+                    debugDescription: "Promoted purchase response Boolean must not be null"
+                )
+            )
+        }
+        return try container.decode(Bool.self, forKey: key)
+    }
 }
 
 /// Optional Boolean that preserves an explicit JSON null in write requests.
@@ -126,4 +174,8 @@ public struct UpdatePromotedPurchaseRequest: Codable, Sendable {
         public let visibleForAllUsers: PromotedPurchaseNullableBool?
         public let enabled: PromotedPurchaseNullableBool?
     }
+}
+
+public struct ReorderPromotedPurchasesRequest: Codable, Sendable {
+    public let data: [ASCResourceIdentifier]
 }

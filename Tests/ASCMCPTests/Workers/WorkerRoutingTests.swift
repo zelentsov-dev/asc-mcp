@@ -92,6 +92,58 @@ struct WorkerRoutingTests {
         #expect(text.contains("Read-only mode is enabled"))
     }
 
+    @Test("WorkerManager read-only mode follows effective metadata without network")
+    func workerManagerReadOnlyModeFollowsEffectiveMetadata() async throws {
+        let transport = TestHTTPTransport(responses: [])
+        let companiesWorker = CompaniesWorker(manager: try TestFactory.makeCompaniesManager())
+        let jwtService = try TestFactory.makeJWTService()
+        let httpClient = await HTTPClient(
+            jwtService: jwtService,
+            baseURL: "https://test.example.com",
+            transport: transport
+        )
+        let manager = await WorkerManager(
+            dependencies: WorkerDependencies(
+                companiesWorker: companiesWorker,
+                jwtService: jwtService,
+                httpClient: httpClient,
+                authWorker: AuthWorker(jwtService: jwtService)
+            ),
+            readOnlyMode: true
+        )
+
+        for toolName in [
+            "custom_pages_add_search_keywords",
+            "custom_pages_remove_search_keywords"
+        ] {
+            let result = try await manager.routeTool(.init(name: toolName, arguments: nil))
+            #expect(result.isError == true)
+            #expect(result._meta?.fields["asc/readOnlyMode"] == .bool(true))
+            #expect(result._meta?.fields["asc/blockedTool"] == .string(toolName))
+        }
+
+        let deprecatedReads: [(String, [String: Value])] = [
+            ("promoted_delete_image", ["image_id": .string("image-1")]),
+            (
+                "promoted_upload_image",
+                [
+                    "promoted_purchase_id": .string("promoted-1"),
+                    "file_path": .string("/tmp/nonexistent.png")
+                ]
+            )
+        ]
+        for (toolName, arguments) in deprecatedReads {
+            let deprecatedRead = try await manager.routeTool(.init(
+                name: toolName,
+                arguments: arguments
+            ))
+            #expect(deprecatedRead.isError == true)
+            #expect(deprecatedRead._meta?.fields["asc/readOnlyMode"] == nil)
+            #expect(deprecatedRead._meta?.fields["asc/blockedTool"] == nil)
+        }
+        #expect(await transport.requestCount() == 0)
+    }
+
     @Test("WorkerManager read-only mode allows read-only tools to reach handlers")
     func workerManagerReadOnlyAllowsReadOnlyTools() async throws {
         let manager = try await TestFactory.makeWorkerManager(readOnlyMode: true)

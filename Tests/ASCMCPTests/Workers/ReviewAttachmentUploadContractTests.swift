@@ -3,7 +3,7 @@ import MCP
 import Testing
 @testable import asc_mcp
 
-@Suite("Review Attachment Upload Contract Tests")
+@Suite("Review Attachment Upload Contract Tests", .serialized)
 struct ReviewAttachmentUploadContractTests {
     @Test("complete commit response succeeds without polling")
     func completeCommitResponseSucceedsWithoutPolling() async throws {
@@ -102,7 +102,7 @@ struct ReviewAttachmentUploadContractTests {
         let requests = await apiTransport.recordedRequests()
         #expect(requests.map(\.httpMethod) == ["POST", "PATCH", "GET"])
         let pollQuery = reviewAttachmentUploadQuery(requests[2])
-        #expect(pollQuery["fields[appStoreReviewAttachments]"] == "fileSize,fileName,sourceFileChecksum,assetDeliveryState,appStoreReviewDetail")
+        #expect(pollQuery["fields[appStoreReviewAttachments]"] == nil)
         #expect(pollQuery["include"] == nil)
     }
 
@@ -220,8 +220,8 @@ struct ReviewAttachmentUploadContractTests {
         try assertProcessingPending(result, state: "AWAITING_UPLOAD")
     }
 
-    @Test("wrong commit attachment reconciles the expected attachment once")
-    func wrongCommitAttachmentReconcilesExpectedAttachment() async throws {
+    @Test("wrong commit attachment remains unresolved after a later valid reconciliation")
+    func wrongCommitAttachmentRemainsUnresolved() async throws {
         let fileURL = try reviewAttachmentFile(Data("hello".utf8))
         defer { try? FileManager.default.removeItem(at: fileURL) }
         let apiTransport = TestHTTPTransport(responses: [
@@ -239,13 +239,16 @@ struct ReviewAttachmentUploadContractTests {
 
         let result = try await worker.handleTool(reviewAttachmentUploadParameters(fileURL: fileURL))
 
-        #expect(result.isError != true)
+        #expect(result.isError == true)
         let requests = await apiTransport.recordedRequests()
         #expect(requests.map(\.httpMethod) == ["POST", "PATCH", "GET"])
         #expect(requests.contains { $0.httpMethod == "DELETE" } == false)
         let payload = try reviewAttachmentObject(result.structuredContent)
-        #expect(payload["success"] == .bool(true))
-        #expect(payload["reconciledAfterCommit"] == .bool(true))
+        #expect(payload["success"] == .bool(false))
+        #expect(payload["retrySafe"] == .bool(false))
+        #expect(payload["reservationDeleted"] == .bool(false))
+        #expect(payload["deliveryPending"] == .bool(true))
+        #expect(payload["error"]?.stringValue?.contains("Later reconciliation cannot override") == true)
     }
 
     @Test("wrong reconciliation attachment is retained as an error")
@@ -625,10 +628,13 @@ private func reviewAttachmentUploadParameters(fileURL: URL) -> CallTool.Paramete
 
 private func reviewAttachmentFile(_ data: Data) throws -> URL {
     let url = FileManager.default.temporaryDirectory
-        .appendingPathComponent("asc-mcp-review-attachment-\(UUID().uuidString).png")
+        .appendingPathComponent(reviewAttachmentTestFileName)
     try data.write(to: url)
     return url
 }
+
+private let reviewAttachmentTestFileName =
+    "asc-mcp-review-attachment-\(ProcessInfo.processInfo.processIdentifier).png"
 
 private func reviewAttachmentResponse(
     state: String,
@@ -646,7 +652,7 @@ private func reviewAttachmentResponse(
     let messages = includeMessages
         ? #", "errors":[{"code":"ASSET_ERROR","description":"The asset failed validation."}], "warnings":[{"code":"ASSET_WARNING","description":"The image was recompressed."}]"#
         : ""
-    return #"{"data":{"type":"\#(type)","id":"attachment-1","attributes":{"fileSize":5,"fileName":"attachment.png","sourceFileChecksum":"5d41402abc4b2a76b9719d911017c592","assetDeliveryState":{"state":"\#(state)"\#(messages)}\#(uploadOperations)}}}"#
+    return #"{"data":{"type":"\#(type)","id":"attachment-1","attributes":{"fileSize":5,"fileName":"\#(reviewAttachmentTestFileName)","sourceFileChecksum":"5d41402abc4b2a76b9719d911017c592","assetDeliveryState":{"state":"\#(state)"\#(messages)}\#(uploadOperations)},"relationships":{"appStoreReviewDetail":{"data":{"type":"appStoreReviewDetails","id":"review-detail-1"}}}},"links":{"self":"https://api.example.test/v1/appStoreReviewAttachments/attachment-1"}}"#
 }
 
 private func reviewAttachmentAPIError(status: Int, code: String) -> String {

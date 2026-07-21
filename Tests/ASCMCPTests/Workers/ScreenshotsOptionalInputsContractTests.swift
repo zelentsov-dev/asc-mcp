@@ -8,8 +8,8 @@ struct ScreenshotsOptionalInputsContractTests {
     @Test("screenshot and preview set lists bind Apple media filters")
     func mediaSetListFilters() async throws {
         let transport = TestHTTPTransport(responses: [
-            .init(statusCode: 200, body: #"{"data":[]}"#),
-            .init(statusCode: 200, body: #"{"data":[]}"#)
+            .init(statusCode: 200, body: #"{"data":[],"links":{"self":"/v1/appStoreVersionLocalizations/version-loc-1/appScreenshotSets"}}"#),
+            .init(statusCode: 200, body: #"{"data":[],"links":{"self":"/v1/appStoreVersionLocalizations/version-loc-1/appPreviewSets"}}"#)
         ])
         let worker = ScreenshotsWorker(
             httpClient: try await screenshotsClient(transport),
@@ -224,8 +224,8 @@ struct ScreenshotsOptionalInputsContractTests {
 
         for fixture in fixtures {
             let apiTransport = TestHTTPTransport(responses: [
-                .init(statusCode: 201, body: screenshotsPreviewReservationResponse()),
-                .init(statusCode: 200, body: screenshotsPreviewCommitResponse())
+                .init(statusCode: 201, body: screenshotsPreviewReservationResponse(fileName: fileURL.lastPathComponent)),
+                .init(statusCode: 200, body: screenshotsPreviewCommitResponse(fileName: fileURL.lastPathComponent))
             ])
             let uploadTransport = TestHTTPTransport(responses: [
                 .init(statusCode: 200, body: "")
@@ -374,7 +374,7 @@ private func screenshotsExpectAttribute(
     }
 }
 
-private func screenshotsPreviewReservationResponse() -> String {
+private func screenshotsPreviewReservationResponse(fileName: String) -> String {
     """
     {
       "data": {
@@ -382,7 +382,7 @@ private func screenshotsPreviewReservationResponse() -> String {
         "id": "preview-1",
         "attributes": {
           "fileSize": 5,
-          "fileName": "preview.mp4",
+          "fileName": "\(fileName)",
           "videoDeliveryState": {"state": "AWAITING_UPLOAD"},
           "uploadOperations": [{
             "method": "PUT",
@@ -391,13 +391,18 @@ private func screenshotsPreviewReservationResponse() -> String {
             "offset": 0,
             "requestHeaders": []
           }]
-        }
-      }
+        },
+        "relationships": {
+          "appPreviewSet": {"data": {"type": "appPreviewSets", "id": "preview-set-1"}}
+        },
+        "links": {"self": "/v1/appPreviews/preview-1"}
+      },
+      "links": {"self": "/v1/appPreviews/preview-1"}
     }
     """
 }
 
-private func screenshotsPreviewCommitResponse() -> String {
+private func screenshotsPreviewCommitResponse(fileName: String) -> String {
     """
     {
       "data": {
@@ -405,11 +410,16 @@ private func screenshotsPreviewCommitResponse() -> String {
         "id": "preview-1",
         "attributes": {
           "fileSize": 5,
-          "fileName": "preview.mp4",
+          "fileName": "\(fileName)",
           "sourceFileChecksum": "5d41402abc4b2a76b9719d911017c592",
           "videoDeliveryState": {"state": "COMPLETE"}
-        }
-      }
+        },
+        "relationships": {
+          "appPreviewSet": {"data": {"type": "appPreviewSets", "id": "preview-set-1"}}
+        },
+        "links": {"self": "/v1/appPreviews/preview-1"}
+      },
+      "links": {"self": "/v1/appPreviews/preview-1"}
     }
     """
 }

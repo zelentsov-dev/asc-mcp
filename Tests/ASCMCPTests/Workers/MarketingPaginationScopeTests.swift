@@ -7,9 +7,13 @@ import Testing
 struct MarketingPaginationScopeTests {
     @Test("marketing first pages and continuations preserve exact queries")
     func preservesExactQueries() async throws {
-        for fixture in marketingPaginationFixtures() {
+        let fixtures = marketingPaginationFixtures()
+        #expect(fixtures.count == 14)
+        #expect(fixtures.map(\.toolName) == marketingPaginationToolNames)
+
+        for fixture in fixtures {
             let firstPageTransport = TestHTTPTransport(responses: [
-                .init(statusCode: 200, body: #"{"data":[]}"#)
+                .init(statusCode: 200, body: marketingPaginationResponseBody(for: fixture))
             ])
             let firstPageResult = try await invokeMarketingPaginationFixture(
                 fixture,
@@ -22,12 +26,15 @@ struct MarketingPaginationScopeTests {
             #expect(firstPageRequest.url?.path == fixture.path)
             #expect(marketingPaginationQuery(firstPageRequest) == fixture.requiredQuery)
 
-            let continuationTransport = TestHTTPTransport(responses: [
-                .init(statusCode: 200, body: #"{"data":[]}"#)
-            ])
             var continuationArguments = fixture.arguments
             var continuationQuery = fixture.requiredQuery
             continuationQuery["cursor"] = "next"
+            let continuationTransport = TestHTTPTransport(responses: [
+                .init(
+                    statusCode: 200,
+                    body: marketingPaginationResponseBody(for: fixture, query: continuationQuery)
+                )
+            ])
             continuationArguments["next_url"] = .string(marketingPaginationURL(
                 path: fixture.path,
                 query: continuationQuery
@@ -49,7 +56,7 @@ struct MarketingPaginationScopeTests {
     func preservesEffectiveDefaultLimit() async throws {
         for fixture in marketingDefaultLimitFixtures() {
             let firstPageTransport = TestHTTPTransport(responses: [
-                .init(statusCode: 200, body: #"{"data":[]}"#)
+                .init(statusCode: 200, body: marketingPaginationResponseBody(for: fixture))
             ])
             let firstPageResult = try await invokeMarketingPaginationFixture(
                 fixture,
@@ -64,7 +71,10 @@ struct MarketingPaginationScopeTests {
             var validQuery = fixture.requiredQuery
             validQuery["cursor"] = "next"
             let validTransport = TestHTTPTransport(responses: [
-                .init(statusCode: 200, body: #"{"data":[]}"#)
+                .init(
+                    statusCode: 200,
+                    body: marketingPaginationResponseBody(for: fixture, query: validQuery)
+                )
             ])
             var validArguments = fixture.arguments
             validArguments["next_url"] = .string(marketingPaginationURL(
@@ -97,6 +107,36 @@ struct MarketingPaginationScopeTests {
 
             #expect(changedResult.isError == true, "Expected default limit drift rejection for \(fixture.toolName)")
             #expect(await changedTransport.requestCount() == 0)
+        }
+    }
+
+    @Test("marketing continuations accept scoped root-relative links")
+    func acceptsScopedRootRelativeLinks() async throws {
+        for fixture in marketingPaginationFixtures() {
+            var continuationQuery = fixture.requiredQuery
+            continuationQuery["cursor"] = "next"
+            let transport = TestHTTPTransport(responses: [
+                .init(
+                    statusCode: 200,
+                    body: marketingPaginationResponseBody(for: fixture, query: continuationQuery)
+                )
+            ])
+            var arguments = fixture.arguments
+            arguments["next_url"] = .string(marketingPaginationRootRelativeURL(
+                path: fixture.path,
+                query: continuationQuery
+            ))
+
+            let result = try await invokeMarketingPaginationFixture(
+                fixture,
+                arguments: arguments,
+                transport: transport
+            )
+
+            #expect(result.isError != true, "Expected root-relative continuation for \(fixture.toolName)")
+            let request = try #require(await transport.recordedRequests().first)
+            #expect(request.url?.path == fixture.path)
+            #expect(marketingPaginationQuery(request) == continuationQuery)
         }
     }
 
@@ -252,7 +292,7 @@ struct MarketingPaginationScopeTests {
         let invalidValues: [Value] = [
             .string(""),
             .string(" "),
-            .string("/v1/apps/app-1/promotedPurchases?limit=25&cursor=next"),
+            .string("//api.example.test/v1/apps/app-1/promotedPurchases?limit=25&cursor=next"),
             .string("https://api.example.test/v1/apps/app-1/promotedPurchases?limit=25&cursor=next#fragment"),
             .int(1)
         ]
@@ -278,12 +318,15 @@ struct MarketingPaginationScopeTests {
     @Test("custom page continuations accept scalar filter values")
     func acceptsCustomPageScalarFilters() async throws {
         for fixture in customPageScalarPaginationFixtures() {
-            let transport = TestHTTPTransport(responses: [
-                .init(statusCode: 200, body: #"{"data":[]}"#)
-            ])
             var arguments = fixture.arguments
             var query = fixture.requiredQuery
             query["cursor"] = "next"
+            let transport = TestHTTPTransport(responses: [
+                .init(
+                    statusCode: 200,
+                    body: marketingPaginationResponseBody(for: fixture, query: query)
+                )
+            ])
             arguments["next_url"] = .string(marketingPaginationURL(path: fixture.path, query: query))
 
             let result = try await invokeMarketingPaginationFixture(
@@ -338,6 +381,8 @@ private enum MarketingPaginationWorker {
     case customPages
     case ppo
     case promoted
+    case reviewAttachments
+    case screenshots
 }
 
 private enum MarketingQueryMutation: CaseIterable {
@@ -367,6 +412,23 @@ private struct MalformedCustomPageFilterValue {
     let value: Value
     let serializedValue: String
 }
+
+private let marketingPaginationToolNames = [
+    "custom_pages_list",
+    "custom_pages_list_versions",
+    "custom_pages_list_localizations",
+    "custom_pages_list_search_keywords",
+    "ppo_list_experiments",
+    "ppo_list_version_experiments",
+    "ppo_list_treatments",
+    "ppo_list_treatment_localizations",
+    "promoted_list",
+    "screenshots_list_sets",
+    "screenshots_list",
+    "screenshots_list_preview_sets",
+    "screenshots_list_previews",
+    "review_attachments_list"
+]
 
 private func marketingPaginationFixtures() -> [MarketingPaginationFixture] {
     [
@@ -407,6 +469,23 @@ private func marketingPaginationFixtures() -> [MarketingPaginationFixture] {
             requiredQuery: ["filter[locale]": "en-US,fr-FR", "limit": "31"]
         ),
         MarketingPaginationFixture(
+            worker: .customPages,
+            toolName: "custom_pages_list_search_keywords",
+            arguments: [
+                "localization_id": .string("localization-1"),
+                "platform": .array([.string("IOS"), .string("MAC_OS")]),
+                "locale": .array([.string("en-US"), .string("fr-FR")]),
+                "limit": .int(36)
+            ],
+            path: "/v1/appCustomProductPageLocalizations/localization-1/searchKeywords",
+            wrongParentPath: "/v1/appCustomProductPageLocalizations/localization-2/searchKeywords",
+            requiredQuery: [
+                "filter[platform]": "IOS,MAC_OS",
+                "filter[locale]": "en-US,fr-FR",
+                "limit": "36"
+            ]
+        ),
+        MarketingPaginationFixture(
             worker: .ppo,
             toolName: "ppo_list_experiments",
             arguments: [
@@ -417,6 +496,18 @@ private func marketingPaginationFixtures() -> [MarketingPaginationFixture] {
             path: "/v1/apps/app-1/appStoreVersionExperimentsV2",
             wrongParentPath: "/v1/apps/app-2/appStoreVersionExperimentsV2",
             requiredQuery: ["filter[state]": "READY_FOR_REVIEW,IN_REVIEW", "limit": "32"]
+        ),
+        MarketingPaginationFixture(
+            worker: .ppo,
+            toolName: "ppo_list_version_experiments",
+            arguments: [
+                "version_id": .string("version-1"),
+                "states": .array([.string("READY_FOR_REVIEW"), .string("IN_REVIEW")]),
+                "limit": .int(37)
+            ],
+            path: "/v1/appStoreVersions/version-1/appStoreVersionExperimentsV2",
+            wrongParentPath: "/v1/appStoreVersions/version-2/appStoreVersionExperimentsV2",
+            requiredQuery: ["filter[state]": "READY_FOR_REVIEW,IN_REVIEW", "limit": "37"]
         ),
         MarketingPaginationFixture(
             worker: .ppo,
@@ -445,6 +536,71 @@ private func marketingPaginationFixtures() -> [MarketingPaginationFixture] {
             path: "/v1/apps/app-1/promotedPurchases",
             wrongParentPath: "/v1/apps/app-2/promotedPurchases",
             requiredQuery: ["limit": "35"]
+        ),
+        MarketingPaginationFixture(
+            worker: .screenshots,
+            toolName: "screenshots_list_sets",
+            arguments: [
+                "app_store_version_localization_id": .string("localization-1"),
+                "display_types": .array([.string("APP_IPHONE_67"), .string("APP_IPAD_PRO_3GEN_129")]),
+                "custom_product_page_localization_ids": .array([.string("page-localization-1")]),
+                "treatment_localization_ids": .array([.string("treatment-localization-1")]),
+                "limit": .int(38)
+            ],
+            path: "/v1/appStoreVersionLocalizations/localization-1/appScreenshotSets",
+            wrongParentPath: "/v1/appStoreVersionLocalizations/localization-2/appScreenshotSets",
+            requiredQuery: [
+                "filter[screenshotDisplayType]": "APP_IPHONE_67,APP_IPAD_PRO_3GEN_129",
+                "filter[appCustomProductPageLocalization]": "page-localization-1",
+                "filter[appStoreVersionExperimentTreatmentLocalization]": "treatment-localization-1",
+                "limit": "38"
+            ]
+        ),
+        MarketingPaginationFixture(
+            worker: .screenshots,
+            toolName: "screenshots_list",
+            arguments: ["set_id": .string("screenshot-set-1"), "limit": .int(39)],
+            path: "/v1/appScreenshotSets/screenshot-set-1/appScreenshots",
+            wrongParentPath: "/v1/appScreenshotSets/screenshot-set-2/appScreenshots",
+            requiredQuery: ["limit": "39"]
+        ),
+        MarketingPaginationFixture(
+            worker: .screenshots,
+            toolName: "screenshots_list_preview_sets",
+            arguments: [
+                "custom_product_page_localization_id": .string("page-localization-1"),
+                "preview_types": .array([.string("IPHONE_67"), .string("IPAD_PRO_3GEN_129")]),
+                "app_store_version_localization_ids": .array([.string("localization-1")]),
+                "treatment_localization_ids": .array([.string("treatment-localization-1")]),
+                "limit": .int(40)
+            ],
+            path: "/v1/appCustomProductPageLocalizations/page-localization-1/appPreviewSets",
+            wrongParentPath: "/v1/appCustomProductPageLocalizations/page-localization-2/appPreviewSets",
+            requiredQuery: [
+                "filter[previewType]": "IPHONE_67,IPAD_PRO_3GEN_129",
+                "filter[appStoreVersionLocalization]": "localization-1",
+                "filter[appStoreVersionExperimentTreatmentLocalization]": "treatment-localization-1",
+                "limit": "40"
+            ]
+        ),
+        MarketingPaginationFixture(
+            worker: .screenshots,
+            toolName: "screenshots_list_previews",
+            arguments: ["set_id": .string("preview-set-1"), "limit": .int(41)],
+            path: "/v1/appPreviewSets/preview-set-1/appPreviews",
+            wrongParentPath: "/v1/appPreviewSets/preview-set-2/appPreviews",
+            requiredQuery: ["limit": "41"]
+        ),
+        MarketingPaginationFixture(
+            worker: .reviewAttachments,
+            toolName: "review_attachments_list",
+            arguments: ["review_detail_id": .string("review-detail-1"), "limit": .int(42)],
+            path: "/v1/appStoreReviewDetails/review-detail-1/appStoreReviewAttachments",
+            wrongParentPath: "/v1/appStoreReviewDetails/review-detail-2/appStoreReviewAttachments",
+            requiredQuery: [
+                "fields[appStoreReviewAttachments]": "fileSize,fileName,sourceFileChecksum,assetDeliveryState,appStoreReviewDetail",
+                "limit": "42"
+            ]
         )
     ]
 }
@@ -491,6 +647,22 @@ private func customPageScalarPaginationFixtures() -> [MarketingPaginationFixture
             path: "/v1/appCustomProductPageVersions/version-1/appCustomProductPageLocalizations",
             wrongParentPath: "/v1/appCustomProductPageVersions/version-2/appCustomProductPageLocalizations",
             requiredQuery: ["filter[locale]": "en-US", "limit": "25"]
+        ),
+        MarketingPaginationFixture(
+            worker: .customPages,
+            toolName: "custom_pages_list_search_keywords",
+            arguments: [
+                "localization_id": .string("localization-1"),
+                "platform": .string("IOS"),
+                "locale": .string("en-US")
+            ],
+            path: "/v1/appCustomProductPageLocalizations/localization-1/searchKeywords",
+            wrongParentPath: "/v1/appCustomProductPageLocalizations/localization-2/searchKeywords",
+            requiredQuery: [
+                "filter[platform]": "IOS",
+                "filter[locale]": "en-US",
+                "limit": "25"
+            ]
         )
     ]
 }
@@ -527,6 +699,22 @@ private func malformedCustomPageFilterFixtures() -> [MalformedCustomPageFilterFi
             field: "locale",
             appleName: "filter[locale]",
             path: "/v1/appCustomProductPageVersions/version-1/appCustomProductPageLocalizations",
+            values: malformedStringFilterValues(first: "en-US", second: "fr-FR")
+        ),
+        MalformedCustomPageFilterFixture(
+            toolName: "custom_pages_list_search_keywords",
+            arguments: ["localization_id": .string("localization-1")],
+            field: "platform",
+            appleName: "filter[platform]",
+            path: "/v1/appCustomProductPageLocalizations/localization-1/searchKeywords",
+            values: malformedStringFilterValues(first: "IOS", second: "MAC_OS")
+        ),
+        MalformedCustomPageFilterFixture(
+            toolName: "custom_pages_list_search_keywords",
+            arguments: ["localization_id": .string("localization-1")],
+            field: "locale",
+            appleName: "filter[locale]",
+            path: "/v1/appCustomProductPageLocalizations/localization-1/searchKeywords",
             values: malformedStringFilterValues(first: "en-US", second: "fr-FR")
         )
     ]
@@ -570,7 +758,29 @@ private func invokeMarketingPaginationFixture(
             httpClient: client,
             uploadService: UploadService()
         ).handleTool(parameters)
+    case .reviewAttachments:
+        return try await ReviewAttachmentsWorker(
+            httpClient: client,
+            uploadService: UploadService()
+        ).handleTool(parameters)
+    case .screenshots:
+        return try await ScreenshotsWorker(
+            httpClient: client,
+            uploadService: UploadService()
+        ).handleTool(parameters)
     }
+}
+
+private func marketingPaginationResponseBody(
+    for fixture: MarketingPaginationFixture,
+    query: [String: String]? = nil
+) -> String {
+    let responseQuery = query ?? fixture.requiredQuery
+    guard let limit = responseQuery["limit"], Int(limit) != nil else {
+        preconditionFailure("Missing numeric pagination limit for \(fixture.toolName)")
+    }
+    let selfURL = marketingPaginationURL(path: fixture.path, query: responseQuery)
+    return #"{"data":[],"links":{"self":"\#(selfURL)"},"meta":{"paging":{"total":0,"limit":\#(limit)}}}"#
 }
 
 private func marketingPaginationURL(
@@ -592,6 +802,18 @@ private func marketingPaginationURL(
         preconditionFailure("Unable to construct marketing pagination URL")
     }
     return url.absoluteString
+}
+
+private func marketingPaginationRootRelativeURL(
+    path: String,
+    query: [String: String]
+) -> String {
+    guard let absoluteURL = URL(string: marketingPaginationURL(path: path, query: query)),
+          let components = URLComponents(url: absoluteURL, resolvingAgainstBaseURL: false),
+          let encodedQuery = components.percentEncodedQuery else {
+        preconditionFailure("Unable to construct root-relative marketing pagination URL")
+    }
+    return "\(path)?\(encodedQuery)"
 }
 
 private func marketingPaginationURL(

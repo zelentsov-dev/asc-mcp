@@ -32,13 +32,14 @@ struct CompletePaginationScopeTests {
     func acceptsDefaultAndExplicitControls() async throws {
         for fixture in completePaginationFixtures() {
             for variant in [fixture.defaultVariant, fixture.explicitVariant] {
-                let transport = TestHTTPTransport(responses: completePaginationResponses(
-                    for: fixture,
-                    includeContinuation: true
-                ))
                 var arguments = variant.arguments
                 var query = variant.requiredQuery
                 query["cursor"] = "next"
+                let transport = TestHTTPTransport(responses: completePaginationResponses(
+                    for: fixture,
+                    includeContinuation: true,
+                    continuationQuery: query
+                ))
                 arguments["next_url"] = .string(completePaginationURL(path: fixture.path, query: query))
 
                 let result = try await invokeCompletePaginationFixture(
@@ -416,7 +417,8 @@ private func expectCompletePaginationRejection(
 
 private func completePaginationResponses(
     for fixture: CompletePaginationFixture,
-    includeContinuation: Bool
+    includeContinuation: Bool,
+    continuationQuery: [String: String]? = nil
 ) -> [TestHTTPTransport.Response] {
     var responses: [TestHTTPTransport.Response] = []
     if fixture.requiresVersionOwnershipRequest {
@@ -426,7 +428,20 @@ private func completePaginationResponses(
         ))
     }
     if includeContinuation {
-        responses.append(.init(statusCode: 200, body: fixture.continuationResponse))
+        let body: String
+        switch fixture.worker {
+        case .reviewAttachments:
+            guard let continuationQuery,
+                  let limit = continuationQuery["limit"],
+                  Int(limit) != nil else {
+                preconditionFailure("Review attachment continuation requires a numeric limit")
+            }
+            let selfURL = completePaginationURL(path: fixture.path, query: continuationQuery)
+            body = #"{"data":[],"links":{"self":"\#(selfURL)"},"meta":{"paging":{"total":0,"limit":\#(limit)}}}"#
+        case .appLifecycle, .apps:
+            body = fixture.continuationResponse
+        }
+        responses.append(.init(statusCode: 200, body: body))
     }
     return responses
 }

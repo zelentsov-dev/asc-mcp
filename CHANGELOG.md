@@ -7,6 +7,43 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.0.0] - 2026-07-21
+
+### Added
+
+- Added `apps_list_search_keywords` with platform and locale filtering, bounded pagination, and canonical keyword identifiers.
+- Added 7 Custom Product Page tools for version reads and updates, localization reads and deletion, and search-keyword relationship management.
+- Added 6 Product Page Optimization tools for version-scoped experiments, treatment reads, treatment updates and deletion, and localization reads and deletion.
+- Added promoted-purchase reordering plus screenshot-set reads, preview-set reads, and app-preview reordering.
+
+### Changed
+
+- Marketing collections validate the configured App Store Connect origin and exact parent path for document links, plus the complete originating query and non-empty cursor for continuation links, before exposing resource identities and returned lineage.
+- Screenshot, preview, and App Store review-attachment uploads preserve an immutable local snapshot through reservation, transfer, commit, and recovery inspection; batch media uploads finish every local preflight before the first Apple mutation.
+- Mutation results distinguish verified changes from accepted-but-unverified or unknown outcomes instead of inferring success from a later matching resource.
+
+### Fixed
+
+- Reject cross-origin or cross-parent document and continuation links, noncanonical identifiers, duplicate resource identities, impossible paging metadata, present-null nonnullable response attributes, and unexpected successful HTTP statuses.
+- Prevent a malformed mutation response from being reclassified as successful by reconciliation, and keep ambiguous non-idempotent writes unsafe to retry until their exact resource is inspected.
+- Block Custom Product Page search-keyword relationship mutations in `--read-only` mode, publish mutation-safe annotations for them, and correctly mark all local helpers as closed-world, including deprecated promoted-image guidance available in read-only sessions.
+- Require exact target-ID confirmation for destructive Custom Product Page, PPO, promoted-purchase, review-attachment, screenshot, preview, and relationship-removal operations.
+- Validate upload reservation file name, file size, parent lineage, checksum evidence, and immutable snapshot before transferring bytes or advising recovery.
+
+### Compatibility
+
+- The public surface grows from 472 to 490 tools; no existing tool or worker filter key is removed or renamed.
+- Existing destructive Marketing and review-attachment calls now require their documented `confirm_*` identifier, and PPO lifecycle-state changes require the exact experiment confirmation.
+- The operation manifest maps 464 Apple operations, explicitly defers 436, and scopes out 363; all 1,263 pinned Apple 4.4.1 operations remain accounted for without overlap.
+- The optional-input pin is fully classified at 2,756 total: 1,041 bound, 40 internally controlled, 1,675 intentionally omitted, and 0 unclassified; its identity SHA-256 is `d23f48816b9bc0b19933ae9f65cf4d737918730b1247f8949a802007055bd4a2`.
+
+### Migration
+
+- Add the exact target confirmation to existing destructive calls: `confirm_page_id` for `custom_pages_delete`, `confirm_experiment_id` for `ppo_delete_experiment`, `confirm_promoted_purchase_id` for `promoted_delete`, and `confirm_attachment_id` for `review_attachments_delete`.
+- Add `confirm_set_id` to `screenshots_delete_set` and `screenshots_delete_preview_set`, `confirm_screenshot_id` to `screenshots_delete`, and `confirm_preview_id` to `screenshots_delete_preview`.
+- When `ppo_update_experiment` supplies `state`, also supply `confirm_experiment_id` equal to the target experiment ID; updates that omit `state` do not require it.
+- Remove undocumented top-level arguments from existing Marketing and review-attachment calls; version 4 rejects unknown keys locally instead of ignoring them.
+
 ## [3.18.0] - 2026-07-21
 
 ### Added

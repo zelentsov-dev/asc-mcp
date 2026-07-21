@@ -5,7 +5,8 @@ import Foundation
 /// Screenshot sets list response
 public struct ASCScreenshotSetsResponse: Codable, Sendable {
     public let data: [ASCScreenshotSet]
-    public let links: ASCPagedDocumentLinks?
+    public let links: ASCPagedDocumentLinks
+    public let meta: ASCPagingInformation?
 }
 
 /// Screenshot set resource
@@ -13,11 +14,14 @@ public struct ASCScreenshotSet: Codable, Sendable {
     public let type: String
     public let id: String
     public let attributes: ScreenshotSetAttributes?
+    public let relationships: ASCScreenshotSetRelationships?
+    public let links: ASCMediaResourceLinks?
 }
 
 /// Single screenshot set response
 public struct ASCScreenshotSetResponse: Codable, Sendable {
     public let data: ASCScreenshotSet
+    public let links: ASCMediaDocumentLinks
 }
 
 /// Screenshot set attributes
@@ -25,17 +29,25 @@ public struct ScreenshotSetAttributes: Codable, Sendable {
     public let screenshotDisplayType: String?
 }
 
+public struct ASCScreenshotSetRelationships: Codable, Sendable {
+    public let appStoreVersionLocalization: ASCRelationship?
+    public let appCustomProductPageLocalization: ASCRelationship?
+    public let appStoreVersionExperimentTreatmentLocalization: ASCRelationship?
+}
+
 // MARK: - Screenshot Models
 
 /// Screenshots list response
 public struct ASCScreenshotsResponse: Codable, Sendable {
     public let data: [ASCScreenshot]
-    public let links: ASCPagedDocumentLinks?
+    public let links: ASCPagedDocumentLinks
+    public let meta: ASCPagingInformation?
 }
 
 /// Single screenshot response
 public struct ASCScreenshotResponse: Codable, Sendable {
     public let data: ASCScreenshot
+    public let links: ASCMediaDocumentLinks
 }
 
 /// Screenshot resource
@@ -43,6 +55,12 @@ public struct ASCScreenshot: Codable, Sendable {
     public let type: String
     public let id: String
     public let attributes: ScreenshotAttributes?
+    public let relationships: ASCScreenshotRelationships?
+    public let links: ASCMediaResourceLinks?
+}
+
+public struct ASCScreenshotRelationships: Codable, Sendable {
+    public let appScreenshotSet: ASCRelationship?
 }
 
 /// Screenshot attributes
@@ -113,12 +131,18 @@ public struct ReorderScreenshotsRequest: Codable, Sendable {
     public let data: [ASCResourceIdentifier]
 }
 
+/// Reorder app previews request
+public struct ReorderPreviewsRequest: Codable, Sendable {
+    public let data: [ASCResourceIdentifier]
+}
+
 // MARK: - Preview Set Models
 
 /// Preview sets list response
 public struct ASCPreviewSetsResponse: Codable, Sendable {
     public let data: [ASCPreviewSet]
-    public let links: ASCPagedDocumentLinks?
+    public let links: ASCPagedDocumentLinks
+    public let meta: ASCPagingInformation?
 }
 
 /// Preview set resource
@@ -126,11 +150,14 @@ public struct ASCPreviewSet: Codable, Sendable {
     public let type: String
     public let id: String
     public let attributes: PreviewSetAttributes?
+    public let relationships: ASCPreviewSetRelationships?
+    public let links: ASCMediaResourceLinks?
 }
 
 /// Single preview set response
 public struct ASCPreviewSetResponse: Codable, Sendable {
     public let data: ASCPreviewSet
+    public let links: ASCMediaDocumentLinks
 }
 
 /// Preview set attributes
@@ -138,11 +165,18 @@ public struct PreviewSetAttributes: Codable, Sendable {
     public let previewType: String?
 }
 
+public struct ASCPreviewSetRelationships: Codable, Sendable {
+    public let appStoreVersionLocalization: ASCRelationship?
+    public let appCustomProductPageLocalization: ASCRelationship?
+    public let appStoreVersionExperimentTreatmentLocalization: ASCRelationship?
+}
+
 // MARK: - Preview Models
 
 /// Single preview response
 public struct ASCPreviewResponse: Codable, Sendable {
     public let data: ASCPreview
+    public let links: ASCMediaDocumentLinks
 }
 
 /// Preview resource
@@ -150,6 +184,12 @@ public struct ASCPreview: Codable, Sendable {
     public let type: String
     public let id: String
     public let attributes: PreviewAttributes?
+    public let relationships: ASCPreviewRelationships?
+    public let links: ASCMediaResourceLinks?
+}
+
+public struct ASCPreviewRelationships: Codable, Sendable {
+    public let appPreviewSet: ASCRelationship?
 }
 
 /// Preview attributes
@@ -202,7 +242,16 @@ public struct CreatePreviewSetRequest: Codable, Sendable {
 /// Previews list response
 public struct ASCPreviewsResponse: Codable, Sendable {
     public let data: [ASCPreview]
-    public let links: ASCPagedDocumentLinks?
+    public let links: ASCPagedDocumentLinks
+    public let meta: ASCPagingInformation?
+}
+
+public struct ASCMediaDocumentLinks: Codable, Sendable {
+    public let `self`: String
+}
+
+public struct ASCMediaResourceLinks: Codable, Sendable {
+    public let `self`: String?
 }
 
 /// Commit screenshot upload request

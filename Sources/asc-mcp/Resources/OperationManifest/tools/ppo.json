@@ -23,7 +23,7 @@
         { "toolField": "app_id", "sourceKind": "requestBody", "operationId": "appStoreVersionExperimentsV2_createInstance", "jsonPointer": "/data/relationships/app/data/id" },
         { "toolField": "name", "sourceKind": "requestBody", "operationId": "appStoreVersionExperimentsV2_createInstance", "jsonPointer": "/data/attributes/name" },
         { "toolField": "traffic_proportion", "sourceKind": "requestBody", "operationId": "appStoreVersionExperimentsV2_createInstance", "jsonPointer": "/data/attributes/trafficProportion" },
-        { "toolField": "platform", "sourceKind": "requestBody", "operationId": "appStoreVersionExperimentsV2_createInstance", "jsonPointer": "/data/attributes/platform" }
+        { "toolField": "platform", "sourceKind": "requestBody", "operationId": "appStoreVersionExperimentsV2_createInstance", "jsonPointer": "/data/attributes/platform", "localRole": "Default to IOS only when the tool field is omitted." }
       ],
       "response": {
         "mode": "projection",
@@ -31,12 +31,12 @@
           { "operationId": "appStoreVersionExperimentsV2_createInstance", "statusCode": "201", "mediaType": "application/json" }
         ],
         "fields": [
-          { "outputField": "success", "localRole": "successfulCreate" },
+          { "outputField": "success", "localRole": "exact201AndCanonicalResource" },
           { "outputField": "experiment", "operationId": "appStoreVersionExperimentsV2_createInstance", "jsonPointer": "/data" },
-          { "outputField": "experiment.platform", "operationId": "appStoreVersionExperimentsV2_createInstance", "jsonPointer": "/data/attributes/platform" }
+          { "outputField": "operationCommitState", "localRole": "structuredNonIdempotentWriteState" }
         ]
       },
-      "note": "The handler uses the current V2 create operation, supports Apple's IOS, MAC_OS, TV_OS, and VISION_OS platforms, and defaults platform to IOS locally."
+      "note": "Current V2 create only. Exact HTTP 201, canonical response identity, requested attributes, and links.self are validated; ambiguous POST outcomes are never replayed and return list/get recovery instructions."
     },
     {
       "tool": "ppo_create_treatment",
@@ -59,7 +59,7 @@
               "location": "body",
               "appleName": "/data/relationships/appStoreVersionExperiment",
               "disposition": "intentionallyOmitted",
-              "reason": "Apple 4.4.1 accepts either the legacy appStoreVersionExperiment relationship or appStoreVersionExperimentV2. This worker exposes V2 experiment IDs and always binds appStoreVersionExperimentV2, so the legacy alternative is omitted to avoid an ambiguous parent.",
+              "reason": "Apple 4.4.1 retains this deprecated V1 parent alternative. PPO tools accept only current V2 experiment IDs and always bind appStoreVersionExperimentV2, so exposing both parents would make lineage ambiguous.",
               "reviewAtSpec": "4.4.1"
             }
           ]
@@ -68,7 +68,7 @@
       "fields": [
         { "toolField": "experiment_id", "sourceKind": "requestBody", "operationId": "appStoreVersionExperimentTreatments_createInstance", "jsonPointer": "/data/relationships/appStoreVersionExperimentV2/data/id" },
         { "toolField": "name", "sourceKind": "requestBody", "operationId": "appStoreVersionExperimentTreatments_createInstance", "jsonPointer": "/data/attributes/name" },
-        { "toolField": "app_icon_name", "sourceKind": "requestBody", "operationId": "appStoreVersionExperimentTreatments_createInstance", "jsonPointer": "/data/attributes/appIconName" }
+        { "toolField": "app_icon_name", "sourceKind": "requestBody", "operationId": "appStoreVersionExperimentTreatments_createInstance", "jsonPointer": "/data/attributes/appIconName", "localRole": "Preserve omission, explicit null, and concrete string." }
       ],
       "response": {
         "mode": "projection",
@@ -76,14 +76,12 @@
           { "operationId": "appStoreVersionExperimentTreatments_createInstance", "statusCode": "201", "mediaType": "application/json" }
         ],
         "fields": [
-          { "outputField": "success", "localRole": "successfulCreate" },
+          { "outputField": "success", "localRole": "exact201AndCanonicalResource" },
           { "outputField": "treatment", "operationId": "appStoreVersionExperimentTreatments_createInstance", "jsonPointer": "/data" },
-          { "outputField": "treatment.appIconName", "operationId": "appStoreVersionExperimentTreatments_createInstance", "jsonPointer": "/data/attributes/appIconName" },
-          { "outputField": "treatment.appIcon", "operationId": "appStoreVersionExperimentTreatments_createInstance", "jsonPointer": "/data/attributes/appIcon" },
-          { "outputField": "treatment.promotedDate", "operationId": "appStoreVersionExperimentTreatments_createInstance", "jsonPointer": "/data/attributes/promotedDate" }
+          { "outputField": "operationCommitState", "localRole": "structuredNonIdempotentWriteState" }
         ]
       },
-      "note": "The handler binds treatments created for current V2 experiment IDs through the appStoreVersionExperimentV2 relationship."
+      "note": "Creates only under appStoreVersionExperimentV2 and never sends the deprecated V1 relationship. Exact status, identity, attributes, and links.self are validated."
     },
     {
       "tool": "ppo_create_treatment_localization",
@@ -113,11 +111,12 @@
           { "operationId": "appStoreVersionExperimentTreatmentLocalizations_createInstance", "statusCode": "201", "mediaType": "application/json" }
         ],
         "fields": [
-          { "outputField": "success", "localRole": "successfulCreate" },
-          { "outputField": "localization", "operationId": "appStoreVersionExperimentTreatmentLocalizations_createInstance", "jsonPointer": "/data" }
+          { "outputField": "success", "localRole": "exact201AndCanonicalResource" },
+          { "outputField": "localization", "operationId": "appStoreVersionExperimentTreatmentLocalizations_createInstance", "jsonPointer": "/data" },
+          { "outputField": "operationCommitState", "localRole": "structuredNonIdempotentWriteState" }
         ]
       },
-      "note": "Direct localization create operation; mapping remains partial because the tool has no declared output schema and the worker has no treatment-localization media lifecycle."
+      "note": "Exact HTTP 201, canonical response identity, locale, parent relationship when returned, and links.self are validated; ambiguous POST outcomes return scoped recovery."
     },
     {
       "tool": "ppo_delete_experiment",
@@ -134,7 +133,8 @@
         }
       ],
       "fields": [
-        { "toolField": "experiment_id", "sourceKind": "parameter", "operationId": "appStoreVersionExperimentsV2_deleteInstance", "location": "path", "appleName": "id" }
+        { "toolField": "experiment_id", "sourceKind": "parameter", "operationId": "appStoreVersionExperimentsV2_deleteInstance", "location": "path", "appleName": "id" },
+        { "toolField": "confirm_experiment_id", "sourceKind": "local", "localRole": "Exact irreversible-delete confirmation matching experiment_id." }
       ],
       "response": {
         "mode": "local",
@@ -142,11 +142,74 @@
           { "operationId": "appStoreVersionExperimentsV2_deleteInstance", "statusCode": "204" }
         ],
         "fields": [
-          { "outputField": "success", "localRole": "successful204" },
+          { "outputField": "success", "localRole": "exact204" },
+          { "outputField": "operationCommitState", "localRole": "structuredDeleteOutcome" },
           { "outputField": "message", "localRole": "deleteConfirmation" }
         ]
       },
-      "note": "Apple returns 204 without content; the handler constructs the deletion confirmation locally."
+      "note": "Requires exact ID confirmation. Only HTTP 204 is reported as committed; unknown and unexpected-success outcomes require exact get inspection before retry."
+    },
+    {
+      "tool": "ppo_delete_treatment",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "destructive",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "appStoreVersionExperimentTreatments_deleteInstance",
+          "method": "delete",
+          "path": "/v1/appStoreVersionExperimentTreatments/{id}",
+          "role": "primary"
+        }
+      ],
+      "fields": [
+        { "toolField": "treatment_id", "sourceKind": "parameter", "operationId": "appStoreVersionExperimentTreatments_deleteInstance", "location": "path", "appleName": "id" },
+        { "toolField": "confirm_treatment_id", "sourceKind": "local", "localRole": "Exact irreversible-delete confirmation matching treatment_id." }
+      ],
+      "response": {
+        "mode": "local",
+        "sources": [
+          { "operationId": "appStoreVersionExperimentTreatments_deleteInstance", "statusCode": "204" }
+        ],
+        "fields": [
+          { "outputField": "success", "localRole": "exact204" },
+          { "outputField": "operationCommitState", "localRole": "structuredDeleteOutcome" },
+          { "outputField": "message", "localRole": "deleteConfirmation" }
+        ]
+      },
+      "note": "Current shared treatment delete endpoint with exact confirmation and fail-closed outcome reporting. No deprecated V1 experiment endpoint is used."
+    },
+    {
+      "tool": "ppo_delete_treatment_localization",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "destructive",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "appStoreVersionExperimentTreatmentLocalizations_deleteInstance",
+          "method": "delete",
+          "path": "/v1/appStoreVersionExperimentTreatmentLocalizations/{id}",
+          "role": "primary"
+        }
+      ],
+      "fields": [
+        { "toolField": "localization_id", "sourceKind": "parameter", "operationId": "appStoreVersionExperimentTreatmentLocalizations_deleteInstance", "location": "path", "appleName": "id" },
+        { "toolField": "confirm_localization_id", "sourceKind": "local", "localRole": "Exact irreversible-delete confirmation matching localization_id." }
+      ],
+      "response": {
+        "mode": "local",
+        "sources": [
+          { "operationId": "appStoreVersionExperimentTreatmentLocalizations_deleteInstance", "statusCode": "204" }
+        ],
+        "fields": [
+          { "outputField": "success", "localRole": "exact204" },
+          { "outputField": "operationCommitState", "localRole": "structuredDeleteOutcome" },
+          { "outputField": "message", "localRole": "deleteConfirmation" }
+        ]
+      },
+      "note": "Requires exact localization-ID confirmation and accepts only Apple's exact 204 contract as committed."
     },
     {
       "tool": "ppo_get_experiment",
@@ -161,27 +224,9 @@
           "path": "/v2/appStoreVersionExperiments/{id}",
           "role": "primary",
           "optionalParameterClassifications": [
-            {
-              "location": "query",
-              "appleName": "include",
-              "disposition": "intentionallyOmitted",
-              "reason": "Apple 4.4.1 can expand app, latestControlVersion, controlVersions, and appStoreVersionExperimentTreatments. This detail contract returns the experiment resource only; treatments are available through ppo_list_treatments.",
-              "reviewAtSpec": "4.4.1"
-            },
-            {
-              "location": "query",
-              "appleName": "limit[appStoreVersionExperimentTreatments]",
-              "disposition": "intentionallyOmitted",
-              "reason": "Apple applies this nested limit only when appStoreVersionExperimentTreatments is included; this tool does not include that relationship and ppo_list_treatments provides bounded pagination.",
-              "reviewAtSpec": "4.4.1"
-            },
-            {
-              "location": "query",
-              "appleName": "limit[controlVersions]",
-              "disposition": "intentionallyOmitted",
-              "reason": "Apple applies this nested limit only when controlVersions is included; the current detail projection does not include or return control-version resources.",
-              "reviewAtSpec": "4.4.1"
-            }
+            { "location": "query", "appleName": "include", "disposition": "intentionallyOmitted", "reason": "Apple 4.4.1 can expand app, control-version, and treatment resources; the detail tool returns the canonical experiment and dedicated tools own child collections.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[appStoreVersionExperimentTreatments]", "disposition": "intentionallyOmitted", "reason": "Apple applies this nested limit only to an omitted treatment include; ppo_list_treatments provides strict continuation.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[controlVersions]", "disposition": "intentionallyOmitted", "reason": "Apple applies this nested limit only to an omitted controlVersions include.", "reviewAtSpec": "4.4.1" }
           ]
         }
       ],
@@ -194,12 +239,78 @@
           { "operationId": "appStoreVersionExperimentsV2_getInstance", "statusCode": "200", "mediaType": "application/json" }
         ],
         "fields": [
-          { "outputField": "success", "localRole": "successfulRead" },
-          { "outputField": "experiment", "operationId": "appStoreVersionExperimentsV2_getInstance", "jsonPointer": "/data" },
-          { "outputField": "experiment.platform", "operationId": "appStoreVersionExperimentsV2_getInstance", "jsonPointer": "/data/attributes/platform" }
+          { "outputField": "success", "localRole": "exact200AndCanonicalIdentity" },
+          { "outputField": "experiment", "operationId": "appStoreVersionExperimentsV2_getInstance", "jsonPointer": "/data" }
         ]
       },
-      "note": "Direct V2 experiment read with a narrow local attribute projection and no declared output schema."
+      "note": "Current V2 detail endpoint only; validates exact identity and required document self-link."
+    },
+    {
+      "tool": "ppo_get_treatment",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "appStoreVersionExperimentTreatments_getInstance",
+          "method": "get",
+          "path": "/v1/appStoreVersionExperimentTreatments/{id}",
+          "role": "primary",
+          "optionalParameterClassifications": [
+            { "location": "query", "appleName": "include", "disposition": "intentionallyOmitted", "reason": "Apple 4.4.1 allows legacy-parent and child expansion; the direct treatment projection avoids the deprecated parent and uses ppo_list_treatment_localizations for child resources.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[appStoreVersionExperimentTreatmentLocalizations]", "disposition": "intentionallyOmitted", "reason": "Apple applies this nested limit only to the omitted localization include; the child collection has strict pagination.", "reviewAtSpec": "4.4.1" }
+          ]
+        }
+      ],
+      "fields": [
+        { "toolField": "treatment_id", "sourceKind": "parameter", "operationId": "appStoreVersionExperimentTreatments_getInstance", "location": "path", "appleName": "id" }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          { "operationId": "appStoreVersionExperimentTreatments_getInstance", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": [
+          { "outputField": "success", "localRole": "exact200AndCanonicalIdentity" },
+          { "outputField": "treatment", "operationId": "appStoreVersionExperimentTreatments_getInstance", "jsonPointer": "/data" }
+        ]
+      },
+      "note": "Shared nondeprecated treatment detail endpoint; a response containing only the deprecated V1 parent relationship is rejected."
+    },
+    {
+      "tool": "ppo_get_treatment_localization",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "appStoreVersionExperimentTreatmentLocalizations_getInstance",
+          "method": "get",
+          "path": "/v1/appStoreVersionExperimentTreatmentLocalizations/{id}",
+          "role": "primary",
+          "optionalParameterClassifications": [
+            { "location": "query", "appleName": "include", "disposition": "intentionallyOmitted", "reason": "Apple 4.4.1 allows media expansion; this tool returns the localization identity and locale while screenshot and preview media remain in ScreenshotsWorker.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[appPreviewSets]", "disposition": "intentionallyOmitted", "reason": "Apple applies this nested preview limit only to the omitted appPreviewSets include.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[appScreenshotSets]", "disposition": "intentionallyOmitted", "reason": "Apple applies this nested screenshot limit only to the omitted appScreenshotSets include.", "reviewAtSpec": "4.4.1" }
+          ]
+        }
+      ],
+      "fields": [
+        { "toolField": "localization_id", "sourceKind": "parameter", "operationId": "appStoreVersionExperimentTreatmentLocalizations_getInstance", "location": "path", "appleName": "id" }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          { "operationId": "appStoreVersionExperimentTreatmentLocalizations_getInstance", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": [
+          { "outputField": "success", "localRole": "exact200AndCanonicalIdentity" },
+          { "outputField": "localization", "operationId": "appStoreVersionExperimentTreatmentLocalizations_getInstance", "jsonPointer": "/data" }
+        ]
+      },
+      "note": "Direct localization read with exact identity and required links.self validation."
     },
     {
       "tool": "ppo_list_experiments",
@@ -214,35 +325,17 @@
           "path": "/v1/apps/{id}/appStoreVersionExperimentsV2",
           "role": "primary",
           "optionalParameterClassifications": [
-            {
-              "location": "query",
-              "appleName": "include",
-              "disposition": "intentionallyOmitted",
-              "reason": "Apple 4.4.1 can expand app, control versions, and treatments. This collection contract returns experiment resources only; treatments are retrieved through ppo_list_treatments.",
-              "reviewAtSpec": "4.4.1"
-            },
-            {
-              "location": "query",
-              "appleName": "limit[appStoreVersionExperimentTreatments]",
-              "disposition": "intentionallyOmitted",
-              "reason": "Apple applies this nested limit only when appStoreVersionExperimentTreatments is included; the collection does not include that relationship and the dedicated treatment tool is paginated.",
-              "reviewAtSpec": "4.4.1"
-            },
-            {
-              "location": "query",
-              "appleName": "limit[controlVersions]",
-              "disposition": "intentionallyOmitted",
-              "reason": "Apple applies this nested limit only when controlVersions is included; the experiment collection projection does not include control-version resources.",
-              "reviewAtSpec": "4.4.1"
-            }
+            { "location": "query", "appleName": "include", "disposition": "intentionallyOmitted", "reason": "Apple 4.4.1 can expand app, control-version, and treatment resources; this app collection returns experiment resources only and dedicated tools own children.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[appStoreVersionExperimentTreatments]", "disposition": "intentionallyOmitted", "reason": "Apple applies this nested limit only to an omitted treatment include.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[controlVersions]", "disposition": "intentionallyOmitted", "reason": "Apple applies this nested limit only to an omitted controlVersions include.", "reviewAtSpec": "4.4.1" }
           ]
         }
       ],
       "fields": [
         { "toolField": "app_id", "sourceKind": "parameter", "operationId": "apps_appStoreVersionExperimentsV2_getToManyRelated", "location": "path", "appleName": "id" },
         { "toolField": "limit", "sourceKind": "parameter", "operationId": "apps_appStoreVersionExperimentsV2_getToManyRelated", "location": "query", "appleName": "limit" },
-        { "toolField": "states", "sourceKind": "parameter", "operationId": "apps_appStoreVersionExperimentsV2_getToManyRelated", "location": "query", "appleName": "filter[state]", "localRole": "Accept a scalar or string array and serialize Apple's explode=false filter as CSV." },
-        { "toolField": "next_url", "sourceKind": "local", "localRole": "paginationContinuation" }
+        { "toolField": "states", "sourceKind": "parameter", "operationId": "apps_appStoreVersionExperimentsV2_getToManyRelated", "location": "query", "appleName": "filter[state]", "localRole": "Validate scalar-or-array enum and serialize Apple's explode=false CSV filter." },
+        { "toolField": "next_url", "sourceKind": "local", "localRole": "Strict continuation bound to path, effective limit, state filter, origin, and non-empty cursor." }
       ],
       "response": {
         "mode": "projection",
@@ -250,13 +343,12 @@
           { "operationId": "apps_appStoreVersionExperimentsV2_getToManyRelated", "statusCode": "200", "mediaType": "application/json" }
         ],
         "fields": [
-          { "outputField": "success", "localRole": "successfulRead" },
+          { "outputField": "success", "localRole": "validatedCollection" },
           { "outputField": "experiments", "operationId": "apps_appStoreVersionExperimentsV2_getToManyRelated", "jsonPointer": "/data" },
-          { "outputField": "experiments.platform", "operationId": "apps_appStoreVersionExperimentsV2_getToManyRelated", "jsonPointer": "/data/*/attributes/platform" },
           { "outputField": "next_url", "operationId": "apps_appStoreVersionExperimentsV2_getToManyRelated", "jsonPointer": "/links/next" }
         ]
       },
-      "note": "Direct paginated V2 experiment relationship read with validated scalar-or-array state filtering and Apple explode=false CSV semantics; relationship expansion remains intentionally omitted."
+      "note": "App-scoped current V2 list with strict arguments, canonical unique identities, required self-link, paging metadata checks, and exact continuation lineage."
     },
     {
       "tool": "ppo_list_treatment_localizations",
@@ -271,35 +363,17 @@
           "path": "/v1/appStoreVersionExperimentTreatments/{id}/appStoreVersionExperimentTreatmentLocalizations",
           "role": "primary",
           "optionalParameterClassifications": [
-            {
-              "location": "query",
-              "appleName": "include",
-              "disposition": "intentionallyOmitted",
-              "reason": "Apple 4.4.1 can expand the parent treatment and its appScreenshotSets or appPreviewSets. This worker returns localization resources only and leaves media lifecycle operations to ScreenshotsWorker.",
-              "reviewAtSpec": "4.4.1"
-            },
-            {
-              "location": "query",
-              "appleName": "limit[appPreviewSets]",
-              "disposition": "intentionallyOmitted",
-              "reason": "Apple applies this nested limit only when appPreviewSets is included; this localization list does not include media resources.",
-              "reviewAtSpec": "4.4.1"
-            },
-            {
-              "location": "query",
-              "appleName": "limit[appScreenshotSets]",
-              "disposition": "intentionallyOmitted",
-              "reason": "Apple applies this nested limit only when appScreenshotSets is included; this localization list does not include media resources.",
-              "reviewAtSpec": "4.4.1"
-            }
+            { "location": "query", "appleName": "include", "disposition": "intentionallyOmitted", "reason": "Apple 4.4.1 can expand the treatment and media resources; this localization collection stays narrow and ScreenshotsWorker owns media lifecycle operations.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[appPreviewSets]", "disposition": "intentionallyOmitted", "reason": "Apple applies this nested preview limit only to an omitted appPreviewSets include.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[appScreenshotSets]", "disposition": "intentionallyOmitted", "reason": "Apple applies this nested screenshot limit only to an omitted appScreenshotSets include.", "reviewAtSpec": "4.4.1" }
           ]
         }
       ],
       "fields": [
         { "toolField": "treatment_id", "sourceKind": "parameter", "operationId": "appStoreVersionExperimentTreatments_appStoreVersionExperimentTreatmentLocalizations_getToManyRelated", "location": "path", "appleName": "id" },
         { "toolField": "limit", "sourceKind": "parameter", "operationId": "appStoreVersionExperimentTreatments_appStoreVersionExperimentTreatmentLocalizations_getToManyRelated", "location": "query", "appleName": "limit" },
-        { "toolField": "locale", "sourceKind": "parameter", "operationId": "appStoreVersionExperimentTreatments_appStoreVersionExperimentTreatmentLocalizations_getToManyRelated", "location": "query", "appleName": "filter[locale]", "localRole": "Accept a scalar or string array and serialize Apple's explode=false filter as CSV." },
-        { "toolField": "next_url", "sourceKind": "local", "localRole": "paginationContinuation" }
+        { "toolField": "locale", "sourceKind": "parameter", "operationId": "appStoreVersionExperimentTreatments_appStoreVersionExperimentTreatmentLocalizations_getToManyRelated", "location": "query", "appleName": "filter[locale]", "localRole": "Validate scalar-or-array values and serialize Apple's explode=false CSV filter." },
+        { "toolField": "next_url", "sourceKind": "local", "localRole": "Strict continuation bound to path, effective limit, locale filter, origin, and non-empty cursor." }
       ],
       "response": {
         "mode": "projection",
@@ -307,12 +381,12 @@
           { "operationId": "appStoreVersionExperimentTreatments_appStoreVersionExperimentTreatmentLocalizations_getToManyRelated", "statusCode": "200", "mediaType": "application/json" }
         ],
         "fields": [
-          { "outputField": "success", "localRole": "successfulRead" },
+          { "outputField": "success", "localRole": "validatedCollection" },
           { "outputField": "localizations", "operationId": "appStoreVersionExperimentTreatments_appStoreVersionExperimentTreatmentLocalizations_getToManyRelated", "jsonPointer": "/data" },
           { "outputField": "next_url", "operationId": "appStoreVersionExperimentTreatments_appStoreVersionExperimentTreatmentLocalizations_getToManyRelated", "jsonPointer": "/links/next" }
         ]
       },
-      "note": "Direct paginated localization read with scalar-or-array locale filtering and Apple explode=false CSV semantics; media relationship expansion remains intentionally omitted."
+      "note": "Treatment-scoped localization list with strict locale filtering, unique identities, parent lineage when returned, paging validation, and exact continuation scope."
     },
     {
       "tool": "ppo_list_treatments",
@@ -327,27 +401,15 @@
           "path": "/v2/appStoreVersionExperiments/{id}/appStoreVersionExperimentTreatments",
           "role": "primary",
           "optionalParameterClassifications": [
-            {
-              "location": "query",
-              "appleName": "include",
-              "disposition": "intentionallyOmitted",
-              "reason": "Apple 4.4.1 can expand legacy or V2 experiment parents and treatment localizations. This tool returns treatments only; localizations are retrieved through ppo_list_treatment_localizations.",
-              "reviewAtSpec": "4.4.1"
-            },
-            {
-              "location": "query",
-              "appleName": "limit[appStoreVersionExperimentTreatmentLocalizations]",
-              "disposition": "intentionallyOmitted",
-              "reason": "Apple applies this nested limit only when treatment localizations are included; ppo_list_treatment_localizations provides bounded pagination instead.",
-              "reviewAtSpec": "4.4.1"
-            }
+            { "location": "query", "appleName": "include", "disposition": "intentionallyOmitted", "reason": "Apple 4.4.1 can expand parent and localization resources; the V2 relationship endpoint establishes lineage and the child collection is separate.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[appStoreVersionExperimentTreatmentLocalizations]", "disposition": "intentionallyOmitted", "reason": "Apple applies this nested localization limit only to an omitted include.", "reviewAtSpec": "4.4.1" }
           ]
         }
       ],
       "fields": [
         { "toolField": "experiment_id", "sourceKind": "parameter", "operationId": "appStoreVersionExperimentsV2_appStoreVersionExperimentTreatments_getToManyRelated", "location": "path", "appleName": "id" },
         { "toolField": "limit", "sourceKind": "parameter", "operationId": "appStoreVersionExperimentsV2_appStoreVersionExperimentTreatments_getToManyRelated", "location": "query", "appleName": "limit" },
-        { "toolField": "next_url", "sourceKind": "local", "localRole": "paginationContinuation" }
+        { "toolField": "next_url", "sourceKind": "local", "localRole": "Strict continuation bound to the V2 parent path, effective limit, origin, and non-empty cursor." }
       ],
       "response": {
         "mode": "projection",
@@ -355,15 +417,50 @@
           { "operationId": "appStoreVersionExperimentsV2_appStoreVersionExperimentTreatments_getToManyRelated", "statusCode": "200", "mediaType": "application/json" }
         ],
         "fields": [
-          { "outputField": "success", "localRole": "successfulRead" },
+          { "outputField": "success", "localRole": "validatedCollection" },
           { "outputField": "treatments", "operationId": "appStoreVersionExperimentsV2_appStoreVersionExperimentTreatments_getToManyRelated", "jsonPointer": "/data" },
-          { "outputField": "treatments.appIconName", "operationId": "appStoreVersionExperimentsV2_appStoreVersionExperimentTreatments_getToManyRelated", "jsonPointer": "/data/*/attributes/appIconName" },
-          { "outputField": "treatments.appIcon", "operationId": "appStoreVersionExperimentsV2_appStoreVersionExperimentTreatments_getToManyRelated", "jsonPointer": "/data/*/attributes/appIcon" },
-          { "outputField": "treatments.promotedDate", "operationId": "appStoreVersionExperimentsV2_appStoreVersionExperimentTreatments_getToManyRelated", "jsonPointer": "/data/*/attributes/promotedDate" },
           { "outputField": "next_url", "operationId": "appStoreVersionExperimentsV2_appStoreVersionExperimentTreatments_getToManyRelated", "jsonPointer": "/links/next" }
         ]
       },
-      "note": "Direct paginated V2 treatment relationship read with a narrow response projection."
+      "note": "Uses only the V2 experiment relationship endpoint, validates unique canonical treatment identities and returned parent lineage, and preserves strict pagination scope."
+    },
+    {
+      "tool": "ppo_list_version_experiments",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "appStoreVersions_appStoreVersionExperimentsV2_getToManyRelated",
+          "method": "get",
+          "path": "/v1/appStoreVersions/{id}/appStoreVersionExperimentsV2",
+          "role": "primary",
+          "optionalParameterClassifications": [
+            { "location": "query", "appleName": "include", "disposition": "intentionallyOmitted", "reason": "Apple 4.4.1 allows related-resource expansion; the version-scoped endpoint establishes lineage directly while app, control-version, and treatment resources remain separate contracts.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[appStoreVersionExperimentTreatments]", "disposition": "intentionallyOmitted", "reason": "Apple applies this nested treatment limit only to the omitted include; ppo_list_treatments is strictly paginated.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[controlVersions]", "disposition": "intentionallyOmitted", "reason": "Apple applies this nested control-version limit only to the omitted include.", "reviewAtSpec": "4.4.1" }
+          ]
+        }
+      ],
+      "fields": [
+        { "toolField": "version_id", "sourceKind": "parameter", "operationId": "appStoreVersions_appStoreVersionExperimentsV2_getToManyRelated", "location": "path", "appleName": "id" },
+        { "toolField": "limit", "sourceKind": "parameter", "operationId": "appStoreVersions_appStoreVersionExperimentsV2_getToManyRelated", "location": "query", "appleName": "limit" },
+        { "toolField": "states", "sourceKind": "parameter", "operationId": "appStoreVersions_appStoreVersionExperimentsV2_getToManyRelated", "location": "query", "appleName": "filter[state]", "localRole": "Validate scalar-or-array enum and serialize Apple's explode=false CSV filter." },
+        { "toolField": "next_url", "sourceKind": "local", "localRole": "Strict continuation bound to the exact version path, effective limit, state filter, origin, and non-empty cursor." }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          { "operationId": "appStoreVersions_appStoreVersionExperimentsV2_getToManyRelated", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": [
+          { "outputField": "success", "localRole": "validatedCollection" },
+          { "outputField": "experiments", "operationId": "appStoreVersions_appStoreVersionExperimentsV2_getToManyRelated", "jsonPointer": "/data" },
+          { "outputField": "next_url", "operationId": "appStoreVersions_appStoreVersionExperimentsV2_getToManyRelated", "jsonPointer": "/links/next" }
+        ]
+      },
+      "note": "Adds the practical nondeprecated Apple 4.4.1 version-scoped V2 collection with the same strict filtering and pagination contract as the app-scoped list."
     },
     {
       "tool": "ppo_update_experiment",
@@ -379,20 +476,16 @@
           "role": "primary",
           "inputs": [
             { "sourceKind": "fixed", "jsonPointer": "/data/type", "fixedValue": "appStoreVersionExperiments" },
-            {
-              "sourceKind": "derived",
-              "jsonPointer": "/data/id",
-              "derivedFrom": ["experiment_id"],
-              "localRole": "copyPathIdentifierToRequestBody"
-            }
+            { "sourceKind": "derived", "jsonPointer": "/data/id", "derivedFrom": ["experiment_id"], "localRole": "Copy the canonical path identifier to the body." }
           ]
         }
       ],
       "fields": [
         { "toolField": "experiment_id", "sourceKind": "parameter", "operationId": "appStoreVersionExperimentsV2_updateInstance", "location": "path", "appleName": "id" },
-        { "toolField": "name", "sourceKind": "requestBody", "operationId": "appStoreVersionExperimentsV2_updateInstance", "jsonPointer": "/data/attributes/name" },
-        { "toolField": "traffic_proportion", "sourceKind": "requestBody", "operationId": "appStoreVersionExperimentsV2_updateInstance", "jsonPointer": "/data/attributes/trafficProportion" },
-        { "toolField": "state", "sourceKind": "derived", "operationId": "appStoreVersionExperimentsV2_updateInstance", "jsonPointer": "/data/attributes/started", "localRole": "mapStartStopToStartedBoolean", "derivedFrom": ["state"] }
+        { "toolField": "name", "sourceKind": "requestBody", "operationId": "appStoreVersionExperimentsV2_updateInstance", "jsonPointer": "/data/attributes/name", "localRole": "Preserve omission, explicit null, and concrete string." },
+        { "toolField": "traffic_proportion", "sourceKind": "requestBody", "operationId": "appStoreVersionExperimentsV2_updateInstance", "jsonPointer": "/data/attributes/trafficProportion", "localRole": "Preserve omission, explicit null, and concrete integer." },
+        { "toolField": "state", "sourceKind": "derived", "operationId": "appStoreVersionExperimentsV2_updateInstance", "jsonPointer": "/data/attributes/started", "localRole": "Map START to true, STOP to false, explicit null to null, and omission to no key.", "derivedFrom": ["state"] },
+        { "toolField": "confirm_experiment_id", "sourceKind": "local", "localRole": "Exact experiment_id confirmation required whenever state is present." }
       ],
       "response": {
         "mode": "projection",
@@ -400,12 +493,52 @@
           { "operationId": "appStoreVersionExperimentsV2_updateInstance", "statusCode": "200", "mediaType": "application/json" }
         ],
         "fields": [
-          { "outputField": "success", "localRole": "successfulUpdate" },
+          { "outputField": "success", "localRole": "exact200AndCanonicalResource" },
           { "outputField": "experiment", "operationId": "appStoreVersionExperimentsV2_updateInstance", "jsonPointer": "/data" },
-          { "outputField": "experiment.platform", "operationId": "appStoreVersionExperimentsV2_updateInstance", "jsonPointer": "/data/attributes/platform" }
+          { "outputField": "operationCommitState", "localRole": "structuredNonIdempotentWriteState" },
+          { "outputField": "changed", "localRole": "Null because a PATCH response proves the accepted target state but not that the pre-request state differed." },
+          { "outputField": "changeVerified", "localRole": "False without a pre-mutation read." }
         ]
       },
-      "note": "The handler derives started=true from START and started=false from STOP for the V2 update request."
+      "note": "Rejects empty updates and unknown keys, preserves nullable request states with presence checks, requires exact lifecycle confirmation, and never replays an ambiguous PATCH. STOP is verified only when Apple returns STOPPED; START and started=null remain committed_unverified because Apple 4.4.1 exposes no response attribute that can attribute those lifecycle outcomes to this request."
+    },
+    {
+      "tool": "ppo_update_treatment",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "write",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "appStoreVersionExperimentTreatments_updateInstance",
+          "method": "patch",
+          "path": "/v1/appStoreVersionExperimentTreatments/{id}",
+          "role": "primary",
+          "inputs": [
+            { "sourceKind": "fixed", "jsonPointer": "/data/type", "fixedValue": "appStoreVersionExperimentTreatments" },
+            { "sourceKind": "derived", "jsonPointer": "/data/id", "derivedFrom": ["treatment_id"], "localRole": "Copy the canonical path identifier to the body." }
+          ]
+        }
+      ],
+      "fields": [
+        { "toolField": "treatment_id", "sourceKind": "parameter", "operationId": "appStoreVersionExperimentTreatments_updateInstance", "location": "path", "appleName": "id" },
+        { "toolField": "name", "sourceKind": "requestBody", "operationId": "appStoreVersionExperimentTreatments_updateInstance", "jsonPointer": "/data/attributes/name", "localRole": "Preserve omission, explicit null, and concrete string." },
+        { "toolField": "app_icon_name", "sourceKind": "requestBody", "operationId": "appStoreVersionExperimentTreatments_updateInstance", "jsonPointer": "/data/attributes/appIconName", "localRole": "Preserve omission, explicit null, and concrete string." }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          { "operationId": "appStoreVersionExperimentTreatments_updateInstance", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": [
+          { "outputField": "success", "localRole": "exact200AndCanonicalResource" },
+          { "outputField": "treatment", "operationId": "appStoreVersionExperimentTreatments_updateInstance", "jsonPointer": "/data" },
+          { "outputField": "operationCommitState", "localRole": "structuredNonIdempotentWriteState" },
+          { "outputField": "changed", "localRole": "Null because a PATCH response proves the accepted target state but not that the pre-request state differed." },
+          { "outputField": "changeVerified", "localRole": "False without a pre-mutation read." }
+        ]
+      },
+      "note": "Adds the nondeprecated treatment PATCH, rejects empty updates, preserves null versus omission with presence checks, validates exact HTTP 200 and canonical identity, reports change as unverified without a pre-read, and returns fail-closed recovery for ambiguous writes."
     }
   ],
   "implementationAliases": []

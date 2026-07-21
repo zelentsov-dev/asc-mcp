@@ -7,12 +7,12 @@
     "operationCount": 1263
   },
   "optionalInputCoveragePin": {
-    "total": 2548,
-    "bound": 993,
+    "total": 2756,
+    "bound": 1041,
     "internalControl": 40,
-    "intentionallyOmitted": 1515,
+    "intentionallyOmitted": 1675,
     "unclassified": 0,
-    "identitySHA256": "00b48805d61ba3849f940f2e7c020817882a0e942b8eef0bea14e81089d13323"
+    "identitySHA256": "d23f48816b9bc0b19933ae9f65cf4d737918730b1247f8949a802007055bd4a2"
   },
   "optionalParameterFamilyRules": [
     {
@@ -479,42 +479,10 @@
       "reviewAtSpec": "4.4.1"
     },
     {
-      "id": "deferred.appCustomProductPageLocalizations_deleteInstance",
-      "operationId": "appCustomProductPageLocalizations_deleteInstance",
-      "disposition": "deferred",
-      "reason": "The `appCustomProductPageLocalizations` resource-group capability is not yet exposed by asc-mcp.",
-      "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
-    },
-    {
-      "id": "deferred.appCustomProductPageLocalizations_getInstance",
-      "operationId": "appCustomProductPageLocalizations_getInstance",
-      "disposition": "deferred",
-      "reason": "The `appCustomProductPageLocalizations` resource-group capability is not yet exposed by asc-mcp.",
-      "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
-    },
-    {
-      "id": "deferred.appCustomProductPageLocalizations_appPreviewSets_getToManyRelated",
-      "operationId": "appCustomProductPageLocalizations_appPreviewSets_getToManyRelated",
-      "disposition": "deferred",
-      "reason": "The `appCustomProductPageLocalizations` resource-group capability is not yet exposed by asc-mcp.",
-      "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
-    },
-    {
-      "id": "deferred.appCustomProductPageLocalizations_appScreenshotSets_getToManyRelated",
-      "operationId": "appCustomProductPageLocalizations_appScreenshotSets_getToManyRelated",
-      "disposition": "deferred",
-      "reason": "The `appCustomProductPageLocalizations` resource-group capability is not yet exposed by asc-mcp.",
-      "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
-    },
-    {
       "id": "deferred.appCustomProductPageLocalizations_appPreviewSets_getToManyRelationship",
       "operationId": "appCustomProductPageLocalizations_appPreviewSets_getToManyRelationship",
       "disposition": "deferred",
-      "reason": "The `appCustomProductPageLocalizations` resource-group capability is not yet exposed by asc-mcp.",
+      "reason": "screenshots_list_preview_sets returns the full related preview-set resources; this linkage-only relationship document is deferred because it duplicates IDs without attributes.",
       "owner": "asc-mcp",
       "reviewAtSpec": "4.4.1"
     },
@@ -522,15 +490,7 @@
       "id": "deferred.appCustomProductPageLocalizations_appScreenshotSets_getToManyRelationship",
       "operationId": "appCustomProductPageLocalizations_appScreenshotSets_getToManyRelationship",
       "disposition": "deferred",
-      "reason": "The `appCustomProductPageLocalizations` resource-group capability is not yet exposed by asc-mcp.",
-      "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
-    },
-    {
-      "id": "deferred.appCustomProductPageLocalizations_searchKeywords_deleteToManyRelationship",
-      "operationId": "appCustomProductPageLocalizations_searchKeywords_deleteToManyRelationship",
-      "disposition": "deferred",
-      "reason": "The `appCustomProductPageLocalizations` resource-group capability is not yet exposed by asc-mcp.",
+      "reason": "screenshots_list_sets returns the full related screenshot-set resources; this linkage-only relationship document is deferred because it duplicates IDs without attributes.",
       "owner": "asc-mcp",
       "reviewAtSpec": "4.4.1"
     },
@@ -538,39 +498,7 @@
       "id": "deferred.appCustomProductPageLocalizations_searchKeywords_getToManyRelationship",
       "operationId": "appCustomProductPageLocalizations_searchKeywords_getToManyRelationship",
       "disposition": "deferred",
-      "reason": "The `appCustomProductPageLocalizations` resource-group capability is not yet exposed by asc-mcp.",
-      "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
-    },
-    {
-      "id": "deferred.appCustomProductPageLocalizations_searchKeywords_createToManyRelationship",
-      "operationId": "appCustomProductPageLocalizations_searchKeywords_createToManyRelationship",
-      "disposition": "deferred",
-      "reason": "The `appCustomProductPageLocalizations` resource-group capability is not yet exposed by asc-mcp.",
-      "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
-    },
-    {
-      "id": "deferred.appCustomProductPageLocalizations_searchKeywords_getToManyRelated",
-      "operationId": "appCustomProductPageLocalizations_searchKeywords_getToManyRelated",
-      "disposition": "deferred",
-      "reason": "The `appCustomProductPageLocalizations` resource-group capability is not yet exposed by asc-mcp.",
-      "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
-    },
-    {
-      "id": "deferred.appCustomProductPageVersions_getInstance",
-      "operationId": "appCustomProductPageVersions_getInstance",
-      "disposition": "deferred",
-      "reason": "The `appCustomProductPageVersions` resource-group capability is not yet exposed by asc-mcp.",
-      "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
-    },
-    {
-      "id": "deferred.appCustomProductPageVersions_updateInstance",
-      "operationId": "appCustomProductPageVersions_updateInstance",
-      "disposition": "deferred",
-      "reason": "The `appCustomProductPageVersions` resource-group capability is not yet exposed by asc-mcp.",
+      "reason": "custom_pages_list_search_keywords returns full related keyword resources; this linkage-only relationship document is deferred because it duplicates IDs without attributes.",
       "owner": "asc-mcp",
       "reviewAtSpec": "4.4.1"
     },
@@ -578,7 +506,7 @@
       "id": "deferred.appCustomProductPageVersions_appCustomProductPageLocalizations_getToManyRelationship",
       "operationId": "appCustomProductPageVersions_appCustomProductPageLocalizations_getToManyRelationship",
       "disposition": "deferred",
-      "reason": "The `appCustomProductPageVersions` resource-group capability is not yet exposed by asc-mcp.",
+      "reason": "custom_pages_list_localizations returns full related localization resources; this linkage-only relationship document is deferred because it duplicates IDs without attributes.",
       "owner": "asc-mcp",
       "reviewAtSpec": "4.4.1"
     },
@@ -586,7 +514,7 @@
       "id": "deferred.appCustomProductPages_appCustomProductPageVersions_getToManyRelationship",
       "operationId": "appCustomProductPages_appCustomProductPageVersions_getToManyRelationship",
       "disposition": "deferred",
-      "reason": "The `appCustomProductPages` resource-group capability is not yet exposed by asc-mcp.",
+      "reason": "custom_pages_list_versions returns full related version resources; this linkage-only relationship document is deferred because it duplicates IDs without attributes.",
       "owner": "asc-mcp",
       "reviewAtSpec": "4.4.1"
     },
@@ -871,26 +799,10 @@
       "reviewAtSpec": "4.4.1"
     },
     {
-      "id": "deferred.appPreviewSets_getInstance",
-      "operationId": "appPreviewSets_getInstance",
-      "disposition": "deferred",
-      "reason": "The `appPreviewSets` resource-group capability is not yet exposed by asc-mcp.",
-      "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
-    },
-    {
       "id": "deferred.appPreviewSets_appPreviews_getToManyRelationship",
       "operationId": "appPreviewSets_appPreviews_getToManyRelationship",
       "disposition": "deferred",
-      "reason": "The `appPreviewSets` resource-group capability is not yet exposed by asc-mcp.",
-      "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
-    },
-    {
-      "id": "deferred.appPreviewSets_appPreviews_replaceToManyRelationship",
-      "operationId": "appPreviewSets_appPreviews_replaceToManyRelationship",
-      "disposition": "deferred",
-      "reason": "The `appPreviewSets` resource-group capability is not yet exposed by asc-mcp.",
+      "reason": "screenshots_list_previews returns full preview resources; this linkage-only relationship document is deferred because it duplicates IDs without attributes.",
       "owner": "asc-mcp",
       "reviewAtSpec": "4.4.1"
     },
@@ -951,18 +863,10 @@
       "reviewAtSpec": "4.4.1"
     },
     {
-      "id": "deferred.appScreenshotSets_getInstance",
-      "operationId": "appScreenshotSets_getInstance",
-      "disposition": "deferred",
-      "reason": "The `appScreenshotSets` resource-group capability is not yet exposed by asc-mcp.",
-      "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
-    },
-    {
       "id": "deferred.appScreenshotSets_appScreenshots_getToManyRelationship",
       "operationId": "appScreenshotSets_appScreenshots_getToManyRelationship",
       "disposition": "deferred",
-      "reason": "The `appScreenshotSets` resource-group capability is not yet exposed by asc-mcp.",
+      "reason": "screenshots_list returns full screenshot resources; this linkage-only relationship document is deferred because it duplicates IDs without attributes.",
       "owner": "asc-mcp",
       "reviewAtSpec": "4.4.1"
     },
@@ -983,42 +887,10 @@
       "reviewAtSpec": "4.4.1"
     },
     {
-      "id": "deferred.appStoreVersionExperimentTreatmentLocalizations_deleteInstance",
-      "operationId": "appStoreVersionExperimentTreatmentLocalizations_deleteInstance",
-      "disposition": "deferred",
-      "reason": "The `appStoreVersionExperimentTreatmentLocalizations` resource-group capability is not yet exposed by asc-mcp.",
-      "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
-    },
-    {
-      "id": "deferred.appStoreVersionExperimentTreatmentLocalizations_getInstance",
-      "operationId": "appStoreVersionExperimentTreatmentLocalizations_getInstance",
-      "disposition": "deferred",
-      "reason": "The `appStoreVersionExperimentTreatmentLocalizations` resource-group capability is not yet exposed by asc-mcp.",
-      "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
-    },
-    {
-      "id": "deferred.appStoreVersionExperimentTreatmentLocalizations_appPreviewSets_getToManyRelated",
-      "operationId": "appStoreVersionExperimentTreatmentLocalizations_appPreviewSets_getToManyRelated",
-      "disposition": "deferred",
-      "reason": "The `appStoreVersionExperimentTreatmentLocalizations` resource-group capability is not yet exposed by asc-mcp.",
-      "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
-    },
-    {
-      "id": "deferred.appStoreVersionExperimentTreatmentLocalizations_appScreenshotSets_getToManyRelated",
-      "operationId": "appStoreVersionExperimentTreatmentLocalizations_appScreenshotSets_getToManyRelated",
-      "disposition": "deferred",
-      "reason": "The `appStoreVersionExperimentTreatmentLocalizations` resource-group capability is not yet exposed by asc-mcp.",
-      "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
-    },
-    {
       "id": "deferred.appStoreVersionExperimentTreatmentLocalizations_appPreviewSets_getToManyRelationship",
       "operationId": "appStoreVersionExperimentTreatmentLocalizations_appPreviewSets_getToManyRelationship",
       "disposition": "deferred",
-      "reason": "The `appStoreVersionExperimentTreatmentLocalizations` resource-group capability is not yet exposed by asc-mcp.",
+      "reason": "screenshots_list_preview_sets returns the full treatment-localization preview-set resources; this linkage-only document is deferred because it duplicates IDs without attributes.",
       "owner": "asc-mcp",
       "reviewAtSpec": "4.4.1"
     },
@@ -1026,31 +898,7 @@
       "id": "deferred.appStoreVersionExperimentTreatmentLocalizations_appScreenshotSets_getToManyRelationship",
       "operationId": "appStoreVersionExperimentTreatmentLocalizations_appScreenshotSets_getToManyRelationship",
       "disposition": "deferred",
-      "reason": "The `appStoreVersionExperimentTreatmentLocalizations` resource-group capability is not yet exposed by asc-mcp.",
-      "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
-    },
-    {
-      "id": "deferred.appStoreVersionExperimentTreatments_deleteInstance",
-      "operationId": "appStoreVersionExperimentTreatments_deleteInstance",
-      "disposition": "deferred",
-      "reason": "The `appStoreVersionExperimentTreatments` resource-group capability is not yet exposed by asc-mcp.",
-      "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
-    },
-    {
-      "id": "deferred.appStoreVersionExperimentTreatments_getInstance",
-      "operationId": "appStoreVersionExperimentTreatments_getInstance",
-      "disposition": "deferred",
-      "reason": "The `appStoreVersionExperimentTreatments` resource-group capability is not yet exposed by asc-mcp.",
-      "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
-    },
-    {
-      "id": "deferred.appStoreVersionExperimentTreatments_updateInstance",
-      "operationId": "appStoreVersionExperimentTreatments_updateInstance",
-      "disposition": "deferred",
-      "reason": "The `appStoreVersionExperimentTreatments` resource-group capability is not yet exposed by asc-mcp.",
+      "reason": "screenshots_list_sets returns the full treatment-localization screenshot-set resources; this linkage-only document is deferred because it duplicates IDs without attributes.",
       "owner": "asc-mcp",
       "reviewAtSpec": "4.4.1"
     },
@@ -1058,7 +906,7 @@
       "id": "deferred.appStoreVersionExperimentTreatments_appStoreVersionExperimentTreatmentLocalizations_getToManyRelationship",
       "operationId": "appStoreVersionExperimentTreatments_appStoreVersionExperimentTreatmentLocalizations_getToManyRelationship",
       "disposition": "deferred",
-      "reason": "The `appStoreVersionExperimentTreatments` resource-group capability is not yet exposed by asc-mcp.",
+      "reason": "ppo_list_treatment_localizations returns full localization resources; this linkage-only relationship document is deferred because it duplicates IDs without attributes.",
       "owner": "asc-mcp",
       "reviewAtSpec": "4.4.1"
     },
@@ -1066,7 +914,7 @@
       "id": "deferred.appStoreVersionExperiments_createInstance",
       "operationId": "appStoreVersionExperiments_createInstance",
       "disposition": "deferred",
-      "reason": "The `appStoreVersionExperiments` resource-group capability is not yet exposed by asc-mcp.",
+      "reason": "The legacy V1 experiment mutation is intentionally deferred; PPO tools use Apple's nondeprecated V2 experiment surface and shared treatment resources.",
       "owner": "asc-mcp",
       "reviewAtSpec": "4.4.1"
     },
@@ -1074,7 +922,7 @@
       "id": "deferred.appStoreVersionExperiments_deleteInstance",
       "operationId": "appStoreVersionExperiments_deleteInstance",
       "disposition": "deferred",
-      "reason": "The `appStoreVersionExperiments` resource-group capability is not yet exposed by asc-mcp.",
+      "reason": "The legacy V1 experiment mutation is intentionally deferred; PPO tools use Apple's nondeprecated V2 experiment surface and shared treatment resources.",
       "owner": "asc-mcp",
       "reviewAtSpec": "4.4.1"
     },
@@ -1082,7 +930,7 @@
       "id": "deferred.appStoreVersionExperiments_getInstance",
       "operationId": "appStoreVersionExperiments_getInstance",
       "disposition": "deferred",
-      "reason": "The `appStoreVersionExperiments` resource-group capability is not yet exposed by asc-mcp.",
+      "reason": "The legacy V1 experiment read is intentionally deferred; PPO tools use Apple's nondeprecated V2 experiment surface and shared treatment resources.",
       "owner": "asc-mcp",
       "reviewAtSpec": "4.4.1"
     },
@@ -1090,7 +938,7 @@
       "id": "deferred.appStoreVersionExperiments_updateInstance",
       "operationId": "appStoreVersionExperiments_updateInstance",
       "disposition": "deferred",
-      "reason": "The `appStoreVersionExperiments` resource-group capability is not yet exposed by asc-mcp.",
+      "reason": "The legacy V1 experiment mutation is intentionally deferred; PPO tools use Apple's nondeprecated V2 experiment surface and shared treatment resources.",
       "owner": "asc-mcp",
       "reviewAtSpec": "4.4.1"
     },
@@ -1098,7 +946,7 @@
       "id": "deferred.appStoreVersionExperiments_appStoreVersionExperimentTreatments_getToManyRelated",
       "operationId": "appStoreVersionExperiments_appStoreVersionExperimentTreatments_getToManyRelated",
       "disposition": "deferred",
-      "reason": "The `appStoreVersionExperiments` resource-group capability is not yet exposed by asc-mcp.",
+      "reason": "This legacy V1 experiment relationship is intentionally deferred; ppo_list_treatments uses the nondeprecated V2 experiment relationship and returns full treatment resources.",
       "owner": "asc-mcp",
       "reviewAtSpec": "4.4.1"
     },
@@ -1106,7 +954,7 @@
       "id": "deferred.appStoreVersionExperiments_appStoreVersionExperimentTreatments_getToManyRelationship",
       "operationId": "appStoreVersionExperiments_appStoreVersionExperimentTreatments_getToManyRelationship",
       "disposition": "deferred",
-      "reason": "The `appStoreVersionExperiments` resource-group capability is not yet exposed by asc-mcp.",
+      "reason": "This legacy V1 linkage-only relationship is intentionally deferred; ppo_list_treatments uses the nondeprecated V2 relationship and returns full treatment resources.",
       "owner": "asc-mcp",
       "reviewAtSpec": "4.4.1"
     },
@@ -1114,7 +962,7 @@
       "id": "deferred.appStoreVersionLocalizations_getInstance",
       "operationId": "appStoreVersionLocalizations_getInstance",
       "disposition": "deferred",
-      "reason": "The `appStoreVersionLocalizations` resource-group capability is not yet exposed by asc-mcp.",
+      "reason": "Version-localization list/create/update/delete operations are exposed, but a dedicated direct-get tool is not yet published; this read remains deferred pending a distinct practical use case.",
       "owner": "asc-mcp",
       "reviewAtSpec": "4.4.1"
     },
@@ -1122,7 +970,7 @@
       "id": "deferred.appStoreVersionLocalizations_appPreviewSets_getToManyRelationship",
       "operationId": "appStoreVersionLocalizations_appPreviewSets_getToManyRelationship",
       "disposition": "deferred",
-      "reason": "The `appStoreVersionLocalizations` resource-group capability is not yet exposed by asc-mcp.",
+      "reason": "screenshots_list_preview_sets returns full version-localization preview-set resources; this linkage-only document is deferred because it duplicates IDs without attributes.",
       "owner": "asc-mcp",
       "reviewAtSpec": "4.4.1"
     },
@@ -1130,7 +978,7 @@
       "id": "deferred.appStoreVersionLocalizations_appScreenshotSets_getToManyRelationship",
       "operationId": "appStoreVersionLocalizations_appScreenshotSets_getToManyRelationship",
       "disposition": "deferred",
-      "reason": "The `appStoreVersionLocalizations` resource-group capability is not yet exposed by asc-mcp.",
+      "reason": "screenshots_list_sets returns full version-localization screenshot-set resources; this linkage-only document is deferred because it duplicates IDs without attributes.",
       "owner": "asc-mcp",
       "reviewAtSpec": "4.4.1"
     },
@@ -1138,7 +986,7 @@
       "id": "deferred.appStoreVersionLocalizations_searchKeywords_deleteToManyRelationship",
       "operationId": "appStoreVersionLocalizations_searchKeywords_deleteToManyRelationship",
       "disposition": "deferred",
-      "reason": "The `appStoreVersionLocalizations` resource-group capability is not yet exposed by asc-mcp.",
+      "reason": "Search-keyword targeting for standard App Store version localizations is not yet exposed; the current search-keyword tools are scoped to apps and Custom Product Page localizations.",
       "owner": "asc-mcp",
       "reviewAtSpec": "4.4.1"
     },
@@ -1146,7 +994,7 @@
       "id": "deferred.appStoreVersionLocalizations_searchKeywords_getToManyRelationship",
       "operationId": "appStoreVersionLocalizations_searchKeywords_getToManyRelationship",
       "disposition": "deferred",
-      "reason": "The `appStoreVersionLocalizations` resource-group capability is not yet exposed by asc-mcp.",
+      "reason": "Search-keyword targeting for standard App Store version localizations is not yet exposed; the current search-keyword tools are scoped to apps and Custom Product Page localizations.",
       "owner": "asc-mcp",
       "reviewAtSpec": "4.4.1"
     },
@@ -1154,7 +1002,7 @@
       "id": "deferred.appStoreVersionLocalizations_searchKeywords_createToManyRelationship",
       "operationId": "appStoreVersionLocalizations_searchKeywords_createToManyRelationship",
       "disposition": "deferred",
-      "reason": "The `appStoreVersionLocalizations` resource-group capability is not yet exposed by asc-mcp.",
+      "reason": "Search-keyword targeting for standard App Store version localizations is not yet exposed; the current search-keyword tools are scoped to apps and Custom Product Page localizations.",
       "owner": "asc-mcp",
       "reviewAtSpec": "4.4.1"
     },
@@ -1162,7 +1010,7 @@
       "id": "deferred.appStoreVersionLocalizations_searchKeywords_getToManyRelated",
       "operationId": "appStoreVersionLocalizations_searchKeywords_getToManyRelated",
       "disposition": "deferred",
-      "reason": "The `appStoreVersionLocalizations` resource-group capability is not yet exposed by asc-mcp.",
+      "reason": "Search-keyword targeting for standard App Store version localizations is not yet exposed; the current search-keyword tools are scoped to apps and Custom Product Page localizations.",
       "owner": "asc-mcp",
       "reviewAtSpec": "4.4.1"
     },
@@ -1201,14 +1049,6 @@
     {
       "id": "deferred.appStoreVersions_appStoreVersionExperiments_getToManyRelated",
       "operationId": "appStoreVersions_appStoreVersionExperiments_getToManyRelated",
-      "disposition": "deferred",
-      "reason": "The `appStoreVersions` resource-group capability is not yet exposed by asc-mcp.",
-      "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
-    },
-    {
-      "id": "deferred.appStoreVersions_appStoreVersionExperimentsV2_getToManyRelated",
-      "operationId": "appStoreVersions_appStoreVersionExperimentsV2_getToManyRelated",
       "disposition": "deferred",
       "reason": "The `appStoreVersions` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
@@ -1274,7 +1114,7 @@
       "id": "deferred.appStoreVersions_appStoreVersionExperimentsV2_getToManyRelationship",
       "operationId": "appStoreVersions_appStoreVersionExperimentsV2_getToManyRelationship",
       "disposition": "deferred",
-      "reason": "The `appStoreVersions` resource-group capability is not yet exposed by asc-mcp.",
+      "reason": "ppo_list_version_experiments returns full V2 experiment resources; this linkage-only relationship document is deferred because it duplicates IDs without experiment attributes.",
       "owner": "asc-mcp",
       "reviewAtSpec": "4.4.1"
     },
@@ -1530,7 +1370,7 @@
       "id": "deferred.apps_appCustomProductPages_getToManyRelationship",
       "operationId": "apps_appCustomProductPages_getToManyRelationship",
       "disposition": "deferred",
-      "reason": "The `apps` resource-group capability is not yet exposed by asc-mcp.",
+      "reason": "custom_pages_list returns full app-owned custom product page resources; this linkage-only relationship document is deferred because it duplicates IDs without page attributes.",
       "owner": "asc-mcp",
       "reviewAtSpec": "4.4.1"
     },
@@ -1578,7 +1418,7 @@
       "id": "deferred.apps_appStoreVersionExperimentsV2_getToManyRelationship",
       "operationId": "apps_appStoreVersionExperimentsV2_getToManyRelationship",
       "disposition": "deferred",
-      "reason": "The `apps` resource-group capability is not yet exposed by asc-mcp.",
+      "reason": "ppo_list_experiments returns full app-owned V2 experiment resources; this linkage-only relationship document is deferred because it duplicates IDs without experiment attributes.",
       "owner": "asc-mcp",
       "reviewAtSpec": "4.4.1"
     },
@@ -1751,22 +1591,6 @@
       "reviewAtSpec": "4.4.1"
     },
     {
-      "id": "deferred.apps_promotedPurchases_getToManyRelationship",
-      "operationId": "apps_promotedPurchases_getToManyRelationship",
-      "disposition": "deferred",
-      "reason": "The `apps` resource-group capability is not yet exposed by asc-mcp.",
-      "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
-    },
-    {
-      "id": "deferred.apps_promotedPurchases_replaceToManyRelationship",
-      "operationId": "apps_promotedPurchases_replaceToManyRelationship",
-      "disposition": "deferred",
-      "reason": "The `apps` resource-group capability is not yet exposed by asc-mcp.",
-      "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
-    },
-    {
       "id": "deferred.apps_reviewSubmissions_getToManyRelationship",
       "operationId": "apps_reviewSubmissions_getToManyRelationship",
       "disposition": "deferred",
@@ -1778,7 +1602,7 @@
       "id": "deferred.apps_searchKeywords_getToManyRelationship",
       "operationId": "apps_searchKeywords_getToManyRelationship",
       "disposition": "deferred",
-      "reason": "The `apps` resource-group capability is not yet exposed by asc-mcp.",
+      "reason": "apps_list_search_keywords returns full related keyword resources; this linkage-only relationship document is deferred because it duplicates IDs without keyword attributes.",
       "owner": "asc-mcp",
       "reviewAtSpec": "4.4.1"
     },
@@ -1811,14 +1635,6 @@
       "operationId": "apps_reviewSubmissions_getToManyRelated",
       "disposition": "deferred",
       "reason": "`review_submissions_list` exposes the equivalent app-owned submission collection through Apple's required filter[app] query and adds state, platform, include, and strict pagination controls; the alternate related-resource path is intentionally deferred.",
-      "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
-    },
-    {
-      "id": "deferred.apps_searchKeywords_getToManyRelated",
-      "operationId": "apps_searchKeywords_getToManyRelated",
-      "disposition": "deferred",
-      "reason": "The `apps` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
       "reviewAtSpec": "4.4.1"
     },
@@ -3490,7 +3306,7 @@
       "id": "deferred.subscriptions_promotedPurchase_getToOneRelationship",
       "operationId": "subscriptions_promotedPurchase_getToOneRelationship",
       "disposition": "deferred",
-      "reason": "The `subscriptions` resource-group capability is not yet exposed by asc-mcp.",
+      "reason": "promoted_list and promoted_get expose the promoted-purchase resource and its linked subscription; this linkage-only inverse relationship is deferred because it carries only the promoted-purchase ID.",
       "owner": "asc-mcp",
       "reviewAtSpec": "4.4.1"
     },
@@ -3610,7 +3426,7 @@
       "id": "deferred.appStoreVersionExperimentsV2_appStoreVersionExperimentTreatments_getToManyRelationship",
       "operationId": "appStoreVersionExperimentsV2_appStoreVersionExperimentTreatments_getToManyRelationship",
       "disposition": "deferred",
-      "reason": "The `appStoreVersionExperiments` resource-group capability is not yet exposed by asc-mcp.",
+      "reason": "ppo_list_treatments returns full treatment resources; this V2 linkage-only relationship document is deferred because it duplicates IDs without treatment attributes.",
       "owner": "asc-mcp",
       "reviewAtSpec": "4.4.1"
     },
@@ -3690,7 +3506,7 @@
       "id": "deferred.inAppPurchasesV2_promotedPurchase_getToOneRelationship",
       "operationId": "inAppPurchasesV2_promotedPurchase_getToOneRelationship",
       "disposition": "deferred",
-      "reason": "The `inAppPurchases` resource-group capability is not yet exposed by asc-mcp.",
+      "reason": "promoted_list and promoted_get expose the promoted-purchase resource and its linked in-app purchase; this linkage-only inverse relationship is deferred because it carries only the promoted-purchase ID.",
       "owner": "asc-mcp",
       "reviewAtSpec": "4.4.1"
     },

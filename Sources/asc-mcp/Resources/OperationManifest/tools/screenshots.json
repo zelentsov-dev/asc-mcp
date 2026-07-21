@@ -3,7 +3,7 @@
   "tools": [
     {
       "tool": "screenshots_create_preview_set",
-      "kind": "direct",
+      "kind": "compound",
       "status": "partial",
       "effect": "write",
       "implementationState": "asBuilt",
@@ -19,6 +19,54 @@
             { "sourceKind": "fixed", "jsonPointer": "/data/relationships/appCustomProductPageLocalization/data/type", "fixedValue": "appCustomProductPageLocalizations" },
             { "sourceKind": "fixed", "jsonPointer": "/data/relationships/appStoreVersionExperimentTreatmentLocalization/data/type", "fixedValue": "appStoreVersionExperimentTreatmentLocalizations" }
           ]
+        },
+        {
+          "operationId": "appStoreVersionLocalizations_appPreviewSets_getToManyRelated",
+          "method": "get",
+          "path": "/v1/appStoreVersionLocalizations/{id}/appPreviewSets",
+          "role": "supporting",
+          "condition": "When the selected parent is an App Store version localization, fully paginate exact previewType preflight, postflight, and diagnostic collections.",
+          "inputs": [
+            { "sourceKind": "fixed", "location": "query", "appleName": "limit", "fixedValue": 200 }
+          ],
+          "optionalParameterClassifications": [
+            { "location": "query", "appleName": "filter[appCustomProductPageLocalization]", "disposition": "intentionallyOmitted", "reason": "Create recovery scopes by the selected App Store parent and exact previewType, so cross-parent filters are unnecessary.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "filter[appStoreVersionExperimentTreatmentLocalization]", "disposition": "intentionallyOmitted", "reason": "Create recovery scopes by the selected App Store parent and exact previewType, so cross-parent filters are unnecessary.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "include", "disposition": "intentionallyOmitted", "reason": "The exact parent-scoped relationship path proves localization scope; the base projection validates identity and previewType plus optional resource self and parent linkage when present, so included resources are unnecessary and not decoded.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[appPreviews]", "disposition": "intentionallyOmitted", "reason": "Create recovery does not include child previews.", "reviewAtSpec": "4.4.1" }
+          ]
+        },
+        {
+          "operationId": "appCustomProductPageLocalizations_appPreviewSets_getToManyRelated",
+          "method": "get",
+          "path": "/v1/appCustomProductPageLocalizations/{id}/appPreviewSets",
+          "role": "supporting",
+          "condition": "When the selected parent is a custom product page localization, fully paginate exact previewType preflight, postflight, and diagnostic collections.",
+          "inputs": [
+            { "sourceKind": "fixed", "location": "query", "appleName": "limit", "fixedValue": 200 }
+          ],
+          "optionalParameterClassifications": [
+            { "location": "query", "appleName": "filter[appStoreVersionLocalization]", "disposition": "intentionallyOmitted", "reason": "Create recovery scopes by the selected custom-page parent and exact previewType.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "filter[appStoreVersionExperimentTreatmentLocalization]", "disposition": "intentionallyOmitted", "reason": "Create recovery scopes by the selected custom-page parent and exact previewType.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "include", "disposition": "intentionallyOmitted", "reason": "The exact parent-scoped relationship path proves localization scope; the base projection validates identity and previewType plus optional resource self and parent linkage when present, so included resources are unnecessary and not decoded.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[appPreviews]", "disposition": "intentionallyOmitted", "reason": "Create recovery does not include child previews.", "reviewAtSpec": "4.4.1" }
+          ]
+        },
+        {
+          "operationId": "appStoreVersionExperimentTreatmentLocalizations_appPreviewSets_getToManyRelated",
+          "method": "get",
+          "path": "/v1/appStoreVersionExperimentTreatmentLocalizations/{id}/appPreviewSets",
+          "role": "supporting",
+          "condition": "When the selected parent is a PPO treatment localization, fully paginate exact previewType preflight, postflight, and diagnostic collections.",
+          "inputs": [
+            { "sourceKind": "fixed", "location": "query", "appleName": "limit", "fixedValue": 200 }
+          ],
+          "optionalParameterClassifications": [
+            { "location": "query", "appleName": "filter[appStoreVersionLocalization]", "disposition": "intentionallyOmitted", "reason": "Create recovery scopes by the selected treatment parent and exact previewType.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "filter[appCustomProductPageLocalization]", "disposition": "intentionallyOmitted", "reason": "Create recovery scopes by the selected treatment parent and exact previewType.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "include", "disposition": "intentionallyOmitted", "reason": "The exact parent-scoped relationship path proves localization scope; the base projection validates identity and previewType plus optional resource self and parent linkage when present, so included resources are unnecessary and not decoded.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[appPreviews]", "disposition": "intentionallyOmitted", "reason": "Create recovery does not include child previews.", "reviewAtSpec": "4.4.1" }
+          ]
         }
       ],
       "fields": [
@@ -26,23 +74,53 @@
         { "toolField": "app_store_version_localization_id", "sourceKind": "requestBody", "operationId": "appPreviewSets_createInstance", "jsonPointer": "/data/relationships/appStoreVersionLocalization/data/id" },
         { "toolField": "custom_product_page_localization_id", "sourceKind": "requestBody", "operationId": "appPreviewSets_createInstance", "jsonPointer": "/data/relationships/appCustomProductPageLocalization/data/id" },
         { "toolField": "treatment_localization_id", "sourceKind": "requestBody", "operationId": "appPreviewSets_createInstance", "jsonPointer": "/data/relationships/appStoreVersionExperimentTreatmentLocalization/data/id" },
-        { "toolField": "preview_type", "sourceKind": "requestBody", "operationId": "appPreviewSets_createInstance", "jsonPointer": "/data/attributes/previewType" }
+        { "toolField": "preview_type", "sourceKind": "requestBody", "operationId": "appPreviewSets_createInstance", "jsonPointer": "/data/attributes/previewType" },
+        { "toolField": "localization_id", "sourceKind": "parameter", "operationId": "appStoreVersionLocalizations_appPreviewSets_getToManyRelated", "location": "path", "appleName": "id" },
+        { "toolField": "app_store_version_localization_id", "sourceKind": "parameter", "operationId": "appStoreVersionLocalizations_appPreviewSets_getToManyRelated", "location": "path", "appleName": "id" },
+        { "toolField": "custom_product_page_localization_id", "sourceKind": "parameter", "operationId": "appCustomProductPageLocalizations_appPreviewSets_getToManyRelated", "location": "path", "appleName": "id" },
+        { "toolField": "treatment_localization_id", "sourceKind": "parameter", "operationId": "appStoreVersionExperimentTreatmentLocalizations_appPreviewSets_getToManyRelated", "location": "path", "appleName": "id" },
+        { "toolField": "preview_type", "sourceKind": "parameter", "operationId": "appStoreVersionLocalizations_appPreviewSets_getToManyRelated", "location": "query", "appleName": "filter[previewType]" },
+        { "toolField": "preview_type", "sourceKind": "parameter", "operationId": "appCustomProductPageLocalizations_appPreviewSets_getToManyRelated", "location": "query", "appleName": "filter[previewType]" },
+        { "toolField": "preview_type", "sourceKind": "parameter", "operationId": "appStoreVersionExperimentTreatmentLocalizations_appPreviewSets_getToManyRelated", "location": "query", "appleName": "filter[previewType]" }
       ],
       "response": {
-        "mode": "projection",
+        "mode": "aggregate",
         "sources": [
-          { "operationId": "appPreviewSets_createInstance", "statusCode": "201", "mediaType": "application/json" }
+          { "operationId": "appPreviewSets_createInstance", "statusCode": "201", "mediaType": "application/json" },
+          { "operationId": "appStoreVersionLocalizations_appPreviewSets_getToManyRelated", "statusCode": "200", "mediaType": "application/json" },
+          { "operationId": "appCustomProductPageLocalizations_appPreviewSets_getToManyRelated", "statusCode": "200", "mediaType": "application/json" },
+          { "operationId": "appStoreVersionExperimentTreatmentLocalizations_appPreviewSets_getToManyRelated", "statusCode": "200", "mediaType": "application/json" }
         ],
         "fields": [
           { "outputField": "success", "localRole": "successfulCreate" },
-          { "outputField": "preview_set", "operationId": "appPreviewSets_createInstance", "jsonPointer": "/data" }
+          { "outputField": "operation", "localRole": "Create discriminator." },
+          { "outputField": "operationCommitted", "localRole": "True only after exact POST 201 and unique fully paginated parent-scoped postflight confirmation." },
+          { "outputField": "operationCommitState", "localRole": "Committed only for an exact attributed create; ambiguous or malformed accepted outcomes remain committed_unverified or unknown." },
+          { "outputField": "createdByInvocation", "localRole": "True only when the exact POST response ID is the unique matching resource in the fresh parent-scoped postflight." },
+          { "outputField": "candidateAttributionConfirmed", "localRole": "True only for unique exact-ID postflight attribution." },
+          { "outputField": "retrySafe", "localRole": "False after any attempted create; inspect the full parent collection before retrying an ambiguous outcome." },
+          { "outputField": "statusCode", "localRole": "Exact verified 201 status." },
+          { "outputField": "parent", "localRole": "Validated localization-parent request scope." },
+          { "outputField": "preview_set", "localRole": "Fresh resource projection returned by the fully paginated parent-scoped GET postflight, not the POST body." },
+          { "outputField": "mutationAttempted", "localRole": "Whether the create POST was attempted." },
+          { "outputField": "write_outcome", "localRole": "Rejected, unknown, or committed_unverified failure disposition." },
+          { "outputField": "error", "localRole": "Redacted validation, request, response, or postflight failure." },
+          { "outputField": "mediaType", "localRole": "Validated preview_type request echo on failure." },
+          { "outputField": "existingCandidates", "localRole": "Matching resources proven by the complete preflight when creation is not attempted." },
+          { "outputField": "setId", "localRole": "Known canonical created-resource candidate ID when available." },
+          { "outputField": "responseSetId", "localRole": "Canonical ID decoded from an accepted POST response when available." },
+          { "outputField": "observedCandidates", "localRole": "Fresh diagnostic collection candidates without attribution to this invocation." },
+          { "outputField": "inspectionError", "localRole": "Redacted diagnostic collection failure." },
+          { "outputField": "outcomeUnknown", "localRole": "True when request commitment cannot be determined." },
+          { "outputField": "inspectionRequired", "localRole": "True when full parent-scoped inspection is required before retry." },
+          { "outputField": "inspection", "localRole": "Executable complete parent-scoped inspection guidance." }
         ]
       },
-      "note": "The handler requires exactly one localization relationship. localization_id remains a compatibility alias for app_store_version_localization_id."
+      "note": "The handler requires exactly one canonical localization relationship, proves matching-set absence through a fully paginated parent-scoped preflight, requires exact POST 201 identity and previewType, and confirms the response ID through a fresh fully paginated parent-scoped postflight. Ambiguous or malformed outcomes are never attributed from observed state and return retry-safe inspection guidance."
     },
     {
       "tool": "screenshots_create_set",
-      "kind": "direct",
+      "kind": "compound",
       "status": "partial",
       "effect": "write",
       "implementationState": "asBuilt",
@@ -58,6 +136,54 @@
             { "sourceKind": "fixed", "jsonPointer": "/data/relationships/appCustomProductPageLocalization/data/type", "fixedValue": "appCustomProductPageLocalizations" },
             { "sourceKind": "fixed", "jsonPointer": "/data/relationships/appStoreVersionExperimentTreatmentLocalization/data/type", "fixedValue": "appStoreVersionExperimentTreatmentLocalizations" }
           ]
+        },
+        {
+          "operationId": "appStoreVersionLocalizations_appScreenshotSets_getToManyRelated",
+          "method": "get",
+          "path": "/v1/appStoreVersionLocalizations/{id}/appScreenshotSets",
+          "role": "supporting",
+          "condition": "When the selected parent is an App Store version localization, fully paginate exact screenshotDisplayType preflight, postflight, and diagnostic collections.",
+          "inputs": [
+            { "sourceKind": "fixed", "location": "query", "appleName": "limit", "fixedValue": 200 }
+          ],
+          "optionalParameterClassifications": [
+            { "location": "query", "appleName": "filter[appCustomProductPageLocalization]", "disposition": "intentionallyOmitted", "reason": "Create recovery scopes by the selected App Store parent and exact screenshotDisplayType.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "filter[appStoreVersionExperimentTreatmentLocalization]", "disposition": "intentionallyOmitted", "reason": "Create recovery scopes by the selected App Store parent and exact screenshotDisplayType.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "include", "disposition": "intentionallyOmitted", "reason": "The exact parent-scoped relationship path proves localization scope; the base projection validates identity and screenshotDisplayType plus optional resource self and parent linkage when present, so included resources are unnecessary and not decoded.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[appScreenshots]", "disposition": "intentionallyOmitted", "reason": "Create recovery does not include child screenshots.", "reviewAtSpec": "4.4.1" }
+          ]
+        },
+        {
+          "operationId": "appCustomProductPageLocalizations_appScreenshotSets_getToManyRelated",
+          "method": "get",
+          "path": "/v1/appCustomProductPageLocalizations/{id}/appScreenshotSets",
+          "role": "supporting",
+          "condition": "When the selected parent is a custom product page localization, fully paginate exact screenshotDisplayType preflight, postflight, and diagnostic collections.",
+          "inputs": [
+            { "sourceKind": "fixed", "location": "query", "appleName": "limit", "fixedValue": 200 }
+          ],
+          "optionalParameterClassifications": [
+            { "location": "query", "appleName": "filter[appStoreVersionLocalization]", "disposition": "intentionallyOmitted", "reason": "Create recovery scopes by the selected custom-page parent and exact screenshotDisplayType.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "filter[appStoreVersionExperimentTreatmentLocalization]", "disposition": "intentionallyOmitted", "reason": "Create recovery scopes by the selected custom-page parent and exact screenshotDisplayType.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "include", "disposition": "intentionallyOmitted", "reason": "The exact parent-scoped relationship path proves localization scope; the base projection validates identity and screenshotDisplayType plus optional resource self and parent linkage when present, so included resources are unnecessary and not decoded.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[appScreenshots]", "disposition": "intentionallyOmitted", "reason": "Create recovery does not include child screenshots.", "reviewAtSpec": "4.4.1" }
+          ]
+        },
+        {
+          "operationId": "appStoreVersionExperimentTreatmentLocalizations_appScreenshotSets_getToManyRelated",
+          "method": "get",
+          "path": "/v1/appStoreVersionExperimentTreatmentLocalizations/{id}/appScreenshotSets",
+          "role": "supporting",
+          "condition": "When the selected parent is a PPO treatment localization, fully paginate exact screenshotDisplayType preflight, postflight, and diagnostic collections.",
+          "inputs": [
+            { "sourceKind": "fixed", "location": "query", "appleName": "limit", "fixedValue": 200 }
+          ],
+          "optionalParameterClassifications": [
+            { "location": "query", "appleName": "filter[appStoreVersionLocalization]", "disposition": "intentionallyOmitted", "reason": "Create recovery scopes by the selected treatment parent and exact screenshotDisplayType.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "filter[appCustomProductPageLocalization]", "disposition": "intentionallyOmitted", "reason": "Create recovery scopes by the selected treatment parent and exact screenshotDisplayType.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "include", "disposition": "intentionallyOmitted", "reason": "The exact parent-scoped relationship path proves localization scope; the base projection validates identity and screenshotDisplayType plus optional resource self and parent linkage when present, so included resources are unnecessary and not decoded.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[appScreenshots]", "disposition": "intentionallyOmitted", "reason": "Create recovery does not include child screenshots.", "reviewAtSpec": "4.4.1" }
+          ]
         }
       ],
       "fields": [
@@ -65,19 +191,49 @@
         { "toolField": "app_store_version_localization_id", "sourceKind": "requestBody", "operationId": "appScreenshotSets_createInstance", "jsonPointer": "/data/relationships/appStoreVersionLocalization/data/id" },
         { "toolField": "custom_product_page_localization_id", "sourceKind": "requestBody", "operationId": "appScreenshotSets_createInstance", "jsonPointer": "/data/relationships/appCustomProductPageLocalization/data/id" },
         { "toolField": "treatment_localization_id", "sourceKind": "requestBody", "operationId": "appScreenshotSets_createInstance", "jsonPointer": "/data/relationships/appStoreVersionExperimentTreatmentLocalization/data/id" },
-        { "toolField": "display_type", "sourceKind": "requestBody", "operationId": "appScreenshotSets_createInstance", "jsonPointer": "/data/attributes/screenshotDisplayType" }
+        { "toolField": "display_type", "sourceKind": "requestBody", "operationId": "appScreenshotSets_createInstance", "jsonPointer": "/data/attributes/screenshotDisplayType" },
+        { "toolField": "localization_id", "sourceKind": "parameter", "operationId": "appStoreVersionLocalizations_appScreenshotSets_getToManyRelated", "location": "path", "appleName": "id" },
+        { "toolField": "app_store_version_localization_id", "sourceKind": "parameter", "operationId": "appStoreVersionLocalizations_appScreenshotSets_getToManyRelated", "location": "path", "appleName": "id" },
+        { "toolField": "custom_product_page_localization_id", "sourceKind": "parameter", "operationId": "appCustomProductPageLocalizations_appScreenshotSets_getToManyRelated", "location": "path", "appleName": "id" },
+        { "toolField": "treatment_localization_id", "sourceKind": "parameter", "operationId": "appStoreVersionExperimentTreatmentLocalizations_appScreenshotSets_getToManyRelated", "location": "path", "appleName": "id" },
+        { "toolField": "display_type", "sourceKind": "parameter", "operationId": "appStoreVersionLocalizations_appScreenshotSets_getToManyRelated", "location": "query", "appleName": "filter[screenshotDisplayType]" },
+        { "toolField": "display_type", "sourceKind": "parameter", "operationId": "appCustomProductPageLocalizations_appScreenshotSets_getToManyRelated", "location": "query", "appleName": "filter[screenshotDisplayType]" },
+        { "toolField": "display_type", "sourceKind": "parameter", "operationId": "appStoreVersionExperimentTreatmentLocalizations_appScreenshotSets_getToManyRelated", "location": "query", "appleName": "filter[screenshotDisplayType]" }
       ],
       "response": {
-        "mode": "projection",
+        "mode": "aggregate",
         "sources": [
-          { "operationId": "appScreenshotSets_createInstance", "statusCode": "201", "mediaType": "application/json" }
+          { "operationId": "appScreenshotSets_createInstance", "statusCode": "201", "mediaType": "application/json" },
+          { "operationId": "appStoreVersionLocalizations_appScreenshotSets_getToManyRelated", "statusCode": "200", "mediaType": "application/json" },
+          { "operationId": "appCustomProductPageLocalizations_appScreenshotSets_getToManyRelated", "statusCode": "200", "mediaType": "application/json" },
+          { "operationId": "appStoreVersionExperimentTreatmentLocalizations_appScreenshotSets_getToManyRelated", "statusCode": "200", "mediaType": "application/json" }
         ],
         "fields": [
           { "outputField": "success", "localRole": "successfulCreate" },
-          { "outputField": "screenshot_set", "operationId": "appScreenshotSets_createInstance", "jsonPointer": "/data" }
+          { "outputField": "operation", "localRole": "Create discriminator." },
+          { "outputField": "operationCommitted", "localRole": "True only after exact POST 201 and unique fully paginated parent-scoped postflight confirmation." },
+          { "outputField": "operationCommitState", "localRole": "Committed only for an exact attributed create; ambiguous or malformed accepted outcomes remain committed_unverified or unknown." },
+          { "outputField": "createdByInvocation", "localRole": "True only when the exact POST response ID is the unique matching resource in the fresh parent-scoped postflight." },
+          { "outputField": "candidateAttributionConfirmed", "localRole": "True only for unique exact-ID postflight attribution." },
+          { "outputField": "retrySafe", "localRole": "False after any attempted create; inspect the full parent collection before retrying an ambiguous outcome." },
+          { "outputField": "statusCode", "localRole": "Exact verified 201 status." },
+          { "outputField": "parent", "localRole": "Validated localization-parent request scope." },
+          { "outputField": "screenshot_set", "localRole": "Fresh resource projection returned by the fully paginated parent-scoped GET postflight, not the POST body." },
+          { "outputField": "mutationAttempted", "localRole": "Whether the create POST was attempted." },
+          { "outputField": "write_outcome", "localRole": "Rejected, unknown, or committed_unverified failure disposition." },
+          { "outputField": "error", "localRole": "Redacted validation, request, response, or postflight failure." },
+          { "outputField": "mediaType", "localRole": "Validated display_type request echo on failure." },
+          { "outputField": "existingCandidates", "localRole": "Matching resources proven by the complete preflight when creation is not attempted." },
+          { "outputField": "setId", "localRole": "Known canonical created-resource candidate ID when available." },
+          { "outputField": "responseSetId", "localRole": "Canonical ID decoded from an accepted POST response when available." },
+          { "outputField": "observedCandidates", "localRole": "Fresh diagnostic collection candidates without attribution to this invocation." },
+          { "outputField": "inspectionError", "localRole": "Redacted diagnostic collection failure." },
+          { "outputField": "outcomeUnknown", "localRole": "True when request commitment cannot be determined." },
+          { "outputField": "inspectionRequired", "localRole": "True when full parent-scoped inspection is required before retry." },
+          { "outputField": "inspection", "localRole": "Executable complete parent-scoped inspection guidance." }
         ]
       },
-      "note": "The handler requires exactly one localization relationship. localization_id remains a compatibility alias for app_store_version_localization_id."
+      "note": "The handler requires exactly one canonical localization relationship, proves matching-set absence through a fully paginated parent-scoped preflight, requires exact POST 201 identity and screenshotDisplayType, and confirms the response ID through a fresh fully paginated parent-scoped postflight. Ambiguous or malformed outcomes are never attributed from observed state and return retry-safe inspection guidance."
     },
     {
       "tool": "screenshots_delete",
@@ -89,10 +245,30 @@
         { "operationId": "appScreenshots_deleteInstance", "method": "delete", "path": "/v1/appScreenshots/{id}", "role": "primary" }
       ],
       "fields": [
-        { "toolField": "screenshot_id", "sourceKind": "parameter", "operationId": "appScreenshots_deleteInstance", "location": "path", "appleName": "id" }
+        { "toolField": "screenshot_id", "sourceKind": "parameter", "operationId": "appScreenshots_deleteInstance", "location": "path", "appleName": "id" },
+        { "toolField": "confirm_screenshot_id", "sourceKind": "local", "localRole": "Must exactly match screenshot_id before DELETE is attempted." }
       ],
-      "response": { "mode": "local", "sources": [{ "operationId": "appScreenshots_deleteInstance", "statusCode": "204" }], "fields": [] },
-      "note": "Apple returns 204; the MCP deletion confirmation is local."
+      "response": {
+        "mode": "local",
+        "sources": [{ "operationId": "appScreenshots_deleteInstance", "statusCode": "204" }],
+        "fields": [
+          { "outputField": "success", "localRole": "True only after exact confirmation and HTTP 204." },
+          { "outputField": "operationCommitState", "localRole": "Committed only for exact 204; rejected, unknown, and committed_unverified remain error outcomes." },
+          { "outputField": "operationCommitted", "localRole": "True only for exact 204." },
+          { "outputField": "retrySafe", "localRole": "False after an attempted delete; inspect the exact resource before retrying ambiguity." },
+          { "outputField": "statusCode", "localRole": "Exact verified 204 status." },
+          { "outputField": "message", "localRole": "Deterministic deletion confirmation built from screenshot_id." },
+          { "outputField": "operation", "localRole": "Delete discriminator returned by structured failure outcomes." },
+          { "outputField": "write_outcome", "localRole": "Stable rejected, unknown, or accepted-but-unverified write classification." },
+          { "outputField": "mutationAttempted", "localRole": "Whether the DELETE request may have reached Apple." },
+          { "outputField": "resourceId", "localRole": "Validated canonical screenshot ID on structured failure outcomes." },
+          { "outputField": "error", "localRole": "Redacted diagnostic for rejected or unverified outcomes." },
+          { "outputField": "inspection", "localRole": "Executable exact-resource inspection guidance when retry safety is unknown." },
+          { "outputField": "outcomeUnknown", "localRole": "True when DELETE commitment cannot be determined." },
+          { "outputField": "inspectionRequired", "localRole": "True when exact-resource inspection is required before retry." }
+        ]
+      },
+      "note": "Runtime validation requires canonical IDs and exact confirm_screenshot_id. Only HTTP 204 confirms deletion; rejected, unknown, and unexpected successful outcomes remain distinct and never become false success."
     },
     {
       "tool": "screenshots_delete_preview",
@@ -104,40 +280,214 @@
         { "operationId": "appPreviews_deleteInstance", "method": "delete", "path": "/v1/appPreviews/{id}", "role": "primary" }
       ],
       "fields": [
-        { "toolField": "preview_id", "sourceKind": "parameter", "operationId": "appPreviews_deleteInstance", "location": "path", "appleName": "id" }
+        { "toolField": "preview_id", "sourceKind": "parameter", "operationId": "appPreviews_deleteInstance", "location": "path", "appleName": "id" },
+        { "toolField": "confirm_preview_id", "sourceKind": "local", "localRole": "Must exactly match preview_id before DELETE is attempted." }
       ],
-      "response": { "mode": "local", "sources": [{ "operationId": "appPreviews_deleteInstance", "statusCode": "204" }], "fields": [] },
-      "note": "Apple returns 204; the MCP deletion confirmation is local."
+      "response": {
+        "mode": "local",
+        "sources": [{ "operationId": "appPreviews_deleteInstance", "statusCode": "204" }],
+        "fields": [
+          { "outputField": "success", "localRole": "True only after exact confirmation and HTTP 204." },
+          { "outputField": "operationCommitState", "localRole": "Committed only for exact 204; rejected, unknown, and committed_unverified remain error outcomes." },
+          { "outputField": "operationCommitted", "localRole": "True only for exact 204." },
+          { "outputField": "retrySafe", "localRole": "False after an attempted delete; inspect the exact resource before retrying ambiguity." },
+          { "outputField": "statusCode", "localRole": "Exact verified 204 status." },
+          { "outputField": "message", "localRole": "Deterministic deletion confirmation built from preview_id." },
+          { "outputField": "operation", "localRole": "Delete discriminator returned by structured failure outcomes." },
+          { "outputField": "write_outcome", "localRole": "Stable rejected, unknown, or accepted-but-unverified write classification." },
+          { "outputField": "mutationAttempted", "localRole": "Whether the DELETE request may have reached Apple." },
+          { "outputField": "resourceId", "localRole": "Validated canonical preview ID on structured failure outcomes." },
+          { "outputField": "error", "localRole": "Redacted diagnostic for rejected or unverified outcomes." },
+          { "outputField": "inspection", "localRole": "Executable exact-resource inspection guidance when retry safety is unknown." },
+          { "outputField": "outcomeUnknown", "localRole": "True when DELETE commitment cannot be determined." },
+          { "outputField": "inspectionRequired", "localRole": "True when exact-resource inspection is required before retry." }
+        ]
+      },
+      "note": "Runtime validation requires canonical IDs and exact confirm_preview_id. Only HTTP 204 confirms deletion; rejected, unknown, and unexpected successful outcomes remain distinct and never become false success."
     },
     {
       "tool": "screenshots_delete_preview_set",
-      "kind": "direct",
+      "kind": "compound",
       "status": "partial",
       "effect": "destructive",
       "implementationState": "asBuilt",
       "operations": [
+        {
+          "operationId": "appPreviewSets_getInstance",
+          "method": "get",
+          "path": "/v1/appPreviewSets/{id}",
+          "role": "supporting",
+          "condition": "Confirm the canonical target identity before the cascade delete.",
+          "optionalParameterClassifications": [
+            { "location": "query", "appleName": "include", "disposition": "intentionallyOmitted", "reason": "Delete preflight needs only the exact base set identity.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[appPreviews]", "disposition": "intentionallyOmitted", "reason": "The preflight does not include previews.", "reviewAtSpec": "4.4.1" }
+          ]
+        },
         { "operationId": "appPreviewSets_deleteInstance", "method": "delete", "path": "/v1/appPreviewSets/{id}", "role": "primary" }
       ],
       "fields": [
-        { "toolField": "set_id", "sourceKind": "parameter", "operationId": "appPreviewSets_deleteInstance", "location": "path", "appleName": "id" }
+        { "toolField": "set_id", "sourceKind": "parameter", "operationId": "appPreviewSets_deleteInstance", "location": "path", "appleName": "id" },
+        { "toolField": "set_id", "sourceKind": "parameter", "operationId": "appPreviewSets_getInstance", "location": "path", "appleName": "id" },
+        { "toolField": "confirm_set_id", "sourceKind": "local", "localRole": "Must exactly match set_id before the cascade delete preflight." }
       ],
-      "response": { "mode": "local", "sources": [{ "operationId": "appPreviewSets_deleteInstance", "statusCode": "204" }], "fields": [] },
-      "note": "Apple returns 204; the MCP deletion confirmation is local."
+      "response": {
+        "mode": "local",
+        "sources": [{ "operationId": "appPreviewSets_getInstance", "statusCode": "200", "mediaType": "application/json" }, { "operationId": "appPreviewSets_deleteInstance", "statusCode": "204" }],
+        "fields": [
+          { "outputField": "success", "localRole": "True only after exact-ID preflight and HTTP 204." },
+          { "outputField": "operation", "localRole": "Delete discriminator." },
+          { "outputField": "operationCommitState", "localRole": "Committed only for exact 204; accepted but unverified and unknown outcomes remain errors." },
+          { "outputField": "operationCommitted", "localRole": "True only for exact 204." },
+          { "outputField": "retrySafe", "localRole": "False after an attempted cascade delete." },
+          { "outputField": "statusCode", "localRole": "Exact verified 204 status." },
+          { "outputField": "setId", "localRole": "Validated canonical request ID." },
+          { "outputField": "message", "localRole": "Deterministic cascade-deletion confirmation." },
+          { "outputField": "write_outcome", "localRole": "Stable rejected, unknown, or accepted-but-unverified write classification." },
+          { "outputField": "mutationAttempted", "localRole": "Whether the cascade DELETE request may have reached Apple." },
+          { "outputField": "error", "localRole": "Redacted diagnostic for rejected or unverified outcomes." },
+          { "outputField": "inspection", "localRole": "Executable exact-set inspection guidance when retry safety is unknown." },
+          { "outputField": "outcomeUnknown", "localRole": "True when DELETE commitment cannot be determined." },
+          { "outputField": "inspectionRequired", "localRole": "True when exact-set inspection is required before retry." }
+        ]
+      },
+      "note": "Requires canonical set_id, exact confirm_set_id, an exact identity GET, and HTTP 204. Unknown or unexpected successful DELETE outcomes remain unverified."
     },
     {
       "tool": "screenshots_delete_set",
-      "kind": "direct",
+      "kind": "compound",
       "status": "partial",
       "effect": "destructive",
       "implementationState": "asBuilt",
       "operations": [
+        {
+          "operationId": "appScreenshotSets_getInstance",
+          "method": "get",
+          "path": "/v1/appScreenshotSets/{id}",
+          "role": "supporting",
+          "condition": "Confirm the canonical target identity before the cascade delete.",
+          "optionalParameterClassifications": [
+            { "location": "query", "appleName": "include", "disposition": "intentionallyOmitted", "reason": "Delete preflight needs only the exact base set identity.", "reviewAtSpec": "4.4.1" },
+            { "location": "query", "appleName": "limit[appScreenshots]", "disposition": "intentionallyOmitted", "reason": "The preflight does not include screenshots.", "reviewAtSpec": "4.4.1" }
+          ]
+        },
         { "operationId": "appScreenshotSets_deleteInstance", "method": "delete", "path": "/v1/appScreenshotSets/{id}", "role": "primary" }
       ],
       "fields": [
-        { "toolField": "set_id", "sourceKind": "parameter", "operationId": "appScreenshotSets_deleteInstance", "location": "path", "appleName": "id" }
+        { "toolField": "set_id", "sourceKind": "parameter", "operationId": "appScreenshotSets_deleteInstance", "location": "path", "appleName": "id" },
+        { "toolField": "set_id", "sourceKind": "parameter", "operationId": "appScreenshotSets_getInstance", "location": "path", "appleName": "id" },
+        { "toolField": "confirm_set_id", "sourceKind": "local", "localRole": "Must exactly match set_id before the cascade delete preflight." }
       ],
-      "response": { "mode": "local", "sources": [{ "operationId": "appScreenshotSets_deleteInstance", "statusCode": "204" }], "fields": [] },
-      "note": "Apple returns 204; the MCP deletion confirmation is local."
+      "response": {
+        "mode": "local",
+        "sources": [{ "operationId": "appScreenshotSets_getInstance", "statusCode": "200", "mediaType": "application/json" }, { "operationId": "appScreenshotSets_deleteInstance", "statusCode": "204" }],
+        "fields": [
+          { "outputField": "success", "localRole": "True only after exact-ID preflight and HTTP 204." },
+          { "outputField": "operation", "localRole": "Delete discriminator." },
+          { "outputField": "operationCommitState", "localRole": "Committed only for exact 204; accepted but unverified and unknown outcomes remain errors." },
+          { "outputField": "operationCommitted", "localRole": "True only for exact 204." },
+          { "outputField": "retrySafe", "localRole": "False after an attempted cascade delete." },
+          { "outputField": "statusCode", "localRole": "Exact verified 204 status." },
+          { "outputField": "setId", "localRole": "Validated canonical request ID." },
+          { "outputField": "message", "localRole": "Deterministic cascade-deletion confirmation." },
+          { "outputField": "write_outcome", "localRole": "Stable rejected, unknown, or accepted-but-unverified write classification." },
+          { "outputField": "mutationAttempted", "localRole": "Whether the cascade DELETE request may have reached Apple." },
+          { "outputField": "error", "localRole": "Redacted diagnostic for rejected or unverified outcomes." },
+          { "outputField": "inspection", "localRole": "Executable exact-set inspection guidance when retry safety is unknown." },
+          { "outputField": "outcomeUnknown", "localRole": "True when DELETE commitment cannot be determined." },
+          { "outputField": "inspectionRequired", "localRole": "True when exact-set inspection is required before retry." }
+        ]
+      },
+      "note": "Requires canonical set_id, exact confirm_set_id, an exact identity GET, and HTTP 204. Unknown or unexpected successful DELETE outcomes remain unverified."
+    },
+    {
+      "tool": "screenshots_get_preview_set",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "appPreviewSets_getInstance",
+          "method": "get",
+          "path": "/v1/appPreviewSets/{id}",
+          "role": "primary",
+          "optionalParameterClassifications": [
+            {
+              "location": "query",
+              "appleName": "include",
+              "disposition": "intentionallyOmitted",
+              "reason": "The exact-ID path proves resource identity; the base appPreviewSet projection includes validated attributes plus optional self and parent linkage when present, so included localization and appPreview resources are unnecessary and not decoded.",
+              "reviewAtSpec": "4.4.1"
+            },
+            {
+              "location": "query",
+              "appleName": "limit[appPreviews]",
+              "disposition": "intentionallyOmitted",
+              "reason": "The nested limit applies only when appPreviews is included; callers page previews through screenshots_list_previews.",
+              "reviewAtSpec": "4.4.1"
+            }
+          ]
+        }
+      ],
+      "fields": [
+        { "toolField": "set_id", "sourceKind": "parameter", "operationId": "appPreviewSets_getInstance", "location": "path", "appleName": "id" }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          { "operationId": "appPreviewSets_getInstance", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": [
+          { "outputField": "success", "localRole": "successfulRead" },
+          { "outputField": "preview_set", "localRole": "Validated base appPreviewSet projection with identity, previewType, optional self, and optional canonical parent linkage; not the raw Apple document." }
+        ]
+      },
+      "note": "The handler validates the exact canonical set identity and appPreviewSets resource type."
+    },
+    {
+      "tool": "screenshots_get_set",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "appScreenshotSets_getInstance",
+          "method": "get",
+          "path": "/v1/appScreenshotSets/{id}",
+          "role": "primary",
+          "optionalParameterClassifications": [
+            {
+              "location": "query",
+              "appleName": "include",
+              "disposition": "intentionallyOmitted",
+              "reason": "The exact-ID path proves resource identity; the base appScreenshotSet projection includes validated attributes plus optional self and parent linkage when present, so included localization and appScreenshot resources are unnecessary and not decoded.",
+              "reviewAtSpec": "4.4.1"
+            },
+            {
+              "location": "query",
+              "appleName": "limit[appScreenshots]",
+              "disposition": "intentionallyOmitted",
+              "reason": "The nested limit applies only when appScreenshots is included; callers page screenshots through screenshots_list.",
+              "reviewAtSpec": "4.4.1"
+            }
+          ]
+        }
+      ],
+      "fields": [
+        { "toolField": "set_id", "sourceKind": "parameter", "operationId": "appScreenshotSets_getInstance", "location": "path", "appleName": "id" }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          { "operationId": "appScreenshotSets_getInstance", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": [
+          { "outputField": "success", "localRole": "successfulRead" },
+          { "outputField": "screenshot_set", "localRole": "Validated base appScreenshotSet projection with identity, screenshotDisplayType, optional self, and optional canonical parent linkage; not the raw Apple document." }
+        ]
+      },
+      "note": "The handler validates the exact canonical set identity and appScreenshotSets resource type."
     },
     {
       "tool": "screenshots_get",
@@ -156,7 +506,7 @@
               "location": "query",
               "appleName": "include",
               "disposition": "intentionallyOmitted",
-              "reason": "Apple only permits appScreenshotSet here, while screenshots_get returns the screenshot attribute projection and does not decode JSON:API included resources; exposing include would promise parent-set data that the tool discards.",
+              "reason": "The exact-ID path proves resource identity; screenshots_get returns a validated base projection with attributes plus optional resource self and screenshot-set linkage when present, so included appScreenshotSet resources are unnecessary and not decoded.",
               "reviewAtSpec": "4.4.1"
             }
           ]
@@ -170,7 +520,13 @@
         "sources": [
           { "operationId": "appScreenshots_getInstance", "statusCode": "200", "mediaType": "application/json" }
         ],
-        "fields": []
+        "fields": [
+          { "outputField": "success", "localRole": "successfulRead" },
+          { "outputField": "screenshot", "localRole": "Validated redacted appScreenshot projection; upload operations, signed URLs, and headers are omitted." },
+          { "outputField": "screenshot.assetDeliveryState.warnings", "operationId": "appScreenshots_getInstance", "jsonPointer": "/data/attributes/assetDeliveryState/warnings" },
+          { "outputField": "screenshot.selfLink", "operationId": "appScreenshots_getInstance", "jsonPointer": "/data/links/self" },
+          { "outputField": "screenshot.screenshotSet", "operationId": "appScreenshots_getInstance", "jsonPointer": "/data/relationships/appScreenshotSet/data", "localRole": "Projected only when Apple supplies canonical relationship linkage; absent optional linkage is not invented." }
+        ]
       }
     },
     {
@@ -190,7 +546,7 @@
               "location": "query",
               "appleName": "include",
               "disposition": "intentionallyOmitted",
-              "reason": "Apple only permits appPreviewSet here, while screenshots_get_preview returns the preview attribute projection and does not decode JSON:API included resources; exposing include would promise parent-set data that the tool discards.",
+              "reason": "The exact-ID path proves resource identity; screenshots_get_preview returns a validated base projection with attributes plus optional resource self and preview-set linkage when present, so included appPreviewSet resources are unnecessary and not decoded.",
               "reviewAtSpec": "4.4.1"
             }
           ]
@@ -206,10 +562,14 @@
         ],
         "fields": [
           { "outputField": "success", "localRole": "successfulRead" },
-          { "outputField": "preview", "operationId": "appPreviews_getInstance", "jsonPointer": "/data" },
+          { "outputField": "preview", "localRole": "Validated redacted appPreview projection; upload operations, signed URLs, and headers are omitted." },
           { "outputField": "preview.previewFrameTimeCode", "operationId": "appPreviews_getInstance", "jsonPointer": "/data/attributes/previewFrameTimeCode" },
           { "outputField": "preview.previewFrameImage", "operationId": "appPreviews_getInstance", "jsonPointer": "/data/attributes/previewFrameImage" },
-          { "outputField": "preview.previewImage", "operationId": "appPreviews_getInstance", "jsonPointer": "/data/attributes/previewImage" }
+          { "outputField": "preview.previewImage", "operationId": "appPreviews_getInstance", "jsonPointer": "/data/attributes/previewImage" },
+          { "outputField": "preview.assetDeliveryState.warnings", "operationId": "appPreviews_getInstance", "jsonPointer": "/data/attributes/assetDeliveryState/warnings" },
+          { "outputField": "preview.videoDeliveryState.warnings", "operationId": "appPreviews_getInstance", "jsonPointer": "/data/attributes/videoDeliveryState/warnings" },
+          { "outputField": "preview.selfLink", "operationId": "appPreviews_getInstance", "jsonPointer": "/data/links/self" },
+          { "outputField": "preview.previewSet", "operationId": "appPreviews_getInstance", "jsonPointer": "/data/relationships/appPreviewSet/data", "localRole": "Projected only when Apple supplies canonical relationship linkage; absent optional linkage is not invented." }
         ]
       },
       "note": "The projection exposes Apple previewFrameImage and retains deprecated previewImage for compatibility with existing MCP consumers."
@@ -231,7 +591,7 @@
               "location": "query",
               "appleName": "include",
               "disposition": "intentionallyOmitted",
-              "reason": "Apple only permits appScreenshotSet here, while screenshots_list returns ordered screenshot attributes and does not decode JSON:API included resources; callers already identify the parent through set_id.",
+              "reason": "The exact appScreenshotSet relationship path proves set scope; screenshots_list returns ordered validated base projections with attributes plus optional resource self and set linkage when present, so included appScreenshotSet resources are unnecessary and not decoded.",
               "reviewAtSpec": "4.4.1"
             }
           ]
@@ -247,12 +607,21 @@
         "sources": [
           { "operationId": "appScreenshotSets_appScreenshots_getToManyRelated", "statusCode": "200", "mediaType": "application/json" }
         ],
-        "fields": []
+        "fields": [
+          { "outputField": "success", "localRole": "successfulRead" },
+          { "outputField": "screenshots", "localRole": "Ordered validated redacted appScreenshot projections from the exact parent-set page; upload operations, signed URLs, and headers are omitted." },
+          { "outputField": "count", "localRole": "Count of validated resources on this page." },
+          { "outputField": "next_url", "operationId": "appScreenshotSets_appScreenshots_getToManyRelated", "jsonPointer": "/links/next" },
+          { "outputField": "total", "operationId": "appScreenshotSets_appScreenshots_getToManyRelated", "jsonPointer": "/meta/paging/total" },
+          { "outputField": "screenshots.*.assetDeliveryState.warnings", "operationId": "appScreenshotSets_appScreenshots_getToManyRelated", "jsonPointer": "/data/*/attributes/assetDeliveryState/warnings" },
+          { "outputField": "screenshots.*.selfLink", "operationId": "appScreenshotSets_appScreenshots_getToManyRelated", "jsonPointer": "/data/*/links/self" },
+          { "outputField": "screenshots.*.screenshotSet", "operationId": "appScreenshotSets_appScreenshots_getToManyRelated", "jsonPointer": "/data/*/relationships/appScreenshotSet/data", "localRole": "Projected only when Apple supplies canonical linkage; the exact parent endpoint remains the scope proof." }
+        ]
       }
     },
     {
       "tool": "screenshots_list_preview_sets",
-      "kind": "direct",
+      "kind": "compound",
       "status": "partial",
       "effect": "read",
       "implementationState": "asBuilt",
@@ -262,12 +631,13 @@
           "method": "get",
           "path": "/v1/appStoreVersionLocalizations/{id}/appPreviewSets",
           "role": "primary",
+          "condition": "Selected parent is localization_id or app_store_version_localization_id.",
           "optionalParameterClassifications": [
             {
               "location": "query",
               "appleName": "include",
               "disposition": "intentionallyOmitted",
-              "reason": "Apple can include localization parents or appPreviews, but screenshots_list_preview_sets deliberately returns only each base preview set ID, type, and previewType and does not decode included resources.",
+              "reason": "The exact localization relationship path proves parent scope; each base preview-set projection includes validated identity, previewType, optional self, and optional parent linkage when present, so included resources are unnecessary and not decoded.",
               "reviewAtSpec": "4.4.1"
             },
             {
@@ -278,23 +648,92 @@
               "reviewAtSpec": "4.4.1"
             }
           ]
+        },
+        {
+          "operationId": "appCustomProductPageLocalizations_appPreviewSets_getToManyRelated",
+          "method": "get",
+          "path": "/v1/appCustomProductPageLocalizations/{id}/appPreviewSets",
+          "role": "conditional",
+          "condition": "Selected parent is custom_product_page_localization_id.",
+          "optionalParameterClassifications": [
+            {
+              "location": "query",
+              "appleName": "include",
+              "disposition": "intentionallyOmitted",
+              "reason": "The exact localization relationship path proves parent scope; each base preview-set projection includes validated identity, previewType, optional self, and optional parent linkage when present, so included resources are unnecessary and not decoded.",
+              "reviewAtSpec": "4.4.1"
+            },
+            {
+              "location": "query",
+              "appleName": "limit[appPreviews]",
+              "disposition": "intentionallyOmitted",
+              "reason": "The tool does not include child previews; callers page them through screenshots_list_previews.",
+              "reviewAtSpec": "4.4.1"
+            }
+          ]
+        },
+        {
+          "operationId": "appStoreVersionExperimentTreatmentLocalizations_appPreviewSets_getToManyRelated",
+          "method": "get",
+          "path": "/v1/appStoreVersionExperimentTreatmentLocalizations/{id}/appPreviewSets",
+          "role": "conditional",
+          "condition": "Selected parent is treatment_localization_id.",
+          "optionalParameterClassifications": [
+            {
+              "location": "query",
+              "appleName": "include",
+              "disposition": "intentionallyOmitted",
+              "reason": "The exact localization relationship path proves parent scope; each base preview-set projection includes validated identity, previewType, optional self, and optional parent linkage when present, so included resources are unnecessary and not decoded.",
+              "reviewAtSpec": "4.4.1"
+            },
+            {
+              "location": "query",
+              "appleName": "limit[appPreviews]",
+              "disposition": "intentionallyOmitted",
+              "reason": "The tool does not include child previews; callers page them through screenshots_list_previews.",
+              "reviewAtSpec": "4.4.1"
+            }
+          ]
         }
       ],
       "fields": [
         { "toolField": "localization_id", "sourceKind": "parameter", "operationId": "appStoreVersionLocalizations_appPreviewSets_getToManyRelated", "location": "path", "appleName": "id" },
+        { "toolField": "app_store_version_localization_id", "sourceKind": "parameter", "operationId": "appStoreVersionLocalizations_appPreviewSets_getToManyRelated", "location": "path", "appleName": "id" },
+        { "toolField": "custom_product_page_localization_id", "sourceKind": "parameter", "operationId": "appCustomProductPageLocalizations_appPreviewSets_getToManyRelated", "location": "path", "appleName": "id" },
+        { "toolField": "treatment_localization_id", "sourceKind": "parameter", "operationId": "appStoreVersionExperimentTreatmentLocalizations_appPreviewSets_getToManyRelated", "location": "path", "appleName": "id" },
         { "toolField": "preview_types", "sourceKind": "parameter", "operationId": "appStoreVersionLocalizations_appPreviewSets_getToManyRelated", "location": "query", "appleName": "filter[previewType]" },
+        { "toolField": "preview_types", "sourceKind": "parameter", "operationId": "appCustomProductPageLocalizations_appPreviewSets_getToManyRelated", "location": "query", "appleName": "filter[previewType]" },
+        { "toolField": "preview_types", "sourceKind": "parameter", "operationId": "appStoreVersionExperimentTreatmentLocalizations_appPreviewSets_getToManyRelated", "location": "query", "appleName": "filter[previewType]" },
         { "toolField": "custom_product_page_localization_ids", "sourceKind": "parameter", "operationId": "appStoreVersionLocalizations_appPreviewSets_getToManyRelated", "location": "query", "appleName": "filter[appCustomProductPageLocalization]" },
         { "toolField": "treatment_localization_ids", "sourceKind": "parameter", "operationId": "appStoreVersionLocalizations_appPreviewSets_getToManyRelated", "location": "query", "appleName": "filter[appStoreVersionExperimentTreatmentLocalization]" },
+        { "toolField": "app_store_version_localization_ids", "sourceKind": "parameter", "operationId": "appCustomProductPageLocalizations_appPreviewSets_getToManyRelated", "location": "query", "appleName": "filter[appStoreVersionLocalization]" },
+        { "toolField": "treatment_localization_ids", "sourceKind": "parameter", "operationId": "appCustomProductPageLocalizations_appPreviewSets_getToManyRelated", "location": "query", "appleName": "filter[appStoreVersionExperimentTreatmentLocalization]" },
+        { "toolField": "app_store_version_localization_ids", "sourceKind": "parameter", "operationId": "appStoreVersionExperimentTreatmentLocalizations_appPreviewSets_getToManyRelated", "location": "query", "appleName": "filter[appStoreVersionLocalization]" },
+        { "toolField": "custom_product_page_localization_ids", "sourceKind": "parameter", "operationId": "appStoreVersionExperimentTreatmentLocalizations_appPreviewSets_getToManyRelated", "location": "query", "appleName": "filter[appCustomProductPageLocalization]" },
         { "toolField": "limit", "sourceKind": "parameter", "operationId": "appStoreVersionLocalizations_appPreviewSets_getToManyRelated", "location": "query", "appleName": "limit" },
+        { "toolField": "limit", "sourceKind": "parameter", "operationId": "appCustomProductPageLocalizations_appPreviewSets_getToManyRelated", "location": "query", "appleName": "limit" },
+        { "toolField": "limit", "sourceKind": "parameter", "operationId": "appStoreVersionExperimentTreatmentLocalizations_appPreviewSets_getToManyRelated", "location": "query", "appleName": "limit" },
         { "toolField": "next_url", "sourceKind": "local", "localRole": "paginationContinuation" }
       ],
       "response": {
         "mode": "projection",
         "sources": [
-          { "operationId": "appStoreVersionLocalizations_appPreviewSets_getToManyRelated", "statusCode": "200", "mediaType": "application/json" }
+          { "operationId": "appStoreVersionLocalizations_appPreviewSets_getToManyRelated", "statusCode": "200", "mediaType": "application/json" },
+          { "operationId": "appCustomProductPageLocalizations_appPreviewSets_getToManyRelated", "statusCode": "200", "mediaType": "application/json" },
+          { "operationId": "appStoreVersionExperimentTreatmentLocalizations_appPreviewSets_getToManyRelated", "statusCode": "200", "mediaType": "application/json" }
         ],
-        "fields": []
-      }
+        "fields": [
+          { "outputField": "success", "localRole": "successfulRead" },
+          { "outputField": "preview_sets", "localRole": "Validated base resources from the selected one-of-three parent-scoped operation." },
+          { "outputField": "count", "localRole": "Count of validated resources on this page." },
+          { "outputField": "parent", "localRole": "Validated selected localization-parent scope." },
+          { "outputField": "next_url", "localRole": "Apple continuation after configured-origin, exact-path, query, and cursor validation." },
+          { "outputField": "total", "localRole": "Optional Apple paging total after limit and count validation." },
+          { "outputField": "preview_sets.*.selfLink", "localRole": "Optional resource links.self from the selected parent-scoped operation, validated when present." },
+          { "outputField": "preview_sets.*.parent", "localRole": "Projected only when Apple supplies canonical relationship linkage; no unverified lineage is invented." }
+        ]
+      },
+      "note": "Exactly one canonical parent selects one Apple relationship endpoint. Parent-specific filters are forwarded only where Apple exposes them, limits are validated in 1...200, and next_url remains within the selected relationship scope."
     },
     {
       "tool": "screenshots_list_previews",
@@ -313,7 +752,7 @@
               "location": "query",
               "appleName": "include",
               "disposition": "intentionallyOmitted",
-              "reason": "Apple only permits appPreviewSet here, while screenshots_list_previews returns ordered preview attributes and does not decode JSON:API included resources; callers already identify the parent through set_id.",
+              "reason": "The exact appPreviewSet relationship path proves set scope; screenshots_list_previews returns ordered validated base projections with attributes plus optional resource self and set linkage when present, so included appPreviewSet resources are unnecessary and not decoded.",
               "reviewAtSpec": "4.4.1"
             }
           ]
@@ -331,16 +770,23 @@
         ],
         "fields": [
           { "outputField": "success", "localRole": "successfulRead" },
-          { "outputField": "previews", "operationId": "appPreviewSets_appPreviews_getToManyRelated", "jsonPointer": "/data" },
-          { "outputField": "previews.previewFrameTimeCode", "operationId": "appPreviewSets_appPreviews_getToManyRelated", "jsonPointer": "/data/*/attributes/previewFrameTimeCode" },
-          { "outputField": "previews.previewFrameImage", "operationId": "appPreviewSets_appPreviews_getToManyRelated", "jsonPointer": "/data/*/attributes/previewFrameImage" },
-          { "outputField": "next_url", "operationId": "appPreviewSets_appPreviews_getToManyRelated", "jsonPointer": "/links/next" }
+          { "outputField": "previews", "localRole": "Ordered validated redacted appPreview projections from the exact parent-set page; upload operations, signed URLs, and headers are omitted." },
+          { "outputField": "count", "localRole": "Count of validated resources on this page." },
+          { "outputField": "previews.*.previewFrameTimeCode", "operationId": "appPreviewSets_appPreviews_getToManyRelated", "jsonPointer": "/data/*/attributes/previewFrameTimeCode" },
+          { "outputField": "previews.*.previewFrameImage", "operationId": "appPreviewSets_appPreviews_getToManyRelated", "jsonPointer": "/data/*/attributes/previewFrameImage" },
+          { "outputField": "previews.*.previewImage", "operationId": "appPreviewSets_appPreviews_getToManyRelated", "jsonPointer": "/data/*/attributes/previewImage" },
+          { "outputField": "previews.*.assetDeliveryState.warnings", "operationId": "appPreviewSets_appPreviews_getToManyRelated", "jsonPointer": "/data/*/attributes/assetDeliveryState/warnings" },
+          { "outputField": "previews.*.videoDeliveryState.warnings", "operationId": "appPreviewSets_appPreviews_getToManyRelated", "jsonPointer": "/data/*/attributes/videoDeliveryState/warnings" },
+          { "outputField": "previews.*.selfLink", "operationId": "appPreviewSets_appPreviews_getToManyRelated", "jsonPointer": "/data/*/links/self" },
+          { "outputField": "previews.*.previewSet", "operationId": "appPreviewSets_appPreviews_getToManyRelated", "jsonPointer": "/data/*/relationships/appPreviewSet/data", "localRole": "Projected only when Apple supplies canonical linkage; the exact parent endpoint remains the scope proof." },
+          { "outputField": "next_url", "operationId": "appPreviewSets_appPreviews_getToManyRelated", "jsonPointer": "/links/next" },
+          { "outputField": "total", "operationId": "appPreviewSets_appPreviews_getToManyRelated", "jsonPointer": "/meta/paging/total" }
         ]
       }
     },
     {
       "tool": "screenshots_list_sets",
-      "kind": "direct",
+      "kind": "compound",
       "status": "partial",
       "effect": "read",
       "implementationState": "asBuilt",
@@ -350,12 +796,13 @@
           "method": "get",
           "path": "/v1/appStoreVersionLocalizations/{id}/appScreenshotSets",
           "role": "primary",
+          "condition": "Selected parent is localization_id or app_store_version_localization_id.",
           "optionalParameterClassifications": [
             {
               "location": "query",
               "appleName": "include",
               "disposition": "intentionallyOmitted",
-              "reason": "Apple can include localization parents or appScreenshots, but screenshots_list_sets deliberately returns only each base screenshot set ID, type, and screenshotDisplayType and does not decode included resources.",
+              "reason": "The exact localization relationship path proves parent scope; each base screenshot-set projection includes validated identity, screenshotDisplayType, optional self, and optional parent linkage when present, so included resources are unnecessary and not decoded.",
               "reviewAtSpec": "4.4.1"
             },
             {
@@ -366,31 +813,119 @@
               "reviewAtSpec": "4.4.1"
             }
           ]
+        },
+        {
+          "operationId": "appCustomProductPageLocalizations_appScreenshotSets_getToManyRelated",
+          "method": "get",
+          "path": "/v1/appCustomProductPageLocalizations/{id}/appScreenshotSets",
+          "role": "conditional",
+          "condition": "Selected parent is custom_product_page_localization_id.",
+          "optionalParameterClassifications": [
+            {
+              "location": "query",
+              "appleName": "include",
+              "disposition": "intentionallyOmitted",
+              "reason": "The exact localization relationship path proves parent scope; each base screenshot-set projection includes validated identity, screenshotDisplayType, optional self, and optional parent linkage when present, so included resources are unnecessary and not decoded.",
+              "reviewAtSpec": "4.4.1"
+            },
+            {
+              "location": "query",
+              "appleName": "limit[appScreenshots]",
+              "disposition": "intentionallyOmitted",
+              "reason": "The tool does not include child screenshots; callers page them through screenshots_list.",
+              "reviewAtSpec": "4.4.1"
+            }
+          ]
+        },
+        {
+          "operationId": "appStoreVersionExperimentTreatmentLocalizations_appScreenshotSets_getToManyRelated",
+          "method": "get",
+          "path": "/v1/appStoreVersionExperimentTreatmentLocalizations/{id}/appScreenshotSets",
+          "role": "conditional",
+          "condition": "Selected parent is treatment_localization_id.",
+          "optionalParameterClassifications": [
+            {
+              "location": "query",
+              "appleName": "include",
+              "disposition": "intentionallyOmitted",
+              "reason": "The exact localization relationship path proves parent scope; each base screenshot-set projection includes validated identity, screenshotDisplayType, optional self, and optional parent linkage when present, so included resources are unnecessary and not decoded.",
+              "reviewAtSpec": "4.4.1"
+            },
+            {
+              "location": "query",
+              "appleName": "limit[appScreenshots]",
+              "disposition": "intentionallyOmitted",
+              "reason": "The tool does not include child screenshots; callers page them through screenshots_list.",
+              "reviewAtSpec": "4.4.1"
+            }
+          ]
         }
       ],
       "fields": [
         { "toolField": "localization_id", "sourceKind": "parameter", "operationId": "appStoreVersionLocalizations_appScreenshotSets_getToManyRelated", "location": "path", "appleName": "id" },
+        { "toolField": "app_store_version_localization_id", "sourceKind": "parameter", "operationId": "appStoreVersionLocalizations_appScreenshotSets_getToManyRelated", "location": "path", "appleName": "id" },
+        { "toolField": "custom_product_page_localization_id", "sourceKind": "parameter", "operationId": "appCustomProductPageLocalizations_appScreenshotSets_getToManyRelated", "location": "path", "appleName": "id" },
+        { "toolField": "treatment_localization_id", "sourceKind": "parameter", "operationId": "appStoreVersionExperimentTreatmentLocalizations_appScreenshotSets_getToManyRelated", "location": "path", "appleName": "id" },
         { "toolField": "display_types", "sourceKind": "parameter", "operationId": "appStoreVersionLocalizations_appScreenshotSets_getToManyRelated", "location": "query", "appleName": "filter[screenshotDisplayType]" },
+        { "toolField": "display_types", "sourceKind": "parameter", "operationId": "appCustomProductPageLocalizations_appScreenshotSets_getToManyRelated", "location": "query", "appleName": "filter[screenshotDisplayType]" },
+        { "toolField": "display_types", "sourceKind": "parameter", "operationId": "appStoreVersionExperimentTreatmentLocalizations_appScreenshotSets_getToManyRelated", "location": "query", "appleName": "filter[screenshotDisplayType]" },
         { "toolField": "custom_product_page_localization_ids", "sourceKind": "parameter", "operationId": "appStoreVersionLocalizations_appScreenshotSets_getToManyRelated", "location": "query", "appleName": "filter[appCustomProductPageLocalization]" },
         { "toolField": "treatment_localization_ids", "sourceKind": "parameter", "operationId": "appStoreVersionLocalizations_appScreenshotSets_getToManyRelated", "location": "query", "appleName": "filter[appStoreVersionExperimentTreatmentLocalization]" },
+        { "toolField": "app_store_version_localization_ids", "sourceKind": "parameter", "operationId": "appCustomProductPageLocalizations_appScreenshotSets_getToManyRelated", "location": "query", "appleName": "filter[appStoreVersionLocalization]" },
+        { "toolField": "treatment_localization_ids", "sourceKind": "parameter", "operationId": "appCustomProductPageLocalizations_appScreenshotSets_getToManyRelated", "location": "query", "appleName": "filter[appStoreVersionExperimentTreatmentLocalization]" },
+        { "toolField": "app_store_version_localization_ids", "sourceKind": "parameter", "operationId": "appStoreVersionExperimentTreatmentLocalizations_appScreenshotSets_getToManyRelated", "location": "query", "appleName": "filter[appStoreVersionLocalization]" },
+        { "toolField": "custom_product_page_localization_ids", "sourceKind": "parameter", "operationId": "appStoreVersionExperimentTreatmentLocalizations_appScreenshotSets_getToManyRelated", "location": "query", "appleName": "filter[appCustomProductPageLocalization]" },
         { "toolField": "limit", "sourceKind": "parameter", "operationId": "appStoreVersionLocalizations_appScreenshotSets_getToManyRelated", "location": "query", "appleName": "limit" },
+        { "toolField": "limit", "sourceKind": "parameter", "operationId": "appCustomProductPageLocalizations_appScreenshotSets_getToManyRelated", "location": "query", "appleName": "limit" },
+        { "toolField": "limit", "sourceKind": "parameter", "operationId": "appStoreVersionExperimentTreatmentLocalizations_appScreenshotSets_getToManyRelated", "location": "query", "appleName": "limit" },
         { "toolField": "next_url", "sourceKind": "local", "localRole": "paginationContinuation" }
       ],
       "response": {
         "mode": "projection",
         "sources": [
-          { "operationId": "appStoreVersionLocalizations_appScreenshotSets_getToManyRelated", "statusCode": "200", "mediaType": "application/json" }
+          { "operationId": "appStoreVersionLocalizations_appScreenshotSets_getToManyRelated", "statusCode": "200", "mediaType": "application/json" },
+          { "operationId": "appCustomProductPageLocalizations_appScreenshotSets_getToManyRelated", "statusCode": "200", "mediaType": "application/json" },
+          { "operationId": "appStoreVersionExperimentTreatmentLocalizations_appScreenshotSets_getToManyRelated", "statusCode": "200", "mediaType": "application/json" }
         ],
-        "fields": []
-      }
+        "fields": [
+          { "outputField": "success", "localRole": "successfulRead" },
+          { "outputField": "screenshot_sets", "localRole": "Validated base resources from the selected one-of-three parent-scoped operation." },
+          { "outputField": "count", "localRole": "Count of validated resources on this page." },
+          { "outputField": "parent", "localRole": "Validated selected localization-parent scope." },
+          { "outputField": "next_url", "localRole": "Apple continuation after configured-origin, exact-path, query, and cursor validation." },
+          { "outputField": "total", "localRole": "Optional Apple paging total after limit and count validation." },
+          { "outputField": "screenshot_sets.*.selfLink", "localRole": "Optional resource links.self from the selected parent-scoped operation, validated when present." },
+          { "outputField": "screenshot_sets.*.parent", "localRole": "Projected only when Apple supplies canonical relationship linkage; no unverified lineage is invented." }
+        ]
+      },
+      "note": "Exactly one canonical parent selects one Apple relationship endpoint. Parent-specific filters are forwarded only where Apple exposes them, limits are validated in 1...200, and next_url remains within the selected relationship scope."
     },
     {
       "tool": "screenshots_reorder",
-      "kind": "direct",
+      "kind": "compound",
       "status": "partial",
       "effect": "write",
       "implementationState": "asBuilt",
       "operations": [
+        {
+          "operationId": "appScreenshotSets_appScreenshots_getToManyRelated",
+          "method": "get",
+          "path": "/v1/appScreenshotSets/{id}/appScreenshots",
+          "role": "supporting",
+          "condition": "Fully paginate before PATCH to prove exact membership and after PATCH to prove the exact order.",
+          "inputs": [
+            { "sourceKind": "fixed", "location": "query", "appleName": "limit", "fixedValue": 200 }
+          ],
+          "optionalParameterClassifications": [
+            {
+              "location": "query",
+              "appleName": "include",
+              "disposition": "intentionallyOmitted",
+              "reason": "Reorder verification needs only ordered base screenshot IDs.",
+              "reviewAtSpec": "4.4.1"
+            }
+          ]
+        },
         {
           "operationId": "appScreenshotSets_appScreenshots_replaceToManyRelationship",
           "method": "patch",
@@ -403,10 +938,93 @@
       ],
       "fields": [
         { "toolField": "set_id", "sourceKind": "parameter", "operationId": "appScreenshotSets_appScreenshots_replaceToManyRelationship", "location": "path", "appleName": "id" },
-        { "toolField": "screenshot_ids", "sourceKind": "requestBody", "operationId": "appScreenshotSets_appScreenshots_replaceToManyRelationship", "jsonPointer": "/data", "derivedFrom": ["comma-separated MCP string"] }
+        { "toolField": "set_id", "sourceKind": "parameter", "operationId": "appScreenshotSets_appScreenshots_getToManyRelated", "location": "path", "appleName": "id" },
+        { "toolField": "screenshot_ids", "sourceKind": "requestBody", "operationId": "appScreenshotSets_appScreenshots_replaceToManyRelationship", "jsonPointer": "/data" }
       ],
-      "response": { "mode": "local", "sources": [{ "operationId": "appScreenshotSets_appScreenshots_replaceToManyRelationship", "statusCode": "204" }], "fields": [] },
-      "note": "Apple returns 204; the handler expands screenshot_ids into ordered JSON:API linkage objects and returns a local confirmation."
+      "response": {
+        "mode": "aggregate",
+        "sources": [{ "operationId": "appScreenshotSets_appScreenshots_getToManyRelated", "statusCode": "200", "mediaType": "application/json" }, { "operationId": "appScreenshotSets_appScreenshots_replaceToManyRelationship", "statusCode": "204" }],
+        "fields": [
+          { "outputField": "success", "localRole": "True only after complete preflight membership, exact PATCH 204, and exact fully paginated postflight order." },
+          { "outputField": "operation", "localRole": "Reorder discriminator." },
+          { "outputField": "operationCommitted", "localRole": "True only after exact 204 and exact postflight order." },
+          { "outputField": "operationCommitState", "localRole": "Committed only after full postflight verification; accepted but invalid, truncated, or ambiguous outcomes remain unverified." },
+          { "outputField": "retrySafe", "localRole": "False after an attempted PATCH; inspect complete current membership before retrying." },
+          { "outputField": "statusCode", "localRole": "Exact verified 204 status." },
+          { "outputField": "setId", "localRole": "Validated canonical request ID." },
+          { "outputField": "order", "operationId": "appScreenshotSets_appScreenshots_getToManyRelated", "jsonPointer": "/data/*/id", "localRole": "Exact fully paginated postflight order." },
+          { "outputField": "write_outcome", "localRole": "Stable rejected, unknown, or accepted-but-unverified write classification." },
+          { "outputField": "mutationAttempted", "localRole": "Whether the reorder PATCH may have reached Apple." },
+          { "outputField": "error", "localRole": "Redacted diagnostic for rejected or unverified outcomes." },
+          { "outputField": "inspection", "localRole": "Executable fully paginated set-membership inspection guidance." },
+          { "outputField": "outcomeUnknown", "localRole": "True when reorder commitment cannot be determined." },
+          { "outputField": "inspectionRequired", "localRole": "True when full membership inspection is required before retry." }
+        ]
+      },
+      "note": "The handler accepts a unique ordered array of 1...200 canonical IDs, fully paginates current membership before mutation, requires exact set equality, requires PATCH 204, and fully paginates again to verify exact order. Ambiguous or mismatched outcomes remain unverified."
+    },
+    {
+      "tool": "screenshots_reorder_previews",
+      "kind": "compound",
+      "status": "partial",
+      "effect": "write",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "appPreviewSets_appPreviews_getToManyRelated",
+          "method": "get",
+          "path": "/v1/appPreviewSets/{id}/appPreviews",
+          "role": "supporting",
+          "condition": "Fully paginate before PATCH to prove exact membership and after PATCH to prove the exact order.",
+          "inputs": [
+            { "sourceKind": "fixed", "location": "query", "appleName": "limit", "fixedValue": 200 }
+          ],
+          "optionalParameterClassifications": [
+            {
+              "location": "query",
+              "appleName": "include",
+              "disposition": "intentionallyOmitted",
+              "reason": "Reorder verification needs only ordered base preview IDs.",
+              "reviewAtSpec": "4.4.1"
+            }
+          ]
+        },
+        {
+          "operationId": "appPreviewSets_appPreviews_replaceToManyRelationship",
+          "method": "patch",
+          "path": "/v1/appPreviewSets/{id}/relationships/appPreviews",
+          "role": "primary",
+          "inputs": [
+            { "sourceKind": "fixed", "jsonPointer": "/data/*/type", "fixedValue": "appPreviews" }
+          ]
+        }
+      ],
+      "fields": [
+        { "toolField": "set_id", "sourceKind": "parameter", "operationId": "appPreviewSets_appPreviews_replaceToManyRelationship", "location": "path", "appleName": "id" },
+        { "toolField": "set_id", "sourceKind": "parameter", "operationId": "appPreviewSets_appPreviews_getToManyRelated", "location": "path", "appleName": "id" },
+        { "toolField": "preview_ids", "sourceKind": "requestBody", "operationId": "appPreviewSets_appPreviews_replaceToManyRelationship", "jsonPointer": "/data" }
+      ],
+      "response": {
+        "mode": "aggregate",
+        "sources": [{ "operationId": "appPreviewSets_appPreviews_getToManyRelated", "statusCode": "200", "mediaType": "application/json" }, { "operationId": "appPreviewSets_appPreviews_replaceToManyRelationship", "statusCode": "204" }],
+        "fields": [
+          { "outputField": "success", "localRole": "True only after complete preflight membership, exact PATCH 204, and exact fully paginated postflight order." },
+          { "outputField": "operation", "localRole": "Reorder discriminator." },
+          { "outputField": "operationCommitted", "localRole": "True only after exact 204 and exact postflight order." },
+          { "outputField": "operationCommitState", "localRole": "Committed only after full postflight verification; accepted but invalid, truncated, or ambiguous outcomes remain unverified." },
+          { "outputField": "retrySafe", "localRole": "False after an attempted PATCH; inspect complete current membership before retrying." },
+          { "outputField": "statusCode", "localRole": "Exact verified 204 status." },
+          { "outputField": "setId", "localRole": "Validated canonical request ID." },
+          { "outputField": "order", "operationId": "appPreviewSets_appPreviews_getToManyRelated", "jsonPointer": "/data/*/id", "localRole": "Exact fully paginated postflight order." },
+          { "outputField": "write_outcome", "localRole": "Stable rejected, unknown, or accepted-but-unverified write classification." },
+          { "outputField": "mutationAttempted", "localRole": "Whether the reorder PATCH may have reached Apple." },
+          { "outputField": "error", "localRole": "Redacted diagnostic for rejected or unverified outcomes." },
+          { "outputField": "inspection", "localRole": "Executable fully paginated set-membership inspection guidance." },
+          { "outputField": "outcomeUnknown", "localRole": "True when reorder commitment cannot be determined." },
+          { "outputField": "inspectionRequired", "localRole": "True when full membership inspection is required before retry." }
+        ]
+      },
+      "note": "The handler accepts a unique ordered array of 1...200 canonical IDs, fully paginates current membership before mutation, requires exact set equality, requires PATCH 204, and fully paginates again to verify exact order. Ambiguous or mismatched outcomes remain unverified."
     },
     {
       "tool": "screenshots_upload",
@@ -427,13 +1045,13 @@
               "sourceKind": "derived",
               "jsonPointer": "/data/attributes/fileName",
               "derivedFrom": ["file_path"],
-              "localRole": "Derive the reservation file name from the local file path."
+              "localRole": "Derive the reservation file name from the immutable local snapshot prepared before reservation."
             },
             {
               "sourceKind": "derived",
               "jsonPointer": "/data/attributes/fileSize",
               "derivedFrom": ["file_path"],
-              "localRole": "Read the local file size before reserving the asset."
+              "localRole": "Use the immutable snapshot size captured before reserving the asset."
             },
             { "sourceKind": "fixed", "jsonPointer": "/data/relationships/appScreenshotSet/data/type", "fixedValue": "appScreenshotSets" }
           ]
@@ -463,7 +1081,7 @@
               "sourceKind": "derived",
               "jsonPointer": "/data/attributes/sourceFileChecksum",
               "derivedFrom": ["file_path", "appScreenshots_createInstance:/data/attributes/uploadOperations"],
-              "localRole": "Use the checksum returned after uploading the local file through Apple's signed upload operations."
+              "localRole": "Use the local MD5 of the same immutable snapshot bytes after their successful signed transfer."
             },
             { "sourceKind": "fixed", "jsonPointer": "/data/attributes/uploaded", "fixedValue": true }
           ]
@@ -494,6 +1112,19 @@
           ]
         },
         {
+          "operationId": "appScreenshotSets_appScreenshots_getToManyRelated",
+          "method": "get",
+          "path": "/v1/appScreenshotSets/{id}/appScreenshots",
+          "role": "conditional",
+          "condition": "When POST 201 omits optional appScreenshotSet relationship linkage, fully paginate the exact requested set collection before byte transfer and require the reservation ID to be present.",
+          "inputs": [
+            { "sourceKind": "fixed", "location": "query", "appleName": "limit", "fixedValue": 200 }
+          ],
+          "optionalParameterClassifications": [
+            { "location": "query", "appleName": "include", "disposition": "intentionallyOmitted", "reason": "The exact appScreenshotSet relationship path proves set scope; optional returned linkage is validated when present and any contradiction is rejected.", "reviewAtSpec": "4.4.1" }
+          ]
+        },
+        {
           "operationId": "appScreenshots_deleteInstance",
           "method": "delete",
           "path": "/v1/appScreenshots/{id}",
@@ -512,6 +1143,7 @@
       ],
       "fields": [
         { "toolField": "set_id", "sourceKind": "requestBody", "operationId": "appScreenshots_createInstance", "jsonPointer": "/data/relationships/appScreenshotSet/data/id" },
+        { "toolField": "set_id", "sourceKind": "parameter", "operationId": "appScreenshotSets_appScreenshots_getToManyRelated", "location": "path", "appleName": "id" },
         { "toolField": "file_path", "sourceKind": "local", "localRole": "Create an immutable temporary snapshot before reservation, then derive fileName, fileSize, transfer bytes, and sourceFileChecksum from that same snapshot.", "derivedFrom": ["fileName", "fileSize", "sourceFileChecksum"] }
       ],
       "response": {
@@ -520,11 +1152,37 @@
           { "operationId": "appScreenshots_createInstance", "statusCode": "201", "mediaType": "application/json" },
           { "operationId": "appScreenshots_updateInstance", "statusCode": "200", "mediaType": "application/json" },
           { "operationId": "appScreenshots_getInstance", "statusCode": "200", "mediaType": "application/json" },
+          { "operationId": "appScreenshotSets_appScreenshots_getToManyRelated", "statusCode": "200", "mediaType": "application/json" },
           { "operationId": "appScreenshots_deleteInstance", "statusCode": "204" }
         ],
-        "fields": []
+        "fields": [
+          { "outputField": "success", "localRole": "True only for COMPLETE or a semantically valid exact-200 commit that remains processing-pending." },
+          { "outputField": "screenshot", "localRole": "Validated redacted screenshot projection selected from the reservation, commit, or exact-ID reconciliation response; signed URLs and headers are omitted." },
+          { "outputField": "screenshot.assetDeliveryState.warnings", "localRole": "Apple warning projection from whichever validated screenshot response supplies the final state." },
+          { "outputField": "uploadCommitted", "localRole": "True only after exact PATCH 200 without a latched identity, lineage, or link-scope conflict." },
+          { "outputField": "processingComplete", "localRole": "False for an accepted nonterminal processing result." },
+          { "outputField": "deliveryPending", "localRole": "True while a confirmed commit remains nonterminal or post-commit resolution remains required." },
+          { "outputField": "retrySafe", "localRole": "False after any unresolved reservation or commit; true only before reservation or after confirmed rollback." },
+          { "outputField": "cleanup", "localRole": "Exact rollback outcome or executable get/delete guidance for a retained known reservation." },
+          { "outputField": "reservationFingerprint", "localRole": "Ambiguous-reservation fileName/fileSize hints only; never a unique attribution claim." },
+          { "outputField": "sourceFileChecksumReceipt", "localRole": "Local immutable-snapshot checksum receipt kept separate from reservation candidate matching." },
+          { "outputField": "operationCommitState", "localRole": "Stable unknown or committed_unverified discriminator on unresolved outcomes." },
+          { "outputField": "inspection", "localRole": "Executable fully paginated parent-set inspection guidance." },
+          { "outputField": "reconciledAfterCommit", "localRole": "True when exact-ID GET reconciliation supplied the final accepted state." },
+          { "outputField": "error", "localRole": "Redacted diagnostic for rejected, terminal, or unresolved upload outcomes." },
+          { "outputField": "resourceId", "localRole": "Canonical known reservation ID on retained or failed outcomes." },
+          { "outputField": "screenshot_id", "localRole": "Canonical known screenshot reservation ID for executable follow-up." },
+          { "outputField": "reservationCreated", "localRole": "False only when failure is proven to precede reservation creation." },
+          { "outputField": "reservationDeleted", "localRole": "Whether a known pre-commit reservation was confirmed deleted." },
+          { "outputField": "reservationState", "localRole": "Rejected, unknown, or committed-unverified reservation classification." },
+          { "outputField": "reservationIdKnown", "localRole": "Whether an ambiguous reservation outcome produced a canonical resource ID." },
+          { "outputField": "operationCommitted", "localRole": "True only for a confirmed accepted-but-unverified reservation, commit, or cleanup response." },
+          { "outputField": "outcomeUnknown", "localRole": "True when reservation or cleanup commitment cannot be determined." },
+          { "outputField": "inspectionRequired", "localRole": "True when exact-resource or full parent-set inspection is required before retry." },
+          { "outputField": "statusCode", "localRole": "Unexpected successful Apple status retained for recovery classification." }
+        ]
       },
-      "note": "The handler snapshots the file before reserve, uploads those immutable bytes through Apple-provided signed URLs, and commits their checksum. COMPLETE is successful; FAILED is terminal failure; any other assetDeliveryState remains pending and is polled with conditional GET. After a confirmed 2xx commit, nonterminal processing is an accepted success with uploadCommitted=true, processingComplete=false, deliveryPending=true, retrySafe=false, and get/delete guidance. If PATCH transport remains ambiguous and reconciliation only shows a pending state, the outcome stays an error and the resource is retained without blind retry. A mismatched 2xx commit resource triggers one GET of the expected ID; its valid terminal or pending state is interpreted normally, while a failed, unreadable, or mismatched GET remains a retained error. A confirmed reservation that fails before PATCH is best-effort deleted independently of cancellation. If create may have succeeded but its response or ID is unavailable, Apple exposes no idempotency key for identifying that exact reservation, so the handler reports retrySafe=false and parent-collection inspection guidance instead of silently reserving again."
+      "note": "The handler accepts only a canonical set ID and an absolute readable regular-file path, creates one immutable snapshot before network I/O, and binds the POST reservation to that snapshot's exact fileName, fileSize, and optional returned checksum. Transfer requires exact POST 201, required document links.self, canonical appScreenshots identity, AWAITING_UPLOAD, and requested-set proof: contradictory returned linkage is rejected, while omitted optional linkage is confirmed through the fully paginated parent-set inventory before transfer. Resource links.self is optional but must match the configured origin and exact resource path when present; every continuation is scoped likewise, and root-relative links are accepted. The same snapshot bytes produce the checksum receipt and commit body, and only PATCH 200 is a confirmed commit response. Any returned post-commit fileName, fileSize, or checksum must still match the snapshot. A semantic conflict in a confirmed PATCH 200 response is latched and cannot be converted into success by a later valid GET. COMPLETE is successful, FAILED is terminal failure, and other states remain processing-pending. Ambiguous reservation outcomes expose a 200-item parent inspection with next_url guidance and a fileName/fileSize candidate fingerprint; the local checksum receipt is separate and is not a server-side candidate field."
     },
     {
       "tool": "screenshots_upload_batch",
@@ -545,13 +1203,13 @@
               "sourceKind": "derived",
               "jsonPointer": "/data/attributes/fileName",
               "derivedFrom": ["file_paths"],
-              "localRole": "Derive each reservation file name from the current local path in the batch."
+              "localRole": "Derive each reservation file name from its immutable snapshot after every batch item has passed local preflight."
             },
             {
               "sourceKind": "derived",
               "jsonPointer": "/data/attributes/fileSize",
               "derivedFrom": ["file_paths"],
-              "localRole": "Read each current local file size before reserving its asset."
+              "localRole": "Use each immutable snapshot size after every batch item has passed local preflight."
             },
             { "sourceKind": "fixed", "jsonPointer": "/data/relationships/appScreenshotSet/data/type", "fixedValue": "appScreenshotSets" }
           ]
@@ -581,7 +1239,7 @@
               "sourceKind": "derived",
               "jsonPointer": "/data/attributes/sourceFileChecksum",
               "derivedFrom": ["file_paths", "appScreenshots_createInstance:/data/attributes/uploadOperations"],
-              "localRole": "Use the checksum returned after uploading the current batch file through Apple's signed upload operations."
+              "localRole": "Use the local MD5 of the current item's immutable snapshot bytes after their successful signed transfer."
             },
             { "sourceKind": "fixed", "jsonPointer": "/data/attributes/uploaded", "fixedValue": true }
           ]
@@ -612,6 +1270,19 @@
           ]
         },
         {
+          "operationId": "appScreenshotSets_appScreenshots_getToManyRelated",
+          "method": "get",
+          "path": "/v1/appScreenshotSets/{id}/appScreenshots",
+          "role": "conditional",
+          "condition": "For any batch reservation whose POST 201 omits optional appScreenshotSet linkage, fully paginate the exact requested set collection before that item's byte transfer and require its reservation ID to be present.",
+          "inputs": [
+            { "sourceKind": "fixed", "location": "query", "appleName": "limit", "fixedValue": 200 }
+          ],
+          "optionalParameterClassifications": [
+            { "location": "query", "appleName": "include", "disposition": "intentionallyOmitted", "reason": "The exact appScreenshotSet relationship path proves set scope; optional returned linkage is validated when present and any contradiction is rejected.", "reviewAtSpec": "4.4.1" }
+          ]
+        },
+        {
           "operationId": "appScreenshots_deleteInstance",
           "method": "delete",
           "path": "/v1/appScreenshots/{id}",
@@ -630,7 +1301,8 @@
       ],
       "fields": [
         { "toolField": "set_id", "sourceKind": "requestBody", "operationId": "appScreenshots_createInstance", "jsonPointer": "/data/relationships/appScreenshotSet/data/id" },
-        { "toolField": "file_paths", "sourceKind": "local", "localRole": "Create a separate immutable temporary snapshot before each reservation, then derive that item's fileName, fileSize, transfer bytes, and sourceFileChecksum from the same snapshot.", "derivedFrom": ["per-file fileName", "per-file fileSize", "per-file sourceFileChecksum"] }
+        { "toolField": "set_id", "sourceKind": "parameter", "operationId": "appScreenshotSets_appScreenshots_getToManyRelated", "location": "path", "appleName": "id" },
+        { "toolField": "file_paths", "sourceKind": "local", "localRole": "Validate all 1...50 paths as absolute readable regular files and create every immutable snapshot before the first reservation; derive each item's fileName, fileSize, transfer bytes, and sourceFileChecksum from its snapshot.", "derivedFrom": ["per-file fileName", "per-file fileSize", "per-file sourceFileChecksum"] }
       ],
       "response": {
         "mode": "aggregate",
@@ -638,11 +1310,50 @@
           { "operationId": "appScreenshots_createInstance", "statusCode": "201", "mediaType": "application/json" },
           { "operationId": "appScreenshots_updateInstance", "statusCode": "200", "mediaType": "application/json" },
           { "operationId": "appScreenshots_getInstance", "statusCode": "200", "mediaType": "application/json" },
+          { "operationId": "appScreenshotSets_appScreenshots_getToManyRelated", "statusCode": "200", "mediaType": "application/json" },
           { "operationId": "appScreenshots_deleteInstance", "statusCode": "204" }
         ],
-        "fields": []
+        "fields": [
+          { "outputField": "success", "localRole": "True only when every independently reported item succeeds or remains confirmed processing-pending." },
+          { "outputField": "total", "localRole": "Validated batch item count from 1 through 50." },
+          { "outputField": "uploaded", "localRole": "Count of COMPLETE and confirmed processing-pending item outcomes." },
+          { "outputField": "failed", "localRole": "Count of failed or unresolved item outcomes." },
+          { "outputField": "results", "localRole": "Ordered per-file redacted outcome projections; remote work is sequential and not atomic." },
+          { "outputField": "results.*.file", "localRole": "Immutable snapshot file name for the matching input item." },
+          { "outputField": "results.*.screenshot_id", "localRole": "Canonical known screenshot reservation ID across success, processing-pending, or structured failure outcomes." },
+          { "outputField": "results.*.state", "localRole": "Latest validated Apple delivery state for a known item." },
+          { "outputField": "results.*.upload_committed", "localRole": "True only for a confirmed processing-pending exact-200 commit." },
+          { "outputField": "results.*.delivery_pending", "localRole": "True only while a confirmed item commit remains nonterminal." },
+          { "outputField": "results.*.retry_safe", "localRole": "Per-item retry safety; false for retained or unresolved reservations and commits." },
+          { "outputField": "results.*.inspection", "localRole": "Per-item exact-resource or fully paginated set inspection guidance on ambiguous outcomes." },
+          { "outputField": "results.*.success", "localRole": "Per-item success discriminator across complete, processing-pending, and failure outcomes." },
+          { "outputField": "results.*.processing_complete", "localRole": "False for a successful item whose confirmed commit remains nonterminal." },
+          { "outputField": "results.*.reconciled_after_commit", "localRole": "True when exact-ID reconciliation supplied the accepted item state." },
+          { "outputField": "results.*.inspect_tool", "localRole": "Exact single-resource inspection tool for a processing-pending item." },
+          { "outputField": "results.*.inspect_arguments", "localRole": "Canonical exact-resource arguments for the processing-pending inspection tool." },
+          { "outputField": "results.*.inspect_arguments.screenshot_id", "localRole": "Canonical screenshot ID passed to screenshots_get for processing-pending inspection." },
+          { "outputField": "results.*.error", "localRole": "Redacted per-item diagnostic for rejected, terminal, or unresolved outcomes." },
+          { "outputField": "results.*.screenshot", "localRole": "Validated redacted screenshot projection on known failure or retained outcomes." },
+          { "outputField": "results.*.resourceId", "localRole": "Canonical known reservation ID on retained or failed item outcomes." },
+          { "outputField": "results.*.reservationCreated", "localRole": "False only when the item failure is proven to precede reservation creation." },
+          { "outputField": "results.*.reservationDeleted", "localRole": "Whether the item's known pre-commit reservation was confirmed deleted." },
+          { "outputField": "results.*.reservationState", "localRole": "Rejected, unknown, or committed-unverified reservation classification for the item." },
+          { "outputField": "results.*.reservationIdKnown", "localRole": "Whether an ambiguous item reservation produced a canonical resource ID." },
+          { "outputField": "results.*.operationCommitState", "localRole": "Stable unknown or committed-unverified discriminator for unresolved item outcomes." },
+          { "outputField": "results.*.operationCommitted", "localRole": "True only for a confirmed accepted-but-unverified reservation, commit, or cleanup response." },
+          { "outputField": "results.*.outcomeUnknown", "localRole": "True when item reservation or cleanup commitment cannot be determined." },
+          { "outputField": "results.*.inspectionRequired", "localRole": "True when item inspection is required before retry." },
+          { "outputField": "results.*.retrySafe", "localRole": "Camel-case retry classification inherited from structured failure payloads." },
+          { "outputField": "results.*.cleanup", "localRole": "Exact rollback outcome or executable retained-resource guidance for the item." },
+          { "outputField": "results.*.reservationFingerprint", "localRole": "Ambiguous item reservation fileName/fileSize hints only; never a unique attribution claim." },
+          { "outputField": "results.*.sourceFileChecksumReceipt", "localRole": "Local immutable-snapshot checksum receipt kept separate from candidate matching." },
+          { "outputField": "results.*.statusCode", "localRole": "Unexpected successful Apple status retained for item recovery classification." },
+          { "outputField": "results.*.uploadCommitted", "localRole": "True for a confirmed commit represented by a structured failure or pending payload." },
+          { "outputField": "results.*.processingComplete", "localRole": "False for a committed-but-unverified structured item payload." },
+          { "outputField": "results.*.deliveryPending", "localRole": "Camel-case delivery-pending classification inherited from structured item payloads." }
+        ]
       },
-      "note": "Reserve, signed-URL transfer, commit, processing verification, and any pre-PATCH rollback run independently for each immutable per-file snapshot; the MCP aggregates per-item results. COMPLETE is successful; FAILED is terminal failure; any other assetDeliveryState remains pending and is polled with conditional GET. Confirmed commits still processing count as uploaded successes with delivery_pending=true and retry_safe=false; ambiguous PATCH results with only pending reconciliation remain per-item errors. A mismatched 2xx commit resource triggers one GET of that item's expected ID before its terminal, pending, or invalid reconciliation result is classified. Retained outcomes include inspection guidance, while confirmed pre-PATCH failures are best-effort deleted per reservation. An unresolved create response has no safe Apple idempotency key, so the affected item requires parent-collection inspection before retry."
+      "note": "The batch is preflight-atomic only: all 1...50 unique paths must be absolute readable regular files and every immutable snapshot must be ready before the first Apple reservation. Remote operations are deliberately sequential and per-item, not remotely atomic; earlier committed items are not rolled back when a later item fails. Each item requires exact POST 201 and PATCH 200 responses, required document links.self, canonical identity, snapshot-matching fileName/fileSize/optional checksum, and AWAITING_UPLOAD. Contradictory set linkage is rejected; omitted optional linkage is confirmed through the fully paginated parent-set inventory before transfer. Resource links.self is optional but exact when present, and continuation links stay on the configured origin and endpoint scope. Returned post-commit snapshot evidence is validated when present. A semantic conflict in a confirmed PATCH 200 response is latched and cannot be laundered into success by later reconciliation. COMPLETE, FAILED, pending, rollback, and ambiguous-recovery outcomes are reported independently per item."
     },
     {
       "tool": "screenshots_upload_preview",
@@ -663,13 +1374,13 @@
               "sourceKind": "derived",
               "jsonPointer": "/data/attributes/fileName",
               "derivedFrom": ["file_path"],
-              "localRole": "Derive the reservation file name from the local video path."
+              "localRole": "Derive the reservation file name from the immutable video snapshot prepared before reservation."
             },
             {
               "sourceKind": "derived",
               "jsonPointer": "/data/attributes/fileSize",
               "derivedFrom": ["file_path"],
-              "localRole": "Read the local video size before reserving the asset."
+              "localRole": "Use the immutable video snapshot size captured before reserving the asset."
             },
             { "sourceKind": "fixed", "jsonPointer": "/data/relationships/appPreviewSet/data/type", "fixedValue": "appPreviewSets" }
           ]
@@ -699,7 +1410,7 @@
               "sourceKind": "derived",
               "jsonPointer": "/data/attributes/sourceFileChecksum",
               "derivedFrom": ["file_path", "appPreviews_createInstance:/data/attributes/uploadOperations"],
-              "localRole": "Use the checksum returned after uploading the local video through Apple's signed upload operations."
+              "localRole": "Use the local MD5 of the same immutable video snapshot bytes after their successful signed transfer."
             },
             { "sourceKind": "fixed", "jsonPointer": "/data/attributes/uploaded", "fixedValue": true }
           ]
@@ -730,6 +1441,19 @@
           ]
         },
         {
+          "operationId": "appPreviewSets_appPreviews_getToManyRelated",
+          "method": "get",
+          "path": "/v1/appPreviewSets/{id}/appPreviews",
+          "role": "conditional",
+          "condition": "When POST 201 omits optional appPreviewSet relationship linkage, fully paginate the exact requested set collection before byte transfer and require the reservation ID to be present.",
+          "inputs": [
+            { "sourceKind": "fixed", "location": "query", "appleName": "limit", "fixedValue": 200 }
+          ],
+          "optionalParameterClassifications": [
+            { "location": "query", "appleName": "include", "disposition": "intentionallyOmitted", "reason": "The exact appPreviewSet relationship path proves set scope; optional returned linkage is validated when present and any contradiction is rejected.", "reviewAtSpec": "4.4.1" }
+          ]
+        },
+        {
           "operationId": "appPreviews_deleteInstance",
           "method": "delete",
           "path": "/v1/appPreviews/{id}",
@@ -748,6 +1472,7 @@
       ],
       "fields": [
         { "toolField": "set_id", "sourceKind": "requestBody", "operationId": "appPreviews_createInstance", "jsonPointer": "/data/relationships/appPreviewSet/data/id" },
+        { "toolField": "set_id", "sourceKind": "parameter", "operationId": "appPreviewSets_appPreviews_getToManyRelated", "location": "path", "appleName": "id" },
         { "toolField": "file_path", "sourceKind": "local", "localRole": "Create an immutable temporary snapshot before reservation, then derive fileName, fileSize, transfer bytes, and sourceFileChecksum from that same snapshot.", "derivedFrom": ["fileName", "fileSize", "sourceFileChecksum"] },
         { "toolField": "mime_type", "sourceKind": "requestBody", "operationId": "appPreviews_createInstance", "jsonPointer": "/data/attributes/mimeType", "localRole": "Omission preserves compatibility by sending video/mp4; explicit null asks Apple to infer the type; any concrete non-empty MIME string allowed by Apple 4.4.1 is preserved after whitespace validation." },
         { "toolField": "preview_frame_time_code", "sourceKind": "requestBody", "operationId": "appPreviews_createInstance", "jsonPointer": "/data/attributes/previewFrameTimeCode", "localRole": "Omission leaves the attribute absent, explicit null is preserved, and a concrete non-empty value is sent on both reservation and commit." },
@@ -759,17 +1484,41 @@
           { "operationId": "appPreviews_createInstance", "statusCode": "201", "mediaType": "application/json" },
           { "operationId": "appPreviews_updateInstance", "statusCode": "200", "mediaType": "application/json" },
           { "operationId": "appPreviews_getInstance", "statusCode": "200", "mediaType": "application/json" },
+          { "operationId": "appPreviewSets_appPreviews_getToManyRelated", "statusCode": "200", "mediaType": "application/json" },
           { "operationId": "appPreviews_deleteInstance", "statusCode": "204" }
         ],
         "fields": [
-          { "outputField": "success", "localRole": "uploadTransactionOutcome" },
-          { "outputField": "preview", "operationId": "appPreviews_updateInstance", "jsonPointer": "/data" },
-          { "outputField": "preview.previewFrameTimeCode", "operationId": "appPreviews_updateInstance", "jsonPointer": "/data/attributes/previewFrameTimeCode" },
-          { "outputField": "preview.previewFrameImage", "operationId": "appPreviews_updateInstance", "jsonPointer": "/data/attributes/previewFrameImage" },
-          { "outputField": "preview.previewImage", "operationId": "appPreviews_updateInstance", "jsonPointer": "/data/attributes/previewImage" }
+          { "outputField": "success", "localRole": "True only for COMPLETE or a semantically valid exact-200 commit that remains processing-pending." },
+          { "outputField": "preview", "localRole": "Validated redacted preview projection selected from the reservation, commit, or exact-ID reconciliation response; signed URLs and headers are omitted." },
+          { "outputField": "preview.previewFrameTimeCode", "localRole": "Apple preview frame time code from the selected validated response." },
+          { "outputField": "preview.previewFrameImage", "localRole": "Apple current preview-frame image projection from the selected validated response." },
+          { "outputField": "preview.previewImage", "localRole": "Deprecated Apple previewImage projection retained for compatibility when supplied." },
+          { "outputField": "preview.assetDeliveryState.warnings", "localRole": "Warnings from Apple's deprecated asset delivery state when supplied." },
+          { "outputField": "preview.videoDeliveryState.warnings", "localRole": "Warnings from Apple's current video delivery state when supplied." },
+          { "outputField": "uploadCommitted", "localRole": "True only after exact PATCH 200 without a latched identity, lineage, or link-scope conflict." },
+          { "outputField": "processingComplete", "localRole": "False for an accepted nonterminal processing result." },
+          { "outputField": "deliveryPending", "localRole": "True while a confirmed commit remains nonterminal or post-commit resolution remains required." },
+          { "outputField": "retrySafe", "localRole": "False after any unresolved reservation or commit; true only before reservation or after confirmed rollback." },
+          { "outputField": "cleanup", "localRole": "Exact rollback outcome or executable get/delete guidance for a retained known reservation." },
+          { "outputField": "reservationFingerprint", "localRole": "Ambiguous-reservation fileName/fileSize hints only; never a unique attribution claim." },
+          { "outputField": "sourceFileChecksumReceipt", "localRole": "Local immutable-snapshot checksum receipt kept separate from reservation candidate matching." },
+          { "outputField": "operationCommitState", "localRole": "Stable unknown or committed_unverified discriminator on unresolved outcomes." },
+          { "outputField": "inspection", "localRole": "Executable fully paginated parent-set inspection guidance." },
+          { "outputField": "reconciledAfterCommit", "localRole": "True when exact-ID GET reconciliation supplied the final accepted state." },
+          { "outputField": "error", "localRole": "Redacted diagnostic for rejected, terminal, or unresolved upload outcomes." },
+          { "outputField": "resourceId", "localRole": "Canonical known reservation ID on retained or failed outcomes." },
+          { "outputField": "preview_id", "localRole": "Canonical known preview reservation ID for executable follow-up." },
+          { "outputField": "reservationCreated", "localRole": "False only when failure is proven to precede reservation creation." },
+          { "outputField": "reservationDeleted", "localRole": "Whether a known pre-commit reservation was confirmed deleted." },
+          { "outputField": "reservationState", "localRole": "Rejected, unknown, or committed-unverified reservation classification." },
+          { "outputField": "reservationIdKnown", "localRole": "Whether an ambiguous reservation outcome produced a canonical resource ID." },
+          { "outputField": "operationCommitted", "localRole": "True only for a confirmed accepted-but-unverified reservation, commit, or cleanup response." },
+          { "outputField": "outcomeUnknown", "localRole": "True when reservation or cleanup commitment cannot be determined." },
+          { "outputField": "inspectionRequired", "localRole": "True when exact-resource or full parent-set inspection is required before retry." },
+          { "outputField": "statusCode", "localRole": "Unexpected successful Apple status retained for recovery classification." }
         ]
       },
-      "note": "The handler snapshots the video before reserve, uploads those immutable bytes through Apple-provided signed URLs, and commits their checksum. Nullable previewFrameTimeCode preserves omission, explicit null, and concrete values on both POST and PATCH; mimeType preserves the video/mp4 compatibility default while allowing explicit null or any concrete non-empty MIME string accepted by Apple on POST. COMPLETE is successful and FAILED is terminal failure; all other videoDeliveryState values (falling back to assetDeliveryState for compatibility) remain pending and are polled with conditional GET. After a confirmed 2xx commit, nonterminal video processing is an accepted success with uploadCommitted=true, processingComplete=false, deliveryPending=true, and retrySafe=false. If PATCH transport remains ambiguous and reconciliation only shows pending, the outcome stays an error; either way the preview is retained with inspection guidance. A mismatched 2xx commit resource triggers one GET of the expected preview ID; valid terminal or pending state is interpreted normally, while invalid reconciliation stays an error. A confirmed reservation that fails before PATCH is best-effort deleted independently of cancellation; an unresolved create response instead requires parent-collection inspection because Apple exposes no idempotency key for locating that exact reservation. The response exposes previewFrameImage and retains deprecated previewImage for compatibility."
+      "note": "The handler accepts only a canonical set ID and an absolute readable regular-file path, snapshots the video before network I/O, and binds the reservation to that snapshot's fileName, fileSize, and optional returned checksum. Transfer requires exact POST 201, required document links.self, canonical appPreviews identity, AWAITING_UPLOAD videoDeliveryState (deprecated assetDeliveryState fallback), and requested-set proof: contradictory linkage is rejected, while omitted optional linkage is confirmed through the fully paginated parent-set inventory before transfer. Resource links.self is optional but exact when present; every continuation remains on the configured origin and endpoint scope. The same bytes produce the separate checksum receipt and commit body, and only PATCH 200 confirms the commit response; returned post-commit snapshot evidence is validated when present. A semantic conflict in a confirmed PATCH 200 response is latched and cannot be converted into success by a later valid GET. Nullable previewFrameTimeCode preserves omission, explicit null, and value; mimeType preserves its compatibility default and explicit null. Ambiguous reservations use a 200-item parent inspection with next_url and fileName/fileSize candidate matching, never checksum as a server-side candidate field."
     }
   ],
   "implementationAliases": []

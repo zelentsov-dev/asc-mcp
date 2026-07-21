@@ -18,10 +18,17 @@ public final class CustomProductPagesWorker: Sendable {
             updateCustomPageTool(),
             deleteCustomPageTool(),
             listVersionsTool(),
+            getVersionTool(),
             createVersionTool(),
+            updateVersionTool(),
             listLocalizationsTool(),
+            getLocalizationTool(),
             createLocalizationTool(),
-            updateLocalizationTool()
+            updateLocalizationTool(),
+            deleteLocalizationTool(),
+            listSearchKeywordsTool(),
+            addSearchKeywordsTool(),
+            removeSearchKeywordsTool()
         ]
     }
 
@@ -40,14 +47,28 @@ public final class CustomProductPagesWorker: Sendable {
             return try await deleteCustomPage(params)
         case "custom_pages_list_versions":
             return try await listVersions(params)
+        case "custom_pages_get_version":
+            return try await getVersion(params)
         case "custom_pages_create_version":
             return try await createVersion(params)
+        case "custom_pages_update_version":
+            return try await updateVersion(params)
         case "custom_pages_list_localizations":
             return try await listLocalizations(params)
+        case "custom_pages_get_localization":
+            return try await getLocalization(params)
         case "custom_pages_create_localization":
             return try await createLocalization(params)
         case "custom_pages_update_localization":
             return try await updateLocalization(params)
+        case "custom_pages_delete_localization":
+            return try await deleteLocalization(params)
+        case "custom_pages_list_search_keywords":
+            return try await listSearchKeywords(params)
+        case "custom_pages_add_search_keywords":
+            return try await addSearchKeywords(params)
+        case "custom_pages_remove_search_keywords":
+            return try await removeSearchKeywords(params)
         default:
             throw MCPError.methodNotFound("Unknown tool: \(params.name)")
         }

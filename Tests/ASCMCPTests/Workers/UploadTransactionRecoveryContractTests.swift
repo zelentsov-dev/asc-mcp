@@ -469,8 +469,8 @@ struct UploadTransactionRecoveryContractTests {
         #expect(payload["reservationDeleted"] == .bool(false))
     }
 
-    @Test("confirmed 2xx with unreadable body and failed GET remains accepted pending")
-    func confirmedMalformedCommitWithFailedGetIsAcceptedPending() async throws {
+    @Test("confirmed 2xx with unreadable body and failed GET remains unresolved")
+    func confirmedMalformedCommitWithFailedGetRemainsUnresolved() async throws {
         let fileURL = try uploadRecoveryFile(Data("hello".utf8))
         defer { try? FileManager.default.removeItem(at: fileURL) }
         let flow = UploadFlow.screenshot
@@ -491,18 +491,17 @@ struct UploadTransactionRecoveryContractTests {
             uploadTransport: TestHTTPTransport(responses: [.init(statusCode: 200, body: "")])
         )
 
-        #expect(result.isError != true)
+        #expect(result.isError == true)
         #expect(await apiTransport.recordedRequests().map(\.httpMethod) == ["POST", "PATCH", "GET"])
         let payload = try uploadRecoveryObject(result.structuredContent)
-        #expect(payload["success"] == .bool(true))
-        #expect(payload["uploadCommitted"] == .bool(true))
-        #expect(payload["processingComplete"] == .bool(false))
+        #expect(payload["success"] == .bool(false))
+        #expect(payload["uploadCommitted"] != .bool(true))
         #expect(payload["deliveryPending"] == .bool(true))
         #expect(payload["retrySafe"] == .bool(false))
     }
 
-    @Test("wrong commit resource reconciles the expected resource once")
-    func wrongCommitResourceReconcilesExpectedResource() async throws {
+    @Test("wrong commit resource cannot be laundered by expected-resource reconciliation")
+    func wrongCommitResourceRemainsUnresolvedAfterReconciliation() async throws {
         let fileURL = try uploadRecoveryFile(Data("hello".utf8))
         defer { try? FileManager.default.removeItem(at: fileURL) }
         let flow = UploadFlow.screenshot
@@ -532,13 +531,14 @@ struct UploadTransactionRecoveryContractTests {
             uploadTransport: TestHTTPTransport(responses: [.init(statusCode: 200, body: "")])
         )
 
-        #expect(result.isError != true)
+        #expect(result.isError == true)
         let requests = await apiTransport.recordedRequests()
         #expect(requests.map(\.httpMethod) == ["POST", "PATCH", "GET"])
         #expect(requests.contains { $0.httpMethod == "DELETE" } == false)
         let payload = try uploadRecoveryObject(result.structuredContent)
-        #expect(payload["success"] == .bool(true))
-        #expect(payload["reconciledAfterCommit"] == .bool(true))
+        #expect(payload["success"] == .bool(false))
+        #expect(payload["retrySafe"] == .bool(false))
+        #expect(payload["reconciledAfterCommit"] == nil)
     }
 
     @Test("wrong reconciliation resource is retained as an error")
@@ -879,9 +879,19 @@ struct UploadTransactionRecoveryContractTests {
         }
         let flow = UploadFlow.screenshot
         let apiTransport = TestHTTPTransport(responses: [
-            .init(statusCode: 201, body: uploadRecoveryResponse(flow: flow, state: flow.pendingState, id: "asset-1")),
+            .init(statusCode: 201, body: uploadRecoveryResponse(
+                flow: flow,
+                state: flow.pendingState,
+                id: "asset-1",
+                fileName: firstURL.lastPathComponent
+            )),
             .init(statusCode: 204, body: ""),
-            .init(statusCode: 201, body: uploadRecoveryResponse(flow: flow, state: flow.pendingState, id: "asset-2")),
+            .init(statusCode: 201, body: uploadRecoveryResponse(
+                flow: flow,
+                state: flow.pendingState,
+                id: "asset-2",
+                fileName: secondURL.lastPathComponent
+            )),
             .init(statusCode: 204, body: "")
         ])
         let client = await HTTPClient(
@@ -920,16 +930,19 @@ struct UploadTransactionRecoveryContractTests {
             .init(statusCode: 201, body: uploadRecoveryResponse(
                 flow: flow,
                 state: flow.pendingState,
+                fileName: fileURL.lastPathComponent,
                 includeUploadOperation: true
             )),
             .init(statusCode: 200, body: uploadRecoveryResponse(
                 flow: flow,
                 state: "UPLOAD_COMPLETE",
+                fileName: fileURL.lastPathComponent,
                 includeChecksum: true
             )),
             .init(statusCode: 200, body: uploadRecoveryResponse(
                 flow: flow,
                 state: "UPLOAD_COMPLETE",
+                fileName: fileURL.lastPathComponent,
                 includeChecksum: true
             ))
         ])
@@ -999,8 +1012,15 @@ struct UploadTransactionRecoveryContractTests {
         #expect(payload["outcomeUnknown"] == .bool(true))
         #expect(payload["inspectionRequired"] == .bool(true))
         #expect(payload["retrySafe"] == .bool(false))
-        #expect(payload["sourceFileChecksumReceipt"] == nil)
-        #expect(uploadRecoveryText(result).contains("checksum receipt") == false)
+        #expect(payload["sourceFileChecksumReceipt"]?.stringValue?.count == 32)
+        let fingerprint = try uploadRecoveryValueObject(payload["reservationFingerprint"])
+        #expect(fingerprint["file_name"] == .string(fileURL.lastPathComponent))
+        #expect(fingerprint["file_size"] == .int(5))
+        #expect(fingerprint["checksum"] == nil)
+        let inspection = try uploadRecoveryValueObject(payload["inspection"])
+        let arguments = try uploadRecoveryValueObject(inspection["arguments"])
+        #expect(arguments["limit"] == .int(200))
+        #expect(inspection["next_url_argument"] == .string("next_url"))
     }
 
     @Test("unreadable reservation response is not deleted or retried")
@@ -1285,10 +1305,19 @@ private func invokeUpload(
     uploadTransport: any HTTPTransport,
     pollAttempts: Int = 1
 ) async throws -> CallTool.Result {
+    let effectiveAPITransport: any HTTPTransport
+    if flow == .screenshot || flow == .preview {
+        effectiveAPITransport = UploadRecoveryFileNameTransport(
+            base: apiTransport,
+            fileName: fileURL.lastPathComponent
+        )
+    } else {
+        effectiveAPITransport = apiTransport
+    }
     let client = await HTTPClient(
         jwtService: try TestFactory.makeJWTService(),
         baseURL: "https://api.example.test",
-        transport: apiTransport,
+        transport: effectiveAPITransport,
         maxRetries: 3
     )
     let uploadService = UploadService(transport: uploadTransport, batchSize: 1)
@@ -1452,7 +1481,18 @@ private func uploadRecoveryResponse(
     let operationsFragment = includeUploadOperation
         ? #", "uploadOperations":[{"method":"PUT","url":"https://upload.example.test/chunk?signed=signed-secret","length":5,"offset":0,"requestHeaders":\#(requestHeaders)}]"#
         : ""
-    return #"{"data":{"type":"\#(type ?? flow.type)","id":"\#(id)","attributes":{"fileSize":5,"fileName":"\#(fileName)"\#(checksumFragment)\#(stateFragment)\#(operationsFragment)}},"links":{"self":"\#(flow.reservationPath)/\#(id)"}}"#
+    let relationshipFragment: String
+    if flow == .screenshot {
+        relationshipFragment = #", "relationships":{"appScreenshotSet":{"data":{"type":"appScreenshotSets","id":"set-1"}}}"#
+    } else if flow == .preview {
+        relationshipFragment = #", "relationships":{"appPreviewSet":{"data":{"type":"appPreviewSets","id":"set-1"}}}"#
+    } else {
+        relationshipFragment = ""
+    }
+    let resourceLinksFragment = (flow == .screenshot || flow == .preview)
+        ? #", "links":{"self":"\#(flow.reservationPath)/\#(id)"}"#
+        : ""
+    return #"{"data":{"type":"\#(type ?? flow.type)","id":"\#(id)","attributes":{"fileSize":5,"fileName":"\#(fileName)"\#(checksumFragment)\#(stateFragment)\#(operationsFragment)}\#(relationshipFragment)\#(resourceLinksFragment)},"links":{"self":"\#(flow.reservationPath)/\#(id)"}}"#
 }
 
 private func uploadRecoveryFile(_ data: Data) throws -> URL {
@@ -1577,6 +1617,28 @@ private actor UploadRecoveryScriptTransport: HTTPTransport {
 
     func recordedRequests() -> [URLRequest] {
         requests
+    }
+}
+
+private actor UploadRecoveryFileNameTransport: HTTPTransport {
+    private let base: any HTTPTransport
+    private let fileName: String
+
+    init(base: any HTTPTransport, fileName: String) {
+        self.base = base
+        self.fileName = fileName
+    }
+
+    func data(for request: URLRequest) async throws -> (Data, HTTPURLResponse) {
+        let (data, response) = try await base.data(for: request)
+        guard var body = String(data: data, encoding: .utf8) else {
+            return (data, response)
+        }
+        body = body.replacingOccurrences(
+            of: #""fileName":"asset.bin""#,
+            with: #""fileName":"\#(fileName)""#
+        )
+        return (Data(body.utf8), response)
     }
 }
 

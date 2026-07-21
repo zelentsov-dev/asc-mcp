@@ -8,9 +8,18 @@ struct CustomProductPagesWorkerContractTests {
     @Test("list filters preserve Apple's comma-separated array semantics")
     func listFilters() async throws {
         let transport = TestHTTPTransport(responses: [
-            .init(statusCode: 200, body: #"{"data":[]}"#),
-            .init(statusCode: 200, body: #"{"data":[]}"#),
-            .init(statusCode: 200, body: #"{"data":[]}"#)
+            .init(
+                statusCode: 200,
+                body: #"{"data":[],"links":{"self":"/v1/apps/app-1/appCustomProductPages"},"meta":{"paging":{"limit":25,"total":0}}}"#
+            ),
+            .init(
+                statusCode: 200,
+                body: #"{"data":[],"links":{"self":"/v1/appCustomProductPages/page-1/appCustomProductPageVersions"},"meta":{"paging":{"limit":25,"total":0}}}"#
+            ),
+            .init(
+                statusCode: 200,
+                body: #"{"data":[],"links":{"self":"/v1/appCustomProductPageVersions/version-1/appCustomProductPageLocalizations"},"meta":{"paging":{"limit":25,"total":0}}}"#
+            )
         ])
         let worker = CustomProductPagesWorker(httpClient: try await cppClient(transport))
 
@@ -55,7 +64,10 @@ struct CustomProductPagesWorkerContractTests {
     @Test("create binds an existing custom product page template")
     func createPageTemplate() async throws {
         let transport = TestHTTPTransport(responses: [
-            .init(statusCode: 201, body: #"{"data":{"type":"appCustomProductPages","id":"page-2","attributes":{"name":"Campaign"}}}"#)
+            .init(
+                statusCode: 201,
+                body: #"{"data":{"type":"appCustomProductPages","id":"page-2","attributes":{"name":"Campaign"},"relationships":{"app":{"data":{"type":"apps","id":"app-1"}}}},"links":{"self":"/v1/appCustomProductPages/page-2"}}"#
+            )
         ])
         let worker = CustomProductPagesWorker(httpClient: try await cppClient(transport))
 
@@ -87,11 +99,11 @@ struct CustomProductPagesWorkerContractTests {
         let transport = TestHTTPTransport(responses: [
             .init(
                 statusCode: 201,
-                body: #"{"data":{"type":"appCustomProductPageVersions","id":"version-1","attributes":{"deepLink":"ascmcp://campaign/summer"}}}"#
+                body: #"{"data":{"type":"appCustomProductPageVersions","id":"version-1","attributes":{"deepLink":"ascmcp://campaign/summer"},"relationships":{"appCustomProductPage":{"data":{"type":"appCustomProductPages","id":"page-1"}}}},"links":{"self":"/v1/appCustomProductPageVersions/version-1"}}"#
             ),
             .init(
                 statusCode: 201,
-                body: #"{"data":{"type":"appCustomProductPageVersions","id":"version-2","attributes":{"deepLink":null}}}"#
+                body: #"{"data":{"type":"appCustomProductPageVersions","id":"version-2","attributes":{"deepLink":null},"relationships":{"appCustomProductPage":{"data":{"type":"appCustomProductPages","id":"page-1"}}}},"links":{"self":"/v1/appCustomProductPageVersions/version-2"}}"#
             )
         ])
         let worker = CustomProductPagesWorker(httpClient: try await cppClient(transport))
@@ -153,6 +165,12 @@ struct CustomProductPagesWorkerContractTests {
             "custom_pages_create_version|body|/data/relationships/appCustomProductPageLocalizations|intentionallyOmitted",
             "custom_pages_get|query|include|intentionallyOmitted",
             "custom_pages_get|query|limit[appCustomProductPageVersions]|intentionallyOmitted",
+            "custom_pages_get_localization|query|include|intentionallyOmitted",
+            "custom_pages_get_localization|query|limit[appPreviewSets]|intentionallyOmitted",
+            "custom_pages_get_localization|query|limit[appScreenshotSets]|intentionallyOmitted",
+            "custom_pages_get_localization|query|limit[searchKeywords]|intentionallyOmitted",
+            "custom_pages_get_version|query|include|intentionallyOmitted",
+            "custom_pages_get_version|query|limit[appCustomProductPageLocalizations]|intentionallyOmitted",
             "custom_pages_list|query|include|intentionallyOmitted",
             "custom_pages_list|query|limit[appCustomProductPageVersions]|intentionallyOmitted",
             "custom_pages_list_localizations|query|include|intentionallyOmitted",

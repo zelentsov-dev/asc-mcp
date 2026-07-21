@@ -20,7 +20,7 @@ private struct HTTPResponsePayload: Sendable {
 public actor HTTPClient {
     private let transport: any HTTPTransport
     private let jwtService: JWTService
-    private let baseURL: String
+    private nonisolated let baseURL: String
     private let logger = Logger(subsystem: "com.asc-mcp", category: "HTTPClient")
     private var lastRateLimitInfo: ASCRateLimitInfo?
 
@@ -51,6 +51,13 @@ public actor HTTPClient {
         lastRateLimitInfo
     }
 
+    nonisolated func validatedScopedLink(
+        _ fullURL: String,
+        scope: PaginationScope
+    ) throws -> PaginationRequest {
+        try validatedPaginationRequest(fullURL, baseURL: baseURL, scope: scope)
+    }
+
     /// Fetches a pagination link only when it remains inside the supplied collection scope.
     /// - Parameters:
     ///   - nextURL: Absolute or root-relative URL returned by an App Store Connect `links.next` field.
@@ -58,7 +65,7 @@ public actor HTTPClient {
     /// - Returns: Raw response data for the validated next page.
     /// - Throws: `ASCError` when the link is invalid, leaves the configured origin or scope, or the request fails.
     public func getPage(_ nextURL: String, scope: PaginationScope) async throws -> Data {
-        let page = try validatedPaginationRequest(nextURL, baseURL: baseURL, scope: scope)
+        let page = try validatedScopedLink(nextURL, scope: scope)
         return try await get(page.path, parameters: page.parameters)
     }
 

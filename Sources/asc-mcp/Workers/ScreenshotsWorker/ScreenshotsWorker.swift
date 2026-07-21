@@ -3,6 +3,9 @@ import MCP
 
 /// ScreenshotsWorker manages screenshots and app previews in App Store Connect
 public final class ScreenshotsWorker: Sendable {
+    static let maximumBatchUploadCount = 50
+    static let maximumReorderCount = 200
+
     static let screenshotDisplayTypes = [
         "APP_IPHONE_67",
         "APP_IPHONE_61",
@@ -86,6 +89,7 @@ public final class ScreenshotsWorker: Sendable {
     public func getTools() async -> [Tool] {
         return [
             listScreenshotSetsTool(),
+            getScreenshotSetTool(),
             createScreenshotSetTool(),
             deleteScreenshotSetTool(),
             listScreenshotsTool(),
@@ -94,12 +98,14 @@ public final class ScreenshotsWorker: Sendable {
             deleteScreenshotTool(),
             reorderScreenshotsTool(),
             listPreviewSetsTool(),
+            getPreviewSetTool(),
             createPreviewSetTool(),
             deletePreviewSetTool(),
             uploadPreviewTool(),
             getPreviewTool(),
             listPreviewsTool(),
             deletePreviewTool(),
+            reorderPreviewsTool(),
             uploadScreenshotBatchTool()
         ]
     }
@@ -109,6 +115,8 @@ public final class ScreenshotsWorker: Sendable {
         switch params.name {
         case "screenshots_list_sets":
             return try await listScreenshotSets(params)
+        case "screenshots_get_set":
+            return try await getScreenshotSet(params)
         case "screenshots_create_set":
             return try await createScreenshotSet(params)
         case "screenshots_delete_set":
@@ -125,6 +133,8 @@ public final class ScreenshotsWorker: Sendable {
             return try await reorderScreenshots(params)
         case "screenshots_list_preview_sets":
             return try await listPreviewSets(params)
+        case "screenshots_get_preview_set":
+            return try await getPreviewSet(params)
         case "screenshots_create_preview_set":
             return try await createPreviewSet(params)
         case "screenshots_delete_preview_set":
@@ -137,6 +147,8 @@ public final class ScreenshotsWorker: Sendable {
             return try await listPreviews(params)
         case "screenshots_delete_preview":
             return try await deletePreview(params)
+        case "screenshots_reorder_previews":
+            return try await reorderPreviews(params)
         case "screenshots_upload_batch":
             return try await uploadScreenshotBatch(params)
         default:

@@ -5,16 +5,20 @@ import Testing
 
 @Suite("Filtered Pagination Scope Matrix Tests")
 struct FilteredPaginationScopeMatrixTests {
-    @Test("all 37 filtered handlers preserve exact default and maximal explicit queries")
+    @Test("all 40 filtered handlers preserve exact default and maximal explicit queries")
     func acceptsExactContinuations() async throws {
         let fixtures = filteredPaginationFixtures()
-        #expect(fixtures.count == 37)
+        #expect(fixtures.count == 40)
         #expect(fixtures.map(\.tool) == filteredPaginationToolNames)
 
         for fixture in fixtures {
             for variant in filteredPaginationVariants(for: fixture) {
                 let firstPageTransport = TestHTTPTransport(
-                    responses: filteredPaginationResponses(for: fixture, includePage: true)
+                    responses: filteredPaginationResponses(
+                        for: fixture,
+                        includePage: true,
+                        requestedQuery: variant.query
+                    )
                 )
                 let firstPageResult = try await invokeFilteredPaginationFixture(
                     fixture,
@@ -37,7 +41,11 @@ struct FilteredPaginationScopeMatrixTests {
                     paginationMatrixURL(path: fixture.path, query: continuationQuery)
                 )
                 let continuationTransport = TestHTTPTransport(
-                    responses: filteredPaginationResponses(for: fixture, includePage: true)
+                    responses: filteredPaginationResponses(
+                        for: fixture,
+                        includePage: true,
+                        requestedQuery: variant.query
+                    )
                 )
                 let continuationResult = try await invokeFilteredPaginationFixture(
                     fixture,
@@ -165,12 +173,12 @@ struct FilteredPaginationScopeMatrixTests {
         }
     }
 
-    @Test("all 56 public manifest fields publish the strict continuation contract")
+    @Test("all 59 public manifest fields publish the strict continuation contract")
     func manifestDescribesStrictContinuationContract() throws {
         let manifest = try ASCOperationManifestBundle.loadBundled()
         let toolNames = filteredPaginationToolNames + pathOnlyManifestPaginationToolNames + completeManifestPaginationToolNames
-        #expect(toolNames.count == 56)
-        #expect(Set(toolNames).count == 56)
+        #expect(toolNames.count == 59)
+        #expect(Set(toolNames).count == 59)
 
         for toolName in toolNames {
             let mapping = try #require(manifest.mapping(for: toolName))
@@ -180,7 +188,7 @@ struct FilteredPaginationScopeMatrixTests {
         }
     }
 
-    @Test("all 50 path and filtered tool schemas explain the strict continuation contract")
+    @Test("all 53 path and filtered tool schemas explain the strict continuation contract")
     func toolSchemasDescribeStrictContinuationContract() async throws {
         let client = await HTTPClient(
             jwtService: try TestFactory.makeJWTService(),
@@ -190,8 +198,8 @@ struct FilteredPaginationScopeMatrixTests {
         )
         let tools = await pathAndFilteredPaginationTools(client: client)
         let toolNames = filteredPaginationToolNames + pathOnlyManifestPaginationToolNames
-        #expect(toolNames.count == 50)
-        #expect(Set(toolNames).count == 50)
+        #expect(toolNames.count == 53)
+        #expect(Set(toolNames).count == 53)
 
         for toolName in toolNames {
             let tool = try #require(tools.first { $0.name == toolName })
@@ -213,16 +221,19 @@ private enum FilteredPaginationWorker {
     case analytics
     case appEvents
     case appInfo
+    case apps
     case betaFeedback
     case betaGroups
     case betaLicense
     case betaTesters
     case buildBetaDetails
     case builds
+    case customPages
     case metrics
     case preRelease
     case pricing
     case provisioning
+    case ppo
     case reviews
     case users
     case webhooks
@@ -300,6 +311,13 @@ private func filteredPaginationFixtures() -> [FilteredPaginationFixture] {
             "/v1/appInfos/info-2/appInfoLocalizations",
             ["limit": "25"],
             ["limit": "31", "filter[locale]": "en-US,fr-FR", "include": "appInfo"]
+        ),
+        fixture(
+            "apps_list_search_keywords",
+            "/v1/apps/app-1/searchKeywords",
+            "/v1/apps/app-2/searchKeywords",
+            ["limit": "200"],
+            ["limit": "31", "filter[platform]": "IOS,MAC_OS", "filter[locale]": "en-US,fr-FR"]
         ),
         fixture(
             "beta_feedback_list_crashes",
@@ -437,6 +455,13 @@ private func filteredPaginationFixtures() -> [FilteredPaginationFixture] {
             ]
         ),
         fixture(
+            "custom_pages_list_search_keywords",
+            "/v1/appCustomProductPageLocalizations/localization-1/searchKeywords",
+            "/v1/appCustomProductPageLocalizations/localization-2/searchKeywords",
+            ["limit": "25"],
+            ["limit": "31", "filter[platform]": "IOS,MAC_OS", "filter[locale]": "en-US,fr-FR"]
+        ),
+        fixture(
             "metrics_app_beta_tester_usage",
             "/v1/apps/app-1/metrics/betaTesterUsages",
             "/v1/apps/app-2/metrics/betaTesterUsages",
@@ -473,6 +498,13 @@ private func filteredPaginationFixtures() -> [FilteredPaginationFixture] {
             "/v1/builds/build-2/diagnosticSignatures",
             ["limit": "25"],
             ["limit": "31", "filter[diagnosticType]": "DISK_WRITES,HANGS,LAUNCHES"]
+        ),
+        fixture(
+            "ppo_list_version_experiments",
+            "/v1/appStoreVersions/version-1/appStoreVersionExperimentsV2",
+            "/v1/appStoreVersions/version-2/appStoreVersionExperimentsV2",
+            ["limit": "25"],
+            ["limit": "31", "filter[state]": "READY_FOR_REVIEW,IN_REVIEW"]
         ),
         fixture(
             "pre_release_list",
@@ -578,6 +610,7 @@ private let filteredPaginationToolNames = [
     "app_events_list_localizations",
     "app_info_list",
     "app_info_list_localizations",
+    "apps_list_search_keywords",
     "beta_feedback_list_crashes",
     "beta_feedback_list_screenshots",
     "beta_groups_list",
@@ -587,10 +620,12 @@ private let filteredPaginationToolNames = [
     "beta_testers_search",
     "builds_get_beta_groups",
     "builds_list",
+    "custom_pages_list_search_keywords",
     "metrics_app_beta_tester_usage",
     "metrics_group_beta_tester_usage",
     "metrics_tester_usage",
     "metrics_build_diagnostics",
+    "ppo_list_version_experiments",
     "pre_release_list",
     "pricing_list_price_points",
     "pricing_list_territory_availability",
@@ -639,21 +674,27 @@ private let strictContinuationLocalRole = "Strict Apple continuation URL for thi
 private let strictContinuationToolDescription = "Apple continuation URL from the previous response. Repeat every originating list control, including the effective/default limit, filters, sort, include, fields, and nested limits when supported; the exact query and a non-empty cursor are validated."
 
 private let strictContinuationManifestRoleOverrides = [
+    "apps_list_search_keywords": "Strict Apple continuation URL for this exact app keyword collection; app_id, filters, and effective limit must be repeated and the cursor is validated before network access.",
     "beta_groups_list_recruitment_options": "Strict Apple continuation URL for this exact collection; effective limit and fixed sparse fieldset must match, and origin, path, exact query, and a non-empty cursor are validated.",
+    "custom_pages_list_search_keywords": "paginationContinuation",
     "metrics_app_beta_tester_usage": "Strict Apple continuation URL for the same app metric scope; every period, grouping, filter, and effective limit value must match.",
     "metrics_group_beta_tester_usage": "Strict Apple continuation URL for the same beta-group metric scope; every period, grouping, filter, and effective limit value must match.",
     "metrics_group_public_link_usage": "Strict Apple continuation URL for the same public-link metric scope and effective limit.",
     "metrics_tester_usage": "Strict Apple continuation URL for the same tester, required app filter, period, and effective limit.",
-    "metrics_build_beta_usage": "Strict Apple continuation URL for the same build metric scope and effective limit."
+    "metrics_build_beta_usage": "Strict Apple continuation URL for the same build metric scope and effective limit.",
+    "ppo_list_version_experiments": "Strict continuation bound to the exact version path, effective limit, state filter, origin, and non-empty cursor."
 ]
 
 private let strictContinuationToolDescriptionOverrides = [
+    "apps_list_search_keywords": "Apple continuation URL from the previous response. Repeat app_id, platforms, locales, and the effective limit; the exact path, query, and cursor are validated.",
     "beta_groups_list_recruitment_options": "Apple continuation URL from the previous response. Repeat the effective limit; the exact query, origin, path, and a non-empty cursor are validated.",
+    "custom_pages_list_search_keywords": "Apple continuation URL from the previous response; origin, path, query invariants, and cursor are validated",
     "metrics_app_beta_tester_usage": "Apple continuation URL from the previous response. Repeat the effective limit and every period, grouping, and filter control; exact origin, path, query, and a non-empty cursor are validated.",
     "metrics_group_beta_tester_usage": "Apple continuation URL from the previous response. Repeat the effective limit and every period, grouping, and filter control; exact origin, path, query, and a non-empty cursor are validated.",
     "metrics_group_public_link_usage": "Apple continuation URL from the previous response. Repeat the effective limit and every period, grouping, and filter control; exact origin, path, query, and a non-empty cursor are validated.",
     "metrics_tester_usage": "Apple continuation URL from the previous response. Repeat the effective limit and every period, grouping, and filter control; exact origin, path, query, and a non-empty cursor are validated.",
-    "metrics_build_beta_usage": "Apple continuation URL from the previous response. Repeat the effective limit and every period, grouping, and filter control; exact origin, path, query, and a non-empty cursor are validated."
+    "metrics_build_beta_usage": "Apple continuation URL from the previous response. Repeat the effective limit and every period, grouping, and filter control; exact origin, path, query, and a non-empty cursor are validated.",
+    "ppo_list_version_experiments": "Apple continuation URL from the previous response; repeat the exact originating limit and filters"
 ]
 
 private func pathAndFilteredPaginationTools(client: HTTPClient) async -> [Tool] {
@@ -662,16 +703,19 @@ private func pathAndFilteredPaginationTools(client: HTTPClient) async -> [Tool] 
     tools += await AnalyticsWorker(httpClient: client).getTools()
     tools += await AppEventsWorker(httpClient: client).getTools()
     tools += await AppInfoWorker(httpClient: client).getTools()
+    tools += await AppsWorker(client: client).getTools()
     tools += await BetaFeedbackWorker(httpClient: client).getTools()
     tools += await BetaGroupsWorker(httpClient: client).getTools()
     tools += await BetaLicenseAgreementsWorker(httpClient: client).getTools()
     tools += await BetaTestersWorker(httpClient: client).getTools()
     tools += await BuildBetaDetailsWorker(httpClient: client).getTools()
     tools += await BuildsWorker(httpClient: client).getTools()
+    tools += await CustomProductPagesWorker(httpClient: client).getTools()
     tools += await MetricsWorker(httpClient: client).getTools()
     tools += await PreReleaseVersionsWorker(httpClient: client).getTools()
     tools += await PricingWorker(httpClient: client).getTools()
     tools += await ProvisioningWorker(httpClient: client).getTools()
+    tools += await ProductPageOptimizationWorker(httpClient: client).getTools()
     tools += await ReviewsWorker(httpClient: client).getTools()
     tools += await SandboxTestersWorker(httpClient: client).getTools()
     tools += await UsersWorker(httpClient: client).getTools()
@@ -685,17 +729,20 @@ private func filteredPaginationWorker(for tool: String) -> FilteredPaginationWor
     case "analytics_list_report_requests", "analytics_list_reports", "analytics_list_instances": .analytics
     case "app_events_list", "app_events_list_localizations": .appEvents
     case "app_info_list", "app_info_list_localizations": .appInfo
+    case "apps_list_search_keywords": .apps
     case "beta_feedback_list_crashes", "beta_feedback_list_screenshots": .betaFeedback
     case "beta_groups_list", "beta_groups_list_recruitment_options": .betaGroups
     case "beta_license_list": .betaLicense
     case "beta_testers_list", "beta_testers_search": .betaTesters
     case "builds_get_beta_groups": .buildBetaDetails
     case "builds_list": .builds
+    case "custom_pages_list_search_keywords": .customPages
     case "metrics_app_beta_tester_usage", "metrics_group_beta_tester_usage",
          "metrics_tester_usage", "metrics_build_diagnostics": .metrics
     case "pre_release_list": .preRelease
     case "pricing_list_price_points", "pricing_list_territory_availability", "pricing_list_territory_availabilities": .pricing
     case "provisioning_list_bundle_ids", "provisioning_list_devices", "provisioning_list_certificates", "provisioning_list_profiles", "provisioning_list_capabilities": .provisioning
+    case "ppo_list_version_experiments": .ppo
     case "reviews_list", "reviews_list_for_version", "reviews_summarizations": .reviews
     case "users_list", "users_list_invitations": .users
     case "webhooks_list", "webhooks_list_deliveries": .webhooks
@@ -735,12 +782,16 @@ private func filteredPaginationDefaultArguments(for tool: String) -> [String: Va
         return ["event_id": .string("event-1")]
     case "app_info_list_localizations":
         return ["info_id": .string("info-1")]
+    case "apps_list_search_keywords":
+        return ["app_id": .string("app-1")]
     case "beta_testers_search":
         return ["email": .string("tester@example.com")]
     case "beta_groups_list_recruitment_options":
         return [:]
     case "builds_get_beta_groups", "metrics_build_diagnostics":
         return ["build_id": .string("build-1")]
+    case "custom_pages_list_search_keywords":
+        return ["localization_id": .string("localization-1")]
     case "metrics_app_beta_tester_usage":
         return ["app_id": .string("app-1")]
     case "metrics_group_beta_tester_usage":
@@ -751,6 +802,8 @@ private func filteredPaginationDefaultArguments(for tool: String) -> [String: Va
         return ["availability_id": .string("availability-1")]
     case "provisioning_list_capabilities":
         return ["bundle_id_resource_id": .string("bundle-1")]
+    case "ppo_list_version_experiments":
+        return ["version_id": .string("version-1")]
     case "reviews_list_for_version":
         return ["version_id": .string("version-1")]
     case "webhooks_list_deliveries":
@@ -830,6 +883,13 @@ private func filteredPaginationExplicitArguments(for tool: String) -> [String: V
             "info_id": .string("info-1"),
             "locale": .array([.string("en-US"), .string("fr-FR")]),
             "include": .array([.string("appInfo")]),
+            "limit": .int(31)
+        ]
+    case "apps_list_search_keywords":
+        return [
+            "app_id": .string("app-1"),
+            "platforms": .array([.string("IOS"), .string("MAC_OS")]),
+            "locales": .array([.string("en-US"), .string("fr-FR")]),
             "limit": .int(31)
         ]
     case "beta_feedback_list_crashes", "beta_feedback_list_screenshots":
@@ -917,6 +977,13 @@ private func filteredPaginationExplicitArguments(for tool: String) -> [String: V
             "uses_non_exempt_encryption_set": .bool(true),
             "limit": .int(31),
             "sort": .string("version")
+        ]
+    case "custom_pages_list_search_keywords":
+        return [
+            "localization_id": .string("localization-1"),
+            "platform": .array([.string("IOS"), .string("MAC_OS")]),
+            "locale": .array([.string("en-US"), .string("fr-FR")]),
+            "limit": .int(31)
         ]
     case "metrics_app_beta_tester_usage":
         return [
@@ -1006,6 +1073,12 @@ private func filteredPaginationExplicitArguments(for tool: String) -> [String: V
         ]
     case "provisioning_list_capabilities":
         return ["bundle_id_resource_id": .string("bundle-1"), "limit": .int(31)]
+    case "ppo_list_version_experiments":
+        return [
+            "version_id": .string("version-1"),
+            "states": .array([.string("READY_FOR_REVIEW"), .string("IN_REVIEW")]),
+            "limit": .int(31)
+        ]
     case "reviews_list":
         return reviewPaginationArguments(parent: ("app_id", "app-1"))
     case "reviews_list_for_version":
@@ -1087,6 +1160,8 @@ private func invokeFilteredPaginationFixture(
         return try await AppEventsWorker(httpClient: client).handleTool(parameters)
     case .appInfo:
         return try await AppInfoWorker(httpClient: client).handleTool(parameters)
+    case .apps:
+        return try await AppsWorker(client: client).handleTool(parameters)
     case .betaFeedback:
         return try await BetaFeedbackWorker(httpClient: client).handleTool(parameters)
     case .betaGroups:
@@ -1099,6 +1174,8 @@ private func invokeFilteredPaginationFixture(
         return try await BuildBetaDetailsWorker(httpClient: client).handleTool(parameters)
     case .builds:
         return try await BuildsWorker(httpClient: client).handleTool(parameters)
+    case .customPages:
+        return try await CustomProductPagesWorker(httpClient: client).handleTool(parameters)
     case .metrics:
         return try await MetricsWorker(httpClient: client).handleTool(parameters)
     case .preRelease:
@@ -1107,6 +1184,8 @@ private func invokeFilteredPaginationFixture(
         return try await PricingWorker(httpClient: client).handleTool(parameters)
     case .provisioning:
         return try await ProvisioningWorker(httpClient: client).handleTool(parameters)
+    case .ppo:
+        return try await ProductPageOptimizationWorker(httpClient: client).handleTool(parameters)
     case .reviews:
         return try await ReviewsWorker(httpClient: client).handleTool(parameters)
     case .users:
@@ -1118,7 +1197,8 @@ private func invokeFilteredPaginationFixture(
 
 private func filteredPaginationResponses(
     for fixture: FilteredPaginationFixture,
-    includePage: Bool
+    includePage: Bool,
+    requestedQuery: [String: String]? = nil
 ) -> [TestHTTPTransport.Response] {
     var responses: [TestHTTPTransport.Response] = []
     if fixture.tool == "pricing_list_territory_availability" {
@@ -1130,6 +1210,13 @@ private func filteredPaginationResponses(
     if includePage {
         let body: String
         switch fixture.tool {
+        case "apps_list_search_keywords",
+             "custom_pages_list_search_keywords",
+             "ppo_list_version_experiments":
+            let effectiveQuery = requestedQuery ?? fixture.defaultQuery
+            let limit = effectiveQuery["limit"] ?? "25"
+            let selfURL = paginationMatrixURL(path: fixture.path, query: effectiveQuery)
+            body = #"{"data":[],"links":{"self":"\#(selfURL)"},"meta":{"paging":{"total":0,"limit":\#(limit)}}}"#
         case "beta_groups_list_recruitment_options",
              "metrics_app_beta_tester_usage",
              "metrics_group_beta_tester_usage",

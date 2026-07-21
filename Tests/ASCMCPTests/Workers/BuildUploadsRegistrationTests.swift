@@ -19,7 +19,7 @@ struct BuildUploadsRegistrationTests {
         let snapshots = try await TestFactory.collectWorkerToolSnapshots()
         #expect(snapshots.count == 35)
         #expect(Set(snapshots.map(\.key)) == WorkerManager.validWorkerFilterKeys)
-        #expect(snapshots.reduce(0) { $0 + $1.count } == 472)
+        #expect(snapshots.reduce(0) { $0 + $1.count } == 490)
 
         let uploads = try #require(snapshots.first { $0.key == "build_uploads" })
         #expect(uploads.readmeName == "Build Uploads")

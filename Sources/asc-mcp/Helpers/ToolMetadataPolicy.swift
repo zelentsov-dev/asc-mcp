@@ -38,6 +38,9 @@ enum ToolMetadataPolicy {
         if explicitMutationTools.contains(toolName) {
             return false
         }
+        if explicitReadOnlyTools.contains(toolName) {
+            return true
+        }
         if toolName.hasPrefix("auth_") {
             return true
         }
@@ -75,7 +78,31 @@ enum ToolMetadataPolicy {
 
     private static let explicitMutationTools: Set<String> = [
         "build_uploads_reserve_file",
-        "build_uploads_commit_file"
+        "build_uploads_commit_file",
+        "custom_pages_add_search_keywords",
+        "custom_pages_remove_search_keywords"
+    ]
+
+    private static let explicitReadOnlyTools: Set<String> = [
+        "promoted_delete_image",
+        "promoted_upload_image"
+    ]
+
+    private static let explicitClosedWorldTools: Set<String> = [
+        "auth_generate_token",
+        "auth_refresh_token",
+        "auth_token_status",
+        "auth_validate_token",
+        "company_current",
+        "company_list",
+        "company_switch",
+        "promoted_delete_image",
+        "promoted_get_image",
+        "promoted_get_image_for_purchase",
+        "promoted_upload_image",
+        "webhooks_parse_payload",
+        "webhooks_triage_event",
+        "webhooks_verify_signature"
     ]
 
     private static let readOnlyMarkers = [
@@ -116,7 +143,9 @@ enum ToolMetadataPolicy {
         let readOnly = existing.readOnlyHint ?? isReadOnly(toolName)
         let destructive = existing.destructiveHint ?? (readOnly ? false : isDestructiveOrHighRisk(toolName))
         let idempotent = existing.idempotentHint ?? readOnly
-        let openWorld = existing.openWorldHint ?? true
+        let openWorld = explicitClosedWorldTools.contains(toolName)
+            ? false
+            : (existing.openWorldHint ?? true)
 
         return Tool.Annotations(
             title: existing.title,

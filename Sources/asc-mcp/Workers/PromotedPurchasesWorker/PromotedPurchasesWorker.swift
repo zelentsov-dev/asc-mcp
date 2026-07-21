@@ -12,7 +12,7 @@ public final class PromotedPurchasesWorker: Sendable {
     }
 
     /// Get list of available tools
-    /// - Returns: Array of 9 promoted purchase tools
+    /// - Returns: Array of 10 promoted purchase tools
     public func getTools() async -> [Tool] {
         return [
             listPromotedPurchasesTool(),
@@ -20,6 +20,7 @@ public final class PromotedPurchasesWorker: Sendable {
             createPromotedPurchaseTool(),
             updatePromotedPurchaseTool(),
             deletePromotedPurchaseTool(),
+            reorderPromotedPurchasesTool(),
             uploadPromotedPurchaseImageTool(),
             getPromotedPurchaseImageTool(),
             deletePromotedPurchaseImageTool(),
@@ -42,6 +43,8 @@ public final class PromotedPurchasesWorker: Sendable {
             return try await updatePromotedPurchase(params)
         case "promoted_delete":
             return try await deletePromotedPurchase(params)
+        case "promoted_reorder":
+            return try await reorderPromotedPurchases(params)
         case "promoted_upload_image":
             return try await uploadPromotedPurchaseImage(params)
         case "promoted_get_image":

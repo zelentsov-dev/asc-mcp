@@ -29,7 +29,7 @@
 
 ## Overview
 
-**asc-mcp** is a Swift-based MCP server that bridges [Claude](https://claude.ai) (or any MCP-compatible host) with the [App Store Connect API](https://developer.apple.com/documentation/appstoreconnectapi). It exposes **472 tools** across 33 App Store tool domains + 2 core domains, enabling you to automate your entire iOS/macOS release workflow through natural language.
+**asc-mcp** is a Swift-based MCP server that bridges [Claude](https://claude.ai) (or any MCP-compatible host) with the [App Store Connect API](https://developer.apple.com/documentation/appstoreconnectapi). It exposes **490 tools** across 33 App Store tool domains + 2 core domains, enabling you to automate your entire iOS/macOS release workflow through natural language.
 
 ### Key capabilities
 
@@ -49,14 +49,14 @@
 - **Analytics & Metrics** — sales/financial reports, analytics reports, performance metrics, TestFlight usage metrics, diagnostics
 - **Metadata management** — localized descriptions, keywords, What's New across all locales
 - **MCP 2025-11-25 surface** — tool annotations, output schemas for stable tools, structured JSON results, and safe result-size metadata
-- **OpenAPI contract tooling** — compare the live 472-tool worker catalog and semantic manifest with Apple's official App Store Connect OpenAPI specification
+- **OpenAPI contract tooling** — compare the live 490-tool worker catalog and semantic manifest with Apple's official App Store Connect OpenAPI specification
 
 ## Quick Start
 
 ```bash
 # 1. Install via Mint
 brew install mint
-mint install zelentsov-dev/asc-mcp@v3.18.0
+mint install zelentsov-dev/asc-mcp@v4.0.0
 
 # 2. Add to Claude Code with env vars (simplest setup)
 claude mcp add asc-mcp \
@@ -88,7 +88,7 @@ Or use a JSON config file — see [Configuration](#configuration) below.
 brew install mint
 
 # Install asc-mcp from GitHub
-mint install zelentsov-dev/asc-mcp@v3.18.0
+mint install zelentsov-dev/asc-mcp@v4.0.0
 
 # Register in Claude Code
 claude mcp add asc-mcp -- ~/.mint/bin/asc-mcp
@@ -99,14 +99,32 @@ To install a specific branch or tag:
 ```bash
 mint install zelentsov-dev/asc-mcp@main      # main branch
 mint install zelentsov-dev/asc-mcp@develop    # develop branch
-mint install zelentsov-dev/asc-mcp@v3.18.0    # specific tag
+mint install zelentsov-dev/asc-mcp@v4.0.0    # specific tag
 ```
 
 To update to the latest version:
 
 ```bash
-mint install zelentsov-dev/asc-mcp@v3.18.0 --force
+mint install zelentsov-dev/asc-mcp@v4.0.0 --force
 ```
+
+### Migrating from v3.18.x
+
+Version 4 keeps every existing tool name and worker filter, but destructive Marketing and review-attachment calls now require an exact confirmation ID before any Apple request:
+
+| Existing tool | New required confirmation |
+|---|---|
+| `custom_pages_delete` | `confirm_page_id` |
+| `ppo_delete_experiment` | `confirm_experiment_id` |
+| `promoted_delete` | `confirm_promoted_purchase_id` |
+| `review_attachments_delete` | `confirm_attachment_id` |
+| `screenshots_delete_set`, `screenshots_delete_preview_set` | `confirm_set_id` |
+| `screenshots_delete` | `confirm_screenshot_id` |
+| `screenshots_delete_preview` | `confirm_preview_id` |
+
+`ppo_update_experiment` also requires `confirm_experiment_id` when `state` is supplied. Calls that update only name or traffic proportion remain unchanged. After an `unknown` or `committed_unverified` mutation result, use the returned inspection action before retrying.
+
+Remove undocumented top-level arguments from existing Marketing and review-attachment calls. Version 4 rejects unknown keys before any network request instead of silently ignoring them.
 
 ### Option B: Build from Source
 
@@ -367,7 +385,7 @@ Add to `~/.codeium/windsurf/mcp_config.json`:
 }
 ```
 
-> **Note:** Windsurf has a 100-tool limit. The server exposes 472 tools by default, so you must use `--workers` to select a subset. See [Worker Filtering](#worker-filtering) below.
+> **Note:** Windsurf has a 100-tool limit. The server exposes 490 tools by default, so you must use `--workers` to select a subset. See [Worker Filtering](#worker-filtering) below.
 
 </details>
 
@@ -376,14 +394,17 @@ Add to `~/.codeium/windsurf/mcp_config.json`:
 
 ### Worker Filtering
 
-The server exposes **472 tools** across 33 App Store tool domains + 2 core domains. Some MCP clients impose a tool limit (e.g., Windsurf caps at 100). Use the 35 `--workers` filter keys to enable only the workers you need:
+The server exposes **490 tools** across 33 App Store tool domains + 2 core domains. Some MCP clients impose a tool limit (e.g., Windsurf caps at 100). Use the 35 `--workers` filter keys to enable only the workers you need:
 
 ```bash
 # Only load apps, builds, and version lifecycle tools
 asc-mcp --workers apps,builds,versions
 
-# App Store release preparation subset (108 tools, including always-on and build sub-workers)
-asc-mcp --workers apps,accessibility,builds,export_compliance,versions,beta_app,pre_release,app_info,screenshots
+# App Store release preparation subset (99 tools, including always-on and build sub-workers)
+asc-mcp --workers apps,accessibility,builds,export_compliance,versions,app_info,screenshots
+
+# TestFlight review helpers can be loaded separately (49 tools)
+asc-mcp --workers apps,builds,beta_app,pre_release
 
 # Monetization focus
 asc-mcp --workers apps,iap,subscriptions,pricing,promoted,review_submissions
@@ -424,13 +445,13 @@ swift run asc-mcp openapi-contract-check \
   --strict
 ```
 
-The manifest is pinned to Apple API 4.4.1 by version, SHA-256, path count, and operation count. It currently maps 441 Apple operations, explicitly defers 459, and scopes out 363, covering all 1,263 operations without overlap. CI fails when the Apple document changes, a mapped operation moves or disappears, a public tool or worker drifts from the manifest, an input field loses its binding, response lineage becomes invalid, or a deferred decision expires. Unexposed optional Apple parameters are warnings so they remain visible in the generated backlog.
+The manifest is pinned to Apple API 4.4.1 by version, SHA-256, path count, and operation count. It currently maps 464 Apple operations, explicitly defers 436, and scopes out 363, covering all 1,263 operations without overlap. CI fails when the Apple document changes, a mapped operation moves or disappears, a public tool or worker drifts from the manifest, an input field loses its binding, response lineage becomes invalid, or a deferred decision expires. Unexposed optional Apple parameters are warnings so they remain visible in the generated backlog.
 
-Manifest schema v2 also accounts for every optional Apple query and request-body input as publicly bound, internally controlled, intentionally omitted with a reviewed reason, or still unclassified. The checked-in `optionalInputCoveragePin` records the exact current totals and a SHA-256 digest of the sorted input identities and dispositions; `--strict` rejects a missing pin or any count- or identity-level drift. The pin makes phased remediation auditable and regression-safe, but it is not a claim that every optional Apple input is already public. The v3.18.0 pin is 2,548 total: 993 bound, 40 internally controlled, 1,515 intentionally omitted, and 0 unclassified. Its identity SHA-256 is `00b48805d61ba3849f940f2e7c020817882a0e942b8eef0bea14e81089d13323`.
+Manifest schema v2 also accounts for every optional Apple query and request-body input as publicly bound, internally controlled, intentionally omitted with a reviewed reason, or still unclassified. The checked-in `optionalInputCoveragePin` records the exact current totals and a SHA-256 digest of the sorted input identities and dispositions; `--strict` rejects a missing pin or any count- or identity-level drift. The pin makes phased remediation auditable and regression-safe, but it is not a claim that every optional Apple input is already public. The v4.0.0 pin is 2,756 total: 1,041 bound, 40 internally controlled, 1,675 intentionally omitted, and 0 unclassified. Its identity SHA-256 is `d23f48816b9bc0b19933ae9f65cf4d737918730b1247f8949a802007055bd4a2`.
 
 `--strict` is the merge- and tag-time release gate. Every declared `target` or `broken` tool remains an error in reports, and a regression test pins their exact state. The current baseline has no `target` or `broken` implementations and no implementation drift, so any implementation that leaves `asBuilt`, any structural contract error, or any optional-input coverage drift blocks both merges and releases. `--structural-strict` remains available only for local phased remediation work.
 
-This gate proves operation identity, top-level MCP field ownership, required Apple inputs, typed internal values, and response source/pointer lineage. Full MCP type/enum/range parity and complete typed response schemas remain separate optimization phases; the current mapping status is 439 partial and 33 deprecated.
+This gate proves operation identity, top-level MCP field ownership, required Apple inputs, typed internal values, and response source/pointer lineage. Full MCP type/enum/range parity and complete typed response schemas remain separate optimization phases; the current mapping status is 457 partial and 33 deprecated.
 
 The older `openapi-coverage` command remains available for the high-level domain report in [`ASC-OPENAPI-COVERAGE-GENERATED.md`](ASC-OPENAPI-COVERAGE-GENERATED.md). The operation contract is the authoritative release gate.
 
@@ -440,7 +461,7 @@ The older `openapi-coverage` command remains available for the high-level domain
 |--------|--------|-------|-------------|
 | `company` | `company_` | 3 | Multi-account management |
 | `auth` | `auth_` | 4 | JWT token tools |
-| `apps` | `apps_` | 9 | App listing, metadata, localizations |
+| `apps` | `apps_` | 10 | App listing, metadata, localizations, search keyword IDs |
 | `accessibility` | `accessibility_` | 6 | App Store accessibility declarations |
 | `webhooks` | `webhooks_` | 11 | Webhook notifications, delivery diagnostics, and receiver helpers |
 | `xcode_cloud` | `xcode_cloud_` | 30 | Xcode Cloud products, workflows, build runs, artifacts, issues, test results, and SCM |
@@ -466,10 +487,10 @@ The older `openapi-coverage` command remains available for the high-level domain
 | `users` | `users_` | 10 | Team members, roles |
 | `app_events` | `app_events_` | 9 | In-app events, localizations |
 | `analytics` | `analytics_` | 11 | Sales/financial reports, analytics |
-| `screenshots` | `screenshots_` | 16 | Screenshots, previews, sets |
-| `custom_pages` | `custom_pages_` | 10 | Custom product pages |
-| `ppo` | `ppo_` | 9 | Product page optimization (A/B tests) |
-| `promoted` | `promoted_` | 9 | Promoted in-app purchases |
+| `screenshots` | `screenshots_` | 19 | Screenshots, previews, sets, and verified ordering |
+| `custom_pages` | `custom_pages_` | 17 | Custom product pages, versions, localizations, and search keywords |
+| `ppo` | `ppo_` | 15 | Product page optimization experiments, treatments, and localizations |
+| `promoted` | `promoted_` | 10 | Promoted in-app purchases and verified ordering |
 | `review_attachments` | `review_attachments_` | 4 | App Store review attachments |
 | `review_submissions` | `review_submissions_` | 9 | Generic App Store review submissions and submission items |
 | `metrics` | `metrics_` | 9 | Performance metrics, diagnostics, and TestFlight usage metrics |
@@ -480,20 +501,20 @@ When connected to an LLM client, tool definitions consume context tokens. Here's
 
 | Configuration | Tools | ~Tokens |
 |---|---:|---:|
-| All workers (default) | 472 | **~55,000** |
-| Release workflow: `apps,builds,export_compliance,versions,reviews` | ~71 | ~8,800 |
-| Monetization: `apps,iap,subscriptions,pricing` | 183 | ~21,000 |
-| TestFlight: `apps,builds,beta_groups,beta_testers` | ~62 | ~7,000 |
-| Marketing: `apps,screenshots,custom_pages,ppo,promoted` | ~60 | ~6,800 |
-| `--workers apps` | 16 | ~2,000 |
+| All workers (default) | 490 | **~60,000** |
+| Release workflow: `apps,builds,export_compliance,versions,reviews` | ~72 | ~8,900 |
+| Monetization: `apps,iap,subscriptions,pricing` | 184 | ~21,100 |
+| TestFlight: `apps,builds,beta_groups,beta_testers` | ~63 | ~7,100 |
+| Marketing: `apps,screenshots,custom_pages,ppo,promoted` | ~78 | ~8,800 |
+| `--workers apps` | 17 | ~2,100 |
 
-**Heaviest workers:** Subscriptions (99 tools), InAppPurchases (59 tools), Xcode Cloud (30 tools), Provisioning (17 tools), Screenshots (16 tools).
+**Heaviest workers:** Subscriptions (99 tools), InAppPurchases (59 tools), Xcode Cloud (30 tools), Screenshots (19 tools), Provisioning (17 tools).
 
-For 200K-context clients, ~55K tokens is about 28% of the window. Exact cost depends on the MCP host's serialization and tokenizer. For clients with smaller context windows, use `--workers` to reduce the footprint.
+For 200K-context clients, ~60K tokens is about 30% of the window. Exact cost depends on the MCP host's serialization and tokenizer. For clients with smaller context windows, use `--workers` to reduce the footprint.
 
 ## Available Tools
 
-**472 tools** organized across 33 App Store tool domains + 2 core domains (use the 35 `--workers` filter keys — see [Worker Filtering](#worker-filtering)):
+**490 tools** organized across 33 App Store tool domains + 2 core domains (use the 35 `--workers` filter keys — see [Worker Filtering](#worker-filtering)):
 
 <details>
 <summary><strong>Company Management</strong> — 3 tools</summary>
@@ -519,7 +540,7 @@ For 200K-context clients, ~55K tokens is about 28% of the window. Exact cost dep
 </details>
 
 <details>
-<summary><strong>Apps Management</strong> — 9 tools</summary>
+<summary><strong>Apps Management</strong> — 10 tools</summary>
 
 | Tool | Description |
 |------|-------------|
@@ -528,6 +549,7 @@ For 200K-context clients, ~55K tokens is about 28% of the window. Exact cost dep
 | `apps_search` | Search apps by name or Bundle ID |
 | `apps_list_versions` | List all versions with states |
 | `apps_get_metadata` | Get localized metadata for a version |
+| `apps_list_search_keywords` | List canonical App Store search keyword IDs for custom-page targeting |
 | `apps_update_metadata` | Update metadata (What's New, description, etc.) |
 | `apps_list_localizations` | List localizations with content status |
 | `apps_create_localization` | Create a new localization for a version |
@@ -970,11 +992,12 @@ Includes sales, financial, app summary, analytics report request, report, instan
 </details>
 
 <details>
-<summary><strong>Screenshots & Previews</strong> — 16 tools</summary>
+<summary><strong>Screenshots & Previews</strong> — 19 tools</summary>
 
 | Tool | Description |
 |------|-------------|
 | `screenshots_list_sets` | List screenshot sets |
+| `screenshots_get_set` | Get a screenshot set by ID |
 | `screenshots_create_set` | Create a screenshot set |
 | `screenshots_delete_set` | Delete a screenshot set |
 | `screenshots_list` | List screenshots in a set |
@@ -983,18 +1006,20 @@ Includes sales, financial, app summary, analytics report request, report, instan
 | `screenshots_delete` | Delete a screenshot |
 | `screenshots_reorder` | Reorder screenshots in a set |
 | `screenshots_list_preview_sets` | List app preview sets |
+| `screenshots_get_preview_set` | Get an app preview set by ID |
 | `screenshots_create_preview_set` | Create a preview set |
 | `screenshots_delete_preview_set` | Delete a preview set |
 | `screenshots_upload_preview` | Upload an app preview |
 | `screenshots_get_preview` | Get preview details |
 | `screenshots_list_previews` | List previews in a preview set |
+| `screenshots_reorder_previews` | Reorder every preview in a set with membership and postflight verification |
 | `screenshots_upload_batch` | Upload screenshots in a batch |
 | `screenshots_delete_preview` | Delete a preview |
 
 </details>
 
 <details>
-<summary><strong>Custom Product Pages</strong> — 10 tools</summary>
+<summary><strong>Custom Product Pages</strong> — 17 tools</summary>
 
 | Tool | Description |
 |------|-------------|
@@ -1004,44 +1029,58 @@ Includes sales, financial, app summary, analytics report request, report, instan
 | `custom_pages_update` | Update a custom page |
 | `custom_pages_delete` | Delete a custom page |
 | `custom_pages_list_versions` | List page versions |
+| `custom_pages_get_version` | Get a page version by ID |
 | `custom_pages_create_version` | Create a page version |
+| `custom_pages_update_version` | Update a page version |
 | `custom_pages_list_localizations` | List version localizations |
+| `custom_pages_get_localization` | Get a localization by ID |
 | `custom_pages_create_localization` | Create a localization |
 | `custom_pages_update_localization` | Update a localization |
+| `custom_pages_delete_localization` | Delete a localization after exact confirmation |
+| `custom_pages_list_search_keywords` | List search keyword IDs assigned to a localization |
+| `custom_pages_add_search_keywords` | Add search keyword relationships |
+| `custom_pages_remove_search_keywords` | Remove search keyword relationships after exact confirmation |
 
 </details>
 
 <details>
-<summary><strong>Product Page Optimization (A/B Tests)</strong> — 9 tools</summary>
+<summary><strong>Product Page Optimization (A/B Tests)</strong> — 15 tools</summary>
 
 | Tool | Description |
 |------|-------------|
 | `ppo_list_experiments` | List A/B test experiments |
+| `ppo_list_version_experiments` | List V2 experiments for an App Store version |
 | `ppo_get_experiment` | Get experiment details |
 | `ppo_create_experiment` | Create an experiment |
 | `ppo_update_experiment` | Update/start/stop experiment |
 | `ppo_delete_experiment` | Delete an experiment |
 | `ppo_list_treatments` | List experiment treatments |
+| `ppo_get_treatment` | Get a treatment by ID |
 | `ppo_create_treatment` | Create a treatment variant |
+| `ppo_update_treatment` | Update a treatment variant |
+| `ppo_delete_treatment` | Delete a treatment after exact confirmation |
 | `ppo_list_treatment_localizations` | List treatment localizations |
+| `ppo_get_treatment_localization` | Get a treatment localization by ID |
 | `ppo_create_treatment_localization` | Create treatment localization |
+| `ppo_delete_treatment_localization` | Delete a treatment localization after exact confirmation |
 
 </details>
 
 <details>
-<summary><strong>Promoted Purchases</strong> — 9 tools</summary>
+<summary><strong>Promoted Purchases</strong> — 10 tools</summary>
 
 | Tool | Description |
 |------|-------------|
 | `promoted_list` | List promoted purchases for an app |
 | `promoted_get` | Get promotion details |
 | `promoted_create` | Create a promotion |
-| `promoted_update` | Update promotion (visibility/order) |
+| `promoted_update` | Update promotion visibility or enabled state |
 | `promoted_delete` | Delete a promotion |
-| `promoted_upload_image` | Deprecated: returns migration guidance; Apple removed the endpoint |
-| `promoted_get_image` | Deprecated: returns migration guidance; Apple removed the endpoint |
-| `promoted_delete_image` | Deprecated: returns migration guidance; Apple removed the endpoint |
-| `promoted_get_image_for_purchase` | Deprecated: returns migration guidance; Apple removed the relationship |
+| `promoted_reorder` | Replace and verify the complete promoted-purchase order for an app |
+| `promoted_upload_image` | Deprecated: returns migration guidance; the endpoint is absent from pinned Apple OpenAPI 4.4.1 |
+| `promoted_get_image` | Deprecated: returns migration guidance; the endpoint is absent from pinned Apple OpenAPI 4.4.1 |
+| `promoted_delete_image` | Deprecated: returns migration guidance; the endpoint is absent from pinned Apple OpenAPI 4.4.1 |
+| `promoted_get_image_for_purchase` | Deprecated: returns migration guidance; the relationship is absent from pinned Apple OpenAPI 4.4.1 |
 
 </details>
 

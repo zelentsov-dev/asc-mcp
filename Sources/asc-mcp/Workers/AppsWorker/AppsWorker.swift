@@ -19,6 +19,7 @@ public final class AppsWorker: Sendable {
             searchAppsTool(),
             listVersionsTool(),
             getAppMetadataTool(),
+            listSearchKeywordsTool(),
             updateMetadataTool(),
             createLocalizationTool(),
             deleteLocalizationTool(),
@@ -39,6 +40,8 @@ public final class AppsWorker: Sendable {
             return try await self.listAppVersions(params)
         case "apps_get_metadata":
             return try await self.getAppMetadata(params)
+        case "apps_list_search_keywords":
+            return try await self.listSearchKeywords(params)
         case "apps_update_metadata":
             return try await self.updateMetadata(params)
         case "apps_create_localization":

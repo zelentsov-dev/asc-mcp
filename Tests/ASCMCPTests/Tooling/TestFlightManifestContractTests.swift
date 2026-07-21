@@ -51,9 +51,9 @@ struct TestFlightManifestContractTests {
         let testFlightOperations = Set(expected.values.flatMap { $0 })
         #expect(testFlightOperations.count == 12)
         #expect(testFlightOperations.isSubset(of: mapped))
-        #expect(mapped.count == 441)
-        #expect(manifest.index.waivers.count == 459)
-        #expect(441 + 459 + 363 == manifest.index.specPin.operationCount)
+        #expect(mapped.count == 464)
+        #expect(manifest.index.waivers.count == 436)
+        #expect(464 + 436 + 363 == manifest.index.specPin.operationCount)
 
         let recruitmentWaivers = Set(
             manifest.index.waivers.compactMap(\.operationID).filter {
@@ -69,12 +69,12 @@ struct TestFlightManifestContractTests {
         })
 
         let pin = try #require(manifest.index.optionalInputCoveragePin)
-        #expect(pin.total == 2_548)
-        #expect(pin.bound == 993)
+        #expect(pin.total == 2_756)
+        #expect(pin.bound == 1_041)
         #expect(pin.internalControl == 40)
-        #expect(pin.intentionallyOmitted == 1_515)
+        #expect(pin.intentionallyOmitted == 1_675)
         #expect(pin.unclassified == 0)
-        #expect(pin.identitySHA256 == "00b48805d61ba3849f940f2e7c020817882a0e942b8eef0bea14e81089d13323")
+        #expect(pin.identitySHA256 == "d23f48816b9bc0b19933ae9f65cf4d737918730b1247f8949a802007055bd4a2")
     }
 
     @Test("TestFlight operation methods paths and success statuses are exact")

@@ -9,7 +9,7 @@ struct ScreenshotsPaginationScopeTests {
     func preservesExactQueries() async throws {
         for fixture in screenshotPaginationFixtures() {
             let firstPageTransport = TestHTTPTransport(responses: [
-                .init(statusCode: 200, body: #"{"data":[]}"#)
+                .init(statusCode: 200, body: screenshotPaginationEmptyResponse(path: fixture.path))
             ])
             let firstPageResult = try await invokeScreenshotPaginationFixture(
                 fixture,
@@ -23,7 +23,7 @@ struct ScreenshotsPaginationScopeTests {
             #expect(screenshotPaginationQuery(firstPageRequest) == fixture.requiredQuery)
 
             let continuationTransport = TestHTTPTransport(responses: [
-                .init(statusCode: 200, body: #"{"data":[]}"#)
+                .init(statusCode: 200, body: screenshotPaginationEmptyResponse(path: fixture.path))
             ])
             var continuationArguments = fixture.arguments
             var continuationQuery = fixture.requiredQuery
@@ -49,7 +49,7 @@ struct ScreenshotsPaginationScopeTests {
     func preservesDefaultLimit() async throws {
         for fixture in screenshotDefaultLimitFixtures() {
             let firstPageTransport = TestHTTPTransport(responses: [
-                .init(statusCode: 200, body: #"{"data":[]}"#)
+                .init(statusCode: 200, body: screenshotPaginationEmptyResponse(path: fixture.path))
             ])
             let firstPageResult = try await invokeScreenshotPaginationFixture(
                 fixture,
@@ -64,7 +64,7 @@ struct ScreenshotsPaginationScopeTests {
             var validQuery = fixture.requiredQuery
             validQuery["cursor"] = "next"
             let validTransport = TestHTTPTransport(responses: [
-                .init(statusCode: 200, body: #"{"data":[]}"#)
+                .init(statusCode: 200, body: screenshotPaginationEmptyResponse(path: fixture.path))
             ])
             var validArguments = fixture.arguments
             validArguments["next_url"] = .string(screenshotPaginationURL(
@@ -251,7 +251,7 @@ struct ScreenshotsPaginationScopeTests {
         let invalidValues: [Value] = [
             .string(""),
             .string(" "),
-            .string("/v1/appScreenshotSets/set-1/appScreenshots?limit=25&cursor=next"),
+            .string("v1/appScreenshotSets/set-1/appScreenshots?limit=25&cursor=next"),
             .string("https://api.example.test/v1/apps?limit=25&cursor=next#fragment"),
             .int(1)
         ]
@@ -412,6 +412,10 @@ private func screenshotPaginationURL(
         preconditionFailure("Unable to construct screenshot pagination URL")
     }
     return url.absoluteString
+}
+
+private func screenshotPaginationEmptyResponse(path: String) -> String {
+    #"{"data":[],"links":{"self":"\#(path)"}}"#
 }
 
 private func screenshotPaginationURL(

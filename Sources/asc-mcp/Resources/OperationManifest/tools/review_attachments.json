@@ -22,6 +22,11 @@
           "operationId": "appStoreReviewAttachments_deleteInstance",
           "location": "path",
           "appleName": "id"
+        },
+        {
+          "toolField": "confirm_attachment_id",
+          "sourceKind": "local",
+          "localRole": "Require an exact canonical match with attachment_id before issuing the destructive request."
         }
       ],
       "response": {
@@ -32,7 +37,7 @@
         "fields": [
           {
             "outputField": "success",
-            "localRole": "Set true after Apple's empty 204 response."
+            "localRole": "Set true only after exact ID confirmation and Apple's empty HTTP 204 response."
           },
           {
             "outputField": "message",
@@ -40,7 +45,7 @@
           }
         ]
       },
-      "note": "Apple returns 204 with no media type; the MCP confirmation is local and has no outputSchema."
+      "note": "The tool rejects unknown arguments, non-canonical IDs, and a missing or mismatched confirm_attachment_id without sending a request. Apple returns 204 with no media type; ambiguous DELETE outcomes and unexpected successful statuses remain unverified and require an exact review_attachments_get inspection. The MCP confirmation is local and has no outputSchema."
     },
     {
       "tool": "review_attachments_get",
@@ -114,7 +119,7 @@
           }
         ]
       },
-      "note": "The direct read fixes a documented attachment projection that omits presigned uploadOperations and returns the review-detail relationship ID; the mapping remains partial because the tool has no outputSchema."
+      "note": "The direct read fixes a documented attachment projection that omits presigned uploadOperations and returns the review-detail relationship ID. It requires the top-level links object and validates links.self against the configured App Store Connect origin, exact attachment path, and fixed projection query before reporting success; the mapping remains partial because the tool has no outputSchema."
     },
     {
       "tool": "review_attachments_list",
@@ -214,7 +219,7 @@
           }
         ]
       },
-      "note": "The related collection uses the same upload-operation-free projection, requires callers to repeat a non-default limit with next_url so the effective limit remains stable across pagination, and returns paging total plus review-detail linkage; the mapping remains partial because the tool has no outputSchema."
+      "note": "The related collection uses the same upload-operation-free projection, requires callers to repeat a non-default limit with next_url so the effective limit remains stable across pagination, and returns paging total plus review-detail linkage. It requires top-level links, binds links.self and every continuation to the configured origin plus exact parent, projection, limit, and requested cursor, rejects duplicate resource IDs, and validates paging limit, total, and nextCursor consistency before reporting success; the mapping remains partial because the tool has no outputSchema."
     },
     {
       "tool": "review_attachments_upload",
@@ -228,7 +233,7 @@
           "method": "post",
           "path": "/v1/appStoreReviewAttachments",
           "role": "primary",
-          "condition": "After creating an immutable local snapshot, reserve an attachment with metadata derived from that snapshot and receive Apple's signed upload operations.",
+          "condition": "After creating an immutable local snapshot, reserve an attachment with metadata derived from that snapshot, require exactly HTTP 201 plus a canonical attachment identity, require Apple's echoed fileName and fileSize to match the snapshot exactly, and only then accept signed upload operations.",
           "inputs": [
             {
               "sourceKind": "fixed",
@@ -247,7 +252,7 @@
           "method": "patch",
           "path": "/v1/appStoreReviewAttachments/{id}",
           "role": "supporting",
-          "condition": "After all presigned upload operations succeed, commit the derived checksum with uploaded=true using the attachment ID returned by create.",
+          "condition": "After all presigned upload operations succeed, commit the derived checksum with uploaded=true using the canonical attachment ID returned by create and require exactly HTTP 200.",
           "inputs": [
             {
               "sourceKind": "derived",
@@ -302,18 +307,6 @@
                 "appStoreReviewAttachments_createInstance:/data/id"
               ],
               "localRole": "Poll the attachment created by the reservation operation."
-            },
-            {
-              "sourceKind": "fixed",
-              "location": "query",
-              "appleName": "fields[appStoreReviewAttachments]",
-              "fixedValue": [
-                "fileSize",
-                "fileName",
-                "sourceFileChecksum",
-                "assetDeliveryState",
-                "appStoreReviewDetail"
-              ]
             }
           ]
         },
@@ -390,7 +383,7 @@
         "fields": [
           {
             "outputField": "success",
-            "localRole": "Set true when processing reaches COMPLETE or when a confirmed 2xx commit remains accepted processing-pending; ambiguous commit, unexpected-resource, and FAILED outcomes remain false."
+            "localRole": "Set true when processing reaches COMPLETE or when an exact HTTP 200 commit remains accepted processing-pending; ambiguous commit, unexpected-resource, unexpected-success-status, and FAILED outcomes remain false."
           },
           {
             "outputField": "attachment",
@@ -398,7 +391,7 @@
           },
           {
             "outputField": "uploadCommitted",
-            "localRole": "Set true for an accepted processing-pending result after the commit PATCH returned 2xx."
+            "localRole": "Set true for an accepted processing-pending result only after the commit PATCH returned exactly HTTP 200 and no known semantic identity or lineage conflict occurred."
           },
           {
             "outputField": "processingComplete",
@@ -414,11 +407,27 @@
           },
           {
             "outputField": "cleanup",
-            "localRole": "Describe rollback status or provide review_attachments_get and review_attachments_delete guidance for retained post-PATCH resources."
+            "localRole": "Describe rollback status or provide review_attachments_get and review_attachments_delete guidance, including confirm_attachment_id for explicit deletion of retained post-PATCH resources."
+          },
+          {
+            "outputField": "reservationHints",
+            "localRole": "For an unresolved reservation without a trusted resource ID, publish fileName and fileSize only as non-unique manual inspection hints and state that sourceFileChecksum is unavailable on an uncommitted reservation."
+          },
+          {
+            "outputField": "manualResolutionRequired",
+            "localRole": "Set true when an ambiguous reservation has no trusted attachment ID and cannot be attributed automatically."
+          },
+          {
+            "outputField": "manualResolution",
+            "localRole": "Require every-page collection inspection, exact-ID verification with review_attachments_get, and exact-ID confirmation for any review_attachments_delete cleanup before retry."
+          },
+          {
+            "outputField": "sourceFileChecksumReceipt",
+            "localRole": "Publish the immutable snapshot checksum only on applicable pre-commit failure paths where the reservation resource ID is already known; never use it to claim attribution of an ambiguous POST reservation."
           }
         ]
       },
-      "note": "The handler snapshots the local file before reserve, derives reservation metadata, transfer bytes, and checksum from that immutable snapshot, then commits and reconciles assetDeliveryState. COMPLETE is successful; FAILED is terminal failure; missing, unknown, and every other state remain pending and are polled with conditional GET. After a confirmed 2xx commit, nonterminal processing or unavailable verification is an accepted success with uploadCommitted=true, processingComplete=false, deliveryPending=true, and retrySafe=false. If PATCH transport remains ambiguous and reconciliation only shows pending, the outcome stays an error. A mismatched 2xx commit attachment triggers one GET of the expected attachment ID; valid COMPLETE, FAILED, or pending state is interpreted normally, while failed, unreadable, or mismatched reconciliation remains a retained error. All post-PATCH outcomes retain the attachment with explicit get/delete guidance. A confirmed reservation that fails before PATCH is best-effort deleted independently of cancellation. If create may have succeeded but its response or ID is unavailable, Apple exposes no idempotency key for identifying that exact reservation, so the handler reports retrySafe=false and review-detail collection inspection guidance instead of silently reserving again. The mapping remains partial because the MCP output has no outputSchema."
+      "note": "The handler snapshots the local file before reserve and derives reservation metadata, transfer bytes, and checksum from that immutable snapshot. It requires exact 201 reserve and 200 commit receipts, required top-level document links bound to the configured App Store Connect origin and exact resource path, canonical resource identity across reserve, commit, and reconciliation, exact echoed reservation fileName/fileSize before transfer, and consistent review-detail lineage. A semantic identity, lineage, or document-link scope conflict observed after a confirmed commit remains commit-unresolved and cannot be converted into success by a later reconciliation response. COMPLETE is successful; FAILED is terminal failure; missing, unknown, and every other state remain pending and are reconciled against the exact reserved attachment ID. After a confirmed 200 commit, nonterminal processing or unavailable verification is an accepted success with uploadCommitted=true, processingComplete=false, deliveryPending=true, and retrySafe=false only when no semantic conflict is known. If PATCH transport remains ambiguous and reconciliation only shows pending, the outcome stays an error. All post-PATCH outcomes retain the attachment with exact get/delete guidance, and explicit deletion requires confirm_attachment_id. A confirmed reservation that fails before PATCH is best-effort deleted with an exact 204 requirement independently of cancellation. If create may have succeeded but its response or canonical ID is unavailable, Apple exposes no idempotency key and sourceFileChecksum is not present on an uncommitted reservation, so fileName/fileSize are explicitly non-unique hints: the handler requires manual every-page inspection, exact-ID verification, and exact-confirmation cleanup before retry instead of claiming a unique match or silently reserving again. Signed upload operations never appear in structured output. The mapping remains partial because the MCP output has no outputSchema."
     }
   ],
   "implementationAliases": []

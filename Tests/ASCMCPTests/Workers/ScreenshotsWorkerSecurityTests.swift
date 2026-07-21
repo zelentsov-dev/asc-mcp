@@ -125,8 +125,13 @@ struct ScreenshotsWorkerSecurityTests {
               {"name": "x-amz-security-token", "value": "screenshot-header-token"}
             ]
           }]
-        }
-      }
+        },
+        "relationships": {
+          "appScreenshotSet": {"data": {"type": "appScreenshotSets", "id": "screenshot-set-1"}}
+        },
+        "links": {"self": "/v1/appScreenshots/screenshot-1"}
+      },
+      "links": {"self": "/v1/appScreenshots/screenshot-1"}
     }
     """#
 
@@ -149,8 +154,13 @@ struct ScreenshotsWorkerSecurityTests {
               {"name": "x-amz-security-token", "value": "preview-header-token"}
             ]
           }]
-        }
-      }
+        },
+        "relationships": {
+          "appPreviewSet": {"data": {"type": "appPreviewSets", "id": "preview-set-1"}}
+        },
+        "links": {"self": "/v1/appPreviews/preview-1"}
+      },
+      "links": {"self": "/v1/appPreviews/preview-1"}
     }
     """#
 }

@@ -16,6 +16,7 @@ struct UploadRecoveryDescriptor: Sendable {
     let reservationFingerprintKey: String?
     let inspectionCandidateFields: [String]
     let checksumReceiptKey: String?
+    let includeChecksumInReservationFingerprint: Bool
 
     init(
         resourceName: String,
@@ -31,7 +32,8 @@ struct UploadRecoveryDescriptor: Sendable {
         inspectionNextURLArgument: String? = nil,
         reservationFingerprintKey: String? = nil,
         inspectionCandidateFields: [String] = [],
-        checksumReceiptKey: String? = nil
+        checksumReceiptKey: String? = nil,
+        includeChecksumInReservationFingerprint: Bool = true
     ) {
         self.resourceName = resourceName
         self.successKey = successKey
@@ -47,6 +49,7 @@ struct UploadRecoveryDescriptor: Sendable {
         self.reservationFingerprintKey = reservationFingerprintKey
         self.inspectionCandidateFields = inspectionCandidateFields
         self.checksumReceiptKey = checksumReceiptKey
+        self.includeChecksumInReservationFingerprint = includeChecksumInReservationFingerprint
     }
 }
 
@@ -159,10 +162,12 @@ enum UploadTransactionRecovery {
         reservationEndpoint: String,
         httpClient: HTTPClient,
         uploadService: UploadService,
+        preparedSnapshot: UploadFileSnapshot? = nil,
         cleanupPolicy: UploadReservationCleanupPolicy = .delete,
         existingResource: Resource? = nil,
         validateSnapshot: @Sendable (Resource?, UploadFileSnapshot) throws -> Void = { _, _ in },
         validateReservedResource: @Sendable (Resource, UploadFileSnapshot) throws -> Void = { _, _ in },
+        validateReservedResourceAsync: @Sendable (Resource, UploadFileSnapshot) async throws -> Void = { _, _ in },
         reservationFailureDisposition: @Sendable (Error) -> UploadReservationFailureDisposition = { error in
             ASCNonIdempotentWriteRecovery.failureDisposition(for: error, phase: .request) == .rejected
                 ? .rejected
@@ -171,6 +176,7 @@ enum UploadTransactionRecovery {
         deliveryPollAttempts: Int,
         deliveryPollIntervalNanoseconds: UInt64,
         makeReservationBody: @Sendable (Int, String) throws -> Data,
+        decodeReservedResource: (@Sendable (Data) throws -> Resource)? = nil,
         decodeResource: @Sendable (Data) throws -> Resource,
         makeCommitBody: @Sendable (String, String) throws -> Data,
         resourceEndpoint: @Sendable (String) throws -> String
@@ -213,23 +219,27 @@ enum UploadTransactionRecovery {
         }
 
         let snapshot: UploadFileSnapshot
-        do {
-            snapshot = try await uploadService.prepareSnapshot(filePath: filePath)
-        } catch {
-            if let existingResource, let existingEndpoint {
-                let cleanup = await rollbackReservation(
-                    httpClient: httpClient,
-                    endpoint: existingEndpoint,
-                    policy: cleanupPolicy
-                )
-                return .preCommitFailure(
-                    "Failed to read \(resourceName): \(error.localizedDescription)",
-                    existingResource,
-                    cleanup,
-                    checksumReceipt: nil
-                )
+        if let preparedSnapshot {
+            snapshot = preparedSnapshot
+        } else {
+            do {
+                snapshot = try await uploadService.prepareSnapshot(filePath: filePath)
+            } catch {
+                if let existingResource, let existingEndpoint {
+                    let cleanup = await rollbackReservation(
+                        httpClient: httpClient,
+                        endpoint: existingEndpoint,
+                        policy: cleanupPolicy
+                    )
+                    return .preCommitFailure(
+                        "Failed to read \(resourceName): \(error.localizedDescription)",
+                        existingResource,
+                        cleanup,
+                        checksumReceipt: nil
+                    )
+                }
+                return .beforeReservation("Failed to read \(resourceName): \(error.localizedDescription)")
             }
-            return .beforeReservation("Failed to read \(resourceName): \(error.localizedDescription)")
         }
         defer { snapshot.discard() }
         let reservationFingerprint = UploadReservationFingerprint(snapshot: snapshot)
@@ -312,7 +322,11 @@ enum UploadTransactionRecovery {
             }
 
             do {
-                reserved = try decodeResource(reservationReceipt.data)
+                if let decodeReservedResource {
+                    reserved = try decodeReservedResource(reservationReceipt.data)
+                } else {
+                    reserved = try decodeResource(reservationReceipt.data)
+                }
             } catch {
                 return .reservationCommittedUnverified(
                     statusCode: reservationReceipt.statusCode,
@@ -350,6 +364,7 @@ enum UploadTransactionRecovery {
 
         do {
             try validateReservedResource(reserved, snapshot)
+            try await validateReservedResourceAsync(reserved, snapshot)
         } catch {
             let cleanup = await rollbackReservation(
                 httpClient: httpClient,
@@ -1245,11 +1260,14 @@ enum UploadTransactionRecovery {
               let fingerprintKey = descriptor.reservationFingerprintKey else {
             return
         }
-        value[fingerprintKey] = [
+        var published: [String: Any] = [
             "file_name": fingerprint.fileName,
-            "file_size": fingerprint.fileSize,
-            "checksum": fingerprint.checksum
-        ] as [String: Any]
+            "file_size": fingerprint.fileSize
+        ]
+        if descriptor.includeChecksumInReservationFingerprint {
+            published["checksum"] = fingerprint.checksum
+        }
+        value[fingerprintKey] = published
     }
 
     private static let protectedAdditionalSuccessFields: Set<String> = [

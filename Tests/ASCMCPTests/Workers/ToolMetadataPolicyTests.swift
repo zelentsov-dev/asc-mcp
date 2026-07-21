@@ -9,19 +9,52 @@ struct ToolMetadataPolicyTests {
     func allToolsReceiveAnnotationsAndMeta() async throws {
         let tools = try await TestFactory.collectAllWorkerTools().map(ToolMetadataPolicy.apply)
 
-        #expect(tools.count == 472)
+        #expect(tools.count == 490)
         for tool in tools {
             #expect(tool.annotations.isEmpty == false)
-            #expect(tool.annotations.openWorldHint == true)
+            #expect(tool.annotations.openWorldHint != nil)
             #expect(tool._meta?.fields["anthropic/maxResultSizeChars"] != nil)
         }
 
-        let promotedDeleteImage = try #require(
-            tools.first { $0.name == "promoted_delete_image" }
-        )
-        #expect(promotedDeleteImage.annotations.readOnlyHint == true)
-        #expect(promotedDeleteImage.annotations.destructiveHint == false)
-        #expect(promotedDeleteImage.annotations.idempotentHint == true)
+        for toolName in ["promoted_delete_image", "promoted_upload_image"] {
+            let migrationTool = try #require(tools.first { $0.name == toolName })
+            #expect(migrationTool.annotations.readOnlyHint == true)
+            #expect(migrationTool.annotations.destructiveHint == false)
+            #expect(migrationTool.annotations.idempotentHint == true)
+        }
+    }
+
+    @Test("manifest effects agree with metadata for the complete public catalog")
+    func manifestEffectsAgreeWithMetadata() async throws {
+        let manifest = try ASCOperationManifestBundle.loadBundled()
+        let catalog = try await TestFactory.collectAllWorkerTools()
+        let tools = Dictionary(uniqueKeysWithValues: catalog.map { ($0.name, ToolMetadataPolicy.apply(to: $0)) })
+
+        #expect(manifest.tools.count == 490)
+        #expect(tools.count == 490)
+        for rawTool in catalog {
+            let effectiveReadOnly = ToolMetadataPolicy.apply(to: rawTool).annotations.readOnlyHint
+            #expect(
+                effectiveReadOnly == ToolMetadataPolicy.isReadOnly(rawTool.name),
+                "WorkerManager read-only routing must match published metadata for \(rawTool.name)"
+            )
+        }
+        for mapping in manifest.tools {
+            let tool = try #require(tools[mapping.tool])
+            switch mapping.effect {
+            case .read, .local:
+                #expect(tool.annotations.readOnlyHint == true, "Expected read-only metadata for \(mapping.tool)")
+            case .write, .destructive:
+                #expect(tool.annotations.readOnlyHint == false, "Expected mutation metadata for \(mapping.tool)")
+            }
+            if mapping.effect == .destructive {
+                #expect(tool.annotations.destructiveHint == true, "Expected destructive metadata for \(mapping.tool)")
+            }
+            if mapping.kind == .local {
+                #expect(tool.annotations.openWorldHint == false, "Expected closed-world metadata for \(mapping.tool)")
+            }
+        }
+        #expect(try #require(tools["promoted_reorder"]).annotations.idempotentHint == true)
     }
 
     @Test("IAP version image collection remains read-only metadata")
@@ -126,6 +159,8 @@ struct ToolMetadataPolicyTests {
             "beta_groups_create_recruitment_criteria",
             "beta_groups_delete_recruitment_criteria",
             "beta_groups_update_recruitment_criteria",
+            "custom_pages_add_search_keywords",
+            "custom_pages_remove_search_keywords",
             "iap_delete_version_image",
             "iap_delete_version_localization",
             "review_submissions_cancel",

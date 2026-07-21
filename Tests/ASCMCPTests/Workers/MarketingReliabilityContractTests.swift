@@ -8,7 +8,10 @@ struct MarketingReliabilityContractTests {
     @Test("custom product page create binds the App Store version template")
     func customPageTemplateRelationship() async throws {
         let transport = TestHTTPTransport(responses: [
-            .init(statusCode: 201, body: #"{"data":{"type":"appCustomProductPages","id":"page-1","attributes":{"name":"Campaign"}}}"#)
+            .init(
+                statusCode: 201,
+                body: #"{"data":{"type":"appCustomProductPages","id":"page-1","attributes":{"name":"Campaign"},"relationships":{"app":{"data":{"type":"apps","id":"app-1"}}}},"links":{"self":"/v1/appCustomProductPages/page-1"}}"#
+            )
         ])
         let worker = CustomProductPagesWorker(httpClient: try await marketingClient(transport))
 
@@ -73,7 +76,33 @@ struct MarketingReliabilityContractTests {
 
         for (input, relationship, type) in cases {
             let transport = TestHTTPTransport(responses: [
-                .init(statusCode: 201, body: #"{"data":{"type":"appScreenshotSets","id":"set-1","attributes":{"screenshotDisplayType":"APP_IPHONE_67"}}}"#)
+                .init(statusCode: 200, body: marketingMediaSetCollection(
+                    setType: "appScreenshotSets",
+                    attributeName: "screenshotDisplayType",
+                    attributeValue: "APP_IPHONE_67",
+                    parentRelationship: relationship,
+                    parentType: type,
+                    parentID: "parent-1",
+                    ids: []
+                )),
+                .init(statusCode: 201, body: marketingMediaSetDocument(
+                    setType: "appScreenshotSets",
+                    setID: "set-1",
+                    attributeName: "screenshotDisplayType",
+                    attributeValue: "APP_IPHONE_67",
+                    parentRelationship: relationship,
+                    parentType: type,
+                    parentID: "parent-1"
+                )),
+                .init(statusCode: 200, body: marketingMediaSetCollection(
+                    setType: "appScreenshotSets",
+                    attributeName: "screenshotDisplayType",
+                    attributeValue: "APP_IPHONE_67",
+                    parentRelationship: relationship,
+                    parentType: type,
+                    parentID: "parent-1",
+                    ids: ["set-1"]
+                ))
             ])
             let worker = ScreenshotsWorker(
                 httpClient: try await marketingClient(transport),
@@ -85,7 +114,7 @@ struct MarketingReliabilityContractTests {
             ))
 
             #expect(result.isError != true)
-            let request = try #require(await transport.recordedRequests().first)
+            let request = try #require(await transport.recordedRequests().first { $0.httpMethod == "POST" })
             #expect(request.url?.path == "/v1/appScreenshotSets")
             let relationships = try marketingRelationships(request)
             #expect(relationships.count == 1)
@@ -99,7 +128,33 @@ struct MarketingReliabilityContractTests {
     @Test("preview set maps PPO parent and rejects ambiguous parents before transport")
     func previewSetParentAndPreflight() async throws {
         let validTransport = TestHTTPTransport(responses: [
-            .init(statusCode: 201, body: #"{"data":{"type":"appPreviewSets","id":"set-1","attributes":{"previewType":"IPHONE_67"}}}"#)
+            .init(statusCode: 200, body: marketingMediaSetCollection(
+                setType: "appPreviewSets",
+                attributeName: "previewType",
+                attributeValue: "IPHONE_67",
+                parentRelationship: "appStoreVersionExperimentTreatmentLocalization",
+                parentType: "appStoreVersionExperimentTreatmentLocalizations",
+                parentID: "ppo-loc-1",
+                ids: []
+            )),
+            .init(statusCode: 201, body: marketingMediaSetDocument(
+                setType: "appPreviewSets",
+                setID: "set-1",
+                attributeName: "previewType",
+                attributeValue: "IPHONE_67",
+                parentRelationship: "appStoreVersionExperimentTreatmentLocalization",
+                parentType: "appStoreVersionExperimentTreatmentLocalizations",
+                parentID: "ppo-loc-1"
+            )),
+            .init(statusCode: 200, body: marketingMediaSetCollection(
+                setType: "appPreviewSets",
+                attributeName: "previewType",
+                attributeValue: "IPHONE_67",
+                parentRelationship: "appStoreVersionExperimentTreatmentLocalization",
+                parentType: "appStoreVersionExperimentTreatmentLocalizations",
+                parentID: "ppo-loc-1",
+                ids: ["set-1"]
+            ))
         ])
         let validWorker = ScreenshotsWorker(
             httpClient: try await marketingClient(validTransport),
@@ -114,7 +169,7 @@ struct MarketingReliabilityContractTests {
         ))
 
         #expect(valid.isError != true)
-        let request = try #require(await validTransport.recordedRequests().first)
+        let request = try #require(await validTransport.recordedRequests().first { $0.httpMethod == "POST" })
         #expect(request.url?.path == "/v1/appPreviewSets")
         let relationships = try marketingRelationships(request)
         let parent = try marketingObject(relationships["appStoreVersionExperimentTreatmentLocalization"])
@@ -154,8 +209,13 @@ struct MarketingReliabilityContractTests {
                     "state": {"state": "COMPLETE", "errors": [], "warnings": []}
                   },
                   "previewImage": {"templateUrl": "https://deprecated.example.test/image.png"}
-                }
-              }
+                },
+                "relationships": {
+                  "appPreviewSet": {"data": {"type": "appPreviewSets", "id": "preview-set-1"}}
+                },
+                "links": {"self": "/v1/appPreviews/preview-1"}
+              },
+              "links": {"self": "/v1/appPreviews/preview-1"}
             }
             """)
         ])
@@ -185,11 +245,13 @@ struct MarketingReliabilityContractTests {
               "data": {
                 "type": "promotedPurchases",
                 "id": "promoted-1",
-                "attributes": {"visibleForAllUsers": true, "enabled": true, "state": "APPROVED"}
-              }
+                "attributes": {"visibleForAllUsers": true, "enabled": true, "state": "APPROVED"},
+                "relationships": {"inAppPurchaseV2": {"data": {"type": "inAppPurchases", "id": "iap-1"}}}
+              },
+              "links": {"self": "https://api.example.test/v1/promotedPurchases/promoted-1"}
             }
             """),
-            .init(statusCode: 201, body: #"{"data":{"type":"promotedPurchases","id":"promoted-2","relationships":{"subscription":{"data":{"type":"subscriptions","id":"subscription-1"}}}}}"#)
+            .init(statusCode: 201, body: #"{"data":{"type":"promotedPurchases","id":"promoted-2","relationships":{"subscription":{"data":{"type":"subscriptions","id":"subscription-1"}}}},"links":{"self":"https://api.example.test/v1/promotedPurchases/promoted-2"}}"#)
         ])
         let worker = PromotedPurchasesWorker(
             httpClient: try await marketingClient(transport),
@@ -279,7 +341,7 @@ struct MarketingReliabilityContractTests {
     @Test("promoted update preserves nullable booleans and rejects empty patches")
     func promotedUpdateNullableBooleans() async throws {
         let transport = TestHTTPTransport(responses: [
-            .init(statusCode: 200, body: #"{"data":{"type":"promotedPurchases","id":"promoted-1","attributes":{"visibleForAllUsers":null,"enabled":null}}}"#)
+            .init(statusCode: 200, body: #"{"data":{"type":"promotedPurchases","id":"promoted-1","attributes":{"visibleForAllUsers":false,"enabled":true}},"links":{"self":"https://api.example.test/v1/promotedPurchases/promoted-1"}}"#)
         ])
         let worker = PromotedPurchasesWorker(
             httpClient: try await marketingClient(transport),
@@ -329,7 +391,7 @@ struct MarketingReliabilityContractTests {
     @Test("PPO supports visionOS and complete experiment and treatment projections")
     func ppoProjection() async throws {
         let experimentTransport = TestHTTPTransport(responses: [
-            .init(statusCode: 201, body: #"{"data":{"type":"appStoreVersionExperiments","id":"experiment-1","attributes":{"name":"Vision","platform":"VISION_OS","trafficProportion":50}}}"#)
+            .init(statusCode: 201, body: #"{"data":{"type":"appStoreVersionExperiments","id":"experiment-1","attributes":{"name":"Vision","platform":"VISION_OS","trafficProportion":50}},"links":{"self":"https://api.example.test/v2/appStoreVersionExperiments/experiment-1"}}"#)
         ])
         let experimentWorker = ProductPageOptimizationWorker(httpClient: try await marketingClient(experimentTransport))
         let experimentResult = try await experimentWorker.handleTool(CallTool.Parameters(
@@ -363,7 +425,8 @@ struct MarketingReliabilityContractTests {
                   "appIcon": {"templateUrl": "https://example.test/{w}x{h}.png", "width": 1024, "height": 1024},
                   "promotedDate": "2026-07-20T12:00:00Z"
                 }
-              }
+              },
+              "links": {"self": "https://api.example.test/v1/appStoreVersionExperimentTreatments/treatment-1"}
             }
             """)
         ])
@@ -428,6 +491,84 @@ private func marketingAttributes(_ request: URLRequest) throws -> [String: Any] 
     let body = try marketingRequestBody(request)
     let data = try marketingObject(body["data"])
     return try marketingObject(data["attributes"])
+}
+
+private func marketingMediaSetDocument(
+    setType: String,
+    setID: String,
+    attributeName: String,
+    attributeValue: String,
+    parentRelationship: String,
+    parentType: String,
+    parentID: String
+) -> String {
+    let resource = marketingMediaSetResource(
+        setType: setType,
+        setID: setID,
+        attributeName: attributeName,
+        attributeValue: attributeValue,
+        parentRelationship: parentRelationship,
+        parentType: parentType,
+        parentID: parentID
+    )
+    return marketingJSON([
+        "data": resource,
+        "links": ["self": marketingMediaResourcePath(setType: setType, setID: setID)]
+    ])
+}
+
+private func marketingMediaSetCollection(
+    setType: String,
+    attributeName: String,
+    attributeValue: String,
+    parentRelationship: String,
+    parentType: String,
+    parentID: String,
+    ids: [String]
+) -> String {
+    marketingJSON([
+        "data": ids.map {
+            marketingMediaSetResource(
+                setType: setType,
+                setID: $0,
+                attributeName: attributeName,
+                attributeValue: attributeValue,
+                parentRelationship: parentRelationship,
+                parentType: parentType,
+                parentID: parentID
+            )
+        },
+        "links": ["self": "/v1/\(parentType)/\(parentID)/\(setType)"]
+    ])
+}
+
+private func marketingMediaSetResource(
+    setType: String,
+    setID: String,
+    attributeName: String,
+    attributeValue: String,
+    parentRelationship: String,
+    parentType: String,
+    parentID: String
+) -> [String: Any] {
+    [
+        "type": setType,
+        "id": setID,
+        "attributes": [attributeName: attributeValue],
+        "relationships": [
+            parentRelationship: ["data": ["type": parentType, "id": parentID]]
+        ],
+        "links": ["self": marketingMediaResourcePath(setType: setType, setID: setID)]
+    ]
+}
+
+private func marketingMediaResourcePath(setType: String, setID: String) -> String {
+    "/v1/\(setType)/\(setID)"
+}
+
+private func marketingJSON(_ object: Any) -> String {
+    let data = try! JSONSerialization.data(withJSONObject: object, options: [.sortedKeys])
+    return String(decoding: data, as: UTF8.self)
 }
 
 private func marketingValueObject(_ value: Value?) throws -> [String: Value] {

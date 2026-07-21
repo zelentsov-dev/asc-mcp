@@ -1,7 +1,10 @@
 import Foundation
 import MCP
+import os
 
 private let reviewAttachmentReadFields = "fileSize,fileName,sourceFileChecksum,assetDeliveryState,appStoreReviewDetail"
+private let reviewAttachmentResourceType = "appStoreReviewAttachments"
+private let reviewDetailResourceType = "appStoreReviewDetails"
 
 // MARK: - Tool Handlers
 extension ReviewAttachmentsWorker {
@@ -9,305 +12,288 @@ extension ReviewAttachmentsWorker {
     /// Uploads a review attachment and reconciles Apple's asynchronous delivery state
     /// - Returns: JSON with terminal or accepted processing-pending attachment info
     func uploadAttachment(_ params: CallTool.Parameters) async throws -> CallTool.Result {
-        guard let arguments = params.arguments,
-              let reviewDetailId = arguments["review_detail_id"]?.stringValue,
-              let filePath = arguments["file_path"]?.stringValue else {
-            return CallTool.Result(
-                content: [MCPContent.text("Error: Required parameters: review_detail_id, file_path")],
-                isError: true
-            )
+        guard let arguments = params.arguments else {
+            return MCPResult.error("Required parameters 'review_detail_id' and 'file_path' are missing")
         }
 
-        if Task.isCancelled {
-            return beforeReservationResult("Review attachment upload was cancelled before reservation.")
-        }
-
-        let snapshot: UploadFileSnapshot
+        let reviewDetailID: String
+        let filePath: String
         do {
-            snapshot = try await uploadService.prepareSnapshot(filePath: filePath)
+            reviewDetailID = try reviewAttachmentIdentifier(
+                "review_detail_id",
+                from: arguments
+            )
+            filePath = try reviewAttachmentFilePath(arguments["file_path"])
         } catch {
-            return MCPResult.error("Failed to read review attachment: \(error.localizedDescription)")
-        }
-        defer { snapshot.discard() }
-
-        if Task.isCancelled {
-            return beforeReservationResult("Review attachment upload was cancelled before reservation.")
+            return MCPResult.error(error, prefix: "Failed to validate review attachment upload")
         }
 
-        let createRequest = CreateReviewAttachmentRequest(
-            data: CreateReviewAttachmentRequest.CreateData(
-                attributes: CreateReviewAttachmentRequest.Attributes(
-                    fileSize: snapshot.fileSize,
-                    fileName: snapshot.fileName
-                ),
-                relationships: CreateReviewAttachmentRequest.Relationships(
-                    appStoreReviewDetail: CreateReviewAttachmentRequest.ReviewDetailRelationship(
-                        data: ASCResourceIdentifier(type: "appStoreReviewDetails", id: reviewDetailId)
+        let semanticValidation = ReviewAttachmentSemanticValidationState()
+        let rawOutcome: UploadTransactionOutcome<ASCReviewAttachment> = await UploadTransactionRecovery.perform(
+            filePath: filePath,
+            resourceName: "review attachment",
+            expectedType: reviewAttachmentResourceType,
+            reservationEndpoint: "/v1/appStoreReviewAttachments",
+            httpClient: httpClient,
+            uploadService: uploadService,
+            validateReservedResource: { attachment, snapshot in
+                guard attachment.attributes?.fileName == snapshot.fileName,
+                      attachment.attributes?.fileSize == snapshot.fileSize else {
+                    throw ReviewAttachmentInputError(
+                        "reservation fileName and fileSize must exactly match the immutable upload snapshot"
+                    )
+                }
+                guard attachment.attributes?.assetDeliveryState?.state == "AWAITING_UPLOAD" else {
+                    throw ReviewAttachmentInputError(
+                        "reservation delivery state must be exactly AWAITING_UPLOAD before transfer"
+                    )
+                }
+            },
+            deliveryPollAttempts: deliveryPollAttempts,
+            deliveryPollIntervalNanoseconds: deliveryPollIntervalNanoseconds,
+            makeReservationBody: { fileSize, fileName in
+                try JSONEncoder().encode(
+                    CreateReviewAttachmentRequest(
+                        data: CreateReviewAttachmentRequest.CreateData(
+                            attributes: CreateReviewAttachmentRequest.Attributes(
+                                fileSize: fileSize,
+                                fileName: fileName
+                            ),
+                            relationships: CreateReviewAttachmentRequest.Relationships(
+                                appStoreReviewDetail: CreateReviewAttachmentRequest.ReviewDetailRelationship(
+                                    data: ASCResourceIdentifier(
+                                        type: reviewDetailResourceType,
+                                        id: reviewDetailID
+                                    )
+                                )
+                            )
+                        )
                     )
                 )
-            )
+            },
+            decodeResource: { data in
+                let response = try JSONDecoder().decode(
+                    ASCReviewAttachmentResponse.self,
+                    from: data
+                )
+                do {
+                    try validateReviewAttachmentResponse(
+                        response,
+                        expectedID: semanticValidation.expectedResourceID(),
+                        expectedReviewDetailID: reviewDetailID,
+                        requireReviewDetailLineage: false,
+                        requiredQuery: [:],
+                        httpClient: httpClient,
+                        context: "review attachment upload response"
+                    )
+                    semanticValidation.establishResourceID(response.data.id)
+                    return response.data
+                } catch {
+                    semanticValidation.record(error)
+                    throw error
+                }
+            },
+            makeCommitBody: { attachmentID, checksum in
+                try JSONEncoder().encode(
+                    CommitReviewAttachmentRequest(
+                        data: CommitReviewAttachmentRequest.CommitData(
+                            id: attachmentID,
+                            attributes: CommitReviewAttachmentRequest.Attributes(
+                                sourceFileChecksum: checksum,
+                                uploaded: true
+                            )
+                        )
+                    )
+                )
+            },
+            resourceEndpoint: reviewAttachmentEndpoint
         )
+        let outcome = semanticValidation.enforcing(rawOutcome)
 
-        let reserveBody: Data
-        do {
-            reserveBody = try JSONEncoder().encode(createRequest)
-        } catch {
-            return beforeReservationResult(
-                "Failed to prepare the review attachment reservation: \(error.localizedDescription)"
-            )
-        }
-
-        if Task.isCancelled {
-            return beforeReservationResult("Review attachment upload was cancelled before reservation.")
-        }
-
-        let reserveData: Data
-        do {
-            reserveData = try await httpClient.post("/v1/appStoreReviewAttachments", body: reserveBody)
-        } catch {
-            return unresolvedReservationResult(
-                "The review attachment reservation request did not return a confirmed response: \(error.localizedDescription)",
-                reviewDetailId: reviewDetailId
-            )
-        }
-
-        let reserveResponse: ASCReviewAttachmentResponse
-        do {
-            reserveResponse = try JSONDecoder().decode(ASCReviewAttachmentResponse.self, from: reserveData)
-        } catch {
-            return unresolvedReservationResult(
-                "Apple returned an unreadable review attachment reservation response: \(error.localizedDescription)",
-                reviewDetailId: reviewDetailId
-            )
-        }
-
-        guard !reserveResponse.data.id.isEmpty,
-              reserveResponse.data.type == "appStoreReviewAttachments" else {
-            return unresolvedReservationResult(
-                "Apple returned a review attachment reservation whose identity could not be confirmed.",
-                reviewDetailId: reviewDetailId
-            )
-        }
-
-        let attachmentId = reserveResponse.data.id
-
-        if Task.isCancelled {
-            let cleanup = await rollbackReservation(attachmentId)
-            return preCommitFailureResult(
-                "Review attachment upload was cancelled after reservation and before commit.",
-                attachment: reserveResponse.data,
-                cleanup: cleanup
-            )
-        }
-
-        guard let uploadOperations = reserveResponse.data.attributes?.uploadOperations, !uploadOperations.isEmpty else {
-            let cleanup = await rollbackReservation(attachmentId)
-            return preCommitFailureResult(
-                "Apple returned no upload operations for the review attachment reservation.",
-                attachment: reserveResponse.data,
-                cleanup: cleanup
-            )
-        }
-
-        let md5: String
-        do {
-            md5 = try await uploadService.uploadFile(snapshot: snapshot, uploadOperations: uploadOperations)
-        } catch {
-            let cleanup = await rollbackReservation(attachmentId)
-            return preCommitFailureResult(
-                "Failed to transfer review attachment bytes through Apple's upload endpoint.",
-                attachment: reserveResponse.data,
-                cleanup: cleanup
-            )
-        }
-
-        let commitBody: Data
-        do {
-            let commitRequest = CommitReviewAttachmentRequest(
-                data: CommitReviewAttachmentRequest.CommitData(
-                    id: attachmentId,
-                    attributes: CommitReviewAttachmentRequest.Attributes(
-                        sourceFileChecksum: md5,
-                        uploaded: true
-                    )
-                )
-            )
-
-            commitBody = try JSONEncoder().encode(commitRequest)
-        } catch {
-            let cleanup = await rollbackReservation(attachmentId)
-            return preCommitFailureResult(
-                "Failed to prepare the review attachment commit: \(error.localizedDescription)",
-                attachment: reserveResponse.data,
-                cleanup: cleanup
-            )
-        }
-
-        if Task.isCancelled {
-            let cleanup = await rollbackReservation(attachmentId)
-            return preCommitFailureResult(
-                "Review attachment commit was not attempted because the operation was cancelled.",
-                attachment: reserveResponse.data,
-                cleanup: cleanup
-            )
-        }
-
-        let commitData: Data
-        do {
-            commitData = try await httpClient.patch(
-                "/v1/appStoreReviewAttachments/\(try ASCPathSegment.encode(attachmentId))",
-                body: commitBody
-            )
-        } catch {
-            return await reconcileAfterCommit(
-                attachmentId: attachmentId,
-                lastKnownAttachment: reserveResponse.data,
-                context: "The commit request did not return a confirmed response: \(error.localizedDescription)",
-                commitConfirmed: false
-            )
-        }
-
-        let commitResponse: ASCReviewAttachmentResponse
-        do {
-            commitResponse = try JSONDecoder().decode(ASCReviewAttachmentResponse.self, from: commitData)
-        } catch {
-            return await reconcileAfterCommit(
-                attachmentId: attachmentId,
-                lastKnownAttachment: reserveResponse.data,
-                context: "Apple accepted the review attachment commit but returned an unreadable response: \(error.localizedDescription)",
-                commitConfirmed: true
-            )
-        }
-
-        guard commitResponse.data.id == attachmentId,
-              commitResponse.data.type == "appStoreReviewAttachments" else {
-            return await reconcileUnexpectedCommitResource(
-                attachmentId: attachmentId,
-                lastKnownAttachment: reserveResponse.data,
-                context: "Apple accepted the review attachment commit but returned an unexpected resource."
-            )
-        }
-
-        return await resolveCommittedAttachment(commitResponse.data)
+        return reviewAttachmentUploadResult(
+            outcome,
+            reviewDetailID: reviewDetailID
+        )
     }
 
     /// Gets details of a specific review attachment
     /// - Returns: JSON with attachment details
     func getAttachment(_ params: CallTool.Parameters) async throws -> CallTool.Result {
-        guard let arguments = params.arguments,
-              let attachmentId = arguments["attachment_id"]?.stringValue else {
-            return CallTool.Result(
-                content: [MCPContent.text("Error: Required parameter 'attachment_id' is missing")],
-                isError: true
-            )
+        guard let arguments = params.arguments else {
+            return MCPResult.error("Required parameter 'attachment_id' is missing")
         }
 
         do {
-            let data = try await httpClient.get(
-                "/v1/appStoreReviewAttachments/\(try ASCPathSegment.encode(attachmentId))",
-                parameters: ["fields[appStoreReviewAttachments]": reviewAttachmentReadFields]
+            let attachmentID = try reviewAttachmentIdentifier("attachment_id", from: arguments)
+            let response: ASCReviewAttachmentResponse = try await httpClient.get(
+                reviewAttachmentEndpoint(attachmentID),
+                parameters: ["fields[appStoreReviewAttachments]": reviewAttachmentReadFields],
+                as: ASCReviewAttachmentResponse.self
             )
-            let response = try JSONDecoder().decode(ASCReviewAttachmentResponse.self, from: data)
+            try validateReviewAttachmentResponse(
+                response,
+                expectedID: attachmentID,
+                requireReviewDetailLineage: true,
+                requiredQuery: [
+                    "fields[appStoreReviewAttachments]": reviewAttachmentReadFields
+                ],
+                httpClient: httpClient,
+                context: "review attachment get response"
+            )
 
-            let result = [
+            return MCPResult.jsonObject([
                 "success": true,
                 "attachment": formatAttachment(response.data)
-            ] as [String: Any]
-
-            return MCPResult.jsonObject(result)
-
+            ])
         } catch {
-            return CallTool.Result(
-                content: [MCPContent.text("Error: Failed to get review attachment: \(error.localizedDescription)")],
-                isError: true
-            )
+            return MCPResult.error(error, prefix: "Failed to get review attachment")
         }
     }
 
     /// Deletes a review attachment
     /// - Returns: JSON confirmation
     func deleteAttachment(_ params: CallTool.Parameters) async throws -> CallTool.Result {
-        guard let arguments = params.arguments,
-              let attachmentId = arguments["attachment_id"]?.stringValue else {
-            return CallTool.Result(
-                content: [MCPContent.text("Error: Required parameter 'attachment_id' is missing")],
-                isError: true
+        guard let arguments = params.arguments else {
+            return MCPResult.error(
+                "Required parameters 'attachment_id' and 'confirm_attachment_id' are missing"
             )
         }
 
+        let attachmentID: String
         do {
-            _ = try await httpClient.delete("/v1/appStoreReviewAttachments/\(try ASCPathSegment.encode(attachmentId))")
-
-            let result = [
-                "success": true,
-                "message": "Review attachment '\(attachmentId)' deleted"
-            ] as [String: Any]
-
-            return MCPResult.jsonObject(result)
-
+            attachmentID = try reviewAttachmentIdentifier("attachment_id", from: arguments)
+            let confirmationID = try reviewAttachmentIdentifier(
+                "confirm_attachment_id",
+                from: arguments
+            )
+            guard confirmationID == attachmentID else {
+                throw ReviewAttachmentInputError(
+                    "confirm_attachment_id must exactly match attachment_id"
+                )
+            }
         } catch {
-            return MCPResult.error(error, prefix: "Failed to delete review attachment")
+            return MCPResult.error(error, prefix: "Failed to validate review attachment deletion")
+        }
+
+        do {
+            _ = try await httpClient.delete(reviewAttachmentEndpoint(attachmentID))
+            return MCPResult.jsonObject([
+                "success": true,
+                "attachment_id": attachmentID,
+                "message": "Review attachment '\(attachmentID)' deleted"
+            ])
+        } catch {
+            let base = MCPResult.error(error, prefix: "Failed to delete review attachment")
+            return reviewAttachmentResult(
+                base,
+                adding: [
+                    "attachment_id": .string(attachmentID),
+                    "retrySafe": .bool(false),
+                    "inspection": .object([
+                        "tool": .string("review_attachments_get"),
+                        "arguments": .object([
+                            "attachment_id": .string(attachmentID)
+                        ]),
+                        "instruction": .string(
+                            "Inspect the exact attachment before another delete attempt."
+                        )
+                    ])
+                ]
+            )
         }
     }
 
     /// Lists review attachments for a review detail
     /// - Returns: JSON array of attachments
     func listAttachments(_ params: CallTool.Parameters) async throws -> CallTool.Result {
-        guard let arguments = params.arguments,
-              let reviewDetailId = arguments["review_detail_id"]?.stringValue else {
-            return CallTool.Result(
-                content: [MCPContent.text("Error: Required parameter 'review_detail_id' is missing")],
-                isError: true
-            )
+        guard let arguments = params.arguments else {
+            return MCPResult.error("Required parameter 'review_detail_id' is missing")
         }
 
         do {
-            let response: ASCReviewAttachmentsResponse
-            let effectiveLimit = min(max(arguments["limit"]?.intValue ?? 25, 1), 200)
-            let queryParams = [
+            let reviewDetailID = try reviewAttachmentIdentifier(
+                "review_detail_id",
+                from: arguments
+            )
+            let effectiveLimit = try reviewAttachmentLimit(arguments["limit"])
+            let query = [
                 "fields[appStoreReviewAttachments]": reviewAttachmentReadFields,
                 "limit": String(effectiveLimit)
             ]
-            let path = "/v1/appStoreReviewDetails/\(try ASCPathSegment.encode(reviewDetailId))/appStoreReviewAttachments"
+            let path = "/v1/appStoreReviewDetails/\(try ASCPathSegment.encode(reviewDetailID, field: "review_detail_id"))/appStoreReviewAttachments"
+            let response: ASCReviewAttachmentsResponse
+            let requestedCursor: String?
 
-            if let nextUrl = try paginationURL(from: arguments["next_url"]) {
+            if let nextURL = try paginationURL(from: arguments["next_url"]) {
+                let requestedLink = try validateReviewAttachmentLink(
+                    nextURL,
+                    expectedPath: path,
+                    requiredQuery: query,
+                    allowedQuery: Set(query.keys).union(["cursor"]),
+                    httpClient: httpClient,
+                    context: "review attachment requested continuation"
+                )
+                guard let cursor = requestedLink["cursor"],
+                      !cursor.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+                    throw ReviewAttachmentInputError(
+                        "review attachment requested continuation omitted a non-empty cursor"
+                    )
+                }
+                requestedCursor = cursor
                 response = try await httpClient.getPage(
-                    nextUrl,
-                    scope: PaginationScope.strict(
-                        path: path,
-                        query: queryParams
-                    ),
+                    nextURL,
+                    scope: PaginationScope.strict(path: path, query: query),
                     as: ASCReviewAttachmentsResponse.self
                 )
             } else {
+                requestedCursor = nil
                 response = try await httpClient.get(
                     path,
-                    parameters: queryParams,
+                    parameters: query,
                     as: ASCReviewAttachmentsResponse.self
                 )
             }
 
-            let attachments = response.data.map { formatAttachment($0) }
+            var seenIDs = Set<String>()
+            for attachment in response.data {
+                try validateReviewAttachmentResource(
+                    attachment,
+                    expectedReviewDetailID: reviewDetailID,
+                    requireReviewDetailLineage: true,
+                    context: "review attachment list response"
+                )
+                guard seenIDs.insert(attachment.id).inserted else {
+                    throw ReviewAttachmentInputError(
+                        "review attachment list response contains a duplicate resource ID"
+                    )
+                }
+            }
 
+            try validateReviewAttachmentPaging(
+                response,
+                expectedPath: path,
+                requiredQuery: query,
+                requestedCursor: requestedCursor,
+                requestedLimit: effectiveLimit,
+                httpClient: httpClient,
+                context: "review attachment list response"
+            )
+
+            let attachments = response.data.map(formatAttachment)
             var result: [String: Any] = [
                 "success": true,
                 "attachments": attachments,
                 "count": attachments.count
             ]
-            if let next = response.links?.next {
+            if let next = response.links.next {
                 result["next_url"] = next
             }
             if let total = response.meta?.paging?.total {
                 result["total"] = total
             }
-
             return MCPResult.jsonObject(result)
-
         } catch {
-            return CallTool.Result(
-                content: [MCPContent.text("Error: Failed to list review attachments: \(error.localizedDescription)")],
-                isError: true
-            )
+            return MCPResult.error(error, prefix: "Failed to list review attachments")
         }
     }
 
@@ -330,380 +316,7 @@ extension ReviewAttachmentsWorker {
                 "warnings": formatDeliveryMessages(deliveryState.warnings)
             ]
         }
-
         return result
-    }
-
-    private func resolveCommittedAttachment(_ attachment: ASCReviewAttachment) async -> CallTool.Result {
-        switch attachment.attributes?.assetDeliveryState?.state {
-        case "COMPLETE":
-            return MCPResult.jsonObject([
-                "success": true,
-                "attachment": formatAttachment(attachment)
-            ])
-        case "FAILED":
-            return retainedFailureResult(
-                "Apple reported FAILED while processing the review attachment.",
-                attachment: attachment
-            )
-        default:
-            return await pollAttachmentDelivery(
-                attachmentId: attachment.id,
-                lastKnownAttachment: attachment,
-                context: nil,
-                commitConfirmed: true
-            )
-        }
-    }
-
-    private func reconcileAfterCommit(
-        attachmentId: String,
-        lastKnownAttachment: ASCReviewAttachment,
-        context: String,
-        commitConfirmed: Bool
-    ) async -> CallTool.Result {
-        if Task.isCancelled {
-            return commitConfirmed
-                ? processingPendingResult(context, attachment: lastKnownAttachment)
-                : deliveryPendingResult(context, attachment: lastKnownAttachment)
-        }
-
-        return await pollAttachmentDelivery(
-            attachmentId: attachmentId,
-            lastKnownAttachment: lastKnownAttachment,
-            context: context,
-            commitConfirmed: commitConfirmed
-        )
-    }
-
-    private func reconcileUnexpectedCommitResource(
-        attachmentId: String,
-        lastKnownAttachment: ASCReviewAttachment,
-        context: String
-    ) async -> CallTool.Result {
-        if Task.isCancelled {
-            return deliveryPendingResult(context, attachment: lastKnownAttachment)
-        }
-
-        let data: Data
-        do {
-            data = try await httpClient.get(
-                "/v1/appStoreReviewAttachments/\(try ASCPathSegment.encode(attachmentId))",
-                parameters: ["fields[appStoreReviewAttachments]": reviewAttachmentReadFields]
-            )
-        } catch {
-            return deliveryPendingResult(
-                "\(context) Reconciliation also failed: \(error.localizedDescription)",
-                attachment: lastKnownAttachment
-            )
-        }
-
-        let response: ASCReviewAttachmentResponse
-        do {
-            response = try JSONDecoder().decode(ASCReviewAttachmentResponse.self, from: data)
-        } catch {
-            return deliveryPendingResult(
-                "\(context) Apple returned an unreadable reconciliation response: \(error.localizedDescription)",
-                attachment: lastKnownAttachment
-            )
-        }
-
-        guard response.data.id == attachmentId,
-              response.data.type == "appStoreReviewAttachments" else {
-            return deliveryPendingResult(
-                "\(context) Apple also returned an unexpected resource during reconciliation.",
-                attachment: lastKnownAttachment
-            )
-        }
-
-        switch response.data.attributes?.assetDeliveryState?.state {
-        case "COMPLETE":
-            return MCPResult.jsonObject([
-                "success": true,
-                "attachment": formatAttachment(response.data),
-                "reconciledAfterCommit": true
-            ])
-        case "FAILED":
-            return retainedFailureResult(
-                "\(context) Apple reports FAILED for the expected attachment.",
-                attachment: response.data
-            )
-        default:
-            return processingPendingResult(
-                "\(context) The expected attachment was reconciled and retained for processing.",
-                attachment: response.data
-            )
-        }
-    }
-
-    private func pollAttachmentDelivery(
-        attachmentId: String,
-        lastKnownAttachment: ASCReviewAttachment,
-        context: String?,
-        commitConfirmed: Bool
-    ) async -> CallTool.Result {
-        var latest = lastKnownAttachment
-
-        for attempt in 0..<deliveryPollAttempts {
-            if Task.isCancelled {
-                let message = context ?? "Review attachment delivery polling was cancelled."
-                return commitConfirmed
-                    ? processingPendingResult(message, attachment: latest)
-                    : deliveryPendingResult(message, attachment: latest)
-            }
-
-            let data: Data
-            do {
-                data = try await httpClient.get(
-                    "/v1/appStoreReviewAttachments/\(try ASCPathSegment.encode(attachmentId))",
-                    parameters: ["fields[appStoreReviewAttachments]": reviewAttachmentReadFields]
-                )
-            } catch {
-                let message = context.map { "\($0) Reconciliation also failed: \(error.localizedDescription)" }
-                    ?? "The review attachment delivery state could not be confirmed: \(error.localizedDescription)"
-                return commitConfirmed
-                    ? processingPendingResult(message, attachment: latest)
-                    : deliveryPendingResult(message, attachment: latest)
-            }
-
-            let response: ASCReviewAttachmentResponse
-            do {
-                response = try JSONDecoder().decode(ASCReviewAttachmentResponse.self, from: data)
-            } catch {
-                let message = context.map { "\($0) Apple returned an unreadable reconciliation response: \(error.localizedDescription)" }
-                    ?? "Apple returned an unreadable review attachment delivery response: \(error.localizedDescription)"
-                return commitConfirmed
-                    ? processingPendingResult(message, attachment: latest)
-                    : deliveryPendingResult(message, attachment: latest)
-            }
-
-            guard response.data.id == attachmentId,
-                  response.data.type == "appStoreReviewAttachments" else {
-                return deliveryPendingResult(
-                    context ?? "Apple returned an unexpected review attachment during delivery verification.",
-                    attachment: latest
-                )
-            }
-            latest = response.data
-
-            switch latest.attributes?.assetDeliveryState?.state {
-            case "COMPLETE":
-                return MCPResult.jsonObject([
-                    "success": true,
-                    "attachment": formatAttachment(latest)
-                ])
-            case "FAILED":
-                return retainedFailureResult(
-                    "Apple reported FAILED while processing the review attachment.",
-                    attachment: latest
-                )
-            default:
-                break
-            }
-
-            if attempt + 1 < deliveryPollAttempts {
-                if Task.isCancelled {
-                    let message = context ?? "Review attachment delivery polling was cancelled."
-                    return commitConfirmed
-                        ? processingPendingResult(message, attachment: latest)
-                        : deliveryPendingResult(message, attachment: latest)
-                }
-                do {
-                    try await Task.sleep(nanoseconds: deliveryPollIntervalNanoseconds)
-                } catch {
-                    let message = context ?? "Review attachment delivery polling was cancelled."
-                    return commitConfirmed
-                        ? processingPendingResult(message, attachment: latest)
-                        : deliveryPendingResult(message, attachment: latest)
-                }
-            }
-        }
-
-        let state = latest.attributes?.assetDeliveryState?.state ?? "unknown"
-        let message = context.map { "\($0) Apple currently reports delivery state '\(state)'." }
-            ?? "The review attachment was committed, but Apple still reports delivery state '\(state)'."
-        return commitConfirmed
-            ? processingPendingResult(message, attachment: latest)
-            : deliveryPendingResult(message, attachment: latest)
-    }
-
-    private func rollbackReservation(_ attachmentId: String) async -> ReviewAttachmentCleanupOutcome {
-        let client = httpClient
-        let task = Task.detached { () -> ReviewAttachmentCleanupOutcome in
-            do {
-                _ = try await client.delete("/v1/appStoreReviewAttachments/\(try ASCPathSegment.encode(attachmentId))")
-                return .deleted
-            } catch let error as ASCError {
-                if case .deleteCommittedUnverified(let statusCode) = error {
-                    return .committedUnverified(
-                        statusCode: statusCode,
-                        reason: Redactor.redact(error.localizedDescription)
-                    )
-                }
-                if case .deleteOutcomeUnknown = error {
-                    return .commitUnknown(Redactor.redact(error.localizedDescription))
-                }
-                if error.httpStatusCode == 404 {
-                    return .alreadyAbsent
-                }
-                return .failed(Redactor.redact(error.localizedDescription))
-            } catch {
-                return .failed(Redactor.redact(error.localizedDescription))
-            }
-        }
-        return await task.value
-    }
-
-    private func beforeReservationResult(_ message: String) -> CallTool.Result {
-        let safeMessage = Redactor.redact(message)
-        return MCPResult.jsonObject(
-            [
-                "success": false,
-                "error": safeMessage,
-                "reservationCreated": false,
-                "retrySafe": true
-            ],
-            text: "Error: \(safeMessage)",
-            isError: true
-        )
-    }
-
-    private func unresolvedReservationResult(
-        _ message: String,
-        reviewDetailId: String
-    ) -> CallTool.Result {
-        let safeMessage = Redactor.redact(message)
-        return MCPResult.jsonObject(
-            [
-                "success": false,
-                "error": safeMessage,
-                "reservationState": "unknown",
-                "reservationIdKnown": false,
-                "retrySafe": false,
-                "inspection": [
-                    "tool": "review_attachments_list",
-                    "arguments": ["review_detail_id": reviewDetailId]
-                ]
-            ],
-            text: "Error: \(safeMessage) The reservation id is unavailable. Inspect the review detail before retrying to avoid a duplicate.",
-            isError: true
-        )
-    }
-
-    private func preCommitFailureResult(
-        _ message: String,
-        attachment: ASCReviewAttachment,
-        cleanup: ReviewAttachmentCleanupOutcome
-    ) -> CallTool.Result {
-        let safeMessage = Redactor.redact(message)
-        let cleanupValue = cleanup.structuredValue(attachmentId: attachment.id)
-        let manualGuidance: String
-        if cleanup.reservationDeleted {
-            manualGuidance = ""
-        } else if cleanup.outcomeUnknown || cleanup.completionUnverified {
-            manualGuidance = " Inspect this exact attachment before another cleanup attempt."
-        } else {
-            manualGuidance = " Use review_attachments_delete with attachment_id '\(attachment.id)' to retry cleanup."
-        }
-        var value: [String: Any] = [
-                "success": false,
-                "error": safeMessage,
-                "attachmentId": attachment.id,
-                "attachment": formatAttachment(attachment),
-                "cleanup": cleanupValue,
-                "reservationDeleted": cleanup.reservationDeleted,
-                "retrySafe": cleanup.reservationDeleted
-            ]
-        if cleanup.outcomeUnknown {
-            value["operationCommitState"] = "unknown"
-            value["outcomeUnknown"] = true
-        }
-        if cleanup.completionUnverified {
-            value["operationCommitState"] = "committed_unverified"
-            value["operationCommitted"] = true
-            value["inspectionRequired"] = true
-        }
-        return MCPResult.jsonObject(
-            value,
-            text: "Error: \(safeMessage) Cleanup status: \(cleanup.status).\(manualGuidance)",
-            isError: true
-        )
-    }
-
-    private func retainedFailureResult(
-        _ message: String,
-        attachment: ASCReviewAttachment
-    ) -> CallTool.Result {
-        let safeMessage = Redactor.redact(message)
-        return MCPResult.jsonObject(
-            [
-                "success": false,
-                "error": safeMessage,
-                "attachmentId": attachment.id,
-                "attachment": formatAttachment(attachment),
-                "deliveryPending": false,
-                "cleanup": retainedCleanupGuidance(attachmentId: attachment.id),
-                "reservationDeleted": false,
-                "retrySafe": false
-            ],
-            text: "Error: \(safeMessage) The attachment was retained. Inspect it with review_attachments_get and delete it explicitly with review_attachments_delete if appropriate.",
-            isError: true
-        )
-    }
-
-    private func processingPendingResult(
-        _ message: String,
-        attachment: ASCReviewAttachment
-    ) -> CallTool.Result {
-        let safeMessage = Redactor.redact(message)
-        return MCPResult.jsonObject(
-            [
-                "success": true,
-                "uploadCommitted": true,
-                "processingComplete": false,
-                "deliveryPending": true,
-                "retrySafe": false,
-                "attachmentId": attachment.id,
-                "attachment": formatAttachment(attachment),
-                "cleanup": retainedCleanupGuidance(attachmentId: attachment.id),
-                "reservationDeleted": false
-            ],
-            text: "Review attachment committed successfully. \(safeMessage) Inspect the existing attachment instead of starting another upload.",
-            isError: false
-        )
-    }
-
-    private func deliveryPendingResult(
-        _ message: String,
-        attachment: ASCReviewAttachment
-    ) -> CallTool.Result {
-        let safeMessage = Redactor.redact(message)
-        return MCPResult.jsonObject(
-            [
-                "success": false,
-                "error": safeMessage,
-                "attachmentId": attachment.id,
-                "attachment": formatAttachment(attachment),
-                "deliveryPending": true,
-                "cleanup": retainedCleanupGuidance(attachmentId: attachment.id),
-                "reservationDeleted": false,
-                "retrySafe": false
-            ],
-            text: "Error: \(safeMessage) The attachment was retained. Check it with review_attachments_get before using review_attachments_delete.",
-            isError: true
-        )
-    }
-
-    private func retainedCleanupGuidance(attachmentId: String) -> [String: Any] {
-        [
-            "status": "not_attempted",
-            "attachmentId": attachmentId,
-            "reason": "Automatic deletion was not attempted; inspect the attachment state before deleting it.",
-            "tool": "review_attachments_delete",
-            "arguments": ["attachment_id": attachmentId],
-            "inspectTool": "review_attachments_get",
-            "inspectArguments": ["attachment_id": attachmentId]
-        ]
     }
 
     private func formatDeliveryMessages(_ messages: [ASCAssetDeliveryError]?) -> [[String: Any]] {
@@ -714,96 +327,405 @@ extension ReviewAttachmentsWorker {
             ]
         } ?? []
     }
-}
 
-private enum ReviewAttachmentCleanupOutcome: Sendable {
-    case deleted
-    case alreadyAbsent
-    case commitUnknown(String)
-    case committedUnverified(statusCode: Int, reason: String)
-    case failed(String)
+    private func reviewAttachmentUploadResult(
+        _ outcome: UploadTransactionOutcome<ASCReviewAttachment>,
+        reviewDetailID: String
+    ) -> CallTool.Result {
+        let result = UploadTransactionRecovery.result(
+            for: outcome,
+            descriptor: UploadRecoveryDescriptor(
+                resourceName: "review attachment",
+                successKey: "attachment",
+                idArgument: "attachment_id",
+                getTool: "review_attachments_get",
+                getIDArgument: "attachment_id",
+                deleteTool: "review_attachments_delete",
+                deleteConfirmationArgument: "confirm_attachment_id",
+                inspectionTool: "review_attachments_list",
+                inspectionArguments: ["review_detail_id": reviewDetailID],
+                inspectionPageLimit: 200,
+                inspectionNextURLArgument: "next_url"
+            ),
+            format: formatAttachment
+        )
 
-    var status: String {
-        switch self {
-        case .deleted:
-            return "deleted"
-        case .alreadyAbsent:
-            return "already_absent"
-        case .commitUnknown:
-            return "commit_unknown"
-        case .committedUnverified:
-            return "committed_unverified"
-        case .failed:
-            return "failed"
+        var additions: [String: Value] = [:]
+        if case .object(let payload)? = result.structuredContent,
+           case .string(let attachmentID)? = payload["attachment_id"] {
+            additions["attachmentId"] = .string(attachmentID)
         }
-    }
 
-    var reservationDeleted: Bool {
-        switch self {
-        case .deleted, .alreadyAbsent:
-            return true
-        case .commitUnknown, .committedUnverified, .failed:
-            return false
-        }
-    }
+        switch outcome {
+        case .reservationUnresolved(_, let fingerprint),
+             .reservationCommittedUnverified(_, _, let fingerprint):
+            if let fingerprint {
+                additions["reservationHints"] = .object([
+                    "fileName": .string(fingerprint.fileName),
+                    "fileSize": .int(fingerprint.fileSize),
+                    "matchStrength": .string("non_unique"),
+                    "checksumAvailableBeforeCommit": .bool(false)
+                ])
+            }
+            additions["manualResolutionRequired"] = .bool(true)
+            additions["manualResolution"] = reviewAttachmentManualReservationResolution(
+                reviewDetailID: reviewDetailID
+            )
 
-    var outcomeUnknown: Bool {
-        if case .commitUnknown = self {
-            return true
-        }
-        return false
-    }
+        case .preCommitFailure(_, _, _, let checksumReceipt):
+            if let checksumReceipt {
+                additions["sourceFileChecksumReceipt"] = .string(checksumReceipt)
+            }
 
-    var completionUnverified: Bool {
-        if case .committedUnverified = self {
-            return true
-        }
-        return false
-    }
-
-    func structuredValue(attachmentId: String) -> [String: Any] {
-        var value: [String: Any] = [
-            "status": status,
-            "attachmentId": attachmentId
-        ]
-        if case .failed(let reason) = self {
-            value["reason"] = reason
-            value["tool"] = "review_attachments_delete"
-            value["arguments"] = ["attachment_id": attachmentId]
-        }
-        if case .commitUnknown(let reason) = self {
-            value["reason"] = reason
-            value["operationCommitState"] = "unknown"
-            value["outcomeUnknown"] = true
-            value["retrySafe"] = false
-            value["inspectTool"] = "review_attachments_get"
-            value["inspectArguments"] = ["attachment_id": attachmentId]
-        }
-        if case .committedUnverified(let statusCode, let reason) = self {
-            value["reason"] = reason
-            value["statusCode"] = statusCode
-            value["operationCommitState"] = "committed_unverified"
-            value["operationCommitted"] = true
-            value["retrySafe"] = false
-            value["inspectionRequired"] = true
-            value["inspectTool"] = "review_attachments_get"
-            value["inspectArguments"] = ["attachment_id": attachmentId]
-        }
-        return value
-    }
-}
-
-private extension ASCError {
-    var httpStatusCode: Int? {
-        switch self {
-        case .api(_, let statusCode), .apiResponse(_, let statusCode):
-            return statusCode
-        case .deleteOutcomeUnknown(let cause):
-            return cause.httpStatusCode
-        case .deleteCommittedUnverified(let statusCode):
-            return statusCode
         default:
-            return nil
+            break
         }
+
+        return additions.isEmpty
+            ? result
+            : reviewAttachmentResult(result, adding: additions)
+    }
+}
+
+private func reviewAttachmentIdentifier(
+    _ name: String,
+    from arguments: [String: Value]
+) throws -> String {
+    guard let value = arguments[name]?.stringValue else {
+        throw ReviewAttachmentInputError("\(name) must be a string")
+    }
+    let encoded = try ASCPathSegment.encode(value, field: name)
+    guard encoded == value else {
+        throw ReviewAttachmentInputError(
+            "\(name) must be a canonical App Store Connect resource ID"
+        )
+    }
+    return value
+}
+
+private func reviewAttachmentFilePath(_ value: Value?) throws -> String {
+    guard let path = value?.stringValue else {
+        throw ReviewAttachmentInputError("file_path must be a string")
+    }
+    guard (path as NSString).isAbsolutePath else {
+        throw ReviewAttachmentInputError("file_path must be an absolute path")
+    }
+    return path
+}
+
+private func reviewAttachmentLimit(_ value: Value?) throws -> Int {
+    guard let value else { return 25 }
+    guard let limit = value.intValue, (1...200).contains(limit) else {
+        throw ReviewAttachmentInputError("limit must be an integer between 1 and 200")
+    }
+    return limit
+}
+
+private func reviewAttachmentEndpoint(_ attachmentID: String) throws -> String {
+    let encoded = try ASCPathSegment.encode(
+        attachmentID,
+        field: "review attachment response ID"
+    )
+    guard encoded == attachmentID else {
+        throw ReviewAttachmentInputError(
+            "review attachment response ID must be canonical"
+        )
+    }
+    return "/v1/appStoreReviewAttachments/\(try ASCPathSegment.encode(attachmentID, field: "review attachment response ID"))"
+}
+
+private func validateReviewAttachmentResource(
+    _ attachment: ASCReviewAttachment,
+    expectedID: String? = nil,
+    expectedReviewDetailID: String? = nil,
+    requireReviewDetailLineage: Bool,
+    context: String
+) throws {
+    try ASCNonIdempotentWriteRecovery.validateResourceIdentity(
+        type: attachment.type,
+        id: attachment.id,
+        expectedType: reviewAttachmentResourceType,
+        expectedID: expectedID,
+        context: context
+    )
+
+    guard let relationship = attachment.relationships?.appStoreReviewDetail else {
+        if requireReviewDetailLineage {
+            throw ReviewAttachmentInputError(
+                "\(context) omitted appStoreReviewDetail lineage"
+            )
+        }
+        return
+    }
+    guard let linkage = relationship.data else {
+        throw ReviewAttachmentInputError(
+            "\(context) returned appStoreReviewDetail without resource linkage"
+        )
+    }
+    try ASCNonIdempotentWriteRecovery.validateResourceIdentity(
+        type: linkage.type,
+        id: linkage.id,
+        expectedType: reviewDetailResourceType,
+        expectedID: expectedReviewDetailID,
+        context: "\(context) appStoreReviewDetail lineage"
+    )
+}
+
+private func validateReviewAttachmentResponse(
+    _ response: ASCReviewAttachmentResponse,
+    expectedID: String? = nil,
+    expectedReviewDetailID: String? = nil,
+    requireReviewDetailLineage: Bool,
+    requiredQuery: [String: String],
+    httpClient: HTTPClient,
+    context: String
+) throws {
+    try validateReviewAttachmentResource(
+        response.data,
+        expectedID: expectedID,
+        expectedReviewDetailID: expectedReviewDetailID,
+        requireReviewDetailLineage: requireReviewDetailLineage,
+        context: context
+    )
+    _ = try validateReviewAttachmentLink(
+        response.links.`self`,
+        expectedPath: reviewAttachmentEndpoint(response.data.id),
+        requiredQuery: requiredQuery,
+        allowedQuery: Set(requiredQuery.keys),
+        httpClient: httpClient,
+        context: "\(context) links.self"
+    )
+}
+
+private func validateReviewAttachmentPaging(
+    _ response: ASCReviewAttachmentsResponse,
+    expectedPath: String,
+    requiredQuery: [String: String],
+    requestedCursor: String?,
+    requestedLimit: Int,
+    httpClient: HTTPClient,
+    context: String
+) throws {
+    let allowedQuery = Set(requiredQuery.keys).union(["cursor"])
+    let selfQuery = try validateReviewAttachmentLink(
+        response.links.`self`,
+        expectedPath: expectedPath,
+        requiredQuery: requiredQuery,
+        allowedQuery: allowedQuery,
+        httpClient: httpClient,
+        context: "\(context) links.self"
+    )
+    guard selfQuery["cursor"] == requestedCursor else {
+        throw ReviewAttachmentInputError(
+            "\(context) links.self does not identify the requested page cursor"
+        )
+    }
+
+    let nextCursor: String?
+    if let next = response.links.next {
+        let nextQuery = try validateReviewAttachmentLink(
+            next,
+            expectedPath: expectedPath,
+            requiredQuery: requiredQuery,
+            allowedQuery: allowedQuery,
+            httpClient: httpClient,
+            context: "\(context) links.next"
+        )
+        guard let cursor = nextQuery["cursor"],
+              !cursor.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+              cursor != requestedCursor else {
+            throw ReviewAttachmentInputError(
+                "\(context) links.next must advance to a distinct non-empty cursor"
+            )
+        }
+        nextCursor = cursor
+    } else {
+        nextCursor = nil
+    }
+
+    if let first = response.links.first {
+        _ = try validateReviewAttachmentLink(
+            first,
+            expectedPath: expectedPath,
+            requiredQuery: requiredQuery,
+            allowedQuery: allowedQuery,
+            httpClient: httpClient,
+            context: "\(context) links.first"
+        )
+    }
+
+    guard response.data.count <= requestedLimit else {
+        throw ReviewAttachmentInputError(
+            "\(context) contains more resources than the requested limit"
+        )
+    }
+    guard let meta = response.meta else { return }
+    guard let paging = meta.paging, let limit = paging.limit else {
+        throw ReviewAttachmentInputError(
+            "\(context) contains incomplete paging metadata"
+        )
+    }
+    guard limit == requestedLimit, response.data.count <= limit else {
+        throw ReviewAttachmentInputError(
+            "\(context) paging limit does not match the requested collection scope"
+        )
+    }
+    if let total = paging.total, total < response.data.count {
+        throw ReviewAttachmentInputError(
+            "\(context) contains an impossible paging total"
+        )
+    }
+    if let metaCursor = paging.nextCursor {
+        guard !metaCursor.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+              metaCursor == nextCursor else {
+            throw ReviewAttachmentInputError(
+                "\(context) paging cursor does not match links.next"
+            )
+        }
+    }
+}
+
+private func validateReviewAttachmentLink(
+    _ value: String,
+    expectedPath: String,
+    requiredQuery: [String: String],
+    allowedQuery: Set<String>,
+    httpClient: HTTPClient,
+    context: String
+) throws -> [String: String] {
+    do {
+        return try httpClient.validatedScopedLink(
+            value,
+            scope: PaginationScope(
+                path: expectedPath,
+                requiredParameters: requiredQuery,
+                allowedParameters: allowedQuery
+            )
+        ).parameters
+    } catch {
+        throw ReviewAttachmentInputError(
+            "Apple returned an invalid or out-of-origin link in \(context): \(Redactor.redact(error.localizedDescription))"
+        )
+    }
+}
+
+private func reviewAttachmentManualReservationResolution(reviewDetailID: String) -> Value {
+    .object([
+        "reason": .string(
+            "fileName and fileSize are non-unique hints, and sourceFileChecksum is unavailable on an uncommitted reservation"
+        ),
+        "inspect": .object([
+            "tool": .string("review_attachments_list"),
+            "arguments": .object([
+                "review_detail_id": .string(reviewDetailID),
+                "limit": .int(200)
+            ]),
+            "continue_with_next_url": .bool(true),
+            "instruction": .string(
+                "Inspect every page; the hints cannot prove which reservation belongs to this request."
+            )
+        ]),
+        "verify": .object([
+            "tool": .string("review_attachments_get"),
+            "id_argument": .string("attachment_id"),
+            "instruction": .string(
+                "Verify each possible candidate by its exact attachment ID before any cleanup."
+            )
+        ]),
+        "cleanup": .object([
+            "tool": .string("review_attachments_delete"),
+            "id_argument": .string("attachment_id"),
+            "confirmation_argument": .string("confirm_attachment_id"),
+            "instruction": .string(
+                "Delete only an exact manually verified attachment ID and repeat that same ID as confirmation."
+            )
+        ]),
+        "retry": .string(
+            "Do not create another reservation until manual inspection has resolved whether Apple committed the original POST."
+        )
+    ])
+}
+
+private final class ReviewAttachmentSemanticValidationState: Sendable {
+    private struct State: Sendable {
+        var expectedResourceID: String? = nil
+        var firstFailure: String? = nil
+    }
+
+    private let state = OSAllocatedUnfairLock(uncheckedState: State())
+
+    func expectedResourceID() -> String? {
+        state.withLock { $0.expectedResourceID }
+    }
+
+    func establishResourceID(_ resourceID: String) {
+        state.withLock { current in
+            if current.expectedResourceID == nil {
+                current.expectedResourceID = resourceID
+            }
+        }
+    }
+
+    func record(_ error: Error) {
+        let message = Redactor.redact(error.localizedDescription)
+        state.withLock { current in
+            if current.firstFailure == nil {
+                current.firstFailure = message
+            }
+        }
+    }
+
+    func enforcing(
+        _ outcome: UploadTransactionOutcome<ASCReviewAttachment>
+    ) -> UploadTransactionOutcome<ASCReviewAttachment> {
+        guard let failure = state.withLock({ $0.firstFailure }) else {
+            return outcome
+        }
+        let message = "A confirmed review attachment response violated immutable identity, lineage, or document-link scope: \(failure) Later reconciliation cannot override that semantic conflict."
+        switch outcome {
+        case .success(let resource, _),
+             .processingPending(_, let resource, _):
+            return .commitUnresolved(message, resource)
+        default:
+            return outcome
+        }
+    }
+}
+
+private func reviewAttachmentResult(
+    _ result: CallTool.Result,
+    adding fields: [String: Value]
+) -> CallTool.Result {
+    guard case .object(var payload)? = result.structuredContent else {
+        return result
+    }
+    for (key, value) in fields where payload[key] == nil {
+        payload[key] = value
+    }
+
+    let firstText = result.content.compactMap { content -> String? in
+        guard case .text(let text, _, _) = content else { return nil }
+        return text
+    }.first
+    let humanText = firstText?.trimmingCharacters(in: .whitespacesAndNewlines).hasPrefix("{") == true
+        ? nil
+        : firstText
+    return MCPResult.json(
+        .object(payload),
+        text: humanText,
+        isError: result.isError == true,
+        _meta: result._meta
+    )
+}
+
+private struct ReviewAttachmentInputError: LocalizedError, Sendable {
+    let message: String
+
+    init(_ message: String) {
+        self.message = message
+    }
+
+    var errorDescription: String? {
+        message
     }
 }

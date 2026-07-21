@@ -49,13 +49,13 @@ Each company needs: `keyID`, `issuerID`, `privateKeyPath` (path to `.p8` file).
 
 **WorkerManager** (`Workers/MainWorker/WorkerManager.swift`) — central registry, routes tool calls by prefix.
 
-**Workers** (39 Swift worker classes; 35 `--workers` filter keys; 472 tools):
+**Workers** (39 Swift worker classes; 35 `--workers` filter keys; 490 tools):
 
 | Worker | Prefix | Tools | Domain |
 |--------|--------|-------|--------|
 | CompaniesWorker | `company_` | 3 | Multi-account management |
 | AuthWorker | `auth_` | 4 | JWT tokens |
-| AppsWorker | `apps_` | 9 | App listing, metadata, localizations |
+| AppsWorker | `apps_` | 10 | App listing, metadata, localizations, search keyword IDs |
 | AccessibilityWorker | `accessibility_` | 6 | App Store accessibility declarations |
 | WebhooksWorker | `webhooks_` | 11 | Webhook notifications, delivery diagnostics, receiver helpers |
 | XcodeCloudWorker | `xcode_cloud_` | 30 | Xcode Cloud products, workflows, builds, artifacts, issues, test results, SCM |
@@ -81,10 +81,10 @@ Each company needs: `keyID`, `issuerID`, `privateKeyPath` (path to `.p8` file).
 | BetaAppWorker | `beta_app_` | 10 | Beta app localizations, review submissions, review details |
 | PreReleaseVersionsWorker | `pre_release_` | 3 | Pre-release versions (list, get, builds) |
 | BetaLicenseAgreementsWorker | `beta_license_` | 3 | Beta license agreements (list, get, update) |
-| ScreenshotsWorker | `screenshots_` | 16 | Screenshots, previews, sets, reorder, full upload, batch upload |
-| CustomProductPagesWorker | `custom_pages_` | 10 | Custom product pages, versions, localizations |
-| ProductPageOptimizationWorker | `ppo_` | 9 | A/B test experiments, treatments |
-| PromotedPurchasesWorker | `promoted_` | 9 | Promoted in-app purchases; legacy image tools return migration guidance |
+| ScreenshotsWorker | `screenshots_` | 19 | Screenshots, previews, sets, verified reorder, full upload, batch upload |
+| CustomProductPagesWorker | `custom_pages_` | 17 | Custom product pages, versions, localizations, search keywords |
+| ProductPageOptimizationWorker | `ppo_` | 15 | A/B test experiments, treatments, localizations |
+| PromotedPurchasesWorker | `promoted_` | 10 | Promoted in-app purchases and verified reorder; legacy image tools return migration guidance |
 | ReviewAttachmentsWorker | `review_attachments_` | 4 | App Store review attachments (upload, get, delete, list) |
 | ReviewSubmissionsWorker | `review_submissions_` | 9 | Generic App Store review submissions and submission items |
 | MetricsWorker | `metrics_` | 9 | Performance/power metrics, diagnostics, TestFlight usage metrics |

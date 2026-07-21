@@ -94,7 +94,7 @@ enum ASCCoverageInventory {
                 "routing app coverages",
                 "customer review summary endpoint"
             ],
-            notes: "The common release workflow includes strict version filtering and paging, safe phased-release controls, generic review submissions, and App Info-owned age-rating inspection. API 4.0 app-surface additions remain the highest App Store coverage gap."
+            notes: "The common release workflow includes strict version filtering and paging, safe phased-release controls, generic review submissions, App Info-owned age-rating inspection, app search keywords, expanded Custom Product Page and PPO workflows, promoted ordering, and verified screenshot and preview ordering. Remaining app-surface operations stay explicitly phased."
         ),
         ASCCoverageArea(
             name: "TestFlight builds, testers, groups, and beta app review",

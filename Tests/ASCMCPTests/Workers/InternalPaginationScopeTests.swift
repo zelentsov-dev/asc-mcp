@@ -102,38 +102,64 @@ struct InternalPaginationScopeTests {
         }
     }
 
-    @Test("remaining inventory cannot regress to permissive scope construction")
-    func targetWorkersUseOnlyStrictScopes() throws {
+    @Test("remaining inventory pins strict continuation and scoped-link constructors")
+    func targetWorkersPreserveExactScopeInventory() throws {
         let workersRoot = URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
             .appendingPathComponent("Sources/asc-mcp/Workers", isDirectory: true)
-        let workerNames = [
-            "AccessibilityWorker", "AnalyticsWorker", "AppEventsWorker", "AppInfoWorker",
-            "AppLifecycleWorker", "AppsWorker", "BetaFeedbackWorker", "BetaGroupsWorker",
-            "BetaLicenseAgreementsWorker", "BetaTestersWorker", "BuildBetaDetailsWorker",
-            "BuildsWorker", "MetricsWorker", "PreReleaseVersionsWorker", "PricingWorker",
-            "ProvisioningWorker", "ReviewAttachmentsWorker", "ReviewsWorker",
-            "SandboxTestersWorker", "UsersWorker", "WebhooksWorker"
+        let expectedStrictScopeCounts = [
+            "AccessibilityWorker": 2,
+            "AnalyticsWorker": 5,
+            "AppEventsWorker": 2,
+            "AppInfoWorker": 2,
+            "AppLifecycleWorker": 3,
+            "AppsWorker": 9,
+            "BetaFeedbackWorker": 2,
+            "BetaGroupsWorker": 3,
+            "BetaLicenseAgreementsWorker": 1,
+            "BetaTestersWorker": 3,
+            "BuildBetaDetailsWorker": 4,
+            "BuildsWorker": 1,
+            "MetricsWorker": 2,
+            "PreReleaseVersionsWorker": 2,
+            "PricingWorker": 4,
+            "ProvisioningWorker": 5,
+            "ReviewAttachmentsWorker": 1,
+            "ReviewsWorker": 4,
+            "SandboxTestersWorker": 1,
+            "UsersWorker": 3,
+            "WebhooksWorker": 2
+        ]
+        let expectedScopedLinkScopeCounts = [
+            "AppsWorker/AppsWorker+SearchKeywordHandlers.swift": 1,
+            "ReviewAttachmentsWorker/ReviewAttachmentsWorker+Handlers.swift": 1
         ]
         var strictScopeCount = 0
-        var permissiveFiles: [String] = []
+        var scopedLinkScopeCounts: [String: Int] = [:]
 
-        for workerName in workerNames {
+        for (workerName, expectedCount) in expectedStrictScopeCounts.sorted(by: { $0.key < $1.key }) {
             let directory = workersRoot.appendingPathComponent(workerName, isDirectory: true)
             let files = try FileManager.default.contentsOfDirectory(
                 at: directory,
                 includingPropertiesForKeys: nil
             ).filter { $0.lastPathComponent.hasSuffix("Handlers.swift") }
+            var workerStrictScopeCount = 0
             for file in files {
                 let source = try String(contentsOf: file, encoding: .utf8)
-                strictScopeCount += source.components(separatedBy: "PaginationScope.strict(").count - 1
-                if source.contains("PaginationScope(") {
-                    permissiveFiles.append(workerName)
+                workerStrictScopeCount += source.components(separatedBy: "PaginationScope.strict(").count - 1
+                let scopedLinkScopeCount = source.components(separatedBy: "PaginationScope(").count - 1
+                if scopedLinkScopeCount > 0 {
+                    scopedLinkScopeCounts["\(workerName)/\(file.lastPathComponent)"] = scopedLinkScopeCount
                 }
             }
+            #expect(
+                workerStrictScopeCount == expectedCount,
+                "Unexpected strict pagination scope count for \(workerName)"
+            )
+            strictScopeCount += workerStrictScopeCount
         }
 
-        #expect(strictScopeCount == 59)
-        #expect(permissiveFiles.isEmpty, "Target workers must not construct permissive scopes: \(permissiveFiles)")
+        #expect(strictScopeCount == 61)
+        #expect(scopedLinkScopeCounts == expectedScopedLinkScopeCounts)
     }
 }
 

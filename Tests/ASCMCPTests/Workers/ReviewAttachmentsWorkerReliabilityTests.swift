@@ -70,11 +70,9 @@ struct ReviewAttachmentsWorkerReliabilityTests {
         #expect(attachment["appStoreReviewDetailId"] == .string("review-detail-1"))
     }
 
-    @Test("list clamps oversized limits")
-    func listClampsOversizedLimit() async throws {
-        let transport = TestHTTPTransport(responses: [
-            .init(statusCode: 200, body: reviewAttachmentsEmptyCollectionResponse())
-        ])
+    @Test("list rejects oversized limits before network access")
+    func listRejectsOversizedLimit() async throws {
+        let transport = TestHTTPTransport(responses: [])
         let worker = try await reviewAttachmentsWorker(transport)
 
         let result = try await worker.handleTool(.init(
@@ -85,9 +83,8 @@ struct ReviewAttachmentsWorkerReliabilityTests {
             ]
         ))
 
-        #expect(result.isError != true)
-        let request = try #require(await transport.recordedRequests().first)
-        #expect(reviewAttachmentsQuery(request)["limit"] == "200")
+        #expect(result.isError == true)
+        #expect(await transport.requestCount() == 0)
     }
 
     @Test("list accepts a continuation preserving projection and effective limit")
@@ -148,7 +145,7 @@ struct ReviewAttachmentsWorkerReliabilityTests {
                 name: "review_attachments_list",
                 arguments: [
                     "review_detail_id": .string("review-detail-1"),
-                    "limit": .int(500),
+                    "limit": .int(200),
                     "next_url": .string(nextURL)
                 ]
             ))
@@ -167,7 +164,10 @@ struct ReviewAttachmentsWorkerReliabilityTests {
 
         let result = try await worker.handleTool(.init(
             name: "review_attachments_delete",
-            arguments: ["attachment_id": .string("attachment-1")]
+            arguments: [
+                "attachment_id": .string("attachment-1"),
+                "confirm_attachment_id": .string("attachment-1")
+            ]
         ))
 
         #expect(result.isError != true)
@@ -198,16 +198,13 @@ struct ReviewAttachmentsWorkerReliabilityTests {
     @Test("manifest records three include omissions and fixed safe projections")
     func manifestRecordsReadInvocations() throws {
         let manifest = try ASCOperationManifestBundle.loadBundled()
-        let invocations = [
+        let readInvocations = [
             try #require(manifest.mapping(for: "review_attachments_get")?.operations.first),
-            try #require(manifest.mapping(for: "review_attachments_list")?.operations.first),
-            try #require(manifest.mapping(for: "review_attachments_upload")?.operations.first {
-                $0.operationID == "appStoreReviewAttachments_getInstance"
-            })
+            try #require(manifest.mapping(for: "review_attachments_list")?.operations.first)
         ]
 
         var reasons: Set<String> = []
-        for invocation in invocations {
+        for invocation in readInvocations {
             let include = try #require(invocation.optionalParameterClassifications?.first {
                 $0.location == "query" && $0.appleName == "include"
             })
@@ -222,6 +219,18 @@ struct ReviewAttachmentsWorkerReliabilityTests {
                 .string(String($0))
             }))
         }
+
+        let reconciliation = try #require(manifest.mapping(for: "review_attachments_upload")?.operations.first {
+            $0.operationID == "appStoreReviewAttachments_getInstance"
+        })
+        let reconciliationInclude = try #require(reconciliation.optionalParameterClassifications?.first {
+            $0.location == "query" && $0.appleName == "include"
+        })
+        #expect(reconciliationInclude.disposition == .intentionallyOmitted)
+        #expect(reconciliation.inputs?.contains {
+            $0.location == "query" && $0.appleName == "fields[appStoreReviewAttachments]"
+        } != true)
+        reasons.insert(reconciliationInclude.reason)
         #expect(reasons.count == 3)
 
         let relationshipWaiver = try #require(manifest.index.waivers.first {
@@ -304,7 +313,9 @@ private func reviewAttachmentsSingleResponse() -> String {
           }
         }
       },
-      "links": {"self": "https://api.example.test/v1/appStoreReviewAttachments/attachment-1"}
+      "links": {
+        "self": "https://api.example.test/v1/appStoreReviewAttachments/attachment-1?fields%5BappStoreReviewAttachments%5D=fileSize,fileName,sourceFileChecksum,assetDeliveryState,appStoreReviewDetail"
+      }
     }
     """
 }
@@ -330,7 +341,7 @@ private func reviewAttachmentsCollectionResponse() -> String {
         }
       ],
       "links": {
-        "self": "https://api.example.test/v1/appStoreReviewDetails/review-detail-1/appStoreReviewAttachments?limit=25"
+        "self": "https://api.example.test/v1/appStoreReviewDetails/review-detail-1/appStoreReviewAttachments?fields%5BappStoreReviewAttachments%5D=fileSize,fileName,sourceFileChecksum,assetDeliveryState,appStoreReviewDetail&limit=25"
       },
       "meta": {"paging": {"total": 41, "limit": 25}}
     }
@@ -342,9 +353,9 @@ private func reviewAttachmentsEmptyCollectionResponse() -> String {
     {
       "data": [],
       "links": {
-        "self": "https://api.example.test/v1/appStoreReviewDetails/review-detail-1/appStoreReviewAttachments"
+        "self": "https://api.example.test/v1/appStoreReviewDetails/review-detail-1/appStoreReviewAttachments?cursor=next&fields%5BappStoreReviewAttachments%5D=fileSize,fileName,sourceFileChecksum,assetDeliveryState,appStoreReviewDetail&limit=73"
       },
-      "meta": {"paging": {"total": 0, "limit": 200}}
+      "meta": {"paging": {"total": 0, "limit": 73}}
     }
     """
 }

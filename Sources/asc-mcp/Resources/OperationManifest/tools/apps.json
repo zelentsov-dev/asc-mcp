@@ -458,6 +458,47 @@
       "note": "The handler validates app-to-version ownership, then returns only localizations whose appStoreVersion linkage matches version_id."
     },
     {
+      "tool": "apps_list_search_keywords",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "apps_searchKeywords_getToManyRelated",
+          "method": "get",
+          "path": "/v1/apps/{id}/searchKeywords",
+          "role": "primary"
+        }
+      ],
+      "fields": [
+        { "toolField": "app_id", "sourceKind": "parameter", "operationId": "apps_searchKeywords_getToManyRelated", "location": "path", "appleName": "id" },
+        { "toolField": "platforms", "sourceKind": "parameter", "operationId": "apps_searchKeywords_getToManyRelated", "location": "query", "appleName": "filter[platform]" },
+        { "toolField": "locales", "sourceKind": "parameter", "operationId": "apps_searchKeywords_getToManyRelated", "location": "query", "appleName": "filter[locale]" },
+        { "toolField": "limit", "sourceKind": "parameter", "operationId": "apps_searchKeywords_getToManyRelated", "location": "query", "appleName": "limit" },
+        { "toolField": "next_url", "sourceKind": "local", "localRole": "Strict Apple continuation URL for this exact app keyword collection; app_id, filters, and effective limit must be repeated and the cursor is validated before network access." }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          { "operationId": "apps_searchKeywords_getToManyRelated", "statusCode": "200", "mediaType": "application/json" }
+        ],
+        "fields": [
+          { "outputField": "success", "localRole": "successfulRead" },
+          { "outputField": "app_id", "localRole": "requestEcho" },
+          { "outputField": "search_keywords", "operationId": "apps_searchKeywords_getToManyRelated", "jsonPointer": "/data" },
+          { "outputField": "count", "localRole": "pageResourceCount" },
+          { "outputField": "limit", "localRole": "effectiveLimitEcho" },
+          { "outputField": "platforms", "localRole": "requestFilterEcho" },
+          { "outputField": "locales", "localRole": "requestFilterEcho" },
+          { "outputField": "links", "operationId": "apps_searchKeywords_getToManyRelated", "jsonPointer": "/links" },
+          { "outputField": "paging", "operationId": "apps_searchKeywords_getToManyRelated", "jsonPointer": "/meta/paging" },
+          { "outputField": "next_url", "operationId": "apps_searchKeywords_getToManyRelated", "jsonPointer": "/links/next" }
+        ]
+      },
+      "note": "Lists canonical AppKeyword identifiers needed by Custom Product Page localization keyword relationships while preserving platform, locale, and pagination scope."
+    },
+    {
       "tool": "apps_list_versions",
       "kind": "direct",
       "status": "partial",
