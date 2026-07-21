@@ -54,7 +54,8 @@ struct ToolMetadataPolicyTests {
                 #expect(tool.annotations.openWorldHint == false, "Expected closed-world metadata for \(mapping.tool)")
             }
         }
-        #expect(try #require(tools["promoted_reorder"]).annotations.idempotentHint == true)
+        let promotedReorder = try #require(tools["promoted_reorder"])
+        #expect(promotedReorder.annotations.idempotentHint == true)
     }
 
     @Test("IAP version image collection remains read-only metadata")
