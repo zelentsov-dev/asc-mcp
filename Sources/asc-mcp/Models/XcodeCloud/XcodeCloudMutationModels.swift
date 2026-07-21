@@ -82,7 +82,7 @@ struct XcodeCloudMutationResourceLinks: Decodable, Sendable {
 
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        `self` = container.contains(CodingKeys.`self`)
+        self.`self` = container.contains(CodingKeys.`self`)
             ? try container.decode(String.self, forKey: CodingKeys.`self`)
             : nil
     }
