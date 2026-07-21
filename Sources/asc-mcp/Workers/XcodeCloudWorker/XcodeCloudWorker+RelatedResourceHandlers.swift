@@ -750,14 +750,17 @@ private extension XcodeCloudWorker {
             "appUrl": relatedRelationshipURL(product.relationships?.app?.links),
             "appRelationshipUrl": relatedRelationshipSelfURL(product.relationships?.app?.links),
             "bundleIdResourceId": relatedRelationshipID(product.relationships?.bundleId),
+            "workflowIds": NSNull(),
             "workflowsUrl": relatedRelationshipURL(product.relationships?.workflows?.links),
             "workflowsRelationshipUrl": relatedRelationshipSelfURL(product.relationships?.workflows?.links),
             "primaryRepositoryIds": relatedRelationshipIDs(product.relationships?.primaryRepositories),
             "primaryRepositoryIdsMeta": relatedRelationshipIDsMetadata(product.relationships?.primaryRepositories),
             "primaryRepositoriesUrl": relatedRelationshipURL(product.relationships?.primaryRepositories?.links),
             "primaryRepositoriesRelationshipUrl": relatedRelationshipSelfURL(product.relationships?.primaryRepositories?.links),
+            "additionalRepositoryIds": NSNull(),
             "additionalRepositoriesUrl": relatedRelationshipURL(product.relationships?.additionalRepositories?.links),
             "additionalRepositoriesRelationshipUrl": relatedRelationshipSelfURL(product.relationships?.additionalRepositories?.links),
+            "buildRunIds": NSNull(),
             "buildRunsUrl": relatedRelationshipURL(product.relationships?.buildRuns?.links),
             "buildRunsRelationshipUrl": relatedRelationshipSelfURL(product.relationships?.buildRuns?.links)
         ]
@@ -789,6 +792,7 @@ private extension XcodeCloudWorker {
             "productId": relatedRelationshipID(buildRun.relationships?.product),
             "sourceBranchOrTagId": relatedRelationshipID(buildRun.relationships?.sourceBranchOrTag),
             "destinationBranchId": relatedRelationshipID(buildRun.relationships?.destinationBranch),
+            "actionIds": NSNull(),
             "actionsUrl": relatedRelationshipURL(buildRun.relationships?.actions?.links),
             "actionsRelationshipUrl": relatedRelationshipSelfURL(buildRun.relationships?.actions?.links),
             "pullRequestId": relatedRelationshipID(buildRun.relationships?.pullRequest)
@@ -802,19 +806,21 @@ private extension XcodeCloudWorker {
             "selfUrl": (version.links?.`self`).jsonSafe,
             "version": (version.attributes?.version).jsonSafe,
             "name": (version.attributes?.name).jsonSafe,
-            "testDestinations": relatedOptionalMappedArray(version.attributes?.testDestinations) { destination in
+            "testDestinations": version.attributes?.testDestinations?.map { destination in
                 [
                     "deviceTypeName": (destination.deviceTypeName).jsonSafe,
                     "deviceTypeIdentifier": (destination.deviceTypeIdentifier).jsonSafe,
                     "kind": (destination.kind).jsonSafe,
-                    "availableRuntimes": relatedOptionalMappedArray(destination.availableRuntimes) { runtime in
+                    "availableRuntimes": destination.availableRuntimes?.map { runtime in
                         [
                             "runtimeName": (runtime.runtimeName).jsonSafe,
                             "runtimeIdentifier": (runtime.runtimeIdentifier).jsonSafe
                         ]
-                    }
+                    } ?? [],
+                    "availableRuntimesPresent": destination.availableRuntimes != nil
                 ] as [String: Any]
-            },
+            } ?? [],
+            "testDestinationsPresent": version.attributes?.testDestinations != nil,
             "macOSVersionIds": relatedRelationshipIDs(version.relationships?.macOsVersions),
             "macOSVersionIdsMeta": relatedRelationshipIDsMetadata(version.relationships?.macOsVersions),
             "macOSVersionsUrl": relatedRelationshipURL(version.relationships?.macOsVersions?.links),
@@ -848,8 +854,10 @@ private extension XcodeCloudWorker {
             "repositoryName": (repository.attributes?.repositoryName).jsonSafe,
             "providerId": relatedRelationshipID(repository.relationships?.scmProvider),
             "defaultBranchId": relatedRelationshipID(repository.relationships?.defaultBranch),
+            "gitReferenceIds": NSNull(),
             "gitReferencesUrl": relatedRelationshipURL(repository.relationships?.gitReferences?.links),
             "gitReferencesRelationshipUrl": relatedRelationshipSelfURL(repository.relationships?.gitReferences?.links),
+            "pullRequestIds": NSNull(),
             "pullRequestsUrl": relatedRelationshipURL(repository.relationships?.pullRequests?.links),
             "pullRequestsRelationshipUrl": relatedRelationshipSelfURL(repository.relationships?.pullRequests?.links)
         ]
@@ -866,14 +874,6 @@ private extension XcodeCloudWorker {
             "isOrEverWasMadeForKids": (app.attributes?.isOrEverWasMadeForKids).jsonSafe,
             "resourceUrl": (app.links?.`self`).jsonSafe
         ]
-    }
-
-    func relatedOptionalMappedArray<Element>(
-        _ elements: [Element]?,
-        transform: (Element) -> Any
-    ) -> Any {
-        guard let elements else { return NSNull() }
-        return elements.map(transform)
     }
 
     func relatedRelationshipID(_ relationship: ASCRelationship?) -> Any {

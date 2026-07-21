@@ -73,9 +73,11 @@ extension XcodeCloudWorker {
     func updateWorkflow(_ params: CallTool.Parameters) async throws -> CallTool.Result {
         let arguments = params.arguments ?? [:]
         let workflowID: String
+        let path: String
         let request: XcodeCloudWorkflowMutationRequestPlan
         do {
             workflowID = try xcMutationResourceID("workflow_id", from: arguments)
+            path = "/v1/ciWorkflows/\(try ASCPathSegment.encode(workflowID))"
             request = try xcWorkflowMutationRequest(arguments, workflowID: workflowID, isCreate: false)
             guard !request.attributes.isEmpty || !request.relationships.isEmpty else {
                 throw XcodeCloudMutationArgumentError(
@@ -90,7 +92,6 @@ extension XcodeCloudWorker {
             )
         }
 
-        let path = "/v1/ciWorkflows/\(workflowID)"
         let receipt: ASCMutationReceipt
         do {
             receipt = try await httpClient.patchReceipt(path, body: request.body)
@@ -144,9 +145,11 @@ extension XcodeCloudWorker {
     func deleteWorkflow(_ params: CallTool.Parameters) async throws -> CallTool.Result {
         let arguments = params.arguments ?? [:]
         let workflowID: String
+        let path: String
         do {
             try xcValidateMutationKeys(arguments, allowed: xcWorkflowDeleteFields, context: "arguments")
             workflowID = try xcMutationResourceID("workflow_id", from: arguments)
+            path = "/v1/ciWorkflows/\(try ASCPathSegment.encode(workflowID))"
         } catch {
             return xcMutationNotAttempted(
                 operation: "delete_workflow",
@@ -157,7 +160,6 @@ extension XcodeCloudWorker {
 
         let preview: XcodeCloudDeletionPreview
         do {
-            let path = "/v1/ciWorkflows/\(workflowID)"
             let resource = try await xcFetchDeletionResource(path: path, expectedType: "ciWorkflows", expectedID: workflowID)
             let name = try xcRequiredResourceName(resource, context: "workflow deletion preview")
             let buildRunIDs = try await xcExactCollectionInventory(
@@ -196,7 +198,7 @@ extension XcodeCloudWorker {
 
         return await xcExecuteDeletion(
             operation: "delete_workflow",
-            path: "/v1/ciWorkflows/\(workflowID)",
+            path: path,
             identifiers: ["workflow_id": .string(workflowID)],
             preview: preview,
             inspection: xcResourceInspection(tool: "xcode_cloud_workflows_get", idField: "workflow_id", id: workflowID)
@@ -210,9 +212,11 @@ extension XcodeCloudWorker {
     func deleteProduct(_ params: CallTool.Parameters) async throws -> CallTool.Result {
         let arguments = params.arguments ?? [:]
         let productID: String
+        let path: String
         do {
             try xcValidateMutationKeys(arguments, allowed: xcProductDeleteFields, context: "arguments")
             productID = try xcMutationResourceID("product_id", from: arguments)
+            path = "/v1/ciProducts/\(try ASCPathSegment.encode(productID))"
         } catch {
             return xcMutationNotAttempted(
                 operation: "delete_product",
@@ -223,7 +227,6 @@ extension XcodeCloudWorker {
 
         let preview: XcodeCloudDeletionPreview
         do {
-            let path = "/v1/ciProducts/\(productID)"
             let resource = try await xcFetchDeletionResource(path: path, expectedType: "ciProducts", expectedID: productID)
             let name = try xcRequiredResourceName(resource, context: "product deletion preview")
             let workflowIDs = try await xcExactCollectionInventory(
@@ -267,7 +270,7 @@ extension XcodeCloudWorker {
 
         return await xcExecuteDeletion(
             operation: "delete_product",
-            path: "/v1/ciProducts/\(productID)",
+            path: path,
             identifiers: ["product_id": .string(productID)],
             preview: preview,
             inspection: xcResourceInspection(tool: "xcode_cloud_products_get", idField: "product_id", id: productID)
@@ -803,7 +806,7 @@ private extension XcodeCloudWorker {
             expectedID: expectedID,
             context: "Apple \(context) response"
         )
-        let path = expectedPath ?? "/v1/ciWorkflows/\(response.data.id)"
+        let path = expectedPath ?? "/v1/ciWorkflows/\(try ASCPathSegment.encode(response.data.id))"
         try xcValidateDocumentSelf(response.links.`self`, expectedPath: path, context: context)
         if let resourceSelf = response.data.links?.`self` {
             try xcValidateDocumentSelf(resourceSelf, expectedPath: path, context: "\(context) resource")
@@ -1268,8 +1271,8 @@ private extension XcodeCloudWorker {
                 "Apple \(context) response contains malformed links for relationship '\(relationship)'"
             )
         }
-        let relationshipPath = "/v1/ciWorkflows/\(workflowID)/relationships/\(relationship)"
-        let relatedPath = "/v1/ciWorkflows/\(workflowID)/\(relationship)"
+        let relationshipPath = "/v1/ciWorkflows/\(try ASCPathSegment.encode(workflowID))/relationships/\(try ASCPathSegment.encode(relationship))"
+        let relatedPath = "/v1/ciWorkflows/\(try ASCPathSegment.encode(workflowID))/\(try ASCPathSegment.encode(relationship))"
         for (name, path) in [("self", relationshipPath), ("related", relatedPath)] {
             guard let value = links[name] else { continue }
             guard case .string(let link) = value else {

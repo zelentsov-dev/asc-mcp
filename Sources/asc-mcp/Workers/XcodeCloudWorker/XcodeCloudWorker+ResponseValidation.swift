@@ -48,12 +48,12 @@ extension XcodeCloudWorker {
         guard supportedParents.contains(parentType) else {
             throw ASCError.parsing("Xcode Cloud relationship links use an unsupported parent type")
         }
-        let parentPath = "/v1/\(parentType)/\(try ASCPathSegment.encode(parentID))"
+        let parentPath = "/v1/\(try ASCPathSegment.encode(parentType))/\(try ASCPathSegment.encode(parentID))"
         if let selfURL = links.`self` {
             do {
                 try validateXcodeCloudSingleDocument(
                     selfURL: selfURL,
-                    endpoint: "\(parentPath)/relationships/\(relationship)"
+                    endpoint: "\(parentPath)/relationships/\(try ASCPathSegment.encode(relationship))"
                 )
             } catch {
                 throw ASCError.parsing(
@@ -65,7 +65,7 @@ extension XcodeCloudWorker {
             do {
                 try validateXcodeCloudSingleDocument(
                     selfURL: relatedURL,
-                    endpoint: "\(parentPath)/\(relationship)"
+                    endpoint: "\(parentPath)/\(try ASCPathSegment.encode(relationship))"
                 )
             } catch {
                 throw ASCError.parsing(
@@ -457,7 +457,7 @@ extension XcodeCloudWorker {
         }
         try validateXcodeCloudSingleDocument(
             selfURL: selfURL,
-            endpoint: "/v1/\(collection)/\(try ASCPathSegment.encode(id))"
+            endpoint: "/v1/\(try ASCPathSegment.encode(collection))/\(try ASCPathSegment.encode(id))"
         )
     }
 

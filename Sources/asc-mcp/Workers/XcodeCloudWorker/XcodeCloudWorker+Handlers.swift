@@ -566,9 +566,10 @@ extension XcodeCloudWorker {
                 "buildBundles": query["limit[buildBundles]"].flatMap(Int.init)
             ].compactMapValues { $0 }
             let endpoint = "/v1/ciBuildRuns/\(try ASCPathSegment.encode(buildRunID))/builds"
-            if let nextURL = try paginationURL(from: arguments["next_url"]) {
+            let requestedNextURL = try paginationURL(from: arguments["next_url"])
+            if let requestedNextURL {
                 response = try await httpClient.getPage(
-                    nextURL,
+                    requestedNextURL,
                     scope: paginationScope(endpoint: endpoint, query: query),
                     as: ASCXcodeCloudBuildsResponse.self
                 )
@@ -583,7 +584,7 @@ extension XcodeCloudWorker {
                 meta: response.meta,
                 endpoint: endpoint,
                 query: query,
-                requestedNextURL: arguments["next_url"]?.stringValue,
+                requestedNextURL: requestedNextURL,
                 count: response.data.count
             )
             var buildIdentities: Set<String> = []
@@ -1855,7 +1856,6 @@ extension XcodeCloudWorker {
         supportsRelated: Bool
     ) throws {
         guard let links else { return }
-        let encodedBuildID = try ASCPathSegment.encode(buildID)
         if let selfURL = links.`self` {
             guard supportsRelationshipSelf else {
                 throw ASCError.parsing(
@@ -1864,7 +1864,7 @@ extension XcodeCloudWorker {
             }
             try validateXcodeCloudSingleDocument(
                 selfURL: selfURL,
-                endpoint: "/v1/builds/\(encodedBuildID)/relationships/\(name)"
+                endpoint: "/v1/builds/\(try ASCPathSegment.encode(buildID))/relationships/\(try ASCPathSegment.encode(name))"
             )
         }
         if let relatedURL = links.related {
@@ -1875,7 +1875,7 @@ extension XcodeCloudWorker {
             }
             try validateXcodeCloudSingleDocument(
                 selfURL: relatedURL,
-                endpoint: "/v1/builds/\(encodedBuildID)/\(name)"
+                endpoint: "/v1/builds/\(try ASCPathSegment.encode(buildID))/\(try ASCPathSegment.encode(name))"
             )
         }
     }
@@ -1889,7 +1889,6 @@ extension XcodeCloudWorker {
         guard let links = relationship?.links else {
             return
         }
-        let encodedBuildID = try ASCPathSegment.encode(buildID)
         if let selfURL = links.`self` {
             guard supportsRelationshipSelf else {
                 throw ASCError.parsing(
@@ -1898,13 +1897,13 @@ extension XcodeCloudWorker {
             }
             try validateXcodeCloudSingleDocument(
                 selfURL: selfURL,
-                endpoint: "/v1/builds/\(encodedBuildID)/relationships/\(name)"
+                endpoint: "/v1/builds/\(try ASCPathSegment.encode(buildID))/relationships/\(try ASCPathSegment.encode(name))"
             )
         }
         if let relatedURL = links.related {
             try validateXcodeCloudSingleDocument(
                 selfURL: relatedURL,
-                endpoint: "/v1/builds/\(encodedBuildID)/\(name)"
+                endpoint: "/v1/builds/\(try ASCPathSegment.encode(buildID))/\(try ASCPathSegment.encode(name))"
             )
         }
     }
