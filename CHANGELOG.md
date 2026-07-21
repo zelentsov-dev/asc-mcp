@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Release automation now carries exact release IDs through draft creation, normalization, and publication, and paginates existing-release lookup to keep reruns reliable as release history grows.
+
 ## [4.1.1] - 2026-07-21
 
 ### Changed
