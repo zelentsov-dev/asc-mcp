@@ -1777,7 +1777,7 @@ extension ScreenshotsWorker {
             },
             decodeReservedResource: { data in
                 do {
-                    let screenshot = try decodeScreenshotResponse(
+                    let screenshot = try self.decodeScreenshotResponse(
                         data,
                         expectedID: nil,
                         expectedSetID: nil,
@@ -1877,7 +1877,7 @@ extension ScreenshotsWorker {
             },
             decodeReservedResource: { data in
                 do {
-                    let preview = try decodePreviewResponse(
+                    let preview = try self.decodePreviewResponse(
                         data,
                         expectedID: nil,
                         expectedSetID: nil,
