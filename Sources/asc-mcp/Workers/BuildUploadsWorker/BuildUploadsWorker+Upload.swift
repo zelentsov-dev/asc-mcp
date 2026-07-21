@@ -640,10 +640,13 @@ extension BuildUploadsWorker {
             }
 
             do {
-                async let fetchedFile = fetchBuildUploadFile(latestFile.id)
-                async let fetchedParent = fetchBuildUpload(latestParent.id)
-                latestFile = try await fetchedFile
-                latestParent = try await fetchedParent
+                let fileID = latestFile.id
+                let parentID = latestParent.id
+                async let fetchedFile = fetchBuildUploadFile(fileID)
+                async let fetchedParent = fetchBuildUpload(parentID)
+                let (nextFile, nextParent) = try await (fetchedFile, fetchedParent)
+                latestFile = nextFile
+                latestParent = nextParent
             } catch {
                 return processingPendingResult(
                     "The upload was committed, but processing reconciliation failed: \(Redactor.redact(error.localizedDescription))",
