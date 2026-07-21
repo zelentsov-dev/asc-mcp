@@ -403,10 +403,10 @@ private func filteredPaginationFixtures() -> [FilteredPaginationFixture] {
             "builds_list",
             "/v1/builds",
             "/v1/users",
-            ["filter[app]": "app-1", "include": "app,buildBetaDetail,preReleaseVersion", "limit": "25", "sort": "-uploadedDate"],
+            ["filter[app]": "app-1", "include": "app,buildBetaDetail,preReleaseVersion,buildUpload", "limit": "25", "sort": "-uploadedDate"],
             [
                 "filter[app]": "app-1",
-                "include": "app,buildBetaDetail,preReleaseVersion",
+                "include": "app,buildBetaDetail,preReleaseVersion,buildUpload",
                 "limit": "31",
                 "sort": "version",
                 "filter[version]": "42,43",

@@ -348,8 +348,7 @@ struct MCPResultBuilderTests {
               case .object(let receipt)? = details["receipt"],
               case .array(let candidateIDs)? = details["candidateIds"],
               case .array(let snakeCaseCandidateIDs)? = details["candidate_ids"],
-              case .object(let unsafeReceipt)? = details["unsafeReceipt"],
-              case .object(let bearerReceipt)? = details["bearerReceipt"] else {
+              case .object(let unsafeReceipt)? = details["unsafeReceipt"] else {
             Issue.record("Expected normalized forensic details")
             return
         }
@@ -364,7 +363,7 @@ struct MCPResultBuilderTests {
         #expect(snakeCaseCandidateIDs == [.string(candidateUUID)])
         #expect(unsafeReceipt["entityTag"] == .string("[REDACTED]"))
         #expect(unsafeReceipt["responseEntityTag"] == .string("[REDACTED_PRIVATE_KEY_PATH]"))
-        #expect(bearerReceipt["entityTag"] == .string("Bearer [REDACTED]"))
+        #expect(details["bearerReceipt"] == .string("[REDACTED]"))
         #expect(try exactJSONMirror(from: result) == structuredJSON(from: result))
     }
 
