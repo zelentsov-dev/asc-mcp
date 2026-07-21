@@ -9,7 +9,7 @@ struct ToolMetadataPolicyTests {
     func allToolsReceiveAnnotationsAndMeta() async throws {
         let tools = try await TestFactory.collectAllWorkerTools().map(ToolMetadataPolicy.apply)
 
-        #expect(tools.count == 461)
+        #expect(tools.count == 472)
         for tool in tools {
             #expect(tool.annotations.isEmpty == false)
             #expect(tool.annotations.openWorldHint == true)
@@ -123,6 +123,9 @@ struct ToolMetadataPolicyTests {
         #expect(reviewSubmissionSubmit.annotations.destructiveHint == true)
 
         let newDestructiveTools = [
+            "beta_groups_create_recruitment_criteria",
+            "beta_groups_delete_recruitment_criteria",
+            "beta_groups_update_recruitment_criteria",
             "iap_delete_version_image",
             "iap_delete_version_localization",
             "review_submissions_cancel",
@@ -140,6 +143,9 @@ struct ToolMetadataPolicyTests {
         }
 
         let newReadOnlyTools = [
+            "beta_groups_check_recruitment_compatibility",
+            "beta_groups_get_recruitment_criteria",
+            "beta_groups_list_recruitment_options",
             "iap_get_version",
             "iap_get_version_image",
             "iap_get_version_image_resource",
@@ -147,6 +153,11 @@ struct ToolMetadataPolicyTests {
             "iap_list_version_images",
             "iap_list_version_localizations",
             "iap_list_versions",
+            "metrics_app_beta_tester_usage",
+            "metrics_build_beta_usage",
+            "metrics_group_beta_tester_usage",
+            "metrics_group_public_link_usage",
+            "metrics_tester_usage",
             "review_submissions_get",
             "review_submissions_list",
             "review_submissions_list_items",
@@ -183,6 +194,20 @@ struct ToolMetadataPolicyTests {
 
         let offerCodes = ToolMetadataPolicy.apply(to: Self.sampleTool(named: "subscriptions_get_one_time_code_values"))
         #expect(offerCodes._meta?.fields["anthropic/maxResultSizeChars"] == Value.int(500_000))
+
+        for toolName in [
+            "metrics_app_beta_tester_usage",
+            "metrics_group_beta_tester_usage",
+            "metrics_group_public_link_usage",
+            "metrics_tester_usage",
+            "metrics_build_beta_usage"
+        ] {
+            let metric = ToolMetadataPolicy.apply(to: Self.sampleTool(named: toolName))
+            #expect(
+                metric._meta?.fields["anthropic/maxResultSizeChars"] == Value.int(500_000),
+                "Expected large-result metadata for \(toolName)"
+            )
+        }
 
         let list = ToolMetadataPolicy.apply(to: Self.sampleTool(named: "apps_list"))
         #expect(list._meta?.fields["anthropic/maxResultSizeChars"] == Value.int(200_000))

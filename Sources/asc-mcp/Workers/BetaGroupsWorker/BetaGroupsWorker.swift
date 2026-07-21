@@ -20,7 +20,13 @@ public final class BetaGroupsWorker: Sendable {
             removeTestersTool(),
             listTestersTool(),
             addBuildsTool(),
-            removeBuildsTool()
+            removeBuildsTool(),
+            getRecruitmentCriteriaTool(),
+            createRecruitmentCriteriaTool(),
+            updateRecruitmentCriteriaTool(),
+            deleteRecruitmentCriteriaTool(),
+            listRecruitmentOptionsTool(),
+            checkRecruitmentCompatibilityTool()
         ]
     }
 
@@ -45,6 +51,18 @@ public final class BetaGroupsWorker: Sendable {
             return try await addBuilds(params)
         case "beta_groups_remove_builds":
             return try await removeBuilds(params)
+        case "beta_groups_get_recruitment_criteria":
+            return try await getRecruitmentCriteria(params)
+        case "beta_groups_create_recruitment_criteria":
+            return try await createRecruitmentCriteria(params)
+        case "beta_groups_update_recruitment_criteria":
+            return try await updateRecruitmentCriteria(params)
+        case "beta_groups_delete_recruitment_criteria":
+            return try await deleteRecruitmentCriteria(params)
+        case "beta_groups_list_recruitment_options":
+            return try await listRecruitmentOptions(params)
+        case "beta_groups_check_recruitment_compatibility":
+            return try await checkRecruitmentCompatibility(params)
         default:
             throw MCPError.methodNotFound("Unknown tool: \(params.name)")
         }

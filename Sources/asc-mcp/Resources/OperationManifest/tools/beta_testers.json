@@ -168,14 +168,15 @@
           }
         ],
         "fields": [
-          {
-            "outputField": "beta_tester",
-            "operationId": "betaTesters_createInstance",
-            "jsonPointer": "/data"
+        {
+          "outputField": "beta_tester",
+          "operationId": "betaTesters_createInstance",
+          "jsonPointer": "/data",
+          "localRole": "Stable tester projection including Apple's appDevices attributes."
           }
         ]
       },
-      "note": "Apple requires only email; betaGroups and builds relationships are independently optional and validated when supplied."
+      "note": "Apple requires only email; betaGroups and builds relationships are independently optional and validated when supplied, and the response projects the complete Apple 4.4.1 appDevices attribute."
     },
     {
       "tool": "beta_testers_delete",
@@ -301,7 +302,8 @@
           {
             "outputField": "beta_tester",
             "operationId": "betaTesters_getInstance",
-            "jsonPointer": "/data"
+            "jsonPointer": "/data",
+            "localRole": "Stable tester projection including Apple's appDevices attributes."
           },
           {
             "outputField": "beta_tester.apps",
@@ -320,7 +322,7 @@
           }
         ]
       },
-      "note": "Supports and decodes every documented include value: apps, betaGroups, and builds."
+      "note": "Supports and decodes every documented include value (apps, betaGroups, and builds) plus the complete Apple 4.4.1 appDevices attribute."
     },
     {
       "tool": "beta_testers_list",
@@ -453,10 +455,11 @@
           }
         ],
         "fields": [
-          {
-            "outputField": "beta_testers",
-            "operationId": "betaTesters_getCollection",
-            "jsonPointer": "/data"
+        {
+          "outputField": "beta_testers",
+          "operationId": "betaTesters_getCollection",
+          "jsonPointer": "/data",
+          "localRole": "Stable tester projections including Apple's appDevices attributes."
           },
           {
             "outputField": "next_url",
@@ -470,7 +473,7 @@
           }
         ]
       },
-      "note": "Exposes every current semantic tester filter and sort while keeping included-resource projection controlled."
+      "note": "Exposes every current semantic tester filter and sort while keeping included-resource projection controlled and preserving the complete Apple 4.4.1 appDevices attribute."
     },
     {
       "tool": "beta_testers_list_apps",
@@ -835,10 +838,11 @@
           }
         ],
         "fields": [
-          {
-            "outputField": "beta_testers",
-            "operationId": "betaTesters_getCollection",
-            "jsonPointer": "/data"
+        {
+          "outputField": "beta_testers",
+          "operationId": "betaTesters_getCollection",
+          "jsonPointer": "/data",
+          "localRole": "Stable tester projections including Apple's appDevices attributes."
           },
           {
             "outputField": "next_url",
@@ -852,7 +856,7 @@
           }
         ]
       },
-      "note": "Exact-email collection filter with an optional app scope and validated pagination for ambiguous or repeated matches; partial matching is not provided by Apple."
+      "note": "Exact-email collection filter with an optional app scope, validated pagination, and complete appDevices projections for ambiguous or repeated matches; partial matching is not provided by Apple."
     },
     {
       "tool": "beta_testers_send_invitation",

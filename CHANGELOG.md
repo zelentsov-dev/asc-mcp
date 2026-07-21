@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.18.0] - 2026-07-21
+
+### Added
+
+- Added 6 `beta_groups_*` tools for public-link recruitment criteria, option discovery, and compatible-build checks.
+- Added 5 `metrics_*` tools for app, group, public-link, tester, and build TestFlight usage metrics.
+- Added App Store Connect app-device context to beta tester projections.
+
+### Changed
+
+- Recruitment and metric reads validate canonical resource identities, required JSON:API links, endpoint-specific metric fields, and continuation scope before returning data.
+- Recruitment responses and postflight verification distinguish an omitted filter attribute from explicit null, an empty array, and populated filters.
+
+### Fixed
+
+- Require exact Apple success statuses and fresh parent-scoped verification for recruitment mutations; ambiguous writes fail closed with machine-readable inspection guidance and are never inferred successful from later state alone.
+- Require an exact criterion-ID confirmation before deleting recruitment criteria.
+
+### Compatibility
+
+- The public surface grows from 461 to 472 tools; no existing tool or worker filter key is removed or renamed.
+- The operation manifest maps 441 Apple operations, explicitly defers 459, and scopes out 363; all 1,263 pinned Apple 4.4.1 operations remain accounted for without overlap.
+- The optional-input pin is fully classified at 2,548 total: 993 bound, 40 internally controlled, 1,515 intentionally omitted, and 0 unclassified; its identity SHA-256 is `00b48805d61ba3849f940f2e7c020817882a0e942b8eef0bea14e81089d13323`.
+
 ## [3.17.0] - 2026-07-21
 
 ### Added

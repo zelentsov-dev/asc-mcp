@@ -49,7 +49,7 @@ Each company needs: `keyID`, `issuerID`, `privateKeyPath` (path to `.p8` file).
 
 **WorkerManager** (`Workers/MainWorker/WorkerManager.swift`) — central registry, routes tool calls by prefix.
 
-**Workers** (39 Swift worker classes; 35 `--workers` filter keys; 461 tools):
+**Workers** (39 Swift worker classes; 35 `--workers` filter keys; 472 tools):
 
 | Worker | Prefix | Tools | Domain |
 |--------|--------|-------|--------|
@@ -66,7 +66,7 @@ Each company needs: `keyID`, `issuerID`, `privateKeyPath` (path to `.p8` file).
 | ExportComplianceWorker | `export_compliance_` | 11 | Encryption declarations, document delivery, build linkage, readiness |
 | AppLifecycleWorker | `app_versions_` | 17 | Versions, age ratings, submit, release, phased rollout, delete |
 | ReviewsWorker | `reviews_` | 8 | Customer reviews, responses, AI summarizations |
-| BetaGroupsWorker | `beta_groups_` | 9 | TestFlight groups CRUD, testers, builds |
+| BetaGroupsWorker | `beta_groups_` | 15 | TestFlight groups CRUD, testers, builds, recruitment criteria |
 | BetaFeedbackWorker | `beta_feedback_` | 8 | TestFlight feedback screenshots, crash submissions, crash logs |
 | InAppPurchasesWorker | `iap_` | 59 | IAP, versioned metadata, pricing, availability, offer codes, review assets |
 | ProvisioningWorker | `provisioning_` | 17 | Bundle IDs, devices, certificates, profiles, capabilities |
@@ -87,7 +87,7 @@ Each company needs: `keyID`, `issuerID`, `privateKeyPath` (path to `.p8` file).
 | PromotedPurchasesWorker | `promoted_` | 9 | Promoted in-app purchases; legacy image tools return migration guidance |
 | ReviewAttachmentsWorker | `review_attachments_` | 4 | App Store review attachments (upload, get, delete, list) |
 | ReviewSubmissionsWorker | `review_submissions_` | 9 | Generic App Store review submissions and submission items |
-| MetricsWorker | `metrics_` | 4 | Performance/power metrics, diagnostics |
+| MetricsWorker | `metrics_` | 9 | Performance/power metrics, diagnostics, TestFlight usage metrics |
 
 **Services**: HTTPClient (actor, GET/POST/PATCH/PUT/DELETE + retry with 429), JWTService (ES256), CompaniesManager
 

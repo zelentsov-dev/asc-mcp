@@ -256,14 +256,14 @@ struct WorkerToolDefinitionsTests {
         #expect(names.contains("reviews_get_response"))
     }
 
-    // MARK: - BetaGroupsWorker (9 tools)
+    // MARK: - BetaGroupsWorker (15 tools)
 
-    @Test("BetaGroupsWorker returns 9 tools with correct names")
+    @Test("BetaGroupsWorker returns 15 tools with correct names")
     func betaGroupsWorkerTools() async throws {
         let client = try await TestFactory.makeHTTPClient()
         let worker = BetaGroupsWorker(httpClient: client)
         let tools = await worker.getTools()
-        #expect(tools.count == 9)
+        #expect(tools.count == 15)
         let names = Set(tools.map(\.name))
         #expect(names.contains("beta_groups_list"))
         #expect(names.contains("beta_groups_create"))
@@ -274,6 +274,12 @@ struct WorkerToolDefinitionsTests {
         #expect(names.contains("beta_groups_list_testers"))
         #expect(names.contains("beta_groups_add_builds"))
         #expect(names.contains("beta_groups_remove_builds"))
+        #expect(names.contains("beta_groups_get_recruitment_criteria"))
+        #expect(names.contains("beta_groups_create_recruitment_criteria"))
+        #expect(names.contains("beta_groups_update_recruitment_criteria"))
+        #expect(names.contains("beta_groups_delete_recruitment_criteria"))
+        #expect(names.contains("beta_groups_list_recruitment_options"))
+        #expect(names.contains("beta_groups_check_recruitment_compatibility"))
     }
 
     // MARK: - InAppPurchasesWorker (59 tools)
@@ -816,19 +822,67 @@ struct WorkerToolDefinitionsTests {
         #expect(names.contains("promoted_get_image_for_purchase"))
     }
 
-    // MARK: - MetricsWorker (4 tools)
+    // MARK: - MetricsWorker (9 tools)
 
-    @Test("MetricsWorker returns 4 tools with correct names")
+    @Test("MetricsWorker returns 9 tools with correct names")
     func metricsWorkerTools() async throws {
         let client = try await TestFactory.makeHTTPClient()
         let worker = MetricsWorker(httpClient: client)
         let tools = await worker.getTools()
-        #expect(tools.count == 4)
+        #expect(tools.count == 9)
         let names = Set(tools.map(\.name))
         #expect(names.contains("metrics_app_perf"))
         #expect(names.contains("metrics_build_perf"))
         #expect(names.contains("metrics_build_diagnostics"))
         #expect(names.contains("metrics_get_diagnostic_logs"))
+        #expect(names.contains("metrics_app_beta_tester_usage"))
+        #expect(names.contains("metrics_group_beta_tester_usage"))
+        #expect(names.contains("metrics_group_public_link_usage"))
+        #expect(names.contains("metrics_tester_usage"))
+        #expect(names.contains("metrics_build_beta_usage"))
+    }
+
+    @Test("TestFlight recruitment and usage schemas require their complete parent identities")
+    func testFlightRequiredArguments() async throws {
+        let client = try await TestFactory.makeHTTPClient()
+        let betaGroupTools = await BetaGroupsWorker(httpClient: client).getTools()
+        let metricTools = await MetricsWorker(httpClient: client).getTools()
+        let tools = betaGroupTools + metricTools
+        let expected: [String: Set<String>] = [
+            "beta_groups_get_recruitment_criteria": ["group_id"],
+            "beta_groups_create_recruitment_criteria": ["group_id", "device_filters"],
+            "beta_groups_update_recruitment_criteria": ["group_id", "criterion_id", "device_filters"],
+            "beta_groups_delete_recruitment_criteria": ["group_id", "criterion_id", "confirm_criterion_id"],
+            "beta_groups_list_recruitment_options": [],
+            "beta_groups_check_recruitment_compatibility": ["group_id"],
+            "metrics_app_beta_tester_usage": ["app_id"],
+            "metrics_group_beta_tester_usage": ["group_id"],
+            "metrics_group_public_link_usage": ["group_id"],
+            "metrics_tester_usage": ["tester_id", "app_id"],
+            "metrics_build_beta_usage": ["build_id"]
+        ]
+        let pagedTools: Set<String> = [
+            "beta_groups_list_recruitment_options",
+            "metrics_app_beta_tester_usage",
+            "metrics_group_beta_tester_usage",
+            "metrics_group_public_link_usage",
+            "metrics_tester_usage",
+            "metrics_build_beta_usage"
+        ]
+
+        for (name, expectedRequired) in expected {
+            let tool = try #require(tools.first { $0.name == name })
+            let schema = try #require(tool.inputSchema.objectValue)
+            let required = Set(schema["required"]?.arrayValue?.compactMap(\.stringValue) ?? [])
+            #expect(required == expectedRequired, "Unexpected required arguments for \(name)")
+            #expect(schema["additionalProperties"]?.boolValue == false)
+            if pagedTools.contains(name) {
+                let properties = try #require(schema["properties"]?.objectValue)
+                let nextURL = try #require(properties["next_url"]?.objectValue)
+                #expect(nextURL["minLength"]?.intValue == 1)
+                #expect(nextURL["format"]?.stringValue == "uri-reference")
+            }
+        }
     }
 
     // MARK: - Tool name uniqueness

@@ -322,6 +322,541 @@
         ]
       },
       "note": "Aligned with the OpenAPI 4.4.1 diagnosticLogs shape: callStackTree is decoded as an array, limit is exposed, and version, diagnosticInsights, diagnosticMetaData, and every documented frame field are projected."
+    },
+    {
+      "tool": "metrics_app_beta_tester_usage",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "apps_betaTesterUsages_getMetrics",
+          "method": "get",
+          "path": "/v1/apps/{id}/metrics/betaTesterUsages",
+          "role": "primary"
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "app_id",
+          "sourceKind": "parameter",
+          "operationId": "apps_betaTesterUsages_getMetrics",
+          "location": "path",
+          "appleName": "id"
+        },
+        {
+          "toolField": "period",
+          "sourceKind": "parameter",
+          "operationId": "apps_betaTesterUsages_getMetrics",
+          "location": "query",
+          "appleName": "period"
+        },
+        {
+          "toolField": "group_by",
+          "sourceKind": "parameter",
+          "operationId": "apps_betaTesterUsages_getMetrics",
+          "location": "query",
+          "appleName": "groupBy"
+        },
+        {
+          "toolField": "beta_tester_id",
+          "sourceKind": "parameter",
+          "operationId": "apps_betaTesterUsages_getMetrics",
+          "location": "query",
+          "appleName": "filter[betaTesters]"
+        },
+        {
+          "toolField": "limit",
+          "sourceKind": "parameter",
+          "operationId": "apps_betaTesterUsages_getMetrics",
+          "location": "query",
+          "appleName": "limit"
+        },
+        {
+          "toolField": "next_url",
+          "sourceKind": "local",
+          "localRole": "Strict Apple continuation URL for the same app metric scope; every period, grouping, filter, and effective limit value must match."
+        }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          {
+            "operationId": "apps_betaTesterUsages_getMetrics",
+            "statusCode": "200",
+            "mediaType": "application/json"
+          }
+        ],
+        "fields": [
+          {
+            "outputField": "success",
+            "localRole": "successEnvelope"
+          },
+          {
+            "outputField": "metric",
+            "localRole": "Stable endpoint discriminator."
+          },
+          {
+            "outputField": "groups",
+            "operationId": "apps_betaTesterUsages_getMetrics",
+            "jsonPointer": "/data",
+            "localRole": "Endpoint-specific strict metric projection."
+          },
+          {
+            "outputField": "count",
+            "operationId": "apps_betaTesterUsages_getMetrics",
+            "jsonPointer": "/data",
+            "localRole": "pageCount"
+          },
+          {
+            "outputField": "limit",
+            "localRole": "Effective request limit echo."
+          },
+          {
+            "outputField": "app_id",
+            "localRole": "requestEcho"
+          },
+          {
+            "outputField": "period",
+            "localRole": "requestEcho"
+          },
+          {
+            "outputField": "group_by",
+            "localRole": "requestEcho"
+          },
+          {
+            "outputField": "beta_tester_id",
+            "localRole": "requestEcho"
+          },
+          {
+            "outputField": "includedBetaTesters",
+            "operationId": "apps_betaTesterUsages_getMetrics",
+            "jsonPointer": "/included",
+            "localRole": "Camel-case beta tester projection including appDevices after strict identity and enum validation."
+          },
+          {
+            "outputField": "next_url",
+            "operationId": "apps_betaTesterUsages_getMetrics",
+            "jsonPointer": "/links/next"
+          },
+          {
+            "outputField": "total",
+            "operationId": "apps_betaTesterUsages_getMetrics",
+            "jsonPointer": "/meta/paging/total"
+          }
+        ]
+      },
+      "note": "Exposes every Apple 4.4.1 app beta-tester usage control, rejects included-resource identity drift, and projects all documented values with strict scope-preserving pagination. The decoder rejects response fields and dimensions belonging to other TestFlight metric endpoints."
+    },
+    {
+      "tool": "metrics_group_beta_tester_usage",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "betaGroups_betaTesterUsages_getMetrics",
+          "method": "get",
+          "path": "/v1/betaGroups/{id}/metrics/betaTesterUsages",
+          "role": "primary"
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "group_id",
+          "sourceKind": "parameter",
+          "operationId": "betaGroups_betaTesterUsages_getMetrics",
+          "location": "path",
+          "appleName": "id"
+        },
+        {
+          "toolField": "period",
+          "sourceKind": "parameter",
+          "operationId": "betaGroups_betaTesterUsages_getMetrics",
+          "location": "query",
+          "appleName": "period"
+        },
+        {
+          "toolField": "group_by",
+          "sourceKind": "parameter",
+          "operationId": "betaGroups_betaTesterUsages_getMetrics",
+          "location": "query",
+          "appleName": "groupBy"
+        },
+        {
+          "toolField": "beta_tester_id",
+          "sourceKind": "parameter",
+          "operationId": "betaGroups_betaTesterUsages_getMetrics",
+          "location": "query",
+          "appleName": "filter[betaTesters]"
+        },
+        {
+          "toolField": "limit",
+          "sourceKind": "parameter",
+          "operationId": "betaGroups_betaTesterUsages_getMetrics",
+          "location": "query",
+          "appleName": "limit"
+        },
+        {
+          "toolField": "next_url",
+          "sourceKind": "local",
+          "localRole": "Strict Apple continuation URL for the same beta-group metric scope; every period, grouping, filter, and effective limit value must match."
+        }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          {
+            "operationId": "betaGroups_betaTesterUsages_getMetrics",
+            "statusCode": "200",
+            "mediaType": "application/json"
+          }
+        ],
+        "fields": [
+          {
+            "outputField": "success",
+            "localRole": "successEnvelope"
+          },
+          {
+            "outputField": "metric",
+            "localRole": "Stable endpoint discriminator."
+          },
+          {
+            "outputField": "groups",
+            "operationId": "betaGroups_betaTesterUsages_getMetrics",
+            "jsonPointer": "/data",
+            "localRole": "Endpoint-specific strict metric projection."
+          },
+          {
+            "outputField": "count",
+            "operationId": "betaGroups_betaTesterUsages_getMetrics",
+            "jsonPointer": "/data",
+            "localRole": "pageCount"
+          },
+          {
+            "outputField": "limit",
+            "localRole": "Effective request limit echo."
+          },
+          {
+            "outputField": "group_id",
+            "localRole": "requestEcho"
+          },
+          {
+            "outputField": "period",
+            "localRole": "requestEcho"
+          },
+          {
+            "outputField": "group_by",
+            "localRole": "requestEcho"
+          },
+          {
+            "outputField": "beta_tester_id",
+            "localRole": "requestEcho"
+          },
+          {
+            "outputField": "includedBetaTesters",
+            "operationId": "betaGroups_betaTesterUsages_getMetrics",
+            "jsonPointer": "/included",
+            "localRole": "Camel-case beta tester projection including appDevices after strict identity and enum validation."
+          },
+          {
+            "outputField": "next_url",
+            "operationId": "betaGroups_betaTesterUsages_getMetrics",
+            "jsonPointer": "/links/next"
+          },
+          {
+            "outputField": "total",
+            "operationId": "betaGroups_betaTesterUsages_getMetrics",
+            "jsonPointer": "/meta/paging/total"
+          }
+        ]
+      },
+      "note": "Exposes every Apple 4.4.1 beta-group tester usage control, rejects included-resource identity drift, and projects all documented values with strict scope-preserving pagination. The decoder rejects response fields and dimensions belonging to other TestFlight metric endpoints."
+    },
+    {
+      "tool": "metrics_group_public_link_usage",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "betaGroups_publicLinkUsages_getMetrics",
+          "method": "get",
+          "path": "/v1/betaGroups/{id}/metrics/publicLinkUsages",
+          "role": "primary"
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "group_id",
+          "sourceKind": "parameter",
+          "operationId": "betaGroups_publicLinkUsages_getMetrics",
+          "location": "path",
+          "appleName": "id"
+        },
+        {
+          "toolField": "limit",
+          "sourceKind": "parameter",
+          "operationId": "betaGroups_publicLinkUsages_getMetrics",
+          "location": "query",
+          "appleName": "limit"
+        },
+        {
+          "toolField": "next_url",
+          "sourceKind": "local",
+          "localRole": "Strict Apple continuation URL for the same public-link metric scope and effective limit."
+        }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          {
+            "operationId": "betaGroups_publicLinkUsages_getMetrics",
+            "statusCode": "200",
+            "mediaType": "application/json"
+          }
+        ],
+        "fields": [
+          {
+            "outputField": "success",
+            "localRole": "successEnvelope"
+          },
+          {
+            "outputField": "metric",
+            "localRole": "Stable endpoint discriminator."
+          },
+          {
+            "outputField": "groups",
+            "operationId": "betaGroups_publicLinkUsages_getMetrics",
+            "jsonPointer": "/data",
+            "localRole": "Endpoint-specific strict metric projection."
+          },
+          {
+            "outputField": "count",
+            "operationId": "betaGroups_publicLinkUsages_getMetrics",
+            "jsonPointer": "/data",
+            "localRole": "pageCount"
+          },
+          {
+            "outputField": "limit",
+            "localRole": "Effective request limit echo."
+          },
+          {
+            "outputField": "group_id",
+            "localRole": "requestEcho"
+          },
+          {
+            "outputField": "next_url",
+            "operationId": "betaGroups_publicLinkUsages_getMetrics",
+            "jsonPointer": "/links/next"
+          },
+          {
+            "outputField": "total",
+            "operationId": "betaGroups_publicLinkUsages_getMetrics",
+            "jsonPointer": "/meta/paging/total"
+          }
+        ]
+      },
+      "note": "Projects every Apple 4.4.1 TestFlight public-link metric and protects continuation scope. The decoder rejects response fields and dimensions belonging to other TestFlight metric endpoints."
+    },
+    {
+      "tool": "metrics_tester_usage",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "betaTesters_betaTesterUsages_getMetrics",
+          "method": "get",
+          "path": "/v1/betaTesters/{id}/metrics/betaTesterUsages",
+          "role": "primary"
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "tester_id",
+          "sourceKind": "parameter",
+          "operationId": "betaTesters_betaTesterUsages_getMetrics",
+          "location": "path",
+          "appleName": "id"
+        },
+        {
+          "toolField": "app_id",
+          "sourceKind": "parameter",
+          "operationId": "betaTesters_betaTesterUsages_getMetrics",
+          "location": "query",
+          "appleName": "filter[apps]"
+        },
+        {
+          "toolField": "period",
+          "sourceKind": "parameter",
+          "operationId": "betaTesters_betaTesterUsages_getMetrics",
+          "location": "query",
+          "appleName": "period"
+        },
+        {
+          "toolField": "limit",
+          "sourceKind": "parameter",
+          "operationId": "betaTesters_betaTesterUsages_getMetrics",
+          "location": "query",
+          "appleName": "limit"
+        },
+        {
+          "toolField": "next_url",
+          "sourceKind": "local",
+          "localRole": "Strict Apple continuation URL for the same tester, required app filter, period, and effective limit."
+        }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          {
+            "operationId": "betaTesters_betaTesterUsages_getMetrics",
+            "statusCode": "200",
+            "mediaType": "application/json"
+          }
+        ],
+        "fields": [
+          {
+            "outputField": "success",
+            "localRole": "successEnvelope"
+          },
+          {
+            "outputField": "metric",
+            "localRole": "Stable endpoint discriminator."
+          },
+          {
+            "outputField": "groups",
+            "operationId": "betaTesters_betaTesterUsages_getMetrics",
+            "jsonPointer": "/data",
+            "localRole": "Endpoint-specific strict metric projection."
+          },
+          {
+            "outputField": "count",
+            "operationId": "betaTesters_betaTesterUsages_getMetrics",
+            "jsonPointer": "/data",
+            "localRole": "pageCount"
+          },
+          {
+            "outputField": "limit",
+            "localRole": "Effective request limit echo."
+          },
+          {
+            "outputField": "tester_id",
+            "localRole": "requestEcho"
+          },
+          {
+            "outputField": "app_id",
+            "localRole": "Required filter echo."
+          },
+          {
+            "outputField": "period",
+            "localRole": "requestEcho"
+          },
+          {
+            "outputField": "next_url",
+            "operationId": "betaTesters_betaTesterUsages_getMetrics",
+            "jsonPointer": "/links/next"
+          },
+          {
+            "outputField": "total",
+            "operationId": "betaTesters_betaTesterUsages_getMetrics",
+            "jsonPointer": "/meta/paging/total"
+          }
+        ]
+      },
+      "note": "Requires Apple's app relationship filter and protects it across pagination. The decoder rejects response fields and dimensions belonging to other TestFlight metric endpoints."
+    },
+    {
+      "tool": "metrics_build_beta_usage",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "builds_betaBuildUsages_getMetrics",
+          "method": "get",
+          "path": "/v1/builds/{id}/metrics/betaBuildUsages",
+          "role": "primary"
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "build_id",
+          "sourceKind": "parameter",
+          "operationId": "builds_betaBuildUsages_getMetrics",
+          "location": "path",
+          "appleName": "id"
+        },
+        {
+          "toolField": "limit",
+          "sourceKind": "parameter",
+          "operationId": "builds_betaBuildUsages_getMetrics",
+          "location": "query",
+          "appleName": "limit"
+        },
+        {
+          "toolField": "next_url",
+          "sourceKind": "local",
+          "localRole": "Strict Apple continuation URL for the same build metric scope and effective limit."
+        }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          {
+            "operationId": "builds_betaBuildUsages_getMetrics",
+            "statusCode": "200",
+            "mediaType": "application/json"
+          }
+        ],
+        "fields": [
+          {
+            "outputField": "success",
+            "localRole": "successEnvelope"
+          },
+          {
+            "outputField": "metric",
+            "localRole": "Stable endpoint discriminator."
+          },
+          {
+            "outputField": "groups",
+            "operationId": "builds_betaBuildUsages_getMetrics",
+            "jsonPointer": "/data",
+            "localRole": "Endpoint-specific strict metric projection."
+          },
+          {
+            "outputField": "count",
+            "operationId": "builds_betaBuildUsages_getMetrics",
+            "jsonPointer": "/data",
+            "localRole": "pageCount"
+          },
+          {
+            "outputField": "limit",
+            "localRole": "Effective request limit echo."
+          },
+          {
+            "outputField": "build_id",
+            "localRole": "requestEcho"
+          },
+          {
+            "outputField": "next_url",
+            "operationId": "builds_betaBuildUsages_getMetrics",
+            "jsonPointer": "/links/next"
+          },
+          {
+            "outputField": "total",
+            "operationId": "builds_betaBuildUsages_getMetrics",
+            "jsonPointer": "/meta/paging/total"
+          }
+        ]
+      },
+      "note": "Projects every Apple 4.4.1 TestFlight build-usage value and protects continuation scope. The decoder rejects response fields and dimensions belonging to other TestFlight metric endpoints."
     }
   ],
   "implementationAliases": []

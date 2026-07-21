@@ -57,10 +57,10 @@ struct BuildUploadsManifestContractTests {
 
         let uniqueBuildUploadOperations = Set(worker.tools.flatMap(\.operations).map(\.operationID))
         #expect(uniqueBuildUploadOperations.count == 8)
-        #expect(Set(manifest.tools.flatMap(\.operations).map(\.operationID)).count == 429)
-        #expect(manifest.index.waivers.count == 471)
+        #expect(Set(manifest.tools.flatMap(\.operations).map(\.operationID)).count == 441)
+        #expect(manifest.index.waivers.count == 459)
         #expect(manifest.index.specPin.operationCount == 1_263)
-        #expect(429 + 471 + 363 == manifest.index.specPin.operationCount)
+        #expect(441 + 459 + 363 == manifest.index.specPin.operationCount)
 
         let buildUploadWaivers = Set(
             manifest.index.waivers.compactMap(\.operationID).filter {
@@ -76,12 +76,12 @@ struct BuildUploadsManifestContractTests {
         })
 
         let pin = try #require(manifest.index.optionalInputCoveragePin)
-        #expect(pin.total == 2_488)
-        #expect(pin.bound == 968)
+        #expect(pin.total == 2_548)
+        #expect(pin.bound == 993)
         #expect(pin.internalControl == 40)
-        #expect(pin.intentionallyOmitted == 1_480)
+        #expect(pin.intentionallyOmitted == 1_515)
         #expect(pin.unclassified == 0)
-        #expect(pin.identitySHA256 == "b2220715e8a131a9ef49f9c9ce2a931dd18ef79bf3d7371a4273b0164c28119e")
+        #expect(pin.identitySHA256 == "00b48805d61ba3849f940f2e7c020817882a0e942b8eef0bea14e81089d13323")
     }
 
     @Test("operation methods paths statuses and effects are exact")

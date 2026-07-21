@@ -22,7 +22,12 @@ public final class MetricsWorker: Sendable {
             appPerfMetricsTool(),
             buildPerfMetricsTool(),
             buildDiagnosticsTool(),
-            getDiagnosticLogsTool()
+            getDiagnosticLogsTool(),
+            appBetaTesterUsageTool(),
+            groupBetaTesterUsageTool(),
+            groupPublicLinkUsageTool(),
+            testerUsageTool(),
+            buildBetaUsageTool()
         ]
     }
 
@@ -37,6 +42,16 @@ public final class MetricsWorker: Sendable {
             return try await getBuildDiagnostics(params)
         case "metrics_get_diagnostic_logs":
             return try await getDiagnosticLogs(params)
+        case "metrics_app_beta_tester_usage":
+            return try await getAppBetaTesterUsage(params)
+        case "metrics_group_beta_tester_usage":
+            return try await getGroupBetaTesterUsage(params)
+        case "metrics_group_public_link_usage":
+            return try await getGroupPublicLinkUsage(params)
+        case "metrics_tester_usage":
+            return try await getTesterUsage(params)
+        case "metrics_build_beta_usage":
+            return try await getBuildBetaUsage(params)
         default:
             throw MCPError.methodNotFound("Unknown tool: \(params.name)")
         }

@@ -65,7 +65,12 @@ enum ToolMetadataPolicy {
     private static let largeResultTools: Set<String> = [
         "subscriptions_get_one_time_code_values",
         "build_uploads_upload",
-        "build_uploads_upload_file"
+        "build_uploads_upload_file",
+        "metrics_app_beta_tester_usage",
+        "metrics_group_beta_tester_usage",
+        "metrics_group_public_link_usage",
+        "metrics_tester_usage",
+        "metrics_build_beta_usage"
     ]
 
     private static let explicitMutationTools: Set<String> = [

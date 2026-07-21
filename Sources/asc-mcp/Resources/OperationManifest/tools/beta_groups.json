@@ -441,10 +441,11 @@
           }
         ],
         "fields": [
-          {
-            "outputField": "beta_testers",
-            "operationId": "betaGroups_betaTesters_getToManyRelated",
-            "jsonPointer": "/data"
+        {
+          "outputField": "beta_testers",
+          "operationId": "betaGroups_betaTesters_getToManyRelated",
+          "jsonPointer": "/data",
+          "localRole": "Stable tester projections including Apple's appDevices attributes."
           },
           {
             "outputField": "next_url",
@@ -458,7 +459,7 @@
           }
         ]
       },
-      "note": "Exact related-resource list; the worker does not expose the corresponding group builds read."
+      "note": "Exact related-resource list with complete Apple 4.4.1 appDevices projections; the worker does not expose the corresponding group builds read."
     },
     {
       "tool": "beta_groups_remove_builds",
@@ -652,6 +653,988 @@
         ]
       },
       "note": "Exposes every current writable beta-group attribute and rejects empty PATCH requests before network access."
+    },
+    {
+      "tool": "beta_groups_get_recruitment_criteria",
+      "kind": "compound",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "betaGroups_getInstance",
+          "method": "get",
+          "path": "/v1/betaGroups/{id}",
+          "role": "supporting",
+          "condition": "Confirm the parent beta group before interpreting a related-resource 404 as absent criteria.",
+          "inputs": [
+            {
+              "sourceKind": "fixed",
+              "location": "query",
+              "appleName": "fields[betaGroups]",
+              "fixedValue": [
+                "name"
+              ]
+            }
+          ],
+          "optionalParameterClassifications": [
+            {
+              "location": "query",
+              "appleName": "include",
+              "disposition": "intentionallyOmitted",
+              "reason": "The supporting request only confirms the parent identity and does not project relationships.",
+              "reviewAtSpec": "4.4.1"
+            },
+            {
+              "location": "query",
+              "appleName": "limit[betaTesters]",
+              "disposition": "intentionallyOmitted",
+              "reason": "No beta testers are included by the supporting parent lookup.",
+              "reviewAtSpec": "4.4.1"
+            },
+            {
+              "location": "query",
+              "appleName": "limit[builds]",
+              "disposition": "intentionallyOmitted",
+              "reason": "No builds are included by the supporting parent lookup.",
+              "reviewAtSpec": "4.4.1"
+            }
+          ]
+        },
+        {
+          "operationId": "betaGroups_betaRecruitmentCriteria_getToOneRelated",
+          "method": "get",
+          "path": "/v1/betaGroups/{id}/betaRecruitmentCriteria",
+          "role": "primary",
+          "inputs": [
+            {
+              "sourceKind": "fixed",
+              "location": "query",
+              "appleName": "fields[betaRecruitmentCriteria]",
+              "fixedValue": [
+                "lastModifiedDate",
+                "deviceFamilyOsVersionFilters"
+              ]
+            }
+          ]
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "group_id",
+          "sourceKind": "parameter",
+          "operationId": "betaGroups_getInstance",
+          "location": "path",
+          "appleName": "id"
+        },
+        {
+          "toolField": "group_id",
+          "sourceKind": "parameter",
+          "operationId": "betaGroups_betaRecruitmentCriteria_getToOneRelated",
+          "location": "path",
+          "appleName": "id"
+        }
+      ],
+      "response": {
+        "mode": "aggregate",
+        "sources": [
+          {
+            "operationId": "betaGroups_getInstance",
+            "statusCode": "200",
+            "mediaType": "application/json"
+          },
+          {
+            "operationId": "betaGroups_betaRecruitmentCriteria_getToOneRelated",
+            "statusCode": "200",
+            "mediaType": "application/json"
+          }
+        ],
+        "fields": [
+          {
+            "outputField": "success",
+            "localRole": "successEnvelope"
+          },
+          {
+            "outputField": "groupId",
+            "localRole": "requestEcho"
+          },
+          {
+            "outputField": "criteriaPresent",
+            "localRole": "True for a valid related resource; false only after the parent is confirmed and Apple returns 404 for the relationship."
+          },
+          {
+            "outputField": "recruitmentCriteria",
+            "operationId": "betaGroups_betaRecruitmentCriteria_getToOneRelated",
+            "jsonPointer": "/data",
+            "localRole": "Stable criterion projection when present."
+          }
+        ]
+      },
+      "note": "Returns the full recruitment criterion instead of the redundant linkage-only relationship document and does not mask a missing or inaccessible beta group."
+    },
+    {
+      "tool": "beta_groups_create_recruitment_criteria",
+      "kind": "compound",
+      "status": "partial",
+      "effect": "write",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "betaGroups_getInstance",
+          "method": "get",
+          "path": "/v1/betaGroups/{id}",
+          "role": "supporting",
+          "condition": "Confirm the parent beta group before uniqueness preflight.",
+          "inputs": [
+            {
+              "sourceKind": "fixed",
+              "location": "query",
+              "appleName": "fields[betaGroups]",
+              "fixedValue": [
+                "name"
+              ]
+            }
+          ],
+          "optionalParameterClassifications": [
+            {
+              "location": "query",
+              "appleName": "include",
+              "disposition": "intentionallyOmitted",
+              "reason": "The supporting request only confirms the parent identity.",
+              "reviewAtSpec": "4.4.1"
+            },
+            {
+              "location": "query",
+              "appleName": "limit[betaTesters]",
+              "disposition": "intentionallyOmitted",
+              "reason": "No beta testers are included by the supporting parent lookup.",
+              "reviewAtSpec": "4.4.1"
+            },
+            {
+              "location": "query",
+              "appleName": "limit[builds]",
+              "disposition": "intentionallyOmitted",
+              "reason": "No builds are included by the supporting parent lookup.",
+              "reviewAtSpec": "4.4.1"
+            }
+          ]
+        },
+        {
+          "operationId": "betaGroups_betaRecruitmentCriteria_getToOneRelated",
+          "method": "get",
+          "path": "/v1/betaGroups/{id}/betaRecruitmentCriteria",
+          "role": "supporting",
+          "condition": "Preflight uniqueness and reconcile ambiguous or malformed create outcomes.",
+          "inputs": [
+            {
+              "sourceKind": "fixed",
+              "location": "query",
+              "appleName": "fields[betaRecruitmentCriteria]",
+              "fixedValue": [
+                "lastModifiedDate",
+                "deviceFamilyOsVersionFilters"
+              ]
+            }
+          ]
+        },
+        {
+          "operationId": "betaRecruitmentCriteria_createInstance",
+          "method": "post",
+          "path": "/v1/betaRecruitmentCriteria",
+          "role": "primary",
+          "inputs": [
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/type",
+              "fixedValue": "betaRecruitmentCriteria"
+            },
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/relationships/betaGroup/data/type",
+              "fixedValue": "betaGroups"
+            }
+          ]
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "group_id",
+          "sourceKind": "parameter",
+          "operationId": "betaGroups_getInstance",
+          "location": "path",
+          "appleName": "id"
+        },
+        {
+          "toolField": "group_id",
+          "sourceKind": "parameter",
+          "operationId": "betaGroups_betaRecruitmentCriteria_getToOneRelated",
+          "location": "path",
+          "appleName": "id"
+        },
+        {
+          "toolField": "group_id",
+          "sourceKind": "requestBody",
+          "operationId": "betaRecruitmentCriteria_createInstance",
+          "jsonPointer": "/data/relationships/betaGroup/data/id"
+        },
+        {
+          "toolField": "device_filters",
+          "sourceKind": "requestBody",
+          "operationId": "betaRecruitmentCriteria_createInstance",
+          "jsonPointer": "/data/attributes/deviceFamilyOsVersionFilters"
+        }
+      ],
+      "response": {
+        "mode": "aggregate",
+        "sources": [
+          {
+            "operationId": "betaGroups_getInstance",
+            "statusCode": "200",
+            "mediaType": "application/json"
+          },
+          {
+            "operationId": "betaGroups_betaRecruitmentCriteria_getToOneRelated",
+            "statusCode": "200",
+            "mediaType": "application/json"
+          },
+          {
+            "operationId": "betaRecruitmentCriteria_createInstance",
+            "statusCode": "201",
+            "mediaType": "application/json"
+          }
+        ],
+        "fields": [
+          {
+            "outputField": "success",
+            "localRole": "Success or fail-closed mutation-outcome envelope."
+          },
+          {
+            "outputField": "operation",
+            "localRole": "create discriminator."
+          },
+          {
+            "outputField": "operationCommitted",
+            "localRole": "True only after exact 201 and fresh group-scoped identity/filter confirmation; false for rejection; null for unknown."
+          },
+          {
+            "outputField": "operationCommitState",
+            "localRole": "Stable exact mutation commit state."
+          },
+          {
+            "outputField": "createdByInvocation",
+            "localRole": "True only after preflight absence, exact 201, and fresh group-scoped confirmation; false for observed ambiguous candidates."
+          },
+          {
+            "outputField": "candidateAttributionConfirmed",
+            "localRole": "Whether the observed criterion can be attributed to this invocation."
+          },
+          {
+            "outputField": "changed",
+            "localRole": "True for a fully confirmed create."
+          },
+          {
+            "outputField": "retrySafe",
+            "localRole": "False unless Apple definitively rejected the request."
+          },
+          {
+            "outputField": "groupId",
+            "localRole": "requestEcho"
+          },
+        {
+          "outputField": "statusCode",
+          "localRole": "Exact verified 201 status."
+          },
+        {
+          "outputField": "recruitmentCriteria",
+          "operationId": "betaGroups_betaRecruitmentCriteria_getToOneRelated",
+          "jsonPointer": "/data",
+          "localRole": "Fresh group-scoped postflight projection."
+        },
+        {
+          "outputField": "criterionId",
+          "localRole": "Validated response identity retained on an accepted create whose postflight could not be verified."
+        },
+          {
+            "outputField": "responseCriterionId",
+            "operationId": "betaRecruitmentCriteria_createInstance",
+            "jsonPointer": "/data/id",
+            "localRole": "Unverified accepted-response identity retained for inspection."
+          },
+          {
+            "outputField": "observedCandidate",
+            "operationId": "betaGroups_betaRecruitmentCriteria_getToOneRelated",
+            "jsonPointer": "/data",
+            "localRole": "Diagnostic only; never proves invocation attribution."
+          },
+          {
+            "outputField": "candidateId",
+            "operationId": "betaGroups_betaRecruitmentCriteria_getToOneRelated",
+            "jsonPointer": "/data/id",
+            "localRole": "Diagnostic candidate identity."
+          },
+          {
+            "outputField": "write_outcome",
+            "localRole": "Stable mutation outcome discriminator on failure."
+          },
+          {
+            "outputField": "mutationAttempted",
+            "localRole": "Whether the Apple mutation request was attempted."
+          },
+          {
+            "outputField": "error",
+            "localRole": "Redacted structured failure summary."
+          },
+          {
+            "outputField": "inspection",
+            "localRole": "Executable beta_groups_get_recruitment_criteria inspection tool and arguments."
+          },
+          {
+            "outputField": "inspectionRequired",
+            "localRole": "True when a caller inspection is required before retrying."
+          },
+        {
+          "outputField": "outcomeUnknown",
+          "localRole": "True only for an ambiguous request outcome."
+        },
+        {
+          "outputField": "inspectionError",
+          "localRole": "Redacted diagnostic-read failure when exact group inspection could not complete."
+        }
+        ]
+      },
+      "note": "Requires confirmed parent and preflight absence, exact HTTP 201, and a fresh group-scoped ID/filter match. Ambiguous candidates remain unattributed and fail closed."
+    },
+    {
+      "tool": "beta_groups_update_recruitment_criteria",
+      "kind": "compound",
+      "status": "partial",
+      "effect": "write",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "betaGroups_getInstance",
+          "method": "get",
+          "path": "/v1/betaGroups/{id}",
+          "role": "supporting",
+          "condition": "Confirm the parent beta group before identity preflight.",
+          "inputs": [
+            {
+              "sourceKind": "fixed",
+              "location": "query",
+              "appleName": "fields[betaGroups]",
+              "fixedValue": [
+                "name"
+              ]
+            }
+          ],
+          "optionalParameterClassifications": [
+            {
+              "location": "query",
+              "appleName": "include",
+              "disposition": "intentionallyOmitted",
+              "reason": "The supporting request only confirms the parent identity.",
+              "reviewAtSpec": "4.4.1"
+            },
+            {
+              "location": "query",
+              "appleName": "limit[betaTesters]",
+              "disposition": "intentionallyOmitted",
+              "reason": "No beta testers are included by the supporting parent lookup.",
+              "reviewAtSpec": "4.4.1"
+            },
+            {
+              "location": "query",
+              "appleName": "limit[builds]",
+              "disposition": "intentionallyOmitted",
+              "reason": "No builds are included by the supporting parent lookup.",
+              "reviewAtSpec": "4.4.1"
+            }
+          ]
+        },
+        {
+          "operationId": "betaGroups_betaRecruitmentCriteria_getToOneRelated",
+          "method": "get",
+          "path": "/v1/betaGroups/{id}/betaRecruitmentCriteria",
+          "role": "supporting",
+          "condition": "Verify criterion ownership before PATCH and reconcile ambiguous or malformed responses.",
+          "inputs": [
+            {
+              "sourceKind": "fixed",
+              "location": "query",
+              "appleName": "fields[betaRecruitmentCriteria]",
+              "fixedValue": [
+                "lastModifiedDate",
+                "deviceFamilyOsVersionFilters"
+              ]
+            }
+          ]
+        },
+        {
+          "operationId": "betaRecruitmentCriteria_updateInstance",
+          "method": "patch",
+          "path": "/v1/betaRecruitmentCriteria/{id}",
+          "role": "primary",
+          "inputs": [
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/type",
+              "fixedValue": "betaRecruitmentCriteria"
+            },
+            {
+              "sourceKind": "derived",
+              "jsonPointer": "/data/id",
+              "derivedFrom": [
+                "criterion_id"
+              ],
+              "localRole": "Reuse the verified criterion ID as the JSON:API resource ID in the PATCH body."
+            }
+          ]
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "group_id",
+          "sourceKind": "parameter",
+          "operationId": "betaGroups_getInstance",
+          "location": "path",
+          "appleName": "id"
+        },
+        {
+          "toolField": "group_id",
+          "sourceKind": "parameter",
+          "operationId": "betaGroups_betaRecruitmentCriteria_getToOneRelated",
+          "location": "path",
+          "appleName": "id"
+        },
+        {
+          "toolField": "criterion_id",
+          "sourceKind": "parameter",
+          "operationId": "betaRecruitmentCriteria_updateInstance",
+          "location": "path",
+          "appleName": "id"
+        },
+        {
+          "toolField": "device_filters",
+          "sourceKind": "requestBody",
+          "operationId": "betaRecruitmentCriteria_updateInstance",
+          "jsonPointer": "/data/attributes/deviceFamilyOsVersionFilters"
+        }
+      ],
+      "response": {
+        "mode": "aggregate",
+        "sources": [
+          {
+            "operationId": "betaGroups_getInstance",
+            "statusCode": "200",
+            "mediaType": "application/json"
+          },
+          {
+            "operationId": "betaGroups_betaRecruitmentCriteria_getToOneRelated",
+            "statusCode": "200",
+            "mediaType": "application/json"
+          },
+          {
+            "operationId": "betaRecruitmentCriteria_updateInstance",
+            "statusCode": "200",
+            "mediaType": "application/json"
+          }
+        ],
+        "fields": [
+          {
+            "outputField": "success",
+            "localRole": "Success, verified no-op, or fail-closed mutation-outcome envelope."
+          },
+          {
+            "outputField": "operation",
+            "localRole": "update discriminator."
+          },
+          {
+            "outputField": "operationCommitted",
+            "localRole": "True only after exact 200 plus group-scoped postflight, false for no-op/rejection, null for unknown."
+          },
+          {
+            "outputField": "operationCommitState",
+            "localRole": "Stable exact mutation commit state."
+          },
+          {
+            "outputField": "changed",
+            "localRole": "False for a preflight-proven no-op; true for a confirmed PATCH."
+          },
+          {
+            "outputField": "retrySafe",
+            "localRole": "False unless the PATCH was definitively rejected before commit."
+          },
+          {
+            "outputField": "groupId",
+            "localRole": "requestEcho"
+          },
+        {
+          "outputField": "statusCode",
+          "localRole": "Exact verified 200 status."
+          },
+        {
+          "outputField": "recruitmentCriteria",
+          "operationId": "betaGroups_betaRecruitmentCriteria_getToOneRelated",
+          "jsonPointer": "/data",
+          "localRole": "Fresh group-scoped postflight projection preserving omitted/null/value state."
+        },
+        {
+          "outputField": "criterionId",
+          "localRole": "Validated request criterion identity on mutation failures."
+        },
+        {
+          "outputField": "observedCandidate",
+          "operationId": "betaGroups_betaRecruitmentCriteria_getToOneRelated",
+          "jsonPointer": "/data",
+          "localRole": "Diagnostic only; never proves this PATCH committed."
+        },
+        {
+          "outputField": "candidateId",
+          "operationId": "betaGroups_betaRecruitmentCriteria_getToOneRelated",
+          "jsonPointer": "/data/id",
+          "localRole": "Diagnostic candidate identity."
+        },
+        {
+          "outputField": "candidateAttributionConfirmed",
+          "localRole": "Always false for a diagnostic candidate after an unverified PATCH."
+        },
+          {
+            "outputField": "write_outcome",
+            "localRole": "Stable mutation outcome discriminator on failure."
+          },
+          {
+            "outputField": "mutationAttempted",
+            "localRole": "Whether the Apple mutation request was attempted."
+          },
+          {
+            "outputField": "error",
+            "localRole": "Redacted structured failure summary."
+          },
+          {
+            "outputField": "inspection",
+            "localRole": "Executable beta_groups_get_recruitment_criteria inspection tool and arguments."
+          },
+          {
+            "outputField": "inspectionRequired",
+            "localRole": "True when a caller inspection is required before retrying."
+          },
+        {
+          "outputField": "outcomeUnknown",
+          "localRole": "True only for an ambiguous request outcome."
+        },
+        {
+          "outputField": "inspectionError",
+          "localRole": "Redacted diagnostic-read failure when exact group inspection could not complete."
+        }
+        ]
+      },
+      "note": "Verifies parent ownership before PATCH, distinguishes omitted/null/value, requires exact HTTP 200 and a fresh group-scoped postflight, and never treats diagnostic state as commit proof."
+    },
+    {
+      "tool": "beta_groups_delete_recruitment_criteria",
+      "kind": "compound",
+      "status": "partial",
+      "effect": "destructive",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "betaGroups_getInstance",
+          "method": "get",
+          "path": "/v1/betaGroups/{id}",
+          "role": "supporting",
+          "condition": "Confirm the parent beta group before identity preflight.",
+          "inputs": [
+            {
+              "sourceKind": "fixed",
+              "location": "query",
+              "appleName": "fields[betaGroups]",
+              "fixedValue": [
+                "name"
+              ]
+            }
+          ],
+          "optionalParameterClassifications": [
+            {
+              "location": "query",
+              "appleName": "include",
+              "disposition": "intentionallyOmitted",
+              "reason": "The supporting request only confirms the parent identity.",
+              "reviewAtSpec": "4.4.1"
+            },
+            {
+              "location": "query",
+              "appleName": "limit[betaTesters]",
+              "disposition": "intentionallyOmitted",
+              "reason": "No beta testers are included by the supporting parent lookup.",
+              "reviewAtSpec": "4.4.1"
+            },
+            {
+              "location": "query",
+              "appleName": "limit[builds]",
+              "disposition": "intentionallyOmitted",
+              "reason": "No builds are included by the supporting parent lookup.",
+              "reviewAtSpec": "4.4.1"
+            }
+          ]
+        },
+        {
+          "operationId": "betaGroups_betaRecruitmentCriteria_getToOneRelated",
+          "method": "get",
+          "path": "/v1/betaGroups/{id}/betaRecruitmentCriteria",
+          "role": "supporting",
+          "condition": "Verify criterion ownership before DELETE and reconcile every final DELETE error against the current related resource.",
+          "inputs": [
+            {
+              "sourceKind": "fixed",
+              "location": "query",
+              "appleName": "fields[betaRecruitmentCriteria]",
+              "fixedValue": [
+                "lastModifiedDate",
+                "deviceFamilyOsVersionFilters"
+              ]
+            }
+          ]
+        },
+        {
+          "operationId": "betaRecruitmentCriteria_deleteInstance",
+          "method": "delete",
+          "path": "/v1/betaRecruitmentCriteria/{id}",
+          "role": "primary"
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "group_id",
+          "sourceKind": "parameter",
+          "operationId": "betaGroups_getInstance",
+          "location": "path",
+          "appleName": "id"
+        },
+        {
+          "toolField": "group_id",
+          "sourceKind": "parameter",
+          "operationId": "betaGroups_betaRecruitmentCriteria_getToOneRelated",
+          "location": "path",
+          "appleName": "id"
+        },
+        {
+          "toolField": "criterion_id",
+          "sourceKind": "parameter",
+          "operationId": "betaRecruitmentCriteria_deleteInstance",
+          "location": "path",
+          "appleName": "id"
+        },
+        {
+          "toolField": "confirm_criterion_id",
+          "sourceKind": "local",
+          "localRole": "Mandatory exact match with criterion_id before the irreversible DELETE request."
+        }
+      ],
+      "response": {
+        "mode": "aggregate",
+        "sources": [
+          {
+            "operationId": "betaGroups_getInstance",
+            "statusCode": "200",
+            "mediaType": "application/json"
+          },
+          {
+            "operationId": "betaGroups_betaRecruitmentCriteria_getToOneRelated",
+            "statusCode": "200",
+            "mediaType": "application/json"
+          },
+          {
+            "operationId": "betaRecruitmentCriteria_deleteInstance",
+            "statusCode": "204"
+          }
+        ],
+        "fields": [
+          {
+            "outputField": "success",
+            "localRole": "True only after Apple's exact 204 response."
+          },
+          {
+            "outputField": "operation",
+            "localRole": "delete discriminator."
+          },
+          {
+            "outputField": "operationCommitted",
+            "localRole": "True only for exact 204; false for rejection; null for unknown."
+          },
+          {
+            "outputField": "operationCommitState",
+            "localRole": "Stable exact mutation commit state."
+          },
+          {
+            "outputField": "changed",
+            "localRole": "True only for exact 204."
+          },
+          {
+            "outputField": "retrySafe",
+            "localRole": "False unless Apple definitively rejected the request."
+          },
+          {
+            "outputField": "groupId",
+            "localRole": "requestEcho"
+          },
+          {
+            "outputField": "criterionId",
+            "localRole": "requestEcho"
+          },
+        {
+          "outputField": "statusCode",
+          "localRole": "Exact verified 204 status."
+          },
+          {
+            "outputField": "message",
+            "localRole": "Local exact-204 confirmation."
+          },
+        {
+          "outputField": "observedCandidate",
+          "operationId": "betaGroups_betaRecruitmentCriteria_getToOneRelated",
+          "jsonPointer": "/data",
+          "localRole": "Diagnostic only; absence or replacement never proves this DELETE committed."
+        },
+        {
+          "outputField": "candidateId",
+          "operationId": "betaGroups_betaRecruitmentCriteria_getToOneRelated",
+          "jsonPointer": "/data/id",
+          "localRole": "Diagnostic candidate identity."
+        },
+        {
+          "outputField": "candidateAttributionConfirmed",
+          "localRole": "Always false for a diagnostic candidate after an unverified DELETE."
+        },
+          {
+            "outputField": "write_outcome",
+            "localRole": "Stable mutation outcome discriminator on failure."
+          },
+          {
+            "outputField": "mutationAttempted",
+            "localRole": "Whether the Apple mutation request was attempted."
+          },
+          {
+            "outputField": "error",
+            "localRole": "Redacted structured failure summary."
+          },
+          {
+            "outputField": "inspection",
+            "localRole": "Executable beta_groups_get_recruitment_criteria inspection tool and arguments."
+          },
+          {
+            "outputField": "inspectionRequired",
+            "localRole": "True when a caller inspection is required before retrying."
+          },
+        {
+          "outputField": "outcomeUnknown",
+          "localRole": "True only for an ambiguous request outcome."
+        },
+        {
+          "outputField": "inspectionError",
+          "localRole": "Redacted diagnostic-read failure when exact group inspection could not complete."
+        }
+        ]
+      },
+      "note": "Requires exact confirm_criterion_id and parent ownership. Only HTTP 204 confirms deletion; follow-up state is diagnostic and cannot convert rejected or ambiguous DELETE outcomes into success."
+    },
+    {
+      "tool": "beta_groups_list_recruitment_options",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "betaRecruitmentCriterionOptions_getCollection",
+          "method": "get",
+          "path": "/v1/betaRecruitmentCriterionOptions",
+          "role": "primary",
+          "inputs": [
+            {
+              "sourceKind": "fixed",
+              "location": "query",
+              "appleName": "fields[betaRecruitmentCriterionOptions]",
+              "fixedValue": [
+                "deviceFamilyOsVersions"
+              ]
+            }
+          ]
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "limit",
+          "sourceKind": "parameter",
+          "operationId": "betaRecruitmentCriterionOptions_getCollection",
+          "location": "query",
+          "appleName": "limit"
+        },
+        {
+          "toolField": "next_url",
+          "sourceKind": "local",
+          "localRole": "Strict Apple continuation URL for this exact collection; effective limit and fixed sparse fieldset must match, and origin, path, exact query, and a non-empty cursor are validated."
+        }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          {
+            "operationId": "betaRecruitmentCriterionOptions_getCollection",
+            "statusCode": "200",
+            "mediaType": "application/json"
+          }
+        ],
+        "fields": [
+          {
+            "outputField": "success",
+            "localRole": "successEnvelope"
+          },
+          {
+            "outputField": "options",
+            "operationId": "betaRecruitmentCriterionOptions_getCollection",
+            "jsonPointer": "/data",
+            "localRole": "Stable device-family and OS-version projection."
+          },
+          {
+            "outputField": "count",
+            "operationId": "betaRecruitmentCriterionOptions_getCollection",
+            "jsonPointer": "/data",
+            "localRole": "pageCount"
+          },
+          {
+            "outputField": "limit",
+            "localRole": "Effective request limit echo."
+          },
+          {
+            "outputField": "total",
+            "operationId": "betaRecruitmentCriterionOptions_getCollection",
+            "jsonPointer": "/meta/paging/total"
+          },
+          {
+            "outputField": "next_url",
+            "operationId": "betaRecruitmentCriterionOptions_getCollection",
+            "jsonPointer": "/links/next"
+          }
+        ]
+      },
+      "note": "Projects Apple's current recruitment option catalog and uses strict scope-preserving pagination."
+    },
+    {
+      "tool": "beta_groups_check_recruitment_compatibility",
+      "kind": "compound",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "betaGroups_getInstance",
+          "method": "get",
+          "path": "/v1/betaGroups/{id}",
+          "role": "supporting",
+          "condition": "Confirm the parent beta group before requesting the compatibility check.",
+          "inputs": [
+            {
+              "sourceKind": "fixed",
+              "location": "query",
+              "appleName": "fields[betaGroups]",
+              "fixedValue": [
+                "name"
+              ]
+            }
+          ],
+          "optionalParameterClassifications": [
+            {
+              "location": "query",
+              "appleName": "include",
+              "disposition": "intentionallyOmitted",
+              "reason": "The supporting request only confirms the parent identity.",
+              "reviewAtSpec": "4.4.1"
+            },
+            {
+              "location": "query",
+              "appleName": "limit[betaTesters]",
+              "disposition": "intentionallyOmitted",
+              "reason": "No beta testers are included by the supporting parent lookup.",
+              "reviewAtSpec": "4.4.1"
+            },
+            {
+              "location": "query",
+              "appleName": "limit[builds]",
+              "disposition": "intentionallyOmitted",
+              "reason": "No builds are included by the supporting parent lookup.",
+              "reviewAtSpec": "4.4.1"
+            }
+          ]
+        },
+        {
+          "operationId": "betaGroups_betaRecruitmentCriterionCompatibleBuildCheck_getToOneRelated",
+          "method": "get",
+          "path": "/v1/betaGroups/{id}/betaRecruitmentCriterionCompatibleBuildCheck",
+          "role": "primary",
+          "inputs": [
+            {
+              "sourceKind": "fixed",
+              "location": "query",
+              "appleName": "fields[betaRecruitmentCriterionCompatibleBuildChecks]",
+              "fixedValue": [
+                "hasCompatibleBuild"
+              ]
+            }
+          ]
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "group_id",
+          "sourceKind": "parameter",
+          "operationId": "betaGroups_getInstance",
+          "location": "path",
+          "appleName": "id"
+        },
+        {
+          "toolField": "group_id",
+          "sourceKind": "parameter",
+          "operationId": "betaGroups_betaRecruitmentCriterionCompatibleBuildCheck_getToOneRelated",
+          "location": "path",
+          "appleName": "id"
+        }
+      ],
+      "response": {
+        "mode": "aggregate",
+        "sources": [
+          {
+            "operationId": "betaGroups_getInstance",
+            "statusCode": "200",
+            "mediaType": "application/json"
+          },
+          {
+            "operationId": "betaGroups_betaRecruitmentCriterionCompatibleBuildCheck_getToOneRelated",
+            "statusCode": "200",
+            "mediaType": "application/json"
+          }
+        ],
+        "fields": [
+          {
+            "outputField": "success",
+            "localRole": "successEnvelope"
+          },
+          {
+            "outputField": "groupId",
+            "localRole": "requestEcho"
+          },
+          {
+            "outputField": "compatibilityCheckId",
+            "operationId": "betaGroups_betaRecruitmentCriterionCompatibleBuildCheck_getToOneRelated",
+            "jsonPointer": "/data/id"
+          },
+          {
+            "outputField": "hasCompatibleBuild",
+            "operationId": "betaGroups_betaRecruitmentCriterionCompatibleBuildCheck_getToOneRelated",
+            "jsonPointer": "/data/attributes/hasCompatibleBuild"
+          }
+        ]
+      },
+      "note": "Returns the full compatible-build check instead of the redundant linkage-only relationship document."
     }
   ],
   "implementationAliases": []

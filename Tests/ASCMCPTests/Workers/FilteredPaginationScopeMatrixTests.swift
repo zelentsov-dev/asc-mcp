@@ -5,10 +5,10 @@ import Testing
 
 @Suite("Filtered Pagination Scope Matrix Tests")
 struct FilteredPaginationScopeMatrixTests {
-    @Test("all 33 filtered handlers preserve exact default and maximal explicit queries")
+    @Test("all 37 filtered handlers preserve exact default and maximal explicit queries")
     func acceptsExactContinuations() async throws {
         let fixtures = filteredPaginationFixtures()
-        #expect(fixtures.count == 33)
+        #expect(fixtures.count == 37)
         #expect(fixtures.map(\.tool) == filteredPaginationToolNames)
 
         for fixture in fixtures {
@@ -165,21 +165,22 @@ struct FilteredPaginationScopeMatrixTests {
         }
     }
 
-    @Test("all 50 public manifest fields publish the strict continuation contract")
+    @Test("all 56 public manifest fields publish the strict continuation contract")
     func manifestDescribesStrictContinuationContract() throws {
         let manifest = try ASCOperationManifestBundle.loadBundled()
         let toolNames = filteredPaginationToolNames + pathOnlyManifestPaginationToolNames + completeManifestPaginationToolNames
-        #expect(toolNames.count == 50)
-        #expect(Set(toolNames).count == 50)
+        #expect(toolNames.count == 56)
+        #expect(Set(toolNames).count == 56)
 
         for toolName in toolNames {
             let mapping = try #require(manifest.mapping(for: toolName))
             let nextURL = try #require(mapping.fields.first { $0.toolField == "next_url" })
-            #expect(nextURL.localRole == strictContinuationLocalRole, "Unexpected next_url contract for \(toolName)")
+            let expectedRole = strictContinuationManifestRoleOverrides[toolName] ?? strictContinuationLocalRole
+            #expect(nextURL.localRole == expectedRole, "Unexpected next_url contract for \(toolName)")
         }
     }
 
-    @Test("all 44 path and filtered tool schemas explain the strict continuation contract")
+    @Test("all 50 path and filtered tool schemas explain the strict continuation contract")
     func toolSchemasDescribeStrictContinuationContract() async throws {
         let client = await HTTPClient(
             jwtService: try TestFactory.makeJWTService(),
@@ -189,14 +190,18 @@ struct FilteredPaginationScopeMatrixTests {
         )
         let tools = await pathAndFilteredPaginationTools(client: client)
         let toolNames = filteredPaginationToolNames + pathOnlyManifestPaginationToolNames
+        #expect(toolNames.count == 50)
+        #expect(Set(toolNames).count == 50)
 
         for toolName in toolNames {
             let tool = try #require(tools.first { $0.name == toolName })
             let root = try #require(tool.inputSchema.objectValue)
             let properties = try #require(root["properties"]?.objectValue)
             let nextURL = try #require(properties["next_url"]?.objectValue)
+            let expectedDescription = strictContinuationToolDescriptionOverrides[toolName]
+                ?? strictContinuationToolDescription
             #expect(
-                nextURL["description"]?.stringValue == strictContinuationToolDescription,
+                nextURL["description"]?.stringValue == expectedDescription,
                 "Unexpected next_url schema description for \(toolName)"
             )
         }
@@ -351,6 +356,13 @@ private func filteredPaginationFixtures() -> [FilteredPaginationFixture] {
             ]
         ),
         fixture(
+            "beta_groups_list_recruitment_options",
+            "/v1/betaRecruitmentCriterionOptions",
+            "/v1/betaRecruitmentCriterionOptions/other",
+            ["fields[betaRecruitmentCriterionOptions]": "deviceFamilyOsVersions", "limit": "25"],
+            ["fields[betaRecruitmentCriterionOptions]": "deviceFamilyOsVersions", "limit": "31"]
+        ),
+        fixture(
             "beta_license_list",
             "/v1/betaLicenseAgreements",
             "/v1/betaTesters",
@@ -423,6 +435,37 @@ private func filteredPaginationFixtures() -> [FilteredPaginationFixture] {
                 "filter[usesNonExemptEncryption]": "true",
                 "exists[usesNonExemptEncryption]": "true"
             ]
+        ),
+        fixture(
+            "metrics_app_beta_tester_usage",
+            "/v1/apps/app-1/metrics/betaTesterUsages",
+            "/v1/apps/app-2/metrics/betaTesterUsages",
+            ["limit": "25"],
+            [
+                "limit": "31",
+                "period": "P30D",
+                "groupBy": "betaTesters",
+                "filter[betaTesters]": "tester-1"
+            ]
+        ),
+        fixture(
+            "metrics_group_beta_tester_usage",
+            "/v1/betaGroups/group-1/metrics/betaTesterUsages",
+            "/v1/betaGroups/group-2/metrics/betaTesterUsages",
+            ["limit": "25"],
+            [
+                "limit": "31",
+                "period": "P30D",
+                "groupBy": "betaTesters",
+                "filter[betaTesters]": "tester-1"
+            ]
+        ),
+        fixture(
+            "metrics_tester_usage",
+            "/v1/betaTesters/tester-1/metrics/betaTesterUsages",
+            "/v1/betaTesters/tester-2/metrics/betaTesterUsages",
+            ["filter[apps]": "app-1", "limit": "25"],
+            ["filter[apps]": "app-1", "limit": "31", "period": "P30D"]
         ),
         fixture(
             "metrics_build_diagnostics",
@@ -538,11 +581,15 @@ private let filteredPaginationToolNames = [
     "beta_feedback_list_crashes",
     "beta_feedback_list_screenshots",
     "beta_groups_list",
+    "beta_groups_list_recruitment_options",
     "beta_license_list",
     "beta_testers_list",
     "beta_testers_search",
     "builds_get_beta_groups",
     "builds_list",
+    "metrics_app_beta_tester_usage",
+    "metrics_group_beta_tester_usage",
+    "metrics_tester_usage",
     "metrics_build_diagnostics",
     "pre_release_list",
     "pricing_list_price_points",
@@ -570,6 +617,8 @@ private let pathOnlyManifestPaginationToolNames = [
     "builds_list_beta_localizations",
     "builds_get_beta_testers",
     "builds_list_individual_testers",
+    "metrics_group_public_link_usage",
+    "metrics_build_beta_usage",
     "pre_release_list_builds",
     "pricing_list_territories",
     "sandbox_list",
@@ -588,6 +637,24 @@ private let completeManifestPaginationToolNames = [
 private let strictContinuationLocalRole = "Strict Apple continuation URL for this exact collection. The caller must repeat every originating list control, including the effective/default limit, filters, sort, include, fields, and nested limits when supported; the exact query and a non-empty cursor are validated before sending the continuation request."
 
 private let strictContinuationToolDescription = "Apple continuation URL from the previous response. Repeat every originating list control, including the effective/default limit, filters, sort, include, fields, and nested limits when supported; the exact query and a non-empty cursor are validated."
+
+private let strictContinuationManifestRoleOverrides = [
+    "beta_groups_list_recruitment_options": "Strict Apple continuation URL for this exact collection; effective limit and fixed sparse fieldset must match, and origin, path, exact query, and a non-empty cursor are validated.",
+    "metrics_app_beta_tester_usage": "Strict Apple continuation URL for the same app metric scope; every period, grouping, filter, and effective limit value must match.",
+    "metrics_group_beta_tester_usage": "Strict Apple continuation URL for the same beta-group metric scope; every period, grouping, filter, and effective limit value must match.",
+    "metrics_group_public_link_usage": "Strict Apple continuation URL for the same public-link metric scope and effective limit.",
+    "metrics_tester_usage": "Strict Apple continuation URL for the same tester, required app filter, period, and effective limit.",
+    "metrics_build_beta_usage": "Strict Apple continuation URL for the same build metric scope and effective limit."
+]
+
+private let strictContinuationToolDescriptionOverrides = [
+    "beta_groups_list_recruitment_options": "Apple continuation URL from the previous response. Repeat the effective limit; the exact query, origin, path, and a non-empty cursor are validated.",
+    "metrics_app_beta_tester_usage": "Apple continuation URL from the previous response. Repeat the effective limit and every period, grouping, and filter control; exact origin, path, query, and a non-empty cursor are validated.",
+    "metrics_group_beta_tester_usage": "Apple continuation URL from the previous response. Repeat the effective limit and every period, grouping, and filter control; exact origin, path, query, and a non-empty cursor are validated.",
+    "metrics_group_public_link_usage": "Apple continuation URL from the previous response. Repeat the effective limit and every period, grouping, and filter control; exact origin, path, query, and a non-empty cursor are validated.",
+    "metrics_tester_usage": "Apple continuation URL from the previous response. Repeat the effective limit and every period, grouping, and filter control; exact origin, path, query, and a non-empty cursor are validated.",
+    "metrics_build_beta_usage": "Apple continuation URL from the previous response. Repeat the effective limit and every period, grouping, and filter control; exact origin, path, query, and a non-empty cursor are validated."
+]
 
 private func pathAndFilteredPaginationTools(client: HTTPClient) async -> [Tool] {
     var tools: [Tool] = []
@@ -619,12 +686,13 @@ private func filteredPaginationWorker(for tool: String) -> FilteredPaginationWor
     case "app_events_list", "app_events_list_localizations": .appEvents
     case "app_info_list", "app_info_list_localizations": .appInfo
     case "beta_feedback_list_crashes", "beta_feedback_list_screenshots": .betaFeedback
-    case "beta_groups_list": .betaGroups
+    case "beta_groups_list", "beta_groups_list_recruitment_options": .betaGroups
     case "beta_license_list": .betaLicense
     case "beta_testers_list", "beta_testers_search": .betaTesters
     case "builds_get_beta_groups": .buildBetaDetails
     case "builds_list": .builds
-    case "metrics_build_diagnostics": .metrics
+    case "metrics_app_beta_tester_usage", "metrics_group_beta_tester_usage",
+         "metrics_tester_usage", "metrics_build_diagnostics": .metrics
     case "pre_release_list": .preRelease
     case "pricing_list_price_points", "pricing_list_territory_availability", "pricing_list_territory_availabilities": .pricing
     case "provisioning_list_bundle_ids", "provisioning_list_devices", "provisioning_list_certificates", "provisioning_list_profiles", "provisioning_list_capabilities": .provisioning
@@ -669,8 +737,16 @@ private func filteredPaginationDefaultArguments(for tool: String) -> [String: Va
         return ["info_id": .string("info-1")]
     case "beta_testers_search":
         return ["email": .string("tester@example.com")]
+    case "beta_groups_list_recruitment_options":
+        return [:]
     case "builds_get_beta_groups", "metrics_build_diagnostics":
         return ["build_id": .string("build-1")]
+    case "metrics_app_beta_tester_usage":
+        return ["app_id": .string("app-1")]
+    case "metrics_group_beta_tester_usage":
+        return ["group_id": .string("group-1")]
+    case "metrics_tester_usage":
+        return ["tester_id": .string("tester-1"), "app_id": .string("app-1")]
     case "pricing_list_territory_availabilities":
         return ["availability_id": .string("availability-1")]
     case "provisioning_list_capabilities":
@@ -785,6 +861,8 @@ private func filteredPaginationExplicitArguments(for tool: String) -> [String: V
             "public_link_limit_enabled": .bool(false),
             "sort": .string("name")
         ]
+    case "beta_groups_list_recruitment_options":
+        return ["limit": .int(31)]
     case "beta_license_list":
         return [
             "app_id": .array([.string("app-1"), .string("app-2")]),
@@ -839,6 +917,29 @@ private func filteredPaginationExplicitArguments(for tool: String) -> [String: V
             "uses_non_exempt_encryption_set": .bool(true),
             "limit": .int(31),
             "sort": .string("version")
+        ]
+    case "metrics_app_beta_tester_usage":
+        return [
+            "app_id": .string("app-1"),
+            "period": .string("P30D"),
+            "group_by": .array([.string("betaTesters")]),
+            "beta_tester_id": .string("tester-1"),
+            "limit": .int(31)
+        ]
+    case "metrics_group_beta_tester_usage":
+        return [
+            "group_id": .string("group-1"),
+            "period": .string("P30D"),
+            "group_by": .string("betaTesters"),
+            "beta_tester_id": .string("tester-1"),
+            "limit": .int(31)
+        ]
+    case "metrics_tester_usage":
+        return [
+            "tester_id": .string("tester-1"),
+            "app_id": .string("app-1"),
+            "period": .string("P30D"),
+            "limit": .int(31)
         ]
     case "metrics_build_diagnostics":
         return [
@@ -1027,7 +1128,17 @@ private func filteredPaginationResponses(
         ))
     }
     if includePage {
-        responses.append(.init(statusCode: 200, body: #"{"data":[]}"#))
+        let body: String
+        switch fixture.tool {
+        case "beta_groups_list_recruitment_options",
+             "metrics_app_beta_tester_usage",
+             "metrics_group_beta_tester_usage",
+             "metrics_tester_usage":
+            body = #"{"data":[],"links":{"self":"https://api.example.test\#(fixture.path)"}}"#
+        default:
+            body = #"{"data":[]}"#
+        }
+        responses.append(.init(statusCode: 200, body: body))
     }
     return responses
 }

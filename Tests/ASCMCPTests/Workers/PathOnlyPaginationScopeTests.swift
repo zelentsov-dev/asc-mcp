@@ -8,7 +8,7 @@ struct PathOnlyPaginationScopeTests {
     @Test("all path-only lists preserve exact default and explicit queries")
     func preservesExactQueries() async throws {
         let fixtures = pathOnlyPaginationFixtures()
-        #expect(fixtures.count == 11)
+        #expect(fixtures.count == 13)
         #expect(fixtures.map(\.toolName) == pathOnlyPaginationToolNames)
 
         for fixture in pathOnlyPaginationCases() {
@@ -202,6 +202,8 @@ private let pathOnlyPaginationToolNames = [
     "builds_list_beta_localizations",
     "builds_get_beta_testers",
     "builds_list_individual_testers",
+    "metrics_group_public_link_usage",
+    "metrics_build_beta_usage",
     "pre_release_list_builds",
     "pricing_list_territories",
     "sandbox_list",
@@ -214,6 +216,7 @@ private enum PathOnlyPaginationWorker {
     case betaGroups
     case betaTesters
     case buildBetaDetails
+    case metrics
     case preReleaseVersions
     case pricing
     case sandbox
@@ -324,6 +327,28 @@ private func pathOnlyPaginationFixtures() -> [PathOnlyPaginationFixture] {
             responseBody: emptyResponse
         ),
         PathOnlyPaginationFixture(
+            worker: .metrics,
+            toolName: "metrics_group_public_link_usage",
+            controlName: "explicit limit",
+            arguments: ["group_id": .string("group-1"), "limit": .int(42)],
+            path: "/v1/betaGroups/group-1/metrics/publicLinkUsages",
+            wrongPath: "/v1/betaGroups/group-2/metrics/publicLinkUsages",
+            requiredQuery: ["limit": "42"],
+            defaultLimit: "25",
+            responseBody: #"{"data":[],"links":{"self":"https://api.example.test/v1/betaGroups/group-1/metrics/publicLinkUsages"}}"#
+        ),
+        PathOnlyPaginationFixture(
+            worker: .metrics,
+            toolName: "metrics_build_beta_usage",
+            controlName: "explicit limit",
+            arguments: ["build_id": .string("build-1"), "limit": .int(43)],
+            path: "/v1/builds/build-1/metrics/betaBuildUsages",
+            wrongPath: "/v1/builds/build-2/metrics/betaBuildUsages",
+            requiredQuery: ["limit": "43"],
+            defaultLimit: "25",
+            responseBody: #"{"data":[],"links":{"self":"https://api.example.test/v1/builds/build-1/metrics/betaBuildUsages"}}"#
+        ),
+        PathOnlyPaginationFixture(
             worker: .preReleaseVersions,
             toolName: "pre_release_list_builds",
             controlName: "explicit limit",
@@ -414,6 +439,8 @@ private func invokePathOnlyPaginationFixture(
         return try await BetaTestersWorker(httpClient: client).handleTool(parameters)
     case .buildBetaDetails:
         return try await BuildBetaDetailsWorker(httpClient: client).handleTool(parameters)
+    case .metrics:
+        return try await MetricsWorker(httpClient: client).handleTool(parameters)
     case .preReleaseVersions:
         return try await PreReleaseVersionsWorker(httpClient: client).handleTool(parameters)
     case .pricing:

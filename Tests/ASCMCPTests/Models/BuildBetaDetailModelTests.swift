@@ -85,6 +85,31 @@ struct BuildBetaDetailModelTests {
         #expect(tester.attributes.state == "ACCEPTED")
     }
 
+    @Test func betaTesterAppDevices() throws {
+        let json = """
+        {"type":"betaTesters","id":"bt-devices","attributes":{"appDevices":[{"model":"iPhone17,1","platform":"IOS","osVersion":"18.0","appBuildVersion":"42"},{"model":"Mac15,3","platform":"MAC_OS","osVersion":"15.0","appBuildVersion":"43"},{"platform":"TV_OS"},{"platform":"WATCH_OS"},{"platform":"VISION_OS"}]}}
+        """.data(using: .utf8)!
+        let tester = try JSONDecoder().decode(ASCBetaTester.self, from: json)
+        let devices = try #require(tester.attributes.appDevices)
+
+        #expect(devices.count == 5)
+        #expect(devices.compactMap(\.platform) == [.iOS, .macOS, .tvOS, .watchOS, .visionOS])
+        #expect(devices[0].model == "iPhone17,1")
+        #expect(devices[0].osVersion == "18.0")
+        #expect(devices[0].appBuildVersion == "42")
+        #expect(devices[2].model == nil)
+    }
+
+    @Test func betaTesterRejectsUnknownAppDevicePlatform() {
+        let json = """
+        {"type":"betaTesters","id":"bt-unknown-device","attributes":{"appDevices":[{"platform":"CAR_OS"}]}}
+        """.data(using: .utf8)!
+
+        #expect(throws: DecodingError.self) {
+            _ = try JSONDecoder().decode(ASCBetaTester.self, from: json)
+        }
+    }
+
     @Test func betaTesterMinimalAttributes() throws {
         let json = """
         {"type":"betaTesters","id":"bt-2","attributes":{}}
@@ -93,6 +118,7 @@ struct BuildBetaDetailModelTests {
         #expect(tester.attributes.email == nil)
         #expect(tester.attributes.firstName == nil)
         #expect(tester.attributes.state == nil)
+        #expect(tester.attributes.appDevices == nil)
     }
 
     @Test func betaIncludedResourceBuild() throws {

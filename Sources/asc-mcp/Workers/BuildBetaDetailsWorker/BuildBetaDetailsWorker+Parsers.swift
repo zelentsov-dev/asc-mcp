@@ -110,6 +110,16 @@ extension BuildBetaDetailsWorker {
         result["lastName"] = tester.attributes.lastName.jsonSafe
         result["inviteType"] = tester.attributes.inviteType.jsonSafe
         result["state"] = tester.attributes.state.jsonSafe
+        result["appDevices"] = tester.attributes.appDevices.map { devices in
+            devices.map { device in
+                [
+                    "model": device.model.jsonSafe,
+                    "platform": (device.platform?.rawValue).jsonSafe,
+                    "osVersion": device.osVersion.jsonSafe,
+                    "appBuildVersion": device.appBuildVersion.jsonSafe
+                ] as [String: Any]
+            }
+        }.jsonSafe
         
         return result
     }

@@ -29,13 +29,13 @@
 
 ## Overview
 
-**asc-mcp** is a Swift-based MCP server that bridges [Claude](https://claude.ai) (or any MCP-compatible host) with the [App Store Connect API](https://developer.apple.com/documentation/appstoreconnectapi). It exposes **461 tools** across 33 App Store tool domains + 2 core domains, enabling you to automate your entire iOS/macOS release workflow through natural language.
+**asc-mcp** is a Swift-based MCP server that bridges [Claude](https://claude.ai) (or any MCP-compatible host) with the [App Store Connect API](https://developer.apple.com/documentation/appstoreconnectapi). It exposes **472 tools** across 33 App Store tool domains + 2 core domains, enabling you to automate your entire iOS/macOS release workflow through natural language.
 
 ### Key capabilities
 
 - **Multi-account** — manage multiple App Store Connect teams from a single server
 - **Full release pipeline** — create versions, attach builds, submit for review, phased rollout
-- **TestFlight automation** — beta groups, testers, build distribution, localized What's New
+- **TestFlight automation** — beta groups, testers, recruitment criteria, usage metrics, build distribution, localized What's New
 - **Build management** — track processing, encryption compliance, readiness checks
 - **Build uploads** — create upload parents, reserve and transfer files, inspect recovery state, and monitor processing
 - **Customer reviews** — list, respond, update, delete responses, aggregate statistics
@@ -46,17 +46,17 @@
 - **Marketing** — screenshots, app previews, custom product pages, A/B testing (PPO), promoted purchases
 - **Accessibility declarations** — manage App Store accessibility support declarations by device family
 - **Webhooks** — manage webhook configurations, inspect delivery diagnostics, verify signatures, parse payloads, and triage events
-- **Analytics & Metrics** — sales/financial reports, analytics reports, performance metrics, diagnostics
+- **Analytics & Metrics** — sales/financial reports, analytics reports, performance metrics, TestFlight usage metrics, diagnostics
 - **Metadata management** — localized descriptions, keywords, What's New across all locales
 - **MCP 2025-11-25 surface** — tool annotations, output schemas for stable tools, structured JSON results, and safe result-size metadata
-- **OpenAPI contract tooling** — compare the live 461-tool worker catalog and semantic manifest with Apple's official App Store Connect OpenAPI specification
+- **OpenAPI contract tooling** — compare the live 472-tool worker catalog and semantic manifest with Apple's official App Store Connect OpenAPI specification
 
 ## Quick Start
 
 ```bash
 # 1. Install via Mint
 brew install mint
-mint install zelentsov-dev/asc-mcp@v3.17.0
+mint install zelentsov-dev/asc-mcp@v3.18.0
 
 # 2. Add to Claude Code with env vars (simplest setup)
 claude mcp add asc-mcp \
@@ -88,7 +88,7 @@ Or use a JSON config file — see [Configuration](#configuration) below.
 brew install mint
 
 # Install asc-mcp from GitHub
-mint install zelentsov-dev/asc-mcp@v3.17.0
+mint install zelentsov-dev/asc-mcp@v3.18.0
 
 # Register in Claude Code
 claude mcp add asc-mcp -- ~/.mint/bin/asc-mcp
@@ -99,13 +99,13 @@ To install a specific branch or tag:
 ```bash
 mint install zelentsov-dev/asc-mcp@main      # main branch
 mint install zelentsov-dev/asc-mcp@develop    # develop branch
-mint install zelentsov-dev/asc-mcp@v3.17.0    # specific tag
+mint install zelentsov-dev/asc-mcp@v3.18.0    # specific tag
 ```
 
 To update to the latest version:
 
 ```bash
-mint install zelentsov-dev/asc-mcp@v3.17.0 --force
+mint install zelentsov-dev/asc-mcp@v3.18.0 --force
 ```
 
 ### Option B: Build from Source
@@ -367,7 +367,7 @@ Add to `~/.codeium/windsurf/mcp_config.json`:
 }
 ```
 
-> **Note:** Windsurf has a 100-tool limit. The server exposes 461 tools by default, so you must use `--workers` to select a subset. See [Worker Filtering](#worker-filtering) below.
+> **Note:** Windsurf has a 100-tool limit. The server exposes 472 tools by default, so you must use `--workers` to select a subset. See [Worker Filtering](#worker-filtering) below.
 
 </details>
 
@@ -376,7 +376,7 @@ Add to `~/.codeium/windsurf/mcp_config.json`:
 
 ### Worker Filtering
 
-The server exposes **461 tools** across 33 App Store tool domains + 2 core domains. Some MCP clients impose a tool limit (e.g., Windsurf caps at 100). Use the 35 `--workers` filter keys to enable only the workers you need:
+The server exposes **472 tools** across 33 App Store tool domains + 2 core domains. Some MCP clients impose a tool limit (e.g., Windsurf caps at 100). Use the 35 `--workers` filter keys to enable only the workers you need:
 
 ```bash
 # Only load apps, builds, and version lifecycle tools
@@ -424,13 +424,13 @@ swift run asc-mcp openapi-contract-check \
   --strict
 ```
 
-The manifest is pinned to Apple API 4.4.1 by version, SHA-256, path count, and operation count. It currently maps 429 Apple operations, explicitly defers 471, and scopes out 363, covering all 1,263 operations without overlap. CI fails when the Apple document changes, a mapped operation moves or disappears, a public tool or worker drifts from the manifest, an input field loses its binding, response lineage becomes invalid, or a deferred decision expires. Unexposed optional Apple parameters are warnings so they remain visible in the generated backlog.
+The manifest is pinned to Apple API 4.4.1 by version, SHA-256, path count, and operation count. It currently maps 441 Apple operations, explicitly defers 459, and scopes out 363, covering all 1,263 operations without overlap. CI fails when the Apple document changes, a mapped operation moves or disappears, a public tool or worker drifts from the manifest, an input field loses its binding, response lineage becomes invalid, or a deferred decision expires. Unexposed optional Apple parameters are warnings so they remain visible in the generated backlog.
 
-Manifest schema v2 also accounts for every optional Apple query and request-body input as publicly bound, internally controlled, intentionally omitted with a reviewed reason, or still unclassified. The checked-in `optionalInputCoveragePin` records the exact current totals and a SHA-256 digest of the sorted input identities and dispositions; `--strict` rejects a missing pin or any count- or identity-level drift. The pin makes phased remediation auditable and regression-safe, but it is not a claim that every optional Apple input is already public. The v3.17.0 pin is 2,488 total: 968 bound, 40 internally controlled, 1,480 intentionally omitted, and 0 unclassified. Its identity SHA-256 is `b2220715e8a131a9ef49f9c9ce2a931dd18ef79bf3d7371a4273b0164c28119e`.
+Manifest schema v2 also accounts for every optional Apple query and request-body input as publicly bound, internally controlled, intentionally omitted with a reviewed reason, or still unclassified. The checked-in `optionalInputCoveragePin` records the exact current totals and a SHA-256 digest of the sorted input identities and dispositions; `--strict` rejects a missing pin or any count- or identity-level drift. The pin makes phased remediation auditable and regression-safe, but it is not a claim that every optional Apple input is already public. The v3.18.0 pin is 2,548 total: 993 bound, 40 internally controlled, 1,515 intentionally omitted, and 0 unclassified. Its identity SHA-256 is `00b48805d61ba3849f940f2e7c020817882a0e942b8eef0bea14e81089d13323`.
 
 `--strict` is the merge- and tag-time release gate. Every declared `target` or `broken` tool remains an error in reports, and a regression test pins their exact state. The current baseline has no `target` or `broken` implementations and no implementation drift, so any implementation that leaves `asBuilt`, any structural contract error, or any optional-input coverage drift blocks both merges and releases. `--structural-strict` remains available only for local phased remediation work.
 
-This gate proves operation identity, top-level MCP field ownership, required Apple inputs, typed internal values, and response source/pointer lineage. Full MCP type/enum/range parity and complete typed response schemas remain separate optimization phases; the current mapping status is 428 partial and 33 deprecated.
+This gate proves operation identity, top-level MCP field ownership, required Apple inputs, typed internal values, and response source/pointer lineage. Full MCP type/enum/range parity and complete typed response schemas remain separate optimization phases; the current mapping status is 439 partial and 33 deprecated.
 
 The older `openapi-coverage` command remains available for the high-level domain report in [`ASC-OPENAPI-COVERAGE-GENERATED.md`](ASC-OPENAPI-COVERAGE-GENERATED.md). The operation contract is the authoritative release gate.
 
@@ -451,7 +451,7 @@ The older `openapi-coverage` command remains available for the high-level domain
 | `build_beta` | `builds_*_beta_*`, individual tester build tools | 11 | TestFlight localizations, notifications |
 | `versions` | `app_versions_` | 17 | Version lifecycle, age ratings, submit, release |
 | `reviews` | `reviews_` | 8 | Customer reviews and responses |
-| `beta_groups` | `beta_groups_` | 9 | TestFlight groups |
+| `beta_groups` | `beta_groups_` | 15 | TestFlight groups and public-link recruitment criteria |
 | `beta_feedback` | `beta_feedback_` | 8 | TestFlight feedback screenshots, crash submissions, crash logs |
 | `beta_testers` | `beta_testers_` | 12 | Tester management |
 | `iap` | `iap_` | 59 | In-app purchases, versioned metadata, pricing, availability, offer codes, review assets |
@@ -472,7 +472,7 @@ The older `openapi-coverage` command remains available for the high-level domain
 | `promoted` | `promoted_` | 9 | Promoted in-app purchases |
 | `review_attachments` | `review_attachments_` | 4 | App Store review attachments |
 | `review_submissions` | `review_submissions_` | 9 | Generic App Store review submissions and submission items |
-| `metrics` | `metrics_` | 4 | Performance metrics, diagnostics |
+| `metrics` | `metrics_` | 9 | Performance metrics, diagnostics, and TestFlight usage metrics |
 
 ### Token Cost
 
@@ -480,20 +480,20 @@ When connected to an LLM client, tool definitions consume context tokens. Here's
 
 | Configuration | Tools | ~Tokens |
 |---|---:|---:|
-| All workers (default) | 461 | **~53,000** |
+| All workers (default) | 472 | **~55,000** |
 | Release workflow: `apps,builds,export_compliance,versions,reviews` | ~71 | ~8,800 |
 | Monetization: `apps,iap,subscriptions,pricing` | 183 | ~21,000 |
-| TestFlight: `apps,builds,beta_groups,beta_testers` | ~56 | ~6,000 |
+| TestFlight: `apps,builds,beta_groups,beta_testers` | ~62 | ~7,000 |
 | Marketing: `apps,screenshots,custom_pages,ppo,promoted` | ~60 | ~6,800 |
 | `--workers apps` | 16 | ~2,000 |
 
 **Heaviest workers:** Subscriptions (99 tools), InAppPurchases (59 tools), Xcode Cloud (30 tools), Provisioning (17 tools), Screenshots (16 tools).
 
-For 200K-context clients, ~53K tokens is about 27% of the window. Exact cost depends on the MCP host's serialization and tokenizer. For clients with smaller context windows, use `--workers` to reduce the footprint.
+For 200K-context clients, ~55K tokens is about 28% of the window. Exact cost depends on the MCP host's serialization and tokenizer. For clients with smaller context windows, use `--workers` to reduce the footprint.
 
 ## Available Tools
 
-**461 tools** organized across 33 App Store tool domains + 2 core domains (use the 35 `--workers` filter keys — see [Worker Filtering](#worker-filtering)):
+**472 tools** organized across 33 App Store tool domains + 2 core domains (use the 35 `--workers` filter keys — see [Worker Filtering](#worker-filtering)):
 
 <details>
 <summary><strong>Company Management</strong> — 3 tools</summary>
@@ -705,7 +705,7 @@ Compound uploads retain the same lowercase MD5 fingerprint from reservation thro
 </details>
 
 <details>
-<summary><strong>TestFlight Beta Groups</strong> — 9 tools</summary>
+<summary><strong>TestFlight Beta Groups</strong> — 15 tools</summary>
 
 | Tool | Description |
 |------|-------------|
@@ -718,6 +718,12 @@ Compound uploads retain the same lowercase MD5 fingerprint from reservation thro
 | `beta_groups_list_testers` | List testers in a beta group |
 | `beta_groups_add_builds` | Add builds to a beta group |
 | `beta_groups_remove_builds` | Remove builds from a beta group |
+| `beta_groups_get_recruitment_criteria` | Get the public-link recruitment criteria attached to a beta group |
+| `beta_groups_create_recruitment_criteria` | Create device-family and OS-version recruitment criteria |
+| `beta_groups_update_recruitment_criteria` | Replace or explicitly clear recruitment filters |
+| `beta_groups_delete_recruitment_criteria` | Delete recruitment criteria after exact criterion-ID confirmation |
+| `beta_groups_list_recruitment_options` | List device families and OS versions Apple currently permits |
+| `beta_groups_check_recruitment_compatibility` | Check whether a group has a build compatible with its criteria |
 
 </details>
 
@@ -1066,7 +1072,7 @@ Includes App Store review attachment upload, get, delete, and list tools.
 </details>
 
 <details>
-<summary><strong>Performance Metrics</strong> — 4 tools</summary>
+<summary><strong>Performance Metrics</strong> — 9 tools</summary>
 
 | Tool | Description |
 |------|-------------|
@@ -1074,6 +1080,11 @@ Includes App Store review attachment upload, get, delete, and list tools.
 | `metrics_build_perf` | Get build performance metrics |
 | `metrics_build_diagnostics` | List diagnostics for a build |
 | `metrics_get_diagnostic_logs` | Get diagnostic logs |
+| `metrics_app_beta_tester_usage` | Get app TestFlight crash, session, and feedback metrics by beta tester |
+| `metrics_group_beta_tester_usage` | Get beta-group TestFlight crash, session, and feedback metrics by beta tester |
+| `metrics_group_public_link_usage` | Get public-link views, acceptance outcomes, criteria failures, and survey ratios |
+| `metrics_tester_usage` | Get one tester's TestFlight usage metrics within an app |
+| `metrics_build_beta_usage` | Get build TestFlight crash, install, session, feedback, and invitation metrics |
 
 </details>
 

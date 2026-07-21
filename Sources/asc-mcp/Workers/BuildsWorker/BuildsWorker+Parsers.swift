@@ -149,7 +149,17 @@ extension BuildsWorker {
                 "type": tester.type,
                 "email": tester.attributes.email.jsonSafe,
                 "firstName": tester.attributes.firstName.jsonSafe,
-                "lastName": tester.attributes.lastName.jsonSafe
+                "lastName": tester.attributes.lastName.jsonSafe,
+                "appDevices": tester.attributes.appDevices.map { devices in
+                    devices.map { device in
+                        [
+                            "model": device.model.jsonSafe,
+                            "platform": (device.platform?.rawValue).jsonSafe,
+                            "osVersion": device.osVersion.jsonSafe,
+                            "appBuildVersion": device.appBuildVersion.jsonSafe
+                        ] as [String: Any]
+                    }
+                }.jsonSafe
             ]
         }
     }

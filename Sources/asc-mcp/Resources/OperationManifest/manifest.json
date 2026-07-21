@@ -7,12 +7,12 @@
     "operationCount": 1263
   },
   "optionalInputCoveragePin": {
-    "total": 2488,
-    "bound": 968,
+    "total": 2548,
+    "bound": 993,
     "internalControl": 40,
-    "intentionallyOmitted": 1480,
+    "intentionallyOmitted": 1515,
     "unclassified": 0,
-    "identitySHA256": "b2220715e8a131a9ef49f9c9ce2a931dd18ef79bf3d7371a4273b0164c28119e"
+    "identitySHA256": "00b48805d61ba3849f940f2e7c020817882a0e942b8eef0bea14e81089d13323"
   },
   "optionalParameterFamilyRules": [
     {
@@ -1479,14 +1479,6 @@
       "reviewAtSpec": "4.4.1"
     },
     {
-      "id": "deferred.apps_betaTesterUsages_getMetrics",
-      "operationId": "apps_betaTesterUsages_getMetrics",
-      "disposition": "deferred",
-      "reason": "The `apps` resource-group capability is not yet exposed by asc-mcp.",
-      "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
-    },
-    {
       "id": "deferred.apps_preReleaseVersions_getToManyRelated",
       "operationId": "apps_preReleaseVersions_getToManyRelated",
       "disposition": "deferred",
@@ -2119,34 +2111,10 @@
       "reviewAtSpec": "4.4.1"
     },
     {
-      "id": "deferred.betaGroups_getInstance",
-      "operationId": "betaGroups_getInstance",
-      "disposition": "deferred",
-      "reason": "The `betaGroups` resource-group capability is not yet exposed by asc-mcp.",
-      "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
-    },
-    {
       "id": "deferred.betaGroups_app_getToOneRelated",
       "operationId": "betaGroups_app_getToOneRelated",
       "disposition": "deferred",
-      "reason": "The `betaGroups` resource-group capability is not yet exposed by asc-mcp.",
-      "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
-    },
-    {
-      "id": "deferred.betaGroups_betaRecruitmentCriteria_getToOneRelated",
-      "operationId": "betaGroups_betaRecruitmentCriteria_getToOneRelated",
-      "disposition": "deferred",
-      "reason": "The `betaGroups` resource-group capability is not yet exposed by asc-mcp.",
-      "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
-    },
-    {
-      "id": "deferred.betaGroups_betaRecruitmentCriterionCompatibleBuildCheck_getToOneRelated",
-      "operationId": "betaGroups_betaRecruitmentCriterionCompatibleBuildCheck_getToOneRelated",
-      "disposition": "deferred",
-      "reason": "The `betaGroups` resource-group capability is not yet exposed by asc-mcp.",
+      "reason": "The related App resource lookup is deferred; current beta-group tools accept or filter by the App identifier without projecting the App resource.",
       "owner": "asc-mcp",
       "reviewAtSpec": "4.4.1"
     },
@@ -2154,23 +2122,7 @@
       "id": "deferred.betaGroups_builds_getToManyRelated",
       "operationId": "betaGroups_builds_getToManyRelated",
       "disposition": "deferred",
-      "reason": "The `betaGroups` resource-group capability is not yet exposed by asc-mcp.",
-      "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
-    },
-    {
-      "id": "deferred.betaGroups_betaTesterUsages_getMetrics",
-      "operationId": "betaGroups_betaTesterUsages_getMetrics",
-      "disposition": "deferred",
-      "reason": "The `betaGroups` resource-group capability is not yet exposed by asc-mcp.",
-      "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
-    },
-    {
-      "id": "deferred.betaGroups_publicLinkUsages_getMetrics",
-      "operationId": "betaGroups_publicLinkUsages_getMetrics",
-      "disposition": "deferred",
-      "reason": "The `betaGroups` resource-group capability is not yet exposed by asc-mcp.",
+      "reason": "Reading the related Build resources for a beta group is deferred; current beta-group tools manage build membership but do not project Build resources.",
       "owner": "asc-mcp",
       "reviewAtSpec": "4.4.1"
     },
@@ -2178,7 +2130,7 @@
       "id": "deferred.betaGroups_app_getToOneRelationship",
       "operationId": "betaGroups_app_getToOneRelationship",
       "disposition": "deferred",
-      "reason": "The `betaGroups` resource-group capability is not yet exposed by asc-mcp.",
+      "reason": "The linkage-only App relationship is deferred with the related App lookup; current beta-group tools accept or filter by the App identifier without a separate relationship read.",
       "owner": "asc-mcp",
       "reviewAtSpec": "4.4.1"
     },
@@ -2186,7 +2138,7 @@
       "id": "deferred.betaGroups_betaRecruitmentCriteria_getToOneRelationship",
       "operationId": "betaGroups_betaRecruitmentCriteria_getToOneRelationship",
       "disposition": "deferred",
-      "reason": "The `betaGroups` resource-group capability is not yet exposed by asc-mcp.",
+      "reason": "`beta_groups_get_recruitment_criteria` uses the related-resource endpoint to return the criterion identity and attributes after confirming the exact beta group; the linkage-only response is intentionally deferred because it is strictly less informative.",
       "owner": "asc-mcp",
       "reviewAtSpec": "4.4.1"
     },
@@ -2194,7 +2146,7 @@
       "id": "deferred.betaGroups_betaRecruitmentCriterionCompatibleBuildCheck_getToOneRelationship",
       "operationId": "betaGroups_betaRecruitmentCriterionCompatibleBuildCheck_getToOneRelationship",
       "disposition": "deferred",
-      "reason": "The `betaGroups` resource-group capability is not yet exposed by asc-mcp.",
+      "reason": "`beta_groups_check_recruitment_compatibility` uses the related-resource endpoint to return the check identity and compatibility attribute after confirming the exact beta group; the linkage-only response is intentionally deferred because it is strictly less informative.",
       "owner": "asc-mcp",
       "reviewAtSpec": "4.4.1"
     },
@@ -2202,7 +2154,7 @@
       "id": "deferred.betaGroups_betaTesters_getToManyRelationship",
       "operationId": "betaGroups_betaTesters_getToManyRelationship",
       "disposition": "deferred",
-      "reason": "The `betaGroups` resource-group capability is not yet exposed by asc-mcp.",
+      "reason": "`beta_groups_list_testers` returns the related BetaTester resources for the group; the linkage-only identifier response is intentionally deferred because it is strictly less informative.",
       "owner": "asc-mcp",
       "reviewAtSpec": "4.4.1"
     },
@@ -2210,7 +2162,7 @@
       "id": "deferred.betaGroups_builds_getToManyRelationship",
       "operationId": "betaGroups_builds_getToManyRelationship",
       "disposition": "deferred",
-      "reason": "The `betaGroups` resource-group capability is not yet exposed by asc-mcp.",
+      "reason": "The linkage-only Build relationship read is deferred with the richer related Build resource lookup; current tools manage build membership without a separate read projection.",
       "owner": "asc-mcp",
       "reviewAtSpec": "4.4.1"
     },
@@ -2231,38 +2183,6 @@
       "reviewAtSpec": "4.4.1"
     },
     {
-      "id": "deferred.betaRecruitmentCriteria_createInstance",
-      "operationId": "betaRecruitmentCriteria_createInstance",
-      "disposition": "deferred",
-      "reason": "The `betaRecruitmentCriteria` resource-group capability is not yet exposed by asc-mcp.",
-      "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
-    },
-    {
-      "id": "deferred.betaRecruitmentCriteria_deleteInstance",
-      "operationId": "betaRecruitmentCriteria_deleteInstance",
-      "disposition": "deferred",
-      "reason": "The `betaRecruitmentCriteria` resource-group capability is not yet exposed by asc-mcp.",
-      "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
-    },
-    {
-      "id": "deferred.betaRecruitmentCriteria_updateInstance",
-      "operationId": "betaRecruitmentCriteria_updateInstance",
-      "disposition": "deferred",
-      "reason": "The `betaRecruitmentCriteria` resource-group capability is not yet exposed by asc-mcp.",
-      "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
-    },
-    {
-      "id": "deferred.betaRecruitmentCriterionOptions_getCollection",
-      "operationId": "betaRecruitmentCriterionOptions_getCollection",
-      "disposition": "deferred",
-      "reason": "The `betaRecruitmentCriterionOptions` resource-group capability is not yet exposed by asc-mcp.",
-      "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
-    },
-    {
       "id": "deferred.betaTesters_betaGroups_getToManyRelated",
       "operationId": "betaTesters_betaGroups_getToManyRelated",
       "disposition": "deferred",
@@ -2273,14 +2193,6 @@
     {
       "id": "deferred.betaTesters_builds_getToManyRelated",
       "operationId": "betaTesters_builds_getToManyRelated",
-      "disposition": "deferred",
-      "reason": "The `betaTesters` resource-group capability is not yet exposed by asc-mcp.",
-      "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
-    },
-    {
-      "id": "deferred.betaTesters_betaTesterUsages_getMetrics",
-      "operationId": "betaTesters_betaTesterUsages_getMetrics",
       "disposition": "deferred",
       "reason": "The `betaTesters` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
@@ -2441,14 +2353,6 @@
     {
       "id": "deferred.builds_icons_getToManyRelated",
       "operationId": "builds_icons_getToManyRelated",
-      "disposition": "deferred",
-      "reason": "The `builds` resource-group capability is not yet exposed by asc-mcp.",
-      "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
-    },
-    {
-      "id": "deferred.builds_betaBuildUsages_getMetrics",
-      "operationId": "builds_betaBuildUsages_getMetrics",
       "disposition": "deferred",
       "reason": "The `builds` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",

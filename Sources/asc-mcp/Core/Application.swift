@@ -52,7 +52,7 @@ public func runApplication(options: AppRuntimeOptions = AppRuntimeOptions()) asy
         - export_compliance_* — encryption declarations, documents, build linkage, and export-compliance readiness
         - app_versions_* — version lifecycle (create, submit, release)
         - reviews_* — customer reviews
-        - beta_groups_* — TestFlight groups
+        - beta_groups_* — TestFlight groups, public-link recruitment criteria, and compatibility checks
         - beta_feedback_* — TestFlight feedback screenshots, crash submissions, and crash logs
         - beta_testers_* — TestFlight testers
         - iap_* — in-app purchases and subscriptions
@@ -71,7 +71,7 @@ public func runApplication(options: AppRuntimeOptions = AppRuntimeOptions()) asy
         - custom_pages_* -- custom product pages
         - ppo_* -- product page optimization (A/B testing)
         - promoted_* -- promoted in-app purchases
-        - metrics_* -- performance metrics and diagnostics
+        - metrics_* -- performance, diagnostics, and TestFlight usage metrics
         - review_attachments_* -- app store review attachments (upload, get, delete, list)
         - review_submissions_* -- App Store review submission inspection, recovery, item assembly, submission, and cancellation
         """,

@@ -282,6 +282,38 @@ struct ParameterValidationTests {
         #expect(result.isError == true)
     }
 
+    @Test("beta recruitment tools without required identifiers return isError")
+    func betaRecruitmentMissingParameters() async throws {
+        let client = try await TestFactory.makeHTTPClient()
+        let worker = BetaGroupsWorker(httpClient: client)
+
+        for name in [
+            "beta_groups_get_recruitment_criteria",
+            "beta_groups_create_recruitment_criteria",
+            "beta_groups_update_recruitment_criteria",
+            "beta_groups_delete_recruitment_criteria",
+            "beta_groups_check_recruitment_compatibility"
+        ] {
+            let result = try await worker.handleTool(CallTool.Parameters(name: name, arguments: nil))
+            #expect(result.isError == true, "Expected missing-parameter error for \(name)")
+        }
+    }
+
+    @Test("beta recruitment delete requires exact confirmation argument")
+    func betaRecruitmentDeleteMissingConfirmation() async throws {
+        let client = try await TestFactory.makeHTTPClient()
+        let worker = BetaGroupsWorker(httpClient: client)
+        let result = try await worker.handleTool(CallTool.Parameters(
+            name: "beta_groups_delete_recruitment_criteria",
+            arguments: [
+                "group_id": .string("group-1"),
+                "criterion_id": .string("criterion-1")
+            ]
+        ))
+
+        #expect(result.isError == true)
+    }
+
     // MARK: - InAppPurchasesWorker
 
     @Test("iap_list without app_id returns isError")
@@ -1149,6 +1181,23 @@ struct ParameterValidationTests {
         let params = CallTool.Parameters(name: "metrics_get_diagnostic_logs", arguments: nil)
         let result = try await worker.handleTool(params)
         #expect(result.isError == true)
+    }
+
+    @Test("TestFlight metrics without required parents return isError")
+    func testFlightMetricsMissingParameters() async throws {
+        let client = try await TestFactory.makeHTTPClient()
+        let worker = MetricsWorker(httpClient: client)
+
+        for name in [
+            "metrics_app_beta_tester_usage",
+            "metrics_group_beta_tester_usage",
+            "metrics_group_public_link_usage",
+            "metrics_tester_usage",
+            "metrics_build_beta_usage"
+        ] {
+            let result = try await worker.handleTool(CallTool.Parameters(name: name, arguments: nil))
+            #expect(result.isError == true, "Expected missing-parameter error for \(name)")
+        }
     }
 
     // MARK: - ReviewAttachmentsWorker

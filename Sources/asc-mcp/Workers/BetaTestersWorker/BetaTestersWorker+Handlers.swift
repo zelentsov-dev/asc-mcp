@@ -746,7 +746,17 @@ extension BetaTestersWorker {
             "firstName": tester.attributes.firstName.jsonSafe,
             "lastName": tester.attributes.lastName.jsonSafe,
             "inviteType": tester.attributes.inviteType.jsonSafe,
-            "state": tester.attributes.state.jsonSafe
+            "state": tester.attributes.state.jsonSafe,
+            "appDevices": tester.attributes.appDevices.map { devices in
+                devices.map { device in
+                    [
+                        "model": device.model.jsonSafe,
+                        "platform": (device.platform?.rawValue).jsonSafe,
+                        "osVersion": device.osVersion.jsonSafe,
+                        "appBuildVersion": device.appBuildVersion.jsonSafe
+                    ] as [String: Any]
+                }
+            }.jsonSafe
         ]
         if let relationships = tester.relationships {
             var relationIds: [String: Any] = [:]

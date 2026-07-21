@@ -1004,7 +1004,7 @@ struct OperationToolManifestTests {
 
         #expect(manifest.index.schemaVersion == 2)
         #expect(manifest.index.optionalInputCoveragePin != nil)
-        #expect(manifest.tools.count == 461)
+        #expect(manifest.tools.count == 472)
         #expect(Set(manifest.tools.map(\.tool)) == Set(tools.map(\.name)))
         #expect(Set(manifest.workers.map(\.workerKey)) == Set(snapshots.map(\.key)))
         for snapshot in snapshots {

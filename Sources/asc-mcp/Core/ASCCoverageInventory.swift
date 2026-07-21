@@ -103,7 +103,7 @@ enum ASCCoverageInventory {
             priority: .p0,
             workerKeys: [
                 "builds", "build_uploads", "build_processing", "export_compliance", "build_beta", "beta_groups",
-                "beta_feedback", "beta_testers", "beta_app", "pre_release", "beta_license"
+                "beta_feedback", "beta_testers", "beta_app", "pre_release", "beta_license", "metrics"
             ],
             coveredCapabilities: [
                 "build list/find",
@@ -117,13 +117,15 @@ enum ASCCoverageInventory {
                 "beta crash log reads",
                 "beta app review submissions",
                 "pre-release versions",
-                "beta license agreements"
+                "beta license agreements",
+                "beta recruitment criteria, option discovery, and compatible-build checks",
+                "beta tester app-device context",
+                "app, group, tester, build, and public-link TestFlight usage metrics"
             ],
             missingCapabilities: [
-                "beta recruitment criteria",
                 "beta app clip invocation/localization APIs"
             ],
-            notes: "Core TestFlight administration, resumable build uploads, and dedicated beta feedback retrieval are covered; recruitment criteria and beta App Clip APIs remain the main gaps."
+            notes: "Core TestFlight administration, resumable build uploads, and dedicated beta feedback retrieval are covered. Six recruitment tools and five usage-metric tools map twelve additional Apple operations; beta App Clip APIs remain the main gap."
         ),
         ASCCoverageArea(
             name: "Webhook notifications",
@@ -232,14 +234,15 @@ enum ASCCoverageInventory {
                 "sales reports",
                 "financial reports",
                 "analytics reports and snapshots",
-                "performance and power metrics"
+                "performance and power metrics",
+                "TestFlight tester, build, and public-link usage metrics"
             ],
             missingCapabilities: [
                 "analytics segment discovery ergonomics",
                 "customer review summarization",
                 "recommendations exposed by perf power metrics"
             ],
-            notes: "Read-heavy workflows are safe and valuable; summaries and recommendations are high UX leverage."
+            notes: "Performance, power, and TestFlight usage metrics are covered; summaries and recommendations remain high UX leverage."
         ),
         ASCCoverageArea(
             name: "Xcode Cloud workflows and builds",

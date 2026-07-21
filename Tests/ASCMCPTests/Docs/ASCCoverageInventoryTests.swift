@@ -39,6 +39,31 @@ struct ASCCoverageInventoryTests {
         #expect(commerce.missingCapabilities.contains("authoritative fully paginated subscription inventory"))
     }
 
+    @Test("TestFlight coverage tracks recruitment app-device context and usage metrics")
+    func testFlightCoverageTracksNewCapabilities() throws {
+        let testFlight = try #require(
+            ASCCoverageInventory.areas.first {
+                $0.name == "TestFlight builds, testers, groups, and beta app review"
+            }
+        )
+        let reporting = try #require(
+            ASCCoverageInventory.areas.first {
+                $0.name == "Reporting, analytics, metrics, and diagnostics"
+            }
+        )
+
+        #expect(testFlight.coveredCapabilities.contains(
+            "beta recruitment criteria, option discovery, and compatible-build checks"
+        ))
+        #expect(testFlight.coveredCapabilities.contains("beta tester app-device context"))
+        #expect(testFlight.coveredCapabilities.contains(
+            "app, group, tester, build, and public-link TestFlight usage metrics"
+        ))
+        #expect(reporting.coveredCapabilities.contains(
+            "TestFlight tester, build, and public-link usage metrics"
+        ))
+    }
+
     @Test("coverage inventory references only current worker keys")
     func coverageInventoryReferencesCurrentWorkerKeys() async throws {
         let snapshots = try await TestFactory.collectWorkerToolSnapshots()

@@ -132,7 +132,7 @@ struct InternalPaginationScopeTests {
             }
         }
 
-        #expect(strictScopeCount == 57)
+        #expect(strictScopeCount == 59)
         #expect(permissiveFiles.isEmpty, "Target workers must not construct permissive scopes: \(permissiveFiles)")
     }
 }

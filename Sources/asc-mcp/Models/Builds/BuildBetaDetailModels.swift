@@ -128,6 +128,22 @@ public struct BetaTesterAttributes: Codable, Sendable {
     public let lastName: String?
     public let inviteType: String?
     public let state: String?
+    public let appDevices: [BetaTesterAppDevice]?
+}
+
+public struct BetaTesterAppDevice: Codable, Sendable {
+    public let model: String?
+    public let platform: BetaTesterAppDevicePlatform?
+    public let osVersion: String?
+    public let appBuildVersion: String?
+}
+
+public enum BetaTesterAppDevicePlatform: String, Codable, Equatable, Sendable {
+    case iOS = "IOS"
+    case macOS = "MAC_OS"
+    case tvOS = "TV_OS"
+    case watchOS = "WATCH_OS"
+    case visionOS = "VISION_OS"
 }
 
 /// Beta tester relationships

@@ -348,10 +348,11 @@
           }
         ],
         "fields": [
-          {
-            "outputField": "betaTesters",
-            "operationId": "builds_individualTesters_getToManyRelated",
-            "jsonPointer": "/data"
+        {
+          "outputField": "betaTesters",
+          "operationId": "builds_individualTesters_getToManyRelated",
+          "jsonPointer": "/data",
+          "localRole": "Stable individual-tester projections including Apple's appDevices attributes."
           },
           {
             "outputField": "next_url",
@@ -365,7 +366,7 @@
           }
         ]
       },
-      "note": "The endpoint returns only testers assigned individually, not every tester who obtains access through beta groups. This tool duplicates builds_list_individual_testers."
+      "note": "The endpoint returns only testers assigned individually, not every tester who obtains access through beta groups, and projects the complete Apple 4.4.1 appDevices attribute. This tool duplicates builds_list_individual_testers."
     },
     {
       "tool": "builds_list_beta_localizations",
@@ -476,10 +477,11 @@
           }
         ],
         "fields": [
-          {
-            "outputField": "individualTesters",
-            "operationId": "builds_individualTesters_getToManyRelated",
-            "jsonPointer": "/data"
+        {
+          "outputField": "individualTesters",
+          "operationId": "builds_individualTesters_getToManyRelated",
+          "jsonPointer": "/data",
+          "localRole": "Stable individual-tester projections including Apple's appDevices attributes."
           },
           {
             "outputField": "next_url",
@@ -493,7 +495,7 @@
           }
         ]
       },
-      "note": "Correct endpoint; public functionality duplicates builds_get_beta_testers."
+      "note": "Correct endpoint with complete Apple 4.4.1 appDevices projections; public functionality duplicates builds_get_beta_testers."
     },
     {
       "tool": "builds_remove_individual_testers",
