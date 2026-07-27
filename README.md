@@ -1,3 +1,5 @@
+[![MCP Toplist](https://mcptoplist.com/badge/glama%2Fzelentsov-dev%2Fasc-mcp.svg)](https://mcptoplist.com/server/glama%2Fzelentsov-dev%2Fasc-mcp)
+
 <p align="center">
   <h1 align="center">App Store Connect MCP Server</h1>
   <p align="center">
