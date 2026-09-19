@@ -9,9 +9,10 @@ Thank you for your interest in contributing! This guide will help you get starte
 3. **Create a branch**: `git checkout -b feature/your-feature`
 4. **Build**: `swift build`
 5. **Test**: `swift test`
-6. **Commit** your changes: `git commit -m 'Add your feature'`
-7. **Push**: `git push origin feature/your-feature`
-8. **Open a Pull Request** against the `develop` branch
+6. **Exercise MCP behavior** with `swift run asc-mcp --code-mode` or the stdio smoke check when changing runtime/tool exposure
+7. **Commit** your changes: `git commit -m 'Add your feature'`
+8. **Push**: `git push origin feature/your-feature`
+9. **Open a Pull Request** against the `develop` branch
 
 ## Code Conventions
 

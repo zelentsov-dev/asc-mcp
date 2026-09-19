@@ -22,6 +22,7 @@ struct ASCCommandLineInfoTests {
         #expect(output.contains("--companies PATH"))
         #expect(output.contains("--workers LIST"))
         #expect(output.contains("--read-only"))
+        #expect(output.contains("--code-mode"))
         for worker in WorkerManager.validWorkerFilterKeys {
             #expect(output.contains(worker))
         }

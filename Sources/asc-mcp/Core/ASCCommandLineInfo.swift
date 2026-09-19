@@ -18,7 +18,7 @@ enum ASCCommandLineInfo {
         let workers = WorkerManager.validWorkerFilterKeys.sorted().joined(separator: ",")
         return """
         Usage:
-          asc-mcp [--companies PATH] [--workers LIST] [--read-only]
+          asc-mcp [--companies PATH] [--workers LIST] [--read-only] [--code-mode]
           asc-mcp openapi-contract-check --spec PATH [options]
           asc-mcp openapi-coverage --spec PATH --output PATH [options]
 
@@ -26,6 +26,7 @@ enum ASCCommandLineInfo {
           --companies PATH   Load App Store Connect companies from a JSON file.
           --workers LIST     Enable a comma-separated worker subset plus company and auth.
           --read-only        Block App Store Connect mutation tools.
+          --code-mode        Expose three bounded catalog discovery and execution tools.
           --version, -V      Print the asc-mcp version without loading credentials.
           --help, -h         Show this help without loading credentials.
 

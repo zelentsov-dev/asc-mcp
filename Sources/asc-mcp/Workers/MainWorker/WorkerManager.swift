@@ -330,6 +330,8 @@ public actor WorkerManager {
     private let enabledWorkers: Set<String>?
     /// Blocks App Store Connect mutation tools before they reach worker handlers.
     private let readOnlyMode: Bool
+    /// Whether only Code Mode tools are exposed through MCP.
+    private let codeMode: Bool
     private var runtime: WorkerRuntime
     private let uploadService: UploadService
 
@@ -338,7 +340,7 @@ public actor WorkerManager {
     ///   - dependencies: Shared worker dependencies.
     ///   - enabledWorkers: Set of worker names to enable, nil = all workers.
     ///   - readOnlyMode: Whether mutation tools should be blocked before handler execution.
-    public init(dependencies: WorkerDependencies, enabledWorkers: Set<String>? = nil, readOnlyMode: Bool = false) async {
+    public init(dependencies: WorkerDependencies, enabledWorkers: Set<String>? = nil, readOnlyMode: Bool = false, codeMode: Bool = false) async {
         let (companiesWorker, account) = await dependencies.snapshot()
         let uploadService = UploadService()
         let graph = WorkerGraph(
@@ -351,6 +353,7 @@ public actor WorkerManager {
         self.companiesWorker = companiesWorker
         self.enabledWorkers = enabledWorkers
         self.readOnlyMode = readOnlyMode
+        self.codeMode = codeMode
         self.uploadService = uploadService
         self.runtime = WorkerRuntime(account: account, graph: graph)
     }
@@ -363,7 +366,8 @@ public actor WorkerManager {
     public static func createForProduction(
         companiesWorker: CompaniesWorker,
         enabledWorkers: Set<String>? = nil,
-        readOnlyMode: Bool = false
+        readOnlyMode: Bool = false,
+        codeMode: Bool = false
     ) async throws -> WorkerManager {
         let company = try await companiesWorker.manager.getCurrentCompany()
         let defaultURL = await companiesWorker.manager.getDefaultURL()
@@ -384,7 +388,7 @@ public actor WorkerManager {
             authWorker: authWorker
         )
         
-        return await WorkerManager(dependencies: dependencies, enabledWorkers: enabledWorkers, readOnlyMode: readOnlyMode)
+        return await WorkerManager(dependencies: dependencies, enabledWorkers: enabledWorkers, readOnlyMode: readOnlyMode, codeMode: codeMode)
     }
 
     /// Check if a worker is enabled (nonisolated since enabledWorkers is let)
@@ -513,6 +517,9 @@ public actor WorkerManager {
     public func registerWorkers(in server: Server) async {
         // Register unified handler for tool listing
         await server.withMethodHandler(ListTools.self) { _ in
+            if self.codeMode {
+                return ListTools.Result(tools: codeModeTools().map(ToolMetadataPolicy.apply))
+            }
             var allTools: [Tool] = []
             for descriptor in await self.workerDescriptors() where self.isWorkerDescriptorEnabled(descriptor) {
                 allTools += await descriptor.getTools()
@@ -546,7 +553,8 @@ public actor WorkerManager {
     private func executeTool(
         _ params: CallTool.Parameters,
         includeRuntimeMetadata: Bool,
-        convertErrorsToResults: Bool
+        convertErrorsToResults: Bool,
+        allowHiddenDomainTool: Bool = false
     ) async throws -> CallTool.Result {
         let isWrite = params.name == "company_switch"
         if isWrite {
@@ -559,7 +567,7 @@ public actor WorkerManager {
             try Task.checkCancellation()
             let result: CallTool.Result
             do {
-                result = try await routeToolWithAccess(params)
+                result = try await routeToolWithAccess(params, allowHiddenDomainTool: allowHiddenDomainTool)
             } catch {
                 guard convertErrorsToResults else { throw error }
                 result = errorResult(error)
@@ -588,7 +596,38 @@ public actor WorkerManager {
         }
     }
 
-    private func routeToolWithAccess(_ params: CallTool.Parameters) async throws -> CallTool.Result {
+    private func makeCodeModeRuntime() -> CodeModeRuntime {
+        CodeModeRuntime(
+            dispatchTool: { params in
+                try await self.executeTool(params, includeRuntimeMetadata: true, convertErrorsToResults: true, allowHiddenDomainTool: true)
+            },
+            toolsProvider: {
+                var tools: [Tool] = []
+                for descriptor in await self.workerDescriptors() where self.isWorkerDescriptorEnabled(descriptor) {
+                    tools += await descriptor.getTools()
+                }
+                return tools.map(ToolMetadataPolicy.apply)
+            }
+        )
+    }
+
+    private func routeToolWithAccess(_ params: CallTool.Parameters, allowHiddenDomainTool: Bool = false) async throws -> CallTool.Result {
+        if codeMode && !allowHiddenDomainTool {
+            switch params.name {
+            case "asc_code_search":
+                let query = params.arguments?["query"]?.stringValue ?? ""
+                let limit = params.arguments?["limit"]?.intValue ?? 10
+                return await makeCodeModeRuntime().search(query: query, limit: limit)
+            case "asc_code_get_schema":
+                let names = params.arguments?["names"]?.arrayValue?.compactMap(\.stringValue) ?? []
+                return await makeCodeModeRuntime().schemas(names: names)
+            case "asc_code_execute":
+                guard let code = params.arguments?["code"]?.stringValue else { return MCPResult.error("Required parameter 'code'") }
+                return await makeCodeModeRuntime().execute(source: code)
+            default:
+                return MCPResult.error("Code Mode is enabled. Use asc_code_search, asc_code_get_schema, or asc_code_execute; direct domain tools are hidden.")
+            }
+        }
         if readOnlyMode, isBlockedByReadOnlyMode(params.name) {
             return readOnlyBlockedResult(params.name)
         }

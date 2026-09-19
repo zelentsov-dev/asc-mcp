@@ -25,6 +25,9 @@ swift test
 # Run with worker filtering (for clients with tool limits)
 ./.build/debug/asc-mcp --workers apps,builds,versions,reviews
 
+# Expose three bounded Code Mode gateway tools
+./.build/debug/asc-mcp --code-mode
+
 # Run integration tests
 ./.build/debug/asc-mcp --test
 
@@ -49,7 +52,7 @@ Each company needs: `keyID`, `issuerID`, `privateKeyPath` (path to `.p8` file).
 
 **WorkerManager** (`Workers/MainWorker/WorkerManager.swift`) — central registry, routes tool calls by prefix.
 
-**Workers** (39 Swift worker classes; 35 `--workers` filter keys; 502 tools):
+**Workers** (39 Swift worker classes; 35 `--workers` filter keys; 502 domain tools; optional `--code-mode` exposes 3 gateway tools):
 
 | Worker | Prefix | Tools | Domain |
 |--------|--------|-------|--------|

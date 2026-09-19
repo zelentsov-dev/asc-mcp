@@ -84,6 +84,11 @@ def parse_arguments() -> argparse.Namespace:
     parser.add_argument("--expected-prefix", required=True)
     parser.add_argument("--expected-prefix-count", required=True, type=non_negative_integer)
     parser.add_argument("--error-tool", required=True)
+    parser.add_argument(
+        "--code-mode",
+        action="store_true",
+        help="Launch the server with the bounded Code Mode catalog.",
+    )
     return parser.parse_args()
 
 
@@ -245,7 +250,12 @@ def run_smoke(arguments: argparse.Namespace) -> dict[str, Any]:
         try:
             with stderr_path.open("wb") as stderr_file:
                 process = subprocess.Popen(
-                    [str(binary), "--companies", str(config_path)],
+                    [
+                        str(binary),
+                        "--companies",
+                        str(config_path),
+                        *(["--code-mode"] if arguments.code_mode else []),
+                    ],
                     stdin=subprocess.PIPE,
                     stdout=subprocess.PIPE,
                     stderr=stderr_file,

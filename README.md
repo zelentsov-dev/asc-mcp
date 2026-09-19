@@ -18,7 +18,7 @@
 
 ## Overview
 
-**asc-mcp** is a Swift-based MCP server that connects a local macOS MCP client to the [App Store Connect API](https://developer.apple.com/documentation/appstoreconnectapi). It exposes **502 tools** across 33 App Store tool domains + 2 core domains, enabling you to automate iOS and macOS release workflows through natural language.
+**asc-mcp** is a Swift-based MCP server that connects a local macOS MCP client to the [App Store Connect API](https://developer.apple.com/documentation/appstoreconnectapi). It exposes **502 domain tools** across 33 App Store tool domains + 2 core domains, enabling you to automate iOS and macOS release workflows through natural language. Clients that struggle with large eager tool catalogs can use [Code Mode](#code-mode) to expose only three bounded discovery and execution tools.
 
 Configuration examples are included for Codex, Claude Code, Claude Desktop, Gemini CLI, VS Code with GitHub Copilot, Continue, Cursor, and Devin Desktop (formerly Windsurf). Client configuration is documented; release CI verifies installation, MCP initialization, and tool discovery on macOS rather than launching every third-party client.
 
@@ -478,9 +478,19 @@ You can also disable individual tools in the client. Server-side worker filterin
 > [!IMPORTANT]
 > `command` must point to the real executable. GUI clients often do not inherit shell aliases, PATH changes, or environment variables. Use an absolute path and prefer the default `companies.json` credential file.
 
+## Code Mode
+
+Use `--code-mode` when an MCP client has a low tool-count or context limit. It exposes exactly three tools—`asc_code_search`, `asc_code_get_schema`, and `asc_code_execute`—while keeping the full 502-tool domain catalog available behind the bounded `asc.callTool(name, args)` bridge. Discovery returns exact schemas, execution is limited to 64 KB of source, 25 domain calls, 16 KB of output, and a 30-second per-call wait. Existing read-only and mutation policy gates still apply.
+
+```bash
+asc-mcp --code-mode
+```
+
+`asc_code_execute` accepts JavaScript with `asc.callTool("tool_name", { ... })`; use `asc_code_search` first and `asc_code_get_schema` before constructing arguments. Code Mode is intended for clients that cannot safely load all domain schemas at startup.
+
 ## Worker Filtering
 
-The server exposes **502 tools** across 33 App Store tool domains + 2 core domains. Some MCP clients impose a tool limit; Cascade in Devin Desktop currently allows 100 active tools. Use the 35 `--workers` filter keys to enable only the workers you need:
+The default server exposes **502 tools** (502 domain tools) across 33 App Store tool domains + 2 core domains. Some MCP clients impose a tool limit; Cascade in Devin Desktop currently allows 100 active tools. Use the 35 `--workers` filter keys to enable only the workers you need:
 
 ```bash
 # Only load apps, builds, and version lifecycle tools
@@ -587,7 +597,8 @@ When an MCP client eagerly loads every tool definition, the approximate schema f
 
 | Configuration | Tools | ~Tokens |
 |---|---:|---:|
-| All workers (default) | 502 | **~60,000** |
+| All workers (default) | 502 domain tools | **~60,000** |
+| Code Mode (`--code-mode`) | 3 gateway tools | **~500** |
 | Release workflow: `apps,builds,export_compliance,versions,reviews` | ~72 | ~8,900 |
 | Monetization: `apps,iap,subscriptions,pricing` | 184 | ~21,100 |
 | TestFlight: `apps,builds,beta_groups,beta_testers` | ~63 | ~7,100 |
@@ -600,7 +611,7 @@ Exact cost depends on the MCP host's serialization, tokenizer, and tool-discover
 
 ## Available Tools
 
-**502 tools** organized across 33 App Store tool domains + 2 core domains (use the 35 `--workers` filter keys — see [Worker Filtering](#worker-filtering)):
+**502 tools** (502 domain tools) organized across 33 App Store tool domains + 2 core domains (use the 35 `--workers` filter keys — see [Worker Filtering](#worker-filtering), or use [Code Mode](#code-mode) for a three-tool gateway):
 
 <details>
 <summary><strong>Company Management</strong> — 3 tools</summary>

@@ -23,7 +23,8 @@ If you discover a security vulnerability, please report it responsibly:
 - Use environment variables or a `companies.json` file outside your repo
 - Add `companies.json`, `*.p8`, `*.pem`, `*.key` to your `.gitignore`
 - Rotate App Store Connect API keys periodically
-- Use `--workers` flag to limit exposed tools to only what you need
+- Use `--workers` or `--code-mode` to limit the MCP surface exposed to clients
+- Code Mode keeps the existing read-only and mutation policy gates on bridged domain calls
 - JWT tokens are held in memory only and expire after 20 minutes
 - Prefer read-only MCP smoke checks (`auth_generate_token`, `auth_token_status`, `apps_list limit=1`) after reloads
 - Review tool annotations before approving high-risk actions such as submit, release, delete, revoke, clear, or cancel

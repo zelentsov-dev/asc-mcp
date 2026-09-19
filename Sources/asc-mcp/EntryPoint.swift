@@ -58,12 +58,16 @@ struct ASCMCPApp {
     private static func parseRuntimeOptions() -> AppRuntimeOptions {
         let enabledWorkers = parseWorkersFlag()
         let readOnlyMode = CommandLine.arguments.contains("--read-only")
+        let codeMode = CommandLine.arguments.contains("--code-mode")
 
         if readOnlyMode {
             print("🔒 Read-only mode enabled: App Store Connect mutation tools will be blocked", to: &standardError)
         }
+        if codeMode {
+            print("🧩 Code Mode enabled: exposing catalog discovery and bounded execution tools", to: &standardError)
+        }
 
-        return AppRuntimeOptions(enabledWorkers: enabledWorkers, readOnlyMode: readOnlyMode)
+        return AppRuntimeOptions(enabledWorkers: enabledWorkers, readOnlyMode: readOnlyMode, codeMode: codeMode)
     }
 
     /// Parse --workers flag from command line arguments.

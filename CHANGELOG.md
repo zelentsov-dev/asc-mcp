@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Add `--code-mode` with three bounded tools (`asc_code_search`, `asc_code_get_schema`, and `asc_code_execute`) for MCP clients that cannot eagerly load the full 502-tool domain catalog. Domain calls continue through the canonical dispatcher and existing safety gates.
+
+### Documentation
+
+- Document Code Mode limits, configuration, and the distinction between the three exposed gateway tools and the 502 underlying domain tools.
+
 ## [4.1.6] - 2026-08-22
 
 ### Fixed

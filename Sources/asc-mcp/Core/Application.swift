@@ -40,6 +40,7 @@ public func runApplication(options: AppRuntimeOptions = AppRuntimeOptions()) asy
         - company_current — show current active company
 
         \(options.readOnlyMode ? "Read-only mode is enabled. Tools that can create, update, upload, submit, release, delete, revoke, clear, cancel, or otherwise mutate App Store Connect are blocked before execution.\n" : "")
+        \(options.codeMode ? "Code Mode is enabled. The 502 domain tools are hidden; use asc_code_search, asc_code_get_schema, and asc_code_execute.\n" : "")
 
         After selecting a company, use:
         - auth_* — authentication
@@ -84,7 +85,8 @@ public func runApplication(options: AppRuntimeOptions = AppRuntimeOptions()) asy
     let workerManager = try await WorkerManager.createForProduction(
         companiesWorker: companiesWorker,
         enabledWorkers: options.enabledWorkers,
-        readOnlyMode: options.readOnlyMode
+        readOnlyMode: options.readOnlyMode,
+        codeMode: options.codeMode
     )
     print("✅ Workers initialized", to: &standardError)
 
