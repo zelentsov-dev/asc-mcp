@@ -299,7 +299,7 @@ struct AppsVersionsOptionalInputContractTests {
         #expect(classifications.count == 119)
         #expect(classifications.filter { $0.disposition == .internalControl }.count == 1)
         #expect(classifications.filter { $0.disposition == .intentionallyOmitted }.count == 118)
-        #expect(classifications.allSatisfy { $0.reviewAtSpec == "4.4.1" && !$0.reason.isEmpty })
+        #expect(classifications.allSatisfy { $0.reviewAtSpec == "4.5" && !$0.reason.isEmpty })
 
         let expectedBindings: [(String, String, String?, String?)] = [
             ("apps_list", "app_ids", "filter[id]", nil),

@@ -40,7 +40,7 @@ struct AppSearchKeywordsV319Tests {
         #expect(manifest.index.optionalParameterFamilyRules?.contains {
             $0.family == .sparseFields &&
             $0.disposition == .intentionallyOmitted &&
-            $0.reviewAtSpec == "4.4.1"
+            $0.reviewAtSpec == "4.5"
         } == true)
     }
 

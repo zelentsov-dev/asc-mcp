@@ -7,7 +7,7 @@ Source baseline:
 - Apple API 4.0 release notes: https://developer.apple.com/documentation/appstoreconnectapi/app-store-connect-api-4-0-release-notes
 - Apple Webhook notifications: https://developer.apple.com/documentation/appstoreconnectapi/webhook-notifications
 
-Update 2026-05-07: automated OpenAPI coverage tooling is now available. See `ASC-OPENAPI-COVERAGE-GENERATED.md` for the generated Apple 4.4.1 path/operation matrix.
+Update 2026-05-07: automated OpenAPI coverage tooling is now available. See `ASC-OPENAPI-COVERAGE-GENERATED.md` for the generated Apple 4.5 path/operation matrix.
 Update 2026-05-08: accessibility declaration management is covered by `accessibility_*` tools.
 Update 2026-05-08: local webhook receiver helpers are available for signature verification, payload parsing, and event/delivery triage.
 Update 2026-07-20: Apple 4.4.1 versioned commerce metadata, plan-type-aware subscription availability, adjusted equalizations, and generic review submissions are covered.

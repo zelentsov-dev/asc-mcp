@@ -11,6 +11,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `subscriptions_list_price_point_adjusted_equalizations` now requires `plan_types`. App Store Connect API 4.5 marks `filter[planType]` as required on `GET /v1/subscriptionPricePoints/{id}/adjustedEqualizations`, where 4.4.1 left it optional, so a call without it produced a request that Apple's current contract rejects. The input schema now lists `plan_types` as required, and a missing or empty value fails locally before any network request. Pass `MONTHLY`, `UPFRONT`, or both. `subscriptions_list_price_point_equalizations` is unchanged because Apple keeps its plan filter optional.
 
+### Changed
+
+- Re-baselined the operation contract from App Store Connect API 4.4.1 to 4.5 after a spec-level review. Each expired decision was re-stamped only where its Apple item is unchanged, or re-decided where 4.5 changed it. The new `apps_performanceOverviews_getToManyRelated` operation is deferred, the six new Game Center operations stay under the Game Center scope rules, and the new optional inputs `gracRatingClassificationNumber` on `app_versions_update_age_rating` and `marketSettings` and `multiSeatStatus` on `subscriptions_update` are intentionally omitted for now.
+- The operation manifest maps 476 Apple operations, explicitly defers 425, and scopes out 369; all 1,270 pinned Apple 4.5 operations remain accounted for without overlap.
+- The optional-input pin is fully classified at 2,907 total: 1,121 bound, 40 internally controlled, 1,746 intentionally omitted, and 0 unclassified; its identity SHA-256 is `0ce3ff14568f841643559c359bc91827290535925c3665172fda81d499f81ce1`.
+- The generated OpenAPI coverage report and the coverage inventory baseline now track Apple 4.5: 973 paths and 1,270 operations, all classified.
+
+### Compatibility
+
+- The public catalog remains at 502 tools with no renamed inputs or removed response fields. Apart from the now-required `plan_types` above, existing calls are unchanged.
+
 ## [4.1.6] - 2026-08-22
 
 ### Fixed

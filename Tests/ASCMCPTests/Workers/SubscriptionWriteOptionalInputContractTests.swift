@@ -534,7 +534,7 @@ struct SubscriptionWriteOptionalInputContractTests {
                     }
                     omittedNames.insert(classification.appleName)
                     omittedReviewsAreCurrent = omittedReviewsAreCurrent
-                        && classification.reviewAtSpec == "4.4.1"
+                        && classification.reviewAtSpec == "4.5"
                         && !classification.reason.isEmpty
                 }
             }

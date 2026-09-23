@@ -383,7 +383,7 @@ struct CommerceCatalogOptionalInputTests {
         #expect(classifications.count == 169)
         #expect(classifications.filter { $0.disposition == .internalControl }.count == 31)
         #expect(classifications.filter { $0.disposition == .intentionallyOmitted }.count == 138)
-        #expect(classifications.allSatisfy { $0.reviewAtSpec == "4.4.1" && !$0.reason.isEmpty })
+        #expect(classifications.allSatisfy { $0.reviewAtSpec == "4.5" && !$0.reason.isEmpty })
     }
 }
 
