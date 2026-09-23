@@ -220,14 +220,14 @@
               "appleName": "filter[granularity]",
               "disposition": "intentionallyOmitted",
               "reason": "The readiness heuristic only needs to know whether any report instance exists, regardless of granularity.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "query",
               "appleName": "filter[processingDate]",
               "disposition": "intentionallyOmitted",
               "reason": "The readiness heuristic only needs to know whether any report instance exists, regardless of processing date.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             }
           ],
           "inputs": [

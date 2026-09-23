@@ -19,42 +19,42 @@
               "appleName": "include",
               "disposition": "internalControl",
               "reason": "Readiness always includes buildBetaDetail because TestFlight states are required for the documented result.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "query",
               "appleName": "limit[betaBuildLocalizations]",
               "disposition": "intentionallyOmitted",
               "reason": "Beta build localizations are not included in readiness checks.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "query",
               "appleName": "limit[betaGroups]",
               "disposition": "intentionallyOmitted",
               "reason": "Beta groups are not included in readiness checks.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "query",
               "appleName": "limit[buildBundles]",
               "disposition": "intentionallyOmitted",
               "reason": "Build bundles are not included in readiness checks.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "query",
               "appleName": "limit[icons]",
               "disposition": "intentionallyOmitted",
               "reason": "Build icons are not included in readiness checks.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "query",
               "appleName": "limit[individualTesters]",
               "disposition": "intentionallyOmitted",
               "reason": "Individual testers are not included in readiness checks.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             }
           ]
         }
@@ -140,42 +140,42 @@
               "appleName": "include",
               "disposition": "intentionallyOmitted",
               "reason": "Processing state is a reduced Build projection and does not include related resources.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "query",
               "appleName": "limit[betaBuildLocalizations]",
               "disposition": "intentionallyOmitted",
               "reason": "Beta build localizations are not included in processing state.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "query",
               "appleName": "limit[betaGroups]",
               "disposition": "intentionallyOmitted",
               "reason": "Beta groups are not included in processing state.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "query",
               "appleName": "limit[buildBundles]",
               "disposition": "intentionallyOmitted",
               "reason": "Build bundles are not included in processing state.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "query",
               "appleName": "limit[icons]",
               "disposition": "intentionallyOmitted",
               "reason": "Build icons are not included in processing state.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "query",
               "appleName": "limit[individualTesters]",
               "disposition": "intentionallyOmitted",
               "reason": "Individual testers are not included in processing state.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             }
           ]
         }
@@ -235,42 +235,42 @@
               "appleName": "include",
               "disposition": "intentionallyOmitted",
               "reason": "Processing status is a reduced Build projection and does not include related resources.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "query",
               "appleName": "limit[betaBuildLocalizations]",
               "disposition": "intentionallyOmitted",
               "reason": "Beta build localizations are not included in processing status.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "query",
               "appleName": "limit[betaGroups]",
               "disposition": "intentionallyOmitted",
               "reason": "Beta groups are not included in processing status.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "query",
               "appleName": "limit[buildBundles]",
               "disposition": "intentionallyOmitted",
               "reason": "Build bundles are not included in processing status.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "query",
               "appleName": "limit[icons]",
               "disposition": "intentionallyOmitted",
               "reason": "Build icons are not included in processing status.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "query",
               "appleName": "limit[individualTesters]",
               "disposition": "intentionallyOmitted",
               "reason": "Individual testers are not included in processing status.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             }
           ]
         }
@@ -345,14 +345,14 @@
               "appleName": "/data/attributes/expired",
               "disposition": "intentionallyOmitted",
               "reason": "This narrowly scoped encryption-compliance tool must not also expire a TestFlight build; expiration requires a separately named destructive action.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "body",
               "appleName": "/data/relationships/appEncryptionDeclaration",
               "disposition": "intentionallyOmitted",
               "reason": "Linking an App Encryption Declaration is a distinct relationship workflow and is not inferred by the boolean encryption-compliance update.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             }
           ]
         }

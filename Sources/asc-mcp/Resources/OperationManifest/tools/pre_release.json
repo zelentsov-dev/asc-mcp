@@ -19,14 +19,14 @@
               "appleName": "include",
               "disposition": "intentionallyOmitted",
               "reason": "The detail tool preserves relationship IDs and uses dedicated tools for full related builds.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "query",
               "appleName": "limit[builds]",
               "disposition": "intentionallyOmitted",
               "reason": "Builds are not included by this detail projection.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             }
           ]
         }
@@ -77,14 +77,14 @@
               "appleName": "include",
               "disposition": "intentionallyOmitted",
               "reason": "The collection preserves relationship IDs and uses pre_release_list_builds for full related Build resources.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "query",
               "appleName": "limit[builds]",
               "disposition": "intentionallyOmitted",
               "reason": "Builds are not included by the pre-release collection projection.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             }
           ]
         }

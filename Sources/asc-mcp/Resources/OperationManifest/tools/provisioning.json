@@ -194,21 +194,21 @@
               "appleName": "include",
               "disposition": "intentionallyOmitted",
               "reason": "This detail tool returns a stable bundle-ID projection and does not project related profiles, capabilities, or app resources.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "query",
               "appleName": "limit[bundleIdCapabilities]",
               "disposition": "intentionallyOmitted",
               "reason": "The related capability collection is not included by this tool, so its nested include limit has no effect on the documented output.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "query",
               "appleName": "limit[profiles]",
               "disposition": "intentionallyOmitted",
               "reason": "The related profile collection is not included by this tool, so its nested include limit has no effect on the documented output.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             }
           ]
         }
@@ -245,7 +245,7 @@
               "appleName": "include",
               "disposition": "intentionallyOmitted",
               "reason": "The certificate detail output is deliberately limited to certificate attributes and does not project the optional passTypeId relationship.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             }
           ]
         }
@@ -282,21 +282,21 @@
               "appleName": "include",
               "disposition": "intentionallyOmitted",
               "reason": "The profile detail output returns profile attributes and does not project bundleId, devices, or certificates relationship resources.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "query",
               "appleName": "limit[certificates]",
               "disposition": "intentionallyOmitted",
               "reason": "Certificates are not included by this tool, so the nested relationship limit has no effect on its documented output.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "query",
               "appleName": "limit[devices]",
               "disposition": "intentionallyOmitted",
               "reason": "Devices are not included by this tool, so the nested relationship limit has no effect on its documented output.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             }
           ]
         }
@@ -333,21 +333,21 @@
               "appleName": "include",
               "disposition": "intentionallyOmitted",
               "reason": "The collection tool returns a stable bundle-ID projection and does not project related profiles, capabilities, or app resources.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "query",
               "appleName": "limit[bundleIdCapabilities]",
               "disposition": "intentionallyOmitted",
               "reason": "The related capability collection is not included, so its nested limit has no effect on the documented output.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "query",
               "appleName": "limit[profiles]",
               "disposition": "intentionallyOmitted",
               "reason": "The related profile collection is not included, so its nested limit has no effect on the documented output.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             }
           ]
         }
@@ -420,7 +420,7 @@
               "appleName": "include",
               "disposition": "intentionallyOmitted",
               "reason": "Certificate lists use a bounded attribute projection and do not project optional passTypeId relationship resources.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             }
           ]
         }
@@ -497,21 +497,21 @@
               "appleName": "include",
               "disposition": "intentionallyOmitted",
               "reason": "Profile lists use a bounded attribute projection and do not project bundleId, devices, or certificates relationship resources.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "query",
               "appleName": "limit[certificates]",
               "disposition": "intentionallyOmitted",
               "reason": "Certificates are not included by this tool, so the nested relationship limit has no effect on its documented output.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "query",
               "appleName": "limit[devices]",
               "disposition": "intentionallyOmitted",
               "reason": "Devices are not included by this tool, so the nested relationship limit has no effect on its documented output.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             }
           ]
         }

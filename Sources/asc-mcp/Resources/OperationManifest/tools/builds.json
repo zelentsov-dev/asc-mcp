@@ -19,112 +19,112 @@
               "appleName": "include",
               "disposition": "internalControl",
               "reason": "The finder fixes include to app, buildBetaDetail, preReleaseVersion, and buildUpload so a stable match and upload-state projection can be produced.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "query",
               "appleName": "limit",
               "disposition": "internalControl",
               "reason": "The singular finder fixes limit to one after applying deterministic filters and sort.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "query",
               "appleName": "exists[usesNonExemptEncryption]",
               "disposition": "intentionallyOmitted",
               "reason": "Encryption-presence filtering belongs to builds_list; this tool is intentionally scoped to exact build-number lookup.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "query",
               "appleName": "filter[appStoreVersion]",
               "disposition": "intentionallyOmitted",
               "reason": "App Store version filtering belongs to builds_list; the finder supports platform and pre-release disambiguation.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "query",
               "appleName": "filter[betaAppReviewSubmission.betaReviewState]",
               "disposition": "intentionallyOmitted",
               "reason": "Beta review-state filtering belongs to builds_list, not exact build-number lookup.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "query",
               "appleName": "filter[betaGroups]",
               "disposition": "intentionallyOmitted",
               "reason": "Beta-group filtering belongs to builds_list, not exact build-number lookup.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "query",
               "appleName": "filter[buildAudienceType]",
               "disposition": "intentionallyOmitted",
               "reason": "Audience filtering belongs to builds_list, not exact build-number lookup.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "query",
               "appleName": "filter[expired]",
               "disposition": "intentionallyOmitted",
               "reason": "Expiration filtering belongs to builds_list, not exact build-number lookup.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "query",
               "appleName": "filter[id]",
               "disposition": "intentionallyOmitted",
               "reason": "A caller with a build ID should use builds_get; this finder is keyed by app and build number.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "query",
               "appleName": "filter[processingState]",
               "disposition": "intentionallyOmitted",
               "reason": "Processing-state filtering belongs to builds_list, not exact build-number lookup.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "query",
               "appleName": "filter[usesNonExemptEncryption]",
               "disposition": "intentionallyOmitted",
               "reason": "Encryption-value filtering belongs to builds_list, not exact build-number lookup.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "query",
               "appleName": "limit[betaBuildLocalizations]",
               "disposition": "intentionallyOmitted",
               "reason": "Beta build localizations are not included by the finder.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "query",
               "appleName": "limit[betaGroups]",
               "disposition": "intentionallyOmitted",
               "reason": "Beta groups are not included by the finder.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "query",
               "appleName": "limit[buildBundles]",
               "disposition": "intentionallyOmitted",
               "reason": "Build bundles are not included by the finder.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "query",
               "appleName": "limit[icons]",
               "disposition": "intentionallyOmitted",
               "reason": "Build icons are not included by the finder.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "query",
               "appleName": "limit[individualTesters]",
               "disposition": "intentionallyOmitted",
               "reason": "Individual testers are not included by the finder.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             }
           ]
         }
@@ -220,35 +220,35 @@
               "appleName": "limit[betaBuildLocalizations]",
               "disposition": "intentionallyOmitted",
               "reason": "Beta build localizations are available through builds_list_beta_localizations and are not included by this detail tool.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "query",
               "appleName": "limit[betaGroups]",
               "disposition": "intentionallyOmitted",
               "reason": "Beta groups are available through builds_get_beta_groups and are not included by this detail tool.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "query",
               "appleName": "limit[buildBundles]",
               "disposition": "intentionallyOmitted",
               "reason": "The detail tool intentionally returns Apple's bounded build-bundle include preview rather than exposing nested JSON:API pagination controls.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "query",
               "appleName": "limit[icons]",
               "disposition": "intentionallyOmitted",
               "reason": "Build icons are not included by this detail tool.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "query",
               "appleName": "limit[individualTesters]",
               "disposition": "intentionallyOmitted",
               "reason": "Individual testers are available through dedicated paginated tools and are not included here.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             }
           ]
         }
@@ -318,42 +318,42 @@
               "appleName": "include",
               "disposition": "internalControl",
               "reason": "The list fixes include to app, buildBetaDetail, preReleaseVersion, and buildUpload, which are projected in its included output.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "query",
               "appleName": "limit[betaBuildLocalizations]",
               "disposition": "intentionallyOmitted",
               "reason": "Beta build localizations are not included by this list projection.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "query",
               "appleName": "limit[betaGroups]",
               "disposition": "intentionallyOmitted",
               "reason": "Beta groups are not included by this list projection.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "query",
               "appleName": "limit[buildBundles]",
               "disposition": "intentionallyOmitted",
               "reason": "Build bundles are not included by this list projection.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "query",
               "appleName": "limit[icons]",
               "disposition": "intentionallyOmitted",
               "reason": "Build icons are not included by this list projection.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "query",
               "appleName": "limit[individualTesters]",
               "disposition": "intentionallyOmitted",
               "reason": "Individual testers are available through dedicated TestFlight tools and are not included here.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             }
           ]
         }

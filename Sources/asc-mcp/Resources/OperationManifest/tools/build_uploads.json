@@ -102,21 +102,21 @@
               "appleName": "filter[state]",
               "disposition": "intentionallyOmitted",
               "reason": "Recovery must compare the complete exact version/build/platform fingerprint regardless of current upload state.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "query",
               "appleName": "sort",
               "disposition": "intentionallyOmitted",
               "reason": "Recovery computes a set difference across every bounded page, so Apple result ordering cannot affect identity.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "query",
               "appleName": "include",
               "disposition": "intentionallyOmitted",
               "reason": "Parent recovery needs only BuildUpload identity and fingerprint attributes; related resources cannot prove create ownership.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             }
           ]
         },
@@ -397,7 +397,7 @@
               "appleName": "include",
               "disposition": "intentionallyOmitted",
               "reason": "Parent identity and processing state are sufficient for upload-file ownership and polling; related resources do not affect the transfer contract.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             }
           ]
         },
@@ -513,21 +513,21 @@
               "appleName": "filter[state]",
               "disposition": "intentionallyOmitted",
               "reason": "Recovery must compare the complete exact version/build/platform fingerprint regardless of current upload state.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "query",
               "appleName": "sort",
               "disposition": "intentionallyOmitted",
               "reason": "Recovery computes a set difference across every bounded page, so Apple result ordering cannot affect identity.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "query",
               "appleName": "include",
               "disposition": "intentionallyOmitted",
               "reason": "Parent recovery needs only BuildUpload identity and fingerprint attributes; related resources cannot prove create ownership.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             }
           ]
         },
@@ -607,7 +607,7 @@
               "appleName": "include",
               "disposition": "intentionallyOmitted",
               "reason": "Post-commit polling needs parent processing state and build linkage already present in the base BuildUpload projection; expanded resources do not change terminal classification.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             }
           ]
         },
