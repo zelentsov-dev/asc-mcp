@@ -499,6 +499,8 @@ struct SubscriptionWriteOptionalInputContractTests {
                     "/data/attributes/subscriptionPeriod"
                 ],
                 [
+                    "/data/attributes/marketSettings",
+                    "/data/attributes/multiSeatStatus",
                     "/data/relationships/introductoryOffers",
                     "/data/relationships/prices",
                     "/data/relationships/promotionalOffers",
