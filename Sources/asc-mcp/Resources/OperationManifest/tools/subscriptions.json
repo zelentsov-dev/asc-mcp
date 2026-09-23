@@ -3473,7 +3473,7 @@
           { "outputField": "next_url", "operationId": "subscriptionPricePoints_adjustedEqualizations_getToManyRelated", "jsonPointer": "/links/next", "localRole": "Apple continuation URL or null." }
         ]
       },
-      "note": "Exposes Apple 4.4.1 adjusted equalizations with all four documented filters, typed plan values, the 8000-item limit, included territory currency, total, and strict continuation scope."
+      "note": "Exposes Apple 4.5 adjusted equalizations with all four documented filters, typed plan values, the 8000-item limit, included territory currency, total, and strict continuation scope. Apple 4.5 requires filter[planType], so plan_types is required and a call without it fails before network access."
     },
     {
       "tool": "subscriptions_list_price_point_equalizations",

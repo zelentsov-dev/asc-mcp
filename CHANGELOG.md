@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Breaking Changes
+
+- `subscriptions_list_price_point_adjusted_equalizations` now requires `plan_types`. App Store Connect API 4.5 marks `filter[planType]` as required on `GET /v1/subscriptionPricePoints/{id}/adjustedEqualizations`, where 4.4.1 left it optional, so a call without it produced a request that Apple's current contract rejects. The input schema now lists `plan_types` as required, and a missing or empty value fails locally before any network request. Pass `MONTHLY`, `UPFRONT`, or both. `subscriptions_list_price_point_equalizations` is unchanged because Apple keeps its plan filter optional.
+
 ## [4.1.6] - 2026-08-22
 
 ### Fixed
