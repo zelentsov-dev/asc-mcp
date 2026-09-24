@@ -1,6 +1,6 @@
 # AGENTS.md
 
-This file provides guidance to Codex (Codex.ai/code) when working with code in this repository.
+This file is the canon for every coding agent (Codex, Claude Code) working in this repository. `CLAUDE.md` imports it and adds only Claude Code specifics.
 
 ## Language
 Response language: Russian
@@ -8,7 +8,7 @@ Comment language: English
 
 ## Project Overview
 
-MCP (Model Context Protocol) server for App Store Connect API integration, designed for Codex CLI. This server provides tools to manage iOS/macOS apps through App Store Connect.
+MCP (Model Context Protocol) server for App Store Connect API integration, designed for MCP clients such as Claude Code and Codex CLI. This server provides tools to manage iOS/macOS apps through App Store Connect.
 
 ## Build and Run Commands
 
@@ -202,6 +202,7 @@ Test infrastructure: `TestFactory` (`Tests/ASCMCPTests/Helpers/TestHelpers.swift
    - Example: "The `builds_list` method returns a list of builds with their statuses and dates. This is useful for selecting a build for TestFlight or submitting to the App Store"
 
 ### Code Documentation Requirements
+This repository is an exception to the owner's global default ("doc comments only for non-obvious contracts of public API"): here every public method carries a doc comment.
 - **MANDATORY**: Comment all public methods with:
   ```swift
   /// Brief description of what the method does
