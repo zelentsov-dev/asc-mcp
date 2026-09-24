@@ -30,10 +30,10 @@
             { "sourceKind": "fixed", "location": "query", "appleName": "limit", "fixedValue": 200 }
           ],
           "optionalParameterClassifications": [
-            { "location": "query", "appleName": "filter[appCustomProductPageLocalization]", "disposition": "intentionallyOmitted", "reason": "Create recovery scopes by the selected App Store parent and exact previewType, so cross-parent filters are unnecessary.", "reviewAtSpec": "4.4.1" },
-            { "location": "query", "appleName": "filter[appStoreVersionExperimentTreatmentLocalization]", "disposition": "intentionallyOmitted", "reason": "Create recovery scopes by the selected App Store parent and exact previewType, so cross-parent filters are unnecessary.", "reviewAtSpec": "4.4.1" },
-            { "location": "query", "appleName": "include", "disposition": "intentionallyOmitted", "reason": "The exact parent-scoped relationship path proves localization scope; the base projection validates identity and previewType plus optional resource self and parent linkage when present, so included resources are unnecessary and not decoded.", "reviewAtSpec": "4.4.1" },
-            { "location": "query", "appleName": "limit[appPreviews]", "disposition": "intentionallyOmitted", "reason": "Create recovery does not include child previews.", "reviewAtSpec": "4.4.1" }
+            { "location": "query", "appleName": "filter[appCustomProductPageLocalization]", "disposition": "intentionallyOmitted", "reason": "Create recovery scopes by the selected App Store parent and exact previewType, so cross-parent filters are unnecessary.", "reviewAtSpec": "4.5" },
+            { "location": "query", "appleName": "filter[appStoreVersionExperimentTreatmentLocalization]", "disposition": "intentionallyOmitted", "reason": "Create recovery scopes by the selected App Store parent and exact previewType, so cross-parent filters are unnecessary.", "reviewAtSpec": "4.5" },
+            { "location": "query", "appleName": "include", "disposition": "intentionallyOmitted", "reason": "The exact parent-scoped relationship path proves localization scope; the base projection validates identity and previewType plus optional resource self and parent linkage when present, so included resources are unnecessary and not decoded.", "reviewAtSpec": "4.5" },
+            { "location": "query", "appleName": "limit[appPreviews]", "disposition": "intentionallyOmitted", "reason": "Create recovery does not include child previews.", "reviewAtSpec": "4.5" }
           ]
         },
         {
@@ -46,10 +46,10 @@
             { "sourceKind": "fixed", "location": "query", "appleName": "limit", "fixedValue": 200 }
           ],
           "optionalParameterClassifications": [
-            { "location": "query", "appleName": "filter[appStoreVersionLocalization]", "disposition": "intentionallyOmitted", "reason": "Create recovery scopes by the selected custom-page parent and exact previewType.", "reviewAtSpec": "4.4.1" },
-            { "location": "query", "appleName": "filter[appStoreVersionExperimentTreatmentLocalization]", "disposition": "intentionallyOmitted", "reason": "Create recovery scopes by the selected custom-page parent and exact previewType.", "reviewAtSpec": "4.4.1" },
-            { "location": "query", "appleName": "include", "disposition": "intentionallyOmitted", "reason": "The exact parent-scoped relationship path proves localization scope; the base projection validates identity and previewType plus optional resource self and parent linkage when present, so included resources are unnecessary and not decoded.", "reviewAtSpec": "4.4.1" },
-            { "location": "query", "appleName": "limit[appPreviews]", "disposition": "intentionallyOmitted", "reason": "Create recovery does not include child previews.", "reviewAtSpec": "4.4.1" }
+            { "location": "query", "appleName": "filter[appStoreVersionLocalization]", "disposition": "intentionallyOmitted", "reason": "Create recovery scopes by the selected custom-page parent and exact previewType.", "reviewAtSpec": "4.5" },
+            { "location": "query", "appleName": "filter[appStoreVersionExperimentTreatmentLocalization]", "disposition": "intentionallyOmitted", "reason": "Create recovery scopes by the selected custom-page parent and exact previewType.", "reviewAtSpec": "4.5" },
+            { "location": "query", "appleName": "include", "disposition": "intentionallyOmitted", "reason": "The exact parent-scoped relationship path proves localization scope; the base projection validates identity and previewType plus optional resource self and parent linkage when present, so included resources are unnecessary and not decoded.", "reviewAtSpec": "4.5" },
+            { "location": "query", "appleName": "limit[appPreviews]", "disposition": "intentionallyOmitted", "reason": "Create recovery does not include child previews.", "reviewAtSpec": "4.5" }
           ]
         },
         {
@@ -62,10 +62,10 @@
             { "sourceKind": "fixed", "location": "query", "appleName": "limit", "fixedValue": 200 }
           ],
           "optionalParameterClassifications": [
-            { "location": "query", "appleName": "filter[appStoreVersionLocalization]", "disposition": "intentionallyOmitted", "reason": "Create recovery scopes by the selected treatment parent and exact previewType.", "reviewAtSpec": "4.4.1" },
-            { "location": "query", "appleName": "filter[appCustomProductPageLocalization]", "disposition": "intentionallyOmitted", "reason": "Create recovery scopes by the selected treatment parent and exact previewType.", "reviewAtSpec": "4.4.1" },
-            { "location": "query", "appleName": "include", "disposition": "intentionallyOmitted", "reason": "The exact parent-scoped relationship path proves localization scope; the base projection validates identity and previewType plus optional resource self and parent linkage when present, so included resources are unnecessary and not decoded.", "reviewAtSpec": "4.4.1" },
-            { "location": "query", "appleName": "limit[appPreviews]", "disposition": "intentionallyOmitted", "reason": "Create recovery does not include child previews.", "reviewAtSpec": "4.4.1" }
+            { "location": "query", "appleName": "filter[appStoreVersionLocalization]", "disposition": "intentionallyOmitted", "reason": "Create recovery scopes by the selected treatment parent and exact previewType.", "reviewAtSpec": "4.5" },
+            { "location": "query", "appleName": "filter[appCustomProductPageLocalization]", "disposition": "intentionallyOmitted", "reason": "Create recovery scopes by the selected treatment parent and exact previewType.", "reviewAtSpec": "4.5" },
+            { "location": "query", "appleName": "include", "disposition": "intentionallyOmitted", "reason": "The exact parent-scoped relationship path proves localization scope; the base projection validates identity and previewType plus optional resource self and parent linkage when present, so included resources are unnecessary and not decoded.", "reviewAtSpec": "4.5" },
+            { "location": "query", "appleName": "limit[appPreviews]", "disposition": "intentionallyOmitted", "reason": "Create recovery does not include child previews.", "reviewAtSpec": "4.5" }
           ]
         }
       ],
@@ -147,10 +147,10 @@
             { "sourceKind": "fixed", "location": "query", "appleName": "limit", "fixedValue": 200 }
           ],
           "optionalParameterClassifications": [
-            { "location": "query", "appleName": "filter[appCustomProductPageLocalization]", "disposition": "intentionallyOmitted", "reason": "Create recovery scopes by the selected App Store parent and exact screenshotDisplayType.", "reviewAtSpec": "4.4.1" },
-            { "location": "query", "appleName": "filter[appStoreVersionExperimentTreatmentLocalization]", "disposition": "intentionallyOmitted", "reason": "Create recovery scopes by the selected App Store parent and exact screenshotDisplayType.", "reviewAtSpec": "4.4.1" },
-            { "location": "query", "appleName": "include", "disposition": "intentionallyOmitted", "reason": "The exact parent-scoped relationship path proves localization scope; the base projection validates identity and screenshotDisplayType plus optional resource self and parent linkage when present, so included resources are unnecessary and not decoded.", "reviewAtSpec": "4.4.1" },
-            { "location": "query", "appleName": "limit[appScreenshots]", "disposition": "intentionallyOmitted", "reason": "Create recovery does not include child screenshots.", "reviewAtSpec": "4.4.1" }
+            { "location": "query", "appleName": "filter[appCustomProductPageLocalization]", "disposition": "intentionallyOmitted", "reason": "Create recovery scopes by the selected App Store parent and exact screenshotDisplayType.", "reviewAtSpec": "4.5" },
+            { "location": "query", "appleName": "filter[appStoreVersionExperimentTreatmentLocalization]", "disposition": "intentionallyOmitted", "reason": "Create recovery scopes by the selected App Store parent and exact screenshotDisplayType.", "reviewAtSpec": "4.5" },
+            { "location": "query", "appleName": "include", "disposition": "intentionallyOmitted", "reason": "The exact parent-scoped relationship path proves localization scope; the base projection validates identity and screenshotDisplayType plus optional resource self and parent linkage when present, so included resources are unnecessary and not decoded.", "reviewAtSpec": "4.5" },
+            { "location": "query", "appleName": "limit[appScreenshots]", "disposition": "intentionallyOmitted", "reason": "Create recovery does not include child screenshots.", "reviewAtSpec": "4.5" }
           ]
         },
         {
@@ -163,10 +163,10 @@
             { "sourceKind": "fixed", "location": "query", "appleName": "limit", "fixedValue": 200 }
           ],
           "optionalParameterClassifications": [
-            { "location": "query", "appleName": "filter[appStoreVersionLocalization]", "disposition": "intentionallyOmitted", "reason": "Create recovery scopes by the selected custom-page parent and exact screenshotDisplayType.", "reviewAtSpec": "4.4.1" },
-            { "location": "query", "appleName": "filter[appStoreVersionExperimentTreatmentLocalization]", "disposition": "intentionallyOmitted", "reason": "Create recovery scopes by the selected custom-page parent and exact screenshotDisplayType.", "reviewAtSpec": "4.4.1" },
-            { "location": "query", "appleName": "include", "disposition": "intentionallyOmitted", "reason": "The exact parent-scoped relationship path proves localization scope; the base projection validates identity and screenshotDisplayType plus optional resource self and parent linkage when present, so included resources are unnecessary and not decoded.", "reviewAtSpec": "4.4.1" },
-            { "location": "query", "appleName": "limit[appScreenshots]", "disposition": "intentionallyOmitted", "reason": "Create recovery does not include child screenshots.", "reviewAtSpec": "4.4.1" }
+            { "location": "query", "appleName": "filter[appStoreVersionLocalization]", "disposition": "intentionallyOmitted", "reason": "Create recovery scopes by the selected custom-page parent and exact screenshotDisplayType.", "reviewAtSpec": "4.5" },
+            { "location": "query", "appleName": "filter[appStoreVersionExperimentTreatmentLocalization]", "disposition": "intentionallyOmitted", "reason": "Create recovery scopes by the selected custom-page parent and exact screenshotDisplayType.", "reviewAtSpec": "4.5" },
+            { "location": "query", "appleName": "include", "disposition": "intentionallyOmitted", "reason": "The exact parent-scoped relationship path proves localization scope; the base projection validates identity and screenshotDisplayType plus optional resource self and parent linkage when present, so included resources are unnecessary and not decoded.", "reviewAtSpec": "4.5" },
+            { "location": "query", "appleName": "limit[appScreenshots]", "disposition": "intentionallyOmitted", "reason": "Create recovery does not include child screenshots.", "reviewAtSpec": "4.5" }
           ]
         },
         {
@@ -179,10 +179,10 @@
             { "sourceKind": "fixed", "location": "query", "appleName": "limit", "fixedValue": 200 }
           ],
           "optionalParameterClassifications": [
-            { "location": "query", "appleName": "filter[appStoreVersionLocalization]", "disposition": "intentionallyOmitted", "reason": "Create recovery scopes by the selected treatment parent and exact screenshotDisplayType.", "reviewAtSpec": "4.4.1" },
-            { "location": "query", "appleName": "filter[appCustomProductPageLocalization]", "disposition": "intentionallyOmitted", "reason": "Create recovery scopes by the selected treatment parent and exact screenshotDisplayType.", "reviewAtSpec": "4.4.1" },
-            { "location": "query", "appleName": "include", "disposition": "intentionallyOmitted", "reason": "The exact parent-scoped relationship path proves localization scope; the base projection validates identity and screenshotDisplayType plus optional resource self and parent linkage when present, so included resources are unnecessary and not decoded.", "reviewAtSpec": "4.4.1" },
-            { "location": "query", "appleName": "limit[appScreenshots]", "disposition": "intentionallyOmitted", "reason": "Create recovery does not include child screenshots.", "reviewAtSpec": "4.4.1" }
+            { "location": "query", "appleName": "filter[appStoreVersionLocalization]", "disposition": "intentionallyOmitted", "reason": "Create recovery scopes by the selected treatment parent and exact screenshotDisplayType.", "reviewAtSpec": "4.5" },
+            { "location": "query", "appleName": "filter[appCustomProductPageLocalization]", "disposition": "intentionallyOmitted", "reason": "Create recovery scopes by the selected treatment parent and exact screenshotDisplayType.", "reviewAtSpec": "4.5" },
+            { "location": "query", "appleName": "include", "disposition": "intentionallyOmitted", "reason": "The exact parent-scoped relationship path proves localization scope; the base projection validates identity and screenshotDisplayType plus optional resource self and parent linkage when present, so included resources are unnecessary and not decoded.", "reviewAtSpec": "4.5" },
+            { "location": "query", "appleName": "limit[appScreenshots]", "disposition": "intentionallyOmitted", "reason": "Create recovery does not include child screenshots.", "reviewAtSpec": "4.5" }
           ]
         }
       ],
@@ -319,8 +319,8 @@
           "role": "supporting",
           "condition": "Confirm the canonical target identity before the cascade delete.",
           "optionalParameterClassifications": [
-            { "location": "query", "appleName": "include", "disposition": "intentionallyOmitted", "reason": "Delete preflight needs only the exact base set identity.", "reviewAtSpec": "4.4.1" },
-            { "location": "query", "appleName": "limit[appPreviews]", "disposition": "intentionallyOmitted", "reason": "The preflight does not include previews.", "reviewAtSpec": "4.4.1" }
+            { "location": "query", "appleName": "include", "disposition": "intentionallyOmitted", "reason": "Delete preflight needs only the exact base set identity.", "reviewAtSpec": "4.5" },
+            { "location": "query", "appleName": "limit[appPreviews]", "disposition": "intentionallyOmitted", "reason": "The preflight does not include previews.", "reviewAtSpec": "4.5" }
           ]
         },
         { "operationId": "appPreviewSets_deleteInstance", "method": "delete", "path": "/v1/appPreviewSets/{id}", "role": "primary" }
@@ -366,8 +366,8 @@
           "role": "supporting",
           "condition": "Confirm the canonical target identity before the cascade delete.",
           "optionalParameterClassifications": [
-            { "location": "query", "appleName": "include", "disposition": "intentionallyOmitted", "reason": "Delete preflight needs only the exact base set identity.", "reviewAtSpec": "4.4.1" },
-            { "location": "query", "appleName": "limit[appScreenshots]", "disposition": "intentionallyOmitted", "reason": "The preflight does not include screenshots.", "reviewAtSpec": "4.4.1" }
+            { "location": "query", "appleName": "include", "disposition": "intentionallyOmitted", "reason": "Delete preflight needs only the exact base set identity.", "reviewAtSpec": "4.5" },
+            { "location": "query", "appleName": "limit[appScreenshots]", "disposition": "intentionallyOmitted", "reason": "The preflight does not include screenshots.", "reviewAtSpec": "4.5" }
           ]
         },
         { "operationId": "appScreenshotSets_deleteInstance", "method": "delete", "path": "/v1/appScreenshotSets/{id}", "role": "primary" }
@@ -417,14 +417,14 @@
               "appleName": "include",
               "disposition": "intentionallyOmitted",
               "reason": "The exact-ID path proves resource identity; the base appPreviewSet projection includes validated attributes plus optional self and parent linkage when present, so included localization and appPreview resources are unnecessary and not decoded.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "query",
               "appleName": "limit[appPreviews]",
               "disposition": "intentionallyOmitted",
               "reason": "The nested limit applies only when appPreviews is included; callers page previews through screenshots_list_previews.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             }
           ]
         }
@@ -462,14 +462,14 @@
               "appleName": "include",
               "disposition": "intentionallyOmitted",
               "reason": "The exact-ID path proves resource identity; the base appScreenshotSet projection includes validated attributes plus optional self and parent linkage when present, so included localization and appScreenshot resources are unnecessary and not decoded.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "query",
               "appleName": "limit[appScreenshots]",
               "disposition": "intentionallyOmitted",
               "reason": "The nested limit applies only when appScreenshots is included; callers page screenshots through screenshots_list.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             }
           ]
         }
@@ -507,7 +507,7 @@
               "appleName": "include",
               "disposition": "intentionallyOmitted",
               "reason": "The exact-ID path proves resource identity; screenshots_get returns a validated base projection with attributes plus optional resource self and screenshot-set linkage when present, so included appScreenshotSet resources are unnecessary and not decoded.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             }
           ]
         }
@@ -547,7 +547,7 @@
               "appleName": "include",
               "disposition": "intentionallyOmitted",
               "reason": "The exact-ID path proves resource identity; screenshots_get_preview returns a validated base projection with attributes plus optional resource self and preview-set linkage when present, so included appPreviewSet resources are unnecessary and not decoded.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             }
           ]
         }
@@ -592,7 +592,7 @@
               "appleName": "include",
               "disposition": "intentionallyOmitted",
               "reason": "The exact appScreenshotSet relationship path proves set scope; screenshots_list returns ordered validated base projections with attributes plus optional resource self and set linkage when present, so included appScreenshotSet resources are unnecessary and not decoded.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             }
           ]
         }
@@ -638,14 +638,14 @@
               "appleName": "include",
               "disposition": "intentionallyOmitted",
               "reason": "The exact localization relationship path proves parent scope; each base preview-set projection includes validated identity, previewType, optional self, and optional parent linkage when present, so included resources are unnecessary and not decoded.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "query",
               "appleName": "limit[appPreviews]",
               "disposition": "intentionallyOmitted",
               "reason": "Apple applies this limit only when appPreviews is included; screenshots_list_preview_sets does not request that relationship, and callers page previews through screenshots_list_previews instead.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             }
           ]
         },
@@ -661,14 +661,14 @@
               "appleName": "include",
               "disposition": "intentionallyOmitted",
               "reason": "The exact localization relationship path proves parent scope; each base preview-set projection includes validated identity, previewType, optional self, and optional parent linkage when present, so included resources are unnecessary and not decoded.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "query",
               "appleName": "limit[appPreviews]",
               "disposition": "intentionallyOmitted",
               "reason": "The tool does not include child previews; callers page them through screenshots_list_previews.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             }
           ]
         },
@@ -684,14 +684,14 @@
               "appleName": "include",
               "disposition": "intentionallyOmitted",
               "reason": "The exact localization relationship path proves parent scope; each base preview-set projection includes validated identity, previewType, optional self, and optional parent linkage when present, so included resources are unnecessary and not decoded.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "query",
               "appleName": "limit[appPreviews]",
               "disposition": "intentionallyOmitted",
               "reason": "The tool does not include child previews; callers page them through screenshots_list_previews.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             }
           ]
         }
@@ -753,7 +753,7 @@
               "appleName": "include",
               "disposition": "intentionallyOmitted",
               "reason": "The exact appPreviewSet relationship path proves set scope; screenshots_list_previews returns ordered validated base projections with attributes plus optional resource self and set linkage when present, so included appPreviewSet resources are unnecessary and not decoded.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             }
           ]
         }
@@ -803,14 +803,14 @@
               "appleName": "include",
               "disposition": "intentionallyOmitted",
               "reason": "The exact localization relationship path proves parent scope; each base screenshot-set projection includes validated identity, screenshotDisplayType, optional self, and optional parent linkage when present, so included resources are unnecessary and not decoded.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "query",
               "appleName": "limit[appScreenshots]",
               "disposition": "intentionallyOmitted",
               "reason": "Apple applies this limit only when appScreenshots is included; screenshots_list_sets does not request that relationship, and callers page screenshots through screenshots_list instead.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             }
           ]
         },
@@ -826,14 +826,14 @@
               "appleName": "include",
               "disposition": "intentionallyOmitted",
               "reason": "The exact localization relationship path proves parent scope; each base screenshot-set projection includes validated identity, screenshotDisplayType, optional self, and optional parent linkage when present, so included resources are unnecessary and not decoded.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "query",
               "appleName": "limit[appScreenshots]",
               "disposition": "intentionallyOmitted",
               "reason": "The tool does not include child screenshots; callers page them through screenshots_list.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             }
           ]
         },
@@ -849,14 +849,14 @@
               "appleName": "include",
               "disposition": "intentionallyOmitted",
               "reason": "The exact localization relationship path proves parent scope; each base screenshot-set projection includes validated identity, screenshotDisplayType, optional self, and optional parent linkage when present, so included resources are unnecessary and not decoded.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "query",
               "appleName": "limit[appScreenshots]",
               "disposition": "intentionallyOmitted",
               "reason": "The tool does not include child screenshots; callers page them through screenshots_list.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             }
           ]
         }
@@ -922,7 +922,7 @@
               "appleName": "include",
               "disposition": "intentionallyOmitted",
               "reason": "Reorder verification needs only ordered base screenshot IDs.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             }
           ]
         },
@@ -985,7 +985,7 @@
               "appleName": "include",
               "disposition": "intentionallyOmitted",
               "reason": "Reorder verification needs only ordered base preview IDs.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             }
           ]
         },
@@ -1098,7 +1098,7 @@
               "appleName": "include",
               "disposition": "intentionallyOmitted",
               "reason": "This conditional GET only reconciles the reserved appScreenshot's assetDeliveryState; Apple's appScreenshotSet inclusion cannot affect processing classification and the upload decoder intentionally ignores included resources.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             }
           ],
           "inputs": [
@@ -1121,7 +1121,7 @@
             { "sourceKind": "fixed", "location": "query", "appleName": "limit", "fixedValue": 200 }
           ],
           "optionalParameterClassifications": [
-            { "location": "query", "appleName": "include", "disposition": "intentionallyOmitted", "reason": "The exact appScreenshotSet relationship path proves set scope; optional returned linkage is validated when present and any contradiction is rejected.", "reviewAtSpec": "4.4.1" }
+            { "location": "query", "appleName": "include", "disposition": "intentionallyOmitted", "reason": "The exact appScreenshotSet relationship path proves set scope; optional returned linkage is validated when present and any contradiction is rejected.", "reviewAtSpec": "4.5" }
           ]
         },
         {
@@ -1256,7 +1256,7 @@
               "appleName": "include",
               "disposition": "intentionallyOmitted",
               "reason": "Each conditional GET only reconciles that appScreenshot's assetDeliveryState; Apple's appScreenshotSet inclusion cannot affect batch processing classification and the upload decoder intentionally ignores included resources.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             }
           ],
           "inputs": [
@@ -1279,7 +1279,7 @@
             { "sourceKind": "fixed", "location": "query", "appleName": "limit", "fixedValue": 200 }
           ],
           "optionalParameterClassifications": [
-            { "location": "query", "appleName": "include", "disposition": "intentionallyOmitted", "reason": "The exact appScreenshotSet relationship path proves set scope; optional returned linkage is validated when present and any contradiction is rejected.", "reviewAtSpec": "4.4.1" }
+            { "location": "query", "appleName": "include", "disposition": "intentionallyOmitted", "reason": "The exact appScreenshotSet relationship path proves set scope; optional returned linkage is validated when present and any contradiction is rejected.", "reviewAtSpec": "4.5" }
           ]
         },
         {
@@ -1427,7 +1427,7 @@
               "appleName": "include",
               "disposition": "intentionallyOmitted",
               "reason": "This conditional GET only reconciles the reserved appPreview's videoDeliveryState or assetDeliveryState; Apple's appPreviewSet inclusion cannot affect processing classification and the upload decoder intentionally ignores included resources.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             }
           ],
           "inputs": [
@@ -1450,7 +1450,7 @@
             { "sourceKind": "fixed", "location": "query", "appleName": "limit", "fixedValue": 200 }
           ],
           "optionalParameterClassifications": [
-            { "location": "query", "appleName": "include", "disposition": "intentionallyOmitted", "reason": "The exact appPreviewSet relationship path proves set scope; optional returned linkage is validated when present and any contradiction is rejected.", "reviewAtSpec": "4.4.1" }
+            { "location": "query", "appleName": "include", "disposition": "intentionallyOmitted", "reason": "The exact appPreviewSet relationship path proves set scope; optional returned linkage is validated when present and any contradiction is rejected.", "reviewAtSpec": "4.5" }
           ]
         },
         {

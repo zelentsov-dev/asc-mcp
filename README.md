@@ -531,9 +531,9 @@ swift run asc-mcp openapi-contract-check \
   --strict
 ```
 
-The manifest is pinned to Apple API 4.4.1 by version, SHA-256, path count, and operation count. It currently maps 476 Apple operations, explicitly defers 424, and scopes out 363, covering all 1,263 operations without overlap. CI fails when the Apple document changes, a mapped operation moves or disappears, a public tool or worker drifts from the manifest, an input field loses its binding, response lineage becomes invalid, or a deferred decision expires. Unexposed optional Apple parameters are warnings so they remain visible in the generated backlog.
+The manifest is pinned to Apple API 4.5 by version, SHA-256, path count, and operation count. It currently maps 476 Apple operations, explicitly defers 425, and scopes out 369, covering all 1,270 operations without overlap. CI fails when the Apple document changes, a mapped operation moves or disappears, a public tool or worker drifts from the manifest, an input field loses its binding, response lineage becomes invalid, or a deferred decision expires. Unexposed optional Apple parameters are warnings so they remain visible in the generated backlog.
 
-Manifest schema v2 also accounts for every optional Apple query and request-body input as publicly bound, internally controlled, intentionally omitted with a reviewed reason, or still unclassified. The checked-in `optionalInputCoveragePin` records the exact current totals and a SHA-256 digest of the sorted input identities and dispositions; `--strict` rejects a missing pin or any count- or identity-level drift. The pin makes phased remediation auditable and regression-safe, but it is not a claim that every optional Apple input is already public. The v4.1.3 pin is 2,905 total: 1,122 bound, 40 internally controlled, 1,743 intentionally omitted, and 0 unclassified. Its identity SHA-256 is `c975f4e4eebb62ec87864a73fbf72bb8841f644108e54e6ffb25168bcf2a2766`.
+Manifest schema v2 also accounts for every optional Apple query and request-body input as publicly bound, internally controlled, intentionally omitted with a reviewed reason, or still unclassified. The checked-in `optionalInputCoveragePin` records the exact current totals and a SHA-256 digest of the sorted input identities and dispositions; `--strict` rejects a missing pin or any count- or identity-level drift. The pin makes phased remediation auditable and regression-safe, but it is not a claim that every optional Apple input is already public. The Apple 4.5 pin is 2,907 total: 1,121 bound, 40 internally controlled, 1,746 intentionally omitted, and 0 unclassified. Its identity SHA-256 is `0ce3ff14568f841643559c359bc91827290535925c3665172fda81d499f81ce1`.
 
 `--strict` is the merge- and tag-time release gate. Every declared `target` or `broken` tool remains an error in reports, and a regression test pins their exact state. The current baseline has no `target` or `broken` implementations and no implementation drift, so any implementation that leaves `asBuilt`, any structural contract error, or any optional-input coverage drift blocks both merges and releases. `--structural-strict` remains available only for local phased remediation work.
 
@@ -1175,10 +1175,10 @@ Includes sales, financial, app summary, analytics report request, report, instan
 | `promoted_update` | Update promotion visibility or enabled state |
 | `promoted_delete` | Delete a promotion |
 | `promoted_reorder` | Replace and verify the complete promoted-purchase order for an app |
-| `promoted_upload_image` | Deprecated: returns migration guidance; the endpoint is absent from pinned Apple OpenAPI 4.4.1 |
-| `promoted_get_image` | Deprecated: returns migration guidance; the endpoint is absent from pinned Apple OpenAPI 4.4.1 |
-| `promoted_delete_image` | Deprecated: returns migration guidance; the endpoint is absent from pinned Apple OpenAPI 4.4.1 |
-| `promoted_get_image_for_purchase` | Deprecated: returns migration guidance; the relationship is absent from pinned Apple OpenAPI 4.4.1 |
+| `promoted_upload_image` | Deprecated: returns migration guidance; the endpoint is absent from pinned Apple OpenAPI 4.5 |
+| `promoted_get_image` | Deprecated: returns migration guidance; the endpoint is absent from pinned Apple OpenAPI 4.5 |
+| `promoted_delete_image` | Deprecated: returns migration guidance; the endpoint is absent from pinned Apple OpenAPI 4.5 |
+| `promoted_get_image_for_purchase` | Deprecated: returns migration guidance; the relationship is absent from pinned Apple OpenAPI 4.5 |
 
 </details>
 

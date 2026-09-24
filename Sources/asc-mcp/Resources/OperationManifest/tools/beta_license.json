@@ -19,7 +19,7 @@
               "appleName": "include",
               "disposition": "intentionallyOmitted",
               "reason": "The base resource app linkage is projected as appId; expanding the full App resource is outside this focused agreement tool.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             }
           ]
         }
@@ -74,7 +74,7 @@
               "appleName": "include",
               "disposition": "intentionallyOmitted",
               "reason": "Each agreement already projects its app linkage; expanding full App resources would duplicate the apps worker.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             }
           ]
         }

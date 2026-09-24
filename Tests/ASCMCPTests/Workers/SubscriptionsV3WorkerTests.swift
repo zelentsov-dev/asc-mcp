@@ -241,6 +241,32 @@ struct SubscriptionsV3WorkerTests {
         #expect(await transport.requestCount() == 0)
     }
 
+    @Test("adjusted equalizations require plan types while equalizations keep them optional")
+    func adjustedEqualizationsRequirePlanTypes() async throws {
+        let transport = TestHTTPTransport(responses: [
+            .init(statusCode: 200, body: #"{"data":[]}"#)
+        ])
+        let worker = try await makeWorker(transport: transport)
+
+        let equalizations = try await worker.handleTool(CallTool.Parameters(
+            name: "subscriptions_list_price_point_equalizations",
+            arguments: ["price_point_id": .string("pp-1")]
+        ))
+        let adjusted = try await worker.handleTool(CallTool.Parameters(
+            name: "subscriptions_list_price_point_adjusted_equalizations",
+            arguments: ["price_point_id": .string("pp-1")]
+        ))
+
+        #expect(equalizations.isError != true)
+        #expect(adjusted.isError == true)
+        #expect(text(adjusted).contains("plan_types is required"))
+        let requests = await transport.recordedRequests()
+        #expect(requests.count == 1)
+        let request = try #require(requests.first)
+        #expect(request.url?.path == "/v1/subscriptionPricePoints/pp-1/equalizations")
+        #expect(queryItems(request)["filter[planType]"] == nil)
+    }
+
     @Test("subscription pricing manifest binds Apple plan-aware filters")
     func pricingManifestBindsPlanAwareFilters() throws {
         let manifest = try ASCOperationManifestBundle.loadBundled()
@@ -251,6 +277,10 @@ struct SubscriptionsV3WorkerTests {
                 "plan_types": "filter[planType]"
             ],
             "subscriptions_list_price_point_equalizations": [
+                "upfront_price_point_ids": "filter[upfrontPricePointId]",
+                "plan_types": "filter[planType]"
+            ],
+            "subscriptions_list_price_point_adjusted_equalizations": [
                 "upfront_price_point_ids": "filter[upfrontPricePointId]",
                 "plan_types": "filter[planType]"
             ]

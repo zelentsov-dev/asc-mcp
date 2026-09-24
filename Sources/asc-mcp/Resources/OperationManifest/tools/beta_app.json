@@ -166,7 +166,7 @@
               "appleName": "include",
               "disposition": "intentionallyOmitted",
               "reason": "The focused localization tool projects the base resource; callers can use apps tools for expanded App details.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             }
           ]
         }

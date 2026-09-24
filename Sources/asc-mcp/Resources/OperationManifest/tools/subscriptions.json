@@ -274,7 +274,7 @@
               "appleName": "/included",
               "disposition": "intentionallyOmitted",
               "reason": "The tool links an existing subscription price point by ID. Apple's inline price-point graph adds no independent caller value and would duplicate typed price-point discovery and validation.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             }
           ],
           "inputs": [
@@ -1514,70 +1514,70 @@
               "appleName": "include",
               "disposition": "intentionallyOmitted",
               "reason": "The public tool returns its stable base projection instead of arbitrary relationship expansion; dedicated commerce tools cover related resources.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "query",
               "appleName": "limit[images]",
               "disposition": "intentionallyOmitted",
               "reason": "The corresponding embedded relationship is not caller-configurable; dedicated relationship tools provide paginated access where supported.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "query",
               "appleName": "limit[introductoryOffers]",
               "disposition": "intentionallyOmitted",
               "reason": "The corresponding embedded relationship is not caller-configurable; dedicated relationship tools provide paginated access where supported.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "query",
               "appleName": "limit[offerCodes]",
               "disposition": "intentionallyOmitted",
               "reason": "The corresponding embedded relationship is not caller-configurable; dedicated relationship tools provide paginated access where supported.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "query",
               "appleName": "limit[planAvailabilities]",
               "disposition": "intentionallyOmitted",
               "reason": "The corresponding embedded relationship is not caller-configurable; dedicated relationship tools provide paginated access where supported.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "query",
               "appleName": "limit[prices]",
               "disposition": "intentionallyOmitted",
               "reason": "The corresponding embedded relationship is not caller-configurable; dedicated relationship tools provide paginated access where supported.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "query",
               "appleName": "limit[promotionalOffers]",
               "disposition": "intentionallyOmitted",
               "reason": "The corresponding embedded relationship is not caller-configurable; dedicated relationship tools provide paginated access where supported.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "query",
               "appleName": "limit[subscriptionLocalizations]",
               "disposition": "intentionallyOmitted",
               "reason": "The corresponding embedded relationship is not caller-configurable; dedicated relationship tools provide paginated access where supported.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "query",
               "appleName": "limit[versions]",
               "disposition": "intentionallyOmitted",
               "reason": "The corresponding embedded relationship is not caller-configurable; dedicated relationship tools provide paginated access where supported.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "query",
               "appleName": "limit[winBackOffers]",
               "disposition": "intentionallyOmitted",
               "reason": "The corresponding embedded relationship is not caller-configurable; dedicated relationship tools provide paginated access where supported.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             }
           ]
         }
@@ -1620,14 +1620,14 @@
               "appleName": "include",
               "disposition": "internalControl",
               "reason": "The handler fixes this query control on the initial request; it is not exposed as a direct public input.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "query",
               "appleName": "limit[availableTerritories]",
               "disposition": "internalControl",
               "reason": "The handler fixes this query control on the initial request; it is not exposed as a direct public input.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             }
           ]
         }
@@ -1669,7 +1669,7 @@
               "appleName": "include",
               "disposition": "intentionallyOmitted",
               "reason": "The public tool returns its stable base projection instead of arbitrary relationship expansion; dedicated commerce tools cover related resources.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             }
           ]
         }
@@ -1711,28 +1711,28 @@
               "appleName": "include",
               "disposition": "internalControl",
               "reason": "The handler fixes this query control on the initial request; it is not exposed as a direct public input.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "query",
               "appleName": "limit[subscriptionGroupLocalizations]",
               "disposition": "intentionallyOmitted",
               "reason": "The corresponding embedded relationship is not caller-configurable; dedicated relationship tools provide paginated access where supported.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "query",
               "appleName": "limit[subscriptions]",
               "disposition": "intentionallyOmitted",
               "reason": "The corresponding embedded relationship is not caller-configurable; dedicated relationship tools provide paginated access where supported.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "query",
               "appleName": "limit[versions]",
               "disposition": "intentionallyOmitted",
               "reason": "The corresponding embedded relationship is not caller-configurable; dedicated relationship tools provide paginated access where supported.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             }
           ]
         }
@@ -1774,7 +1774,7 @@
               "appleName": "include",
               "disposition": "intentionallyOmitted",
               "reason": "The public tool returns its stable base projection instead of arbitrary relationship expansion; dedicated commerce tools cover related resources.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             }
           ]
         }
@@ -1816,7 +1816,7 @@
               "appleName": "include",
               "disposition": "intentionallyOmitted",
               "reason": "The public tool returns its stable base projection instead of arbitrary relationship expansion; dedicated commerce tools cover related resources.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             }
           ]
         }
@@ -1858,7 +1858,7 @@
               "appleName": "include",
               "disposition": "internalControl",
               "reason": "The handler fixes this query control on the initial request; it is not exposed as a direct public input.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             }
           ]
         }
@@ -1900,28 +1900,28 @@
               "appleName": "include",
               "disposition": "intentionallyOmitted",
               "reason": "The public tool returns its stable base projection instead of arbitrary relationship expansion; dedicated commerce tools cover related resources.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "query",
               "appleName": "limit[customCodes]",
               "disposition": "intentionallyOmitted",
               "reason": "The corresponding embedded relationship is not caller-configurable; dedicated relationship tools provide paginated access where supported.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "query",
               "appleName": "limit[oneTimeUseCodes]",
               "disposition": "intentionallyOmitted",
               "reason": "The corresponding embedded relationship is not caller-configurable; dedicated relationship tools provide paginated access where supported.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "query",
               "appleName": "limit[prices]",
               "disposition": "intentionallyOmitted",
               "reason": "The corresponding embedded relationship is not caller-configurable; dedicated relationship tools provide paginated access where supported.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             }
           ]
         }
@@ -1963,7 +1963,7 @@
               "appleName": "include",
               "disposition": "intentionallyOmitted",
               "reason": "The public tool returns its stable base projection instead of arbitrary relationship expansion; dedicated commerce tools cover related resources.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             }
           ]
         }
@@ -2120,7 +2120,7 @@
               "appleName": "include",
               "disposition": "internalControl",
               "reason": "The handler fixes this query control on the initial request; it is not exposed as a direct public input.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             }
           ]
         }
@@ -2162,7 +2162,7 @@
               "appleName": "include",
               "disposition": "internalControl",
               "reason": "The handler fixes this query control on the initial request; it is not exposed as a direct public input.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             }
           ]
         }
@@ -2204,14 +2204,14 @@
               "appleName": "include",
               "disposition": "intentionallyOmitted",
               "reason": "The public tool returns its stable base projection instead of arbitrary relationship expansion; dedicated commerce tools cover related resources.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "query",
               "appleName": "limit[prices]",
               "disposition": "intentionallyOmitted",
               "reason": "The corresponding embedded relationship is not caller-configurable; dedicated relationship tools provide paginated access where supported.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             }
           ]
         }
@@ -2253,7 +2253,7 @@
               "appleName": "include",
               "disposition": "intentionallyOmitted",
               "reason": "The public tool returns its stable base projection instead of arbitrary relationship expansion; dedicated commerce tools cover related resources.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             }
           ]
         }
@@ -2295,7 +2295,7 @@
               "appleName": "include",
               "disposition": "intentionallyOmitted",
               "reason": "The public tool returns its stable base projection instead of arbitrary relationship expansion; dedicated commerce tools cover related resources.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             }
           ]
         }
@@ -2337,14 +2337,14 @@
               "appleName": "include",
               "disposition": "intentionallyOmitted",
               "reason": "The public tool returns its stable base projection instead of arbitrary relationship expansion; dedicated commerce tools cover related resources.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "query",
               "appleName": "limit[prices]",
               "disposition": "intentionallyOmitted",
               "reason": "The corresponding embedded relationship is not caller-configurable; dedicated relationship tools provide paginated access where supported.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             }
           ]
         }
@@ -2386,49 +2386,49 @@
               "appleName": "filter[referenceName]",
               "disposition": "intentionallyOmitted",
               "reason": "This deprecated compatibility inventory keeps its narrow legacy contract; authoritative list tools provide filtered discovery.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "query",
               "appleName": "filter[subscriptions.state]",
               "disposition": "intentionallyOmitted",
               "reason": "This deprecated compatibility inventory keeps its narrow legacy contract; authoritative list tools provide filtered discovery.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "query",
               "appleName": "include",
               "disposition": "internalControl",
               "reason": "The handler fixes this query control on the initial request; it is not exposed as a direct public input.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "query",
               "appleName": "limit[subscriptionGroupLocalizations]",
               "disposition": "intentionallyOmitted",
               "reason": "The corresponding embedded relationship is not caller-configurable; dedicated relationship tools provide paginated access where supported.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "query",
               "appleName": "limit[subscriptions]",
               "disposition": "intentionallyOmitted",
               "reason": "The corresponding embedded relationship is not caller-configurable; dedicated relationship tools provide paginated access where supported.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "query",
               "appleName": "limit[versions]",
               "disposition": "intentionallyOmitted",
               "reason": "The corresponding embedded relationship is not caller-configurable; dedicated relationship tools provide paginated access where supported.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "query",
               "appleName": "sort",
               "disposition": "intentionallyOmitted",
               "reason": "This deprecated compatibility inventory keeps its narrow legacy contract; authoritative list tools provide filtered discovery.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             }
           ]
         },
@@ -2455,14 +2455,14 @@
               "appleName": "include",
               "disposition": "internalControl",
               "reason": "The handler fixes this query control on the initial request; it is not exposed as a direct public input.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "query",
               "appleName": "limit[availableTerritories]",
               "disposition": "internalControl",
               "reason": "The handler fixes this query control on the initial request; it is not exposed as a direct public input.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             }
           ]
         },
@@ -2489,28 +2489,28 @@
               "appleName": "filter[planType]",
               "disposition": "intentionallyOmitted",
               "reason": "The current tool retains territory-focused pricing semantics; plan-aware selection requires a dedicated result contract.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "query",
               "appleName": "filter[subscriptionPricePoint]",
               "disposition": "intentionallyOmitted",
               "reason": "The current tool retains territory-focused pricing semantics; plan-aware selection requires a dedicated result contract.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "query",
               "appleName": "include",
               "disposition": "internalControl",
               "reason": "The handler fixes this query control on the initial request; it is not exposed as a direct public input.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "query",
               "appleName": "limit",
               "disposition": "internalControl",
               "reason": "The handler fixes this query control on the initial request; it is not exposed as a direct public input.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             }
           ]
         }
@@ -2568,70 +2568,70 @@
               "appleName": "include",
               "disposition": "intentionallyOmitted",
               "reason": "The public tool returns its stable base projection instead of arbitrary relationship expansion; dedicated commerce tools cover related resources.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "query",
               "appleName": "limit[images]",
               "disposition": "intentionallyOmitted",
               "reason": "The corresponding embedded relationship is not caller-configurable; dedicated relationship tools provide paginated access where supported.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "query",
               "appleName": "limit[introductoryOffers]",
               "disposition": "intentionallyOmitted",
               "reason": "The corresponding embedded relationship is not caller-configurable; dedicated relationship tools provide paginated access where supported.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "query",
               "appleName": "limit[offerCodes]",
               "disposition": "intentionallyOmitted",
               "reason": "The corresponding embedded relationship is not caller-configurable; dedicated relationship tools provide paginated access where supported.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "query",
               "appleName": "limit[planAvailabilities]",
               "disposition": "intentionallyOmitted",
               "reason": "The corresponding embedded relationship is not caller-configurable; dedicated relationship tools provide paginated access where supported.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "query",
               "appleName": "limit[prices]",
               "disposition": "intentionallyOmitted",
               "reason": "The corresponding embedded relationship is not caller-configurable; dedicated relationship tools provide paginated access where supported.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "query",
               "appleName": "limit[promotionalOffers]",
               "disposition": "intentionallyOmitted",
               "reason": "The corresponding embedded relationship is not caller-configurable; dedicated relationship tools provide paginated access where supported.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "query",
               "appleName": "limit[subscriptionLocalizations]",
               "disposition": "intentionallyOmitted",
               "reason": "The corresponding embedded relationship is not caller-configurable; dedicated relationship tools provide paginated access where supported.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "query",
               "appleName": "limit[versions]",
               "disposition": "intentionallyOmitted",
               "reason": "The corresponding embedded relationship is not caller-configurable; dedicated relationship tools provide paginated access where supported.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "query",
               "appleName": "limit[winBackOffers]",
               "disposition": "intentionallyOmitted",
               "reason": "The corresponding embedded relationship is not caller-configurable; dedicated relationship tools provide paginated access where supported.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             }
           ]
         }
@@ -2759,7 +2759,7 @@
               "appleName": "include",
               "disposition": "intentionallyOmitted",
               "reason": "The public tool returns its stable base projection instead of arbitrary relationship expansion; dedicated commerce tools cover related resources.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             }
           ]
         }
@@ -2813,28 +2813,28 @@
               "appleName": "include",
               "disposition": "internalControl",
               "reason": "The handler fixes this query control on the initial request; it is not exposed as a direct public input.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "query",
               "appleName": "limit[subscriptionGroupLocalizations]",
               "disposition": "intentionallyOmitted",
               "reason": "The corresponding embedded relationship is not caller-configurable; dedicated relationship tools provide paginated access where supported.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "query",
               "appleName": "limit[subscriptions]",
               "disposition": "intentionallyOmitted",
               "reason": "The corresponding embedded relationship is not caller-configurable; dedicated relationship tools provide paginated access where supported.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "query",
               "appleName": "limit[versions]",
               "disposition": "intentionallyOmitted",
               "reason": "The corresponding embedded relationship is not caller-configurable; dedicated relationship tools provide paginated access where supported.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             }
           ]
         }
@@ -2909,7 +2909,7 @@
               "appleName": "include",
               "disposition": "intentionallyOmitted",
               "reason": "The public tool returns its stable base projection instead of arbitrary relationship expansion; dedicated commerce tools cover related resources.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             }
           ]
         }
@@ -2963,7 +2963,7 @@
               "appleName": "include",
               "disposition": "intentionallyOmitted",
               "reason": "The public tool returns its stable base projection instead of arbitrary relationship expansion; dedicated commerce tools cover related resources.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             }
           ]
         }
@@ -3024,7 +3024,7 @@
               "appleName": "include",
               "disposition": "intentionallyOmitted",
               "reason": "The public tool returns its stable base projection instead of arbitrary relationship expansion; dedicated commerce tools cover related resources.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             }
           ]
         }
@@ -3078,7 +3078,7 @@
               "appleName": "include",
               "disposition": "intentionallyOmitted",
               "reason": "The public tool returns its stable base projection instead of arbitrary relationship expansion; dedicated commerce tools cover related resources.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             }
           ]
         }
@@ -3139,28 +3139,28 @@
               "appleName": "include",
               "disposition": "intentionallyOmitted",
               "reason": "The public tool returns its stable base projection instead of arbitrary relationship expansion; dedicated commerce tools cover related resources.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "query",
               "appleName": "limit[customCodes]",
               "disposition": "intentionallyOmitted",
               "reason": "The corresponding embedded relationship is not caller-configurable; dedicated relationship tools provide paginated access where supported.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "query",
               "appleName": "limit[oneTimeUseCodes]",
               "disposition": "intentionallyOmitted",
               "reason": "The corresponding embedded relationship is not caller-configurable; dedicated relationship tools provide paginated access where supported.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "query",
               "appleName": "limit[prices]",
               "disposition": "intentionallyOmitted",
               "reason": "The corresponding embedded relationship is not caller-configurable; dedicated relationship tools provide paginated access where supported.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             }
           ]
         }
@@ -3221,7 +3221,7 @@
               "appleName": "include",
               "disposition": "intentionallyOmitted",
               "reason": "The public tool returns its stable base projection instead of arbitrary relationship expansion; dedicated commerce tools cover related resources.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             }
           ]
         }
@@ -3473,7 +3473,7 @@
           { "outputField": "next_url", "operationId": "subscriptionPricePoints_adjustedEqualizations_getToManyRelated", "jsonPointer": "/links/next", "localRole": "Apple continuation URL or null." }
         ]
       },
-      "note": "Exposes Apple 4.4.1 adjusted equalizations with all four documented filters, typed plan values, the 8000-item limit, included territory currency, total, and strict continuation scope."
+      "note": "Exposes Apple 4.5 adjusted equalizations with all four documented filters, typed plan values, the 8000-item limit, included territory currency, total, and strict continuation scope. Apple 4.5 requires filter[planType], so plan_types is required and a call without it fails before network access."
     },
     {
       "tool": "subscriptions_list_price_point_equalizations",
@@ -3494,7 +3494,7 @@
               "appleName": "include",
               "disposition": "internalControl",
               "reason": "The handler fixes this query control and requires the same value on every continuation; it is not exposed as a direct public input.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             }
           ]
         }
@@ -3577,7 +3577,7 @@
               "appleName": "include",
               "disposition": "internalControl",
               "reason": "The handler fixes this query control and requires the same value on every continuation; it is not exposed as a direct public input.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             }
           ]
         }
@@ -3653,7 +3653,7 @@
               "appleName": "include",
               "disposition": "internalControl",
               "reason": "The handler fixes this query control and requires the same value on every continuation; it is not exposed as a direct public input.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             }
           ]
         }
@@ -3728,7 +3728,7 @@
               "appleName": "include",
               "disposition": "intentionallyOmitted",
               "reason": "The public tool returns its stable base projection instead of arbitrary relationship expansion; dedicated commerce tools cover related resources.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             }
           ]
         }
@@ -3789,14 +3789,14 @@
               "appleName": "include",
               "disposition": "intentionallyOmitted",
               "reason": "The public tool returns its stable base projection instead of arbitrary relationship expansion; dedicated commerce tools cover related resources.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "query",
               "appleName": "limit[prices]",
               "disposition": "intentionallyOmitted",
               "reason": "The corresponding embedded relationship is not caller-configurable; dedicated relationship tools provide paginated access where supported.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             }
           ]
         }
@@ -3857,7 +3857,7 @@
               "appleName": "include",
               "disposition": "intentionallyOmitted",
               "reason": "The public tool returns its stable base projection instead of arbitrary relationship expansion; dedicated commerce tools cover related resources.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             }
           ]
         }
@@ -3918,14 +3918,14 @@
               "appleName": "include",
               "disposition": "intentionallyOmitted",
               "reason": "The public tool returns its stable base projection instead of arbitrary relationship expansion; dedicated commerce tools cover related resources.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "query",
               "appleName": "limit[prices]",
               "disposition": "intentionallyOmitted",
               "reason": "The corresponding embedded relationship is not caller-configurable; dedicated relationship tools provide paginated access where supported.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             }
           ]
         }
@@ -3979,28 +3979,28 @@
               "appleName": "filter[planType]",
               "disposition": "intentionallyOmitted",
               "reason": "The current tool retains territory-focused pricing semantics; plan-aware selection requires a dedicated result contract.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "query",
               "appleName": "filter[upfrontPricePointId]",
               "disposition": "intentionallyOmitted",
               "reason": "The current tool retains territory-focused pricing semantics; plan-aware selection requires a dedicated result contract.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "query",
               "appleName": "include",
               "disposition": "internalControl",
               "reason": "The handler fixes this query control on the initial request; it is not exposed as a direct public input.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "query",
               "appleName": "limit",
               "disposition": "internalControl",
               "reason": "The handler fixes this query control on the initial request; it is not exposed as a direct public input.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             }
           ]
         }
@@ -4086,7 +4086,7 @@
               "appleName": "filter[subscriptionPricePoint]",
               "disposition": "intentionallyOmitted",
               "reason": "The aggregate summarizes the complete territory and optional plan schedule; narrowing to one price point would make current and scheduled classifications incomplete.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             }
           ]
         }
@@ -4324,31 +4324,45 @@
           "optionalParameterClassifications": [
             {
               "location": "body",
+              "appleName": "/data/attributes/marketSettings",
+              "disposition": "intentionallyOmitted",
+              "reason": "Added in Apple 4.5 and not yet exposed by the general subscription update; omission leaves the stored market settings unchanged.",
+              "reviewAtSpec": "4.5"
+            },
+            {
+              "location": "body",
+              "appleName": "/data/attributes/multiSeatStatus",
+              "disposition": "intentionallyOmitted",
+              "reason": "Added in Apple 4.5 and not yet exposed by the general subscription update; omission leaves the stored multi-seat status unchanged.",
+              "reviewAtSpec": "4.5"
+            },
+            {
+              "location": "body",
               "appleName": "/data/relationships/introductoryOffers",
               "disposition": "intentionallyOmitted",
               "reason": "The general subscription update remains attribute-only; dedicated introductory-offer tools manage this relationship without exposing a replacement-capable inline graph.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "body",
               "appleName": "/data/relationships/prices",
               "disposition": "intentionallyOmitted",
               "reason": "The general subscription update remains attribute-only; dedicated price tools validate territory and price-point identifiers without exposing a replacement-capable inline graph.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "body",
               "appleName": "/data/relationships/promotionalOffers",
               "disposition": "intentionallyOmitted",
               "reason": "The general subscription update remains attribute-only; dedicated promotional-offer tools preserve offer and pricing invariants without exposing a replacement-capable inline graph.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "body",
               "appleName": "/included",
               "disposition": "intentionallyOmitted",
               "reason": "Apple's included resources form the inline create graph coupled to the omitted offer and price relationships; dedicated typed lifecycle tools provide safer validated mutations and returned resource IDs.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             }
           ],
           "inputs": [
@@ -5108,7 +5122,7 @@
               "appleName": "include",
               "disposition": "intentionallyOmitted",
               "reason": "The public tool returns its stable base projection instead of arbitrary relationship expansion; dedicated commerce tools cover related resources.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             }
           ]
         },
@@ -5254,7 +5268,7 @@
               "appleName": "include",
               "disposition": "intentionallyOmitted",
               "reason": "The public tool returns its stable base projection instead of arbitrary relationship expansion; dedicated commerce tools cover related resources.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             }
           ]
         },
@@ -5354,9 +5368,9 @@
       "operations": [{
         "operationId": "subscriptionVersions_getInstance", "method": "get", "path": "/v1/subscriptionVersions/{id}", "role": "primary", "condition": null,
         "optionalParameterClassifications": [
-          {"location":"query","appleName":"include","disposition":"intentionallyOmitted","reason":"The stable projection does not expose arbitrary relationship expansion.","reviewAtSpec":"4.4.1"},
-          {"location":"query","appleName":"limit[images]","disposition":"intentionallyOmitted","reason":"Images are paged through subscriptions_list_version_images.","reviewAtSpec":"4.4.1"},
-          {"location":"query","appleName":"limit[localizations]","disposition":"intentionallyOmitted","reason":"Localizations are paged through subscriptions_list_version_localizations.","reviewAtSpec":"4.4.1"}
+          {"location":"query","appleName":"include","disposition":"intentionallyOmitted","reason":"The stable projection does not expose arbitrary relationship expansion.","reviewAtSpec":"4.5"},
+          {"location":"query","appleName":"limit[images]","disposition":"intentionallyOmitted","reason":"Images are paged through subscriptions_list_version_images.","reviewAtSpec":"4.5"},
+          {"location":"query","appleName":"limit[localizations]","disposition":"intentionallyOmitted","reason":"Localizations are paged through subscriptions_list_version_localizations.","reviewAtSpec":"4.5"}
         ]
       }],
       "fields": [{"toolField":"version_id","sourceKind":"parameter","operationId":"subscriptionVersions_getInstance","location":"path","appleName":"id"}],
@@ -5393,9 +5407,9 @@
       "operations": [{
         "operationId":"subscriptions_versions_getToManyRelated","method":"get","path":"/v1/subscriptions/{id}/versions","role":"primary","condition":null,
         "optionalParameterClassifications":[
-          {"location":"query","appleName":"include","disposition":"intentionallyOmitted","reason":"The stable paginated projection does not expose arbitrary relationship expansion.","reviewAtSpec":"4.4.1"},
-          {"location":"query","appleName":"limit[images]","disposition":"intentionallyOmitted","reason":"Images have their own bounded continuation tool.","reviewAtSpec":"4.4.1"},
-          {"location":"query","appleName":"limit[localizations]","disposition":"intentionallyOmitted","reason":"Localizations have their own bounded continuation tool.","reviewAtSpec":"4.4.1"}
+          {"location":"query","appleName":"include","disposition":"intentionallyOmitted","reason":"The stable paginated projection does not expose arbitrary relationship expansion.","reviewAtSpec":"4.5"},
+          {"location":"query","appleName":"limit[images]","disposition":"intentionallyOmitted","reason":"Images have their own bounded continuation tool.","reviewAtSpec":"4.5"},
+          {"location":"query","appleName":"limit[localizations]","disposition":"intentionallyOmitted","reason":"Localizations have their own bounded continuation tool.","reviewAtSpec":"4.5"}
         ]
       }],
       "fields":[
@@ -5434,7 +5448,7 @@
     {
       "tool":"subscriptions_list_version_localizations","kind":"direct","status":"partial","effect":"read","implementationState":"asBuilt",
       "operations":[{"operationId":"subscriptionVersions_localizations_getToManyRelated","method":"get","path":"/v1/subscriptionVersions/{id}/localizations","role":"primary","condition":null,"optionalParameterClassifications":[
-        {"location":"query","appleName":"include","disposition":"intentionallyOmitted","reason":"The stable projection does not expose arbitrary relationship expansion.","reviewAtSpec":"4.4.1"}
+        {"location":"query","appleName":"include","disposition":"intentionallyOmitted","reason":"The stable projection does not expose arbitrary relationship expansion.","reviewAtSpec":"4.5"}
       ]}],
       "fields":[
         {"toolField":"version_id","sourceKind":"parameter","operationId":"subscriptionVersions_localizations_getToManyRelated","location":"path","appleName":"id"},
@@ -5462,7 +5476,7 @@
     {
       "tool":"subscriptions_get_version_localization","kind":"direct","status":"partial","effect":"read","implementationState":"asBuilt",
       "operations":[{"operationId":"subscriptionLocalizationsV2_getInstance","method":"get","path":"/v2/subscriptionLocalizations/{id}","role":"primary","condition":null,"optionalParameterClassifications":[
-        {"location":"query","appleName":"include","disposition":"intentionallyOmitted","reason":"The stable projection does not expose arbitrary relationship expansion.","reviewAtSpec":"4.4.1"}
+        {"location":"query","appleName":"include","disposition":"intentionallyOmitted","reason":"The stable projection does not expose arbitrary relationship expansion.","reviewAtSpec":"4.5"}
       ]}],
       "fields":[{"toolField":"localization_id","sourceKind":"parameter","operationId":"subscriptionLocalizationsV2_getInstance","location":"path","appleName":"id"}],
       "response":{"mode":"opaque","sources":[{"operationId":"subscriptionLocalizationsV2_getInstance","statusCode":"200","mediaType":"application/json"}],"fields":[]},
@@ -5633,8 +5647,8 @@
     {
       "tool":"subscriptions_get_group_version","kind":"direct","status":"partial","effect":"read","implementationState":"asBuilt",
       "operations":[{"operationId":"subscriptionGroupVersions_getInstance","method":"get","path":"/v1/subscriptionGroupVersions/{id}","role":"primary","condition":null,"optionalParameterClassifications":[
-        {"location":"query","appleName":"include","disposition":"intentionallyOmitted","reason":"The stable projection does not expose arbitrary relationship expansion.","reviewAtSpec":"4.4.1"},
-        {"location":"query","appleName":"limit[localizations]","disposition":"intentionallyOmitted","reason":"Localizations are paged through subscriptions_list_group_version_localizations.","reviewAtSpec":"4.4.1"}
+        {"location":"query","appleName":"include","disposition":"intentionallyOmitted","reason":"The stable projection does not expose arbitrary relationship expansion.","reviewAtSpec":"4.5"},
+        {"location":"query","appleName":"limit[localizations]","disposition":"intentionallyOmitted","reason":"Localizations are paged through subscriptions_list_group_version_localizations.","reviewAtSpec":"4.5"}
       ]}],
       "fields":[{"toolField":"version_id","sourceKind":"parameter","operationId":"subscriptionGroupVersions_getInstance","location":"path","appleName":"id"}],
       "response":{
@@ -5657,8 +5671,8 @@
     {
       "tool":"subscriptions_list_group_versions","kind":"direct","status":"partial","effect":"read","implementationState":"asBuilt",
       "operations":[{"operationId":"subscriptionGroups_versions_getToManyRelated","method":"get","path":"/v1/subscriptionGroups/{id}/versions","role":"primary","condition":null,"optionalParameterClassifications":[
-        {"location":"query","appleName":"include","disposition":"intentionallyOmitted","reason":"The stable paginated projection does not expose arbitrary relationship expansion.","reviewAtSpec":"4.4.1"},
-        {"location":"query","appleName":"limit[localizations]","disposition":"intentionallyOmitted","reason":"Localizations have their own bounded continuation tool.","reviewAtSpec":"4.4.1"}
+        {"location":"query","appleName":"include","disposition":"intentionallyOmitted","reason":"The stable paginated projection does not expose arbitrary relationship expansion.","reviewAtSpec":"4.5"},
+        {"location":"query","appleName":"limit[localizations]","disposition":"intentionallyOmitted","reason":"Localizations have their own bounded continuation tool.","reviewAtSpec":"4.5"}
       ]}],
       "fields":[
         {"toolField":"group_id","sourceKind":"parameter","operationId":"subscriptionGroups_versions_getToManyRelated","location":"path","appleName":"id"},
@@ -5689,7 +5703,7 @@
     {
       "tool":"subscriptions_list_group_version_localizations","kind":"direct","status":"partial","effect":"read","implementationState":"asBuilt",
       "operations":[{"operationId":"subscriptionGroupVersions_localizations_getToManyRelated","method":"get","path":"/v1/subscriptionGroupVersions/{id}/localizations","role":"primary","condition":null,"optionalParameterClassifications":[
-        {"location":"query","appleName":"include","disposition":"intentionallyOmitted","reason":"The stable projection does not expose arbitrary relationship expansion.","reviewAtSpec":"4.4.1"}
+        {"location":"query","appleName":"include","disposition":"intentionallyOmitted","reason":"The stable projection does not expose arbitrary relationship expansion.","reviewAtSpec":"4.5"}
       ]}],
       "fields":[
         {"toolField":"version_id","sourceKind":"parameter","operationId":"subscriptionGroupVersions_localizations_getToManyRelated","location":"path","appleName":"id"},
@@ -5717,7 +5731,7 @@
     {
       "tool":"subscriptions_get_group_version_localization","kind":"direct","status":"partial","effect":"read","implementationState":"asBuilt",
       "operations":[{"operationId":"subscriptionGroupLocalizationsV2_getInstance","method":"get","path":"/v2/subscriptionGroupLocalizations/{id}","role":"primary","condition":null,"optionalParameterClassifications":[
-        {"location":"query","appleName":"include","disposition":"intentionallyOmitted","reason":"The stable projection does not expose arbitrary relationship expansion.","reviewAtSpec":"4.4.1"}
+        {"location":"query","appleName":"include","disposition":"intentionallyOmitted","reason":"The stable projection does not expose arbitrary relationship expansion.","reviewAtSpec":"4.5"}
       ]}],
       "fields":[{"toolField":"localization_id","sourceKind":"parameter","operationId":"subscriptionGroupLocalizationsV2_getInstance","location":"path","appleName":"id"}],
       "response":{"mode":"opaque","sources":[{"operationId":"subscriptionGroupLocalizationsV2_getInstance","statusCode":"200","mediaType":"application/json"}],"fields":[]},

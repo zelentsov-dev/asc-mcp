@@ -254,21 +254,21 @@
               "appleName": "limit[apps]",
               "disposition": "intentionallyOmitted",
               "reason": "The detail tool returns Apple's bounded included-app preview; full app access remains paginated through beta_testers_list_apps.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "query",
               "appleName": "limit[betaGroups]",
               "disposition": "intentionallyOmitted",
               "reason": "The detail tool intentionally returns a bounded included beta-group preview.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "query",
               "appleName": "limit[builds]",
               "disposition": "intentionallyOmitted",
               "reason": "The detail tool intentionally returns a bounded included-build preview; relationship mutation has dedicated tools.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             }
           ]
         }
@@ -342,28 +342,28 @@
               "appleName": "include",
               "disposition": "intentionallyOmitted",
               "reason": "The collection returns tester and relationship-ID projections; included details are available through beta_testers_get.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "query",
               "appleName": "limit[apps]",
               "disposition": "intentionallyOmitted",
               "reason": "Apps are not included by the tester collection projection.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "query",
               "appleName": "limit[betaGroups]",
               "disposition": "intentionallyOmitted",
               "reason": "Beta groups are not included by the tester collection projection.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "query",
               "appleName": "limit[builds]",
               "disposition": "intentionallyOmitted",
               "reason": "Builds are not included by the tester collection projection.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             }
           ]
         }
@@ -725,77 +725,77 @@
               "appleName": "filter[betaGroups]",
               "disposition": "intentionallyOmitted",
               "reason": "Advanced group filtering belongs to beta_testers_list; search is intentionally exact-email plus optional app scope.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "query",
               "appleName": "filter[builds]",
               "disposition": "intentionallyOmitted",
               "reason": "Advanced build filtering belongs to beta_testers_list; search is intentionally exact-email plus optional app scope.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "query",
               "appleName": "filter[firstName]",
               "disposition": "intentionallyOmitted",
               "reason": "Name filtering belongs to beta_testers_list; Apple email search is exact.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "query",
               "appleName": "filter[id]",
               "disposition": "intentionallyOmitted",
               "reason": "A caller with a tester ID should use beta_testers_get.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "query",
               "appleName": "filter[inviteType]",
               "disposition": "intentionallyOmitted",
               "reason": "Invitation-type filtering belongs to beta_testers_list.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "query",
               "appleName": "filter[lastName]",
               "disposition": "intentionallyOmitted",
               "reason": "Name filtering belongs to beta_testers_list; Apple email search is exact.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "query",
               "appleName": "include",
               "disposition": "intentionallyOmitted",
               "reason": "Search returns compact tester matches; beta_testers_get provides included details.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "query",
               "appleName": "limit[apps]",
               "disposition": "intentionallyOmitted",
               "reason": "Apps are not included in search results.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "query",
               "appleName": "limit[betaGroups]",
               "disposition": "intentionallyOmitted",
               "reason": "Beta groups are not included in search results.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "query",
               "appleName": "limit[builds]",
               "disposition": "intentionallyOmitted",
               "reason": "Builds are not included in search results.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "query",
               "appleName": "sort",
               "disposition": "intentionallyOmitted",
               "reason": "Exact-email search preserves Apple's natural match order and exposes pagination for ambiguous matches.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             }
           ]
         }

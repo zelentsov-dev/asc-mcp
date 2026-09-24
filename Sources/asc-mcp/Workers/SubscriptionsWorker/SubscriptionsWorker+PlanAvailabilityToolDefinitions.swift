@@ -104,13 +104,13 @@ extension SubscriptionsWorker {
                     "subscription_ids": subscriptionPlanIdentifierListSchema("Filter by one or more subscription IDs"),
                     "upfront_price_point_ids": subscriptionPlanIdentifierListSchema("Filter by one or more upfront price point IDs"),
                     "plan_types": subscriptionEnumListSchema(
-                        "Filter by one or more Apple subscription plan types",
+                        "Filter by one or more Apple subscription plan types; App Store Connect API 4.5 requires this filter",
                         values: ASCSubscriptionPlanType.allCases.map(\.rawValue)
                     ),
                     "limit": subscriptionPlanLimitSchema(maximum: 8000),
                     "next_url": subscriptionPlanNextURLSchema()
                 ]),
-                "required": .array([.string("price_point_id")])
+                "required": .array([.string("price_point_id"), .string("plan_types")])
             ])
         )
     }

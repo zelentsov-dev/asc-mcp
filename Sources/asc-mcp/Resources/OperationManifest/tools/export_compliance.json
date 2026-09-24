@@ -20,14 +20,14 @@
               "appleName": "include",
               "disposition": "intentionallyOmitted",
               "reason": "Attachment preflight only needs declaration approval metadata.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "query",
               "appleName": "limit[builds]",
               "disposition": "intentionallyOmitted",
               "reason": "Attachment preflight does not expand the deprecated builds relationship.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             }
           ],
           "inputs": [
@@ -82,14 +82,14 @@
               "appleName": "/data/attributes/expired",
               "disposition": "intentionallyOmitted",
               "reason": "Attachment does not mutate build expiration state.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "body",
               "appleName": "/data/attributes/usesNonExemptEncryption",
               "disposition": "intentionallyOmitted",
               "reason": "Attachment does not change the build encryption answer; builds_update_encryption owns that mutation.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             }
           ],
           "inputs": [
@@ -208,12 +208,12 @@
           "path": "/v1/builds/{id}",
           "role": "primary",
           "optionalParameterClassifications": [
-            { "location": "query", "appleName": "include", "disposition": "intentionallyOmitted", "reason": "The export gate reads only Build attributes and the app relationship identifier.", "reviewAtSpec": "4.4.1" },
-            { "location": "query", "appleName": "limit[betaBuildLocalizations]", "disposition": "intentionallyOmitted", "reason": "Beta localizations are outside export compliance.", "reviewAtSpec": "4.4.1" },
-            { "location": "query", "appleName": "limit[betaGroups]", "disposition": "intentionallyOmitted", "reason": "Beta groups are outside export compliance.", "reviewAtSpec": "4.4.1" },
-            { "location": "query", "appleName": "limit[buildBundles]", "disposition": "intentionallyOmitted", "reason": "Build bundles are outside this gate.", "reviewAtSpec": "4.4.1" },
-            { "location": "query", "appleName": "limit[icons]", "disposition": "intentionallyOmitted", "reason": "Build icons are outside this gate.", "reviewAtSpec": "4.4.1" },
-            { "location": "query", "appleName": "limit[individualTesters]", "disposition": "intentionallyOmitted", "reason": "Individual testers are outside export compliance.", "reviewAtSpec": "4.4.1" }
+            { "location": "query", "appleName": "include", "disposition": "intentionallyOmitted", "reason": "The export gate reads only Build attributes and the app relationship identifier.", "reviewAtSpec": "4.5" },
+            { "location": "query", "appleName": "limit[betaBuildLocalizations]", "disposition": "intentionallyOmitted", "reason": "Beta localizations are outside export compliance.", "reviewAtSpec": "4.5" },
+            { "location": "query", "appleName": "limit[betaGroups]", "disposition": "intentionallyOmitted", "reason": "Beta groups are outside export compliance.", "reviewAtSpec": "4.5" },
+            { "location": "query", "appleName": "limit[buildBundles]", "disposition": "intentionallyOmitted", "reason": "Build bundles are outside this gate.", "reviewAtSpec": "4.5" },
+            { "location": "query", "appleName": "limit[icons]", "disposition": "intentionallyOmitted", "reason": "Build icons are outside this gate.", "reviewAtSpec": "4.5" },
+            { "location": "query", "appleName": "limit[individualTesters]", "disposition": "intentionallyOmitted", "reason": "Individual testers are outside export compliance.", "reviewAtSpec": "4.5" }
           ],
           "inputs": [
             {
@@ -345,8 +345,8 @@
           "role": "supporting",
           "condition": "Preflight a mutable declaration state before creating a reservation.",
           "optionalParameterClassifications": [
-            { "location": "query", "appleName": "include", "disposition": "intentionallyOmitted", "reason": "Reservation preflight only needs declaration state.", "reviewAtSpec": "4.4.1" },
-            { "location": "query", "appleName": "limit[builds]", "disposition": "intentionallyOmitted", "reason": "Reservation preflight does not expand deprecated builds.", "reviewAtSpec": "4.4.1" }
+            { "location": "query", "appleName": "include", "disposition": "intentionallyOmitted", "reason": "Reservation preflight only needs declaration state.", "reviewAtSpec": "4.5" },
+            { "location": "query", "appleName": "limit[builds]", "disposition": "intentionallyOmitted", "reason": "Reservation preflight does not expand deprecated builds.", "reviewAtSpec": "4.5" }
           ],
           "inputs": [
             {
@@ -481,12 +481,12 @@
           "role": "supporting",
           "condition": "Confirm that the parent build exists before interpreting a relationship 404 as absence.",
           "optionalParameterClassifications": [
-            { "location": "query", "appleName": "include", "disposition": "intentionallyOmitted", "reason": "Parent existence confirmation needs only the Build resource.", "reviewAtSpec": "4.4.1" },
-            { "location": "query", "appleName": "limit[betaBuildLocalizations]", "disposition": "intentionallyOmitted", "reason": "Beta localizations are outside parent confirmation.", "reviewAtSpec": "4.4.1" },
-            { "location": "query", "appleName": "limit[betaGroups]", "disposition": "intentionallyOmitted", "reason": "Beta groups are outside parent confirmation.", "reviewAtSpec": "4.4.1" },
-            { "location": "query", "appleName": "limit[buildBundles]", "disposition": "intentionallyOmitted", "reason": "Build bundles are outside parent confirmation.", "reviewAtSpec": "4.4.1" },
-            { "location": "query", "appleName": "limit[icons]", "disposition": "intentionallyOmitted", "reason": "Icons are outside parent confirmation.", "reviewAtSpec": "4.4.1" },
-            { "location": "query", "appleName": "limit[individualTesters]", "disposition": "intentionallyOmitted", "reason": "Individual testers are outside parent confirmation.", "reviewAtSpec": "4.4.1" }
+            { "location": "query", "appleName": "include", "disposition": "intentionallyOmitted", "reason": "Parent existence confirmation needs only the Build resource.", "reviewAtSpec": "4.5" },
+            { "location": "query", "appleName": "limit[betaBuildLocalizations]", "disposition": "intentionallyOmitted", "reason": "Beta localizations are outside parent confirmation.", "reviewAtSpec": "4.5" },
+            { "location": "query", "appleName": "limit[betaGroups]", "disposition": "intentionallyOmitted", "reason": "Beta groups are outside parent confirmation.", "reviewAtSpec": "4.5" },
+            { "location": "query", "appleName": "limit[buildBundles]", "disposition": "intentionallyOmitted", "reason": "Build bundles are outside parent confirmation.", "reviewAtSpec": "4.5" },
+            { "location": "query", "appleName": "limit[icons]", "disposition": "intentionallyOmitted", "reason": "Icons are outside parent confirmation.", "reviewAtSpec": "4.5" },
+            { "location": "query", "appleName": "limit[individualTesters]", "disposition": "intentionallyOmitted", "reason": "Individual testers are outside parent confirmation.", "reviewAtSpec": "4.5" }
           ],
           "inputs": [
             {
@@ -552,8 +552,8 @@
           "path": "/v1/appEncryptionDeclarations/{id}",
           "role": "primary",
           "optionalParameterClassifications": [
-            { "location": "query", "appleName": "include", "disposition": "intentionallyOmitted", "reason": "The safe declaration projection does not expand related app, builds, or document resources.", "reviewAtSpec": "4.4.1" },
-            { "location": "query", "appleName": "limit[builds]", "disposition": "intentionallyOmitted", "reason": "The deprecated builds relationship is not expanded.", "reviewAtSpec": "4.4.1" }
+            { "location": "query", "appleName": "include", "disposition": "intentionallyOmitted", "reason": "The safe declaration projection does not expand related app, builds, or document resources.", "reviewAtSpec": "4.5" },
+            { "location": "query", "appleName": "limit[builds]", "disposition": "intentionallyOmitted", "reason": "The deprecated builds relationship is not expanded.", "reviewAtSpec": "4.5" }
           ],
           "inputs": [
             {
@@ -627,8 +627,8 @@
           "role": "supporting",
           "condition": "Confirm that the parent declaration exists before interpreting a relationship 404 as absence.",
           "optionalParameterClassifications": [
-            { "location": "query", "appleName": "include", "disposition": "intentionallyOmitted", "reason": "Parent confirmation needs only declaration state.", "reviewAtSpec": "4.4.1" },
-            { "location": "query", "appleName": "limit[builds]", "disposition": "intentionallyOmitted", "reason": "Parent confirmation does not expand deprecated builds.", "reviewAtSpec": "4.4.1" }
+            { "location": "query", "appleName": "include", "disposition": "intentionallyOmitted", "reason": "Parent confirmation needs only declaration state.", "reviewAtSpec": "4.5" },
+            { "location": "query", "appleName": "limit[builds]", "disposition": "intentionallyOmitted", "reason": "Parent confirmation does not expand deprecated builds.", "reviewAtSpec": "4.5" }
           ],
           "inputs": [
             {
@@ -694,10 +694,10 @@
           "path": "/v1/apps/{id}/appEncryptionDeclarations",
           "role": "primary",
           "optionalParameterClassifications": [
-            { "location": "query", "appleName": "filter[platform]", "disposition": "intentionallyOmitted", "reason": "The platform filter is deprecated and is not exposed.", "reviewAtSpec": "4.4.1" },
-            { "location": "query", "appleName": "filter[builds]", "disposition": "intentionallyOmitted", "reason": "The app-scoped list does not infer a build filter; build linkage has a dedicated tool.", "reviewAtSpec": "4.4.1" },
-            { "location": "query", "appleName": "include", "disposition": "intentionallyOmitted", "reason": "The list returns a bounded declaration projection without related expansion.", "reviewAtSpec": "4.4.1" },
-            { "location": "query", "appleName": "limit[builds]", "disposition": "intentionallyOmitted", "reason": "The deprecated builds relationship is not expanded.", "reviewAtSpec": "4.4.1" }
+            { "location": "query", "appleName": "filter[platform]", "disposition": "intentionallyOmitted", "reason": "The platform filter is deprecated and is not exposed.", "reviewAtSpec": "4.5" },
+            { "location": "query", "appleName": "filter[builds]", "disposition": "intentionallyOmitted", "reason": "The app-scoped list does not infer a build filter; build linkage has a dedicated tool.", "reviewAtSpec": "4.5" },
+            { "location": "query", "appleName": "include", "disposition": "intentionallyOmitted", "reason": "The list returns a bounded declaration projection without related expansion.", "reviewAtSpec": "4.5" },
+            { "location": "query", "appleName": "limit[builds]", "disposition": "intentionallyOmitted", "reason": "The deprecated builds relationship is not expanded.", "reviewAtSpec": "4.5" }
           ],
           "inputs": [
             {

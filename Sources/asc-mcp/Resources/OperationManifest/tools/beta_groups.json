@@ -271,21 +271,21 @@
               "appleName": "include",
               "disposition": "intentionallyOmitted",
               "reason": "The group collection returns stable group and relationship-ID projections; related resources have dedicated tools.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "query",
               "appleName": "limit[betaTesters]",
               "disposition": "intentionallyOmitted",
               "reason": "Beta testers are not included in the group collection response.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "query",
               "appleName": "limit[builds]",
               "disposition": "intentionallyOmitted",
               "reason": "Builds are not included in the group collection response.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             }
           ]
         }
@@ -683,21 +683,21 @@
               "appleName": "include",
               "disposition": "intentionallyOmitted",
               "reason": "The supporting request only confirms the parent identity and does not project relationships.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "query",
               "appleName": "limit[betaTesters]",
               "disposition": "intentionallyOmitted",
               "reason": "No beta testers are included by the supporting parent lookup.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "query",
               "appleName": "limit[builds]",
               "disposition": "intentionallyOmitted",
               "reason": "No builds are included by the supporting parent lookup.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             }
           ]
         },
@@ -801,21 +801,21 @@
               "appleName": "include",
               "disposition": "intentionallyOmitted",
               "reason": "The supporting request only confirms the parent identity.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "query",
               "appleName": "limit[betaTesters]",
               "disposition": "intentionallyOmitted",
               "reason": "No beta testers are included by the supporting parent lookup.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "query",
               "appleName": "limit[builds]",
               "disposition": "intentionallyOmitted",
               "reason": "No builds are included by the supporting parent lookup.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             }
           ]
         },
@@ -1033,21 +1033,21 @@
               "appleName": "include",
               "disposition": "intentionallyOmitted",
               "reason": "The supporting request only confirms the parent identity.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "query",
               "appleName": "limit[betaTesters]",
               "disposition": "intentionallyOmitted",
               "reason": "No beta testers are included by the supporting parent lookup.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "query",
               "appleName": "limit[builds]",
               "disposition": "intentionallyOmitted",
               "reason": "No builds are included by the supporting parent lookup.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             }
           ]
         },
@@ -1259,21 +1259,21 @@
               "appleName": "include",
               "disposition": "intentionallyOmitted",
               "reason": "The supporting request only confirms the parent identity.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "query",
               "appleName": "limit[betaTesters]",
               "disposition": "intentionallyOmitted",
               "reason": "No beta testers are included by the supporting parent lookup.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "query",
               "appleName": "limit[builds]",
               "disposition": "intentionallyOmitted",
               "reason": "No builds are included by the supporting parent lookup.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             }
           ]
         },
@@ -1548,21 +1548,21 @@
               "appleName": "include",
               "disposition": "intentionallyOmitted",
               "reason": "The supporting request only confirms the parent identity.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "query",
               "appleName": "limit[betaTesters]",
               "disposition": "intentionallyOmitted",
               "reason": "No beta testers are included by the supporting parent lookup.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "query",
               "appleName": "limit[builds]",
               "disposition": "intentionallyOmitted",
               "reason": "No builds are included by the supporting parent lookup.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             }
           ]
         },

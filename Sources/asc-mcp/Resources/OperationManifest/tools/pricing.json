@@ -809,14 +809,14 @@
               "appleName": "include",
               "disposition": "internalControl",
               "reason": "The resolver needs only the authoritative availability ID; the primary operation fetches the complete paginated territory collection with included territories.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "query",
               "appleName": "limit[territoryAvailabilities]",
               "disposition": "internalControl",
               "reason": "The resolver does not include territoryAvailabilities because the primary related-collection operation provides independent pagination up to 200 resources.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             }
           ]
         },

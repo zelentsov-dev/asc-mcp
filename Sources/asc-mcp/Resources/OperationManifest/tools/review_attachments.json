@@ -301,7 +301,7 @@
               "appleName": "include",
               "disposition": "intentionallyOmitted",
               "reason": "Upload reconciliation needs attachment delivery state and relationship identity only; expanding reviewer contact or demo-account data is unrelated to delivery verification.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             }
           ],
           "inputs": [
