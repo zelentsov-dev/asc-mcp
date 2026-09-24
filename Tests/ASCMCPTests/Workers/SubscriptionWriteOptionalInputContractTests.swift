@@ -499,6 +499,8 @@ struct SubscriptionWriteOptionalInputContractTests {
                     "/data/attributes/subscriptionPeriod"
                 ],
                 [
+                    "/data/attributes/marketSettings",
+                    "/data/attributes/multiSeatStatus",
                     "/data/relationships/introductoryOffers",
                     "/data/relationships/prices",
                     "/data/relationships/promotionalOffers",
@@ -534,7 +536,7 @@ struct SubscriptionWriteOptionalInputContractTests {
                     }
                     omittedNames.insert(classification.appleName)
                     omittedReviewsAreCurrent = omittedReviewsAreCurrent
-                        && classification.reviewAtSpec == "4.4.1"
+                        && classification.reviewAtSpec == "4.5"
                         && !classification.reason.isEmpty
                 }
             }

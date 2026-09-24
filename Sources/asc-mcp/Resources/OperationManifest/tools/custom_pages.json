@@ -20,7 +20,7 @@
             { "sourceKind": "fixed", "jsonPointer": "/data/relationships/customProductPageTemplate/data/type", "fixedValue": "appCustomProductPages" }
           ],
           "optionalParameterClassifications": [
-            { "location": "body", "appleName": "/data/relationships/appCustomProductPageVersions", "disposition": "internalControl", "reason": "The create workflow always generates local JSON:API IDs for the first page version and localization, then binds this relationship to that internally constructed inline version graph required by the public locale input.", "reviewAtSpec": "4.4.1" }
+            { "location": "body", "appleName": "/data/relationships/appCustomProductPageVersions", "disposition": "internalControl", "reason": "The create workflow always generates local JSON:API IDs for the first page version and localization, then binds this relationship to that internally constructed inline version graph required by the public locale input.", "reviewAtSpec": "4.5" }
           ]
         }
       ],
@@ -121,7 +121,7 @@
             { "sourceKind": "fixed", "jsonPointer": "/data/relationships/appCustomProductPage/data/type", "fixedValue": "appCustomProductPages" }
           ],
           "optionalParameterClassifications": [
-            { "location": "body", "appleName": "/data/relationships/appCustomProductPageLocalizations", "disposition": "intentionallyOmitted", "reason": "Apple 4.4.1's standalone AppCustomProductPageVersionCreateRequest has no top-level included member for inline localization resources; this tool creates the version first and callers create its owned localizations through appCustomProductPageLocalizations_createInstance instead of attempting to reparent existing localization IDs.", "reviewAtSpec": "4.4.1" }
+            { "location": "body", "appleName": "/data/relationships/appCustomProductPageLocalizations", "disposition": "intentionallyOmitted", "reason": "Apple 4.5's standalone AppCustomProductPageVersionCreateRequest has no top-level included member for inline localization resources; this tool creates the version first and callers create its owned localizations through appCustomProductPageLocalizations_createInstance instead of attempting to reparent existing localization IDs.", "reviewAtSpec": "4.5" }
           ]
         }
       ],
@@ -196,8 +196,8 @@
           "path": "/v1/appCustomProductPages/{id}",
           "role": "primary",
           "optionalParameterClassifications": [
-            { "location": "query", "appleName": "include", "disposition": "intentionallyOmitted", "reason": "The get tool projects only the primary appCustomProductPages resource and does not decode Apple's top-level included relationship resources, so exposing include would silently discard the requested expansion.", "reviewAtSpec": "4.4.1" },
-            { "location": "query", "appleName": "limit[appCustomProductPageVersions]", "disposition": "intentionallyOmitted", "reason": "Apple applies this nested limit only when appCustomProductPageVersions is requested through include; the get tool intentionally returns the base page without relationship expansion.", "reviewAtSpec": "4.4.1" }
+            { "location": "query", "appleName": "include", "disposition": "intentionallyOmitted", "reason": "The get tool projects only the primary appCustomProductPages resource and does not decode Apple's top-level included relationship resources, so exposing include would silently discard the requested expansion.", "reviewAtSpec": "4.5" },
+            { "location": "query", "appleName": "limit[appCustomProductPageVersions]", "disposition": "intentionallyOmitted", "reason": "Apple applies this nested limit only when appCustomProductPageVersions is requested through include; the get tool intentionally returns the base page without relationship expansion.", "reviewAtSpec": "4.5" }
           ]
         }
       ],
@@ -237,8 +237,8 @@
           "path": "/v1/apps/{id}/appCustomProductPages",
           "role": "primary",
           "optionalParameterClassifications": [
-            { "location": "query", "appleName": "include", "disposition": "intentionallyOmitted", "reason": "The list tool returns only its primary appCustomProductPages array and does not decode Apple's top-level included resources, so relationship expansion is deliberately unavailable.", "reviewAtSpec": "4.4.1" },
-            { "location": "query", "appleName": "limit[appCustomProductPageVersions]", "disposition": "intentionallyOmitted", "reason": "Apple uses this nested limit only for included appCustomProductPageVersions; the list tool does not request or project that relationship.", "reviewAtSpec": "4.4.1" }
+            { "location": "query", "appleName": "include", "disposition": "intentionallyOmitted", "reason": "The list tool returns only its primary appCustomProductPages array and does not decode Apple's top-level included resources, so relationship expansion is deliberately unavailable.", "reviewAtSpec": "4.5" },
+            { "location": "query", "appleName": "limit[appCustomProductPageVersions]", "disposition": "intentionallyOmitted", "reason": "Apple uses this nested limit only for included appCustomProductPageVersions; the list tool does not request or project that relationship.", "reviewAtSpec": "4.5" }
           ]
         }
       ],
@@ -285,10 +285,10 @@
           "path": "/v1/appCustomProductPageVersions/{id}/appCustomProductPageLocalizations",
           "role": "primary",
           "optionalParameterClassifications": [
-            { "location": "query", "appleName": "include", "disposition": "intentionallyOmitted", "reason": "The localization list projects only primary appCustomProductPageLocalizations resources and does not decode Apple's included screenshot, preview, keyword, or parent-version resources.", "reviewAtSpec": "4.4.1" },
-            { "location": "query", "appleName": "limit[appPreviewSets]", "disposition": "intentionallyOmitted", "reason": "Apple applies this nested limit only when appPreviewSets is included; this tool neither requests nor projects preview-set relationship resources.", "reviewAtSpec": "4.4.1" },
-            { "location": "query", "appleName": "limit[appScreenshotSets]", "disposition": "intentionallyOmitted", "reason": "Apple applies this nested limit only when appScreenshotSets is included; this tool neither requests nor projects screenshot-set relationship resources.", "reviewAtSpec": "4.4.1" },
-            { "location": "query", "appleName": "limit[searchKeywords]", "disposition": "intentionallyOmitted", "reason": "Apple applies this nested limit only when searchKeywords is included; this tool neither requests nor projects keyword relationship resources.", "reviewAtSpec": "4.4.1" }
+            { "location": "query", "appleName": "include", "disposition": "intentionallyOmitted", "reason": "The localization list projects only primary appCustomProductPageLocalizations resources and does not decode Apple's included screenshot, preview, keyword, or parent-version resources.", "reviewAtSpec": "4.5" },
+            { "location": "query", "appleName": "limit[appPreviewSets]", "disposition": "intentionallyOmitted", "reason": "Apple applies this nested limit only when appPreviewSets is included; this tool neither requests nor projects preview-set relationship resources.", "reviewAtSpec": "4.5" },
+            { "location": "query", "appleName": "limit[appScreenshotSets]", "disposition": "intentionallyOmitted", "reason": "Apple applies this nested limit only when appScreenshotSets is included; this tool neither requests nor projects screenshot-set relationship resources.", "reviewAtSpec": "4.5" },
+            { "location": "query", "appleName": "limit[searchKeywords]", "disposition": "intentionallyOmitted", "reason": "Apple applies this nested limit only when searchKeywords is included; this tool neither requests nor projects keyword relationship resources.", "reviewAtSpec": "4.5" }
           ]
         }
       ],
@@ -331,8 +331,8 @@
           "path": "/v1/appCustomProductPages/{id}/appCustomProductPageVersions",
           "role": "primary",
           "optionalParameterClassifications": [
-            { "location": "query", "appleName": "include", "disposition": "intentionallyOmitted", "reason": "The version list projects only primary appCustomProductPageVersions resources and does not decode Apple's included page or localization resources.", "reviewAtSpec": "4.4.1" },
-            { "location": "query", "appleName": "limit[appCustomProductPageLocalizations]", "disposition": "intentionallyOmitted", "reason": "Apple applies this nested limit only when appCustomProductPageLocalizations is included; this tool leaves relationship expansion to custom_pages_list_localizations.", "reviewAtSpec": "4.4.1" }
+            { "location": "query", "appleName": "include", "disposition": "intentionallyOmitted", "reason": "The version list projects only primary appCustomProductPageVersions resources and does not decode Apple's included page or localization resources.", "reviewAtSpec": "4.5" },
+            { "location": "query", "appleName": "limit[appCustomProductPageLocalizations]", "disposition": "intentionallyOmitted", "reason": "Apple applies this nested limit only when appCustomProductPageLocalizations is included; this tool leaves relationship expansion to custom_pages_list_localizations.", "reviewAtSpec": "4.5" }
           ]
         }
       ],
@@ -480,8 +480,8 @@
           "path": "/v1/appCustomProductPageVersions/{id}",
           "role": "primary",
           "optionalParameterClassifications": [
-            { "location": "query", "appleName": "include", "disposition": "intentionallyOmitted", "reason": "The tool projects the primary page-version resource only; relationship expansion would be silently discarded and is available through the dedicated page and localization tools.", "reviewAtSpec": "4.4.1" },
-            { "location": "query", "appleName": "limit[appCustomProductPageLocalizations]", "disposition": "intentionallyOmitted", "reason": "Apple applies this nested limit only when appCustomProductPageLocalizations is included; the tool does not request that expansion.", "reviewAtSpec": "4.4.1" }
+            { "location": "query", "appleName": "include", "disposition": "intentionallyOmitted", "reason": "The tool projects the primary page-version resource only; relationship expansion would be silently discarded and is available through the dedicated page and localization tools.", "reviewAtSpec": "4.5" },
+            { "location": "query", "appleName": "limit[appCustomProductPageLocalizations]", "disposition": "intentionallyOmitted", "reason": "Apple applies this nested limit only when appCustomProductPageLocalizations is included; the tool does not request that expansion.", "reviewAtSpec": "4.5" }
           ]
         }
       ],
@@ -563,10 +563,10 @@
           "path": "/v1/appCustomProductPageLocalizations/{id}",
           "role": "primary",
           "optionalParameterClassifications": [
-            { "location": "query", "appleName": "include", "disposition": "intentionallyOmitted", "reason": "The tool projects the primary localization only and does not decode included parent, screenshot, preview, or keyword resources.", "reviewAtSpec": "4.4.1" },
-            { "location": "query", "appleName": "limit[appPreviewSets]", "disposition": "intentionallyOmitted", "reason": "Apple applies this nested limit only to an appPreviewSets expansion that this tool does not request.", "reviewAtSpec": "4.4.1" },
-            { "location": "query", "appleName": "limit[appScreenshotSets]", "disposition": "intentionallyOmitted", "reason": "Apple applies this nested limit only to an appScreenshotSets expansion that this tool does not request.", "reviewAtSpec": "4.4.1" },
-            { "location": "query", "appleName": "limit[searchKeywords]", "disposition": "intentionallyOmitted", "reason": "Apple applies this nested limit only to an included searchKeywords expansion; custom_pages_list_search_keywords exposes the related collection directly.", "reviewAtSpec": "4.4.1" }
+            { "location": "query", "appleName": "include", "disposition": "intentionallyOmitted", "reason": "The tool projects the primary localization only and does not decode included parent, screenshot, preview, or keyword resources.", "reviewAtSpec": "4.5" },
+            { "location": "query", "appleName": "limit[appPreviewSets]", "disposition": "intentionallyOmitted", "reason": "Apple applies this nested limit only to an appPreviewSets expansion that this tool does not request.", "reviewAtSpec": "4.5" },
+            { "location": "query", "appleName": "limit[appScreenshotSets]", "disposition": "intentionallyOmitted", "reason": "Apple applies this nested limit only to an appScreenshotSets expansion that this tool does not request.", "reviewAtSpec": "4.5" },
+            { "location": "query", "appleName": "limit[searchKeywords]", "disposition": "intentionallyOmitted", "reason": "Apple applies this nested limit only to an included searchKeywords expansion; custom_pages_list_search_keywords exposes the related collection directly.", "reviewAtSpec": "4.5" }
           ]
         }
       ],

@@ -1,18 +1,18 @@
 {
   "schemaVersion": 2,
   "specPin": {
-    "version": "4.4.1",
-    "sha256": "ed0202ef37155b9334772482d2ea0be688c3046b284c895bcbea5455fbe54fd8",
-    "pathCount": 966,
-    "operationCount": 1263
+    "version": "4.5",
+    "sha256": "1e8ef250d6a41bab0f5670b669abf3f06298ef129c8455ba258149fda86927b2",
+    "pathCount": 973,
+    "operationCount": 1270
   },
   "optionalInputCoveragePin": {
-    "total": 2905,
-    "bound": 1122,
+    "total": 2907,
+    "bound": 1121,
     "internalControl": 40,
-    "intentionallyOmitted": 1743,
+    "intentionallyOmitted": 1746,
     "unclassified": 0,
-    "identitySHA256": "c975f4e4eebb62ec87864a73fbf72bb8841f644108e54e6ffb25168bcf2a2766"
+    "identitySHA256": "0ce3ff14568f841643559c359bc91827290535925c3665172fda81d499f81ce1"
   },
   "optionalParameterFamilyRules": [
     {
@@ -20,7 +20,7 @@
       "disposition": "intentionallyOmitted",
       "reason": "Public tools expose documented resource projections instead of arbitrary JSON:API sparse fieldsets; concrete missing response data is tracked at the tool output contract rather than passed through as fields[resource] strings.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     }
   ],
   "scopeRules": [
@@ -29,28 +29,28 @@
       "disposition": "outOfScope",
       "reason": "Game Center is tracked as a separate product roadmap and is not part of the current public MCP scope.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "pathPrefix": "/v2/gameCenter",
       "disposition": "outOfScope",
       "reason": "Game Center is tracked as a separate product roadmap and is not part of the current public MCP scope.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "pathPrefix": "/v1/alternativeDistribution",
       "disposition": "outOfScope",
       "reason": "Alternative distribution is intentionally deferred to a separate product phase.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "pathPrefix": "/v1/marketplace",
       "disposition": "outOfScope",
       "reason": "Alternative marketplace management is intentionally deferred to a separate product phase.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     }
   ],
   "waivers": [
@@ -60,7 +60,7 @@
       "disposition": "deferred",
       "reason": "The `actors` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.actors_getInstance",
@@ -68,7 +68,7 @@
       "disposition": "deferred",
       "reason": "The `actors` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.analyticsReportInstances_segments_getToManyRelationship",
@@ -76,7 +76,7 @@
       "disposition": "deferred",
       "reason": "The `analyticsReportInstances` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.analyticsReportRequests_deleteInstance",
@@ -84,7 +84,7 @@
       "disposition": "deferred",
       "reason": "The `analyticsReportRequests` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.analyticsReportRequests_getInstance",
@@ -92,7 +92,7 @@
       "disposition": "deferred",
       "reason": "The `analyticsReportRequests` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.analyticsReportRequests_reports_getToManyRelationship",
@@ -100,7 +100,7 @@
       "disposition": "deferred",
       "reason": "The `analyticsReportRequests` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.analyticsReportSegments_getInstance",
@@ -108,7 +108,7 @@
       "disposition": "deferred",
       "reason": "The `analyticsReportSegments` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.analyticsReports_instances_getToManyRelationship",
@@ -116,7 +116,7 @@
       "disposition": "deferred",
       "reason": "The `analyticsReports` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.androidToIosAppMappingDetails_createInstance",
@@ -124,7 +124,7 @@
       "disposition": "deferred",
       "reason": "The `androidToIosAppMappingDetails` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.androidToIosAppMappingDetails_deleteInstance",
@@ -132,7 +132,7 @@
       "disposition": "deferred",
       "reason": "The `androidToIosAppMappingDetails` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.androidToIosAppMappingDetails_getInstance",
@@ -140,7 +140,7 @@
       "disposition": "deferred",
       "reason": "The `androidToIosAppMappingDetails` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.androidToIosAppMappingDetails_updateInstance",
@@ -148,7 +148,7 @@
       "disposition": "deferred",
       "reason": "The `androidToIosAppMappingDetails` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.appCategories_getCollection",
@@ -156,7 +156,7 @@
       "disposition": "deferred",
       "reason": "The `appCategories` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.appCategories_getInstance",
@@ -164,7 +164,7 @@
       "disposition": "deferred",
       "reason": "The `appCategories` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.appCategories_parent_getToOneRelated",
@@ -172,7 +172,7 @@
       "disposition": "deferred",
       "reason": "The `appCategories` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.appCategories_parent_getToOneRelationship",
@@ -180,7 +180,7 @@
       "disposition": "deferred",
       "reason": "The `appCategories` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.appCategories_subcategories_getToManyRelationship",
@@ -188,7 +188,7 @@
       "disposition": "deferred",
       "reason": "The `appCategories` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.appCategories_subcategories_getToManyRelated",
@@ -196,7 +196,7 @@
       "disposition": "deferred",
       "reason": "The `appCategories` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.appClipAdvancedExperienceImages_createInstance",
@@ -204,7 +204,7 @@
       "disposition": "deferred",
       "reason": "The `appClipAdvancedExperienceImages` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.appClipAdvancedExperienceImages_getInstance",
@@ -212,7 +212,7 @@
       "disposition": "deferred",
       "reason": "The `appClipAdvancedExperienceImages` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.appClipAdvancedExperienceImages_updateInstance",
@@ -220,7 +220,7 @@
       "disposition": "deferred",
       "reason": "The `appClipAdvancedExperienceImages` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.appClipAdvancedExperiences_createInstance",
@@ -228,7 +228,7 @@
       "disposition": "deferred",
       "reason": "The `appClipAdvancedExperiences` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.appClipAdvancedExperiences_getInstance",
@@ -236,7 +236,7 @@
       "disposition": "deferred",
       "reason": "The `appClipAdvancedExperiences` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.appClipAdvancedExperiences_updateInstance",
@@ -244,7 +244,7 @@
       "disposition": "deferred",
       "reason": "The `appClipAdvancedExperiences` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.appClipAppStoreReviewDetails_createInstance",
@@ -252,7 +252,7 @@
       "disposition": "deferred",
       "reason": "The `appClipAppStoreReviewDetails` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.appClipAppStoreReviewDetails_getInstance",
@@ -260,7 +260,7 @@
       "disposition": "deferred",
       "reason": "The `appClipAppStoreReviewDetails` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.appClipAppStoreReviewDetails_updateInstance",
@@ -268,7 +268,7 @@
       "disposition": "deferred",
       "reason": "The `appClipAppStoreReviewDetails` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.appClipDefaultExperienceLocalizations_createInstance",
@@ -276,7 +276,7 @@
       "disposition": "deferred",
       "reason": "The `appClipDefaultExperienceLocalizations` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.appClipDefaultExperienceLocalizations_deleteInstance",
@@ -284,7 +284,7 @@
       "disposition": "deferred",
       "reason": "The `appClipDefaultExperienceLocalizations` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.appClipDefaultExperienceLocalizations_getInstance",
@@ -292,7 +292,7 @@
       "disposition": "deferred",
       "reason": "The `appClipDefaultExperienceLocalizations` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.appClipDefaultExperienceLocalizations_updateInstance",
@@ -300,7 +300,7 @@
       "disposition": "deferred",
       "reason": "The `appClipDefaultExperienceLocalizations` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.appClipDefaultExperienceLocalizations_appClipHeaderImage_getToOneRelated",
@@ -308,7 +308,7 @@
       "disposition": "deferred",
       "reason": "The `appClipDefaultExperienceLocalizations` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.appClipDefaultExperienceLocalizations_appClipHeaderImage_getToOneRelationship",
@@ -316,7 +316,7 @@
       "disposition": "deferred",
       "reason": "The `appClipDefaultExperienceLocalizations` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.appClipDefaultExperiences_createInstance",
@@ -324,7 +324,7 @@
       "disposition": "deferred",
       "reason": "The `appClipDefaultExperiences` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.appClipDefaultExperiences_deleteInstance",
@@ -332,7 +332,7 @@
       "disposition": "deferred",
       "reason": "The `appClipDefaultExperiences` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.appClipDefaultExperiences_getInstance",
@@ -340,7 +340,7 @@
       "disposition": "deferred",
       "reason": "The `appClipDefaultExperiences` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.appClipDefaultExperiences_updateInstance",
@@ -348,7 +348,7 @@
       "disposition": "deferred",
       "reason": "The `appClipDefaultExperiences` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.appClipDefaultExperiences_appClipAppStoreReviewDetail_getToOneRelated",
@@ -356,7 +356,7 @@
       "disposition": "deferred",
       "reason": "The `appClipDefaultExperiences` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.appClipDefaultExperiences_appClipDefaultExperienceLocalizations_getToManyRelated",
@@ -364,7 +364,7 @@
       "disposition": "deferred",
       "reason": "The `appClipDefaultExperiences` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.appClipDefaultExperiences_appClipAppStoreReviewDetail_getToOneRelationship",
@@ -372,7 +372,7 @@
       "disposition": "deferred",
       "reason": "The `appClipDefaultExperiences` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.appClipDefaultExperiences_appClipDefaultExperienceLocalizations_getToManyRelationship",
@@ -380,7 +380,7 @@
       "disposition": "deferred",
       "reason": "The `appClipDefaultExperiences` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.appClipDefaultExperiences_releaseWithAppStoreVersion_getToOneRelationship",
@@ -388,7 +388,7 @@
       "disposition": "deferred",
       "reason": "The `appClipDefaultExperiences` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.appClipDefaultExperiences_releaseWithAppStoreVersion_updateToOneRelationship",
@@ -396,7 +396,7 @@
       "disposition": "deferred",
       "reason": "The `appClipDefaultExperiences` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.appClipDefaultExperiences_releaseWithAppStoreVersion_getToOneRelated",
@@ -404,7 +404,7 @@
       "disposition": "deferred",
       "reason": "The `appClipDefaultExperiences` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.appClipHeaderImages_createInstance",
@@ -412,7 +412,7 @@
       "disposition": "deferred",
       "reason": "The `appClipHeaderImages` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.appClipHeaderImages_deleteInstance",
@@ -420,7 +420,7 @@
       "disposition": "deferred",
       "reason": "The `appClipHeaderImages` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.appClipHeaderImages_getInstance",
@@ -428,7 +428,7 @@
       "disposition": "deferred",
       "reason": "The `appClipHeaderImages` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.appClipHeaderImages_updateInstance",
@@ -436,7 +436,7 @@
       "disposition": "deferred",
       "reason": "The `appClipHeaderImages` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.appClips_getInstance",
@@ -444,7 +444,7 @@
       "disposition": "deferred",
       "reason": "The `appClips` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.appClips_appClipAdvancedExperiences_getToManyRelated",
@@ -452,7 +452,7 @@
       "disposition": "deferred",
       "reason": "The `appClips` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.appClips_appClipDefaultExperiences_getToManyRelated",
@@ -460,7 +460,7 @@
       "disposition": "deferred",
       "reason": "The `appClips` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.appClips_appClipAdvancedExperiences_getToManyRelationship",
@@ -468,7 +468,7 @@
       "disposition": "deferred",
       "reason": "The `appClips` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.appClips_appClipDefaultExperiences_getToManyRelationship",
@@ -476,7 +476,7 @@
       "disposition": "deferred",
       "reason": "The `appClips` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.appCustomProductPageLocalizations_appPreviewSets_getToManyRelationship",
@@ -484,7 +484,7 @@
       "disposition": "deferred",
       "reason": "screenshots_list_preview_sets returns the full related preview-set resources; this linkage-only relationship document is deferred because it duplicates IDs without attributes.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.appCustomProductPageLocalizations_appScreenshotSets_getToManyRelationship",
@@ -492,7 +492,7 @@
       "disposition": "deferred",
       "reason": "screenshots_list_sets returns the full related screenshot-set resources; this linkage-only relationship document is deferred because it duplicates IDs without attributes.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.appCustomProductPageLocalizations_searchKeywords_getToManyRelationship",
@@ -500,7 +500,7 @@
       "disposition": "deferred",
       "reason": "custom_pages_list_search_keywords returns full related keyword resources; this linkage-only relationship document is deferred because it duplicates IDs without attributes.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.appCustomProductPageVersions_appCustomProductPageLocalizations_getToManyRelationship",
@@ -508,7 +508,7 @@
       "disposition": "deferred",
       "reason": "custom_pages_list_localizations returns full related localization resources; this linkage-only relationship document is deferred because it duplicates IDs without attributes.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.appCustomProductPages_appCustomProductPageVersions_getToManyRelationship",
@@ -516,7 +516,7 @@
       "disposition": "deferred",
       "reason": "custom_pages_list_versions returns full related version resources; this linkage-only relationship document is deferred because it duplicates IDs without attributes.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.appEncryptionDeclarations_getCollection",
@@ -524,7 +524,7 @@
       "disposition": "deferred",
       "reason": "The `appEncryptionDeclarations` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.appEncryptionDeclarations_app_getToOneRelated",
@@ -532,7 +532,7 @@
       "disposition": "deferred",
       "reason": "The `appEncryptionDeclarations` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.appEncryptionDeclarations_app_getToOneRelationship",
@@ -540,7 +540,7 @@
       "disposition": "deferred",
       "reason": "The `appEncryptionDeclarations` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.appEncryptionDeclarations_appEncryptionDeclarationDocument_getToOneRelationship",
@@ -548,15 +548,15 @@
       "disposition": "deferred",
       "reason": "The `appEncryptionDeclarations` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.appEncryptionDeclarations_builds_createToManyRelationship",
       "operationId": "appEncryptionDeclarations_builds_createToManyRelationship",
       "disposition": "deferred",
-      "reason": "Pinned Apple OpenAPI 4.4.1 marks this declaration-to-build relationship POST deprecated; equivalent relationship assignment is exposed through builds_updateInstance.",
+      "reason": "Pinned Apple OpenAPI 4.5 marks this declaration-to-build relationship POST deprecated; equivalent relationship assignment is exposed through builds_updateInstance.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.appEventLocalizations_getInstance",
@@ -564,7 +564,7 @@
       "disposition": "deferred",
       "reason": "The `appEventLocalizations` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.appEventLocalizations_appEventScreenshots_getToManyRelated",
@@ -572,7 +572,7 @@
       "disposition": "deferred",
       "reason": "The `appEventLocalizations` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.appEventLocalizations_appEventVideoClips_getToManyRelated",
@@ -580,7 +580,7 @@
       "disposition": "deferred",
       "reason": "The `appEventLocalizations` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.appEventLocalizations_appEventScreenshots_getToManyRelationship",
@@ -588,7 +588,7 @@
       "disposition": "deferred",
       "reason": "The `appEventLocalizations` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.appEventLocalizations_appEventVideoClips_getToManyRelationship",
@@ -596,7 +596,7 @@
       "disposition": "deferred",
       "reason": "The `appEventLocalizations` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.appEventScreenshots_createInstance",
@@ -604,7 +604,7 @@
       "disposition": "deferred",
       "reason": "The `appEventScreenshots` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.appEventScreenshots_deleteInstance",
@@ -612,7 +612,7 @@
       "disposition": "deferred",
       "reason": "The `appEventScreenshots` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.appEventScreenshots_getInstance",
@@ -620,7 +620,7 @@
       "disposition": "deferred",
       "reason": "The `appEventScreenshots` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.appEventScreenshots_updateInstance",
@@ -628,7 +628,7 @@
       "disposition": "deferred",
       "reason": "The `appEventScreenshots` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.appEventVideoClips_createInstance",
@@ -636,7 +636,7 @@
       "disposition": "deferred",
       "reason": "The `appEventVideoClips` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.appEventVideoClips_deleteInstance",
@@ -644,7 +644,7 @@
       "disposition": "deferred",
       "reason": "The `appEventVideoClips` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.appEventVideoClips_getInstance",
@@ -652,7 +652,7 @@
       "disposition": "deferred",
       "reason": "The `appEventVideoClips` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.appEventVideoClips_updateInstance",
@@ -660,7 +660,7 @@
       "disposition": "deferred",
       "reason": "The `appEventVideoClips` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.appEvents_localizations_getToManyRelationship",
@@ -668,7 +668,7 @@
       "disposition": "deferred",
       "reason": "The `appEvents` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.appInfoLocalizations_getInstance",
@@ -676,7 +676,7 @@
       "disposition": "deferred",
       "reason": "The `appInfoLocalizations` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.appInfos_primaryCategory_getToOneRelated",
@@ -684,7 +684,7 @@
       "disposition": "deferred",
       "reason": "The `appInfos` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.appInfos_primarySubcategoryOne_getToOneRelated",
@@ -692,7 +692,7 @@
       "disposition": "deferred",
       "reason": "The `appInfos` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.appInfos_primarySubcategoryTwo_getToOneRelated",
@@ -700,7 +700,7 @@
       "disposition": "deferred",
       "reason": "The `appInfos` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.appInfos_ageRatingDeclaration_getToOneRelationship",
@@ -708,7 +708,7 @@
       "disposition": "deferred",
       "reason": "The `appInfos` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.appInfos_appInfoLocalizations_getToManyRelationship",
@@ -716,7 +716,7 @@
       "disposition": "deferred",
       "reason": "The `appInfos` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.appInfos_primaryCategory_getToOneRelationship",
@@ -724,7 +724,7 @@
       "disposition": "deferred",
       "reason": "The `appInfos` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.appInfos_primarySubcategoryOne_getToOneRelationship",
@@ -732,7 +732,7 @@
       "disposition": "deferred",
       "reason": "The `appInfos` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.appInfos_primarySubcategoryTwo_getToOneRelationship",
@@ -740,7 +740,7 @@
       "disposition": "deferred",
       "reason": "The `appInfos` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.appInfos_secondaryCategory_getToOneRelationship",
@@ -748,7 +748,7 @@
       "disposition": "deferred",
       "reason": "The `appInfos` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.appInfos_secondarySubcategoryOne_getToOneRelationship",
@@ -756,7 +756,7 @@
       "disposition": "deferred",
       "reason": "The `appInfos` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.appInfos_secondarySubcategoryTwo_getToOneRelationship",
@@ -764,7 +764,7 @@
       "disposition": "deferred",
       "reason": "The `appInfos` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.appInfos_territoryAgeRatings_getToManyRelationship",
@@ -772,7 +772,7 @@
       "disposition": "deferred",
       "reason": "The related-resource collection is exposed and returns both calculated ratings and territory details; this linkage-only endpoint would add IDs without practical rating data.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.appInfos_secondaryCategory_getToOneRelated",
@@ -780,7 +780,7 @@
       "disposition": "deferred",
       "reason": "The `appInfos` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.appInfos_secondarySubcategoryOne_getToOneRelated",
@@ -788,7 +788,7 @@
       "disposition": "deferred",
       "reason": "The `appInfos` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.appInfos_secondarySubcategoryTwo_getToOneRelated",
@@ -796,7 +796,7 @@
       "disposition": "deferred",
       "reason": "The `appInfos` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.appPreviewSets_appPreviews_getToManyRelationship",
@@ -804,7 +804,7 @@
       "disposition": "deferred",
       "reason": "screenshots_list_previews returns full preview resources; this linkage-only relationship document is deferred because it duplicates IDs without attributes.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.appPriceSchedules_getInstance",
@@ -812,7 +812,7 @@
       "disposition": "deferred",
       "reason": "The `appPriceSchedules` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.appPriceSchedules_automaticPrices_getToManyRelated",
@@ -820,7 +820,7 @@
       "disposition": "deferred",
       "reason": "The `appPriceSchedules` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.appPriceSchedules_baseTerritory_getToOneRelated",
@@ -828,7 +828,7 @@
       "disposition": "deferred",
       "reason": "The `appPriceSchedules` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.appPriceSchedules_manualPrices_getToManyRelated",
@@ -836,7 +836,7 @@
       "disposition": "deferred",
       "reason": "The `appPriceSchedules` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.appPriceSchedules_automaticPrices_getToManyRelationship",
@@ -844,7 +844,7 @@
       "disposition": "deferred",
       "reason": "The `appPriceSchedules` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.appPriceSchedules_baseTerritory_getToOneRelationship",
@@ -852,7 +852,7 @@
       "disposition": "deferred",
       "reason": "The `appPriceSchedules` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.appPriceSchedules_manualPrices_getToManyRelationship",
@@ -860,7 +860,7 @@
       "disposition": "deferred",
       "reason": "The `appPriceSchedules` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.appScreenshotSets_appScreenshots_getToManyRelationship",
@@ -868,7 +868,7 @@
       "disposition": "deferred",
       "reason": "screenshots_list returns full screenshot resources; this linkage-only relationship document is deferred because it duplicates IDs without attributes.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.appStoreReviewDetails_getInstance",
@@ -876,7 +876,7 @@
       "disposition": "deferred",
       "reason": "The `appStoreReviewDetails` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.appStoreReviewDetails_appStoreReviewAttachments_getToManyRelationship",
@@ -884,7 +884,7 @@
       "disposition": "deferred",
       "reason": "review_attachments_list exposes the related attachment resources; the linkage-only relationship endpoint is deferred because it would duplicate IDs without attachment attributes.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.appStoreVersionExperimentTreatmentLocalizations_appPreviewSets_getToManyRelationship",
@@ -892,7 +892,7 @@
       "disposition": "deferred",
       "reason": "screenshots_list_preview_sets returns the full treatment-localization preview-set resources; this linkage-only document is deferred because it duplicates IDs without attributes.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.appStoreVersionExperimentTreatmentLocalizations_appScreenshotSets_getToManyRelationship",
@@ -900,7 +900,7 @@
       "disposition": "deferred",
       "reason": "screenshots_list_sets returns the full treatment-localization screenshot-set resources; this linkage-only document is deferred because it duplicates IDs without attributes.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.appStoreVersionExperimentTreatments_appStoreVersionExperimentTreatmentLocalizations_getToManyRelationship",
@@ -908,7 +908,7 @@
       "disposition": "deferred",
       "reason": "ppo_list_treatment_localizations returns full localization resources; this linkage-only relationship document is deferred because it duplicates IDs without attributes.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.appStoreVersionExperiments_createInstance",
@@ -916,7 +916,7 @@
       "disposition": "deferred",
       "reason": "The legacy V1 experiment mutation is intentionally deferred; PPO tools use Apple's nondeprecated V2 experiment surface and shared treatment resources.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.appStoreVersionExperiments_deleteInstance",
@@ -924,7 +924,7 @@
       "disposition": "deferred",
       "reason": "The legacy V1 experiment mutation is intentionally deferred; PPO tools use Apple's nondeprecated V2 experiment surface and shared treatment resources.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.appStoreVersionExperiments_getInstance",
@@ -932,7 +932,7 @@
       "disposition": "deferred",
       "reason": "The legacy V1 experiment read is intentionally deferred; PPO tools use Apple's nondeprecated V2 experiment surface and shared treatment resources.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.appStoreVersionExperiments_updateInstance",
@@ -940,7 +940,7 @@
       "disposition": "deferred",
       "reason": "The legacy V1 experiment mutation is intentionally deferred; PPO tools use Apple's nondeprecated V2 experiment surface and shared treatment resources.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.appStoreVersionExperiments_appStoreVersionExperimentTreatments_getToManyRelated",
@@ -948,7 +948,7 @@
       "disposition": "deferred",
       "reason": "This legacy V1 experiment relationship is intentionally deferred; ppo_list_treatments uses the nondeprecated V2 experiment relationship and returns full treatment resources.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.appStoreVersionExperiments_appStoreVersionExperimentTreatments_getToManyRelationship",
@@ -956,7 +956,7 @@
       "disposition": "deferred",
       "reason": "This legacy V1 linkage-only relationship is intentionally deferred; ppo_list_treatments uses the nondeprecated V2 relationship and returns full treatment resources.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.appStoreVersionLocalizations_getInstance",
@@ -964,7 +964,7 @@
       "disposition": "deferred",
       "reason": "Version-localization list/create/update/delete operations are exposed, but a dedicated direct-get tool is not yet published; this read remains deferred pending a distinct practical use case.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.appStoreVersionLocalizations_appPreviewSets_getToManyRelationship",
@@ -972,7 +972,7 @@
       "disposition": "deferred",
       "reason": "screenshots_list_preview_sets returns full version-localization preview-set resources; this linkage-only document is deferred because it duplicates IDs without attributes.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.appStoreVersionLocalizations_appScreenshotSets_getToManyRelationship",
@@ -980,7 +980,7 @@
       "disposition": "deferred",
       "reason": "screenshots_list_sets returns full version-localization screenshot-set resources; this linkage-only document is deferred because it duplicates IDs without attributes.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.appStoreVersionLocalizations_searchKeywords_deleteToManyRelationship",
@@ -988,7 +988,7 @@
       "disposition": "deferred",
       "reason": "Search-keyword targeting for standard App Store version localizations is not yet exposed; the current search-keyword tools are scoped to apps and Custom Product Page localizations.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.appStoreVersionLocalizations_searchKeywords_getToManyRelationship",
@@ -996,7 +996,7 @@
       "disposition": "deferred",
       "reason": "Search-keyword targeting for standard App Store version localizations is not yet exposed; the current search-keyword tools are scoped to apps and Custom Product Page localizations.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.appStoreVersionLocalizations_searchKeywords_createToManyRelationship",
@@ -1004,7 +1004,7 @@
       "disposition": "deferred",
       "reason": "Search-keyword targeting for standard App Store version localizations is not yet exposed; the current search-keyword tools are scoped to apps and Custom Product Page localizations.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.appStoreVersionLocalizations_searchKeywords_getToManyRelated",
@@ -1012,7 +1012,7 @@
       "disposition": "deferred",
       "reason": "Search-keyword targeting for standard App Store version localizations is not yet exposed; the current search-keyword tools are scoped to apps and Custom Product Page localizations.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.appStoreVersionPromotions_createInstance",
@@ -1020,7 +1020,7 @@
       "disposition": "deferred",
       "reason": "The `appStoreVersionPromotions` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.appStoreVersionSubmissions_deleteInstance",
@@ -1028,7 +1028,7 @@
       "disposition": "deferred",
       "reason": "The `appStoreVersionSubmissions` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.appStoreVersions_alternativeDistributionPackage_getToOneRelated",
@@ -1036,7 +1036,7 @@
       "disposition": "deferred",
       "reason": "The `appStoreVersions` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.appStoreVersions_appClipDefaultExperience_getToOneRelated",
@@ -1044,7 +1044,7 @@
       "disposition": "deferred",
       "reason": "The `appStoreVersions` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.appStoreVersions_appStoreVersionExperiments_getToManyRelated",
@@ -1052,7 +1052,7 @@
       "disposition": "deferred",
       "reason": "The `appStoreVersions` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.appStoreVersions_appStoreVersionSubmission_getToOneRelated",
@@ -1060,7 +1060,7 @@
       "disposition": "deferred",
       "reason": "The `appStoreVersions` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.appStoreVersions_gameCenterAppVersion_getToOneRelated",
@@ -1068,7 +1068,7 @@
       "disposition": "deferred",
       "reason": "The `appStoreVersions` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.appStoreVersions_alternativeDistributionPackage_getToOneRelationship",
@@ -1076,7 +1076,7 @@
       "disposition": "deferred",
       "reason": "The `appStoreVersions` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.appStoreVersions_appClipDefaultExperience_getToOneRelationship",
@@ -1084,7 +1084,7 @@
       "disposition": "deferred",
       "reason": "The `appStoreVersions` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.appStoreVersions_appClipDefaultExperience_updateToOneRelationship",
@@ -1092,7 +1092,7 @@
       "disposition": "deferred",
       "reason": "The `appStoreVersions` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.appStoreVersions_appStoreReviewDetail_getToOneRelationship",
@@ -1100,7 +1100,7 @@
       "disposition": "deferred",
       "reason": "The `appStoreVersions` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.appStoreVersions_appStoreVersionExperiments_getToManyRelationship",
@@ -1108,7 +1108,7 @@
       "disposition": "deferred",
       "reason": "The `appStoreVersions` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.appStoreVersions_appStoreVersionExperimentsV2_getToManyRelationship",
@@ -1116,7 +1116,7 @@
       "disposition": "deferred",
       "reason": "ppo_list_version_experiments returns full V2 experiment resources; this linkage-only relationship document is deferred because it duplicates IDs without experiment attributes.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.appStoreVersions_appStoreVersionLocalizations_getToManyRelationship",
@@ -1124,7 +1124,7 @@
       "disposition": "deferred",
       "reason": "The `appStoreVersions` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.appStoreVersions_appStoreVersionPhasedRelease_getToOneRelationship",
@@ -1132,7 +1132,7 @@
       "disposition": "deferred",
       "reason": "The `appStoreVersions` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.appStoreVersions_appStoreVersionSubmission_getToOneRelationship",
@@ -1140,7 +1140,7 @@
       "disposition": "deferred",
       "reason": "The `appStoreVersions` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.appStoreVersions_build_getToOneRelationship",
@@ -1148,7 +1148,7 @@
       "disposition": "deferred",
       "reason": "The `appStoreVersions` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.appStoreVersions_customerReviews_getToManyRelationship",
@@ -1156,7 +1156,7 @@
       "disposition": "deferred",
       "reason": "The `appStoreVersions` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.appStoreVersions_gameCenterAppVersion_getToOneRelationship",
@@ -1164,7 +1164,7 @@
       "disposition": "deferred",
       "reason": "The `appStoreVersions` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.appStoreVersions_routingAppCoverage_getToOneRelationship",
@@ -1172,7 +1172,7 @@
       "disposition": "deferred",
       "reason": "The `appStoreVersions` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.appStoreVersions_routingAppCoverage_getToOneRelated",
@@ -1180,7 +1180,7 @@
       "disposition": "deferred",
       "reason": "The `appStoreVersions` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.appTags_updateInstance",
@@ -1188,7 +1188,7 @@
       "disposition": "deferred",
       "reason": "The `appTags` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.appTags_territories_getToManyRelationship",
@@ -1196,7 +1196,7 @@
       "disposition": "deferred",
       "reason": "The `appTags` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.appTags_territories_getToManyRelated",
@@ -1204,7 +1204,7 @@
       "disposition": "deferred",
       "reason": "The `appTags` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.apps_updateInstance",
@@ -1212,7 +1212,7 @@
       "disposition": "deferred",
       "reason": "The `apps` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.apps_alternativeDistributionKey_getToOneRelated",
@@ -1220,7 +1220,7 @@
       "disposition": "deferred",
       "reason": "The `apps` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.apps_androidToIosAppMappingDetails_getToManyRelated",
@@ -1228,7 +1228,7 @@
       "disposition": "deferred",
       "reason": "The `apps` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.apps_appClips_getToManyRelated",
@@ -1236,7 +1236,7 @@
       "disposition": "deferred",
       "reason": "The `apps` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.apps_appTags_getToManyRelated",
@@ -1244,7 +1244,7 @@
       "disposition": "deferred",
       "reason": "The `apps` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.apps_backgroundAssets_getToManyRelated",
@@ -1252,7 +1252,7 @@
       "disposition": "deferred",
       "reason": "The `apps` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.apps_betaGroups_getToManyRelated",
@@ -1260,7 +1260,7 @@
       "disposition": "deferred",
       "reason": "The `apps` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.apps_betaLicenseAgreement_getToOneRelated",
@@ -1268,7 +1268,7 @@
       "disposition": "deferred",
       "reason": "The `apps` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.apps_builds_getToManyRelated",
@@ -1276,7 +1276,7 @@
       "disposition": "deferred",
       "reason": "The `apps` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.apps_gameCenterDetail_getToOneRelated",
@@ -1284,7 +1284,7 @@
       "disposition": "deferred",
       "reason": "The `apps` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.apps_gameCenterEnabledVersions_getToManyRelated",
@@ -1292,7 +1292,7 @@
       "disposition": "deferred",
       "reason": "The `apps` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.apps_inAppPurchases_getToManyRelated",
@@ -1300,7 +1300,7 @@
       "disposition": "deferred",
       "reason": "The `apps` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.apps_marketplaceSearchDetail_getToOneRelated",
@@ -1308,7 +1308,15 @@
       "disposition": "deferred",
       "reason": "The `apps` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
+    },
+    {
+      "id": "deferred.apps_performanceOverviews_getToManyRelated",
+      "operationId": "apps_performanceOverviews_getToManyRelated",
+      "disposition": "deferred",
+      "reason": "Apple 4.5 adds app performance overviews; the `apps` performanceOverviews relationship is not yet exposed by asc-mcp.",
+      "owner": "asc-mcp",
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.apps_preReleaseVersions_getToManyRelated",
@@ -1316,7 +1324,7 @@
       "disposition": "deferred",
       "reason": "The `apps` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.apps_alternativeDistributionKey_getToOneRelationship",
@@ -1324,7 +1332,7 @@
       "disposition": "deferred",
       "reason": "The `apps` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.apps_analyticsReportRequests_getToManyRelationship",
@@ -1332,7 +1340,7 @@
       "disposition": "deferred",
       "reason": "The `apps` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.apps_androidToIosAppMappingDetails_getToManyRelationship",
@@ -1340,7 +1348,7 @@
       "disposition": "deferred",
       "reason": "The `apps` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.apps_appAvailabilityV2_getToOneRelationship",
@@ -1348,7 +1356,7 @@
       "disposition": "deferred",
       "reason": "The `apps` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.apps_appClips_getToManyRelationship",
@@ -1356,7 +1364,7 @@
       "disposition": "deferred",
       "reason": "The `apps` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.apps_appCustomProductPages_getToManyRelationship",
@@ -1364,7 +1372,7 @@
       "disposition": "deferred",
       "reason": "custom_pages_list returns full app-owned custom product page resources; this linkage-only relationship document is deferred because it duplicates IDs without page attributes.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.apps_appEncryptionDeclarations_getToManyRelationship",
@@ -1372,7 +1380,7 @@
       "disposition": "deferred",
       "reason": "The `apps` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.apps_appEvents_getToManyRelationship",
@@ -1380,7 +1388,7 @@
       "disposition": "deferred",
       "reason": "The `apps` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.apps_appInfos_getToManyRelationship",
@@ -1388,7 +1396,7 @@
       "disposition": "deferred",
       "reason": "The `apps` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.apps_appPricePoints_getToManyRelationship",
@@ -1396,7 +1404,7 @@
       "disposition": "deferred",
       "reason": "The `apps` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.apps_appPriceSchedule_getToOneRelationship",
@@ -1404,7 +1412,7 @@
       "disposition": "deferred",
       "reason": "The `apps` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.apps_appStoreVersionExperimentsV2_getToManyRelationship",
@@ -1412,7 +1420,7 @@
       "disposition": "deferred",
       "reason": "ppo_list_experiments returns full app-owned V2 experiment resources; this linkage-only relationship document is deferred because it duplicates IDs without experiment attributes.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.apps_appStoreVersions_getToManyRelationship",
@@ -1420,7 +1428,7 @@
       "disposition": "deferred",
       "reason": "The `apps` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.apps_appTags_getToManyRelationship",
@@ -1428,7 +1436,7 @@
       "disposition": "deferred",
       "reason": "The `apps` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.apps_backgroundAssets_getToManyRelationship",
@@ -1436,7 +1444,7 @@
       "disposition": "deferred",
       "reason": "The `apps` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.apps_betaAppLocalizations_getToManyRelationship",
@@ -1444,7 +1452,7 @@
       "disposition": "deferred",
       "reason": "The related BetaAppLocalization resource list is exposed; the raw app-to-localizations linkage collection is not exposed.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.apps_betaAppReviewDetail_getToOneRelationship",
@@ -1452,7 +1460,7 @@
       "disposition": "deferred",
       "reason": "The related BetaAppReviewDetail resource is exposed; the raw app-to-review-detail linkage endpoint is not exposed.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.apps_betaFeedbackCrashSubmissions_getToManyRelationship",
@@ -1460,7 +1468,7 @@
       "disposition": "deferred",
       "reason": "The `apps` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.apps_betaFeedbackScreenshotSubmissions_getToManyRelationship",
@@ -1468,7 +1476,7 @@
       "disposition": "deferred",
       "reason": "The `apps` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.apps_betaGroups_getToManyRelationship",
@@ -1476,7 +1484,7 @@
       "disposition": "deferred",
       "reason": "The `apps` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.apps_betaLicenseAgreement_getToOneRelationship",
@@ -1484,7 +1492,7 @@
       "disposition": "deferred",
       "reason": "The `apps` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.apps_betaTesters_deleteToManyRelationship",
@@ -1492,7 +1500,7 @@
       "disposition": "deferred",
       "reason": "The `apps` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.apps_buildUploads_getToManyRelationship",
@@ -1500,7 +1508,7 @@
       "disposition": "deferred",
       "reason": "build_uploads_list exposes the related BuildUpload resources; the linkage-only relationship endpoint is deferred because it would duplicate IDs without upload attributes or processing state.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.apps_builds_getToManyRelationship",
@@ -1508,7 +1516,7 @@
       "disposition": "deferred",
       "reason": "The `apps` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.apps_ciProduct_getToOneRelationship",
@@ -1516,7 +1524,7 @@
       "disposition": "deferred",
       "reason": "This ID-only linkage endpoint is intentionally deferred because xcode_cloud_app_product_get is a functional superset that returns the same product identity together with validated product attributes and relationship context.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.apps_customerReviews_getToManyRelationship",
@@ -1524,7 +1532,7 @@
       "disposition": "deferred",
       "reason": "The `apps` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.apps_endUserLicenseAgreement_getToOneRelationship",
@@ -1532,7 +1540,7 @@
       "disposition": "deferred",
       "reason": "The `apps` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.apps_gameCenterDetail_getToOneRelationship",
@@ -1540,7 +1548,7 @@
       "disposition": "deferred",
       "reason": "The `apps` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.apps_gameCenterEnabledVersions_getToManyRelationship",
@@ -1548,7 +1556,7 @@
       "disposition": "deferred",
       "reason": "The `apps` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.apps_inAppPurchases_getToManyRelationship",
@@ -1556,7 +1564,7 @@
       "disposition": "deferred",
       "reason": "The `apps` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.apps_inAppPurchasesV2_getToManyRelationship",
@@ -1564,7 +1572,7 @@
       "disposition": "deferred",
       "reason": "The `apps` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.apps_marketplaceSearchDetail_getToOneRelationship",
@@ -1572,7 +1580,7 @@
       "disposition": "deferred",
       "reason": "The `apps` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.apps_preReleaseVersions_getToManyRelationship",
@@ -1580,7 +1588,7 @@
       "disposition": "deferred",
       "reason": "The `apps` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.apps_reviewSubmissions_getToManyRelationship",
@@ -1588,7 +1596,7 @@
       "disposition": "deferred",
       "reason": "`review_submissions_list` uses Apple's filtered collection endpoint to return submissions for one required app with state and platform filters; this app-scoped linkage-only relationship document is a lower-value duplicate.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.apps_searchKeywords_getToManyRelationship",
@@ -1596,7 +1604,7 @@
       "disposition": "deferred",
       "reason": "apps_list_search_keywords returns full related keyword resources; this linkage-only relationship document is deferred because it duplicates IDs without keyword attributes.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.apps_subscriptionGracePeriod_getToOneRelationship",
@@ -1604,7 +1612,7 @@
       "disposition": "deferred",
       "reason": "The `apps` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.apps_subscriptionGroups_getToManyRelationship",
@@ -1612,7 +1620,7 @@
       "disposition": "deferred",
       "reason": "The `apps` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.apps_webhooks_getToManyRelationship",
@@ -1620,7 +1628,7 @@
       "disposition": "deferred",
       "reason": "The `apps` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.apps_reviewSubmissions_getToManyRelated",
@@ -1628,7 +1636,7 @@
       "disposition": "deferred",
       "reason": "`review_submissions_list` exposes the equivalent app-owned submission collection through Apple's required filter[app] query and adds state, platform, include, and strict pagination controls; the alternate related-resource path is intentionally deferred.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.apps_subscriptionGracePeriod_getToOneRelated",
@@ -1636,7 +1644,7 @@
       "disposition": "deferred",
       "reason": "The `apps` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.backgroundAssetUploadFiles_createInstance",
@@ -1644,7 +1652,7 @@
       "disposition": "deferred",
       "reason": "The `backgroundAssetUploadFiles` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.backgroundAssetUploadFiles_getInstance",
@@ -1652,7 +1660,7 @@
       "disposition": "deferred",
       "reason": "The `backgroundAssetUploadFiles` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.backgroundAssetUploadFiles_updateInstance",
@@ -1660,7 +1668,7 @@
       "disposition": "deferred",
       "reason": "The `backgroundAssetUploadFiles` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.backgroundAssetVersionAppStoreReleases_getInstance",
@@ -1668,7 +1676,7 @@
       "disposition": "deferred",
       "reason": "The `backgroundAssetVersionAppStoreReleases` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.backgroundAssetVersionExternalBetaReleases_getInstance",
@@ -1676,7 +1684,7 @@
       "disposition": "deferred",
       "reason": "The `backgroundAssetVersionExternalBetaReleases` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.backgroundAssetVersionInternalBetaReleases_getInstance",
@@ -1684,7 +1692,7 @@
       "disposition": "deferred",
       "reason": "The `backgroundAssetVersionInternalBetaReleases` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.backgroundAssetVersions_createInstance",
@@ -1692,7 +1700,7 @@
       "disposition": "deferred",
       "reason": "The `backgroundAssetVersions` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.backgroundAssetVersions_getInstance",
@@ -1700,7 +1708,7 @@
       "disposition": "deferred",
       "reason": "The `backgroundAssetVersions` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.backgroundAssetVersions_backgroundAssetUploadFiles_getToManyRelated",
@@ -1708,7 +1716,7 @@
       "disposition": "deferred",
       "reason": "The `backgroundAssetVersions` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.backgroundAssetVersions_backgroundAssetUploadFiles_getToManyRelationship",
@@ -1716,7 +1724,7 @@
       "disposition": "deferred",
       "reason": "The `backgroundAssetVersions` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.backgroundAssets_createInstance",
@@ -1724,7 +1732,7 @@
       "disposition": "deferred",
       "reason": "The `backgroundAssets` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.backgroundAssets_getInstance",
@@ -1732,7 +1740,7 @@
       "disposition": "deferred",
       "reason": "The `backgroundAssets` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.backgroundAssets_updateInstance",
@@ -1740,7 +1748,7 @@
       "disposition": "deferred",
       "reason": "The `backgroundAssets` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.backgroundAssets_versions_getToManyRelationship",
@@ -1748,7 +1756,7 @@
       "disposition": "deferred",
       "reason": "The `backgroundAssets` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.backgroundAssets_versions_getToManyRelated",
@@ -1756,7 +1764,7 @@
       "disposition": "deferred",
       "reason": "The `backgroundAssets` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.betaAppClipInvocationLocalizations_createInstance",
@@ -1764,7 +1772,7 @@
       "disposition": "deferred",
       "reason": "The `betaAppClipInvocationLocalizations` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.betaAppClipInvocationLocalizations_deleteInstance",
@@ -1772,7 +1780,7 @@
       "disposition": "deferred",
       "reason": "The `betaAppClipInvocationLocalizations` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.betaAppClipInvocationLocalizations_updateInstance",
@@ -1780,7 +1788,7 @@
       "disposition": "deferred",
       "reason": "The `betaAppClipInvocationLocalizations` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.betaAppClipInvocations_createInstance",
@@ -1788,7 +1796,7 @@
       "disposition": "deferred",
       "reason": "The `betaAppClipInvocations` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.betaAppClipInvocations_deleteInstance",
@@ -1796,7 +1804,7 @@
       "disposition": "deferred",
       "reason": "The `betaAppClipInvocations` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.betaAppClipInvocations_getInstance",
@@ -1804,7 +1812,7 @@
       "disposition": "deferred",
       "reason": "The `betaAppClipInvocations` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.betaAppClipInvocations_updateInstance",
@@ -1812,7 +1820,7 @@
       "disposition": "deferred",
       "reason": "The `betaAppClipInvocations` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.betaAppLocalizations_getCollection",
@@ -1820,7 +1828,7 @@
       "disposition": "deferred",
       "reason": "The app-scoped related-resource list is exposed; the direct BetaAppLocalization collection and its app filter are not exposed.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.betaAppLocalizations_app_getToOneRelated",
@@ -1828,7 +1836,7 @@
       "disposition": "deferred",
       "reason": "BetaAppLocalization resources are exposed, but the dedicated related App resource endpoint is not exposed.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.betaAppLocalizations_app_getToOneRelationship",
@@ -1836,7 +1844,7 @@
       "disposition": "deferred",
       "reason": "BetaAppLocalization resources are exposed, but the raw App relationship-linkage endpoint is not exposed.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.betaAppReviewDetails_getCollection",
@@ -1844,7 +1852,7 @@
       "disposition": "deferred",
       "reason": "The app-scoped related review detail is exposed; the direct BetaAppReviewDetail collection is not exposed.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.betaAppReviewDetails_getInstance",
@@ -1852,7 +1860,7 @@
       "disposition": "deferred",
       "reason": "The app-scoped related review detail is exposed; direct BetaAppReviewDetail lookup by detail ID is not exposed.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.betaAppReviewDetails_app_getToOneRelated",
@@ -1860,7 +1868,7 @@
       "disposition": "deferred",
       "reason": "BetaAppReviewDetail resources are exposed, but the dedicated related App resource endpoint is not exposed.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.betaAppReviewDetails_app_getToOneRelationship",
@@ -1868,7 +1876,7 @@
       "disposition": "deferred",
       "reason": "BetaAppReviewDetail resources are exposed, but the raw App relationship-linkage endpoint is not exposed.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.betaAppReviewSubmissions_build_getToOneRelated",
@@ -1876,7 +1884,7 @@
       "disposition": "deferred",
       "reason": "Submission tools expand Build resources with include=build; the dedicated related Build resource endpoint is not exposed.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.betaBuildLocalizations_deleteInstance",
@@ -1884,7 +1892,7 @@
       "disposition": "deferred",
       "reason": "The `betaBuildLocalizations` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.betaBuildLocalizations_getInstance",
@@ -1892,7 +1900,7 @@
       "disposition": "deferred",
       "reason": "The `betaBuildLocalizations` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.betaBuildLocalizations_build_getToOneRelated",
@@ -1900,7 +1908,7 @@
       "disposition": "deferred",
       "reason": "The `betaBuildLocalizations` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.betaBuildLocalizations_build_getToOneRelationship",
@@ -1908,7 +1916,7 @@
       "disposition": "deferred",
       "reason": "The `betaBuildLocalizations` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.betaFeedbackCrashSubmissions_crashLog_getToOneRelationship",
@@ -1916,7 +1924,7 @@
       "disposition": "deferred",
       "reason": "The `betaFeedbackCrashSubmissions` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.betaGroups_app_getToOneRelated",
@@ -1924,7 +1932,7 @@
       "disposition": "deferred",
       "reason": "The related App resource lookup is deferred; current beta-group tools accept or filter by the App identifier without projecting the App resource.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.betaGroups_builds_getToManyRelated",
@@ -1932,7 +1940,7 @@
       "disposition": "deferred",
       "reason": "Reading the related Build resources for a beta group is deferred; current beta-group tools manage build membership but do not project Build resources.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.betaGroups_app_getToOneRelationship",
@@ -1940,7 +1948,7 @@
       "disposition": "deferred",
       "reason": "The linkage-only App relationship is deferred with the related App lookup; current beta-group tools accept or filter by the App identifier without a separate relationship read.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.betaGroups_betaRecruitmentCriteria_getToOneRelationship",
@@ -1948,7 +1956,7 @@
       "disposition": "deferred",
       "reason": "`beta_groups_get_recruitment_criteria` uses the related-resource endpoint to return the criterion identity and attributes after confirming the exact beta group; the linkage-only response is intentionally deferred because it is strictly less informative.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.betaGroups_betaRecruitmentCriterionCompatibleBuildCheck_getToOneRelationship",
@@ -1956,7 +1964,7 @@
       "disposition": "deferred",
       "reason": "`beta_groups_check_recruitment_compatibility` uses the related-resource endpoint to return the check identity and compatibility attribute after confirming the exact beta group; the linkage-only response is intentionally deferred because it is strictly less informative.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.betaGroups_betaTesters_getToManyRelationship",
@@ -1964,7 +1972,7 @@
       "disposition": "deferred",
       "reason": "`beta_groups_list_testers` returns the related BetaTester resources for the group; the linkage-only identifier response is intentionally deferred because it is strictly less informative.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.betaGroups_builds_getToManyRelationship",
@@ -1972,7 +1980,7 @@
       "disposition": "deferred",
       "reason": "The linkage-only Build relationship read is deferred with the richer related Build resource lookup; current tools manage build membership without a separate read projection.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.betaLicenseAgreements_app_getToOneRelated",
@@ -1980,7 +1988,7 @@
       "disposition": "deferred",
       "reason": "The `betaLicenseAgreements` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.betaLicenseAgreements_app_getToOneRelationship",
@@ -1988,7 +1996,7 @@
       "disposition": "deferred",
       "reason": "The `betaLicenseAgreements` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.betaTesters_betaGroups_getToManyRelated",
@@ -1996,7 +2004,7 @@
       "disposition": "deferred",
       "reason": "The `betaTesters` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.betaTesters_builds_getToManyRelated",
@@ -2004,7 +2012,7 @@
       "disposition": "deferred",
       "reason": "The `betaTesters` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.betaTesters_apps_getToManyRelationship",
@@ -2012,7 +2020,7 @@
       "disposition": "deferred",
       "reason": "The `betaTesters` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.betaTesters_betaGroups_getToManyRelationship",
@@ -2020,7 +2028,7 @@
       "disposition": "deferred",
       "reason": "The `betaTesters` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.betaTesters_builds_getToManyRelationship",
@@ -2028,7 +2036,7 @@
       "disposition": "deferred",
       "reason": "The `betaTesters` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.buildBetaDetails_getCollection",
@@ -2036,7 +2044,7 @@
       "disposition": "deferred",
       "reason": "The `buildBetaDetails` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.buildBetaDetails_getInstance",
@@ -2044,7 +2052,7 @@
       "disposition": "deferred",
       "reason": "The public beta-detail tool resolves through a build ID and does not accept a BuildBetaDetail resource ID.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.buildBetaDetails_build_getToOneRelated",
@@ -2052,7 +2060,7 @@
       "disposition": "deferred",
       "reason": "The `buildBetaDetails` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.buildBetaDetails_build_getToOneRelationship",
@@ -2060,7 +2068,7 @@
       "disposition": "deferred",
       "reason": "The `buildBetaDetails` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.buildBundles_appClipDomainCacheStatus_getToOneRelated",
@@ -2068,7 +2076,7 @@
       "disposition": "deferred",
       "reason": "The `buildBundles` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.buildBundles_appClipDomainDebugStatus_getToOneRelated",
@@ -2076,7 +2084,7 @@
       "disposition": "deferred",
       "reason": "The `buildBundles` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.buildBundles_betaAppClipInvocations_getToManyRelated",
@@ -2084,7 +2092,7 @@
       "disposition": "deferred",
       "reason": "The `buildBundles` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.buildBundles_buildBundleFileSizes_getToManyRelated",
@@ -2092,7 +2100,7 @@
       "disposition": "deferred",
       "reason": "The `buildBundles` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.buildBundles_appClipDomainCacheStatus_getToOneRelationship",
@@ -2100,7 +2108,7 @@
       "disposition": "deferred",
       "reason": "The `buildBundles` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.buildBundles_appClipDomainDebugStatus_getToOneRelationship",
@@ -2108,7 +2116,7 @@
       "disposition": "deferred",
       "reason": "The `buildBundles` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.buildBundles_betaAppClipInvocations_getToManyRelationship",
@@ -2116,7 +2124,7 @@
       "disposition": "deferred",
       "reason": "The `buildBundles` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.buildBundles_buildBundleFileSizes_getToManyRelationship",
@@ -2124,7 +2132,7 @@
       "disposition": "deferred",
       "reason": "The `buildBundles` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.buildUploads_buildUploadFiles_getToManyRelationship",
@@ -2132,7 +2140,7 @@
       "disposition": "deferred",
       "reason": "build_uploads_list_files exposes the related BuildUploadFile resources; the linkage-only relationship endpoint is deferred because it would duplicate IDs without file attributes or delivery state.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.builds_app_getToOneRelated",
@@ -2140,7 +2148,7 @@
       "disposition": "deferred",
       "reason": "The `builds` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.builds_appStoreVersion_getToOneRelated",
@@ -2148,7 +2156,7 @@
       "disposition": "deferred",
       "reason": "The `builds` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.builds_betaAppReviewSubmission_getToOneRelated",
@@ -2156,7 +2164,7 @@
       "disposition": "deferred",
       "reason": "The `builds` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.builds_icons_getToManyRelated",
@@ -2164,7 +2172,7 @@
       "disposition": "deferred",
       "reason": "The `builds` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.builds_preReleaseVersion_getToOneRelated",
@@ -2172,7 +2180,7 @@
       "disposition": "deferred",
       "reason": "The `builds` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.builds_app_getToOneRelationship",
@@ -2180,7 +2188,7 @@
       "disposition": "deferred",
       "reason": "The `builds` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.builds_appEncryptionDeclaration_getToOneRelationship",
@@ -2188,15 +2196,15 @@
       "disposition": "deferred",
       "reason": "The `builds` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.builds_appEncryptionDeclaration_updateToOneRelationship",
       "operationId": "builds_appEncryptionDeclaration_updateToOneRelationship",
       "disposition": "deferred",
-      "reason": "Pinned Apple OpenAPI 4.4.1 omits a deprecated flag, while current Apple DocC marks the direct relationship PATCH deprecated and directs clients to Modify a build; asc-mcp exposes that replacement through builds_updateInstance.",
+      "reason": "Pinned Apple OpenAPI 4.5 omits a deprecated flag, while current Apple DocC marks the direct relationship PATCH deprecated and directs clients to Modify a build; asc-mcp exposes that replacement through builds_updateInstance.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.builds_appStoreVersion_getToOneRelationship",
@@ -2204,7 +2212,7 @@
       "disposition": "deferred",
       "reason": "The `builds` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.builds_betaAppReviewSubmission_getToOneRelationship",
@@ -2212,7 +2220,7 @@
       "disposition": "deferred",
       "reason": "The `builds` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.builds_betaBuildLocalizations_getToManyRelationship",
@@ -2220,7 +2228,7 @@
       "disposition": "deferred",
       "reason": "The `builds` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.builds_betaGroups_deleteToManyRelationship",
@@ -2228,7 +2236,7 @@
       "disposition": "deferred",
       "reason": "The `builds` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.builds_buildBetaDetail_getToOneRelationship",
@@ -2236,7 +2244,7 @@
       "disposition": "deferred",
       "reason": "The `builds` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.builds_diagnosticSignatures_getToManyRelationship",
@@ -2244,7 +2252,7 @@
       "disposition": "deferred",
       "reason": "The `builds` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.builds_icons_getToManyRelationship",
@@ -2252,7 +2260,7 @@
       "disposition": "deferred",
       "reason": "The `builds` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.builds_individualTesters_getToManyRelationship",
@@ -2260,7 +2268,7 @@
       "disposition": "deferred",
       "reason": "The `builds` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.builds_preReleaseVersion_getToOneRelationship",
@@ -2268,7 +2276,7 @@
       "disposition": "deferred",
       "reason": "The `builds` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.bundleIdCapabilities_updateInstance",
@@ -2276,7 +2284,7 @@
       "disposition": "deferred",
       "reason": "The `bundleIdCapabilities` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.bundleIds_updateInstance",
@@ -2284,7 +2292,7 @@
       "disposition": "deferred",
       "reason": "The `bundleIds` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.bundleIds_app_getToOneRelated",
@@ -2292,7 +2300,7 @@
       "disposition": "deferred",
       "reason": "The `bundleIds` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.bundleIds_profiles_getToManyRelated",
@@ -2300,7 +2308,7 @@
       "disposition": "deferred",
       "reason": "The `bundleIds` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.bundleIds_app_getToOneRelationship",
@@ -2308,7 +2316,7 @@
       "disposition": "deferred",
       "reason": "The `bundleIds` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.bundleIds_bundleIdCapabilities_getToManyRelationship",
@@ -2316,7 +2324,7 @@
       "disposition": "deferred",
       "reason": "The `bundleIds` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.bundleIds_profiles_getToManyRelationship",
@@ -2324,7 +2332,7 @@
       "disposition": "deferred",
       "reason": "The `bundleIds` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.certificates_createInstance",
@@ -2332,7 +2340,7 @@
       "disposition": "deferred",
       "reason": "The `certificates` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.certificates_updateInstance",
@@ -2340,7 +2348,7 @@
       "disposition": "deferred",
       "reason": "The `certificates` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.certificates_passTypeId_getToOneRelated",
@@ -2348,7 +2356,7 @@
       "disposition": "deferred",
       "reason": "The `certificates` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.certificates_passTypeId_getToOneRelationship",
@@ -2356,7 +2364,7 @@
       "disposition": "deferred",
       "reason": "The `certificates` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.ciBuildActions_artifacts_getToManyRelationship",
@@ -2364,7 +2372,7 @@
       "disposition": "deferred",
       "reason": "This ID-only linkage endpoint is intentionally deferred because xcode_cloud_action_artifacts_list is a functional superset that returns artifact identities together with artifact attributes and pagination.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.ciBuildActions_buildRun_getToOneRelationship",
@@ -2372,7 +2380,7 @@
       "disposition": "deferred",
       "reason": "This ID-only linkage endpoint is intentionally deferred because xcode_cloud_action_build_run_get is a functional superset that returns the build-run identity together with validated build-run attributes and requested related resources.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.ciBuildActions_issues_getToManyRelationship",
@@ -2380,7 +2388,7 @@
       "disposition": "deferred",
       "reason": "This ID-only linkage endpoint is intentionally deferred because xcode_cloud_action_issues_list is a functional superset that returns issue identities together with issue attributes and pagination.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.ciBuildActions_testResults_getToManyRelationship",
@@ -2388,7 +2396,7 @@
       "disposition": "deferred",
       "reason": "This ID-only linkage endpoint is intentionally deferred because xcode_cloud_action_test_results_list is a functional superset that returns test-result identities together with result attributes and pagination.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.ciBuildRuns_actions_getToManyRelationship",
@@ -2396,7 +2404,7 @@
       "disposition": "deferred",
       "reason": "This ID-only linkage endpoint is intentionally deferred because xcode_cloud_build_run_actions_list is a functional superset that returns action identities together with action attributes, included resources, and pagination.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.ciBuildRuns_builds_getToManyRelationship",
@@ -2404,7 +2412,7 @@
       "disposition": "deferred",
       "reason": "This ID-only linkage endpoint is intentionally deferred because xcode_cloud_build_run_builds_list is a functional superset that returns build identities together with build attributes and pagination.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.ciMacOsVersions_xcodeVersions_getToManyRelationship",
@@ -2412,7 +2420,7 @@
       "disposition": "deferred",
       "reason": "This ID-only linkage endpoint is intentionally deferred because xcode_cloud_macos_version_xcode_versions_list is a functional superset that returns Xcode-version identities together with version attributes, included resources, and pagination.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.ciProducts_additionalRepositories_getToManyRelationship",
@@ -2420,7 +2428,7 @@
       "disposition": "deferred",
       "reason": "This ID-only linkage endpoint is intentionally deferred because xcode_cloud_product_additional_repositories_list is a functional superset that returns repository identities together with repository attributes, included resources, and pagination.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.ciProducts_app_getToOneRelationship",
@@ -2428,7 +2436,7 @@
       "disposition": "deferred",
       "reason": "This ID-only linkage endpoint is intentionally deferred because xcode_cloud_product_app_get is a functional superset that returns the app identity together with compact membership attributes and canonical resource context.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.ciProducts_buildRuns_getToManyRelationship",
@@ -2436,7 +2444,7 @@
       "disposition": "deferred",
       "reason": "This ID-only linkage endpoint is intentionally deferred because xcode_cloud_product_build_runs_list is a functional superset that returns build-run identities together with build-run attributes, included resources, and pagination.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.ciProducts_primaryRepositories_getToManyRelationship",
@@ -2444,7 +2452,7 @@
       "disposition": "deferred",
       "reason": "This ID-only linkage endpoint is intentionally deferred because xcode_cloud_product_primary_repositories_list is a functional superset that returns repository identities together with repository attributes, included resources, and pagination.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.ciProducts_workflows_getToManyRelationship",
@@ -2452,7 +2460,7 @@
       "disposition": "deferred",
       "reason": "This ID-only linkage endpoint is intentionally deferred because xcode_cloud_product_workflows_list is a functional superset that returns workflow identities together with workflow attributes, included resources, and pagination.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.ciWorkflows_buildRuns_getToManyRelationship",
@@ -2460,7 +2468,7 @@
       "disposition": "deferred",
       "reason": "This ID-only linkage endpoint is intentionally deferred because xcode_cloud_workflow_build_runs_list is a functional superset that returns build-run identities together with build-run attributes, included resources, and pagination.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.ciWorkflows_repository_getToOneRelationship",
@@ -2468,7 +2476,7 @@
       "disposition": "deferred",
       "reason": "This ID-only linkage endpoint is intentionally deferred because xcode_cloud_workflow_repository_get is a functional superset that returns the repository identity together with repository attributes and validated included resources.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.ciXcodeVersions_macOsVersions_getToManyRelationship",
@@ -2476,7 +2484,7 @@
       "disposition": "deferred",
       "reason": "This ID-only linkage endpoint is intentionally deferred because xcode_cloud_xcode_version_macos_versions_list is a functional superset that returns macOS-version identities together with version attributes, included resources, and pagination.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.customerReviewResponses_getInstance",
@@ -2484,7 +2492,7 @@
       "disposition": "deferred",
       "reason": "The `customerReviewResponses` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.customerReviews_response_getToOneRelationship",
@@ -2492,7 +2500,7 @@
       "disposition": "deferred",
       "reason": "The `customerReviews` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.devices_getInstance",
@@ -2500,7 +2508,7 @@
       "disposition": "deferred",
       "reason": "The `devices` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.endAppAvailabilityPreOrders_createInstance",
@@ -2508,7 +2516,7 @@
       "disposition": "deferred",
       "reason": "The `endAppAvailabilityPreOrders` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.endUserLicenseAgreements_deleteInstance",
@@ -2516,7 +2524,7 @@
       "disposition": "deferred",
       "reason": "The `endUserLicenseAgreements` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.endUserLicenseAgreements_getInstance",
@@ -2524,7 +2532,7 @@
       "disposition": "deferred",
       "reason": "The `endUserLicenseAgreements` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.endUserLicenseAgreements_territories_getToManyRelationship",
@@ -2532,7 +2540,7 @@
       "disposition": "deferred",
       "reason": "The `endUserLicenseAgreements` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.endUserLicenseAgreements_territories_getToManyRelated",
@@ -2540,7 +2548,7 @@
       "disposition": "deferred",
       "reason": "The `endUserLicenseAgreements` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.inAppPurchaseAvailabilities_availableTerritories_getToManyRelationship",
@@ -2548,7 +2556,7 @@
       "disposition": "deferred",
       "reason": "The `inAppPurchaseAvailabilities` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.inAppPurchaseContents_getInstance",
@@ -2556,7 +2564,7 @@
       "disposition": "deferred",
       "reason": "The `inAppPurchaseContents` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.inAppPurchaseLocalizations_getInstance",
@@ -2564,7 +2572,7 @@
       "disposition": "deferred",
       "reason": "The `inAppPurchaseLocalizations` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.inAppPurchaseOfferCodes_customCodes_getToManyRelated",
@@ -2572,7 +2580,7 @@
       "disposition": "deferred",
       "reason": "The `inAppPurchaseOfferCodes` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.inAppPurchaseOfferCodes_customCodes_getToManyRelationship",
@@ -2580,7 +2588,7 @@
       "disposition": "deferred",
       "reason": "The `inAppPurchaseOfferCodes` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.inAppPurchaseOfferCodes_oneTimeUseCodes_getToManyRelationship",
@@ -2588,7 +2596,7 @@
       "disposition": "deferred",
       "reason": "The `inAppPurchaseOfferCodes` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.inAppPurchaseOfferCodes_prices_getToManyRelationship",
@@ -2596,7 +2604,7 @@
       "disposition": "deferred",
       "reason": "The `inAppPurchaseOfferCodes` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.inAppPurchasePricePoints_equalizations_getToManyRelationship",
@@ -2604,7 +2612,7 @@
       "disposition": "deferred",
       "reason": "The `inAppPurchasePricePoints` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.inAppPurchasePriceSchedules_getInstance",
@@ -2612,7 +2620,7 @@
       "disposition": "deferred",
       "reason": "The `inAppPurchasePriceSchedules` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.inAppPurchasePriceSchedules_baseTerritory_getToOneRelated",
@@ -2620,7 +2628,7 @@
       "disposition": "deferred",
       "reason": "The `inAppPurchasePriceSchedules` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.inAppPurchasePriceSchedules_automaticPrices_getToManyRelationship",
@@ -2628,7 +2636,7 @@
       "disposition": "deferred",
       "reason": "The `inAppPurchasePriceSchedules` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.inAppPurchasePriceSchedules_baseTerritory_getToOneRelationship",
@@ -2636,7 +2644,7 @@
       "disposition": "deferred",
       "reason": "The `inAppPurchasePriceSchedules` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.inAppPurchasePriceSchedules_manualPrices_getToManyRelationship",
@@ -2644,7 +2652,7 @@
       "disposition": "deferred",
       "reason": "The `inAppPurchasePriceSchedules` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.inAppPurchaseVersions_image_getToOneRelationship",
@@ -2652,7 +2660,7 @@
       "disposition": "deferred",
       "reason": "`iap_get_version_image` returns the singular related review image itself; the linkage-only relationship document would duplicate that workflow without additional public value.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.inAppPurchaseVersions_images_getToManyRelationship",
@@ -2660,7 +2668,7 @@
       "disposition": "deferred",
       "reason": "The plural IAP image relationship is semantically ambiguous beside Apple's documented singular review screenshot, so its linkage-only document remains deferred with the plural related-resource endpoint.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.inAppPurchaseVersions_localizations_getToManyRelationship",
@@ -2668,7 +2676,7 @@
       "disposition": "deferred",
       "reason": "`iap_list_version_localizations` returns the related localization resources and IDs; the linkage-only relationship document is a lower-value duplicate.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.inAppPurchases_getInstance",
@@ -2676,7 +2684,7 @@
       "disposition": "deferred",
       "reason": "The `inAppPurchases` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.merchantIds_getCollection",
@@ -2684,7 +2692,7 @@
       "disposition": "deferred",
       "reason": "The `merchantIds` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.merchantIds_createInstance",
@@ -2692,7 +2700,7 @@
       "disposition": "deferred",
       "reason": "The `merchantIds` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.merchantIds_deleteInstance",
@@ -2700,7 +2708,7 @@
       "disposition": "deferred",
       "reason": "The `merchantIds` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.merchantIds_getInstance",
@@ -2708,7 +2716,7 @@
       "disposition": "deferred",
       "reason": "The `merchantIds` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.merchantIds_updateInstance",
@@ -2716,7 +2724,7 @@
       "disposition": "deferred",
       "reason": "The `merchantIds` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.merchantIds_certificates_getToManyRelated",
@@ -2724,7 +2732,7 @@
       "disposition": "deferred",
       "reason": "The `merchantIds` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.merchantIds_certificates_getToManyRelationship",
@@ -2732,7 +2740,7 @@
       "disposition": "deferred",
       "reason": "The `merchantIds` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.nominations_getCollection",
@@ -2740,7 +2748,7 @@
       "disposition": "deferred",
       "reason": "The `nominations` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.nominations_createInstance",
@@ -2748,7 +2756,7 @@
       "disposition": "deferred",
       "reason": "The `nominations` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.nominations_deleteInstance",
@@ -2756,7 +2764,7 @@
       "disposition": "deferred",
       "reason": "The `nominations` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.nominations_getInstance",
@@ -2764,7 +2772,7 @@
       "disposition": "deferred",
       "reason": "The `nominations` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.nominations_updateInstance",
@@ -2772,7 +2780,7 @@
       "disposition": "deferred",
       "reason": "The `nominations` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.passTypeIds_getCollection",
@@ -2780,7 +2788,7 @@
       "disposition": "deferred",
       "reason": "The `passTypeIds` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.passTypeIds_createInstance",
@@ -2788,7 +2796,7 @@
       "disposition": "deferred",
       "reason": "The `passTypeIds` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.passTypeIds_deleteInstance",
@@ -2796,7 +2804,7 @@
       "disposition": "deferred",
       "reason": "The `passTypeIds` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.passTypeIds_getInstance",
@@ -2804,7 +2812,7 @@
       "disposition": "deferred",
       "reason": "The `passTypeIds` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.passTypeIds_updateInstance",
@@ -2812,7 +2820,7 @@
       "disposition": "deferred",
       "reason": "The `passTypeIds` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.passTypeIds_certificates_getToManyRelated",
@@ -2820,7 +2828,7 @@
       "disposition": "deferred",
       "reason": "The `passTypeIds` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.passTypeIds_certificates_getToManyRelationship",
@@ -2828,7 +2836,7 @@
       "disposition": "deferred",
       "reason": "The `passTypeIds` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.preReleaseVersions_app_getToOneRelated",
@@ -2836,7 +2844,7 @@
       "disposition": "deferred",
       "reason": "The `preReleaseVersions` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.preReleaseVersions_app_getToOneRelationship",
@@ -2844,7 +2852,7 @@
       "disposition": "deferred",
       "reason": "The `preReleaseVersions` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.preReleaseVersions_builds_getToManyRelationship",
@@ -2852,7 +2860,7 @@
       "disposition": "deferred",
       "reason": "The `preReleaseVersions` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.profiles_bundleId_getToOneRelated",
@@ -2860,7 +2868,7 @@
       "disposition": "deferred",
       "reason": "The `profiles` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.profiles_certificates_getToManyRelated",
@@ -2868,7 +2876,7 @@
       "disposition": "deferred",
       "reason": "The `profiles` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.profiles_devices_getToManyRelated",
@@ -2876,7 +2884,7 @@
       "disposition": "deferred",
       "reason": "The `profiles` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.profiles_bundleId_getToOneRelationship",
@@ -2884,7 +2892,7 @@
       "disposition": "deferred",
       "reason": "The `profiles` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.profiles_certificates_getToManyRelationship",
@@ -2892,7 +2900,7 @@
       "disposition": "deferred",
       "reason": "The `profiles` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.profiles_devices_getToManyRelationship",
@@ -2900,7 +2908,7 @@
       "disposition": "deferred",
       "reason": "The `profiles` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.reviewSubmissions_items_getToManyRelationship",
@@ -2908,7 +2916,7 @@
       "disposition": "deferred",
       "reason": "`review_submissions_list_items` returns typed review item resources and IDs for recovery; the linkage-only relationship document is a lower-value duplicate.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.routingAppCoverages_createInstance",
@@ -2916,7 +2924,7 @@
       "disposition": "deferred",
       "reason": "The `routingAppCoverages` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.routingAppCoverages_deleteInstance",
@@ -2924,7 +2932,7 @@
       "disposition": "deferred",
       "reason": "The `routingAppCoverages` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.routingAppCoverages_getInstance",
@@ -2932,7 +2940,7 @@
       "disposition": "deferred",
       "reason": "The `routingAppCoverages` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.routingAppCoverages_updateInstance",
@@ -2940,7 +2948,7 @@
       "disposition": "deferred",
       "reason": "The `routingAppCoverages` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.scmProviders_repositories_getToManyRelationship",
@@ -2948,7 +2956,7 @@
       "disposition": "deferred",
       "reason": "This ID-only linkage endpoint is intentionally deferred because xcode_cloud_scm_provider_repositories_list is a functional superset that returns repository identities together with repository attributes, included resources, and pagination.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.scmRepositories_gitReferences_getToManyRelationship",
@@ -2956,7 +2964,7 @@
       "disposition": "deferred",
       "reason": "This ID-only linkage endpoint is intentionally deferred because xcode_cloud_scm_repository_git_references_list is a functional superset that returns Git-reference identities together with reference attributes, included resources, and pagination.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.scmRepositories_pullRequests_getToManyRelationship",
@@ -2964,7 +2972,7 @@
       "disposition": "deferred",
       "reason": "This ID-only linkage endpoint is intentionally deferred because xcode_cloud_scm_repository_pull_requests_list is a functional superset that returns pull-request identities together with pull-request attributes, included resources, and pagination.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.subscriptionAvailabilities_getInstance",
@@ -2972,7 +2980,7 @@
       "disposition": "deferred",
       "reason": "The `subscriptionAvailabilities` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.subscriptionAvailabilities_availableTerritories_getToManyRelationship",
@@ -2980,7 +2988,7 @@
       "disposition": "deferred",
       "reason": "The `subscriptionAvailabilities` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.subscriptionGracePeriods_getInstance",
@@ -2988,7 +2996,7 @@
       "disposition": "deferred",
       "reason": "The `subscriptionGracePeriods` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.subscriptionGracePeriods_updateInstance",
@@ -2996,7 +3004,7 @@
       "disposition": "deferred",
       "reason": "The `subscriptionGracePeriods` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.subscriptionGroupVersions_localizations_getToManyRelationship",
@@ -3004,7 +3012,7 @@
       "disposition": "deferred",
       "reason": "`subscriptions_list_group_version_localizations` returns the related localization resources and IDs; the linkage-only relationship document is a lower-value duplicate.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.subscriptionGroups_subscriptionGroupLocalizations_getToManyRelationship",
@@ -3012,7 +3020,7 @@
       "disposition": "deferred",
       "reason": "The `subscriptionGroups` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.subscriptionGroups_subscriptions_getToManyRelationship",
@@ -3020,7 +3028,7 @@
       "disposition": "deferred",
       "reason": "The `subscriptionGroups` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.subscriptionGroups_versions_getToManyRelationship",
@@ -3028,7 +3036,7 @@
       "disposition": "deferred",
       "reason": "`subscriptions_list_group_versions` returns the related metadata versions and IDs; the linkage-only relationship document is a lower-value duplicate.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.subscriptionOfferCodeOneTimeUseCodes_updateInstance",
@@ -3036,7 +3044,7 @@
       "disposition": "deferred",
       "reason": "The `subscriptionOfferCodeOneTimeUseCodes` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.subscriptionOfferCodes_customCodes_getToManyRelated",
@@ -3044,7 +3052,7 @@
       "disposition": "deferred",
       "reason": "The `subscriptionOfferCodes` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.subscriptionOfferCodes_customCodes_getToManyRelationship",
@@ -3052,7 +3060,7 @@
       "disposition": "deferred",
       "reason": "The `subscriptionOfferCodes` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.subscriptionOfferCodes_oneTimeUseCodes_getToManyRelationship",
@@ -3060,7 +3068,7 @@
       "disposition": "deferred",
       "reason": "The `subscriptionOfferCodes` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.subscriptionOfferCodes_prices_getToManyRelationship",
@@ -3068,7 +3076,7 @@
       "disposition": "deferred",
       "reason": "The `subscriptionOfferCodes` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.subscriptionPlanAvailabilities_availableTerritories_getToManyRelationship",
@@ -3076,7 +3084,7 @@
       "disposition": "deferred",
       "reason": "`subscriptions_list_plan_availability_territories` returns the related territory resources and IDs with pagination; the linkage-only relationship document is a lower-value duplicate.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.subscriptionPlanAvailabilities_availableTerritories_replaceToManyRelationship",
@@ -3084,7 +3092,7 @@
       "disposition": "deferred",
       "reason": "`subscriptions_update_plan_availability` already replaces the complete territory relationship through the resource PATCH and can update the nullable availability attribute atomically; a second relationship-only mutation is intentionally deferred.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.subscriptionPricePoints_equalizations_getToManyRelationship",
@@ -3092,7 +3100,7 @@
       "disposition": "deferred",
       "reason": "The `subscriptionPricePoints` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.subscriptionPromotionalOffers_prices_getToManyRelationship",
@@ -3100,15 +3108,15 @@
       "disposition": "deferred",
       "reason": "The `subscriptionPromotionalOffers` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.subscriptionVersions_image_getToOneRelated",
       "operationId": "subscriptionVersions_image_getToOneRelated",
       "disposition": "deferred",
-      "reason": "Apple 4.4.1 documents plural version-owned subscription promotional images, which `subscriptions_list_version_images` exposes. The overlapping singular related-resource endpoint is deferred until Apple clarifies its distinct semantics.",
+      "reason": "Apple 4.5 documents plural version-owned subscription promotional images, which `subscriptions_list_version_images` exposes. The overlapping singular related-resource endpoint is deferred until Apple clarifies its distinct semantics.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.subscriptionVersions_image_getToOneRelationship",
@@ -3116,7 +3124,7 @@
       "disposition": "deferred",
       "reason": "The singular subscription image relationship is semantically ambiguous beside Apple's documented plural promotional images, so its linkage-only document remains deferred with the singular related-resource endpoint.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.subscriptionVersions_images_getToManyRelationship",
@@ -3124,7 +3132,7 @@
       "disposition": "deferred",
       "reason": "`subscriptions_list_version_images` returns the related promotional image resources and IDs; the linkage-only relationship document is a lower-value duplicate.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.subscriptionVersions_localizations_getToManyRelationship",
@@ -3132,7 +3140,7 @@
       "disposition": "deferred",
       "reason": "`subscriptions_list_version_localizations` returns the related localization resources and IDs; the linkage-only relationship document is a lower-value duplicate.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.subscriptions_appStoreReviewScreenshot_getToOneRelationship",
@@ -3140,7 +3148,7 @@
       "disposition": "deferred",
       "reason": "The `subscriptions` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.subscriptions_images_getToManyRelationship",
@@ -3148,7 +3156,7 @@
       "disposition": "deferred",
       "reason": "The `subscriptions` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.subscriptions_introductoryOffers_deleteToManyRelationship",
@@ -3156,7 +3164,7 @@
       "disposition": "deferred",
       "reason": "The `subscriptions` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.subscriptions_introductoryOffers_getToManyRelationship",
@@ -3164,7 +3172,7 @@
       "disposition": "deferred",
       "reason": "The `subscriptions` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.subscriptions_offerCodes_getToManyRelationship",
@@ -3172,7 +3180,7 @@
       "disposition": "deferred",
       "reason": "The `subscriptions` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.subscriptions_planAvailabilities_getToManyRelationship",
@@ -3180,7 +3188,7 @@
       "disposition": "deferred",
       "reason": "`subscriptions_list_plan_availabilities` returns the related plan availability resources and IDs; the linkage-only relationship document is a lower-value duplicate.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.subscriptions_pricePoints_getToManyRelationship",
@@ -3188,7 +3196,7 @@
       "disposition": "deferred",
       "reason": "The `subscriptions` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.subscriptions_prices_deleteToManyRelationship",
@@ -3196,7 +3204,7 @@
       "disposition": "deferred",
       "reason": "The `subscriptions` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.subscriptions_prices_getToManyRelationship",
@@ -3204,7 +3212,7 @@
       "disposition": "deferred",
       "reason": "The `subscriptions` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.subscriptions_promotedPurchase_getToOneRelationship",
@@ -3212,7 +3220,7 @@
       "disposition": "deferred",
       "reason": "promoted_list and promoted_get expose the promoted-purchase resource and its linked subscription; this linkage-only inverse relationship is deferred because it carries only the promoted-purchase ID.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.subscriptions_promotionalOffers_getToManyRelationship",
@@ -3220,7 +3228,7 @@
       "disposition": "deferred",
       "reason": "The `subscriptions` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.subscriptions_subscriptionAvailability_getToOneRelationship",
@@ -3228,7 +3236,7 @@
       "disposition": "deferred",
       "reason": "The `subscriptions` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.subscriptions_subscriptionLocalizations_getToManyRelationship",
@@ -3236,7 +3244,7 @@
       "disposition": "deferred",
       "reason": "The `subscriptions` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.subscriptions_versions_getToManyRelationship",
@@ -3244,7 +3252,7 @@
       "disposition": "deferred",
       "reason": "`subscriptions_list_versions` returns the related metadata versions and IDs; the linkage-only relationship document is a lower-value duplicate.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.subscriptions_winBackOffers_getToManyRelationship",
@@ -3252,7 +3260,7 @@
       "disposition": "deferred",
       "reason": "The `subscriptions` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.territoryAvailabilities_updateInstance",
@@ -3260,7 +3268,7 @@
       "disposition": "deferred",
       "reason": "The `territoryAvailabilities` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.userInvitations_getInstance",
@@ -3268,7 +3276,7 @@
       "disposition": "deferred",
       "reason": "The `userInvitations` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.userInvitations_visibleApps_getToManyRelationship",
@@ -3276,7 +3284,7 @@
       "disposition": "deferred",
       "reason": "The `userInvitations` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.userInvitations_visibleApps_getToManyRelated",
@@ -3284,7 +3292,7 @@
       "disposition": "deferred",
       "reason": "The `userInvitations` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.users_visibleApps_getToManyRelationship",
@@ -3292,7 +3300,7 @@
       "disposition": "deferred",
       "reason": "The `users` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.users_visibleApps_replaceToManyRelationship",
@@ -3300,7 +3308,7 @@
       "disposition": "deferred",
       "reason": "The `users` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.webhooks_deliveries_getToManyRelationship",
@@ -3308,7 +3316,7 @@
       "disposition": "deferred",
       "reason": "The `webhooks` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.winBackOffers_prices_getToManyRelationship",
@@ -3316,7 +3324,7 @@
       "disposition": "deferred",
       "reason": "The `winBackOffers` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.appAvailabilitiesV2_territoryAvailabilities_getToManyRelationship",
@@ -3324,7 +3332,7 @@
       "disposition": "deferred",
       "reason": "The `appAvailabilities` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.appStoreVersionExperimentsV2_appStoreVersionExperimentTreatments_getToManyRelationship",
@@ -3332,7 +3340,7 @@
       "disposition": "deferred",
       "reason": "ppo_list_treatments returns full treatment resources; this V2 linkage-only relationship document is deferred because it duplicates IDs without treatment attributes.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.inAppPurchasesV2_content_getToOneRelated",
@@ -3340,7 +3348,7 @@
       "disposition": "deferred",
       "reason": "The `inAppPurchases` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.inAppPurchasesV2_appStoreReviewScreenshot_getToOneRelationship",
@@ -3348,7 +3356,7 @@
       "disposition": "deferred",
       "reason": "The `inAppPurchases` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.inAppPurchasesV2_content_getToOneRelationship",
@@ -3356,7 +3364,7 @@
       "disposition": "deferred",
       "reason": "The `inAppPurchases` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.inAppPurchasesV2_iapPriceSchedule_getToOneRelationship",
@@ -3364,7 +3372,7 @@
       "disposition": "deferred",
       "reason": "The `inAppPurchases` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.inAppPurchasesV2_images_getToManyRelationship",
@@ -3372,7 +3380,7 @@
       "disposition": "deferred",
       "reason": "The `inAppPurchases` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.inAppPurchasesV2_inAppPurchaseAvailability_getToOneRelationship",
@@ -3380,7 +3388,7 @@
       "disposition": "deferred",
       "reason": "The `inAppPurchases` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.inAppPurchasesV2_inAppPurchaseLocalizations_getToManyRelationship",
@@ -3388,7 +3396,7 @@
       "disposition": "deferred",
       "reason": "The `inAppPurchases` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.inAppPurchasesV2_offerCodes_getToManyRelationship",
@@ -3396,7 +3404,7 @@
       "disposition": "deferred",
       "reason": "The `inAppPurchases` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.inAppPurchasesV2_pricePoints_getToManyRelationship",
@@ -3404,7 +3412,7 @@
       "disposition": "deferred",
       "reason": "The `inAppPurchases` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.inAppPurchasesV2_promotedPurchase_getToOneRelationship",
@@ -3412,7 +3420,7 @@
       "disposition": "deferred",
       "reason": "promoted_list and promoted_get expose the promoted-purchase resource and its linked in-app purchase; this linkage-only inverse relationship is deferred because it carries only the promoted-purchase ID.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.inAppPurchasesV2_versions_getToManyRelationship",
@@ -3420,7 +3428,7 @@
       "disposition": "deferred",
       "reason": "`iap_list_versions` returns the related metadata versions and IDs; the linkage-only relationship document is a lower-value duplicate.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.appPricePointsV3_getInstance",
@@ -3428,7 +3436,7 @@
       "disposition": "deferred",
       "reason": "The `appPricePoints` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.appPricePointsV3_equalizations_getToManyRelated",
@@ -3436,7 +3444,7 @@
       "disposition": "deferred",
       "reason": "The `appPricePoints` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     },
     {
       "id": "deferred.appPricePointsV3_equalizations_getToManyRelationship",
@@ -3444,7 +3452,7 @@
       "disposition": "deferred",
       "reason": "The `appPricePoints` resource-group capability is not yet exposed by asc-mcp.",
       "owner": "asc-mcp",
-      "reviewAtSpec": "4.4.1"
+      "reviewAtSpec": "4.5"
     }
   ]
 }

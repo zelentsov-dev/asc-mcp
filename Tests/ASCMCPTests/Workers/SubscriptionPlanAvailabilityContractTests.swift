@@ -57,6 +57,8 @@ struct SubscriptionPlanAvailabilityContractTests {
         #expect(try planObject(adjusted["limit"])["maximum"] == .int(8000))
         #expect(try planObject(adjusted["limit"])["default"] == .int(25))
         #expect(try planObject(adjusted["next_url"])["format"] == .string("uri-reference"))
+        let adjustedSchema = try planSchema(try #require(tools["subscriptions_list_price_point_adjusted_equalizations"]))
+        #expect(Set(try planArray(adjustedSchema["required"]).compactMap(\.stringValue)) == ["price_point_id", "plan_types"])
         for field in ["territory_ids", "subscription_ids", "upfront_price_point_ids", "plan_types"] {
             #expect(try planArray(try planObject(adjusted[field])["oneOf"]).count == 2)
         }
@@ -434,10 +436,12 @@ struct SubscriptionPlanAvailabilityContractTests {
             ("subscriptions_update_plan_availability", ["plan_availability_id": .string("availability-1"), "available_in_new_territories": .string("true")]),
             ("subscriptions_list_plan_availabilities", ["subscription_id": .string("sub-1"), "limit": .int(0)]),
             ("subscriptions_list_plan_availability_territories", ["plan_availability_id": .string("availability-1"), "limit": .int(201)]),
-            ("subscriptions_list_price_point_adjusted_equalizations", ["price_point_id": .string("price-point-1"), "limit": .int(8001)]),
-            ("subscriptions_list_price_point_adjusted_equalizations", ["price_point_id": .string("price-point-1"), "territory_ids": .array([.string("USA"), .string("USA")])]),
-            ("subscriptions_list_price_point_adjusted_equalizations", ["price_point_id": .string("price-point-1"), "subscription_ids": .array([.string("sub-1,sub-2")])]),
+            ("subscriptions_list_price_point_adjusted_equalizations", ["price_point_id": .string("price-point-1"), "plan_types": .string("MONTHLY"), "limit": .int(8001)]),
+            ("subscriptions_list_price_point_adjusted_equalizations", ["price_point_id": .string("price-point-1"), "plan_types": .string("MONTHLY"), "territory_ids": .array([.string("USA"), .string("USA")])]),
+            ("subscriptions_list_price_point_adjusted_equalizations", ["price_point_id": .string("price-point-1"), "plan_types": .string("MONTHLY"), "subscription_ids": .array([.string("sub-1,sub-2")])]),
             ("subscriptions_list_price_point_adjusted_equalizations", ["price_point_id": .string("price-point-1"), "plan_types": .array([.string("ANNUAL")])]),
+            ("subscriptions_list_price_point_adjusted_equalizations", ["price_point_id": .string("price-point-1")]),
+            ("subscriptions_list_price_point_adjusted_equalizations", ["price_point_id": .string("price-point-1"), "plan_types": .array([])]),
             ("subscriptions_list_plan_availabilities", ["subscription_id": .string("sub-1"), "unexpected": .bool(true)])
         ]
 

@@ -59,8 +59,8 @@
               "location": "body",
               "appleName": "/data/relationships/appStoreVersionExperiment",
               "disposition": "intentionallyOmitted",
-              "reason": "Apple 4.4.1 retains this deprecated V1 parent alternative. PPO tools accept only current V2 experiment IDs and always bind appStoreVersionExperimentV2, so exposing both parents would make lineage ambiguous.",
-              "reviewAtSpec": "4.4.1"
+              "reason": "Apple 4.5 retains this deprecated V1 parent alternative. PPO tools accept only current V2 experiment IDs and always bind appStoreVersionExperimentV2, so exposing both parents would make lineage ambiguous.",
+              "reviewAtSpec": "4.5"
             }
           ]
         }
@@ -224,9 +224,9 @@
           "path": "/v2/appStoreVersionExperiments/{id}",
           "role": "primary",
           "optionalParameterClassifications": [
-            { "location": "query", "appleName": "include", "disposition": "intentionallyOmitted", "reason": "Apple 4.4.1 can expand app, control-version, and treatment resources; the detail tool returns the canonical experiment and dedicated tools own child collections.", "reviewAtSpec": "4.4.1" },
-            { "location": "query", "appleName": "limit[appStoreVersionExperimentTreatments]", "disposition": "intentionallyOmitted", "reason": "Apple applies this nested limit only to an omitted treatment include; ppo_list_treatments provides strict continuation.", "reviewAtSpec": "4.4.1" },
-            { "location": "query", "appleName": "limit[controlVersions]", "disposition": "intentionallyOmitted", "reason": "Apple applies this nested limit only to an omitted controlVersions include.", "reviewAtSpec": "4.4.1" }
+            { "location": "query", "appleName": "include", "disposition": "intentionallyOmitted", "reason": "Apple 4.5 can expand app, control-version, and treatment resources; the detail tool returns the canonical experiment and dedicated tools own child collections.", "reviewAtSpec": "4.5" },
+            { "location": "query", "appleName": "limit[appStoreVersionExperimentTreatments]", "disposition": "intentionallyOmitted", "reason": "Apple applies this nested limit only to an omitted treatment include; ppo_list_treatments provides strict continuation.", "reviewAtSpec": "4.5" },
+            { "location": "query", "appleName": "limit[controlVersions]", "disposition": "intentionallyOmitted", "reason": "Apple applies this nested limit only to an omitted controlVersions include.", "reviewAtSpec": "4.5" }
           ]
         }
       ],
@@ -258,8 +258,8 @@
           "path": "/v1/appStoreVersionExperimentTreatments/{id}",
           "role": "primary",
           "optionalParameterClassifications": [
-            { "location": "query", "appleName": "include", "disposition": "intentionallyOmitted", "reason": "Apple 4.4.1 allows legacy-parent and child expansion; the direct treatment projection avoids the deprecated parent and uses ppo_list_treatment_localizations for child resources.", "reviewAtSpec": "4.4.1" },
-            { "location": "query", "appleName": "limit[appStoreVersionExperimentTreatmentLocalizations]", "disposition": "intentionallyOmitted", "reason": "Apple applies this nested limit only to the omitted localization include; the child collection has strict pagination.", "reviewAtSpec": "4.4.1" }
+            { "location": "query", "appleName": "include", "disposition": "intentionallyOmitted", "reason": "Apple 4.5 allows legacy-parent and child expansion; the direct treatment projection avoids the deprecated parent and uses ppo_list_treatment_localizations for child resources.", "reviewAtSpec": "4.5" },
+            { "location": "query", "appleName": "limit[appStoreVersionExperimentTreatmentLocalizations]", "disposition": "intentionallyOmitted", "reason": "Apple applies this nested limit only to the omitted localization include; the child collection has strict pagination.", "reviewAtSpec": "4.5" }
           ]
         }
       ],
@@ -291,9 +291,9 @@
           "path": "/v1/appStoreVersionExperimentTreatmentLocalizations/{id}",
           "role": "primary",
           "optionalParameterClassifications": [
-            { "location": "query", "appleName": "include", "disposition": "intentionallyOmitted", "reason": "Apple 4.4.1 allows media expansion; this tool returns the localization identity and locale while screenshot and preview media remain in ScreenshotsWorker.", "reviewAtSpec": "4.4.1" },
-            { "location": "query", "appleName": "limit[appPreviewSets]", "disposition": "intentionallyOmitted", "reason": "Apple applies this nested preview limit only to the omitted appPreviewSets include.", "reviewAtSpec": "4.4.1" },
-            { "location": "query", "appleName": "limit[appScreenshotSets]", "disposition": "intentionallyOmitted", "reason": "Apple applies this nested screenshot limit only to the omitted appScreenshotSets include.", "reviewAtSpec": "4.4.1" }
+            { "location": "query", "appleName": "include", "disposition": "intentionallyOmitted", "reason": "Apple 4.5 allows media expansion; this tool returns the localization identity and locale while screenshot and preview media remain in ScreenshotsWorker.", "reviewAtSpec": "4.5" },
+            { "location": "query", "appleName": "limit[appPreviewSets]", "disposition": "intentionallyOmitted", "reason": "Apple applies this nested preview limit only to the omitted appPreviewSets include.", "reviewAtSpec": "4.5" },
+            { "location": "query", "appleName": "limit[appScreenshotSets]", "disposition": "intentionallyOmitted", "reason": "Apple applies this nested screenshot limit only to the omitted appScreenshotSets include.", "reviewAtSpec": "4.5" }
           ]
         }
       ],
@@ -325,9 +325,9 @@
           "path": "/v1/apps/{id}/appStoreVersionExperimentsV2",
           "role": "primary",
           "optionalParameterClassifications": [
-            { "location": "query", "appleName": "include", "disposition": "intentionallyOmitted", "reason": "Apple 4.4.1 can expand app, control-version, and treatment resources; this app collection returns experiment resources only and dedicated tools own children.", "reviewAtSpec": "4.4.1" },
-            { "location": "query", "appleName": "limit[appStoreVersionExperimentTreatments]", "disposition": "intentionallyOmitted", "reason": "Apple applies this nested limit only to an omitted treatment include.", "reviewAtSpec": "4.4.1" },
-            { "location": "query", "appleName": "limit[controlVersions]", "disposition": "intentionallyOmitted", "reason": "Apple applies this nested limit only to an omitted controlVersions include.", "reviewAtSpec": "4.4.1" }
+            { "location": "query", "appleName": "include", "disposition": "intentionallyOmitted", "reason": "Apple 4.5 can expand app, control-version, and treatment resources; this app collection returns experiment resources only and dedicated tools own children.", "reviewAtSpec": "4.5" },
+            { "location": "query", "appleName": "limit[appStoreVersionExperimentTreatments]", "disposition": "intentionallyOmitted", "reason": "Apple applies this nested limit only to an omitted treatment include.", "reviewAtSpec": "4.5" },
+            { "location": "query", "appleName": "limit[controlVersions]", "disposition": "intentionallyOmitted", "reason": "Apple applies this nested limit only to an omitted controlVersions include.", "reviewAtSpec": "4.5" }
           ]
         }
       ],
@@ -363,9 +363,9 @@
           "path": "/v1/appStoreVersionExperimentTreatments/{id}/appStoreVersionExperimentTreatmentLocalizations",
           "role": "primary",
           "optionalParameterClassifications": [
-            { "location": "query", "appleName": "include", "disposition": "intentionallyOmitted", "reason": "Apple 4.4.1 can expand the treatment and media resources; this localization collection stays narrow and ScreenshotsWorker owns media lifecycle operations.", "reviewAtSpec": "4.4.1" },
-            { "location": "query", "appleName": "limit[appPreviewSets]", "disposition": "intentionallyOmitted", "reason": "Apple applies this nested preview limit only to an omitted appPreviewSets include.", "reviewAtSpec": "4.4.1" },
-            { "location": "query", "appleName": "limit[appScreenshotSets]", "disposition": "intentionallyOmitted", "reason": "Apple applies this nested screenshot limit only to an omitted appScreenshotSets include.", "reviewAtSpec": "4.4.1" }
+            { "location": "query", "appleName": "include", "disposition": "intentionallyOmitted", "reason": "Apple 4.5 can expand the treatment and media resources; this localization collection stays narrow and ScreenshotsWorker owns media lifecycle operations.", "reviewAtSpec": "4.5" },
+            { "location": "query", "appleName": "limit[appPreviewSets]", "disposition": "intentionallyOmitted", "reason": "Apple applies this nested preview limit only to an omitted appPreviewSets include.", "reviewAtSpec": "4.5" },
+            { "location": "query", "appleName": "limit[appScreenshotSets]", "disposition": "intentionallyOmitted", "reason": "Apple applies this nested screenshot limit only to an omitted appScreenshotSets include.", "reviewAtSpec": "4.5" }
           ]
         }
       ],
@@ -401,8 +401,8 @@
           "path": "/v2/appStoreVersionExperiments/{id}/appStoreVersionExperimentTreatments",
           "role": "primary",
           "optionalParameterClassifications": [
-            { "location": "query", "appleName": "include", "disposition": "intentionallyOmitted", "reason": "Apple 4.4.1 can expand parent and localization resources; the V2 relationship endpoint establishes lineage and the child collection is separate.", "reviewAtSpec": "4.4.1" },
-            { "location": "query", "appleName": "limit[appStoreVersionExperimentTreatmentLocalizations]", "disposition": "intentionallyOmitted", "reason": "Apple applies this nested localization limit only to an omitted include.", "reviewAtSpec": "4.4.1" }
+            { "location": "query", "appleName": "include", "disposition": "intentionallyOmitted", "reason": "Apple 4.5 can expand parent and localization resources; the V2 relationship endpoint establishes lineage and the child collection is separate.", "reviewAtSpec": "4.5" },
+            { "location": "query", "appleName": "limit[appStoreVersionExperimentTreatmentLocalizations]", "disposition": "intentionallyOmitted", "reason": "Apple applies this nested localization limit only to an omitted include.", "reviewAtSpec": "4.5" }
           ]
         }
       ],
@@ -437,9 +437,9 @@
           "path": "/v1/appStoreVersions/{id}/appStoreVersionExperimentsV2",
           "role": "primary",
           "optionalParameterClassifications": [
-            { "location": "query", "appleName": "include", "disposition": "intentionallyOmitted", "reason": "Apple 4.4.1 allows related-resource expansion; the version-scoped endpoint establishes lineage directly while app, control-version, and treatment resources remain separate contracts.", "reviewAtSpec": "4.4.1" },
-            { "location": "query", "appleName": "limit[appStoreVersionExperimentTreatments]", "disposition": "intentionallyOmitted", "reason": "Apple applies this nested treatment limit only to the omitted include; ppo_list_treatments is strictly paginated.", "reviewAtSpec": "4.4.1" },
-            { "location": "query", "appleName": "limit[controlVersions]", "disposition": "intentionallyOmitted", "reason": "Apple applies this nested control-version limit only to the omitted include.", "reviewAtSpec": "4.4.1" }
+            { "location": "query", "appleName": "include", "disposition": "intentionallyOmitted", "reason": "Apple 4.5 allows related-resource expansion; the version-scoped endpoint establishes lineage directly while app, control-version, and treatment resources remain separate contracts.", "reviewAtSpec": "4.5" },
+            { "location": "query", "appleName": "limit[appStoreVersionExperimentTreatments]", "disposition": "intentionallyOmitted", "reason": "Apple applies this nested treatment limit only to the omitted include; ppo_list_treatments is strictly paginated.", "reviewAtSpec": "4.5" },
+            { "location": "query", "appleName": "limit[controlVersions]", "disposition": "intentionallyOmitted", "reason": "Apple applies this nested control-version limit only to the omitted include.", "reviewAtSpec": "4.5" }
           ]
         }
       ],

@@ -1573,13 +1573,13 @@ struct ExportComplianceWorkerContractTests {
         let directPatchWaiver = try #require(manifest.index.waivers.first {
             $0.operationID == "builds_appEncryptionDeclaration_updateToOneRelationship"
         })
-        #expect(directPatchWaiver.reason.contains("Pinned Apple OpenAPI 4.4.1 omits a deprecated flag"))
+        #expect(directPatchWaiver.reason.contains("Pinned Apple OpenAPI 4.5 omits a deprecated flag"))
         #expect(directPatchWaiver.reason.contains("current Apple DocC marks"))
         #expect(directPatchWaiver.reason.contains("builds_updateInstance"))
         let declarationBuildsWaiver = try #require(manifest.index.waivers.first {
             $0.operationID == "appEncryptionDeclarations_builds_createToManyRelationship"
         })
-        #expect(declarationBuildsWaiver.reason.contains("OpenAPI 4.4.1 marks"))
+        #expect(declarationBuildsWaiver.reason.contains("OpenAPI 4.5 marks"))
         #expect(declarationBuildsWaiver.reason.contains("deprecated"))
         #expect(declarationBuildsWaiver.reason.contains("builds_updateInstance"))
     }

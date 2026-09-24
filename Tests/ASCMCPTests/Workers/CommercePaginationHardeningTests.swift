@@ -174,7 +174,7 @@ struct CommercePaginationHardeningTests {
                 $0.disposition == .internalControl
             }
             #expect(!internalControls.isEmpty)
-            #expect(internalControls.allSatisfy { $0.reason == reason && $0.reviewAtSpec == "4.4.1" })
+            #expect(internalControls.allSatisfy { $0.reason == reason && $0.reviewAtSpec == "4.5" })
             let continuation = try #require(mapping.fields.first { $0.toolField == "next_url" })
             #expect(continuation.sourceKind == .local)
             #expect(continuation.localRole == localRole)

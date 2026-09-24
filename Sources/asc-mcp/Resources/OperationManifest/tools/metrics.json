@@ -18,8 +18,8 @@
               "location": "query",
               "appleName": "filter[platform]",
               "disposition": "intentionallyOmitted",
-              "reason": "Apple 4.4.1 only permits IOS, so exposing this filter would not change the result set.",
-              "reviewAtSpec": "4.4.1"
+              "reason": "Apple 4.5 only permits IOS, so exposing this filter would not change the result set.",
+              "reviewAtSpec": "4.5"
             }
           ]
         }
@@ -188,8 +188,8 @@
               "location": "query",
               "appleName": "filter[platform]",
               "disposition": "intentionallyOmitted",
-              "reason": "Apple 4.4.1 only permits IOS, so exposing this filter would not change the result set.",
-              "reviewAtSpec": "4.4.1"
+              "reason": "Apple 4.5 only permits IOS, so exposing this filter would not change the result set.",
+              "reviewAtSpec": "4.5"
             }
           ]
         }

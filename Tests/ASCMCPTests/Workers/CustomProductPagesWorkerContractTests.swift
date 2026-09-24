@@ -182,7 +182,7 @@ struct CustomProductPagesWorkerContractTests {
         ]
         #expect(classifications == expectedClassifications)
         #expect(mappings.flatMap(\.operations).flatMap { $0.optionalParameterClassifications ?? [] }.allSatisfy {
-            $0.reviewAtSpec == "4.4.1" && !$0.reason.isEmpty
+            $0.reviewAtSpec == "4.5" && !$0.reason.isEmpty
         })
 
         let expectedBindings: Set<String> = [

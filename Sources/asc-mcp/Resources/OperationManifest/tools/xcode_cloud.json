@@ -1080,25 +1080,25 @@
           "path": "/v1/ciProducts/{id}/app",
           "role": "primary",
           "optionalParameterClassifications": [
-            { "location": "query", "appleName": "include", "disposition": "intentionallyOmitted", "reason": "This tool is a compact product-to-app membership projection; apps_get_details, apps_get_metadata, and domain-specific app tools replace the very large transitive app include graph.", "reviewAtSpec": "4.4.1" },
-            { "location": "query", "appleName": "limit[appEncryptionDeclarations]", "disposition": "intentionallyOmitted", "reason": "The compact membership projection does not include appEncryptionDeclarations; use the existing app and export-compliance tools.", "reviewAtSpec": "4.4.1" },
-            { "location": "query", "appleName": "limit[betaGroups]", "disposition": "intentionallyOmitted", "reason": "The compact membership projection does not include betaGroups; use the existing beta group tools.", "reviewAtSpec": "4.4.1" },
-            { "location": "query", "appleName": "limit[appStoreVersions]", "disposition": "intentionallyOmitted", "reason": "The compact membership projection does not include appStoreVersions; use apps_list_versions and version tools.", "reviewAtSpec": "4.4.1" },
-            { "location": "query", "appleName": "limit[preReleaseVersions]", "disposition": "intentionallyOmitted", "reason": "The compact membership projection does not include preReleaseVersions; use the existing pre-release tools.", "reviewAtSpec": "4.4.1" },
-            { "location": "query", "appleName": "limit[betaAppLocalizations]", "disposition": "intentionallyOmitted", "reason": "The compact membership projection does not include betaAppLocalizations; use the existing beta app tools.", "reviewAtSpec": "4.4.1" },
-            { "location": "query", "appleName": "limit[builds]", "disposition": "intentionallyOmitted", "reason": "The compact membership projection does not include builds; use the existing build tools.", "reviewAtSpec": "4.4.1" },
-            { "location": "query", "appleName": "limit[appInfos]", "disposition": "intentionallyOmitted", "reason": "The compact membership projection does not include appInfos; use the existing app info tools.", "reviewAtSpec": "4.4.1" },
-            { "location": "query", "appleName": "limit[appClips]", "disposition": "intentionallyOmitted", "reason": "The compact membership projection does not include appClips; this unrelated graph is outside the membership lookup.", "reviewAtSpec": "4.4.1" },
-            { "location": "query", "appleName": "limit[inAppPurchases]", "disposition": "intentionallyOmitted", "reason": "The compact membership projection does not include inAppPurchases; use the existing IAP tools.", "reviewAtSpec": "4.4.1" },
-            { "location": "query", "appleName": "limit[subscriptionGroups]", "disposition": "intentionallyOmitted", "reason": "The compact membership projection does not include subscriptionGroups; use the existing subscription tools.", "reviewAtSpec": "4.4.1" },
-            { "location": "query", "appleName": "limit[gameCenterEnabledVersions]", "disposition": "intentionallyOmitted", "reason": "The compact membership projection does not include gameCenterEnabledVersions; this unrelated graph is outside the membership lookup.", "reviewAtSpec": "4.4.1" },
-            { "location": "query", "appleName": "limit[appCustomProductPages]", "disposition": "intentionallyOmitted", "reason": "The compact membership projection does not include appCustomProductPages; use the existing custom page tools.", "reviewAtSpec": "4.4.1" },
-            { "location": "query", "appleName": "limit[inAppPurchasesV2]", "disposition": "intentionallyOmitted", "reason": "The compact membership projection does not include inAppPurchasesV2; use the existing IAP tools.", "reviewAtSpec": "4.4.1" },
-            { "location": "query", "appleName": "limit[promotedPurchases]", "disposition": "intentionallyOmitted", "reason": "The compact membership projection does not include promotedPurchases; use the existing promoted purchase tools.", "reviewAtSpec": "4.4.1" },
-            { "location": "query", "appleName": "limit[appEvents]", "disposition": "intentionallyOmitted", "reason": "The compact membership projection does not include appEvents; use the existing app event tools.", "reviewAtSpec": "4.4.1" },
-            { "location": "query", "appleName": "limit[reviewSubmissions]", "disposition": "intentionallyOmitted", "reason": "The compact membership projection does not include reviewSubmissions; use the existing review submission tools.", "reviewAtSpec": "4.4.1" },
-            { "location": "query", "appleName": "limit[appStoreVersionExperimentsV2]", "disposition": "intentionallyOmitted", "reason": "The compact membership projection does not include appStoreVersionExperimentsV2; use the existing product page optimization tools.", "reviewAtSpec": "4.4.1" },
-            { "location": "query", "appleName": "limit[androidToIosAppMappingDetails]", "disposition": "intentionallyOmitted", "reason": "The compact membership projection does not include androidToIosAppMappingDetails; this unrelated graph is outside the membership lookup.", "reviewAtSpec": "4.4.1" }
+            { "location": "query", "appleName": "include", "disposition": "intentionallyOmitted", "reason": "This tool is a compact product-to-app membership projection; apps_get_details, apps_get_metadata, and domain-specific app tools replace the very large transitive app include graph.", "reviewAtSpec": "4.5" },
+            { "location": "query", "appleName": "limit[appEncryptionDeclarations]", "disposition": "intentionallyOmitted", "reason": "The compact membership projection does not include appEncryptionDeclarations; use the existing app and export-compliance tools.", "reviewAtSpec": "4.5" },
+            { "location": "query", "appleName": "limit[betaGroups]", "disposition": "intentionallyOmitted", "reason": "The compact membership projection does not include betaGroups; use the existing beta group tools.", "reviewAtSpec": "4.5" },
+            { "location": "query", "appleName": "limit[appStoreVersions]", "disposition": "intentionallyOmitted", "reason": "The compact membership projection does not include appStoreVersions; use apps_list_versions and version tools.", "reviewAtSpec": "4.5" },
+            { "location": "query", "appleName": "limit[preReleaseVersions]", "disposition": "intentionallyOmitted", "reason": "The compact membership projection does not include preReleaseVersions; use the existing pre-release tools.", "reviewAtSpec": "4.5" },
+            { "location": "query", "appleName": "limit[betaAppLocalizations]", "disposition": "intentionallyOmitted", "reason": "The compact membership projection does not include betaAppLocalizations; use the existing beta app tools.", "reviewAtSpec": "4.5" },
+            { "location": "query", "appleName": "limit[builds]", "disposition": "intentionallyOmitted", "reason": "The compact membership projection does not include builds; use the existing build tools.", "reviewAtSpec": "4.5" },
+            { "location": "query", "appleName": "limit[appInfos]", "disposition": "intentionallyOmitted", "reason": "The compact membership projection does not include appInfos; use the existing app info tools.", "reviewAtSpec": "4.5" },
+            { "location": "query", "appleName": "limit[appClips]", "disposition": "intentionallyOmitted", "reason": "The compact membership projection does not include appClips; this unrelated graph is outside the membership lookup.", "reviewAtSpec": "4.5" },
+            { "location": "query", "appleName": "limit[inAppPurchases]", "disposition": "intentionallyOmitted", "reason": "The compact membership projection does not include inAppPurchases; use the existing IAP tools.", "reviewAtSpec": "4.5" },
+            { "location": "query", "appleName": "limit[subscriptionGroups]", "disposition": "intentionallyOmitted", "reason": "The compact membership projection does not include subscriptionGroups; use the existing subscription tools.", "reviewAtSpec": "4.5" },
+            { "location": "query", "appleName": "limit[gameCenterEnabledVersions]", "disposition": "intentionallyOmitted", "reason": "The compact membership projection does not include gameCenterEnabledVersions; this unrelated graph is outside the membership lookup.", "reviewAtSpec": "4.5" },
+            { "location": "query", "appleName": "limit[appCustomProductPages]", "disposition": "intentionallyOmitted", "reason": "The compact membership projection does not include appCustomProductPages; use the existing custom page tools.", "reviewAtSpec": "4.5" },
+            { "location": "query", "appleName": "limit[inAppPurchasesV2]", "disposition": "intentionallyOmitted", "reason": "The compact membership projection does not include inAppPurchasesV2; use the existing IAP tools.", "reviewAtSpec": "4.5" },
+            { "location": "query", "appleName": "limit[promotedPurchases]", "disposition": "intentionallyOmitted", "reason": "The compact membership projection does not include promotedPurchases; use the existing promoted purchase tools.", "reviewAtSpec": "4.5" },
+            { "location": "query", "appleName": "limit[appEvents]", "disposition": "intentionallyOmitted", "reason": "The compact membership projection does not include appEvents; use the existing app event tools.", "reviewAtSpec": "4.5" },
+            { "location": "query", "appleName": "limit[reviewSubmissions]", "disposition": "intentionallyOmitted", "reason": "The compact membership projection does not include reviewSubmissions; use the existing review submission tools.", "reviewAtSpec": "4.5" },
+            { "location": "query", "appleName": "limit[appStoreVersionExperimentsV2]", "disposition": "intentionallyOmitted", "reason": "The compact membership projection does not include appStoreVersionExperimentsV2; use the existing product page optimization tools.", "reviewAtSpec": "4.5" },
+            { "location": "query", "appleName": "limit[androidToIosAppMappingDetails]", "disposition": "intentionallyOmitted", "reason": "The compact membership projection does not include androidToIosAppMappingDetails; this unrelated graph is outside the membership lookup.", "reviewAtSpec": "4.5" }
           ]
         }
       ],
@@ -1219,14 +1219,14 @@
               "appleName": "include",
               "disposition": "intentionallyOmitted",
               "reason": "Deletion preflight validates only the exact product identity and current name; it inventories workflows and build runs through dedicated fully paginated supporting operations.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "query",
               "appleName": "limit[primaryRepositories]",
               "disposition": "intentionallyOmitted",
               "reason": "Primary repositories are not included by the exact deletion identity preflight.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             }
           ]
         },
@@ -1246,7 +1246,7 @@
               "appleName": "include",
               "disposition": "intentionallyOmitted",
               "reason": "The deletion receipt needs the complete direct workflow identity inventory, not expanded workflow relationships.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             }
           ]
         },
@@ -1266,28 +1266,28 @@
               "appleName": "filter[builds]",
               "disposition": "intentionallyOmitted",
               "reason": "Deletion impact must inventory every build run for the product rather than a caller-selected build subset.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "query",
               "appleName": "sort",
               "disposition": "intentionallyOmitted",
               "reason": "The confirmation digest sorts validated identities locally, so Apple response ordering cannot affect the receipt.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "query",
               "appleName": "include",
               "disposition": "intentionallyOmitted",
               "reason": "The deletion receipt needs the complete direct build-run identity inventory, not expanded relationships.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "query",
               "appleName": "limit[builds]",
               "disposition": "intentionallyOmitted",
               "reason": "Build resources are not included by the deletion inventory request.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             }
           ]
         },
@@ -1461,7 +1461,7 @@
               "appleName": "include",
               "disposition": "intentionallyOmitted",
               "reason": "Deletion preflight validates only the exact workflow identity and current name; it inventories build runs through the dedicated fully paginated supporting operation.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             }
           ]
         },
@@ -1481,28 +1481,28 @@
               "appleName": "filter[builds]",
               "disposition": "intentionallyOmitted",
               "reason": "Deletion impact must inventory every build run for the workflow rather than a caller-selected build subset.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "query",
               "appleName": "sort",
               "disposition": "intentionallyOmitted",
               "reason": "The confirmation digest sorts validated identities locally, so Apple response ordering cannot affect the receipt.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "query",
               "appleName": "include",
               "disposition": "intentionallyOmitted",
               "reason": "The deletion receipt needs the complete direct build-run identity inventory, not expanded relationships.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "query",
               "appleName": "limit[builds]",
               "disposition": "intentionallyOmitted",
               "reason": "Build resources are not included by the deletion inventory request.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             }
           ]
         },

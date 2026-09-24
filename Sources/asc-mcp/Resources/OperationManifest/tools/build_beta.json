@@ -119,7 +119,7 @@
               "appleName": "include",
               "disposition": "intentionallyOmitted",
               "reason": "The selected build ID is already known and the tool returns the related beta-detail resource without re-including the Build.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             }
           ]
         }
@@ -178,28 +178,28 @@
               "appleName": "filter[app]",
               "disposition": "intentionallyOmitted",
               "reason": "The required build filter already scopes this tool to groups attached to the selected build.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "query",
               "appleName": "include",
               "disposition": "intentionallyOmitted",
               "reason": "The tool returns a stable group projection and relationship IDs; related resources use dedicated tools.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "query",
               "appleName": "limit[betaTesters]",
               "disposition": "intentionallyOmitted",
               "reason": "Beta testers are not included by this group projection.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             },
             {
               "location": "query",
               "appleName": "limit[builds]",
               "disposition": "intentionallyOmitted",
               "reason": "Builds are represented by relationship IDs rather than included resources.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             }
           ]
         }
@@ -621,7 +621,7 @@
               "appleName": "include",
               "disposition": "intentionallyOmitted",
               "reason": "The supporting lookup needs only the localization resource ID and does not expand its Build relationship.",
-              "reviewAtSpec": "4.4.1"
+              "reviewAtSpec": "4.5"
             }
           ]
         },
