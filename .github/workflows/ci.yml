@@ -152,6 +152,9 @@ jobs:
           swift test --disable-automatic-resolution 2>&1 \
             | tee "$RUNNER_TEMP/asc_mcp_tests.log"
 
+      - name: Test Apple specification drift checks
+        run: python3 -m unittest discover -s .github/workflows/scripts -p 'test_*.py'
+
       - name: Publish test summary
         if: always()
         shell: bash
@@ -229,7 +232,7 @@ jobs:
             --generated-at 2026-05-07
           test -s "$RUNNER_TEMP/asc_openapi_coverage.md"
 
-      - name: App Store Connect operation contract
+      - name: Pinned App Store Connect operation contract
         shell: bash
         run: |
           set -euo pipefail
@@ -237,23 +240,10 @@ jobs:
           contract_directory="$RUNNER_TEMP/asc_openapi_contract"
           rm -rf "$contract_directory"
           mkdir -p "$contract_directory"
-          curl --fail --show-error --silent --location \
-            --proto '=https' --proto-redir '=https' \
-            --connect-timeout 15 --max-time 120 \
-            --retry 3 --retry-delay 2 --retry-all-errors \
-            --output "$contract_directory/spec.zip" \
-            https://developer.apple.com/sample-code/app-store-connect/app-store-connect-openapi-specification.zip
-          shasum -a 256 "$contract_directory/spec.zip" \
+          cp Tests/ASCMCPTests/Fixtures/OpenAPI/app-store-connect-4.5.1.oas.json \
+            "$contract_directory/openapi.oas.json"
+          shasum -a 256 "$contract_directory/openapi.oas.json" \
             > "$contract_directory/specification.sha256"
-
-          spec_entry="$(
-            unzip -Z1 "$contract_directory/spec.zip" \
-              | grep -E '(^|/)openapi\.oas[^/]*\.json$'
-          )"
-          test -n "$spec_entry"
-          test "$(printf '%s\n' "$spec_entry" | grep -c .)" -eq 1
-          unzip -p "$contract_directory/spec.zip" "$spec_entry" \
-            > "$contract_directory/openapi.oas.json"
 
           .build/release/asc-mcp openapi-contract-check \
             --spec "$contract_directory/openapi.oas.json" \
@@ -267,6 +257,12 @@ jobs:
           "$contract_directory/relocated/asc-mcp" openapi-contract-check \
             --spec "$contract_directory/openapi.oas.json" \
             --strict
+
+      - name: Controlled Asset Library MCP process
+        run: |
+          python3 -B .github/workflows/scripts/assets_mcp_smoke.py \
+            --binary "$RUNNER_TEMP/asc_openapi_contract/relocated/asc-mcp" \
+            --expected-version "$(awk -F'\"' '/static let current =/ { print $2 }' Sources/asc-mcp/Core/ServerVersion.swift)"
 
       - name: Verify generated OpenAPI coverage
         shell: bash
@@ -307,18 +303,77 @@ jobs:
           CONTRACT_JOB_STATUS: ${{ job.status }}
         run: |
           printf '%s\n' \
-            '## Release & Apple Contract' \
+            '## Release & Pinned Apple Contract' \
             "- Status: $CONTRACT_JOB_STATUS" \
             "- Ref: $GITHUB_REF_NAME" \
             "- Run attempt: $GITHUB_RUN_ATTEMPT" \
-            '- Contract mode: strict' \
+            '- Contract mode: strict, checked-in Apple snapshot' \
             '- Artifacts: contract reports and release build log' \
             >> "$GITHUB_STEP_SUMMARY"
+
+  latest-apple-contract:
+    name: Latest Apple Contract Drift
+    needs: promotion-lineage
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+          ref: ${{ (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && 'refs/heads/main' || github.ref }}
+
+      - name: Download current Apple specification
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/asc_latest_openapi"
+          curl --fail --show-error --silent --location \
+            --proto '=https' --proto-redir '=https' \
+            --connect-timeout 15 --max-time 120 --max-filesize 33554432 \
+            --retry 3 --retry-delay 2 --retry-all-errors \
+            --output "$RUNNER_TEMP/asc_latest_openapi/spec.zip" \
+            https://developer.apple.com/sample-code/app-store-connect/app-store-connect-openapi-specification.zip
+
+      - name: Require review of every latest-spec change
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 .github/workflows/scripts/apple_spec_drift.py \
+            --pinned Tests/ASCMCPTests/Fixtures/OpenAPI/app-store-connect-4.5.1.oas.json \
+            --latest-zip "$RUNNER_TEMP/asc_latest_openapi/spec.zip" \
+            --output-directory "$RUNNER_TEMP/asc_latest_openapi"
+
+      - name: Publish latest-spec summary
+        if: always()
+        shell: bash
+        env:
+          DRIFT_JOB_STATUS: ${{ job.status }}
+        run: |
+          printf '%s\n' \
+            '## Latest Apple Contract Drift' \
+            "- Status: $DRIFT_JOB_STATUS" \
+            '- Release publishing requires this check to pass.' \
+            >> "$GITHUB_STEP_SUMMARY"
+          if [[ -f "$RUNNER_TEMP/asc_latest_openapi/latest-report.md" ]]; then
+            cat "$RUNNER_TEMP/asc_latest_openapi/latest-report.md" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Upload latest-spec drift reports
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: app-store-connect-latest-drift-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/asc_latest_openapi/latest-report.json
+            ${{ runner.temp }}/asc_latest_openapi/latest-report.md
+          if-no-files-found: warn
+          retention-days: 30
 
   publish-release:
     name: Mint MCP Smoke & Publish Release
     if: startsWith(github.ref, 'refs/tags/v')
-    needs: [promotion-lineage, tests, release-contract]
+    needs: [promotion-lineage, tests, release-contract, latest-apple-contract]
     runs-on: macos-15
     timeout-minutes: 30
     permissions:
@@ -347,10 +402,17 @@ jobs:
           set -euo pipefail
           version="${GITHUB_REF_NAME#v}"
           test "$("$HOME/.mint/bin/asc-mcp" --version)" = "asc-mcp $version"
+          expected_tool_count="$(python3 - <<'PY'
+          import json
+          from pathlib import Path
+          directory = Path('Sources/asc-mcp/Resources/OperationManifest/tools')
+          print(sum(len(json.loads(path.read_text())['tools']) for path in directory.glob('*.json')))
+          PY
+          )"
           python3 Scripts/ci/mcp_stdio_smoke.py \
             --binary "$HOME/.mint/bin/asc-mcp" \
             --expected-version "$version" \
-            --expected-tool-count 502 \
+            --expected-tool-count "$expected_tool_count" \
             --expected-prefix xcode_cloud_ \
             --expected-prefix-count 42 \
             --error-tool xcode_cloud_workflows_create \

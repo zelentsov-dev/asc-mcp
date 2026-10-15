@@ -608,7 +608,7 @@ extension AppLifecycleWorker {
                     "korea_age_rating_override": .object([
                         "type": .array([.string("string"), .string("null")]),
                         "description": .string("Korea-specific age rating override"),
-                        "enum": .array([.string("NONE"), .string("FIFTEEN_PLUS"), .string("NINETEEN_PLUS"), .null])
+                        "enum": .array([.string("NONE"), .string("ALL"), .string("TWELVE_PLUS"), .string("FIFTEEN_PLUS"), .string("NINETEEN_PLUS"), .null])
                     ]),
                     "advertising": .object([
                         "type": .array([.string("boolean"), .string("null")]),

@@ -4,6 +4,19 @@ import Testing
 
 @Suite("Operation Manifest Strict JSON Tests")
 struct OperationManifestStrictJSONTests {
+    @Test("semantic deprecation objects reject unknown keys")
+    func semanticDeprecationRejectsUnknownKeys() {
+        let data = Data(
+            #"{"semanticDeprecations":[{"id":"fixture","operationIds":["apps_getCollection"],"sourceUrl":"typo"}]}"#.utf8
+        )
+
+        #expect(throws: ASCOperationManifestError.unknownKey(
+            source: "manifest.json", path: "$.semanticDeprecations[0]", key: "sourceUrl"
+        )) {
+            try ASCOperationManifestJSONValidator.validateIndex(data, source: "manifest.json")
+        }
+    }
+
     @Test("index rejects an unknown nested key with its JSON path")
     func indexRejectsUnknownNestedKey() {
         let data = Data(

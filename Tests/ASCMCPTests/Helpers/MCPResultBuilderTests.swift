@@ -307,6 +307,29 @@ struct MCPResultBuilderTests {
         #expect(try exactJSONMirror(from: normalized) == structuredJSON(from: normalized))
     }
 
+    @Test("asset recovery protocol values survive errors without exposing credentials")
+    func assetRecoveryProtocol() throws {
+        let digest = String(repeating: "a", count: 64)
+        let result = MCPResult.json(.object([
+            "operation": .object([
+                "status": .string("requires_reconciliation"),
+                "completedSteps": .array([.string("remove_old_placement"), .string("update_reference_name")]),
+                "change": .object([
+                    "fileSHA256": .string(digest),
+                    "target": .string("appStoreVersionExperimentTreatmentLocalization"),
+                    "referenceName": .string("internal_secret_abcdefghijklmnopqrstuvwxyz")
+                ])
+            ])
+        ]), isError: true)
+        let operation = try #require(result.structuredContent?.objectValue?["operation"]?.objectValue)
+        #expect(operation["status"] == .string("requires_reconciliation"))
+        #expect(operation["completedSteps"] == .array([.string("remove_old_placement"), .string("update_reference_name")]))
+        let change = try #require(operation["change"]?.objectValue)
+        #expect(change["fileSHA256"] == .string(digest))
+        #expect(change["target"] == .string("appStoreVersionExperimentTreatmentLocalization"))
+        #expect(change["referenceName"] == .string("[REDACTED]"))
+    }
+
     @Test("transport normalization preserves non-secret recovery states and checksums")
     func transportNormalizationPreservesRecoveryStatesAndChecksums() throws {
         let checksum = "5d41402abc4b2a76b9719d911017c592"

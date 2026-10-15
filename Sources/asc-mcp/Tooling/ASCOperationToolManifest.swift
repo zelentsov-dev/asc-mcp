@@ -221,6 +221,26 @@ struct ASCOptionalParameterFamilyRule: Codable, Sendable, Equatable {
     let reviewAtSpec: String
 }
 
+struct ASCSemanticDeprecation: Codable, Sendable, Equatable {
+    let id: String
+    let operationIDs: [String]
+    let parameterNames: [String]?
+    let reason: String
+    let sourceURL: String
+    let owner: String
+    let reviewAtSpec: String
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case operationIDs = "operationIds"
+        case parameterNames
+        case reason
+        case sourceURL
+        case owner
+        case reviewAtSpec
+    }
+}
+
 struct ASCOperationManifestIndex: Codable, Sendable, Equatable {
     let schemaVersion: Int
     let specPin: ASCSpecPin
@@ -228,6 +248,7 @@ struct ASCOperationManifestIndex: Codable, Sendable, Equatable {
     let optionalParameterFamilyRules: [ASCOptionalParameterFamilyRule]?
     let scopeRules: [ASCOperationScopeRule]
     let waivers: [ASCOperationWaiver]
+    let semanticDeprecations: [ASCSemanticDeprecation]?
 
     init(
         schemaVersion: Int,
@@ -235,7 +256,8 @@ struct ASCOperationManifestIndex: Codable, Sendable, Equatable {
         optionalInputCoveragePin: ASCOptionalInputCoverage? = nil,
         optionalParameterFamilyRules: [ASCOptionalParameterFamilyRule]? = nil,
         scopeRules: [ASCOperationScopeRule],
-        waivers: [ASCOperationWaiver]
+        waivers: [ASCOperationWaiver],
+        semanticDeprecations: [ASCSemanticDeprecation]? = nil
     ) {
         self.schemaVersion = schemaVersion
         self.specPin = specPin
@@ -243,6 +265,7 @@ struct ASCOperationManifestIndex: Codable, Sendable, Equatable {
         self.optionalParameterFamilyRules = optionalParameterFamilyRules
         self.scopeRules = scopeRules
         self.waivers = waivers
+        self.semanticDeprecations = semanticDeprecations
     }
 }
 

@@ -423,6 +423,40 @@ struct SubscriptionPlanAvailabilityContractTests {
         #expect(pricePoint["proceeds_year2"] == .string("9.25"))
     }
 
+    @Test("legacy adjusted equalizations calls default both plan types and preserve continuation scope")
+    func adjustedEqualizationsLegacyDefault() async throws {
+        let query = [
+            "include": "territory",
+            "fields[subscriptionPricePoints]": "customerPrice,proceeds,proceedsYear2,territory,adjustedEqualizations",
+            "fields[territories]": "currency", "filter[planType]": "MONTHLY,UPFRONT", "limit": "25"
+        ]
+        let next = planPaginationURL(path: "/v1/subscriptionPricePoints/price-point-1/adjustedEqualizations",
+                                     query: query.merging(["cursor": "next"]) { _, new in new })
+        let transport = TestHTTPTransport(responses: [
+            .init(statusCode: 200, body: adjustedEqualizationsResponseBody(nextURL: next)),
+            .init(statusCode: 200, body: adjustedEqualizationsResponseBody(nextURL: next))
+        ])
+        let worker = try await planWorker(transport)
+        let tool = try #require(await worker.getTools().first { $0.name == "subscriptions_list_price_point_adjusted_equalizations" })
+        #expect(try planSchema(tool)["required"] == .array([.string("price_point_id")]))
+        let first = try await worker.handleTool(.init(name: tool.name, arguments: ["price_point_id": .string("price-point-1")]))
+        #expect(first.isError != true)
+        let second = try await worker.handleTool(.init(name: tool.name, arguments: [
+            "price_point_id": .string("price-point-1"), "next_url": .string(next)
+        ]))
+        #expect(second.isError != true)
+        let requests = await transport.recordedRequests()
+        #expect(requests.count == 2)
+        #expect(requests.allSatisfy { planQuery($0)["filter[planType]"] == "MONTHLY,UPFRONT" })
+        let narrowed = planPaginationURL(path: "/v1/subscriptionPricePoints/price-point-1/adjustedEqualizations",
+                                         query: query.merging(["filter[planType]": "UPFRONT", "cursor": "next"]) { _, new in new })
+        let rejected = try await worker.handleTool(.init(name: tool.name, arguments: [
+            "price_point_id": .string("price-point-1"), "next_url": .string(narrowed)
+        ]))
+        #expect(rejected.isError == true)
+        #expect(await transport.requestCount() == 2)
+    }
+
     @Test("invalid enums limits identifiers CSV values and no-op updates fail before network access")
     func rejectsInvalidInputsBeforeNetwork() async throws {
         let cases: [(String, [String: Value])] = [

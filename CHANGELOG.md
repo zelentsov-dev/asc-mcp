@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### 4.2.0 candidate — selected Apple API 4.5.1 support
+
+- Add an independent 11-tool Asset Library worker: scoped discovery, dynamic requirements, image/video upload, placements, ordering, replacement, archive/delete, preview and recovery.
+- Require a ten-minute, account-bound, one-use preview for new asset mutations. Snapshot files before transfer, preserve SHA-256 identity, retain uncertain operations in a private journal, and reconcile without automatic write replay.
+- Support image/video review items through the same preview coordinator while retaining legacy item calls.
+- Add Korea ALL/TWELVE_PLUS age overrides, nullable organization subscription PATCH controls and read-only performance overview.
+- Preserve 502 existing tool names and 35 filters; the candidate catalog has 514 tools and 36 filters. Legacy screenshots retain their original IDs and result contract. New Asset Library commits send `uploaded: true` without changing legacy checksum flows.
+- Pin the official Apple 4.5.1 OpenAPI snapshot and separate reproducible contract checks from latest-Apple drift reporting. Account for release-note deprecations beyond OpenAPI flags.
+
+Candidate verification is recorded separately from stable publication. Apple MCP acceptance on Bike tracker, published-state preservation, clean Mint installation and independent review must be completed on the release candidate before this section becomes a stable release. No production or published-placement behavior is claimed from compilation alone.
+
 ## [4.1.6] - 2026-08-22
 
 ### Fixed

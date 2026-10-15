@@ -6,7 +6,9 @@ enum ToolMetadataPolicy {
         Tool(
             name: tool.name,
             title: tool.title,
-            description: tool.description,
+            description: tool.name.hasPrefix("screenshots_") && tool.description?.contains("Legacy screenshot/preview API deprecated by Apple 4.5.1") != true
+                ? (tool.description ?? "") + " Legacy screenshot/preview API deprecated by Apple 4.5.1; retained with its original IDs and result contract. Use assets_* for Asset Library resources."
+                : tool.description,
             inputSchema: normalizedInputSchema(for: tool),
             annotations: annotations(for: tool.name, existing: tool.annotations),
             outputSchema: outputSchema(for: tool.name) ?? tool.outputSchema,
@@ -32,6 +34,9 @@ enum ToolMetadataPolicy {
     }
 
     static func isReadOnly(_ toolName: String) -> Bool {
+        if toolName.hasPrefix("assets_") {
+            return assetToolReadEffects[toolName] ?? false
+        }
         if toolName == "company_switch" {
             return false
         }
@@ -77,10 +82,25 @@ enum ToolMetadataPolicy {
     ]
 
     private static let explicitMutationTools: Set<String> = [
+        "assets_apply_change",
         "build_uploads_reserve_file",
         "build_uploads_commit_file",
         "custom_pages_add_search_keywords",
         "custom_pages_remove_search_keywords"
+    ]
+
+    private static let assetToolReadEffects: [String: Bool] = [
+        "assets_get_library": true,
+        "assets_get_reference_data": true,
+        "assets_list_images": true,
+        "assets_list_videos": true,
+        "assets_get_image": true,
+        "assets_get_video": true,
+        "assets_list_placements": true,
+        "assets_get_placement": true,
+        "assets_prepare_change": true,
+        "assets_apply_change": false,
+        "assets_get_operation": true
     ]
 
     private static let explicitReadOnlyTools: Set<String> = [

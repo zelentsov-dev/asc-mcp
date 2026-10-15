@@ -29,6 +29,8 @@ public struct SubscriptionAttributes: Codable, Sendable {
     public let subscriptionPeriod: String?
     public let groupLevel: Int?
     public let reviewNote: String?
+    public let marketSettings: [String]?
+    public let multiSeatStatus: String?
 }
 
 // MARK: - Subscription Localization Models
@@ -158,6 +160,8 @@ public struct UpdateSubscriptionRequest: Codable, Sendable {
         public let groupLevel: ASCNullable<Int>?
         public let reviewNote: ASCNullable<String>?
         public let subscriptionPeriod: ASCNullable<String>?
+        public let marketSettings: ASCNullable<[String]>?
+        public let multiSeatStatus: ASCNullable<String>?
     }
 }
 

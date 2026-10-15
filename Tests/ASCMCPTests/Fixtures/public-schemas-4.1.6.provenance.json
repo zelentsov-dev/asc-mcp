@@ -1,0 +1,7 @@
+{
+  "sourceCommit": "4c26a15e24b9f5deeec686c9419140102467b500",
+  "toolCount": 502,
+  "schemaSHA256": "d157428c842ab08a8e658ace247b2a4eb089249b0524af1d69ebc471a12ad272",
+  "method": "Serialized the complete raw Tool catalog using TestFactory.collectAllWorkerTools() in an isolated git archive of the source commit. Baseline export test passed. No Apple calls or user credentials were used.",
+  "scope": "Input/output schemas and names; runtime responses remain covered separately by worker tests and required real-API acceptance."
+}

@@ -38,8 +38,8 @@ struct ASCCoverageArea: Sendable {
 }
 
 enum ASCCoverageInventory {
-    static let snapshotDate = "2026-07-21"
-    static let appleAPIVersionBaseline = "4.4.1"
+    static let snapshotDate = "2026-10-15"
+    static let appleAPIVersionBaseline = "4.5.1"
 
     static let areas: [ASCCoverageArea] = [
         ASCCoverageArea(
@@ -68,12 +68,13 @@ enum ASCCoverageInventory {
             priority: .p0,
             workerKeys: [
                 "apps", "accessibility", "versions", "app_info", "pricing", "app_events",
-                "screenshots", "custom_pages", "ppo", "promoted", "review_attachments",
+                "assets", "screenshots", "custom_pages", "ppo", "promoted", "review_attachments",
                 "review_submissions", "reviews", "export_compliance"
             ],
             coveredCapabilities: [
                 "apps, app info, version lifecycle, review responses",
-                "age rating questionnaire updates and reads",
+                "age rating questionnaire updates and reads, including Korea ALL and TWELVE_PLUS",
+                "Asset Library reads, previews, uploads, placements and recovery",
                 "territory-specific calculated age ratings",
                 "confirmed phased release controls",
                 "accessibility declarations",
@@ -180,7 +181,8 @@ enum ASCCoverageInventory {
                 "introductory offers",
                 "promotional offers",
                 "pricing summaries and compatibility inventory helper",
-                "review screenshot and image uploads"
+                "review screenshot and image uploads",
+                "subscription organization market settings and multi-seat PATCH controls"
             ],
             missingCapabilities: [
                 "authoritative fully paginated subscription inventory"

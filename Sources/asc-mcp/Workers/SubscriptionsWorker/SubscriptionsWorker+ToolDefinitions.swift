@@ -3,6 +3,8 @@ import MCP
 
 // MARK: - Tool Definitions
 extension SubscriptionsWorker {
+    static let subscriptionMarketSettings = ["APPLE_SCHOOL", "APP_STORE", "APPLE_BUSINESS"]
+    static let subscriptionMultiSeatStatuses = ["ENABLED", "DISABLED"]
 
     func listSubscriptionsTool() -> Tool {
         return Tool(
@@ -111,7 +113,7 @@ extension SubscriptionsWorker {
     func updateSubscriptionTool() -> Tool {
         return Tool(
             name: "subscriptions_update",
-            description: "Update an existing subscription",
+            description: "Update an existing subscription. Optional market_settings replaces the complete market selection for multi-seat purchases; it has an effect only while multi_seat_status is ENABLED. Omitted fields remain unchanged.",
             inputSchema: .object([
                 "type": .string("object"),
                 "additionalProperties": .bool(false),
@@ -124,6 +126,21 @@ extension SubscriptionsWorker {
                     "name": .object([
                         "type": .array([.string("string"), .string("null")]),
                         "description": .string("New reference name, or null to clear")
+                    ]),
+                    "market_settings": .object([
+                        "type": .array([.string("array"), .string("null")]),
+                        "description": .string("Complete selection of markets for multi-seat purchases, or null to clear Apple's nullable value. Omit to preserve the current selection."),
+                        "uniqueItems": .bool(true),
+                        "maxItems": .int(Self.subscriptionMarketSettings.count),
+                        "items": .object([
+                            "type": .string("string"),
+                            "enum": .array(Self.subscriptionMarketSettings.map(Value.string))
+                        ])
+                    ]),
+                    "multi_seat_status": .object([
+                        "type": .array([.string("string"), .string("null")]),
+                        "description": .string("Enable or disable multi-seat purchases, or null to clear Apple's nullable value. Omit to preserve the current status."),
+                        "enum": .array(Self.subscriptionMultiSeatStatuses.map(Value.string) + [.null])
                     ]),
                     "family_sharable": .object([
                         "type": .array([.string("boolean"), .string("null")]),

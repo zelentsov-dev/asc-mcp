@@ -84,6 +84,14 @@ extension SubscriptionsWorker {
                 )
             }
 
+            for subscription in response.data {
+                try ASCNonIdempotentWriteRecovery.validateResourceIdentity(
+                    type: subscription.type,
+                    id: subscription.id,
+                    expectedType: "subscriptions",
+                    context: "Subscription list response"
+                )
+            }
             let subscriptions = response.data.map { formatSubscription($0) }
 
             var result: [String: Any] = [
@@ -122,6 +130,14 @@ extension SubscriptionsWorker {
                 as: ASCSubscriptionResponse.self
             )
 
+            try ASCNonIdempotentWriteRecovery.validateResourceIdentity(
+                type: response.data.type,
+                id: response.data.id,
+                expectedType: "subscriptions",
+                expectedID: subscriptionId,
+                context: "Subscription read response"
+            )
+
             let subscription = formatSubscription(response.data)
 
             let result = [
@@ -150,6 +166,10 @@ extension SubscriptionsWorker {
                 content: [MCPContent.text("Error: Required parameters: group_id, name, product_id")],
                 isError: true
             )
+        }
+
+        guard arguments["market_settings"] == nil, arguments["multi_seat_status"] == nil else {
+            return MCPResult.error("market_settings and multi_seat_status are supported only by subscriptions_update, after creating the subscription")
         }
 
         do {
@@ -211,7 +231,9 @@ extension SubscriptionsWorker {
             "family_sharable",
             "group_level",
             "review_note",
-            "subscription_period"
+            "subscription_period",
+            "market_settings",
+            "multi_seat_status"
         ]
         guard arguments.keys.contains(where: mutableFields.contains) else {
             return CallTool.Result(
@@ -226,6 +248,8 @@ extension SubscriptionsWorker {
             let familySharable = try nullableSubscriptionBool("family_sharable", from: arguments)
             let groupLevel = try nullableSubscriptionInt("group_level", from: arguments)
             let reviewNote = try nullableSubscriptionString("review_note", from: arguments)
+            let marketSettings = try nullableSubscriptionMarkets(from: arguments)
+            let multiSeatStatus = try nullableSubscriptionMultiSeatStatus(from: arguments)
             let request = UpdateSubscriptionRequest(
                 data: UpdateSubscriptionRequest.UpdateData(
                     id: subscriptionId,
@@ -234,7 +258,9 @@ extension SubscriptionsWorker {
                         familySharable: familySharable,
                         groupLevel: groupLevel,
                         reviewNote: reviewNote,
-                        subscriptionPeriod: subscriptionPeriod
+                        subscriptionPeriod: subscriptionPeriod,
+                        marketSettings: marketSettings,
+                        multiSeatStatus: multiSeatStatus
                     )
                 )
             )
@@ -244,6 +270,35 @@ extension SubscriptionsWorker {
                 body: request,
                 as: ASCSubscriptionResponse.self
             )
+
+            if marketSettings != nil || multiSeatStatus != nil {
+                do {
+                    try ASCNonIdempotentWriteRecovery.validateResourceIdentity(
+                        type: response.data.type,
+                        id: response.data.id,
+                        expectedType: "subscriptions",
+                        expectedID: subscriptionId,
+                        context: "Subscription organization settings PATCH response"
+                    )
+                    if case .some(.value(let markets)) = marketSettings {
+                        guard let returned = response.data.attributes.marketSettings,
+                              Set(returned) == Set(markets), returned.count == markets.count else {
+                            throw ASCError.parsing("Subscription PATCH response did not confirm the requested market settings")
+                        }
+                    }
+                    if case .some(.value(let status)) = multiSeatStatus,
+                       response.data.attributes.multiSeatStatus != status {
+                        throw ASCError.parsing("Subscription PATCH response did not confirm the requested multi-seat status")
+                    }
+                } catch {
+                    throw ASCError.mutationCommittedUnverified(
+                        method: "PATCH",
+                        expectedStatusCode: 200,
+                        actualStatusCode: 200,
+                        cause: error as? ASCError ?? .parsing(error.localizedDescription)
+                    )
+                }
+            }
 
             let subscription = formatSubscription(response.data)
 
@@ -282,6 +337,30 @@ extension SubscriptionsWorker {
             )
         }
         return .value(string)
+    }
+
+    private func nullableSubscriptionMarkets(from arguments: [String: Value]) throws -> ASCNullable<[String]>? {
+        guard let value = arguments["market_settings"] else { return nil }
+        if value.isNull { return .null }
+        guard let values = value.arrayValue else {
+            throw SubscriptionUpdateInputError("market_settings must be an array of market strings or null")
+        }
+        let markets = values.compactMap(\.stringValue)
+        guard markets.count == values.count,
+              Set(markets).count == markets.count,
+              markets.allSatisfy(Self.subscriptionMarketSettings.contains) else {
+            throw SubscriptionUpdateInputError("market_settings must contain unique values from: \(Self.subscriptionMarketSettings.joined(separator: ", "))")
+        }
+        return .value(markets)
+    }
+
+    private func nullableSubscriptionMultiSeatStatus(from arguments: [String: Value]) throws -> ASCNullable<String>? {
+        guard let value = arguments["multi_seat_status"] else { return nil }
+        if value.isNull { return .null }
+        guard let status = value.stringValue, Self.subscriptionMultiSeatStatuses.contains(status) else {
+            throw SubscriptionUpdateInputError("multi_seat_status must be ENABLED, DISABLED, or null")
+        }
+        return .value(status)
     }
 
     private func nullableSubscriptionString(
@@ -1398,7 +1477,9 @@ extension SubscriptionsWorker {
             "state": sub.attributes.state.jsonSafe,
             "subscriptionPeriod": sub.attributes.subscriptionPeriod.jsonSafe,
             "groupLevel": sub.attributes.groupLevel.jsonSafe,
-            "reviewNote": sub.attributes.reviewNote.jsonSafe
+            "reviewNote": sub.attributes.reviewNote.jsonSafe,
+            "marketSettings": sub.attributes.marketSettings.jsonSafe,
+            "multiSeatStatus": sub.attributes.multiSeatStatus.jsonSafe
         ]
     }
 

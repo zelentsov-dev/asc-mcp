@@ -13,13 +13,13 @@ struct BuildUploadsRegistrationTests {
             "export_compliance",
             "review_submissions"
         ]
-        #expect(WorkerManager.validWorkerFilterKeys.count == 35)
+        #expect(WorkerManager.validWorkerFilterKeys.count == 36)
         #expect(requiredKeys.isSubset(of: WorkerManager.validWorkerFilterKeys))
 
         let snapshots = try await TestFactory.collectWorkerToolSnapshots()
-        #expect(snapshots.count == 35)
+        #expect(snapshots.count == 36)
         #expect(Set(snapshots.map(\.key)) == WorkerManager.validWorkerFilterKeys)
-        #expect(snapshots.reduce(0) { $0 + $1.count } == 502)
+        #expect(snapshots.reduce(0) { $0 + $1.count } == 514)
 
         let uploads = try #require(snapshots.first { $0.key == "build_uploads" })
         #expect(uploads.readmeName == "Build Uploads")

@@ -1,6 +1,6 @@
 # AGENTS.md
 
-This file provides guidance to Codex (Codex.ai/code) when working with code in this repository.
+This file is the canon for every coding agent (Codex, Claude Code) working in this repository. `CLAUDE.md` imports it and adds only Claude Code specifics.
 
 ## Language
 Response language: Russian
@@ -8,7 +8,7 @@ Comment language: English
 
 ## Project Overview
 
-MCP (Model Context Protocol) server for App Store Connect API integration, designed for Codex CLI. This server provides tools to manage iOS/macOS apps through App Store Connect.
+MCP (Model Context Protocol) server for App Store Connect API integration, designed for MCP clients such as Claude Code and Codex CLI. This server provides tools to manage iOS/macOS apps through App Store Connect.
 
 ## Build and Run Commands
 
@@ -49,7 +49,7 @@ Each company needs: `keyID`, `issuerID`, `privateKeyPath` (path to `.p8` file).
 
 **WorkerManager** (`Workers/MainWorker/WorkerManager.swift`) — central registry, routes tool calls by prefix.
 
-**Workers** (39 Swift worker classes; 35 `--workers` filter keys; 502 tools):
+**Workers** (40 Swift worker classes; 36 `--workers` filter keys; 514 tools):
 
 | Worker | Prefix | Tools | Domain |
 |--------|--------|-------|--------|
@@ -81,13 +81,14 @@ Each company needs: `keyID`, `issuerID`, `privateKeyPath` (path to `.p8` file).
 | BetaAppWorker | `beta_app_` | 10 | Beta app localizations, review submissions, review details |
 | PreReleaseVersionsWorker | `pre_release_` | 3 | Pre-release versions (list, get, builds) |
 | BetaLicenseAgreementsWorker | `beta_license_` | 3 | Beta license agreements (list, get, update) |
+| AssetsWorker | `assets_` | 11 | Reusable assets, typed preview/apply, placements, review, and private recovery journal |
 | ScreenshotsWorker | `screenshots_` | 19 | Screenshots, previews, sets, verified reorder, full upload, batch upload |
 | CustomProductPagesWorker | `custom_pages_` | 17 | Custom product pages, versions, localizations, search keywords |
 | ProductPageOptimizationWorker | `ppo_` | 15 | A/B test experiments, treatments, localizations |
 | PromotedPurchasesWorker | `promoted_` | 10 | Promoted in-app purchases and verified reorder; legacy image tools return migration guidance |
 | ReviewAttachmentsWorker | `review_attachments_` | 4 | App Store review attachments (upload, get, delete, list) |
 | ReviewSubmissionsWorker | `review_submissions_` | 9 | Generic App Store review submissions and submission items |
-| MetricsWorker | `metrics_` | 9 | Performance/power metrics, diagnostics, TestFlight usage metrics |
+| MetricsWorker | `metrics_` | 10 | Performance/power metrics, diagnostics, TestFlight usage metrics |
 
 **Services**: HTTPClient (actor, GET/POST/PATCH/PUT/DELETE + retry with 429), JWTService (ES256), CompaniesManager
 
@@ -202,6 +203,7 @@ Test infrastructure: `TestFactory` (`Tests/ASCMCPTests/Helpers/TestHelpers.swift
    - Example: "The `builds_list` method returns a list of builds with their statuses and dates. This is useful for selecting a build for TestFlight or submitting to the App Store"
 
 ### Code Documentation Requirements
+This repository is an exception to the owner's global default ("doc comments only for non-obvious contracts of public API"): here every public method carries a doc comment.
 - **MANDATORY**: Comment all public methods with:
   ```swift
   /// Brief description of what the method does

@@ -410,6 +410,7 @@ enum MCPValueSanitizer {
             normalized == "filename" ||
             normalized == "filepath" ||
             normalized == "expectedmd5" ||
+            normalized == "filesha256" ||
             normalized == "entitytag" ||
             normalized == "responseentitytag" ||
             normalized == "fingerprintkey" {
