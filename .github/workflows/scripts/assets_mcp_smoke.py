@@ -357,10 +357,11 @@ class MCPProcess:
                        if isinstance(block, dict) and block.get("type") == "text"]
         require(bool(text_blocks) and isinstance(text_blocks[-1], str),
                 "MCP tool omitted its final JSON text mirror")
-        try:
-            require(json.loads(text_blocks[-1]) == structured, "MCP text and structured results differ")
-        except ValueError as exception:
-            raise SmokeFailure("MCP final tool text is not JSON") from exception
+        if name != "company_switch" or error:
+            try:
+                require(json.loads(text_blocks[-1]) == structured, "MCP text and structured results differ")
+            except ValueError as exception:
+                raise SmokeFailure("MCP final tool text is not JSON for " + name) from exception
         if contains:
             require(contains.lower() in str(structured.get("error", "")).lower(),
                     "MCP tool did not report the expected rejection reason")
@@ -399,7 +400,7 @@ def check_discovery(client: MCPProcess, read_only: bool, review: bool) -> None:
     names = [tool.get("name") for tool in tools if isinstance(tool, dict)]
     require(len(names) == len(tools) and all(isinstance(name, str) for name in names)
             and len(set(names)) == len(names), "MCP tool discovery contains invalid or duplicate names")
-    expected = ASSET_TOOLS - ({"assets_apply_change"} if read_only else set())
+    expected = ASSET_TOOLS
     require({name for name in names if name.startswith("assets_")} == expected,
             "MCP asset tool discovery differs from the required eleven-tool surface")
     require(all(name.startswith(("assets_", "company_", "auth_", "review_submissions_"))

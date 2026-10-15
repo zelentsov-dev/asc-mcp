@@ -29,7 +29,7 @@ extension AssetsWorker {
             throw AssetLibraryError("Asset already participates in active parent review")
         }
         if kind == .video {
-            guard asset.attributes?["previewFrameImage"]?.objectValue?["state"]?.stringValue == "COMPLETE" else { throw AssetLibraryError("Video poster frame must finish processing before review") }
+            guard asset.posterFrameState == "COMPLETE" else { throw AssetLibraryError("Video poster frame must finish processing before review") }
         }
         guard let specID = asset.attributes?["specId"]?.stringValue, let category = asset.attributes?["category"]?.stringValue else { throw AssetLibraryError("Asset review requires a processed specification and category") }
         let groups = (catalog.attributes?["placementTypes"]?.arrayValue ?? []).flatMap { value -> [String] in

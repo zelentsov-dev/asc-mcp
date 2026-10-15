@@ -16,6 +16,9 @@ struct AssetLibraryResource: Codable, Sendable {
     var links: JSONValue?
 
     var state: String? { attributes?["state"]?.stringValue }
+    var posterFrameState: String? {
+        attributes?["previewFrameImage"]?.objectValue?["state"]?.objectValue?["state"]?.stringValue
+    }
 
     func related(_ name: String) -> AssetLibraryResourceID? {
         guard let data = relationships?[name]?.objectValue?["data"]?.objectValue,

@@ -128,8 +128,8 @@ extension AssetsWorker {
             guard mutationMatches(updated, change: change) else { throw AssetLibraryError("Apple accepted the update but read-back did not confirm its effect") }
             operation.resourceIDs["asset_id"] = id
             try await complete(change.action.rawValue, operation: &operation)
-            if change.action == .updateVideoPoster, updated.attributes?["previewFrameImage"]?.objectValue?["state"]?.stringValue != "COMPLETE" {
-                guard updated.attributes?["previewFrameImage"]?.objectValue?["state"]?.stringValue != "FAILED" else { throw AssetLibraryError("Poster timestamp changed but its frame processing failed") }
+            if change.action == .updateVideoPoster, updated.posterFrameState != "COMPLETE" {
+                guard updated.posterFrameState != "FAILED" else { throw AssetLibraryError("Poster timestamp changed but its frame processing failed") }
                 operation.status = "processing_pending"
                 operation.message = "Poster timestamp was updated; frame processing must be inspected separately."
             }
@@ -244,8 +244,8 @@ extension AssetsWorker {
         if resource.state == "FAILED" { throw AssetLibraryError("Apple asset processing failed; inspect stateDetails before preparing a replacement") }
         if Self.placeableStates.contains(resource.state ?? "") {
             guard let spec = resource.attributes?["specId"]?.stringValue, change.expectedSpecIDs?.contains(spec) == true else { throw AssetLibraryError("Apple's assigned specId does not match the prepared file requirements") }
-            if change.kind == .video, resource.attributes?["previewFrameImage"]?.objectValue?["state"]?.stringValue != "COMPLETE" {
-                guard resource.attributes?["previewFrameImage"]?.objectValue?["state"]?.stringValue != "FAILED" else {
+            if change.kind == .video, resource.posterFrameState != "COMPLETE" {
+                guard resource.posterFrameState != "FAILED" else {
                     throw AssetLibraryError("Video was processed but its poster frame failed; inspect the asset before preparing a poster change")
                 }
                 operation.status = "processing_pending"

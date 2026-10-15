@@ -5,6 +5,31 @@ import Testing
 
 @Suite("Asset upload commit and poster outcomes")
 struct AssetUploadExecutionTests {
+    @Test("Video poster reads the nested Apple state and preserves unknown values", arguments: ["PROCESSING", "FAILED", "COMPLETE", "FUTURE_STATE"])
+    func nestedPosterState(_ state: String) throws {
+        let asset = try JSONDecoder().decode(AssetLibraryDocument.self, from: Data(body(.video, state: "PREPARE_FOR_SUBMISSION", poster: state).utf8)).data
+        #expect(asset.posterFrameState == state)
+        for key in ["errors", "warnings"] {
+            let value = try #require(asset.attributes?["previewFrameImage"]?.objectValue?["state"]?.objectValue?[key])
+            guard case .null = value else { Issue.record("Apple's nullable poster details were not preserved"); return }
+        }
+    }
+
+    @Test("Missing, null, malformed and unknown poster data never reports processing success", arguments: [
+        "null", "{}", #"{"state":null}"#, #"{"state":"COMPLETE"}"#, #"{"state":{"state":"FUTURE_STATE"}}"#
+    ])
+    func unconfirmedPoster(_ poster: String) async throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let worker = try await makeWorker(api: TestHTTPTransport(responses: []), upload: TestHTTPTransport(responses: []), root: directory)
+        var value = try await operation(worker, kind: .video, sha: "digest")
+        var asset = try JSONDecoder().decode(AssetLibraryDocument.self, from: Data(body(.video, state: "PREPARE_FOR_SUBMISSION").utf8)).data
+        asset.attributes?["previewFrameImage"] = try JSONDecoder().decode(JSONValue.self, from: Data(poster.utf8))
+        try worker.evaluateProcessing(asset, change: value.change, operation: &value)
+        #expect(value.status == "processing_pending")
+        #expect(asset.posterFrameState != "COMPLETE")
+    }
+
     @Test("Reservation transfer commit use protected bytes and only uploaded=true", arguments: [AssetLibraryKind.image, .video])
     func upload(_ kind: AssetLibraryKind) async throws {
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
@@ -100,7 +125,7 @@ struct AssetUploadExecutionTests {
     private func body(_ kind: AssetLibraryKind, state: String, upload: Bool = false, poster: String? = nil) -> String {
         var attributes: [String: Any] = ["fileName": "fixture.bin", "fileSize": 4, "category": "APP_SCREENSHOTS_AND_PREVIEWS", "referenceName": "fixture", "state": state, "specId": "spec", "previewFrameTimeCode": "00:00:01:00"]
         if upload { attributes["uploadOperations"] = [["method": "PUT", "url": "https://upload.example.test/part?token=SIGNED_TRANSFER_SECRET", "offset": 0, "length": 4]] }
-        if let poster { attributes["previewFrameImage"] = ["state": poster] }
+        if let poster { attributes["previewFrameImage"] = ["state": ["state": poster, "errors": NSNull(), "warnings": NSNull()]] }
         let json: [String: Any] = ["data": ["type": kind.resourceType, "id": "asset", "attributes": attributes]]
         return String(decoding: try! JSONSerialization.data(withJSONObject: json), as: UTF8.self)
     }

@@ -86,7 +86,7 @@ extension AssetsWorker {
             let asset = try await ownedAsset(appID: change.appID, kind: kind, id: id)
             guard mutationMatches(asset, change: change) else { throw AssetLibraryError("Requested asset update is not visible; no mutation was replayed") }
             if change.action == .updateVideoPoster {
-                let posterState = asset.attributes?["previewFrameImage"]?.objectValue?["state"]?.stringValue
+                let posterState = asset.posterFrameState
                 guard posterState != "FAILED" else { throw AssetLibraryError("Poster-frame processing failed") }
                 operation.status = posterState == "COMPLETE" ? "succeeded" : "processing_pending"
             } else {

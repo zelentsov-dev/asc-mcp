@@ -187,7 +187,7 @@ extension AssetsWorker {
                 change.warnings.append("Changing the poster affects every placement of this video; frame processing is asynchronous.")
             case .createPlacement, .replacePlacement:
                 if kind == .video {
-                    guard asset.attributes?["previewFrameImage"]?.objectValue?["state"]?.stringValue == "COMPLETE" else { throw AssetLibraryError("Video poster frame must finish processing before placement") }
+                    guard asset.posterFrameState == "COMPLETE" else { throw AssetLibraryError("Video poster frame must finish processing before placement") }
                 }
                 guard Self.placeableStates.contains(state), let specID = asset.attributes?["specId"]?.stringValue,
                       let category = asset.attributes?["category"]?.stringValue else { throw AssetLibraryError("Asset must be processed with a known specification before placement") }

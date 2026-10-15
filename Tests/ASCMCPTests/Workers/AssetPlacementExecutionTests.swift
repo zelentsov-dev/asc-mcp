@@ -5,6 +5,34 @@ import Testing
 
 @Suite("Asset placement execution and shared review previews")
 struct AssetPlacementExecutionTests {
+    @Test("Nested video poster state gates placement and review preparation", arguments: ["COMPLETE", "PROCESSING", "FAILED", "FUTURE_STATE"], [false, true])
+    func videoPosterPreparation(_ state: String, review: Bool) async throws {
+        let inventory = review ? reviewInventory() : placementInventory(replacing: false)
+        let responses = inventory.map { item in
+            let body = String(decoding: item.data, as: UTF8.self)
+                .replacingOccurrences(of: "appAssetLibraryImages", with: "appAssetLibraryVideos")
+                .replacingOccurrences(of: #""specId":"image-spec""#, with: #""previewFrameImage":{"state":{"state":"\#(state)","errors":null,"warnings":null}},"specId":"image-spec""#)
+            return response(body, status: item.statusCode)
+        }
+        let transport = TestHTTPTransport(responses: responses)
+        let (worker, _, root) = try await workers(transport)
+        defer { try? FileManager.default.removeItem(at: root) }
+        var arguments = createArguments
+        if review {
+            arguments = ["app_id": .string("app"), "action": .string("add_review_item"), "asset_id": .string("replacement"), "submission_id": .string("submission")]
+        }
+        arguments["asset_kind"] = .string("video")
+        let result = try await worker.handleTool(.init(name: "assets_prepare_change", arguments: arguments))
+        if state == "COMPLETE" {
+            #expect(result.isError != true)
+            #expect(result.structuredContent?.objectValue?["preview_id"]?.stringValue != nil)
+        } else {
+            #expect(result.isError == true)
+            #expect(result.structuredContent?.objectValue?["error"]?.stringValue?.contains("poster frame must finish") == true)
+        }
+        #expect(await transport.recordedRequests().allSatisfy { $0.httpMethod == "GET" })
+    }
+
     @Test("Placement creation succeeds only after resource and localization readback")
     func createPlacement() async throws {
         let created = placement("new", asset: "replacement")
