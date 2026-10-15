@@ -245,7 +245,7 @@ struct SubscriptionsV3WorkerTests {
     func adjustedEqualizationsDefaultPlanTypes() async throws {
         let transport = TestHTTPTransport(responses: [
             .init(statusCode: 200, body: #"{"data":[]}"#),
-            .init(statusCode: 200, body: #"{"data":[]}"#)
+            .init(statusCode: 200, body: #"{"data":[],"links":{"self":"https://api.example.test/v1/subscriptionPricePoints/pp-1/adjustedEqualizations"}}"#)
         ])
         let worker = try await makeWorker(transport: transport)
 
