@@ -162,6 +162,7 @@ struct CustomProductPagesWorkerContractTests {
         })
         let expectedClassifications: Set<String> = [
             "custom_pages_create|body|/data/relationships/appCustomProductPageVersions|internalControl",
+            "custom_pages_create_localization|body|/data/relationships/placements|intentionallyOmitted",
             "custom_pages_create_version|body|/data/relationships/appCustomProductPageLocalizations|intentionallyOmitted",
             "custom_pages_get|query|include|intentionallyOmitted",
             "custom_pages_get|query|limit[appCustomProductPageVersions]|intentionallyOmitted",
@@ -169,6 +170,7 @@ struct CustomProductPagesWorkerContractTests {
             "custom_pages_get_localization|query|limit[appPreviewSets]|intentionallyOmitted",
             "custom_pages_get_localization|query|limit[appScreenshotSets]|intentionallyOmitted",
             "custom_pages_get_localization|query|limit[searchKeywords]|intentionallyOmitted",
+            "custom_pages_get_localization|query|limit[placements]|intentionallyOmitted",
             "custom_pages_get_version|query|include|intentionallyOmitted",
             "custom_pages_get_version|query|limit[appCustomProductPageLocalizations]|intentionallyOmitted",
             "custom_pages_list|query|include|intentionallyOmitted",
@@ -177,12 +179,13 @@ struct CustomProductPagesWorkerContractTests {
             "custom_pages_list_localizations|query|limit[appPreviewSets]|intentionallyOmitted",
             "custom_pages_list_localizations|query|limit[appScreenshotSets]|intentionallyOmitted",
             "custom_pages_list_localizations|query|limit[searchKeywords]|intentionallyOmitted",
+            "custom_pages_list_localizations|query|limit[placements]|intentionallyOmitted",
             "custom_pages_list_versions|query|include|intentionallyOmitted",
             "custom_pages_list_versions|query|limit[appCustomProductPageLocalizations]|intentionallyOmitted"
         ]
         #expect(classifications == expectedClassifications)
         #expect(mappings.flatMap(\.operations).flatMap { $0.optionalParameterClassifications ?? [] }.allSatisfy {
-            $0.reviewAtSpec == "4.4.1" && !$0.reason.isEmpty
+            $0.reviewAtSpec == "4.5.1" && !$0.reason.isEmpty
         })
 
         let expectedBindings: Set<String> = [

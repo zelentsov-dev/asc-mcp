@@ -1490,7 +1490,7 @@ extension AppLifecycleWorker {
             if let value = try nullableString(
                 "korea_age_rating_override",
                 from: arguments,
-                allowedValues: ["NONE", "FIFTEEN_PLUS", "NINETEEN_PLUS"]
+                allowedValues: ["NONE", "ALL", "TWELVE_PLUS", "FIFTEEN_PLUS", "NINETEEN_PLUS"]
             ) {
                 attributes["koreaAgeRatingOverride"] = value
             }

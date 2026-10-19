@@ -852,16 +852,17 @@ struct WorkerToolDefinitionsTests {
         #expect(names.contains("promoted_get_image_for_purchase"))
     }
 
-    // MARK: - MetricsWorker (9 tools)
+    // MARK: - MetricsWorker (10 tools)
 
-    @Test("MetricsWorker returns 9 tools with correct names")
+    @Test("MetricsWorker returns 10 tools with correct names")
     func metricsWorkerTools() async throws {
         let client = try await TestFactory.makeHTTPClient()
         let worker = MetricsWorker(httpClient: client)
         let tools = await worker.getTools()
-        #expect(tools.count == 9)
+        #expect(tools.count == 10)
         let names = Set(tools.map(\.name))
         #expect(names.contains("metrics_app_perf"))
+        #expect(names.contains("metrics_performance_overview"))
         #expect(names.contains("metrics_build_perf"))
         #expect(names.contains("metrics_build_diagnostics"))
         #expect(names.contains("metrics_get_diagnostic_logs"))
@@ -920,8 +921,10 @@ struct WorkerToolDefinitionsTests {
     @Test("All tool names across all workers are unique")
     func allToolNamesUnique() async throws {
         let client = try await TestFactory.makeHTTPClient()
+        let assetsWorker = AssetsWorker(httpClient: client, companiesManager: try TestFactory.makeCompaniesManager(), uploadService: UploadService())
 
         var allNames: [String] = []
+        allNames += (await assetsWorker.getTools()).map(\.name)
         allNames += (await AppsWorker(client: client).getTools()).map(\.name)
         allNames += (await AccessibilityWorker(httpClient: client).getTools()).map(\.name)
         allNames += (await WebhooksWorker(httpClient: client).getTools()).map(\.name)
@@ -968,8 +971,10 @@ struct WorkerToolDefinitionsTests {
     @Test("Every tool has a non-empty description")
     func allToolsHaveDescriptions() async throws {
         let client = try await TestFactory.makeHTTPClient()
+        let assetsWorker = AssetsWorker(httpClient: client, companiesManager: try TestFactory.makeCompaniesManager(), uploadService: UploadService())
         let allTools: [Tool] = await {
             var tools: [Tool] = []
+            tools += await assetsWorker.getTools()
             tools += await AppsWorker(client: client).getTools()
             tools += await AccessibilityWorker(httpClient: client).getTools()
             tools += await WebhooksWorker(httpClient: client).getTools()
@@ -1018,8 +1023,10 @@ struct WorkerToolDefinitionsTests {
     @Test("No tool input schema uses top-level oneOf/anyOf/allOf (Anthropic API constraint)")
     func noTopLevelSchemaComposition() async throws {
         let client = try await TestFactory.makeHTTPClient()
+        let assetsWorker = AssetsWorker(httpClient: client, companiesManager: try TestFactory.makeCompaniesManager(), uploadService: UploadService())
         let rawTools: [Tool] = await {
             var tools: [Tool] = []
+            tools += await assetsWorker.getTools()
             tools += await AppsWorker(client: client).getTools()
             tools += await AccessibilityWorker(httpClient: client).getTools()
             tools += await WebhooksWorker(httpClient: client).getTools()

@@ -43,6 +43,7 @@ enum ASCToolCatalogFactory {
         "app_events": "App Events",
         "analytics": "Analytics",
         "screenshots": "Screenshots & Previews",
+        "assets": "App Asset Library",
         "custom_pages": "Custom Product Pages",
         "ppo": "Product Page Optimization (A/B Tests)",
         "promoted": "Promoted Purchases",

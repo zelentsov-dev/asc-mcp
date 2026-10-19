@@ -262,6 +262,7 @@ private struct WorkerGraph: Sendable {
     let preReleaseVersionsWorker: PreReleaseVersionsWorker
     let betaLicenseAgreementsWorker: BetaLicenseAgreementsWorker
     let screenshotsWorker: ScreenshotsWorker
+    let assetsWorker: AssetsWorker
     let customProductPagesWorker: CustomProductPagesWorker
     let productPageOptimizationWorker: ProductPageOptimizationWorker
     let promotedPurchasesWorker: PromotedPurchasesWorker
@@ -297,12 +298,14 @@ private struct WorkerGraph: Sendable {
         self.preReleaseVersionsWorker = PreReleaseVersionsWorker(httpClient: httpClient)
         self.betaLicenseAgreementsWorker = BetaLicenseAgreementsWorker(httpClient: httpClient)
         self.screenshotsWorker = ScreenshotsWorker(httpClient: httpClient, uploadService: uploadService)
+        let assetsWorker = AssetsWorker(httpClient: httpClient, companiesManager: companiesManager, uploadService: uploadService)
+        self.assetsWorker = assetsWorker
         self.customProductPagesWorker = CustomProductPagesWorker(httpClient: httpClient)
         self.productPageOptimizationWorker = ProductPageOptimizationWorker(httpClient: httpClient)
         self.promotedPurchasesWorker = PromotedPurchasesWorker(httpClient: httpClient, uploadService: uploadService)
         self.metricsWorker = MetricsWorker(httpClient: httpClient)
         self.reviewAttachmentsWorker = ReviewAttachmentsWorker(httpClient: httpClient, uploadService: uploadService)
-        self.reviewSubmissionsWorker = ReviewSubmissionsWorker(httpClient: httpClient)
+        self.reviewSubmissionsWorker = ReviewSubmissionsWorker(httpClient: httpClient, assetsWorker: assetsWorker)
     }
 }
 
@@ -318,7 +321,7 @@ public actor WorkerManager {
         "builds", "build_uploads", "build_processing", "export_compliance", "build_beta", "versions", "reviews",
         "beta_groups", "beta_feedback", "beta_testers", "iap", "provisioning",
         "app_info", "pricing", "users", "app_events", "analytics", "subscriptions",
-        "sandbox", "beta_app", "pre_release", "beta_license", "screenshots",
+        "sandbox", "beta_app", "pre_release", "beta_license", "screenshots", "assets",
         "custom_pages", "ppo", "promoted", "metrics", "review_attachments",
         "review_submissions"
     ]
@@ -488,6 +491,7 @@ public actor WorkerManager {
             WorkerDescriptor(key: "pre_release", enabledKeys: ["pre_release"], prefixes: ["pre_release_"], getTools: { await graph.preReleaseVersionsWorker.getTools() }, handle: { try await graph.preReleaseVersionsWorker.handleTool($0) }),
             WorkerDescriptor(key: "beta_license", enabledKeys: ["beta_license"], prefixes: ["beta_license_"], getTools: { await graph.betaLicenseAgreementsWorker.getTools() }, handle: { try await graph.betaLicenseAgreementsWorker.handleTool($0) }),
             WorkerDescriptor(key: "screenshots", enabledKeys: ["screenshots"], prefixes: ["screenshots_"], getTools: { await graph.screenshotsWorker.getTools() }, handle: { try await graph.screenshotsWorker.handleTool($0) }),
+            WorkerDescriptor(key: "assets", enabledKeys: ["assets"], prefixes: ["assets_"], getTools: { await graph.assetsWorker.getTools() }, handle: { try await graph.assetsWorker.handleTool($0) }),
             WorkerDescriptor(key: "custom_pages", enabledKeys: ["custom_pages"], prefixes: ["custom_pages_"], getTools: { await graph.customProductPagesWorker.getTools() }, handle: { try await graph.customProductPagesWorker.handleTool($0) }),
             WorkerDescriptor(key: "ppo", enabledKeys: ["ppo"], prefixes: ["ppo_"], getTools: { await graph.productPageOptimizationWorker.getTools() }, handle: { try await graph.productPageOptimizationWorker.handleTool($0) }),
             WorkerDescriptor(key: "promoted", enabledKeys: ["promoted"], prefixes: ["promoted_"], getTools: { await graph.promotedPurchasesWorker.getTools() }, handle: { try await graph.promotedPurchasesWorker.handleTool($0) }),
@@ -541,6 +545,12 @@ public actor WorkerManager {
             includeRuntimeMetadata: false,
             convertErrorsToResults: false
         )
+    }
+
+    /// Returns the current account's shared Asset Library coordinator for internal integration.
+    /// - Returns: The same instance injected into the current review-submissions worker.
+    func getAssetsWorker() -> AssetsWorker {
+        runtime.graph.assetsWorker
     }
 
     private func executeTool(

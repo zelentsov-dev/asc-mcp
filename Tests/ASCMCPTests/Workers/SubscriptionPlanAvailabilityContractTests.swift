@@ -57,6 +57,8 @@ struct SubscriptionPlanAvailabilityContractTests {
         #expect(try planObject(adjusted["limit"])["maximum"] == .int(8000))
         #expect(try planObject(adjusted["limit"])["default"] == .int(25))
         #expect(try planObject(adjusted["next_url"])["format"] == .string("uri-reference"))
+        let adjustedSchema = try planSchema(try #require(tools["subscriptions_list_price_point_adjusted_equalizations"]))
+        #expect(Set(try planArray(adjustedSchema["required"]).compactMap(\.stringValue)) == ["price_point_id"])
         for field in ["territory_ids", "subscription_ids", "upfront_price_point_ids", "plan_types"] {
             #expect(try planArray(try planObject(adjusted[field])["oneOf"]).count == 2)
         }
@@ -423,6 +425,60 @@ struct SubscriptionPlanAvailabilityContractTests {
         #expect(pricePoint["proceeds_year2"] == .string("9.25"))
     }
 
+    @Test("availableTerritories linkage accepts resource count exceeding relationship paging.limit")
+    func relationshipLinkageExceedsRelationshipPagingLimit() async throws {
+        let body = #"{"data":[{"type":"subscriptionPlanAvailabilities","id":"availability-1","attributes":{"availableInNewTerritories":true,"planType":"MONTHLY"},"relationships":{"availableTerritories":{"data":[{"type":"territories","id":"USA"},{"type":"territories","id":"GBR"}],"meta":{"paging":{"total":175,"limit":1}}}}}],"included":[{"type":"territories","id":"USA","attributes":{"currency":"USD"}}],"links":{"self":"https://api.example.test/v1/subscriptions/sub-1/planAvailabilities?limit=25"},"meta":{"paging":{"total":1,"limit":25}}}"#
+        let transport = TestHTTPTransport(responses: [.init(statusCode: 200, body: body)])
+        let worker = try await planWorker(transport)
+        let result = try await worker.handleTool(.init(
+            name: "subscriptions_list_plan_availabilities",
+            arguments: ["subscription_id": .string("sub-1")]
+        ))
+
+        #expect(result.isError != true)
+        let plans = try planObject(result.structuredContent)
+        let firstPlan = try planObject(try planArray(plans["plan_availabilities"]).first)
+        #expect(firstPlan["available_territories_count"] == .int(2))
+        #expect(firstPlan["available_territories_included_count"] == .int(1))
+        #expect(firstPlan["available_territories_limit"] == .int(1))
+        #expect(firstPlan["available_territories_total"] == .int(175))
+        #expect(firstPlan["available_territories_truncated"] == .bool(true))
+    }
+
+    @Test("legacy adjusted equalizations calls default MONTHLY plan type and preserve continuation scope")
+    func adjustedEqualizationsLegacyDefault() async throws {
+        let query = [
+            "include": "territory",
+            "fields[subscriptionPricePoints]": "customerPrice,proceeds,proceedsYear2,territory,adjustedEqualizations",
+            "fields[territories]": "currency", "filter[planType]": "MONTHLY", "limit": "25"
+        ]
+        let next = planPaginationURL(path: "/v1/subscriptionPricePoints/price-point-1/adjustedEqualizations",
+                                     query: query.merging(["cursor": "next"]) { _, new in new })
+        let transport = TestHTTPTransport(responses: [
+            .init(statusCode: 200, body: adjustedEqualizationsResponseBody(nextURL: next)),
+            .init(statusCode: 200, body: adjustedEqualizationsResponseBody(nextURL: next))
+        ])
+        let worker = try await planWorker(transport)
+        let tool = try #require(await worker.getTools().first { $0.name == "subscriptions_list_price_point_adjusted_equalizations" })
+        #expect(try planSchema(tool)["required"] == .array([.string("price_point_id")]))
+        let first = try await worker.handleTool(.init(name: tool.name, arguments: ["price_point_id": .string("price-point-1")]))
+        #expect(first.isError != true)
+        let second = try await worker.handleTool(.init(name: tool.name, arguments: [
+            "price_point_id": .string("price-point-1"), "next_url": .string(next)
+        ]))
+        #expect(second.isError != true)
+        let requests = await transport.recordedRequests()
+        #expect(requests.count == 2)
+        #expect(requests.allSatisfy { planQuery($0)["filter[planType]"] == "MONTHLY" })
+        let narrowed = planPaginationURL(path: "/v1/subscriptionPricePoints/price-point-1/adjustedEqualizations",
+                                         query: query.merging(["filter[planType]": "UPFRONT", "cursor": "next"]) { _, new in new })
+        let rejected = try await worker.handleTool(.init(name: tool.name, arguments: [
+            "price_point_id": .string("price-point-1"), "next_url": .string(narrowed)
+        ]))
+        #expect(rejected.isError == true)
+        #expect(await transport.requestCount() == 2)
+    }
+
     @Test("invalid enums limits identifiers CSV values and no-op updates fail before network access")
     func rejectsInvalidInputsBeforeNetwork() async throws {
         let cases: [(String, [String: Value])] = [
@@ -434,10 +490,11 @@ struct SubscriptionPlanAvailabilityContractTests {
             ("subscriptions_update_plan_availability", ["plan_availability_id": .string("availability-1"), "available_in_new_territories": .string("true")]),
             ("subscriptions_list_plan_availabilities", ["subscription_id": .string("sub-1"), "limit": .int(0)]),
             ("subscriptions_list_plan_availability_territories", ["plan_availability_id": .string("availability-1"), "limit": .int(201)]),
-            ("subscriptions_list_price_point_adjusted_equalizations", ["price_point_id": .string("price-point-1"), "limit": .int(8001)]),
-            ("subscriptions_list_price_point_adjusted_equalizations", ["price_point_id": .string("price-point-1"), "territory_ids": .array([.string("USA"), .string("USA")])]),
-            ("subscriptions_list_price_point_adjusted_equalizations", ["price_point_id": .string("price-point-1"), "subscription_ids": .array([.string("sub-1,sub-2")])]),
+            ("subscriptions_list_price_point_adjusted_equalizations", ["price_point_id": .string("price-point-1"), "plan_types": .string("MONTHLY"), "limit": .int(8001)]),
+            ("subscriptions_list_price_point_adjusted_equalizations", ["price_point_id": .string("price-point-1"), "plan_types": .string("MONTHLY"), "territory_ids": .array([.string("USA"), .string("USA")])]),
+            ("subscriptions_list_price_point_adjusted_equalizations", ["price_point_id": .string("price-point-1"), "plan_types": .string("MONTHLY"), "subscription_ids": .array([.string("sub-1,sub-2")])]),
             ("subscriptions_list_price_point_adjusted_equalizations", ["price_point_id": .string("price-point-1"), "plan_types": .array([.string("ANNUAL")])]),
+            ("subscriptions_list_price_point_adjusted_equalizations", ["price_point_id": .string("price-point-1"), "plan_types": .array([])]),
             ("subscriptions_list_plan_availabilities", ["subscription_id": .string("sub-1"), "unexpected": .bool(true)])
         ]
 

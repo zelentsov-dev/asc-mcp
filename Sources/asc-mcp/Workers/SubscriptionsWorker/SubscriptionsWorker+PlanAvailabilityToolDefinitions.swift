@@ -104,7 +104,7 @@ extension SubscriptionsWorker {
                     "subscription_ids": subscriptionPlanIdentifierListSchema("Filter by one or more subscription IDs"),
                     "upfront_price_point_ids": subscriptionPlanIdentifierListSchema("Filter by one or more upfront price point IDs"),
                     "plan_types": subscriptionEnumListSchema(
-                        "Filter by one or more Apple subscription plan types",
+                        "Filter by one or more Apple subscription plan types; omission defaults to MONTHLY",
                         values: ASCSubscriptionPlanType.allCases.map(\.rawValue)
                     ),
                     "limit": subscriptionPlanLimitSchema(maximum: 8000),

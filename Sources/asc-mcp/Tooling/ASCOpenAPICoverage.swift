@@ -140,6 +140,7 @@ enum ASCOpenAPICoverageRules {
             "/v1/appPrice",
             "/v1/appPreview",
             "/v1/appScreenshot",
+            "/v1/appAssetLibr",
             "/v1/appStoreReview",
             "/v1/appStoreVersion",
             "/v1/appTags",

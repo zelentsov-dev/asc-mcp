@@ -4,6 +4,7 @@ import MCP
 /// Manages App Store review submissions and their heterogeneous review items.
 public final class ReviewSubmissionsWorker: Sendable {
     let httpClient: HTTPClient
+    let assetsWorker: AssetsWorker?
     private static let allowedArguments: [String: Set<String>] = [
         "review_submissions_list": [
             "app_id", "states", "platforms", "include", "item_limit", "limit", "next_url"
@@ -20,7 +21,10 @@ public final class ReviewSubmissionsWorker: Sendable {
             "background_asset_version_id",
             "in_app_purchase_version_id",
             "subscription_version_id",
-            "subscription_group_version_id"
+            "subscription_group_version_id",
+            "app_asset_library_image_id",
+            "app_asset_library_video_id",
+            "preview_id"
         ],
         "review_submissions_update_item": ["submission_id", "item_id", "resolved", "removed"],
         "review_submissions_remove_item": ["submission_id", "item_id", "confirm_item_id"],
@@ -28,8 +32,13 @@ public final class ReviewSubmissionsWorker: Sendable {
         "review_submissions_cancel": ["submission_id"]
     ]
 
-    public init(httpClient: HTTPClient) {
+    /// Creates a review worker with an optional shared Asset Library mutation coordinator.
+    /// - Parameters:
+    ///   - httpClient: Account-scoped App Store Connect client.
+    ///   - assetsWorker: Coordinator that validates and consumes asset review previews.
+    public init(httpClient: HTTPClient, assetsWorker: AssetsWorker? = nil) {
         self.httpClient = httpClient
+        self.assetsWorker = assetsWorker
     }
 
     /// Returns the review submission tools exposed by this worker.

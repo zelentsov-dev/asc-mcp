@@ -1,0 +1,6 @@
+{
+  "file": "asset-inspection-video.mp4",
+  "sha256": "324981ed5fe76a7dd4677c3b7f5572bc4cbdca67fd8a8598211a04399973a91e",
+  "source": "Generated locally with AVAssetWriter from 30 synthetic black 32x32 pixel buffers, H.264 in MP4, timestamps frame/30, one-second session, no audio, no external media.",
+  "purpose": "Complete content decoding and duration/FPS/audio requirement tests; not an Apple-accepted production asset."
+}

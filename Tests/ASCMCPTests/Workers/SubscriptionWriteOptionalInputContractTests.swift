@@ -5,7 +5,7 @@ import Testing
 
 @Suite("Subscription Write Optional Input Contracts")
 struct SubscriptionWriteOptionalInputContractTests {
-    @Test("write schemas expose nullable Apple 4.4.1 inputs")
+    @Test("write schemas expose nullable Apple 4.5.1 inputs")
     func schemasExposeNullableInputs() async throws {
         let worker = try await subscriptionOptionalWorker(TestHTTPTransport(responses: []))
         let tools = await worker.getTools()
@@ -534,7 +534,7 @@ struct SubscriptionWriteOptionalInputContractTests {
                     }
                     omittedNames.insert(classification.appleName)
                     omittedReviewsAreCurrent = omittedReviewsAreCurrent
-                        && classification.reviewAtSpec == "4.4.1"
+                        && classification.reviewAtSpec == "4.5.1"
                         && !classification.reason.isEmpty
                 }
             }

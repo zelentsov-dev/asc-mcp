@@ -9,7 +9,7 @@ struct ToolMetadataPolicyTests {
     func allToolsReceiveAnnotationsAndMeta() async throws {
         let tools = try await TestFactory.collectAllWorkerTools().map(ToolMetadataPolicy.apply)
 
-        #expect(tools.count == 502)
+        #expect(tools.count == 514)
         for tool in tools {
             #expect(tool.annotations.isEmpty == false)
             #expect(tool.annotations.openWorldHint != nil)
@@ -30,8 +30,8 @@ struct ToolMetadataPolicyTests {
         let catalog = try await TestFactory.collectAllWorkerTools()
         let tools = Dictionary(uniqueKeysWithValues: catalog.map { ($0.name, ToolMetadataPolicy.apply(to: $0)) })
 
-        #expect(manifest.tools.count == 502)
-        #expect(tools.count == 502)
+        #expect(manifest.tools.count == 514)
+        #expect(tools.count == 514)
         for rawTool in catalog {
             let effectiveReadOnly = ToolMetadataPolicy.apply(to: rawTool).annotations.readOnlyHint
             #expect(

@@ -115,14 +115,14 @@ extension ReviewSubmissionsWorker {
     }
 
     func addItemTool() -> Tool {
-        Tool(
+        return Tool(
             name: "review_submissions_add_item",
-            description: "Add exactly one supported typed resource version to an App Store review submission; Game Center content is outside this worker",
+            description: "Add exactly one supported typed resource to an App Store review submission. Existing resource-version calls are unchanged. Asset Library images/videos require preview_id from assets_prepare_change for the same submission and asset; the shared one-time preview is consumed during execution. Game Center content is outside this worker.",
             inputSchema: .object([
                 "type": .string("object"),
                 "additionalProperties": .bool(false),
                 "minProperties": .int(2),
-                "maxProperties": .int(2),
+                "maxProperties": .int(3),
                 "properties": .object([
                     "submission_id": idSchema("Review submission ID"),
                     "app_store_version_id": idSchema("App Store version ID"),
@@ -132,7 +132,10 @@ extension ReviewSubmissionsWorker {
                     "background_asset_version_id": idSchema("Background asset version ID"),
                     "in_app_purchase_version_id": idSchema("In-app purchase version ID"),
                     "subscription_version_id": idSchema("Subscription version ID"),
-                    "subscription_group_version_id": idSchema("Subscription group version ID")
+                    "subscription_group_version_id": idSchema("Subscription group version ID"),
+                    "app_asset_library_image_id": idSchema("Asset Library image ID bound to the preview"),
+                    "app_asset_library_video_id": idSchema("Asset Library video ID bound to the preview"),
+                    "preview_id": idSchema("One-time preview from assets_prepare_change for adding this asset to this submission")
                 ]),
                 "required": .array([.string("submission_id")])
             ])

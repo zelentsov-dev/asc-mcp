@@ -1,0 +1,720 @@
+{
+  "serverVersion": "4.1.6",
+  "sourceCommit": "4c26a15e24b9f5deeec686c9419140102467b500",
+  "workerFilterKeys": [
+    "accessibility",
+    "analytics",
+    "app_events",
+    "app_info",
+    "apps",
+    "auth",
+    "beta_app",
+    "beta_feedback",
+    "beta_groups",
+    "beta_license",
+    "beta_testers",
+    "build_beta",
+    "build_processing",
+    "build_uploads",
+    "builds",
+    "company",
+    "custom_pages",
+    "export_compliance",
+    "iap",
+    "metrics",
+    "ppo",
+    "pre_release",
+    "pricing",
+    "promoted",
+    "provisioning",
+    "review_attachments",
+    "review_submissions",
+    "reviews",
+    "sandbox",
+    "screenshots",
+    "subscriptions",
+    "users",
+    "versions",
+    "webhooks",
+    "xcode_cloud"
+  ],
+  "workers": [
+    {
+      "key": "accessibility",
+      "tools": [
+        "accessibility_create",
+        "accessibility_delete",
+        "accessibility_get",
+        "accessibility_list",
+        "accessibility_list_relationships",
+        "accessibility_update"
+      ]
+    },
+    {
+      "key": "analytics",
+      "tools": [
+        "analytics_app_summary",
+        "analytics_check_snapshot_status",
+        "analytics_create_report_request",
+        "analytics_financial_report",
+        "analytics_get_instance",
+        "analytics_get_report",
+        "analytics_list_instances",
+        "analytics_list_report_requests",
+        "analytics_list_reports",
+        "analytics_list_segments",
+        "analytics_sales_report"
+      ]
+    },
+    {
+      "key": "app_events",
+      "tools": [
+        "app_events_create",
+        "app_events_create_localization",
+        "app_events_delete",
+        "app_events_delete_localization",
+        "app_events_get",
+        "app_events_list",
+        "app_events_list_localizations",
+        "app_events_update",
+        "app_events_update_localization"
+      ]
+    },
+    {
+      "key": "app_info",
+      "tools": [
+        "app_info_create_eula",
+        "app_info_create_localization",
+        "app_info_delete_localization",
+        "app_info_get",
+        "app_info_get_eula",
+        "app_info_list",
+        "app_info_list_localizations",
+        "app_info_update",
+        "app_info_update_eula",
+        "app_info_update_localization"
+      ]
+    },
+    {
+      "key": "apps",
+      "tools": [
+        "apps_create_localization",
+        "apps_delete_localization",
+        "apps_get_details",
+        "apps_get_metadata",
+        "apps_list",
+        "apps_list_localizations",
+        "apps_list_search_keywords",
+        "apps_list_versions",
+        "apps_search",
+        "apps_update_metadata"
+      ]
+    },
+    {
+      "key": "auth",
+      "tools": [
+        "auth_generate_token",
+        "auth_refresh_token",
+        "auth_token_status",
+        "auth_validate_token"
+      ]
+    },
+    {
+      "key": "beta_app",
+      "tools": [
+        "beta_app_create_localization",
+        "beta_app_delete_localization",
+        "beta_app_get_localization",
+        "beta_app_get_review_details",
+        "beta_app_get_submission",
+        "beta_app_list_localizations",
+        "beta_app_list_submissions",
+        "beta_app_submit_for_review",
+        "beta_app_update_localization",
+        "beta_app_update_review_details"
+      ]
+    },
+    {
+      "key": "beta_feedback",
+      "tools": [
+        "beta_feedback_delete_crash",
+        "beta_feedback_delete_screenshot",
+        "beta_feedback_get_crash",
+        "beta_feedback_get_crash_log",
+        "beta_feedback_get_crash_log_by_id",
+        "beta_feedback_get_screenshot",
+        "beta_feedback_list_crashes",
+        "beta_feedback_list_screenshots"
+      ]
+    },
+    {
+      "key": "beta_groups",
+      "tools": [
+        "beta_groups_add_builds",
+        "beta_groups_add_testers",
+        "beta_groups_check_recruitment_compatibility",
+        "beta_groups_create",
+        "beta_groups_create_recruitment_criteria",
+        "beta_groups_delete",
+        "beta_groups_delete_recruitment_criteria",
+        "beta_groups_get_recruitment_criteria",
+        "beta_groups_list",
+        "beta_groups_list_recruitment_options",
+        "beta_groups_list_testers",
+        "beta_groups_remove_builds",
+        "beta_groups_remove_testers",
+        "beta_groups_update",
+        "beta_groups_update_recruitment_criteria"
+      ]
+    },
+    {
+      "key": "beta_license",
+      "tools": [
+        "beta_license_get",
+        "beta_license_list",
+        "beta_license_update"
+      ]
+    },
+    {
+      "key": "beta_testers",
+      "tools": [
+        "beta_testers_add_to_builds",
+        "beta_testers_add_to_groups",
+        "beta_testers_create",
+        "beta_testers_delete",
+        "beta_testers_get",
+        "beta_testers_list",
+        "beta_testers_list_apps",
+        "beta_testers_remove_from_app",
+        "beta_testers_remove_from_builds",
+        "beta_testers_remove_from_groups",
+        "beta_testers_search",
+        "beta_testers_send_invitation"
+      ]
+    },
+    {
+      "key": "build_beta",
+      "tools": [
+        "builds_add_individual_testers",
+        "builds_add_to_beta_groups",
+        "builds_get_beta_detail",
+        "builds_get_beta_groups",
+        "builds_get_beta_testers",
+        "builds_list_beta_localizations",
+        "builds_list_individual_testers",
+        "builds_remove_individual_testers",
+        "builds_send_beta_notification",
+        "builds_set_beta_localization",
+        "builds_update_beta_detail"
+      ]
+    },
+    {
+      "key": "build_processing",
+      "tools": [
+        "builds_check_readiness",
+        "builds_get_processing_state",
+        "builds_get_processing_status",
+        "builds_update_encryption"
+      ]
+    },
+    {
+      "key": "build_uploads",
+      "tools": [
+        "build_uploads_commit_file",
+        "build_uploads_create",
+        "build_uploads_delete",
+        "build_uploads_get",
+        "build_uploads_get_file",
+        "build_uploads_list",
+        "build_uploads_list_files",
+        "build_uploads_reserve_file",
+        "build_uploads_upload",
+        "build_uploads_upload_file"
+      ]
+    },
+    {
+      "key": "builds",
+      "tools": [
+        "builds_find_by_number",
+        "builds_get",
+        "builds_list",
+        "builds_list_for_version"
+      ]
+    },
+    {
+      "key": "company",
+      "tools": [
+        "company_current",
+        "company_list",
+        "company_switch"
+      ]
+    },
+    {
+      "key": "custom_pages",
+      "tools": [
+        "custom_pages_add_search_keywords",
+        "custom_pages_create",
+        "custom_pages_create_localization",
+        "custom_pages_create_version",
+        "custom_pages_delete",
+        "custom_pages_delete_localization",
+        "custom_pages_get",
+        "custom_pages_get_localization",
+        "custom_pages_get_version",
+        "custom_pages_list",
+        "custom_pages_list_localizations",
+        "custom_pages_list_search_keywords",
+        "custom_pages_list_versions",
+        "custom_pages_remove_search_keywords",
+        "custom_pages_update",
+        "custom_pages_update_localization",
+        "custom_pages_update_version"
+      ]
+    },
+    {
+      "key": "export_compliance",
+      "tools": [
+        "export_compliance_attach_build_declaration",
+        "export_compliance_check_release_readiness",
+        "export_compliance_create_declaration",
+        "export_compliance_create_document",
+        "export_compliance_get_build_declaration",
+        "export_compliance_get_declaration",
+        "export_compliance_get_document",
+        "export_compliance_inspect_document",
+        "export_compliance_list_declarations",
+        "export_compliance_update_document",
+        "export_compliance_upload_document"
+      ]
+    },
+    {
+      "key": "iap",
+      "tools": [
+        "iap_create",
+        "iap_create_custom_code",
+        "iap_create_localization",
+        "iap_create_offer_code",
+        "iap_create_version",
+        "iap_create_version_localization",
+        "iap_deactivate_custom_code",
+        "iap_deactivate_offer_code",
+        "iap_deactivate_one_time_code",
+        "iap_delete",
+        "iap_delete_image",
+        "iap_delete_localization",
+        "iap_delete_review_screenshot",
+        "iap_delete_version_image",
+        "iap_delete_version_localization",
+        "iap_generate_one_time_codes",
+        "iap_get",
+        "iap_get_availability",
+        "iap_get_custom_code",
+        "iap_get_image",
+        "iap_get_offer_code",
+        "iap_get_one_time_code",
+        "iap_get_one_time_code_values",
+        "iap_get_price_schedule",
+        "iap_get_promoted_purchase",
+        "iap_get_review_screenshot",
+        "iap_get_subscription_group",
+        "iap_get_version",
+        "iap_get_version_image",
+        "iap_get_version_image_resource",
+        "iap_get_version_localization",
+        "iap_inventory",
+        "iap_list",
+        "iap_list_available_territories",
+        "iap_list_images",
+        "iap_list_localizations",
+        "iap_list_offer_code_prices",
+        "iap_list_offer_codes",
+        "iap_list_one_time_codes",
+        "iap_list_price_point_equalizations",
+        "iap_list_price_points",
+        "iap_list_subscriptions",
+        "iap_list_version_images",
+        "iap_list_version_localizations",
+        "iap_list_versions",
+        "iap_prepare_offer_prices",
+        "iap_pricing_summary",
+        "iap_set_availability",
+        "iap_set_price_schedule",
+        "iap_submit_for_review",
+        "iap_update",
+        "iap_update_custom_code",
+        "iap_update_localization",
+        "iap_update_offer_code",
+        "iap_update_one_time_code",
+        "iap_update_version_localization",
+        "iap_upload_image",
+        "iap_upload_review_screenshot",
+        "iap_upload_version_image"
+      ]
+    },
+    {
+      "key": "metrics",
+      "tools": [
+        "metrics_app_beta_tester_usage",
+        "metrics_app_perf",
+        "metrics_build_beta_usage",
+        "metrics_build_diagnostics",
+        "metrics_build_perf",
+        "metrics_get_diagnostic_logs",
+        "metrics_group_beta_tester_usage",
+        "metrics_group_public_link_usage",
+        "metrics_tester_usage"
+      ]
+    },
+    {
+      "key": "ppo",
+      "tools": [
+        "ppo_create_experiment",
+        "ppo_create_treatment",
+        "ppo_create_treatment_localization",
+        "ppo_delete_experiment",
+        "ppo_delete_treatment",
+        "ppo_delete_treatment_localization",
+        "ppo_get_experiment",
+        "ppo_get_treatment",
+        "ppo_get_treatment_localization",
+        "ppo_list_experiments",
+        "ppo_list_treatment_localizations",
+        "ppo_list_treatments",
+        "ppo_list_version_experiments",
+        "ppo_update_experiment",
+        "ppo_update_treatment"
+      ]
+    },
+    {
+      "key": "pre_release",
+      "tools": [
+        "pre_release_get",
+        "pre_release_list",
+        "pre_release_list_builds"
+      ]
+    },
+    {
+      "key": "pricing",
+      "tools": [
+        "pricing_create_availability",
+        "pricing_get_availability",
+        "pricing_get_availability_v2",
+        "pricing_get_price_schedule",
+        "pricing_list_price_points",
+        "pricing_list_territories",
+        "pricing_list_territory_availabilities",
+        "pricing_list_territory_availability",
+        "pricing_set_price_schedule"
+      ]
+    },
+    {
+      "key": "promoted",
+      "tools": [
+        "promoted_create",
+        "promoted_delete",
+        "promoted_delete_image",
+        "promoted_get",
+        "promoted_get_image",
+        "promoted_get_image_for_purchase",
+        "promoted_list",
+        "promoted_reorder",
+        "promoted_update",
+        "promoted_upload_image"
+      ]
+    },
+    {
+      "key": "provisioning",
+      "tools": [
+        "provisioning_create_bundle_id",
+        "provisioning_create_profile",
+        "provisioning_delete_bundle_id",
+        "provisioning_delete_profile",
+        "provisioning_disable_capability",
+        "provisioning_enable_capability",
+        "provisioning_get_bundle_id",
+        "provisioning_get_certificate",
+        "provisioning_get_profile",
+        "provisioning_list_bundle_ids",
+        "provisioning_list_capabilities",
+        "provisioning_list_certificates",
+        "provisioning_list_devices",
+        "provisioning_list_profiles",
+        "provisioning_register_device",
+        "provisioning_revoke_certificate",
+        "provisioning_update_device"
+      ]
+    },
+    {
+      "key": "review_attachments",
+      "tools": [
+        "review_attachments_delete",
+        "review_attachments_get",
+        "review_attachments_list",
+        "review_attachments_upload"
+      ]
+    },
+    {
+      "key": "review_submissions",
+      "tools": [
+        "review_submissions_add_item",
+        "review_submissions_cancel",
+        "review_submissions_create",
+        "review_submissions_get",
+        "review_submissions_list",
+        "review_submissions_list_items",
+        "review_submissions_remove_item",
+        "review_submissions_submit",
+        "review_submissions_update_item"
+      ]
+    },
+    {
+      "key": "reviews",
+      "tools": [
+        "reviews_create_response",
+        "reviews_delete_response",
+        "reviews_get",
+        "reviews_get_response",
+        "reviews_list",
+        "reviews_list_for_version",
+        "reviews_stats",
+        "reviews_summarizations"
+      ]
+    },
+    {
+      "key": "sandbox",
+      "tools": [
+        "sandbox_clear_purchase_history",
+        "sandbox_list",
+        "sandbox_update"
+      ]
+    },
+    {
+      "key": "screenshots",
+      "tools": [
+        "screenshots_create_preview_set",
+        "screenshots_create_set",
+        "screenshots_delete",
+        "screenshots_delete_preview",
+        "screenshots_delete_preview_set",
+        "screenshots_delete_set",
+        "screenshots_get",
+        "screenshots_get_preview",
+        "screenshots_get_preview_set",
+        "screenshots_get_set",
+        "screenshots_list",
+        "screenshots_list_preview_sets",
+        "screenshots_list_previews",
+        "screenshots_list_sets",
+        "screenshots_reorder",
+        "screenshots_reorder_previews",
+        "screenshots_upload",
+        "screenshots_upload_batch",
+        "screenshots_upload_preview"
+      ]
+    },
+    {
+      "key": "subscriptions",
+      "tools": [
+        "subscriptions_create",
+        "subscriptions_create_custom_code",
+        "subscriptions_create_group",
+        "subscriptions_create_group_localization",
+        "subscriptions_create_group_version",
+        "subscriptions_create_group_version_localization",
+        "subscriptions_create_intro_offer",
+        "subscriptions_create_localization",
+        "subscriptions_create_offer_code",
+        "subscriptions_create_plan_availability",
+        "subscriptions_create_price",
+        "subscriptions_create_promotional_offer",
+        "subscriptions_create_version",
+        "subscriptions_create_version_localization",
+        "subscriptions_create_winback_offer",
+        "subscriptions_deactivate_custom_code",
+        "subscriptions_deactivate_offer_code",
+        "subscriptions_delete",
+        "subscriptions_delete_group",
+        "subscriptions_delete_group_localization",
+        "subscriptions_delete_group_version_localization",
+        "subscriptions_delete_image",
+        "subscriptions_delete_intro_offer",
+        "subscriptions_delete_localization",
+        "subscriptions_delete_price",
+        "subscriptions_delete_promotional_offer",
+        "subscriptions_delete_review_screenshot",
+        "subscriptions_delete_version_image",
+        "subscriptions_delete_version_localization",
+        "subscriptions_delete_winback_offer",
+        "subscriptions_generate_one_time_codes",
+        "subscriptions_get",
+        "subscriptions_get_availability",
+        "subscriptions_get_custom_code",
+        "subscriptions_get_group",
+        "subscriptions_get_group_localization",
+        "subscriptions_get_group_version",
+        "subscriptions_get_group_version_localization",
+        "subscriptions_get_image",
+        "subscriptions_get_localization",
+        "subscriptions_get_offer_code",
+        "subscriptions_get_one_time_code",
+        "subscriptions_get_one_time_code_values",
+        "subscriptions_get_plan_availability",
+        "subscriptions_get_price_point",
+        "subscriptions_get_promoted_purchase",
+        "subscriptions_get_promotional_offer",
+        "subscriptions_get_review_screenshot",
+        "subscriptions_get_review_screenshot_for_subscription",
+        "subscriptions_get_version",
+        "subscriptions_get_version_image",
+        "subscriptions_get_version_localization",
+        "subscriptions_get_winback_offer",
+        "subscriptions_inventory",
+        "subscriptions_list",
+        "subscriptions_list_available_territories",
+        "subscriptions_list_group_localizations",
+        "subscriptions_list_group_version_localizations",
+        "subscriptions_list_group_versions",
+        "subscriptions_list_groups",
+        "subscriptions_list_images",
+        "subscriptions_list_intro_offers",
+        "subscriptions_list_localizations",
+        "subscriptions_list_offer_code_prices",
+        "subscriptions_list_offer_codes",
+        "subscriptions_list_one_time_codes",
+        "subscriptions_list_plan_availabilities",
+        "subscriptions_list_plan_availability_territories",
+        "subscriptions_list_price_point_adjusted_equalizations",
+        "subscriptions_list_price_point_equalizations",
+        "subscriptions_list_price_points",
+        "subscriptions_list_prices",
+        "subscriptions_list_promotional_offer_prices",
+        "subscriptions_list_promotional_offers",
+        "subscriptions_list_version_images",
+        "subscriptions_list_version_localizations",
+        "subscriptions_list_versions",
+        "subscriptions_list_winback_offer_prices",
+        "subscriptions_list_winback_offers",
+        "subscriptions_prepare_offer_prices",
+        "subscriptions_pricing_summary",
+        "subscriptions_set_availability",
+        "subscriptions_submit",
+        "subscriptions_submit_group",
+        "subscriptions_update",
+        "subscriptions_update_custom_code",
+        "subscriptions_update_group",
+        "subscriptions_update_group_localization",
+        "subscriptions_update_group_version_localization",
+        "subscriptions_update_intro_offer",
+        "subscriptions_update_localization",
+        "subscriptions_update_offer_code",
+        "subscriptions_update_plan_availability",
+        "subscriptions_update_promotional_offer",
+        "subscriptions_update_version_localization",
+        "subscriptions_update_winback_offer",
+        "subscriptions_upload_image",
+        "subscriptions_upload_review_screenshot",
+        "subscriptions_upload_version_image"
+      ]
+    },
+    {
+      "key": "users",
+      "tools": [
+        "users_add_visible_apps",
+        "users_cancel_invitation",
+        "users_get",
+        "users_invite",
+        "users_list",
+        "users_list_invitations",
+        "users_list_visible_apps",
+        "users_remove",
+        "users_remove_visible_apps",
+        "users_update"
+      ]
+    },
+    {
+      "key": "versions",
+      "tools": [
+        "app_versions_attach_build",
+        "app_versions_cancel_review",
+        "app_versions_create",
+        "app_versions_create_phased_release",
+        "app_versions_delete",
+        "app_versions_delete_phased_release",
+        "app_versions_get",
+        "app_versions_get_age_rating_declaration",
+        "app_versions_get_phased_release",
+        "app_versions_list",
+        "app_versions_list_territory_age_ratings",
+        "app_versions_release",
+        "app_versions_set_review_details",
+        "app_versions_submit_for_review",
+        "app_versions_update",
+        "app_versions_update_age_rating",
+        "app_versions_update_phased_release"
+      ]
+    },
+    {
+      "key": "webhooks",
+      "tools": [
+        "webhooks_create",
+        "webhooks_delete",
+        "webhooks_get",
+        "webhooks_list",
+        "webhooks_list_deliveries",
+        "webhooks_parse_payload",
+        "webhooks_ping",
+        "webhooks_redeliver",
+        "webhooks_triage_event",
+        "webhooks_update",
+        "webhooks_verify_signature"
+      ]
+    },
+    {
+      "key": "xcode_cloud",
+      "tools": [
+        "xcode_cloud_action_artifacts_list",
+        "xcode_cloud_action_build_run_get",
+        "xcode_cloud_action_issues_list",
+        "xcode_cloud_action_test_results_list",
+        "xcode_cloud_actions_get",
+        "xcode_cloud_app_product_get",
+        "xcode_cloud_artifacts_get",
+        "xcode_cloud_build_run_actions_list",
+        "xcode_cloud_build_run_builds_list",
+        "xcode_cloud_build_runs_get",
+        "xcode_cloud_build_runs_start",
+        "xcode_cloud_issues_get",
+        "xcode_cloud_macos_version_xcode_versions_list",
+        "xcode_cloud_macos_versions_get",
+        "xcode_cloud_macos_versions_list",
+        "xcode_cloud_product_additional_repositories_list",
+        "xcode_cloud_product_app_get",
+        "xcode_cloud_product_build_runs_list",
+        "xcode_cloud_product_primary_repositories_list",
+        "xcode_cloud_product_workflows_list",
+        "xcode_cloud_products_delete",
+        "xcode_cloud_products_get",
+        "xcode_cloud_products_list",
+        "xcode_cloud_scm_git_references_get",
+        "xcode_cloud_scm_provider_repositories_list",
+        "xcode_cloud_scm_providers_get",
+        "xcode_cloud_scm_providers_list",
+        "xcode_cloud_scm_pull_requests_get",
+        "xcode_cloud_scm_repositories_get",
+        "xcode_cloud_scm_repositories_list",
+        "xcode_cloud_scm_repository_git_references_list",
+        "xcode_cloud_scm_repository_pull_requests_list",
+        "xcode_cloud_test_results_get",
+        "xcode_cloud_workflow_build_runs_list",
+        "xcode_cloud_workflow_repository_get",
+        "xcode_cloud_workflows_create",
+        "xcode_cloud_workflows_delete",
+        "xcode_cloud_workflows_get",
+        "xcode_cloud_workflows_update",
+        "xcode_cloud_xcode_version_macos_versions_list",
+        "xcode_cloud_xcode_versions_get",
+        "xcode_cloud_xcode_versions_list"
+      ]
+    }
+  ]
+}

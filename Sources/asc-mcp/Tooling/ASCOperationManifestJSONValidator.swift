@@ -3,7 +3,7 @@ import Foundation
 enum ASCOperationManifestJSONValidator {
     private static let indexKeys: Set<String> = [
         "schemaVersion", "specPin", "optionalInputCoveragePin",
-        "optionalParameterFamilyRules", "scopeRules", "waivers"
+        "optionalParameterFamilyRules", "scopeRules", "waivers", "semanticDeprecations"
     ]
     private static let specPinKeys: Set<String> = [
         "version", "sha256", "pathCount", "operationCount"
@@ -21,6 +21,9 @@ enum ASCOperationManifestJSONValidator {
     ]
     private static let optionalParameterFamilyRuleKeys: Set<String> = [
         "family", "disposition", "reason", "owner", "reviewAtSpec"
+    ]
+    private static let semanticDeprecationKeys: Set<String> = [
+        "id", "operationIds", "parameterNames", "reason", "sourceURL", "owner", "reviewAtSpec"
     ]
     private static let workerKeys: Set<String> = [
         "workerKey", "tools", "implementationAliases"
@@ -93,6 +96,12 @@ enum ASCOperationManifestJSONValidator {
             allowed: waiverKeys,
             source: source,
             path: "$.waivers"
+        )
+        try validateArray(
+            object["semanticDeprecations"],
+            allowed: semanticDeprecationKeys,
+            source: source,
+            path: "$.semanticDeprecations"
         )
     }
 

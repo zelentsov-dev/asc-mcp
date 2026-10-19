@@ -21,6 +21,29 @@ extension MetricsWorker {
     ]
     static let supportedDiagnosticTypes = ["DISK_WRITES", "HANGS", "LAUNCHES"]
 
+    /// Creates the read-only aggregated app performance overview tool.
+    /// - Returns: Tool schema with an app identifier and optional device filter.
+    func performanceOverviewTool() -> Tool {
+        Tool(
+            name: "metrics_performance_overview",
+            description: "Get an app's aggregated performance overview: metadata, insights, categories, datasets, and top diagnostic signatures. data_available is false when a successful response contains no performance observations; permission errors and unavailable resources remain errors.",
+            inputSchema: .object([
+                "type": .string("object"),
+                "additionalProperties": .bool(false),
+                "properties": .object([
+                    "app_id": .object([
+                        "type": .string("string"),
+                        "minLength": .int(1),
+                        "description": .string("App Store Connect app ID")
+                    ]),
+                    "device_type": stringListSchema("Optional device type filter, such as iPhone15,2")
+                ]),
+                "required": .array([.string("app_id")])
+            ]),
+            annotations: .init(readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true)
+        )
+    }
+
     /// Creates tool definition for getting app performance/power metrics
     func appPerfMetricsTool() -> Tool {
         return Tool(

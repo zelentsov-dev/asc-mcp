@@ -132,6 +132,9 @@
               "jsonPointer": "/data/relationships/appEvent/data/type",
               "fixedValue": "appEvents"
             }
+          ],
+          "optionalParameterClassifications": [
+            {"location": "body", "appleName": "/data/relationships/placements", "disposition": "intentionallyOmitted", "reason": "Localization creation and Asset Library placement are separate operations. This legacy create tool does not attach existing placement IDs; prepare and apply placement creation through AssetsWorker after creating the localization so ownership, specification, draft state, and preview checks remain mandatory.", "reviewAtSpec": "4.5.1"}
           ]
         }
       ],
@@ -465,7 +468,10 @@
           "operationId": "appEvents_localizations_getToManyRelated",
           "method": "get",
           "path": "/v1/appEvents/{id}/localizations",
-          "role": "primary"
+          "role": "primary",
+          "optionalParameterClassifications": [
+            {"location": "query", "appleName": "limit[placements]", "disposition": "intentionallyOmitted", "reason": "Apple 4.5.1 applies this optional limit only to included placements. This existing localization workflow does not request or project placement resources; use assets_list_placements for independently paginated Asset Library placements.", "reviewAtSpec": "4.5.1"}
+          ]
         }
       ],
       "fields": [

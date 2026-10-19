@@ -141,7 +141,7 @@ struct AppsSearchContractTests {
         #expect(await transport.requestCount() == 0)
     }
 
-    @Test("manifest fixes pagination controls and classifies Apple 4.4.1 inputs")
+    @Test("manifest fixes pagination controls and classifies Apple 4.5.1 inputs")
     func manifestRecordsSearchContract() throws {
         let manifest = try ASCOperationManifestBundle.loadBundled()
         let mapping = try #require(manifest.mapping(for: "apps_search"))
@@ -182,7 +182,7 @@ struct AppsSearchContractTests {
             #expect(Set(classifications.map(\.appleName)) == nonSparseOptionalInputs.subtracting(Set([boundFilter, "sort", "limit"])))
             #expect(classifications.allSatisfy { classification in
                 classification.disposition == .intentionallyOmitted &&
-                    classification.reviewAtSpec == "4.4.1" &&
+                    classification.reviewAtSpec == "4.5.1" &&
                     !classification.reason.isEmpty
             })
         }

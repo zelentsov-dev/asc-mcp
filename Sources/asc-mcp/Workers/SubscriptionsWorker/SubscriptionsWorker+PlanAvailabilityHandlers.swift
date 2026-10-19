@@ -354,13 +354,11 @@ extension SubscriptionsWorker {
                 try validateSubscriptionPlanQueryIdentifiers(value, field: "upfront_price_point_ids")
                 query["filter[upfrontPricePointId]"] = value
             }
-            if let value = try subscriptionCatalogQueryValue(
+            query["filter[planType]"] = try subscriptionCatalogQueryValue(
                 arguments["plan_types"],
                 field: "plan_types",
                 allowedValues: Set(ASCSubscriptionPlanType.allCases.map(\.rawValue))
-            ) {
-                query["filter[planType]"] = value
-            }
+            ) ?? ASCSubscriptionPlanType.monthly.rawValue
 
             let response: ASCSubscriptionAdjustedPricePointsResponse
             if let nextURL = try paginationURL(from: arguments["next_url"]) {

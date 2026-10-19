@@ -5,7 +5,7 @@ import Testing
 
 @Suite("Commerce Catalog Optional Input Tests")
 struct CommerceCatalogOptionalInputTests {
-    @Test("catalog schemas expose Apple 4.4.1 filters, sort, and localization limits")
+    @Test("catalog schemas expose Apple 4.5.1 filters, sort, and localization limits")
     func schemasExposeCatalogControls() async throws {
         let transport = TestHTTPTransport(responses: [])
         let iap = try await commerceIAPWorker(transport)
@@ -383,7 +383,7 @@ struct CommerceCatalogOptionalInputTests {
         #expect(classifications.count == 169)
         #expect(classifications.filter { $0.disposition == .internalControl }.count == 31)
         #expect(classifications.filter { $0.disposition == .intentionallyOmitted }.count == 138)
-        #expect(classifications.allSatisfy { $0.reviewAtSpec == "4.4.1" && !$0.reason.isEmpty })
+        #expect(classifications.allSatisfy { $0.reviewAtSpec == "4.5.1" && !$0.reason.isEmpty })
     }
 }
 

@@ -9,8 +9,8 @@ struct ASCCoverageInventoryTests {
         let areas = ASCCoverageInventory.areas
         let names = Set(areas.map(\.name))
 
-        #expect(ASCCoverageInventory.snapshotDate == "2026-07-21")
-        #expect(ASCCoverageInventory.appleAPIVersionBaseline == "4.4.1")
+        #expect(ASCCoverageInventory.snapshotDate == "2026-10-15")
+        #expect(ASCCoverageInventory.appleAPIVersionBaseline == "4.5.1")
         #expect(areas.count == names.count)
         #expect(areas.count >= 10)
 
