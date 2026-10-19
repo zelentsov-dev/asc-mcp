@@ -358,7 +358,7 @@ extension SubscriptionsWorker {
                 arguments["plan_types"],
                 field: "plan_types",
                 allowedValues: Set(ASCSubscriptionPlanType.allCases.map(\.rawValue))
-            ) ?? ASCSubscriptionPlanType.allCases.map(\.rawValue).joined(separator: ",")
+            ) ?? ASCSubscriptionPlanType.monthly.rawValue
 
             let response: ASCSubscriptionAdjustedPricePointsResponse
             if let nextURL = try paginationURL(from: arguments["next_url"]) {

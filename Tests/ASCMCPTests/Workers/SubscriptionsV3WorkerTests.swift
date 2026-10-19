@@ -267,7 +267,7 @@ struct SubscriptionsV3WorkerTests {
         #expect(queryItems(request)["filter[planType]"] == nil)
         let adjustedRequest = try #require(requests.last)
         #expect(adjustedRequest.url?.path == "/v1/subscriptionPricePoints/pp-1/adjustedEqualizations")
-        #expect(queryItems(adjustedRequest)["filter[planType]"] == "MONTHLY,UPFRONT")
+        #expect(queryItems(adjustedRequest)["filter[planType]"] == "MONTHLY")
     }
 
     @Test("subscription pricing manifest binds Apple plan-aware filters")

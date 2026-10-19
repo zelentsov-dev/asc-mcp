@@ -67,6 +67,7 @@ extension SubscriptionsWorker {
         try validateSubscriptionPagingInformation(
             relationship.meta,
             resourceCount: resources.count,
+            enforcesLimitUpperBound: false,
             context: context
         )
     }
@@ -76,6 +77,7 @@ extension SubscriptionsWorker {
         resourceCount: Int,
         nextLink: String? = nil,
         validatesContinuation: Bool = false,
+        enforcesLimitUpperBound: Bool = true,
         context: String
     ) throws {
         if validatesContinuation, let nextLink {
@@ -88,7 +90,7 @@ extension SubscriptionsWorker {
         guard let paging = meta.paging, let limit = paging.limit else {
             throw ASCError.parsing("\(context) returned incomplete paging metadata")
         }
-        guard limit > 0, limit >= resourceCount else {
+        guard limit > 0, (!enforcesLimitUpperBound || limit >= resourceCount) else {
             throw ASCError.parsing("\(context) returned paging.limit smaller than the resource count")
         }
         if let total = paging.total {
