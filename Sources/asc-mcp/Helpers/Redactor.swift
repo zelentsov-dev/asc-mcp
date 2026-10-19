@@ -34,6 +34,13 @@ enum Redactor {
             "confirm_review_submission",
             "review_submission_id",
             "committed_unverified",
+            "requires_reconciliation",
+            "remove_old_placement",
+            "update_reference_name",
+            "appStoreVersionLocalization",
+            "appCustomProductPageLocalization",
+            "appStoreVersionExperimentTreatmentLocalization",
+            "appEventLocalization",
             "absolute-path-to-the-exact-reserved-bytes"
         ]
         if let manifest = try? ASCOperationManifestBundle.loadBundled() {

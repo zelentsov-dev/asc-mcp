@@ -10,6 +10,56 @@ import MCP
 
 extension MetricsWorker {
 
+    /// Gets the app-level performance overview without treating API errors as empty data.
+    /// - Returns: A snake-case overview, data availability, and request identifiers.
+    /// - Throws: MCP serialization errors; input, transport, and decoding failures return an error result.
+    func getPerformanceOverview(_ params: CallTool.Parameters) async throws -> CallTool.Result {
+        do {
+            guard let arguments = params.arguments,
+                  let appID = arguments["app_id"]?.stringValue,
+                  !appID.isEmpty,
+                  appID.trimmingCharacters(in: .whitespacesAndNewlines) == appID else {
+                throw ASCError.parsing("app_id must be a non-empty string without surrounding whitespace")
+            }
+            guard Set(arguments.keys).isSubset(of: ["app_id", "device_type"]) else {
+                throw ASCError.parsing("Only app_id and device_type are supported by metrics_performance_overview")
+            }
+            let devices = try filterSelection(arguments["device_type"], name: "device_type")
+            var query: [String: String] = [:]
+            if let devices { query["filter[deviceType]"] = devices.queryValue }
+            let data = try await httpClient.getRaw(
+                "/v1/apps/\(try ASCPathSegment.encode(appID))/performanceOverviews",
+                parameters: query,
+                accept: "application/vnd.apple.xcode-overview+json"
+            )
+            guard let object = try JSONSerialization.jsonObject(with: data) as? [String: Any],
+                  object["data"] == nil, object["productData"] == nil, object["errors"] == nil else {
+                throw ASCError.parsing("Expected an Apple performance overview object")
+            }
+            let knownFields: Set<String> = ["version", "appMetadata", "insights", "categories", "signatures", "telemetryIdentifier"]
+            guard object.isEmpty || !knownFields.isDisjoint(with: object.keys) else {
+                throw ASCError.parsing("Performance overview response has no recognized fields")
+            }
+            let overview = try JSONDecoder().decode(ASCPerformanceOverview.self, from: data)
+            if let returnedAppID = overview.appMetadata?.appId, returnedAppID != appID {
+                throw ASCError.parsing("Performance overview belongs to a different app")
+            }
+            let encoder = JSONEncoder()
+            encoder.keyEncodingStrategy = .convertToSnakeCase
+            guard let projection = try JSONDecoder().decode(Value.self, from: encoder.encode(overview)).objectValue else {
+                throw ASCError.parsing("Could not project the performance overview")
+            }
+            var result = projection
+            result["success"] = .bool(true)
+            result["app_id"] = .string(appID)
+            result["data_available"] = .bool(overview.hasPerformanceData)
+            if let devices { result["device_type"] = try MCPValue.fromAny(devices.echo.asAny) }
+            return MCPResult.json(.object(result))
+        } catch {
+            return MCPResult.error(error, prefix: "Failed to get performance overview")
+        }
+    }
+
     /// Gets performance/power metrics for an app
     /// - Returns: JSON with metric categories, datasets, and data points
     /// - Throws: Error if required parameters are missing or API call fails

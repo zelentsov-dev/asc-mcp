@@ -14,6 +14,9 @@ extension ReviewSubmissionsWorker {
         "platform,submittedDate,state,app,items,appStoreVersionForReview,submittedByActor,lastUpdatedByActor"
     private static let appFields = "name,bundleId,sku,primaryLocale"
     private static let actorFields = "actorType,userFirstName,userLastName,userEmail,apiKeyId"
+    private static let assetInspectionFields = [
+        "category", "createdDate", "lastModifiedDate", "fileName", "fileSize", "referenceName", "specId", "state", "stateDetails"
+    ]
     private static let appStoreVersionFields =
         "platform,versionString,appStoreState,appVersionState,reviewType,releaseType,createdDate"
     private static let itemIdentityFields = [
@@ -23,6 +26,8 @@ extension ReviewSubmissionsWorker {
         "appStoreVersionExperiment",
         "appStoreVersionExperimentV2",
         "appEvent",
+        "appAssetLibraryImage",
+        "appAssetLibraryVideo",
         "backgroundAssetVersion",
         "gameCenterAchievementVersion",
         "gameCenterActivityVersion",
@@ -34,6 +39,8 @@ extension ReviewSubmissionsWorker {
         "subscriptionGroupVersion"
     ].joined(separator: ",")
     private static let supportedItemIncludes = [
+        "appAssetLibraryImage",
+        "appAssetLibraryVideo",
         "appStoreVersion",
         "appCustomProductPageVersion",
         "appStoreVersionExperimentV2",
@@ -50,6 +57,8 @@ extension ReviewSubmissionsWorker {
         "reviewSubmissionItems"
     ]
     private static let itemResourceTypes: [String: String] = [
+        "appAssetLibraryImage": "appAssetLibraryImages",
+        "appAssetLibraryVideo": "appAssetLibraryVideos",
         "appStoreVersion": "appStoreVersions",
         "appCustomProductPageVersion": "appCustomProductPageVersions",
         "appStoreVersionExperiment": "appStoreVersionExperiments",
@@ -408,6 +417,27 @@ extension ReviewSubmissionsWorker {
     func addItem(_ params: CallTool.Parameters) async throws -> CallTool.Result {
         guard let arguments = params.arguments else {
             return MCPResult.error("Required parameter 'submission_id' is missing")
+        }
+
+        if arguments["app_asset_library_image_id"] != nil || arguments["app_asset_library_video_id"] != nil
+            || arguments["preview_id"] != nil {
+            do {
+                let assetFields = ["app_asset_library_image_id", "app_asset_library_video_id"]
+                let selectedFields = assetFields.filter { arguments[$0] != nil }
+                guard selectedFields.count == 1, let assetField = selectedFields.first,
+                      Set(arguments.keys) == Set(["submission_id", assetField, "preview_id"]) else {
+                    throw ReviewSubmissionArgumentError("Asset review items require exactly submission_id, one app_asset_library_image_id or app_asset_library_video_id, and preview_id from assets_prepare_change; legacy resource IDs cannot be combined with this form")
+                }
+                _ = try requiredCanonicalIdentifier("submission_id", from: arguments)
+                _ = try requiredCanonicalIdentifier(assetField, from: arguments)
+                _ = try requiredCanonicalIdentifier("preview_id", from: arguments)
+                guard let assetsWorker else {
+                    return MCPResult.error("Asset Library review changes require the shared assets worker. Enable --workers assets,review_submissions and prepare the change with assets_prepare_change before retrying")
+                }
+                return try await assetsWorker.addReviewItemFromPreview(arguments)
+            } catch {
+                return MCPResult.error(error, prefix: "Failed to add Asset Library review submission item")
+            }
         }
 
         let submissionID: String
@@ -835,6 +865,8 @@ extension ReviewSubmissionsWorker {
 
     private func itemListQuery() -> [String: String] {
         [
+            "fields[appAssetLibraryImages]": Self.assetInspectionFields.joined(separator: ","),
+            "fields[appAssetLibraryVideos]": Self.assetInspectionFields.joined(separator: ","),
             "fields[reviewSubmissionItems]": Self.itemIdentityFields,
             "fields[appStoreVersions]": Self.appStoreVersionFields,
             "fields[appCustomProductPageVersions]": "version,state,deepLink",
@@ -1368,6 +1400,10 @@ extension ReviewSubmissionsWorker {
                     "Apple returned duplicate included resource '\(resource.type):\(resource.id)' in \(context)"
                 )
             }
+            if resource.type == "reviewSubmissionItems" {
+                let item = try JSONDecoder().decode(ASCReviewSubmissionItem.self, from: JSONEncoder().encode(resource))
+                try validateItem(item, expectedID: resource.id, context: "\(context) included review item")
+            }
         }
     }
 
@@ -1518,6 +1554,8 @@ extension ReviewSubmissionsWorker {
     ) -> [(name: String, identifier: ASCResourceIdentifier, scoped: Bool)] {
         guard let relationships else { return [] }
         let candidates: [(String, ASCRelationship?, Bool)] = [
+            ("appAssetLibraryImage", relationships.appAssetLibraryImage, false),
+            ("appAssetLibraryVideo", relationships.appAssetLibraryVideo, false),
             ("appStoreVersion", relationships.appStoreVersion, false),
             ("appCustomProductPageVersion", relationships.appCustomProductPageVersion, false),
             ("appStoreVersionExperiment", relationships.appStoreVersionExperiment, false),
@@ -1543,6 +1581,12 @@ extension ReviewSubmissionsWorker {
             "id": resource.id,
             "type": resource.type
         ]
+        if resource.type == "appAssetLibraryImages" || resource.type == "appAssetLibraryVideos" {
+            if let attributes = resource.attributes?.objectValue {
+                result["attributes"] = Redactor.redact(attributes.filter { Self.assetInspectionFields.contains($0.key) }.mapValues(\.asAny))
+            }
+            return result
+        }
         if let attributes = resource.attributes {
             result["attributes"] = attributes.asAny
         }

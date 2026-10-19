@@ -241,10 +241,11 @@ struct SubscriptionsV3WorkerTests {
         #expect(await transport.requestCount() == 0)
     }
 
-    @Test("adjusted equalizations require plan types while equalizations keep them optional")
-    func adjustedEqualizationsRequirePlanTypes() async throws {
+    @Test("legacy equalization calls retain optional inputs while adjusted requests supply Apple's required filter")
+    func adjustedEqualizationsDefaultPlanTypes() async throws {
         let transport = TestHTTPTransport(responses: [
-            .init(statusCode: 200, body: #"{"data":[]}"#)
+            .init(statusCode: 200, body: #"{"data":[]}"#),
+            .init(statusCode: 200, body: #"{"data":[],"links":{"self":"https://api.example.test/v1/subscriptionPricePoints/pp-1/adjustedEqualizations"}}"#)
         ])
         let worker = try await makeWorker(transport: transport)
 
@@ -258,13 +259,15 @@ struct SubscriptionsV3WorkerTests {
         ))
 
         #expect(equalizations.isError != true)
-        #expect(adjusted.isError == true)
-        #expect(text(adjusted).contains("plan_types is required"))
+        #expect(adjusted.isError != true)
         let requests = await transport.recordedRequests()
-        #expect(requests.count == 1)
+        #expect(requests.count == 2)
         let request = try #require(requests.first)
         #expect(request.url?.path == "/v1/subscriptionPricePoints/pp-1/equalizations")
         #expect(queryItems(request)["filter[planType]"] == nil)
+        let adjustedRequest = try #require(requests.last)
+        #expect(adjustedRequest.url?.path == "/v1/subscriptionPricePoints/pp-1/adjustedEqualizations")
+        #expect(queryItems(adjustedRequest)["filter[planType]"] == "MONTHLY")
     }
 
     @Test("subscription pricing manifest binds Apple plan-aware filters")

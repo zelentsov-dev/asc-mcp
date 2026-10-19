@@ -176,25 +176,29 @@ struct MarketingOptionalInputContractTests {
         let pageVersionLimit = "query:limit[appCustomProductPageVersions]:intentionallyOmitted"
         let pageLocalizationLimit = "query:limit[appCustomProductPageLocalizations]:intentionallyOmitted"
         let keywordLimit = "query:limit[searchKeywords]:intentionallyOmitted"
+        let placementLimit = "query:limit[placements]:intentionallyOmitted"
+        let placementRelationship = "body:/data/relationships/placements:intentionallyOmitted"
         let expected: [String: Set<String>] = [
             "custom_pages_create": [
                 "body:/data/relationships/appCustomProductPageVersions:internalControl"
             ],
+            "custom_pages_create_localization": [placementRelationship],
             "custom_pages_create_version": [
                 "body:/data/relationships/appCustomProductPageLocalizations:intentionallyOmitted"
             ],
             "custom_pages_get": [include, pageVersionLimit],
             "custom_pages_list": [include, pageVersionLimit],
-            "custom_pages_get_localization": [include, previewSetLimit, screenshotSetLimit, keywordLimit],
-            "custom_pages_list_localizations": [include, previewSetLimit, screenshotSetLimit, keywordLimit],
+            "custom_pages_get_localization": [include, previewSetLimit, screenshotSetLimit, keywordLimit, placementLimit],
+            "custom_pages_list_localizations": [include, previewSetLimit, screenshotSetLimit, keywordLimit, placementLimit],
             "custom_pages_get_version": [include, pageLocalizationLimit],
             "custom_pages_list_versions": [include, pageLocalizationLimit],
+            "ppo_create_treatment_localization": [placementRelationship],
             "ppo_create_treatment": ["body:/data/relationships/appStoreVersionExperiment:intentionallyOmitted"],
             "ppo_get_experiment": [include, experimentTreatmentLimit, controlVersionLimit],
             "ppo_get_treatment": [include, treatmentLocalizationLimit],
-            "ppo_get_treatment_localization": [include, previewSetLimit, screenshotSetLimit],
+            "ppo_get_treatment_localization": [include, previewSetLimit, screenshotSetLimit, placementLimit],
             "ppo_list_experiments": [include, experimentTreatmentLimit, controlVersionLimit],
-            "ppo_list_treatment_localizations": [include, previewSetLimit, screenshotSetLimit],
+            "ppo_list_treatment_localizations": [include, previewSetLimit, screenshotSetLimit, placementLimit],
             "ppo_list_treatments": [include, treatmentLocalizationLimit],
             "ppo_list_version_experiments": [include, experimentTreatmentLimit, controlVersionLimit],
             "screenshots_create_preview_set": [
@@ -239,7 +243,7 @@ struct MarketingOptionalInputContractTests {
             }
             return classifications.isEmpty ? nil : mapping.tool
         })
-        #expect(expected.count == 36)
+        #expect(expected.count == 38)
         #expect(classifiedTools == Set(expected.keys))
 
         for (tool, identities) in expected {
@@ -252,7 +256,7 @@ struct MarketingOptionalInputContractTests {
             })
             #expect(classifications == identities)
             #expect(allClassifications.allSatisfy {
-                $0.reviewAtSpec == "4.5"
+                $0.reviewAtSpec == "4.5.1"
                     && !$0.reason.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
             })
         }

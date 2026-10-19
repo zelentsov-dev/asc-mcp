@@ -1,0 +1,286 @@
+{
+  "baselineVersion": "4.4.1",
+  "version": "4.5.1",
+  "operations": [
+    {
+      "operationId": "appAssetLibraries_getInstance",
+      "method": "GET",
+      "path": "/v1/appAssetLibraries/{id}",
+      "decision": "requiredMapping",
+      "reason": "Must be bound to implemented Asset Library tools."
+    },
+    {
+      "operationId": "appAssetLibraries_images_getToManyRelated",
+      "method": "GET",
+      "path": "/v1/appAssetLibraries/{id}/images",
+      "decision": "requiredMapping",
+      "reason": "Must be bound to implemented Asset Library tools."
+    },
+    {
+      "operationId": "appAssetLibraries_images_getToManyRelationship",
+      "method": "GET",
+      "path": "/v1/appAssetLibraries/{id}/relationships/images",
+      "decision": "unsupported",
+      "reason": "The relationship-only endpoint duplicates IDs exposed by the corresponding related-resource read; no separate relationship-ID tool or invocation is implemented."
+    },
+    {
+      "operationId": "appAssetLibraries_videos_getToManyRelationship",
+      "method": "GET",
+      "path": "/v1/appAssetLibraries/{id}/relationships/videos",
+      "decision": "unsupported",
+      "reason": "The relationship-only endpoint duplicates IDs exposed by the corresponding related-resource read; no separate relationship-ID tool or invocation is implemented."
+    },
+    {
+      "operationId": "appAssetLibraries_videos_getToManyRelated",
+      "method": "GET",
+      "path": "/v1/appAssetLibraries/{id}/videos",
+      "decision": "requiredMapping",
+      "reason": "Must be bound to implemented Asset Library tools."
+    },
+    {
+      "operationId": "appAssetLibraryImages_createInstance",
+      "method": "POST",
+      "path": "/v1/appAssetLibraryImages",
+      "decision": "requiredMapping",
+      "reason": "Must be bound to implemented Asset Library tools."
+    },
+    {
+      "operationId": "appAssetLibraryImages_deleteInstance",
+      "method": "DELETE",
+      "path": "/v1/appAssetLibraryImages/{id}",
+      "decision": "requiredMapping",
+      "reason": "Must be bound to implemented Asset Library tools."
+    },
+    {
+      "operationId": "appAssetLibraryImages_getInstance",
+      "method": "GET",
+      "path": "/v1/appAssetLibraryImages/{id}",
+      "decision": "requiredMapping",
+      "reason": "Must be bound to implemented Asset Library tools."
+    },
+    {
+      "operationId": "appAssetLibraryImages_updateInstance",
+      "method": "PATCH",
+      "path": "/v1/appAssetLibraryImages/{id}",
+      "decision": "requiredMapping",
+      "reason": "Must be bound to implemented Asset Library tools."
+    },
+    {
+      "operationId": "appAssetLibraryImages_placements_getToManyRelated",
+      "method": "GET",
+      "path": "/v1/appAssetLibraryImages/{id}/placements",
+      "decision": "requiredMapping",
+      "reason": "Must be bound to implemented Asset Library tools."
+    },
+    {
+      "operationId": "appAssetLibraryImages_placements_getToManyRelationship",
+      "method": "GET",
+      "path": "/v1/appAssetLibraryImages/{id}/relationships/placements",
+      "decision": "unsupported",
+      "reason": "The relationship-only endpoint duplicates IDs exposed by the corresponding related-resource read; no separate relationship-ID tool or invocation is implemented."
+    },
+    {
+      "operationId": "appAssetLibraryPlacementOrderingRequests_createInstance",
+      "method": "POST",
+      "path": "/v1/appAssetLibraryPlacementOrderingRequests",
+      "decision": "requiredMapping",
+      "reason": "Must be bound to implemented Asset Library tools."
+    },
+    {
+      "operationId": "appAssetLibraryPlacements_createInstance",
+      "method": "POST",
+      "path": "/v1/appAssetLibraryPlacements",
+      "decision": "requiredMapping",
+      "reason": "Must be bound to implemented Asset Library tools."
+    },
+    {
+      "operationId": "appAssetLibraryPlacements_deleteInstance",
+      "method": "DELETE",
+      "path": "/v1/appAssetLibraryPlacements/{id}",
+      "decision": "requiredMapping",
+      "reason": "Must be bound to implemented Asset Library tools."
+    },
+    {
+      "operationId": "appAssetLibraryPlacements_getInstance",
+      "method": "GET",
+      "path": "/v1/appAssetLibraryPlacements/{id}",
+      "decision": "requiredMapping",
+      "reason": "Must be bound to implemented Asset Library tools."
+    },
+    {
+      "operationId": "appAssetLibraryRefData_getCollection",
+      "method": "GET",
+      "path": "/v1/appAssetLibraryRefData",
+      "decision": "requiredMapping",
+      "reason": "Must be bound to implemented Asset Library tools."
+    },
+    {
+      "operationId": "appAssetLibraryRefData_getInstance",
+      "method": "GET",
+      "path": "/v1/appAssetLibraryRefData/{id}",
+      "decision": "requiredMapping",
+      "reason": "Must be bound to implemented Asset Library tools."
+    },
+    {
+      "operationId": "appAssetLibraryVideos_createInstance",
+      "method": "POST",
+      "path": "/v1/appAssetLibraryVideos",
+      "decision": "requiredMapping",
+      "reason": "Must be bound to implemented Asset Library tools."
+    },
+    {
+      "operationId": "appAssetLibraryVideos_deleteInstance",
+      "method": "DELETE",
+      "path": "/v1/appAssetLibraryVideos/{id}",
+      "decision": "requiredMapping",
+      "reason": "Must be bound to implemented Asset Library tools."
+    },
+    {
+      "operationId": "appAssetLibraryVideos_getInstance",
+      "method": "GET",
+      "path": "/v1/appAssetLibraryVideos/{id}",
+      "decision": "requiredMapping",
+      "reason": "Must be bound to implemented Asset Library tools."
+    },
+    {
+      "operationId": "appAssetLibraryVideos_updateInstance",
+      "method": "PATCH",
+      "path": "/v1/appAssetLibraryVideos/{id}",
+      "decision": "requiredMapping",
+      "reason": "Must be bound to implemented Asset Library tools."
+    },
+    {
+      "operationId": "appAssetLibraryVideos_placements_getToManyRelated",
+      "method": "GET",
+      "path": "/v1/appAssetLibraryVideos/{id}/placements",
+      "decision": "requiredMapping",
+      "reason": "Must be bound to implemented Asset Library tools."
+    },
+    {
+      "operationId": "appAssetLibraryVideos_placements_getToManyRelationship",
+      "method": "GET",
+      "path": "/v1/appAssetLibraryVideos/{id}/relationships/placements",
+      "decision": "unsupported",
+      "reason": "The relationship-only endpoint duplicates IDs exposed by the corresponding related-resource read; no separate relationship-ID tool or invocation is implemented."
+    },
+    {
+      "operationId": "appCustomProductPageLocalizations_placements_getToManyRelated",
+      "method": "GET",
+      "path": "/v1/appCustomProductPageLocalizations/{id}/placements",
+      "decision": "requiredMapping",
+      "reason": "Must be bound to implemented Asset Library tools."
+    },
+    {
+      "operationId": "appCustomProductPageLocalizations_placements_getToManyRelationship",
+      "method": "GET",
+      "path": "/v1/appCustomProductPageLocalizations/{id}/relationships/placements",
+      "decision": "unsupported",
+      "reason": "The relationship-only endpoint duplicates IDs exposed by the corresponding related-resource read; no separate relationship-ID tool or invocation is implemented."
+    },
+    {
+      "operationId": "appEventLocalizations_placements_getToManyRelated",
+      "method": "GET",
+      "path": "/v1/appEventLocalizations/{id}/placements",
+      "decision": "requiredMapping",
+      "reason": "Must be bound to implemented Asset Library tools."
+    },
+    {
+      "operationId": "appEventLocalizations_placements_getToManyRelationship",
+      "method": "GET",
+      "path": "/v1/appEventLocalizations/{id}/relationships/placements",
+      "decision": "unsupported",
+      "reason": "The relationship-only endpoint duplicates IDs exposed by the corresponding related-resource read; no separate relationship-ID tool or invocation is implemented."
+    },
+    {
+      "operationId": "appStoreVersionExperimentTreatmentLocalizations_placements_getToManyRelated",
+      "method": "GET",
+      "path": "/v1/appStoreVersionExperimentTreatmentLocalizations/{id}/placements",
+      "decision": "requiredMapping",
+      "reason": "Must be bound to implemented Asset Library tools."
+    },
+    {
+      "operationId": "appStoreVersionExperimentTreatmentLocalizations_placements_getToManyRelationship",
+      "method": "GET",
+      "path": "/v1/appStoreVersionExperimentTreatmentLocalizations/{id}/relationships/placements",
+      "decision": "unsupported",
+      "reason": "The relationship-only endpoint duplicates IDs exposed by the corresponding related-resource read; no separate relationship-ID tool or invocation is implemented."
+    },
+    {
+      "operationId": "appStoreVersionLocalizations_placements_getToManyRelated",
+      "method": "GET",
+      "path": "/v1/appStoreVersionLocalizations/{id}/placements",
+      "decision": "requiredMapping",
+      "reason": "Must be bound to implemented Asset Library tools."
+    },
+    {
+      "operationId": "appStoreVersionLocalizations_placements_getToManyRelationship",
+      "method": "GET",
+      "path": "/v1/appStoreVersionLocalizations/{id}/relationships/placements",
+      "decision": "unsupported",
+      "reason": "The relationship-only endpoint duplicates IDs exposed by the corresponding related-resource read; no separate relationship-ID tool or invocation is implemented."
+    },
+    {
+      "operationId": "apps_assetLibrary_getToOneRelated",
+      "method": "GET",
+      "path": "/v1/apps/{id}/assetLibrary",
+      "decision": "requiredMapping",
+      "reason": "Must be bound to implemented Asset Library tools."
+    },
+    {
+      "operationId": "apps_performanceOverviews_getToManyRelated",
+      "method": "GET",
+      "path": "/v1/apps/{id}/performanceOverviews",
+      "decision": "requiredMapping",
+      "reason": "Must be bound to metrics_performance_overview."
+    },
+    {
+      "operationId": "apps_assetLibrary_getToOneRelationship",
+      "method": "GET",
+      "path": "/v1/apps/{id}/relationships/assetLibrary",
+      "decision": "unsupported",
+      "reason": "The relationship-only endpoint duplicates IDs exposed by the corresponding related-resource read; no separate relationship-ID tool or invocation is implemented."
+    },
+    {
+      "operationId": "gameCenterDetailPlayers_updateInstance",
+      "method": "PATCH",
+      "path": "/v1/gameCenterDetailPlayers/{id}",
+      "decision": "outOfScope",
+      "reason": "Game Center remains outside the public MCP product scope; existing Game Center prefix rules apply."
+    },
+    {
+      "operationId": "gameCenterDetails_blockedPlayers_getToManyRelated",
+      "method": "GET",
+      "path": "/v1/gameCenterDetails/{id}/blockedPlayers",
+      "decision": "outOfScope",
+      "reason": "Game Center remains outside the public MCP product scope; existing Game Center prefix rules apply."
+    },
+    {
+      "operationId": "gameCenterDetails_blockedPlayers_getToManyRelationship",
+      "method": "GET",
+      "path": "/v1/gameCenterDetails/{id}/relationships/blockedPlayers",
+      "decision": "outOfScope",
+      "reason": "Game Center remains outside the public MCP product scope; existing Game Center prefix rules apply."
+    },
+    {
+      "operationId": "gameCenterScoreModerations_updateInstance",
+      "method": "PATCH",
+      "path": "/v1/gameCenterScoreModerations/{id}",
+      "decision": "outOfScope",
+      "reason": "Game Center remains outside the public MCP product scope; existing Game Center prefix rules apply."
+    },
+    {
+      "operationId": "gameCenterLeaderboardsV2_gameCenterScoreModerations_getToManyRelated",
+      "method": "GET",
+      "path": "/v2/gameCenterLeaderboards/{id}/gameCenterScoreModerations",
+      "decision": "outOfScope",
+      "reason": "Game Center remains outside the public MCP product scope; existing Game Center prefix rules apply."
+    },
+    {
+      "operationId": "gameCenterLeaderboardsV2_gameCenterScoreModerations_getToManyRelationship",
+      "method": "GET",
+      "path": "/v2/gameCenterLeaderboards/{id}/relationships/gameCenterScoreModerations",
+      "decision": "outOfScope",
+      "reason": "Game Center remains outside the public MCP product scope; existing Game Center prefix rules apply."
+    }
+  ]
+}

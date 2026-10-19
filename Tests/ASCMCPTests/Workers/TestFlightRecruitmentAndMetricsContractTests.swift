@@ -44,7 +44,7 @@ struct TestFlightRecruitmentAndMetricsContractTests {
             httpClient: try await testFlightContractClient(TestHTTPTransport(responses: []))
         )
         let metricTools = await metrics.getTools()
-        #expect(metricTools.count == 9)
+        #expect(metricTools.count == 10)
         let metricToolNames: Set<String> = [
             "metrics_app_beta_tester_usage",
             "metrics_group_beta_tester_usage",

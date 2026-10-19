@@ -5,7 +5,7 @@ import Testing
 
 @Suite("Review Submissions Worker Contract Tests")
 struct ReviewSubmissionsWorkerContractTests {
-    @Test("manifest records exact Apple 4.4.1 operation lineage and clears implemented waivers")
+    @Test("manifest records exact Apple 4.5.1 operation lineage and clears implemented waivers")
     func manifestLineage() throws {
         let manifest = try ASCOperationManifestBundle.loadBundled()
         let worker = try #require(
@@ -83,12 +83,13 @@ struct ReviewSubmissionsWorkerContractTests {
             throw ReviewSubmissionTestFailure.expectedObject
         }
         #expect(addSchema["minProperties"] == .int(2))
-        #expect(addSchema["maxProperties"] == .int(2))
+        #expect(addSchema["maxProperties"] == .int(3))
+        #expect(addSchema["oneOf"] == nil)
         guard case .object(let publishedAddSchema) = ToolMetadataPolicy.apply(to: addTool).inputSchema else {
             throw ReviewSubmissionTestFailure.expectedObject
         }
         #expect(publishedAddSchema["minProperties"] == .int(2))
-        #expect(publishedAddSchema["maxProperties"] == .int(2))
+        #expect(publishedAddSchema["maxProperties"] == .int(3))
 
         let update = try reviewSubmissionProperties(
             try #require(tools.first { $0.name == "review_submissions_update_item" })
@@ -2217,12 +2218,12 @@ private let reviewSubmissionTypedIDFields: Set<String> = [
 private let reviewSubmissionFields =
     "platform,submittedDate,state,app,items,appStoreVersionForReview,submittedByActor,lastUpdatedByActor"
 private let reviewSubmissionItemFields =
-    "state,appStoreVersion,appCustomProductPageVersion,appStoreVersionExperiment,appStoreVersionExperimentV2,appEvent,backgroundAssetVersion,gameCenterAchievementVersion,gameCenterActivityVersion,gameCenterChallengeVersion,gameCenterLeaderboardSetVersion,gameCenterLeaderboardVersion,inAppPurchaseVersion,subscriptionVersion,subscriptionGroupVersion"
+    "state,appStoreVersion,appCustomProductPageVersion,appStoreVersionExperiment,appStoreVersionExperimentV2,appEvent,appAssetLibraryImage,appAssetLibraryVideo,backgroundAssetVersion,gameCenterAchievementVersion,gameCenterActivityVersion,gameCenterChallengeVersion,gameCenterLeaderboardSetVersion,gameCenterLeaderboardVersion,inAppPurchaseVersion,subscriptionVersion,subscriptionGroupVersion"
 private let reviewSubmissionAppVersionFields =
     "platform,versionString,appStoreState,appVersionState,reviewType,releaseType,createdDate"
 private let reviewSubmissionActorFields = "actorType,userFirstName,userLastName,userEmail,apiKeyId"
 private let reviewSubmissionSupportedIncludes =
-    "appStoreVersion,appCustomProductPageVersion,appStoreVersionExperimentV2,appEvent,backgroundAssetVersion,inAppPurchaseVersion,subscriptionVersion,subscriptionGroupVersion"
+    "appAssetLibraryImage,appAssetLibraryVideo,appStoreVersion,appCustomProductPageVersion,appStoreVersionExperimentV2,appEvent,backgroundAssetVersion,inAppPurchaseVersion,subscriptionVersion,subscriptionGroupVersion"
 
 private func makeReviewSubmissionsWorker(
     transport: TestHTTPTransport
@@ -2305,6 +2306,8 @@ private func reviewSubmissionListQuery(
 
 private func reviewSubmissionItemListQuery(limit: Int) -> [String: String] {
     [
+        "fields[appAssetLibraryImages]": "category,createdDate,lastModifiedDate,fileName,fileSize,referenceName,specId,state,stateDetails",
+        "fields[appAssetLibraryVideos]": "category,createdDate,lastModifiedDate,fileName,fileSize,referenceName,specId,state,stateDetails",
         "fields[reviewSubmissionItems]": reviewSubmissionItemFields,
         "fields[appStoreVersions]": reviewSubmissionAppVersionFields,
         "fields[appCustomProductPageVersions]": "version,state,deepLink",

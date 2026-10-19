@@ -14,12 +14,12 @@
           "path": "/v1/reviewSubmissionItems",
           "role": "primary",
           "optionalParameterClassifications": [
-            { "location": "body", "appleName": "/data/relationships/appStoreVersionExperiment", "disposition": "intentionallyOmitted", "reason": "The legacy PPO relationship is intentionally rejected; this worker accepts only appStoreVersionExperimentV2.", "reviewAtSpec": "4.5" },
-            { "location": "body", "appleName": "/data/relationships/gameCenterAchievementVersion", "disposition": "intentionallyOmitted", "reason": "Game Center review items remain in the separately scoped Game Center product.", "reviewAtSpec": "4.5" },
-            { "location": "body", "appleName": "/data/relationships/gameCenterActivityVersion", "disposition": "intentionallyOmitted", "reason": "Game Center review items remain in the separately scoped Game Center product.", "reviewAtSpec": "4.5" },
-            { "location": "body", "appleName": "/data/relationships/gameCenterChallengeVersion", "disposition": "intentionallyOmitted", "reason": "Game Center review items remain in the separately scoped Game Center product.", "reviewAtSpec": "4.5" },
-            { "location": "body", "appleName": "/data/relationships/gameCenterLeaderboardSetVersion", "disposition": "intentionallyOmitted", "reason": "Game Center review items remain in the separately scoped Game Center product.", "reviewAtSpec": "4.5" },
-            { "location": "body", "appleName": "/data/relationships/gameCenterLeaderboardVersion", "disposition": "intentionallyOmitted", "reason": "Game Center review items remain in the separately scoped Game Center product.", "reviewAtSpec": "4.5" }
+            { "location": "body", "appleName": "/data/relationships/appStoreVersionExperiment", "disposition": "intentionallyOmitted", "reason": "The legacy PPO relationship is intentionally rejected; this worker accepts only appStoreVersionExperimentV2.", "reviewAtSpec": "4.5.1" },
+            { "location": "body", "appleName": "/data/relationships/gameCenterAchievementVersion", "disposition": "intentionallyOmitted", "reason": "Game Center review items remain in the separately scoped Game Center product.", "reviewAtSpec": "4.5.1" },
+            { "location": "body", "appleName": "/data/relationships/gameCenterActivityVersion", "disposition": "intentionallyOmitted", "reason": "Game Center review items remain in the separately scoped Game Center product.", "reviewAtSpec": "4.5.1" },
+            { "location": "body", "appleName": "/data/relationships/gameCenterChallengeVersion", "disposition": "intentionallyOmitted", "reason": "Game Center review items remain in the separately scoped Game Center product.", "reviewAtSpec": "4.5.1" },
+            { "location": "body", "appleName": "/data/relationships/gameCenterLeaderboardSetVersion", "disposition": "intentionallyOmitted", "reason": "Game Center review items remain in the separately scoped Game Center product.", "reviewAtSpec": "4.5.1" },
+            { "location": "body", "appleName": "/data/relationships/gameCenterLeaderboardVersion", "disposition": "intentionallyOmitted", "reason": "Game Center review items remain in the separately scoped Game Center product.", "reviewAtSpec": "4.5.1" }
           ],
           "inputs": [
             { "sourceKind": "fixed", "jsonPointer": "/data/type", "fixedValue": "reviewSubmissionItems" },
@@ -28,6 +28,8 @@
             { "sourceKind": "fixed", "jsonPointer": "/data/relationships/appCustomProductPageVersion/data/type", "fixedValue": "appCustomProductPageVersions" },
             { "sourceKind": "fixed", "jsonPointer": "/data/relationships/appStoreVersionExperimentV2/data/type", "fixedValue": "appStoreVersionExperiments" },
             { "sourceKind": "fixed", "jsonPointer": "/data/relationships/appEvent/data/type", "fixedValue": "appEvents" },
+            { "sourceKind": "fixed", "jsonPointer": "/data/relationships/appAssetLibraryImage/data/type", "fixedValue": "appAssetLibraryImages" },
+            { "sourceKind": "fixed", "jsonPointer": "/data/relationships/appAssetLibraryVideo/data/type", "fixedValue": "appAssetLibraryVideos" },
             { "sourceKind": "fixed", "jsonPointer": "/data/relationships/backgroundAssetVersion/data/type", "fixedValue": "backgroundAssetVersions" },
             { "sourceKind": "fixed", "jsonPointer": "/data/relationships/inAppPurchaseVersion/data/type", "fixedValue": "inAppPurchaseVersions" },
             { "sourceKind": "fixed", "jsonPointer": "/data/relationships/subscriptionVersion/data/type", "fixedValue": "subscriptionVersions" },
@@ -41,6 +43,9 @@
         { "toolField": "app_custom_product_page_version_id", "sourceKind": "requestBody", "operationId": "reviewSubmissionItems_createInstance", "jsonPointer": "/data/relationships/appCustomProductPageVersion/data/id" },
         { "toolField": "app_store_version_experiment_v2_id", "sourceKind": "requestBody", "operationId": "reviewSubmissionItems_createInstance", "jsonPointer": "/data/relationships/appStoreVersionExperimentV2/data/id" },
         { "toolField": "app_event_id", "sourceKind": "requestBody", "operationId": "reviewSubmissionItems_createInstance", "jsonPointer": "/data/relationships/appEvent/data/id" },
+        { "toolField": "app_asset_library_image_id", "sourceKind": "requestBody", "operationId": "reviewSubmissionItems_createInstance", "jsonPointer": "/data/relationships/appAssetLibraryImage/data/id" },
+        { "toolField": "app_asset_library_video_id", "sourceKind": "requestBody", "operationId": "reviewSubmissionItems_createInstance", "jsonPointer": "/data/relationships/appAssetLibraryVideo/data/id" },
+        { "toolField": "preview_id", "sourceKind": "local", "localRole": "Required only for Asset Library image/video additions; validates and consumes the shared AssetsWorker one-time preview for the exact submission and asset before any write." },
         { "toolField": "background_asset_version_id", "sourceKind": "requestBody", "operationId": "reviewSubmissionItems_createInstance", "jsonPointer": "/data/relationships/backgroundAssetVersion/data/id" },
         { "toolField": "in_app_purchase_version_id", "sourceKind": "requestBody", "operationId": "reviewSubmissionItems_createInstance", "jsonPointer": "/data/relationships/inAppPurchaseVersion/data/id" },
         { "toolField": "subscription_version_id", "sourceKind": "requestBody", "operationId": "reviewSubmissionItems_createInstance", "jsonPointer": "/data/relationships/subscriptionVersion/data/id" },
@@ -58,7 +63,7 @@
           { "outputField": "recovery", "localRole": "Expose deterministic inspect, update, and remove tool references." }
         ]
       },
-      "note": "Exactly one of eight typed resource-version IDs is accepted at runtime; legacy PPO and all Game Center relationships are rejected before any network request. A successful create is confirmed only when Apple returns a path-safe reviewSubmissionItems ID and exactly the requested relationship name, JSON:API type, and resource ID; mismatches return write_outcome=not_confirmed with owning-submission inspection steps."
+      "note": "Existing calls accept exactly one of eight typed resource-version IDs unchanged. Asset Library image/video additions instead require the exact asset ID, submission ID, and one-time preview_id; execution is delegated to the shared AssetsWorker coordinator. Legacy PPO and Game Center relationships remain rejected before network access. Legacy creates retain exact resource identity and committed-unverified recovery validation."
     },
     {
       "tool": "review_submissions_cancel",
@@ -73,8 +78,8 @@
           "path": "/v1/reviewSubmissions/{id}",
           "role": "primary",
           "optionalParameterClassifications": [
-            { "location": "body", "appleName": "/data/attributes/platform", "disposition": "intentionallyOmitted", "reason": "Cancellation preserves the platform selected when the submission was created.", "reviewAtSpec": "4.5" },
-            { "location": "body", "appleName": "/data/attributes/submitted", "disposition": "intentionallyOmitted", "reason": "Cancellation never combines canceled=true with the distinct submit transition.", "reviewAtSpec": "4.5" }
+            { "location": "body", "appleName": "/data/attributes/platform", "disposition": "intentionallyOmitted", "reason": "Cancellation preserves the platform selected when the submission was created.", "reviewAtSpec": "4.5.1" },
+            { "location": "body", "appleName": "/data/attributes/submitted", "disposition": "intentionallyOmitted", "reason": "Cancellation never combines canceled=true with the distinct submit transition.", "reviewAtSpec": "4.5.1" }
           ],
           "inputs": [
             { "sourceKind": "derived", "jsonPointer": "/data/id", "derivedFrom": ["submission_id"], "localRole": "Copy the path ID into the JSON:API resource identifier." },
@@ -173,7 +178,7 @@
           "inputs": [
             { "sourceKind": "fixed", "location": "query", "appleName": "fields[reviewSubmissions]", "fixedValue": ["platform", "submittedDate", "state", "app", "items", "appStoreVersionForReview", "submittedByActor", "lastUpdatedByActor"] },
             { "sourceKind": "fixed", "location": "query", "appleName": "fields[apps]", "fixedValue": ["name", "bundleId", "sku", "primaryLocale"] },
-            { "sourceKind": "fixed", "location": "query", "appleName": "fields[reviewSubmissionItems]", "fixedValue": ["state", "appStoreVersion", "appCustomProductPageVersion", "appStoreVersionExperiment", "appStoreVersionExperimentV2", "appEvent", "backgroundAssetVersion", "gameCenterAchievementVersion", "gameCenterActivityVersion", "gameCenterChallengeVersion", "gameCenterLeaderboardSetVersion", "gameCenterLeaderboardVersion", "inAppPurchaseVersion", "subscriptionVersion", "subscriptionGroupVersion"] },
+            { "sourceKind": "fixed", "location": "query", "appleName": "fields[reviewSubmissionItems]", "fixedValue": ["state", "appStoreVersion", "appCustomProductPageVersion", "appStoreVersionExperiment", "appStoreVersionExperimentV2", "appEvent", "appAssetLibraryImage", "appAssetLibraryVideo", "backgroundAssetVersion", "gameCenterAchievementVersion", "gameCenterActivityVersion", "gameCenterChallengeVersion", "gameCenterLeaderboardSetVersion", "gameCenterLeaderboardVersion", "inAppPurchaseVersion", "subscriptionVersion", "subscriptionGroupVersion"] },
             { "sourceKind": "fixed", "location": "query", "appleName": "fields[appStoreVersions]", "fixedValue": ["platform", "versionString", "appStoreState", "appVersionState", "reviewType", "releaseType", "createdDate"] },
             { "sourceKind": "fixed", "location": "query", "appleName": "fields[actors]", "fixedValue": ["actorType", "userFirstName", "userLastName", "userEmail", "apiKeyId"] }
           ]
@@ -226,7 +231,7 @@
           "inputs": [
             { "sourceKind": "fixed", "location": "query", "appleName": "fields[reviewSubmissions]", "fixedValue": ["platform", "submittedDate", "state", "app", "items", "appStoreVersionForReview", "submittedByActor", "lastUpdatedByActor"] },
             { "sourceKind": "fixed", "location": "query", "appleName": "fields[apps]", "fixedValue": ["name", "bundleId", "sku", "primaryLocale"] },
-            { "sourceKind": "fixed", "location": "query", "appleName": "fields[reviewSubmissionItems]", "fixedValue": ["state", "appStoreVersion", "appCustomProductPageVersion", "appStoreVersionExperiment", "appStoreVersionExperimentV2", "appEvent", "backgroundAssetVersion", "gameCenterAchievementVersion", "gameCenterActivityVersion", "gameCenterChallengeVersion", "gameCenterLeaderboardSetVersion", "gameCenterLeaderboardVersion", "inAppPurchaseVersion", "subscriptionVersion", "subscriptionGroupVersion"] },
+            { "sourceKind": "fixed", "location": "query", "appleName": "fields[reviewSubmissionItems]", "fixedValue": ["state", "appStoreVersion", "appCustomProductPageVersion", "appStoreVersionExperiment", "appStoreVersionExperimentV2", "appEvent", "appAssetLibraryImage", "appAssetLibraryVideo", "backgroundAssetVersion", "gameCenterAchievementVersion", "gameCenterActivityVersion", "gameCenterChallengeVersion", "gameCenterLeaderboardSetVersion", "gameCenterLeaderboardVersion", "inAppPurchaseVersion", "subscriptionVersion", "subscriptionGroupVersion"] },
             { "sourceKind": "fixed", "location": "query", "appleName": "fields[appStoreVersions]", "fixedValue": ["platform", "versionString", "appStoreState", "appVersionState", "reviewType", "releaseType", "createdDate"] },
             { "sourceKind": "fixed", "location": "query", "appleName": "fields[actors]", "fixedValue": ["actorType", "userFirstName", "userLastName", "userEmail", "apiKeyId"] }
           ]
@@ -283,16 +288,18 @@
           "path": "/v1/reviewSubmissions/{id}/items",
           "role": "primary",
           "inputs": [
-            { "sourceKind": "fixed", "location": "query", "appleName": "fields[reviewSubmissionItems]", "fixedValue": ["state", "appStoreVersion", "appCustomProductPageVersion", "appStoreVersionExperiment", "appStoreVersionExperimentV2", "appEvent", "backgroundAssetVersion", "gameCenterAchievementVersion", "gameCenterActivityVersion", "gameCenterChallengeVersion", "gameCenterLeaderboardSetVersion", "gameCenterLeaderboardVersion", "inAppPurchaseVersion", "subscriptionVersion", "subscriptionGroupVersion"] },
+            { "sourceKind": "fixed", "location": "query", "appleName": "fields[reviewSubmissionItems]", "fixedValue": ["state", "appStoreVersion", "appCustomProductPageVersion", "appStoreVersionExperiment", "appStoreVersionExperimentV2", "appEvent", "appAssetLibraryImage", "appAssetLibraryVideo", "backgroundAssetVersion", "gameCenterAchievementVersion", "gameCenterActivityVersion", "gameCenterChallengeVersion", "gameCenterLeaderboardSetVersion", "gameCenterLeaderboardVersion", "inAppPurchaseVersion", "subscriptionVersion", "subscriptionGroupVersion"] },
             { "sourceKind": "fixed", "location": "query", "appleName": "fields[appStoreVersions]", "fixedValue": ["platform", "versionString", "appStoreState", "appVersionState", "reviewType", "releaseType", "createdDate"] },
             { "sourceKind": "fixed", "location": "query", "appleName": "fields[appCustomProductPageVersions]", "fixedValue": ["version", "state", "deepLink"] },
             { "sourceKind": "fixed", "location": "query", "appleName": "fields[appStoreVersionExperiments]", "fixedValue": ["name", "trafficProportion", "state", "reviewRequired", "startDate", "endDate", "platform"] },
             { "sourceKind": "fixed", "location": "query", "appleName": "fields[appEvents]", "fixedValue": ["referenceName", "badge", "eventState", "deepLink", "purchaseRequirement", "primaryLocale", "priority", "purpose"] },
+            {"sourceKind": "fixed", "location": "query", "appleName": "fields[appAssetLibraryImages]", "fixedValue": ["category", "createdDate", "lastModifiedDate", "fileName", "fileSize", "referenceName", "specId", "state", "stateDetails"]},
+            {"sourceKind": "fixed", "location": "query", "appleName": "fields[appAssetLibraryVideos]", "fixedValue": ["category", "createdDate", "lastModifiedDate", "fileName", "fileSize", "referenceName", "specId", "state", "stateDetails"]},
             { "sourceKind": "fixed", "location": "query", "appleName": "fields[backgroundAssetVersions]", "fixedValue": ["createdDate", "platforms", "state", "stateDetails", "version", "locale"] },
             { "sourceKind": "fixed", "location": "query", "appleName": "fields[inAppPurchaseVersions]", "fixedValue": ["version", "state"] },
             { "sourceKind": "fixed", "location": "query", "appleName": "fields[subscriptionVersions]", "fixedValue": ["version", "state"] },
             { "sourceKind": "fixed", "location": "query", "appleName": "fields[subscriptionGroupVersions]", "fixedValue": ["version", "state"] },
-            { "sourceKind": "fixed", "location": "query", "appleName": "include", "fixedValue": ["appStoreVersion", "appCustomProductPageVersion", "appStoreVersionExperimentV2", "appEvent", "backgroundAssetVersion", "inAppPurchaseVersion", "subscriptionVersion", "subscriptionGroupVersion"] }
+            { "sourceKind": "fixed", "location": "query", "appleName": "include", "fixedValue": ["appAssetLibraryImage", "appAssetLibraryVideo", "appStoreVersion", "appCustomProductPageVersion", "appStoreVersionExperimentV2", "appEvent", "backgroundAssetVersion", "inAppPurchaseVersion", "subscriptionVersion", "subscriptionGroupVersion"] }
           ]
         }
       ],
@@ -362,8 +369,8 @@
           "path": "/v1/reviewSubmissions/{id}",
           "role": "primary",
           "optionalParameterClassifications": [
-            { "location": "body", "appleName": "/data/attributes/platform", "disposition": "intentionallyOmitted", "reason": "Submission preserves the platform selected when the submission was created.", "reviewAtSpec": "4.5" },
-            { "location": "body", "appleName": "/data/attributes/canceled", "disposition": "intentionallyOmitted", "reason": "Submission never combines submitted=true with the distinct cancellation transition.", "reviewAtSpec": "4.5" }
+            { "location": "body", "appleName": "/data/attributes/platform", "disposition": "intentionallyOmitted", "reason": "Submission preserves the platform selected when the submission was created.", "reviewAtSpec": "4.5.1" },
+            { "location": "body", "appleName": "/data/attributes/canceled", "disposition": "intentionallyOmitted", "reason": "Submission never combines submitted=true with the distinct cancellation transition.", "reviewAtSpec": "4.5.1" }
           ],
           "inputs": [
             { "sourceKind": "derived", "jsonPointer": "/data/id", "derivedFrom": ["submission_id"], "localRole": "Copy the path ID into the JSON:API resource identifier." },

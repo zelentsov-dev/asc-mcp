@@ -18,7 +18,7 @@
 
 ## Overview
 
-**asc-mcp** is a Swift-based MCP server that connects a local macOS MCP client to the [App Store Connect API](https://developer.apple.com/documentation/appstoreconnectapi). It exposes **502 tools** across 33 App Store tool domains + 2 core domains, enabling you to automate iOS and macOS release workflows through natural language.
+**asc-mcp** is a Swift-based MCP server that connects a local macOS MCP client to the [App Store Connect API](https://developer.apple.com/documentation/appstoreconnectapi). It exposes **514 tools** across 34 App Store tool domains + 2 core domains, enabling you to automate iOS and macOS release workflows through natural language.
 
 Configuration examples are included for Codex, Claude Code, Claude Desktop, Gemini CLI, VS Code with GitHub Copilot, Continue, Cursor, and Devin Desktop (formerly Windsurf). Client configuration is documented; release CI verifies installation, MCP initialization, and tool discovery on macOS rather than launching every third-party client.
 
@@ -34,6 +34,8 @@ New here? Follow the [Quick Start](#quick-start). The remaining sections are ref
 - **Feedback and operations** — customer reviews, webhooks, accessibility declarations, analytics, metrics, and diagnostics
 - **Safer automation** — read-only mode, confirmation safeguards, strict pagination, and mutation recovery guidance
 - **Auditable API coverage** — a versioned Apple OpenAPI contract and release-time drift checks
+
+The source tree prepares **4.2.0**; the installation examples below remain pinned to the last stable release until candidate acceptance and owner publication. See the [migration guide](docs/migrations/4.2.0-asset-library.md) for the separate Asset Library workflow.
 
 ## Platform Support
 
@@ -58,7 +60,7 @@ The recommended setup stores App Store Connect credentials once in a private loc
 
 ```bash
 brew install mint
-mint install zelentsov-dev/asc-mcp@v4.1.6
+mint install zelentsov-dev/asc-mcp@v4.2.0
 ~/.mint/bin/asc-mcp --version
 ```
 
@@ -149,13 +151,13 @@ If the connection or request fails, see [Troubleshooting](#troubleshooting).
 
 ```bash
 brew install mint
-mint install zelentsov-dev/asc-mcp@v4.1.6
+mint install zelentsov-dev/asc-mcp@v4.2.0
 ```
 
 Update or reinstall the pinned release:
 
 ```bash
-mint install zelentsov-dev/asc-mcp@v4.1.6 --force
+mint install zelentsov-dev/asc-mcp@v4.2.0 --force
 ```
 
 Stable users should install a version tag. Installing `main` or `develop` is intended only for maintainers and pre-release testing.
@@ -480,7 +482,7 @@ You can also disable individual tools in the client. Server-side worker filterin
 
 ## Worker Filtering
 
-The server exposes **502 tools** across 33 App Store tool domains + 2 core domains. Some MCP clients impose a tool limit; Cascade in Devin Desktop currently allows 100 active tools. Use the 35 `--workers` filter keys to enable only the workers you need:
+The server exposes **514 tools** across 34 App Store tool domains + 2 core domains. Some MCP clients impose a tool limit; Cascade in Devin Desktop currently allows 100 active tools. Use the 36 `--workers` filter keys to enable only the workers you need:
 
 ```bash
 # Only load apps, builds, and version lifecycle tools
@@ -531,13 +533,13 @@ swift run asc-mcp openapi-contract-check \
   --strict
 ```
 
-The manifest is pinned to Apple API 4.5 by version, SHA-256, path count, and operation count. It currently maps 476 Apple operations, explicitly defers 425, and scopes out 369, covering all 1,270 operations without overlap. CI fails when the Apple document changes, a mapped operation moves or disappears, a public tool or worker drifts from the manifest, an input field loses its binding, response lineage becomes invalid, or a deferred decision expires. Unexposed optional Apple parameters are warnings so they remain visible in the generated backlog.
+The manifest is pinned to Apple API 4.5.1 by version, SHA-256, path count, and operation count. It maps 503 Apple operations, explicitly defers 431, and scopes out 369, accounting for all 1,303 operations. Required CI checks the committed snapshot reproducibly. A separate latest-Apple comparison produces a semantic drift report and blocks publication until changes are reviewed. Contract CI fails when a mapped operation moves or disappears, a public tool or worker drifts from the manifest, an input field loses its binding, response lineage becomes invalid, or a deferred decision expires. Unexposed optional Apple parameters are warnings so they remain visible in the generated backlog.
 
-Manifest schema v2 also accounts for every optional Apple query and request-body input as publicly bound, internally controlled, intentionally omitted with a reviewed reason, or still unclassified. The checked-in `optionalInputCoveragePin` records the exact current totals and a SHA-256 digest of the sorted input identities and dispositions; `--strict` rejects a missing pin or any count- or identity-level drift. The pin makes phased remediation auditable and regression-safe, but it is not a claim that every optional Apple input is already public. The Apple 4.5 pin is 2,907 total: 1,121 bound, 40 internally controlled, 1,746 intentionally omitted, and 0 unclassified. Its identity SHA-256 is `0ce3ff14568f841643559c359bc91827290535925c3665172fda81d499f81ce1`.
+Manifest schema v2 also accounts for every optional Apple query and request-body input as publicly bound, internally controlled, intentionally omitted with a reviewed reason, or still unclassified. The checked-in `optionalInputCoveragePin` records the exact current totals and a SHA-256 digest of the sorted input identities and dispositions; `--strict` rejects a missing pin or any count- or identity-level drift. The pin makes phased remediation auditable and regression-safe, but it is not a claim that every optional Apple input is already public. The v4.1.3 pin is 2,905 total: 1,122 bound, 40 internally controlled, 1,743 intentionally omitted, and 0 unclassified. Its identity SHA-256 is `c975f4e4eebb62ec87864a73fbf72bb8841f644108e54e6ffb25168bcf2a2766`.
 
 `--strict` is the merge- and tag-time release gate. Every declared `target` or `broken` tool remains an error in reports, and a regression test pins their exact state. The current baseline has no `target` or `broken` implementations and no implementation drift, so any implementation that leaves `asBuilt`, any structural contract error, or any optional-input coverage drift blocks both merges and releases. `--structural-strict` remains available only for local phased remediation work.
 
-This gate proves operation identity, top-level MCP field ownership, required Apple inputs, typed internal values, and response source/pointer lineage. Full MCP type/enum/range parity and complete typed response schemas remain separate optimization phases; the current mapping status is 469 partial and 33 deprecated.
+This gate proves operation identity, top-level MCP field ownership, required Apple inputs, typed internal values, and response source/pointer lineage. Full MCP type/enum/range parity and complete typed response schemas remain separate optimization phases; mapping status does not certify Apple account permissions or successful real-world acceptance.
 
 The older `openapi-coverage` command remains available for the high-level domain report in [`ASC-OPENAPI-COVERAGE-GENERATED.md`](ASC-OPENAPI-COVERAGE-GENERATED.md). The operation contract is the authoritative release gate.
 
@@ -573,13 +575,14 @@ The older `openapi-coverage` command remains available for the high-level domain
 | `users` | `users_` | 10 | Team members, roles |
 | `app_events` | `app_events_` | 9 | In-app events, localizations |
 | `analytics` | `analytics_` | 11 | Sales/financial reports, analytics |
+| `assets` | `assets_` | 11 | Reusable images/videos, placement, preview, one-use execution, and recovery |
 | `screenshots` | `screenshots_` | 19 | Screenshots, previews, sets, and verified ordering |
 | `custom_pages` | `custom_pages_` | 17 | Custom product pages, versions, localizations, and search keywords |
 | `ppo` | `ppo_` | 15 | Product page optimization experiments, treatments, and localizations |
 | `promoted` | `promoted_` | 10 | Promoted in-app purchases and verified ordering |
 | `review_attachments` | `review_attachments_` | 4 | App Store review attachments |
 | `review_submissions` | `review_submissions_` | 9 | Generic App Store review submissions and submission items |
-| `metrics` | `metrics_` | 9 | Performance metrics, diagnostics, and TestFlight usage metrics |
+| `metrics` | `metrics_` | 10 | Performance metrics, diagnostics, and TestFlight usage metrics |
 
 ### Tool Catalog Size
 
@@ -587,7 +590,7 @@ When an MCP client eagerly loads every tool definition, the approximate schema f
 
 | Configuration | Tools | ~Tokens |
 |---|---:|---:|
-| All workers (default) | 502 | **~60,000** |
+| All workers (default) | 514 | **~60,000** |
 | Release workflow: `apps,builds,export_compliance,versions,reviews` | ~72 | ~8,900 |
 | Monetization: `apps,iap,subscriptions,pricing` | 184 | ~21,100 |
 | TestFlight: `apps,builds,beta_groups,beta_testers` | ~63 | ~7,100 |
@@ -600,7 +603,7 @@ Exact cost depends on the MCP host's serialization, tokenizer, and tool-discover
 
 ## Available Tools
 
-**502 tools** organized across 33 App Store tool domains + 2 core domains (use the 35 `--workers` filter keys — see [Worker Filtering](#worker-filtering)):
+**514 tools** organized across 34 App Store tool domains + 2 core domains (use the 36 `--workers` filter keys — see [Worker Filtering](#worker-filtering)):
 
 <details>
 <summary><strong>Company Management</strong> — 3 tools</summary>
@@ -1175,10 +1178,10 @@ Includes sales, financial, app summary, analytics report request, report, instan
 | `promoted_update` | Update promotion visibility or enabled state |
 | `promoted_delete` | Delete a promotion |
 | `promoted_reorder` | Replace and verify the complete promoted-purchase order for an app |
-| `promoted_upload_image` | Deprecated: returns migration guidance; the endpoint is absent from pinned Apple OpenAPI 4.5 |
-| `promoted_get_image` | Deprecated: returns migration guidance; the endpoint is absent from pinned Apple OpenAPI 4.5 |
-| `promoted_delete_image` | Deprecated: returns migration guidance; the endpoint is absent from pinned Apple OpenAPI 4.5 |
-| `promoted_get_image_for_purchase` | Deprecated: returns migration guidance; the relationship is absent from pinned Apple OpenAPI 4.5 |
+| `promoted_upload_image` | Deprecated: returns migration guidance; the endpoint is absent from pinned Apple OpenAPI 4.5.1 |
+| `promoted_get_image` | Deprecated: returns migration guidance; the endpoint is absent from pinned Apple OpenAPI 4.5.1 |
+| `promoted_delete_image` | Deprecated: returns migration guidance; the endpoint is absent from pinned Apple OpenAPI 4.5.1 |
+| `promoted_get_image_for_purchase` | Deprecated: returns migration guidance; the relationship is absent from pinned Apple OpenAPI 4.5.1 |
 
 </details>
 
@@ -1209,10 +1212,32 @@ Includes App Store review attachment upload, get, delete, and list tools.
 </details>
 
 <details>
-<summary><strong>Performance Metrics</strong> — 9 tools</summary>
+<summary><strong>App Asset Library</strong> — 11 tools</summary>
 
 | Tool | Description |
 |------|-------------|
+| `assets_get_library` | Read the app-owned reusable asset library |
+| `assets_get_reference_data` | Read dynamic media and placement requirements, optionally by ID |
+| `assets_list_images` | Browse the app's images with scoped pagination |
+| `assets_list_videos` | Browse the app's videos with scoped pagination |
+| `assets_get_image` | Read image processing/review state and safe properties |
+| `assets_get_video` | Read video and independent poster-frame processing state |
+| `assets_list_placements` | Browse uses of one asset or contents of one localization |
+| `assets_get_placement` | Read a placement and verify its parent app |
+| `assets_prepare_change` | Prepare a typed change without writing to Apple; return a ten-minute preview |
+| `assets_apply_change` | Consume a preview once, revalidate, execute and read back |
+| `assets_get_operation` | Inspect the private journal and reconcile through reads only |
+
+Read the [migration and recovery guide](docs/migrations/4.2.0-asset-library.md) before applying changes. Upload, placement and review are separate operations; published-placement changes are outside this candidate's acceptance scope.
+
+</details>
+
+<details>
+<summary><strong>Performance Metrics</strong> — 10 tools</summary>
+
+| Tool | Description |
+|------|-------------|
+| `metrics_performance_overview` | Read app performance overview with device filtering |
 | `metrics_app_perf` | Get app performance/power metrics |
 | `metrics_build_perf` | Get build performance metrics |
 | `metrics_build_diagnostics` | List diagnostics for a build |
@@ -1309,7 +1334,7 @@ Sources/asc-mcp/
 │   ├── HTTPClient.swift            #   Actor-based HTTP with retry logic
 │   ├── JWTService.swift            #   ES256 JWT token generation
 │   └── CompaniesManager.swift      #   Multi-account management
-└── Workers/                        # MCP tool implementations (39 Swift worker classes + MainWorker router)
+└── Workers/                        # MCP tool implementations (40 Swift worker classes + MainWorker router)
     ├── MainWorker/WorkerManager    #   Central tool registry & routing
     ├── CompaniesWorker/            #   company_* tools
     ├── AuthWorker/                 #   auth_* tools

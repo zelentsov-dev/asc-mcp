@@ -354,6 +354,8 @@ struct ASCReviewSubmissionItem: Codable, Sendable {
 
     struct Relationships: Codable, Sendable {
         let appStoreVersion: ASCRelationship?
+        let appAssetLibraryImage: ASCRelationship?
+        let appAssetLibraryVideo: ASCRelationship?
         let appCustomProductPageVersion: ASCRelationship?
         let appStoreVersionExperiment: ASCRelationship?
         let appStoreVersionExperimentV2: ASCRelationship?

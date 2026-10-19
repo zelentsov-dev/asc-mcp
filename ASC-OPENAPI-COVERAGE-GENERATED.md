@@ -1,21 +1,21 @@
 # App Store Connect OpenAPI Coverage
 
-Generated: 2026-09-24
+Generated: 2026-10-15
 
 Sources:
 - Apple App Store Connect API overview: https://developer.apple.com/app-store-connect/api/
 - Apple App Store Connect API documentation: https://developer.apple.com/documentation/appstoreconnectapi
 - Apple OpenAPI specification download: https://developer.apple.com/sample-code/app-store-connect/app-store-connect-openapi-specification.zip
 
-Spec: App Store Connect API 4.5 (OpenAPI 3.0.1)
-Apple paths: 973
-Apple operations: 1270
-Classified paths: 973
+Spec: App Store Connect API 4.5.1 (OpenAPI 3.0.1)
+Apple paths: 1001
+Apple operations: 1303
+Classified paths: 1001
 Unclassified paths: 0
 
 ## Priority Gaps
 
-- P0 App Store app metadata and release operations: Partial, 304 Apple paths, 381 operations.
+- P0 App Store app metadata and release operations: Partial, 332 Apple paths, 414 operations.
 - P0 TestFlight builds, testers, groups, and beta app review: Partial, 115 Apple paths, 154 operations.
 - P1 Provisioning and identifiers: Partial, 32 Apple paths, 49 operations.
 - P1 Reporting, analytics, metrics, and diagnostics: Partial, 47 Apple paths, 56 operations.
@@ -25,7 +25,7 @@ Unclassified paths: 0
 
 | Domain | Status | Priority | Apple paths | Operations | Workers | Notes |
 |---|---|---:|---:|---:|---|---|
-| App Store app metadata and release operations | Partial | P0 | 304 | 381 | `apps`, `accessibility`, `versions`, `app_info`, `pricing`, `app_events`, `screenshots`, `custom_pages`, `ppo`, `promoted`, `review_attachments`, `review_submissions`, `reviews`, `export_compliance` | The common release workflow includes strict version filtering and paging, safe phased-release controls, generic review submissions, App Info-owned age-rating inspection, app search keywords, expanded Custom Product Page and PPO workflows, promoted ordering, and verified screenshot and preview ordering. Remaining app-surface operations stay explicitly phased. |
+| App Store app metadata and release operations | Partial | P0 | 332 | 414 | `apps`, `accessibility`, `versions`, `app_info`, `pricing`, `app_events`, `assets`, `screenshots`, `custom_pages`, `ppo`, `promoted`, `review_attachments`, `review_submissions`, `reviews`, `export_compliance` | The common release workflow includes strict version filtering and paging, safe phased-release controls, generic review submissions, App Info-owned age-rating inspection, app search keywords, expanded Custom Product Page and PPO workflows, promoted ordering, and verified screenshot and preview ordering. Remaining app-surface operations stay explicitly phased. |
 | TestFlight builds, testers, groups, and beta app review | Partial | P0 | 115 | 154 | `builds`, `build_uploads`, `build_processing`, `export_compliance`, `build_beta`, `beta_groups`, `beta_feedback`, `beta_testers`, `beta_app`, `pre_release`, `beta_license`, `metrics` | Core TestFlight administration, resumable build uploads, and dedicated beta feedback retrieval are covered. Six recruitment tools and five usage-metric tools map twelve additional Apple operations; beta App Clip APIs remain the main gap. |
 | Essentials: auth, errors, paging, uploads, rate limits | Partial | P1 | 0 | 0 | `auth` | Core runtime behavior is covered; OpenAPI drift is now generated from Apple's official specification. |
 | Provisioning and identifiers | Partial | P1 | 32 | 49 | `provisioning` | Core signing automation exists; Wallet and Apple Pay identifiers are useful next additions. |

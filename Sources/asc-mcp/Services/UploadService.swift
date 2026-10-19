@@ -57,12 +57,28 @@ final class PresignedUploadURLSessionTransport: HTTPTransport, @unchecked Sendab
         }
         return (data, response)
     }
+
+    func upload(for request: URLRequest, fromFile fileURL: URL, maximumBytes: Int) async throws -> (Data, HTTPURLResponse) {
+        let configuration = urlSession.configuration
+        if !configuration.timeoutIntervalForRequest.isFinite || configuration.timeoutIntervalForRequest <= 0 || configuration.timeoutIntervalForRequest > 120 {
+            configuration.timeoutIntervalForRequest = 120
+        }
+        if !configuration.timeoutIntervalForResource.isFinite || configuration.timeoutIntervalForResource <= 0 || configuration.timeoutIntervalForResource > 300 {
+            configuration.timeoutIntervalForResource = 300
+        }
+        return try await BoundedUploadSession(maximumBytes: maximumBytes).upload(
+            request: request,
+            fileURL: fileURL,
+            configuration: configuration
+        )
+    }
 }
 
 /// Service for uploading assets to App Store Connect
 /// Transfers immutable file snapshots with bounded memory after validating HTTPS targets and exact byte coverage.
 public actor UploadService {
     private let transport: any HTTPTransport
+    private let assetTestTransport: (any HTTPTransport)?
     private let batchSize: Int
     private let logger = Logger(subsystem: "com.asc-mcp", category: "UploadService")
 
@@ -76,7 +92,40 @@ public actor UploadService {
         config.urlCache = nil
         config.requestCachePolicy = .reloadIgnoringLocalCacheData
         self.transport = transport ?? PresignedUploadURLSessionTransport(configuration: config)
+        self.assetTestTransport = nil
         self.batchSize = max(1, batchSize)
+    }
+
+    init(assetTestTransport: any HTTPTransport, batchSize: Int = 3) {
+        self.transport = assetTestTransport
+        self.assetTestTransport = assetTestTransport
+        self.batchSize = max(1, batchSize)
+    }
+
+    private init(transport: any HTTPTransport, assetTestTransport: (any HTTPTransport)?, batchSize: Int) {
+        self.transport = transport
+        self.assetTestTransport = assetTestTransport
+        self.batchSize = batchSize
+    }
+
+    /// Creates an upload service with the same transfer policy and a bounded response transport.
+    /// - Returns: An independent service preserving the upstream transport and batch size.
+    nonisolated func withResponseLimit(maxBytes: Int) -> UploadService {
+        UploadService(transport: ResponseLimitedUploadTransport(upstream: transport, maximumBytes: maxBytes),
+                      assetTestTransport: assetTestTransport.map { ResponseLimitedUploadTransport(upstream: $0, maximumBytes: maxBytes) },
+                      batchSize: batchSize)
+    }
+
+    nonisolated func withPinnedDestinations(_ addresses: [String: [String]]) -> UploadService {
+        UploadService(transport: assetTestTransport ?? AssetPinnedUploadTransport(validatedAddresses: addresses), batchSize: batchSize)
+    }
+
+    nonisolated func validatePinnedTransportAvailability() throws {
+        if assetTestTransport == nil { try AssetDNSResolver.validateExecutableAvailability() }
+        if assetTestTransport == nil,
+           !FileManager.default.isExecutableFile(atPath: "/usr/bin/curl") {
+            throw ASCError.network("Asset uploads require the system /usr/bin/curl executable; no Apple reservation was created")
+        }
     }
 
     /// Uploads an immutable snapshot of a file using the provided upload operations

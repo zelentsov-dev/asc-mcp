@@ -21,6 +21,10 @@ enum ASCContractDiagnosticCode: String, Codable, Sendable {
     case operationMissing = "operation.missing"
     case operationIdentityDrift = "operation.identity_drift"
     case operationDeprecated = "operation.deprecated"
+    case operationSemanticDeprecation = "operation.semantic_deprecation"
+    case semanticDeprecationInvalid = "semantic_deprecation.invalid"
+    case semanticDeprecationExpired = "semantic_deprecation.expired"
+    case semanticDeprecationTargetMissing = "semantic_deprecation.target_missing"
     case operationUntriaged = "operation.untriaged"
     case operationMissingPrimary = "operation.missing_primary"
     case operationMultiplePrimary = "operation.multiple_primary"
@@ -139,6 +143,7 @@ struct ASCOperationToolAnalyzer: Sendable {
         diagnostics += validateOptionalParameterClassifications(spec: spec, manifest: manifest)
         diagnostics += validateOperationCoverage(spec: spec, manifest: manifest)
         diagnostics += validateWaivers(spec: spec, manifest: manifest)
+        diagnostics += validateSemanticDeprecations(spec: spec, manifest: manifest)
         return sorted(diagnostics)
     }
 
@@ -459,6 +464,79 @@ struct ASCOperationToolAnalyzer: Sendable {
                 operationID: operationID
             )
         }
+    }
+
+    private func validateSemanticDeprecations(
+        spec: ASCOpenAPISpec,
+        manifest: ASCOperationManifestBundle
+    ) -> [ASCContractDiagnostic] {
+        let entries = manifest.index.semanticDeprecations ?? []
+        let operations = operationDictionary(spec.operations)
+        var diagnostics = duplicateValues(entries.map(\.id)).map { id in
+            error(.semanticDeprecationInvalid, "Semantic deprecation id '\(id)' is duplicated.")
+        }
+        for entry in entries {
+            let source = URLComponents(string: entry.sourceURL)
+            let validSource = source?.scheme == "https" &&
+                source?.host == "developer.apple.com" &&
+                source?.path.hasPrefix("/documentation/appstoreconnectapi/") == true &&
+                source?.user == nil && source?.password == nil && source?.port == nil &&
+                source?.query == nil && source?.fragment == nil
+            let hasEmptyText = [entry.id, entry.reason, entry.owner].contains {
+                $0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            }
+            if !validSource || hasEmptyText || entry.operationIDs.isEmpty ||
+                Set(entry.operationIDs).count != entry.operationIDs.count ||
+                entry.parameterNames?.isEmpty == true ||
+                entry.parameterNames.map({ Set($0).count != $0.count }) == true {
+                diagnostics.append(error(
+                    .semanticDeprecationInvalid,
+                    "Semantic deprecation '\(entry.id)' requires unique targets, nonempty metadata, and an official Apple documentation source."
+                ))
+            }
+            if entry.reviewAtSpec != spec.version {
+                diagnostics.append(error(
+                    .semanticDeprecationExpired,
+                    "Semantic deprecation '\(entry.id)' was reviewed for Apple \(entry.reviewAtSpec); expected \(spec.version)."
+                ))
+            }
+            for operationID in entry.operationIDs {
+                guard let operation = operations[operationID] else {
+                    diagnostics.append(error(
+                        .semanticDeprecationTargetMissing,
+                        "Semantic deprecation '\(entry.id)' references an absent operation.",
+                        operationID: operationID
+                    ))
+                    continue
+                }
+                if let parameterNames = entry.parameterNames {
+                    let actualNames = Set(operation.parameters.map(\.name))
+                    for name in parameterNames where !actualNames.contains(name) {
+                        diagnostics.append(error(
+                            .semanticDeprecationTargetMissing,
+                            "Semantic deprecation '\(entry.id)' references an absent parameter.",
+                            operationID: operationID,
+                            field: name
+                        ))
+                    }
+                }
+                let affectedTools = manifest.tools.filter {
+                    $0.operations.contains { $0.operationID == operationID }
+                }.map(\.tool).sorted()
+                let targets: [String?] = affectedTools.isEmpty ? [nil] : affectedTools.map(Optional.some)
+                for tool in targets {
+                    diagnostics.append(ASCContractDiagnostic(
+                        severity: .warning,
+                        code: .operationSemanticDeprecation,
+                        message: "\(entry.reason) Source: \(entry.sourceURL)",
+                        tool: tool,
+                        operationID: operationID,
+                        field: entry.parameterNames?.joined(separator: ", ")
+                    ))
+                }
+            }
+        }
+        return diagnostics
     }
 
     private func validateToolSet(

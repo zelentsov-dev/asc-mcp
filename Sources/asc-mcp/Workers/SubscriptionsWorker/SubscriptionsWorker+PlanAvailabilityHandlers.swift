@@ -354,14 +354,11 @@ extension SubscriptionsWorker {
                 try validateSubscriptionPlanQueryIdentifiers(value, field: "upfront_price_point_ids")
                 query["filter[upfrontPricePointId]"] = value
             }
-            guard let planTypes = try subscriptionCatalogQueryValue(
+            query["filter[planType]"] = try subscriptionCatalogQueryValue(
                 arguments["plan_types"],
                 field: "plan_types",
                 allowedValues: Set(ASCSubscriptionPlanType.allCases.map(\.rawValue))
-            ) else {
-                throw ASCError.parsing("plan_types is required because App Store Connect API 4.5 requires filter[planType] for adjusted equalizations")
-            }
-            query["filter[planType]"] = planTypes
+            ) ?? ASCSubscriptionPlanType.monthly.rawValue
 
             let response: ASCSubscriptionAdjustedPricePointsResponse
             if let nextURL = try paginationURL(from: arguments["next_url"]) {

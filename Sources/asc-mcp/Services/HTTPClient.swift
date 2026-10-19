@@ -45,6 +45,18 @@ public actor HTTPClient {
         self.transport = transport ?? URLSessionTransport(configuration: config)
     }
 
+    private init(jwtService: JWTService, baseURL: String, boundedTransport: any HTTPTransport, maxRetries: Int) {
+        self.jwtService = jwtService
+        self.baseURL = baseURL
+        self.transport = boundedTransport
+        self.maxRetries = maxRetries
+    }
+
+    nonisolated func withResponseLimit(_ maximumBytes: Int) -> HTTPClient {
+        HTTPClient(jwtService: jwtService, baseURL: baseURL,
+                   boundedTransport: BoundedHTTPTransport(upstream: transport, maximumBytes: maximumBytes), maxRetries: maxRetries)
+    }
+
     /// Returns the last App Store Connect rate-limit state observed by this client.
     /// - Returns: Last parsed rate-limit header values, or nil if no rate-limit headers were seen.
     public func getLastRateLimitInfo() -> ASCRateLimitInfo? {

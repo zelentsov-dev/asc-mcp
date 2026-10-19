@@ -7,6 +7,11 @@ public protocol HTTPTransport: Sendable {
     /// - Throws: A transport error or `ASCError` for a non-HTTP response.
     func data(for request: URLRequest) async throws -> (Data, HTTPURLResponse)
 
+    /// Executes a request with a response body limit.
+    /// - Returns: Body and metadata within the requested byte budget.
+    /// - Throws: A transport error or an error when the response exceeds the budget.
+    func data(for request: URLRequest, maximumBytes: Int) async throws -> (Data, HTTPURLResponse)
+
     /// Uploads a request body from a local file without materializing it as `Data`.
     /// - Parameters:
     ///   - request: Request whose body is supplied by `fileURL`.
@@ -14,11 +19,28 @@ public protocol HTTPTransport: Sendable {
     /// - Returns: Response data and HTTP response metadata.
     /// - Throws: `ASCError` when file uploads are unsupported, or a transport error.
     func upload(for request: URLRequest, fromFile fileURL: URL) async throws -> (Data, HTTPURLResponse)
+
+    /// Uploads a file while limiting the response body retained by the transport.
+    /// - Returns: Response data and metadata within the requested byte budget.
+    /// - Throws: A transport error, cancellation, or a response-limit error.
+    func upload(for request: URLRequest, fromFile fileURL: URL, maximumBytes: Int) async throws -> (Data, HTTPURLResponse)
 }
 
 public extension HTTPTransport {
+    func data(for request: URLRequest, maximumBytes: Int) async throws -> (Data, HTTPURLResponse) {
+        let result = try await data(for: request)
+        guard result.0.count <= maximumBytes else { throw ASCError.network("Response exceeded the configured byte limit") }
+        return result
+    }
     func upload(for request: URLRequest, fromFile fileURL: URL) async throws -> (Data, HTTPURLResponse) {
         throw ASCError.network("File upload is not supported by this transport")
+    }
+
+    func upload(for request: URLRequest, fromFile fileURL: URL, maximumBytes: Int) async throws -> (Data, HTTPURLResponse) {
+        guard maximumBytes >= 0 else { throw ASCError.network("Upload response byte limit must not be negative") }
+        let result = try await upload(for: request, fromFile: fileURL)
+        guard result.0.count <= maximumBytes else { throw ASCError.network("Upload response exceeded the configured byte limit") }
+        return result
     }
 }
 
@@ -68,6 +90,29 @@ public final class URLSessionTransport: HTTPTransport, @unchecked Sendable {
         return (data, httpResponse)
     }
 
+    /// Streams an API response within a fixed memory budget without following redirects.
+    /// - Returns: Body and HTTP metadata within the budget.
+    /// - Throws: A transport error, cancellation, or a size-limit error.
+    public func data(for request: URLRequest, maximumBytes: Int) async throws -> (Data, HTTPURLResponse) {
+        let (bytes, response) = try await urlSession.bytes(for: request)
+        guard let response = response as? HTTPURLResponse else { throw ASCError.network("Invalid response format") }
+        guard response.expectedContentLength <= Int64(maximumBytes) else {
+            bytes.task.cancel()
+            throw ASCError.network("Response exceeded the configured byte limit")
+        }
+        var data = Data()
+        do {
+            for try await byte in bytes {
+                guard data.count < maximumBytes else { throw ASCError.network("Response exceeded the configured byte limit") }
+                data.append(byte)
+            }
+        } catch {
+            bytes.task.cancel()
+            throw error
+        }
+        return (data, response)
+    }
+
     /// Uploads a request body directly from a local file.
     /// - Parameters:
     ///   - request: Request whose body is supplied by `fileURL`.
@@ -80,5 +125,14 @@ public final class URLSessionTransport: HTTPTransport, @unchecked Sendable {
             throw ASCError.network("Invalid response format")
         }
         return (data, httpResponse)
+    }
+}
+
+struct BoundedHTTPTransport: HTTPTransport {
+    let upstream: any HTTPTransport
+    let maximumBytes: Int
+
+    func data(for request: URLRequest) async throws -> (Data, HTTPURLResponse) {
+        try await upstream.data(for: request, maximumBytes: maximumBytes)
     }
 }

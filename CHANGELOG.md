@@ -7,20 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Breaking Changes
+## [4.2.0] - 2026-10-19
 
-- `subscriptions_list_price_point_adjusted_equalizations` now requires `plan_types`. App Store Connect API 4.5 marks `filter[planType]` as required on `GET /v1/subscriptionPricePoints/{id}/adjustedEqualizations`, where 4.4.1 left it optional, so a call without it produced a request that Apple's current contract rejects. The input schema now lists `plan_types` as required, and a missing or empty value fails locally before any network request. Pass `MONTHLY`, `UPFRONT`, or both. `subscriptions_list_price_point_equalizations` is unchanged because Apple keeps its plan filter optional.
+### Added
 
-### Changed
+- Add an independent 11-tool Asset Library worker (`assets_*`): scoped discovery, dynamic requirements, image/video upload, placements, ordering, replacement, archive/delete, preview, and recovery.
+- Require a ten-minute, account-bound, one-use preview (`assets_prepare_change` → `assets_apply_change`) for new asset mutations. Snapshot files before transfer, preserve SHA-256 identity, retain uncertain operations in a private journal, and reconcile without automatic write replay.
+- Support `appAssetLibraryImage` and `appAssetLibraryVideo` review submission items through the same preview coordinator while retaining legacy item calls.
+- Add Korea `ALL` and `TWELVE_PLUS` age rating overrides in `app_versions_update_age_rating`, nullable `market_settings` and `multi_seat_status` organization subscription PATCH controls in `subscriptions_update`, and read-only `metrics_performance_overview`.
+- Pin the official Apple 4.5.1 OpenAPI snapshot and separate reproducible contract checks from latest-Apple drift reporting, accounting for release-note deprecations beyond OpenAPI flags.
 
-- Re-baselined the operation contract from App Store Connect API 4.4.1 to 4.5 after a spec-level review. Each expired decision was re-stamped only where its Apple item is unchanged, or re-decided where 4.5 changed it. The new `apps_performanceOverviews_getToManyRelated` operation is deferred, the six new Game Center operations stay under the Game Center scope rules, and the new optional inputs `gracRatingClassificationNumber` on `app_versions_update_age_rating` and `marketSettings` and `multiSeatStatus` on `subscriptions_update` are intentionally omitted for now.
-- The operation manifest maps 476 Apple operations, explicitly defers 425, and scopes out 369; all 1,270 pinned Apple 4.5 operations remain accounted for without overlap.
-- The optional-input pin is fully classified at 2,907 total: 1,121 bound, 40 internally controlled, 1,746 intentionally omitted, and 0 unclassified; its identity SHA-256 is `0ce3ff14568f841643559c359bc91827290535925c3665172fda81d499f81ce1`.
-- The generated OpenAPI coverage report and the coverage inventory baseline now track Apple 4.5: 973 paths and 1,270 operations, all classified.
+### Fixed
+
+- Decode nested `previewFrameImage.state.state` on App Asset Library videos and use the nested poster state consistently across processing, placement, review-item preflight, and reconciliation.
+- Default omitted `plan_types` on `subscriptions_list_price_point_adjusted_equalizations` to `MONTHLY` so legacy calls succeed against Apple's live `adjustedEqualizations` endpoint while preserving continuation scope.
+- Allow nested `availableTerritories` relationship linkage counts on `subscriptions_list_plan_availabilities` and `subscriptions_get_plan_availability` to exceed the nested `meta.paging.limit` when Apple returns the complete territory linkage list alongside a capped inclusion limit.
 
 ### Compatibility
 
-- The public catalog remains at 502 tools with no renamed inputs or removed response fields. Apart from the now-required `plan_types` above, existing calls are unchanged.
+- Preserve all 502 existing tool names and 35 worker filter keys; the complete catalog now has 514 tools and 36 `--workers` filter keys (`assets`). Legacy screenshots retain their original IDs and result contract.
 
 ## [4.1.6] - 2026-08-22
 

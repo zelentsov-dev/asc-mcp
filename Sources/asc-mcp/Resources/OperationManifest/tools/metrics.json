@@ -2,6 +2,102 @@
   "workerKey": "metrics",
   "tools": [
     {
+      "tool": "metrics_performance_overview",
+      "kind": "direct",
+      "status": "partial",
+      "effect": "read",
+      "implementationState": "asBuilt",
+      "operations": [
+        {
+          "operationId": "apps_performanceOverviews_getToManyRelated",
+          "method": "get",
+          "path": "/v1/apps/{id}/performanceOverviews",
+          "role": "primary"
+        }
+      ],
+      "fields": [
+        {
+          "toolField": "app_id",
+          "sourceKind": "parameter",
+          "operationId": "apps_performanceOverviews_getToManyRelated",
+          "location": "path",
+          "appleName": "id"
+        },
+        {
+          "toolField": "device_type",
+          "sourceKind": "parameter",
+          "operationId": "apps_performanceOverviews_getToManyRelated",
+          "location": "query",
+          "appleName": "filter[deviceType]"
+        }
+      ],
+      "response": {
+        "mode": "projection",
+        "sources": [
+          {
+            "operationId": "apps_performanceOverviews_getToManyRelated",
+            "statusCode": "200",
+            "mediaType": "application/vnd.apple.xcode-overview+json"
+          }
+        ],
+        "fields": [
+          {
+            "outputField": "success",
+            "localRole": "successEnvelope"
+          },
+          {
+            "outputField": "app_id",
+            "localRole": "requestEcho"
+          },
+          {
+            "outputField": "device_type",
+            "localRole": "optional request echo preserving scalar-or-array input shape"
+          },
+          {
+            "outputField": "data_available",
+            "localRole": "True only if the overview contains insights, diagnostic signatures, or metric points."
+          },
+          {
+            "outputField": "version",
+            "operationId": "apps_performanceOverviews_getToManyRelated",
+            "jsonPointer": "/version",
+            "localRole": "snakeCaseProjection"
+          },
+          {
+            "outputField": "app_metadata",
+            "operationId": "apps_performanceOverviews_getToManyRelated",
+            "jsonPointer": "/appMetadata",
+            "localRole": "snakeCaseProjection"
+          },
+          {
+            "outputField": "insights",
+            "operationId": "apps_performanceOverviews_getToManyRelated",
+            "jsonPointer": "/insights",
+            "localRole": "snakeCaseProjection"
+          },
+          {
+            "outputField": "categories",
+            "operationId": "apps_performanceOverviews_getToManyRelated",
+            "jsonPointer": "/categories",
+            "localRole": "snakeCaseProjection"
+          },
+          {
+            "outputField": "signatures",
+            "operationId": "apps_performanceOverviews_getToManyRelated",
+            "jsonPointer": "/signatures",
+            "localRole": "snakeCaseProjection"
+          },
+          {
+            "outputField": "telemetry_identifier",
+            "operationId": "apps_performanceOverviews_getToManyRelated",
+            "jsonPointer": "/telemetryIdentifier",
+            "localRole": "snakeCaseProjection"
+          }
+        ]
+      },
+      "note": "Apple 4.5.1 aggregated app performance overview with the xcode-overview media type. Device filters use scalar-or-array CSV semantics. Typed nested decoding preserves future string values, verifies app identity when provided, and distinguishes an empty success from permission, availability, and malformed-response errors."
+    },
+    {
       "tool": "metrics_app_perf",
       "kind": "direct",
       "status": "partial",
@@ -18,8 +114,8 @@
               "location": "query",
               "appleName": "filter[platform]",
               "disposition": "intentionallyOmitted",
-              "reason": "Apple 4.5 only permits IOS, so exposing this filter would not change the result set.",
-              "reviewAtSpec": "4.5"
+              "reason": "Apple 4.5.1 advertises IOS as the only legal platform filter value. This legacy performance tool preserves its unfiltered request contract; it does not claim support for additional platform filter values.",
+              "reviewAtSpec": "4.5.1"
             }
           ]
         }
@@ -188,8 +284,8 @@
               "location": "query",
               "appleName": "filter[platform]",
               "disposition": "intentionallyOmitted",
-              "reason": "Apple 4.5 only permits IOS, so exposing this filter would not change the result set.",
-              "reviewAtSpec": "4.5"
+              "reason": "Apple 4.5.1 advertises IOS as the only legal platform filter value. This legacy performance tool preserves its unfiltered request contract; it does not claim support for additional platform filter values.",
+              "reviewAtSpec": "4.5.1"
             }
           ]
         }

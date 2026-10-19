@@ -19,6 +19,7 @@ public final class MetricsWorker: Sendable {
     /// Get all available tools for metrics and diagnostics management
     public func getTools() async -> [Tool] {
         return [
+            performanceOverviewTool(),
             appPerfMetricsTool(),
             buildPerfMetricsTool(),
             buildDiagnosticsTool(),
@@ -34,6 +35,8 @@ public final class MetricsWorker: Sendable {
     /// Handle tool call for metrics and diagnostics operations
     public func handleTool(_ params: CallTool.Parameters) async throws -> CallTool.Result {
         switch params.name {
+        case "metrics_performance_overview":
+            return try await getPerformanceOverview(params)
         case "metrics_app_perf":
             return try await getAppPerfMetrics(params)
         case "metrics_build_perf":
