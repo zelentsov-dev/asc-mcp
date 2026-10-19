@@ -7,16 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### 4.2.0 candidate — selected Apple API 4.5.1 support
+## [4.2.0] - 2026-10-19
 
-- Add an independent 11-tool Asset Library worker: scoped discovery, dynamic requirements, image/video upload, placements, ordering, replacement, archive/delete, preview and recovery.
-- Require a ten-minute, account-bound, one-use preview for new asset mutations. Snapshot files before transfer, preserve SHA-256 identity, retain uncertain operations in a private journal, and reconcile without automatic write replay.
-- Support image/video review items through the same preview coordinator while retaining legacy item calls.
-- Add Korea ALL/TWELVE_PLUS age overrides, nullable organization subscription PATCH controls and read-only performance overview.
-- Preserve 502 existing tool names and 35 filters; the candidate catalog has 514 tools and 36 filters. Legacy screenshots retain their original IDs and result contract. New Asset Library commits send `uploaded: true` without changing legacy checksum flows.
-- Pin the official Apple 4.5.1 OpenAPI snapshot and separate reproducible contract checks from latest-Apple drift reporting. Account for release-note deprecations beyond OpenAPI flags.
+### Added
 
-Candidate verification is recorded separately from stable publication. Apple MCP acceptance on Bike tracker, published-state preservation, clean Mint installation and independent review must be completed on the release candidate before this section becomes a stable release. No production or published-placement behavior is claimed from compilation alone.
+- Add an independent 11-tool Asset Library worker (`assets_*`): scoped discovery, dynamic requirements, image/video upload, placements, ordering, replacement, archive/delete, preview, and recovery.
+- Require a ten-minute, account-bound, one-use preview (`assets_prepare_change` → `assets_apply_change`) for new asset mutations. Snapshot files before transfer, preserve SHA-256 identity, retain uncertain operations in a private journal, and reconcile without automatic write replay.
+- Support `appAssetLibraryImage` and `appAssetLibraryVideo` review submission items through the same preview coordinator while retaining legacy item calls.
+- Add Korea `ALL` and `TWELVE_PLUS` age rating overrides in `app_versions_update_age_rating`, nullable `market_settings` and `multi_seat_status` organization subscription PATCH controls in `subscriptions_update`, and read-only `metrics_performance_overview`.
+- Pin the official Apple 4.5.1 OpenAPI snapshot and separate reproducible contract checks from latest-Apple drift reporting, accounting for release-note deprecations beyond OpenAPI flags.
+
+### Fixed
+
+- Decode nested `previewFrameImage.state.state` on App Asset Library videos and use the nested poster state consistently across processing, placement, review-item preflight, and reconciliation.
+- Default omitted `plan_types` on `subscriptions_list_price_point_adjusted_equalizations` to `MONTHLY` so legacy calls succeed against Apple's live `adjustedEqualizations` endpoint while preserving continuation scope.
+- Allow nested `availableTerritories` relationship linkage counts on `subscriptions_list_plan_availabilities` and `subscriptions_get_plan_availability` to exceed the nested `meta.paging.limit` when Apple returns the complete territory linkage list alongside a capped inclusion limit.
+
+### Compatibility
+
+- Preserve all 502 existing tool names and 35 worker filter keys; the complete catalog now has 514 tools and 36 `--workers` filter keys (`assets`). Legacy screenshots retain their original IDs and result contract.
 
 ## [4.1.6] - 2026-08-22
 

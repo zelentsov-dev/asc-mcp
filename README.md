@@ -60,7 +60,7 @@ The recommended setup stores App Store Connect credentials once in a private loc
 
 ```bash
 brew install mint
-mint install zelentsov-dev/asc-mcp@v4.1.6
+mint install zelentsov-dev/asc-mcp@v4.2.0
 ~/.mint/bin/asc-mcp --version
 ```
 
@@ -151,13 +151,13 @@ If the connection or request fails, see [Troubleshooting](#troubleshooting).
 
 ```bash
 brew install mint
-mint install zelentsov-dev/asc-mcp@v4.1.6
+mint install zelentsov-dev/asc-mcp@v4.2.0
 ```
 
 Update or reinstall the pinned release:
 
 ```bash
-mint install zelentsov-dev/asc-mcp@v4.1.6 --force
+mint install zelentsov-dev/asc-mcp@v4.2.0 --force
 ```
 
 Stable users should install a version tag. Installing `main` or `develop` is intended only for maintainers and pre-release testing.
