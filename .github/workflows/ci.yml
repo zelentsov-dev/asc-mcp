@@ -14,8 +14,8 @@ permissions:
   contents: read
 
 concurrency:
-  group: ${{ github.workflow }}-${{ (github.event_name == 'pull_request' || github.ref == 'refs/heads/develop') && github.ref || github.run_id }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' || github.ref == 'refs/heads/develop' }}
+  group: ${{ github.workflow }}-${{ (github.event_name == 'pull_request' || (github.event_name == 'push' && (github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/main'))) && (github.event.pull_request.number || github.ref) || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' || (github.event_name == 'push' && (github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/main')) }}
 
 jobs:
   promotion-lineage:
@@ -132,6 +132,7 @@ jobs:
 
   tests:
     name: Tests
+    if: github.event_name != 'schedule'
     needs: promotion-lineage
     runs-on: macos-15
     timeout-minutes: 20
@@ -144,6 +145,17 @@ jobs:
 
       - name: Select Xcode
         run: sudo xcode-select -s /Applications/Xcode_26.2.app
+
+      - name: Cache SwiftPM test build
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.2.3
+        with:
+          path: |
+            ~/Library/Caches/org.swift.swiftpm
+            ~/.swiftpm
+            .build
+          key: swiftpm-tests-${{ runner.os }}-xcode26.2-${{ hashFiles('Package.swift', 'Package.resolved') }}-${{ hashFiles('Sources/**', 'Tests/**') }}
+          restore-keys: |
+            swiftpm-tests-${{ runner.os }}-xcode26.2-${{ hashFiles('Package.swift', 'Package.resolved') }}-
 
       - name: Run tests
         shell: bash
@@ -189,6 +201,7 @@ jobs:
 
   release-contract:
     name: Release & Apple Contract
+    if: github.event_name != 'schedule'
     needs: promotion-lineage
     runs-on: macos-15
     timeout-minutes: 20
@@ -201,6 +214,17 @@ jobs:
 
       - name: Select Xcode
         run: sudo xcode-select -s /Applications/Xcode_26.2.app
+
+      - name: Cache SwiftPM release build
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.2.3
+        with:
+          path: |
+            ~/Library/Caches/org.swift.swiftpm
+            ~/.swiftpm
+            .build
+          key: swiftpm-release-${{ runner.os }}-xcode26.2-${{ hashFiles('Package.swift', 'Package.resolved') }}-${{ hashFiles('Sources/**') }}
+          restore-keys: |
+            swiftpm-release-${{ runner.os }}-xcode26.2-${{ hashFiles('Package.swift', 'Package.resolved') }}-
 
       - name: Build release binary
         shell: bash
@@ -389,11 +413,22 @@ jobs:
       - name: Select Xcode
         run: sudo xcode-select -s /Applications/Xcode_26.2.app
 
+      - name: Cache Mint and SwiftPM packages
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.2.3
+        with:
+          path: |
+            ~/Library/Caches/org.swift.swiftpm
+            ~/.swiftpm
+            ~/.mint
+          key: mint-swiftpm-${{ runner.os }}-xcode26.2-${{ hashFiles('Package.swift', 'Package.resolved') }}-${{ hashFiles('Sources/**') }}
+          restore-keys: |
+            mint-swiftpm-${{ runner.os }}-xcode26.2-${{ hashFiles('Package.swift', 'Package.resolved') }}-
+
       - name: Install tagged release through Mint
         shell: bash
         run: |
           set -euo pipefail
-          brew install mint
+          command -v mint >/dev/null 2>&1 || brew install mint
           mint install "zelentsov-dev/asc-mcp@$GITHUB_REF_NAME" --force
 
       - name: Run installed MCP smoke
