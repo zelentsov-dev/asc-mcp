@@ -642,7 +642,7 @@ def run(arguments: argparse.Namespace) -> dict[str, Any]:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--binary", required=True, help="Previously built candidate asc-mcp executable")
-    parser.add_argument("--expected-version", default="4.2.0")
+    parser.add_argument("--expected-version", default="4.3.0")
     arguments = parser.parse_args()
     try:
         report = run(arguments)
