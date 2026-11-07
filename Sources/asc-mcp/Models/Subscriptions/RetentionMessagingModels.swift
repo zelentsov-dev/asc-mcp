@@ -525,29 +525,32 @@ public struct RetentionOfferAttributes: Codable, Sendable {
     public typealias IntegerRange = RetentionIntegerRange
 
     public let referenceName: String?
-    public let offerMode: String?
+    public let offerId: String?
     public let duration: String?
-    public let periods: Int?
-    public let eligibilitySubscriberDurationType: String?
-    public let eligibilitySubscriberDurationInMonths: IntegerRange?
-    public let waitBetweenOffersInMonths: Int?
+    public let offerMode: String?
+    public let periodCount: Int?
+    public let customerEligibilityPaidSubscriptionDurationInMonths: Int?
+    public let customerEligibilityWaitBetweenOffersInMonths: Int?
+    public let targetSubscriptionPlanType: String?
 
     public init(
         referenceName: String? = nil,
-        offerMode: String? = nil,
+        offerId: String? = nil,
         duration: String? = nil,
-        periods: Int? = nil,
-        eligibilitySubscriberDurationType: String? = nil,
-        eligibilitySubscriberDurationInMonths: IntegerRange? = nil,
-        waitBetweenOffersInMonths: Int? = nil
+        offerMode: String? = nil,
+        periodCount: Int? = nil,
+        customerEligibilityPaidSubscriptionDurationInMonths: Int? = nil,
+        customerEligibilityWaitBetweenOffersInMonths: Int? = nil,
+        targetSubscriptionPlanType: String? = nil
     ) {
         self.referenceName = referenceName
-        self.offerMode = offerMode
+        self.offerId = offerId
         self.duration = duration
-        self.periods = periods
-        self.eligibilitySubscriberDurationType = eligibilitySubscriberDurationType
-        self.eligibilitySubscriberDurationInMonths = eligibilitySubscriberDurationInMonths
-        self.waitBetweenOffersInMonths = waitBetweenOffersInMonths
+        self.offerMode = offerMode
+        self.periodCount = periodCount
+        self.customerEligibilityPaidSubscriptionDurationInMonths = customerEligibilityPaidSubscriptionDurationInMonths
+        self.customerEligibilityWaitBetweenOffersInMonths = customerEligibilityWaitBetweenOffersInMonths
+        self.targetSubscriptionPlanType = targetSubscriptionPlanType
     }
 }
 
@@ -959,29 +962,32 @@ public struct RetentionOfferCreateRequest: Codable, Sendable {
 
     public struct Attributes: Codable, Sendable {
         public let referenceName: String
-        public let offerMode: String
+        public let offerId: String
         public let duration: String
-        public let periods: Int
-        public let eligibilitySubscriberDurationType: String
-        public let eligibilitySubscriberDurationInMonths: RetentionIntegerRange?
-        public let waitBetweenOffersInMonths: Int
+        public let offerMode: String
+        public let periodCount: Int
+        public let customerEligibilityPaidSubscriptionDurationInMonths: Int
+        public let customerEligibilityWaitBetweenOffersInMonths: Int?
+        public let targetSubscriptionPlanType: String?
 
         public init(
             referenceName: String,
-            offerMode: String,
+            offerId: String,
             duration: String,
-            periods: Int,
-            eligibilitySubscriberDurationType: String,
-            eligibilitySubscriberDurationInMonths: RetentionIntegerRange? = nil,
-            waitBetweenOffersInMonths: Int
+            offerMode: String,
+            periodCount: Int,
+            customerEligibilityPaidSubscriptionDurationInMonths: Int,
+            customerEligibilityWaitBetweenOffersInMonths: Int? = nil,
+            targetSubscriptionPlanType: String? = nil
         ) {
             self.referenceName = referenceName
-            self.offerMode = offerMode
+            self.offerId = offerId
             self.duration = duration
-            self.periods = periods
-            self.eligibilitySubscriberDurationType = eligibilitySubscriberDurationType
-            self.eligibilitySubscriberDurationInMonths = eligibilitySubscriberDurationInMonths
-            self.waitBetweenOffersInMonths = waitBetweenOffersInMonths
+            self.offerMode = offerMode
+            self.periodCount = periodCount
+            self.customerEligibilityPaidSubscriptionDurationInMonths = customerEligibilityPaidSubscriptionDurationInMonths
+            self.customerEligibilityWaitBetweenOffersInMonths = customerEligibilityWaitBetweenOffersInMonths
+            self.targetSubscriptionPlanType = targetSubscriptionPlanType
         }
     }
 
@@ -1070,16 +1076,14 @@ public struct RetentionOfferUpdateRequest: Codable, Sendable {
 
     public init(
         offerId: String,
-        eligibilitySubscriberDurationType: ASCNullable<String>? = nil,
-        eligibilitySubscriberDurationInMonths: ASCNullable<RetentionIntegerRange>? = nil,
-        waitBetweenOffersInMonths: ASCNullable<Int>? = nil
+        customerEligibilityPaidSubscriptionDurationInMonths: ASCNullable<Int>? = nil,
+        customerEligibilityWaitBetweenOffersInMonths: ASCNullable<Int>? = nil
     ) {
         self.data = UpdateData(
             id: offerId,
             attributes: Attributes(
-                eligibilitySubscriberDurationType: eligibilitySubscriberDurationType,
-                eligibilitySubscriberDurationInMonths: eligibilitySubscriberDurationInMonths,
-                waitBetweenOffersInMonths: waitBetweenOffersInMonths
+                customerEligibilityPaidSubscriptionDurationInMonths: customerEligibilityPaidSubscriptionDurationInMonths,
+                customerEligibilityWaitBetweenOffersInMonths: customerEligibilityWaitBetweenOffersInMonths
             )
         )
     }
@@ -1101,21 +1105,21 @@ public struct RetentionOfferUpdateRequest: Codable, Sendable {
     }
 
     public struct Attributes: Codable, Sendable {
-        public let eligibilitySubscriberDurationType: ASCNullable<String>?
-        public let eligibilitySubscriberDurationInMonths: ASCNullable<RetentionIntegerRange>?
-        public let waitBetweenOffersInMonths: ASCNullable<Int>?
+        public let customerEligibilityPaidSubscriptionDurationInMonths: ASCNullable<Int>?
+        public let customerEligibilityWaitBetweenOffersInMonths: ASCNullable<Int>?
 
         public init(
-            eligibilitySubscriberDurationType: ASCNullable<String>? = nil,
-            eligibilitySubscriberDurationInMonths: ASCNullable<RetentionIntegerRange>? = nil,
-            waitBetweenOffersInMonths: ASCNullable<Int>? = nil
+            customerEligibilityPaidSubscriptionDurationInMonths: ASCNullable<Int>? = nil,
+            customerEligibilityWaitBetweenOffersInMonths: ASCNullable<Int>? = nil
         ) {
-            self.eligibilitySubscriberDurationType = eligibilitySubscriberDurationType
-            self.eligibilitySubscriberDurationInMonths = eligibilitySubscriberDurationInMonths
-            self.waitBetweenOffersInMonths = waitBetweenOffersInMonths
+            self.customerEligibilityPaidSubscriptionDurationInMonths = customerEligibilityPaidSubscriptionDurationInMonths
+            self.customerEligibilityWaitBetweenOffersInMonths = customerEligibilityWaitBetweenOffersInMonths
         }
     }
 }
+
+public typealias RetentionOfferCreateAttributes = RetentionOfferCreateRequest.Attributes
+public typealias RetentionOfferUpdateAttributes = RetentionOfferUpdateRequest.Attributes
 
 /// Request to set or clear a subscription's retention message (`PATCH /v1/subscriptions/{id}/relationships/retentionMessage`)
 /// Encodes `{"data": {"type": "retentionMessages", "id": id}}` when setting, and `{"data": null}` when clearing.

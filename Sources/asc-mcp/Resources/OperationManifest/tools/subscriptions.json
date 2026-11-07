@@ -9283,33 +9283,6 @@
                 "price_point_ids"
               ],
               "localRole": "Generate the same ${price-index} linkage IDs used by inline retention offer price resources."
-            },
-            {
-              "sourceKind": "derived",
-              "jsonPointer": "/data/attributes/offerId",
-              "derivedFrom": [
-                "reference_name"
-              ],
-              "localRole": "Offer identifier validated alongside the retention offer creation payload."
-            },
-            {
-              "sourceKind": "derived",
-              "jsonPointer": "/data/attributes/customerEligibilityPaidSubscriptionDurationInMonths",
-              "derivedFrom": [
-                "eligibility_duration_type",
-                "eligibility_duration_min",
-                "eligibility_duration_max"
-              ],
-              "localRole": "Constructs the paid subscription duration eligibility range from eligibility_duration_type, eligibility_duration_min, and eligibility_duration_max."
-            }
-          ],
-          "optionalParameterClassifications": [
-            {
-              "location": "body",
-              "appleName": "/data/attributes/targetSubscriptionPlanType",
-              "disposition": "intentionallyOmitted",
-              "reason": "The retention offer create tool targets the parent subscription's plan configuration without exposing a separate targetSubscriptionPlanType selector.",
-              "reviewAtSpec": "4.6"
             }
           ]
         }
@@ -9328,6 +9301,12 @@
           "jsonPointer": "/data/attributes/referenceName"
         },
         {
+          "toolField": "offer_id",
+          "sourceKind": "requestBody",
+          "operationId": "retentionOffers_createInstance",
+          "jsonPointer": "/data/attributes/offerId"
+        },
+        {
           "toolField": "duration",
           "sourceKind": "requestBody",
           "operationId": "retentionOffers_createInstance",
@@ -9340,31 +9319,28 @@
           "jsonPointer": "/data/attributes/offerMode"
         },
         {
-          "toolField": "periods",
+          "toolField": "period_count",
           "sourceKind": "requestBody",
           "operationId": "retentionOffers_createInstance",
           "jsonPointer": "/data/attributes/periodCount"
         },
         {
-          "toolField": "eligibility_duration_type",
-          "sourceKind": "local",
-          "localRole": "Validated locally alongside eligibility_duration_min and eligibility_duration_max before constructing the retention offer payload."
-        },
-        {
-          "toolField": "eligibility_duration_min",
-          "sourceKind": "local",
-          "localRole": "Validated locally as the minimum paid subscription duration in months for AT_LEAST and RANGE rules."
-        },
-        {
-          "toolField": "eligibility_duration_max",
-          "sourceKind": "local",
-          "localRole": "Validated locally as the maximum paid subscription duration in months for UP_TO and RANGE rules."
+          "toolField": "eligibility_duration_months",
+          "sourceKind": "requestBody",
+          "operationId": "retentionOffers_createInstance",
+          "jsonPointer": "/data/attributes/customerEligibilityPaidSubscriptionDurationInMonths"
         },
         {
           "toolField": "wait_between_offers_months",
           "sourceKind": "requestBody",
           "operationId": "retentionOffers_createInstance",
           "jsonPointer": "/data/attributes/customerEligibilityWaitBetweenOffersInMonths"
+        },
+        {
+          "toolField": "target_subscription_plan_type",
+          "sourceKind": "requestBody",
+          "operationId": "retentionOffers_createInstance",
+          "jsonPointer": "/data/attributes/targetSubscriptionPlanType"
         },
         {
           "toolField": "territory_ids",
@@ -9418,16 +9394,6 @@
                 "offer_id"
               ],
               "localRole": "Reuse the public retention-offer ID as the JSON:API resource ID in the update body."
-            },
-            {
-              "sourceKind": "derived",
-              "jsonPointer": "/data/attributes/customerEligibilityPaidSubscriptionDurationInMonths",
-              "derivedFrom": [
-                "eligibility_duration_type",
-                "eligibility_duration_min",
-                "eligibility_duration_max"
-              ],
-              "localRole": "Updates or clears the paid subscription duration eligibility range from eligibility_duration_type, eligibility_duration_min, and eligibility_duration_max."
             }
           ]
         }
@@ -9441,19 +9407,10 @@
           "appleName": "id"
         },
         {
-          "toolField": "eligibility_duration_type",
-          "sourceKind": "local",
-          "localRole": "Validated locally alongside eligibility_duration_min and eligibility_duration_max when provided."
-        },
-        {
-          "toolField": "eligibility_duration_min",
-          "sourceKind": "local",
-          "localRole": "Validated locally as the minimum paid subscription duration in months when updating eligibility."
-        },
-        {
-          "toolField": "eligibility_duration_max",
-          "sourceKind": "local",
-          "localRole": "Validated locally as the maximum paid subscription duration in months when updating eligibility."
+          "toolField": "eligibility_duration_months",
+          "sourceKind": "requestBody",
+          "operationId": "retentionOffers_updateInstance",
+          "jsonPointer": "/data/attributes/customerEligibilityPaidSubscriptionDurationInMonths"
         },
         {
           "toolField": "wait_between_offers_months",

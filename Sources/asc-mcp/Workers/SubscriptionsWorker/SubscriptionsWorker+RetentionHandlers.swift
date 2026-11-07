@@ -26,15 +26,18 @@ extension SubscriptionsWorker {
         "ONE_YEAR"
     ]
 
-    private static let allowedRetentionEligibilityDurationTypes: Set<String> = [
-        "AT_LEAST",
-        "UP_TO",
-        "RANGE"
+    private static let allowedRetentionTargetSubscriptionPlanTypes: Set<String> = [
+        "MONTHLY",
+        "UPFRONT"
     ]
 
-    private static let allowedRetentionWaitBetweenOffersMonths: Set<Int> = [
-        0, 1, 2, 3, 6, 9, 12, 24
-    ]
+    private func isAllowedRetentionEligibilityDuration(_ months: Int) -> Bool {
+        (1...24).contains(months) || [36, 48, 60].contains(months)
+    }
+
+    private func isAllowedRetentionWaitBetweenOffers(_ months: Int) -> Bool {
+        (2...24).contains(months)
+    }
 
     // MARK: - 1. List Retention Messages
 
@@ -694,15 +697,15 @@ extension SubscriptionsWorker {
             try validateRetentionAllowedArguments(params.arguments, allowedKeys: [
                 "subscription_id",
                 "reference_name",
-                "offer_mode",
+                "offer_id",
                 "duration",
-                "periods",
-                "eligibility_duration_type",
-                "eligibility_duration_min",
-                "eligibility_duration_max",
+                "offer_mode",
+                "period_count",
+                "eligibility_duration_months",
                 "wait_between_offers_months",
-                "price_point_ids",
-                "territory_ids"
+                "target_subscription_plan_type",
+                "territory_ids",
+                "price_point_ids"
             ])
 
             let subscriptionId = try validateRetentionRequiredResourceID(
@@ -713,55 +716,48 @@ extension SubscriptionsWorker {
                 params.arguments,
                 key: "reference_name"
             )
-            let offerMode = try validateRequiredEnumString(
+            let offerId = try validateRetentionOfferIdentifier(
                 params.arguments,
-                key: "offer_mode",
-                allowed: Self.allowedRetentionOfferModes
+                key: "offer_id"
             )
             let duration = try validateRequiredEnumString(
                 params.arguments,
                 key: "duration",
                 allowed: Self.allowedRetentionOfferDurations
             )
-            let periods = try parseRequiredStrictPositiveInt(
+            let offerMode = try validateRequiredEnumString(
                 params.arguments,
-                key: "periods"
+                key: "offer_mode",
+                allowed: Self.allowedRetentionOfferModes
             )
-            let eligibilityDurationType = try validateRequiredEnumString(
+            let periodCount = try parseRequiredStrictPositiveInt(
                 params.arguments,
-                key: "eligibility_duration_type",
-                allowed: Self.allowedRetentionEligibilityDurationTypes
+                key: "period_count"
             )
-            let eligibilityMin = try parseOptionalStrictPositiveInt(
+            let eligibilityDurationMonths = try parseRequiredRetentionEligibilityDurationMonths(
                 params.arguments,
-                key: "eligibility_duration_min"
+                key: "eligibility_duration_months"
             )
-            let eligibilityMax = try parseOptionalStrictPositiveInt(
-                params.arguments,
-                key: "eligibility_duration_max"
-            )
-
-            let eligibilityRange = try validateRetentionEligibilityRange(
-                durationType: eligibilityDurationType,
-                minimum: eligibilityMin,
-                maximum: eligibilityMax
-            )
-
-            let waitBetweenOffersMonths = try parseRequiredRetentionWaitMonths(
+            let waitBetweenOffersMonths = try parseOptionalRetentionWaitMonths(
                 params.arguments,
                 key: "wait_between_offers_months"
             )
-
-            let pricePointIds = try parseRequiredUniqueCanonicalIDArray(
+            let targetSubscriptionPlanType = try validateOptionalEnumString(
                 params.arguments,
-                key: "price_point_ids"
+                key: "target_subscription_plan_type",
+                allowed: Self.allowedRetentionTargetSubscriptionPlanTypes
             )
-            let territoryIds = try parseOptionalCanonicalIDArray(
+
+            let territoryIds = try parseRequiredUniqueCanonicalIDArray(
                 params.arguments,
                 key: "territory_ids"
             )
+            let pricePointIds = try parseRequiredCanonicalIDArray(
+                params.arguments,
+                key: "price_point_ids"
+            )
 
-            if let territoryIds, !territoryIds.isEmpty, territoryIds.count != pricePointIds.count {
+            if territoryIds.count != pricePointIds.count {
                 return MCPResult.error(
                     "'territory_ids' count (\(territoryIds.count)) must match 'price_point_ids' count (\(pricePointIds.count))"
                 )
@@ -775,14 +771,9 @@ extension SubscriptionsWorker {
                 priceIdentifiers.append(
                     ASCResourceIdentifier(type: "retentionOfferPrices", id: inlineId)
                 )
-                let territoryRel: RetentionOfferPriceInlineCreate.TerritoryRelationship?
-                if let territoryIds, !territoryIds.isEmpty {
-                    territoryRel = RetentionOfferPriceInlineCreate.TerritoryRelationship(
-                        data: ASCResourceIdentifier(type: "territories", id: territoryIds[index])
-                    )
-                } else {
-                    territoryRel = nil
-                }
+                let territoryRel = RetentionOfferPriceInlineCreate.TerritoryRelationship(
+                    data: ASCResourceIdentifier(type: "territories", id: territoryIds[index])
+                )
 
                 inlinePrices.append(
                     RetentionOfferPriceInlineCreate(
@@ -801,12 +792,13 @@ extension SubscriptionsWorker {
                 data: RetentionOfferCreateRequest.CreateData(
                     attributes: RetentionOfferCreateRequest.Attributes(
                         referenceName: referenceName,
-                        offerMode: offerMode,
+                        offerId: offerId,
                         duration: duration,
-                        periods: periods,
-                        eligibilitySubscriberDurationType: eligibilityDurationType,
-                        eligibilitySubscriberDurationInMonths: eligibilityRange,
-                        waitBetweenOffersInMonths: waitBetweenOffersMonths
+                        offerMode: offerMode,
+                        periodCount: periodCount,
+                        customerEligibilityPaidSubscriptionDurationInMonths: eligibilityDurationMonths,
+                        customerEligibilityWaitBetweenOffersInMonths: waitBetweenOffersMonths,
+                        targetSubscriptionPlanType: targetSubscriptionPlanType
                     ),
                     relationships: RetentionOfferCreateRequest.Relationships(
                         subscription: RetentionOfferCreateRequest.SubscriptionRelationship(
@@ -845,9 +837,7 @@ extension SubscriptionsWorker {
         do {
             try validateRetentionAllowedArguments(params.arguments, allowedKeys: [
                 "offer_id",
-                "eligibility_duration_type",
-                "eligibility_duration_min",
-                "eligibility_duration_max",
+                "eligibility_duration_months",
                 "wait_between_offers_months"
             ])
 
@@ -856,41 +846,25 @@ extension SubscriptionsWorker {
                 key: "offer_id"
             )
 
-            let durationTypePatch = try parseNullableEnumString(
+            let eligibilityDurationPatch = try parseNullableRetentionEligibilityDurationMonths(
                 params.arguments,
-                key: "eligibility_duration_type",
-                allowed: Self.allowedRetentionEligibilityDurationTypes
-            )
-            let minPatch = try parseNullableStrictPositiveInt(
-                params.arguments,
-                key: "eligibility_duration_min"
-            )
-            let maxPatch = try parseNullableStrictPositiveInt(
-                params.arguments,
-                key: "eligibility_duration_max"
+                key: "eligibility_duration_months"
             )
             let waitPatch = try parseNullableRetentionWaitMonths(
                 params.arguments,
                 key: "wait_between_offers_months"
             )
 
-            guard durationTypePatch != nil || minPatch != nil || maxPatch != nil || waitPatch != nil else {
+            guard eligibilityDurationPatch != nil || waitPatch != nil else {
                 return MCPResult.error(
-                    "At least one of 'eligibility_duration_type', 'eligibility_duration_min', 'eligibility_duration_max', or 'wait_between_offers_months' must be provided"
+                    "At least one of 'eligibility_duration_months' or 'wait_between_offers_months' must be provided"
                 )
             }
 
-            let durationRangePatch = try buildRetentionEligibilityRangePatch(
-                durationTypePatch: durationTypePatch,
-                minPatch: minPatch,
-                maxPatch: maxPatch
-            )
-
             let request = RetentionOfferUpdateRequest(
                 offerId: encodedOfferId,
-                eligibilitySubscriberDurationType: durationTypePatch,
-                eligibilitySubscriberDurationInMonths: durationRangePatch,
-                waitBetweenOffersInMonths: waitPatch
+                customerEligibilityPaidSubscriptionDurationInMonths: eligibilityDurationPatch,
+                customerEligibilityWaitBetweenOffersInMonths: waitPatch
             )
 
             let response: ASCRetentionOfferResponse = try await httpClient.patch(
@@ -1435,26 +1409,40 @@ extension SubscriptionsWorker {
         return value
     }
 
-    private func parseNullableEnumString(
+    private func validateRetentionOfferIdentifier(
+        _ arguments: [String: Value]?,
+        key: String
+    ) throws -> String {
+        guard let rawValue = arguments?[key] else {
+            throw ASCError.parsing("Required parameter '\(key)' is missing")
+        }
+        guard case .string(let value) = rawValue else {
+            throw ASCError.parsing("Parameter '\(key)' must be a string")
+        }
+        let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty, value == trimmed else {
+            throw ASCError.parsing("Parameter '\(key)' must be a non-empty identifier without surrounding whitespace")
+        }
+        try validateNoEmoji(in: value, field: key)
+        return value
+    }
+
+    private func validateOptionalEnumString(
         _ arguments: [String: Value]?,
         key: String,
         allowed: Set<String>
-    ) throws -> ASCNullable<String>? {
-        guard let rawValue = arguments?[key] else {
+    ) throws -> String? {
+        guard let rawValue = arguments?[key], rawValue != .null else {
             return nil
         }
-        switch rawValue {
-        case .null:
-            return .null
-        case .string(let value):
-            guard allowed.contains(value) else {
-                let sorted = allowed.sorted().joined(separator: ", ")
-                throw ASCError.parsing("Invalid '\(key)' value '\(value)'. Allowed values: \(sorted)")
-            }
-            return .value(value)
-        default:
-            throw ASCError.parsing("Parameter '\(key)' must be a string or null")
+        guard case .string(let value) = rawValue else {
+            throw ASCError.parsing("Parameter '\(key)' must be a string")
         }
+        guard allowed.contains(value) else {
+            let sorted = allowed.sorted().joined(separator: ", ")
+            throw ASCError.parsing("Invalid '\(key)' value '\(value)'. Allowed values: \(sorted)")
+        }
+        return value
     }
 
     private func parseRequiredStrictPositiveInt(
@@ -1470,20 +1458,23 @@ extension SubscriptionsWorker {
         return intValue
     }
 
-    private func parseOptionalStrictPositiveInt(
+    private func parseRequiredRetentionEligibilityDurationMonths(
         _ arguments: [String: Value]?,
         key: String
-    ) throws -> Int? {
-        guard let rawValue = arguments?[key], rawValue != .null else {
-            return nil
+    ) throws -> Int {
+        guard let rawValue = arguments?[key] else {
+            throw ASCError.parsing("Required parameter '\(key)' is missing")
         }
-        guard case .int(let intValue) = rawValue, intValue >= 1 else {
-            throw ASCError.parsing("Parameter '\(key)' must be an integer >= 1")
+        guard case .int(let intValue) = rawValue,
+              isAllowedRetentionEligibilityDuration(intValue) else {
+            throw ASCError.parsing(
+                "Parameter '\(key)' must be 1 through 24, 36, 48, or 60"
+            )
         }
         return intValue
     }
 
-    private func parseNullableStrictPositiveInt(
+    private func parseNullableRetentionEligibilityDurationMonths(
         _ arguments: [String: Value]?,
         key: String
     ) throws -> ASCNullable<Int>? {
@@ -1493,25 +1484,26 @@ extension SubscriptionsWorker {
         switch rawValue {
         case .null:
             return .null
-        case .int(let intValue) where intValue >= 1:
+        case .int(let intValue) where isAllowedRetentionEligibilityDuration(intValue):
             return .value(intValue)
         default:
-            throw ASCError.parsing("Parameter '\(key)' must be an integer >= 1 or null")
+            throw ASCError.parsing(
+                "Parameter '\(key)' must be 1 through 24, 36, 48, 60, or null"
+            )
         }
     }
 
-    private func parseRequiredRetentionWaitMonths(
+    private func parseOptionalRetentionWaitMonths(
         _ arguments: [String: Value]?,
         key: String
-    ) throws -> Int {
-        guard let rawValue = arguments?[key] else {
-            throw ASCError.parsing("Required parameter '\(key)' is missing")
+    ) throws -> Int? {
+        guard let rawValue = arguments?[key], rawValue != .null else {
+            return nil
         }
         guard case .int(let intValue) = rawValue,
-              Self.allowedRetentionWaitBetweenOffersMonths.contains(intValue) else {
-            let allowedList = Self.allowedRetentionWaitBetweenOffersMonths.sorted().map(String.init).joined(separator: ", ")
+              isAllowedRetentionWaitBetweenOffers(intValue) else {
             throw ASCError.parsing(
-                "Parameter '\(key)' must be one of [\(allowedList)]"
+                "Parameter '\(key)' must be an integer between 2 and 24"
             )
         }
         return intValue
@@ -1527,122 +1519,35 @@ extension SubscriptionsWorker {
         switch rawValue {
         case .null:
             return .null
-        case .int(let intValue) where Self.allowedRetentionWaitBetweenOffersMonths.contains(intValue):
+        case .int(let intValue) where isAllowedRetentionWaitBetweenOffers(intValue):
             return .value(intValue)
         default:
-            let allowedList = Self.allowedRetentionWaitBetweenOffersMonths.sorted().map(String.init).joined(separator: ", ")
             throw ASCError.parsing(
-                "Parameter '\(key)' must be one of [\(allowedList)] or null"
+                "Parameter '\(key)' must be an integer between 2 and 24 or null"
             )
         }
     }
 
-    private func validateRetentionEligibilityRange(
-        durationType: String,
-        minimum: Int?,
-        maximum: Int?
-    ) throws -> RetentionIntegerRange {
-        switch durationType {
-        case "AT_LEAST":
-            guard let minimum, minimum >= 1 else {
-                throw ASCError.parsing(
-                    "'eligibility_duration_min' (>= 1) is required when 'eligibility_duration_type' is 'AT_LEAST'"
-                )
-            }
-            guard maximum == nil else {
-                throw ASCError.parsing(
-                    "'eligibility_duration_max' must not be provided when 'eligibility_duration_type' is 'AT_LEAST'"
-                )
-            }
-            return RetentionIntegerRange(minimum: minimum, maximum: nil)
-
-        case "UP_TO":
-            guard let maximum, maximum >= 1 else {
-                throw ASCError.parsing(
-                    "'eligibility_duration_max' (>= 1) is required when 'eligibility_duration_type' is 'UP_TO'"
-                )
-            }
-            guard minimum == nil else {
-                throw ASCError.parsing(
-                    "'eligibility_duration_min' must not be provided when 'eligibility_duration_type' is 'UP_TO'"
-                )
-            }
-            return RetentionIntegerRange(minimum: nil, maximum: maximum)
-
-        case "RANGE":
-            guard let minimum, minimum >= 1, let maximum, maximum >= 1 else {
-                throw ASCError.parsing(
-                    "Both 'eligibility_duration_min' and 'eligibility_duration_max' (>= 1) are required when 'eligibility_duration_type' is 'RANGE'"
-                )
-            }
-            guard minimum <= maximum else {
-                throw ASCError.parsing(
-                    "'eligibility_duration_min' (\(minimum)) cannot be greater than 'eligibility_duration_max' (\(maximum))"
-                )
-            }
-            return RetentionIntegerRange(minimum: minimum, maximum: maximum)
-
-        default:
-            throw ASCError.parsing("Invalid 'eligibility_duration_type': \(durationType)")
+    private func parseRequiredCanonicalIDArray(
+        _ arguments: [String: Value]?,
+        key: String
+    ) throws -> [String] {
+        guard let rawValue = arguments?[key] else {
+            throw ASCError.parsing("Required parameter '\(key)' is missing")
         }
-    }
-
-    private func buildRetentionEligibilityRangePatch(
-        durationTypePatch: ASCNullable<String>?,
-        minPatch: ASCNullable<Int>?,
-        maxPatch: ASCNullable<Int>?
-    ) throws -> ASCNullable<RetentionIntegerRange>? {
-        let minValue: Int?
-        if case .value(let minInt) = minPatch {
-            minValue = minInt
-        } else {
-            minValue = nil
+        guard case .array(let arrayValues) = rawValue, !arrayValues.isEmpty else {
+            throw ASCError.parsing("Parameter '\(key)' must be a non-empty array of strings")
         }
 
-        let maxValue: Int?
-        if case .value(let maxInt) = maxPatch {
-            maxValue = maxInt
-        } else {
-            maxValue = nil
+        var result: [String] = []
+        for (index, element) in arrayValues.enumerated() {
+            guard case .string(let rawId) = element else {
+                throw ASCError.parsing("Parameter '\(key)[\(index)]' must be a string")
+            }
+            let validatedId = try validateCanonicalIDString(rawId, field: "\(key)[\(index)]")
+            result.append(validatedId)
         }
-
-        switch durationTypePatch {
-        case .value(let durationType):
-            let range = try validateRetentionEligibilityRange(
-                durationType: durationType,
-                minimum: minValue,
-                maximum: maxValue
-            )
-            return .value(range)
-
-        case .null:
-            if minValue != nil || maxValue != nil {
-                throw ASCError.parsing(
-                    "Cannot provide non-null 'eligibility_duration_min' or 'eligibility_duration_max' when clearing 'eligibility_duration_type'"
-                )
-            }
-            if minPatch == .null || maxPatch == .null {
-                return .null
-            }
-            return nil
-
-        case nil:
-            if minPatch == nil && maxPatch == nil {
-                return nil
-            }
-            if minPatch == .null && maxPatch == .null {
-                return .null
-            }
-            if (minPatch == .null && maxValue == nil) || (maxPatch == .null && minValue == nil) {
-                return .null
-            }
-            if let minValue, let maxValue, minValue > maxValue {
-                throw ASCError.parsing(
-                    "'eligibility_duration_min' (\(minValue)) cannot be greater than 'eligibility_duration_max' (\(maxValue))"
-                )
-            }
-            return .value(RetentionIntegerRange(minimum: minValue, maximum: maxValue))
-        }
+        return result
     }
 
     private func parseRequiredUniqueCanonicalIDArray(
@@ -1839,31 +1744,43 @@ extension SubscriptionsWorker {
         if let attributes = offer.attributes {
             if let referenceName = attributes.referenceName {
                 result["referenceName"] = referenceName
+                result["reference_name"] = referenceName
             }
-            if let offerMode = attributes.offerMode {
-                result["offerMode"] = offerMode
+            if let offerId = attributes.offerId {
+                result["offerId"] = offerId
+                result["offer_id"] = offerId
             }
             if let duration = attributes.duration {
                 result["duration"] = duration
             }
-            if let periods = attributes.periods {
-                result["periods"] = periods
+            if let offerMode = attributes.offerMode {
+                result["offerMode"] = offerMode
+                result["offer_mode"] = offerMode
             }
-            if let eligibilityType = attributes.eligibilitySubscriberDurationType {
-                result["eligibilitySubscriberDurationType"] = eligibilityType
+            if let periodCount = attributes.periodCount {
+                result["periodCount"] = periodCount
+                result["period_count"] = periodCount
             }
-            if let eligibilityRange = attributes.eligibilitySubscriberDurationInMonths {
-                var rangeDict: [String: Any] = [:]
-                if let min = eligibilityRange.minimum { rangeDict["minimum"] = min }
-                if let max = eligibilityRange.maximum { rangeDict["maximum"] = max }
-                result["eligibilitySubscriberDurationInMonths"] = rangeDict
+            if let eligibilityDuration = attributes.customerEligibilityPaidSubscriptionDurationInMonths {
+                result["customerEligibilityPaidSubscriptionDurationInMonths"] = eligibilityDuration
+                result["customer_eligibility_paid_subscription_duration_in_months"] = eligibilityDuration
+                result["eligibilityDurationMonths"] = eligibilityDuration
+                result["eligibility_duration_months"] = eligibilityDuration
             }
-            if let waitMonths = attributes.waitBetweenOffersInMonths {
-                result["waitBetweenOffersInMonths"] = waitMonths
+            if let waitMonths = attributes.customerEligibilityWaitBetweenOffersInMonths {
+                result["customerEligibilityWaitBetweenOffersInMonths"] = waitMonths
+                result["customer_eligibility_wait_between_offers_months"] = waitMonths
+                result["waitBetweenOffersMonths"] = waitMonths
+                result["wait_between_offers_months"] = waitMonths
+            }
+            if let targetPlanType = attributes.targetSubscriptionPlanType {
+                result["targetSubscriptionPlanType"] = targetPlanType
+                result["target_subscription_plan_type"] = targetPlanType
             }
         }
         if let subscriptionId = offer.relationships?.subscription?.data?.id {
             result["subscriptionId"] = subscriptionId
+            result["subscription_id"] = subscriptionId
         }
         return result
     }

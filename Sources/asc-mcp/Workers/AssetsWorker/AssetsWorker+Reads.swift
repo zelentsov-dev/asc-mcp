@@ -165,8 +165,9 @@ extension AssetsWorker {
             owner = AssetLibraryResourceID(type: "apps", id: appID)
             state = event.attributes?["eventState"]?.stringValue
         case .retentionMessageVersion:
-            let members = try await all("/v1/apps/\(try ASCPathSegment.encode(appID))/retentionMessages", query: ["filter[id]": parentID.id], type: "retentionMessages")
-            guard let message = members.first(where: { $0.id == parentID.id }), members.count == 1 else {
+            let members = try await all("/v1/apps/\(try ASCPathSegment.encode(appID))/retentionMessages", type: "retentionMessages")
+            let matches = members.filter { $0.id == parentID.id }
+            guard matches.count == 1, let message = matches.first else {
                 throw AssetLibraryError("Retention message does not belong to this app")
             }
             checked.append(message)

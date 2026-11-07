@@ -411,14 +411,9 @@ extension SubscriptionsWorker {
                         "description": .string("Internal reference name for the retention offer (max 64 characters)"),
                         "maxLength": .int(64)
                     ]),
-                    "offer_mode": .object([
+                    "offer_id": .object([
                         "type": .string("string"),
-                        "description": .string("Offer payment mode"),
-                        "enum": .array([
-                            .string("PAY_AS_YOU_GO"),
-                            .string("PAY_UP_FRONT"),
-                            .string("FREE_TRIAL")
-                        ])
+                        "description": .string("Unique offer identifier")
                     ]),
                     "duration": .object([
                         "type": .string("string"),
@@ -434,42 +429,45 @@ extension SubscriptionsWorker {
                             .string("ONE_YEAR")
                         ])
                     ]),
-                    "periods": .object([
+                    "offer_mode": .object([
+                        "type": .string("string"),
+                        "description": .string("Offer payment mode"),
+                        "enum": .array([
+                            .string("PAY_AS_YOU_GO"),
+                            .string("PAY_UP_FRONT"),
+                            .string("FREE_TRIAL")
+                        ])
+                    ]),
+                    "period_count": .object([
                         "type": .string("integer"),
                         "description": .string("Number of billing periods for the offer (minimum 1)"),
                         "minimum": .int(1)
                     ]),
-                    "eligibility_duration_type": .object([
-                        "type": .string("string"),
-                        "description": .string("Subscriber paid duration eligibility rule type"),
-                        "enum": .array([
-                            .string("AT_LEAST"),
-                            .string("UP_TO"),
-                            .string("RANGE")
-                        ])
-                    ]),
-                    "eligibility_duration_min": .object([
+                    "eligibility_duration_months": .object([
                         "type": .string("integer"),
-                        "description": .string("Minimum paid subscription duration in months (required for AT_LEAST and RANGE)"),
-                        "minimum": .int(1)
-                    ]),
-                    "eligibility_duration_max": .object([
-                        "type": .string("integer"),
-                        "description": .string("Maximum paid subscription duration in months (required for UP_TO and RANGE)"),
+                        "description": .string("Paid subscription duration in months required for eligibility (1-24, 36, 48, or 60)"),
                         "minimum": .int(1)
                     ]),
                     "wait_between_offers_months": .object([
                         "type": .string("integer"),
-                        "description": .string("Months a subscriber must wait between retention offers"),
+                        "description": .string("Optional months a subscriber must wait between retention offers (2-24)"),
+                        "minimum": .int(2),
+                        "maximum": .int(24)
+                    ]),
+                    "target_subscription_plan_type": .object([
+                        "type": .string("string"),
+                        "description": .string("Optional target subscription plan type (MONTHLY or UPFRONT)"),
                         "enum": .array([
-                            .int(0),
-                            .int(1),
-                            .int(2),
-                            .int(3),
-                            .int(6),
-                            .int(9),
-                            .int(12),
-                            .int(24)
+                            .string("MONTHLY"),
+                            .string("UPFRONT")
+                        ])
+                    ]),
+                    "territory_ids": .object([
+                        "type": .string("array"),
+                        "description": .string("Territory codes matching price_point_ids 1:1 (e.g. USA, GBR)"),
+                        "minItems": .int(1),
+                        "items": .object([
+                            "type": .string("string")
                         ])
                     ]),
                     "price_point_ids": .object([
@@ -479,23 +477,17 @@ extension SubscriptionsWorker {
                         "items": .object([
                             "type": .string("string")
                         ])
-                    ]),
-                    "territory_ids": .object([
-                        "type": .string("array"),
-                        "description": .string("Optional territory codes matching price_point_ids 1:1 (e.g. USA, GBR)"),
-                        "items": .object([
-                            "type": .string("string")
-                        ])
                     ])
                 ]),
                 "required": .array([
                     .string("subscription_id"),
                     .string("reference_name"),
-                    .string("offer_mode"),
+                    .string("offer_id"),
                     .string("duration"),
-                    .string("periods"),
-                    .string("eligibility_duration_type"),
-                    .string("wait_between_offers_months"),
+                    .string("offer_mode"),
+                    .string("period_count"),
+                    .string("eligibility_duration_months"),
+                    .string("territory_ids"),
                     .string("price_point_ids")
                 ])
             ])
@@ -513,40 +505,16 @@ extension SubscriptionsWorker {
                         "type": .string("string"),
                         "description": .string("Retention offer ID")
                     ]),
-                    "eligibility_duration_type": .object([
-                        "type": .array([.string("string"), .string("null")]),
-                        "description": .string("Updated subscriber duration eligibility type (or null to clear)"),
-                        "enum": .array([
-                            .string("AT_LEAST"),
-                            .string("UP_TO"),
-                            .string("RANGE"),
-                            .null
-                        ])
-                    ]),
-                    "eligibility_duration_min": .object([
+                    "eligibility_duration_months": .object([
                         "type": .array([.string("integer"), .string("null")]),
-                        "description": .string("Updated minimum paid duration in months (or null to clear)"),
-                        "minimum": .int(1)
-                    ]),
-                    "eligibility_duration_max": .object([
-                        "type": .array([.string("integer"), .string("null")]),
-                        "description": .string("Updated maximum paid duration in months (or null to clear)"),
+                        "description": .string("Updated paid subscription duration in months (1-24, 36, 48, 60, or null to clear)"),
                         "minimum": .int(1)
                     ]),
                     "wait_between_offers_months": .object([
                         "type": .array([.string("integer"), .string("null")]),
-                        "description": .string("Updated wait between offers in months (or null to clear)"),
-                        "enum": .array([
-                            .int(0),
-                            .int(1),
-                            .int(2),
-                            .int(3),
-                            .int(6),
-                            .int(9),
-                            .int(12),
-                            .int(24),
-                            .null
-                        ])
+                        "description": .string("Updated wait between offers in months (2-24 or null to clear)"),
+                        "minimum": .int(2),
+                        "maximum": .int(24)
                     ])
                 ]),
                 "required": .array([.string("offer_id")])

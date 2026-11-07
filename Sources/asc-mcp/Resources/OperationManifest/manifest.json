@@ -7,9 +7,9 @@
     "operationCount": 1337
   },
   "optionalInputCoveragePin": {
-    "bound": 1377,
-    "identitySHA256": "1400d282aefe09f38931d0b51bd5edb7294657dbb0d8c54c3c9a0edc1c2a3ccd",
-    "intentionallyOmitted": 3145,
+    "bound": 1378,
+    "identitySHA256": "680a0bd2f5ef10a5ce67de42ede8efaf3364433171fed2bb972ab0927f821d80",
+    "intentionallyOmitted": 3144,
     "internalControl": 40,
     "total": 4562,
     "unclassified": 0

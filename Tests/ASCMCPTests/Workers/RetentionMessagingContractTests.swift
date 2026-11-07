@@ -245,23 +245,23 @@ struct RetentionMessagingContractTests {
         let transport = TestHTTPTransport(responses: [
             .init(
                 statusCode: 201,
-                body: #"{"data":{"type":"retentionOffers","id":"ro-1","attributes":{"referenceName":"Loyal 6M Offer","offerId":"LOYAL6M","duration":"THREE_MONTHS","offerMode":"PAY_AS_YOU_GO","periodCount":3,"customerEligibilityPaidSubscriptionDurationInMonths":{"minimum":3,"maximum":12},"customerEligibilityWaitBetweenOffersInMonths":6,"startDate":"2026-11-01","endDate":"2027-11-01","targetSubscriptionPlanType":"MONTHLY"},"relationships":{"prices":{"data":[{"type":"retentionOfferPrices","id":"rop-1"}]}}}}"#
+                body: #"{"data":{"type":"retentionOffers","id":"ro-1","attributes":{"referenceName":"Loyal 6M Offer","offerId":"LOYAL6M","duration":"THREE_MONTHS","offerMode":"PAY_AS_YOU_GO","periodCount":3,"customerEligibilityPaidSubscriptionDurationInMonths":6,"customerEligibilityWaitBetweenOffersInMonths":6,"targetSubscriptionPlanType":"MONTHLY"},"relationships":{"prices":{"data":[{"type":"retentionOfferPrices","id":"rop-1"}]}}}}"#
             ),
             .init(
                 statusCode: 200,
-                body: #"{"data":[{"type":"retentionOffers","id":"ro-1","attributes":{"referenceName":"Loyal 6M Offer","offerId":"LOYAL6M","duration":"THREE_MONTHS","offerMode":"PAY_AS_YOU_GO","periodCount":3,"customerEligibilityPaidSubscriptionDurationInMonths":{"minimum":3,"maximum":12},"customerEligibilityWaitBetweenOffersInMonths":6}}],"links":{"self":"https://api.example.test/v1/subscriptions/sub-1/retentionOffers"}}"#
+                body: #"{"data":[{"type":"retentionOffers","id":"ro-1","attributes":{"referenceName":"Loyal 6M Offer","offerId":"LOYAL6M","duration":"THREE_MONTHS","offerMode":"PAY_AS_YOU_GO","periodCount":3,"customerEligibilityPaidSubscriptionDurationInMonths":6,"customerEligibilityWaitBetweenOffersInMonths":6,"targetSubscriptionPlanType":"MONTHLY"}}],"links":{"self":"https://api.example.test/v1/subscriptions/sub-1/retentionOffers"}}"#
             ),
             .init(
                 statusCode: 200,
-                body: #"{"data":[{"type":"retentionOffers","id":"ro-1","attributes":{"referenceName":"Loyal 6M Offer","offerId":"LOYAL6M","duration":"THREE_MONTHS","offerMode":"PAY_AS_YOU_GO","periodCount":3}}],"links":{"self":"https://api.example.test/v1/subscriptions/sub-1/retentionMessageOffers"}}"#
+                body: #"{"data":[{"type":"retentionOffers","id":"ro-1","attributes":{"referenceName":"Loyal 6M Offer","offerId":"LOYAL6M","duration":"THREE_MONTHS","offerMode":"PAY_AS_YOU_GO","periodCount":3,"customerEligibilityPaidSubscriptionDurationInMonths":6}}],"links":{"self":"https://api.example.test/v1/subscriptions/sub-1/retentionMessageOffers"}}"#
             ),
             .init(
                 statusCode: 200,
-                body: #"{"data":{"type":"retentionOffers","id":"ro-1","attributes":{"referenceName":"Loyal 6M Offer","offerId":"LOYAL6M","duration":"THREE_MONTHS","offerMode":"PAY_AS_YOU_GO","periodCount":3}}}"#
+                body: #"{"data":{"type":"retentionOffers","id":"ro-1","attributes":{"referenceName":"Loyal 6M Offer","offerId":"LOYAL6M","duration":"THREE_MONTHS","offerMode":"PAY_AS_YOU_GO","periodCount":3,"customerEligibilityPaidSubscriptionDurationInMonths":6,"customerEligibilityWaitBetweenOffersInMonths":6,"targetSubscriptionPlanType":"MONTHLY"}}}"#
             ),
             .init(
                 statusCode: 200,
-                body: #"{"data":{"type":"retentionOffers","id":"ro-1","attributes":{"referenceName":"Loyal 6M Offer","offerId":"LOYAL6M","duration":"THREE_MONTHS","offerMode":"PAY_AS_YOU_GO","periodCount":3,"endDate":null}}}"#
+                body: #"{"data":{"type":"retentionOffers","id":"ro-1","attributes":{"referenceName":"Loyal 6M Offer","offerId":"LOYAL6M","duration":"THREE_MONTHS","offerMode":"PAY_AS_YOU_GO","periodCount":3,"customerEligibilityPaidSubscriptionDurationInMonths":12,"customerEligibilityWaitBetweenOffersInMonths":null,"targetSubscriptionPlanType":"MONTHLY"}}}"#
             ),
             .init(
                 statusCode: 200,
@@ -271,23 +271,40 @@ struct RetentionMessagingContractTests {
         ])
         let worker = try await makeSubscriptionsWorker(transport: transport)
 
-        // Invalid wait_between_offers_months rejected before network access
+        // Invalid wait_between_offers_months (< 2) rejected before network access
         let invalidWait = try await worker.handleTool(.init(
             name: "subscriptions_create_retention_offer",
             arguments: [
                 "subscription_id": .string("sub-1"),
                 "reference_name": .string("Bad Wait"),
+                "offer_id": .string("BADWAIT"),
                 "offer_mode": .string("PAY_AS_YOU_GO"),
                 "duration": .string("ONE_MONTH"),
-                "periods": .int(1),
-                "eligibility_duration_type": .string("AT_LEAST"),
-                "eligibility_duration_min": .int(3),
-                "wait_between_offers_months": .int(5),
+                "period_count": .int(1),
+                "eligibility_duration_months": .int(6),
+                "wait_between_offers_months": .int(1),
                 "price_point_ids": .array([.string("pp-usa-1")]),
                 "territory_ids": .array([.string("USA")])
             ]
         ))
         #expect(invalidWait.isError == true)
+
+        // Invalid eligibility_duration_months (25 not in 1...24, 36, 48, 60) rejected before network access
+        let invalidEligibility = try await worker.handleTool(.init(
+            name: "subscriptions_create_retention_offer",
+            arguments: [
+                "subscription_id": .string("sub-1"),
+                "reference_name": .string("Bad Eligibility"),
+                "offer_id": .string("BADELIG"),
+                "offer_mode": .string("PAY_AS_YOU_GO"),
+                "duration": .string("ONE_MONTH"),
+                "period_count": .int(1),
+                "eligibility_duration_months": .int(25),
+                "price_point_ids": .array([.string("pp-usa-1")]),
+                "territory_ids": .array([.string("USA")])
+            ]
+        ))
+        #expect(invalidEligibility.isError == true)
         #expect(await transport.requestCount() == 0)
 
         let created = try await worker.handleTool(.init(
@@ -295,21 +312,38 @@ struct RetentionMessagingContractTests {
             arguments: [
                 "subscription_id": .string("sub-1"),
                 "reference_name": .string("Loyal 6M Offer"),
+                "offer_id": .string("LOYAL6M"),
                 "offer_mode": .string("PAY_AS_YOU_GO"),
                 "duration": .string("THREE_MONTHS"),
-                "periods": .int(3),
-                "eligibility_duration_type": .string("RANGE"),
-                "eligibility_duration_min": .int(3),
-                "eligibility_duration_max": .int(12),
+                "period_count": .int(3),
+                "eligibility_duration_months": .int(6),
                 "wait_between_offers_months": .int(6),
+                "target_subscription_plan_type": .string("MONTHLY"),
                 "price_point_ids": .array([.string("pp-usa-1")]),
                 "territory_ids": .array([.string("USA")])
             ]
         ))
         #expect(created.isError != true)
+        let createdOffer = try object(try object(created.structuredContent)["offer"])
+        #expect(createdOffer["offerId"] == .string("LOYAL6M"))
+        #expect(createdOffer["periodCount"] == .int(3))
+        #expect(createdOffer["customerEligibilityPaidSubscriptionDurationInMonths"] == .int(6))
+        #expect(createdOffer["customerEligibilityWaitBetweenOffersInMonths"] == .int(6))
+        #expect(createdOffer["targetSubscriptionPlanType"] == .string("MONTHLY"))
 
         let createRequest = try #require(await transport.recordedRequests().first)
         let createBody = try jsonObject(from: try #require(createRequest.httpBody))
+        let createData = try #require(createBody["data"] as? [String: Any])
+        let createAttributes = try #require(createData["attributes"] as? [String: Any])
+        #expect(createAttributes["referenceName"] as? String == "Loyal 6M Offer")
+        #expect(createAttributes["offerId"] as? String == "LOYAL6M")
+        #expect(createAttributes["duration"] as? String == "THREE_MONTHS")
+        #expect(createAttributes["offerMode"] as? String == "PAY_AS_YOU_GO")
+        #expect(createAttributes["periodCount"] as? Int == 3)
+        #expect(createAttributes["customerEligibilityPaidSubscriptionDurationInMonths"] as? Int == 6)
+        #expect(createAttributes["customerEligibilityWaitBetweenOffersInMonths"] as? Int == 6)
+        #expect(createAttributes["targetSubscriptionPlanType"] as? String == "MONTHLY")
+
         let included = try #require(createBody["included"] as? [[String: Any]])
         #expect(included.count == 1)
         #expect(included[0]["type"] as? String == "retentionOfferPrices")
@@ -342,7 +376,11 @@ struct RetentionMessagingContractTests {
 
         let updated = try await worker.handleTool(.init(
             name: "subscriptions_update_retention_offer",
-            arguments: ["offer_id": .string("ro-1"), "wait_between_offers_months": .int(12)]
+            arguments: [
+                "offer_id": .string("ro-1"),
+                "eligibility_duration_months": .int(12),
+                "wait_between_offers_months": .null
+            ]
         ))
         #expect(updated.isError != true)
 
@@ -362,6 +400,10 @@ struct RetentionMessagingContractTests {
         let requests = await transport.recordedRequests()
         #expect(requests[1].url?.path == "/v1/subscriptions/sub-1/retentionOffers")
         #expect(requests[2].url?.path == "/v1/subscriptions/sub-1/retentionMessageOffers")
+        let patchBody = try jsonObject(from: try #require(requests[4].httpBody))
+        let patchAttributes = try #require((patchBody["data"] as? [String: Any])?["attributes"] as? [String: Any])
+        #expect(patchAttributes["customerEligibilityPaidSubscriptionDurationInMonths"] as? Int == 12)
+        #expect(patchAttributes["customerEligibilityWaitBetweenOffersInMonths"] is NSNull)
         #expect(requests[5].url?.path == "/v1/retentionOffers/ro-1/prices")
     }
 
@@ -447,7 +489,7 @@ struct RetentionMessagingContractTests {
     @Test("AssetsWorker reads to-one retentionMessageVersion placement and rejects video and reordering")
     func assetsWorkerRetentionMessageVersionSupport() async throws {
         let versionDoc = #"{"data":{"type":"retentionMessageVersions","id":"ver-1","attributes":{"version":1,"state":"PREPARE_FOR_SUBMISSION"},"relationships":{"retentionMessage":{"data":{"type":"retentionMessages","id":"msg-1"}}}}}"#
-        let appMessagesDoc = #"{"data":[{"type":"retentionMessages","id":"msg-1","attributes":{"referenceName":"Stay With Us"},"relationships":{"app":{"data":{"type":"apps","id":"app-1"}}}}]}"#
+        let appMessagesDoc = #"{"data":[{"type":"retentionMessages","id":"msg-other","attributes":{"referenceName":"Other Message"},"relationships":{"app":{"data":{"type":"apps","id":"app-1"}}}},{"type":"retentionMessages","id":"msg-1","attributes":{"referenceName":"Stay With Us"},"relationships":{"app":{"data":{"type":"apps","id":"app-1"}}}}]}"#
         let placementDoc = #"{"data":{"type":"appAssetLibraryPlacements","id":"pl-1","attributes":{"placementType":"retentionImage","placementGroup":"retentionGroup"},"relationships":{"image":{"data":{"type":"appAssetLibraryImages","id":"img-1"}},"retentionMessageVersion":{"data":{"type":"retentionMessageVersions","id":"ver-1"}}}}}"#
 
         let transport = TestHTTPTransport(responses: [
@@ -528,6 +570,10 @@ struct RetentionMessagingContractTests {
         ))
         #expect(reorderError.isError == true)
         #expect(await transport.requestCount() == beforeCount)
+
+        let recorded = await transport.recordedRequests()
+        #expect(recorded[1].url?.path == "/v1/apps/app-1/retentionMessages")
+        #expect(recorded[1].url?.query?.contains("filter") != true)
     }
 
     // MARK: - 6. ReviewSubmissionsWorker Retention Message Version Support
