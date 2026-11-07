@@ -688,7 +688,7 @@ struct RetentionMessagingContractTests {
         let subscriptionsDoc = #"{"data":[{"type":"subscriptions","id":"sub-2","attributes":{"name":"Pro Annual","productId":"com.example.annual","state":"APPROVED","subscriptionPeriod":"ONE_YEAR"}}],"links":{"self":"https://api.example.test/v1/retentionMessages/msg-1/subscriptions?cursor=page-2"}}"#
         let offersDoc = #"{"data":[{"type":"retentionOffers","id":"ro-2","attributes":{"referenceName":"Page 2 Offer","offerId":"OFFER2","duration":"ONE_MONTH","offerMode":"PAY_AS_YOU_GO","periodCount":1,"customerEligibilityPaidSubscriptionDurationInMonths":6}}],"links":{"self":"https://api.example.test/v1/subscriptions/sub-1/retentionOffers?cursor=page-2"}}"#
         let messageOffersDoc = #"{"data":[{"type":"retentionOffers","id":"ro-3","attributes":{"referenceName":"Page 2 Message Offer","offerId":"MSGOFFER2","duration":"ONE_MONTH","offerMode":"PAY_AS_YOU_GO","periodCount":1,"customerEligibilityPaidSubscriptionDurationInMonths":6}}],"links":{"self":"https://api.example.test/v1/subscriptions/sub-1/retentionMessageOffers?cursor=page-2"}}"#
-        let pricesDoc = #"{"data":[{"type":"retentionOfferPrices","id":"rop-2","relationships":{"territory":{"data":{"type":"territories","id":"USA"}},"subscriptionPricePoint":{"data":{"type":"subscriptionPricePoints","id":"pp-usa-2"}}}}],"included":[{"type":"subscriptionPricePoints","id":"pp-usa-2","attributes":{"customerPrice":"2.99","proceeds":"2.10","proceedsYear2":"2.54"}},{"type":"territories","id":"USA","attributes":{"currency":"USD"}}],"links":{"self":"https://api.example.test/v1/retentionOffers/ro-1/prices?cursor=page-2"}}"#
+        let pricesDoc = #"{"data":[{"type":"retentionOfferPrices","id":"rop-2","relationships":{"territory":{"data":{"type":"territories","id":"USA"}},"subscriptionPricePoint":{"data":{"type":"subscriptionPricePoints","id":"pp-usa-2"}}}}],"included":[{"type":"subscriptionPricePoints","id":"pp-usa-2","attributes":{"customerPrice":"4.99","proceeds":"3.49","proceedsYear2":"4.24"}},{"type":"territories","id":"USA","attributes":{"currency":"USD"}}],"links":{"self":"https://api.example.test/v1/retentionOffers/ro-1/prices?cursor=page-2"}}"#
 
         // 1. Negative checks before any HTTP I/O
         let negativeTransport = TestHTTPTransport(responses: [])
@@ -904,13 +904,36 @@ struct RetentionMessagingContractTests {
             #expect(result.isError != true, "Case \(index) (\(toolName)) failed: \(result.content)")
             let payload = try object(result.structuredContent)
             #expect(payload["count"] == .int(1))
+            if toolName == "subscriptions_list_retention_offer_prices" {
+                guard case .array(let prices) = payload["prices"],
+                      let firstPriceValue = prices.first else {
+                    Issue.record("Expected non-empty prices array for case \(index)")
+                    continue
+                }
+                let priceItem = try object(firstPriceValue)
+                #expect(priceItem["customerPrice"] == .string("4.99"))
+                #expect(priceItem["customer_price"] == .string("4.99"))
+                #expect(priceItem["proceeds"] == .string("3.49"))
+                #expect(priceItem["proceedsYear2"] == .string("4.24"))
+                #expect(priceItem["proceeds_year2"] == .string("4.24"))
+                #expect(priceItem["currency"] == .string("USD"))
+            }
         }
 
         let requests = await transport.recordedRequests()
         #expect(requests.count == 15)
-        for (index, (_, _, expectedPath)) in positiveCases.enumerated() {
-            #expect(requests[index].url?.path == expectedPath)
-            #expect(requests[index].url?.query?.contains("cursor=page-2") == true)
+        for (index, (toolName, _, expectedPath)) in positiveCases.enumerated() {
+            let requestURL = try #require(requests[index].url)
+            #expect(requestURL.path == expectedPath)
+            let queryItems = URLComponents(url: requestURL, resolvingAgainstBaseURL: false)?.queryItems ?? []
+            let queryDict = Dictionary(uniqueKeysWithValues: queryItems.map { ($0.name, $0.value ?? "") })
+            #expect(queryDict["cursor"] == "page-2")
+            if toolName == "subscriptions_list_retention_offer_prices" {
+                #expect(queryDict["include"] == "territory,subscriptionPricePoint")
+                #expect(queryDict["fields[retentionOfferPrices]"] == "territory,subscriptionPricePoint")
+                #expect(queryDict["fields[subscriptionPricePoints]"] == "customerPrice,proceeds,proceedsYear2,territory")
+                #expect(queryDict["fields[territories]"] == "currency")
+            }
         }
     }
 
@@ -925,7 +948,7 @@ struct RetentionMessagingContractTests {
             ),
             .init(
                 statusCode: 200,
-                body: #"{"data":{"type":"retentionMessageLocalizations","id":"loc-ja-1","attributes":{"locale":"ja","header":"𠮷野の便利な機能を継続","body":"𠮟咤激励の機能も引き続きご利用いただけます。"}}}"#
+                body: #"{"data":{"type":"retentionMessageLocalizations","id":"loc-ja-1","attributes":{"locale":"ja","header":"𠮷野の便利な機能を継続 1 © ® ™","body":"𠮟咤激励の機能も引き続きご利用いただけます。"}}}"#
             ),
             .init(
                 statusCode: 201,
@@ -938,34 +961,59 @@ struct RetentionMessagingContractTests {
         ])
         let worker = try await makeSubscriptionsWorker(transport: transport)
 
-        // Real emojis rejected before network access
-        for emojiHeader in ["キャンペーン🎉", "特典🔥", "継続✨", "限定❤️", "夏休み☀️"] {
-            let rejected = try await worker.handleTool(.init(
+        // Real and compound emojis (including keycaps and VS-16 sequences) rejected before network access
+        let emojiSamples = [
+            "キャンペーン🎉",
+            "特典🔥",
+            "継続✨",
+            "限定❤️",
+            "夏休み☀️",
+            "ステップ1️⃣",
+            "番号#️⃣",
+            "記号*️⃣",
+            "キー1⃣",
+            "著作権©️",
+            "登録商標®️",
+            "商標™️",
+            "案内ℹ️",
+            "米国🇺🇸"
+        ]
+        for emojiSample in emojiSamples {
+            let rejectedHeader = try await worker.handleTool(.init(
                 name: "subscriptions_create_retention_message_localization",
                 arguments: [
                     "version_id": .string("ver-1"),
                     "locale": .string("ja"),
-                    "header": .string(emojiHeader),
+                    "header": .string(emojiSample),
                     "body": .string("引き続きご利用いただけます。")
                 ]
             ))
-            #expect(rejected.isError == true, "Expected emoji header '\(emojiHeader)' to be rejected")
-        }
+            #expect(rejectedHeader.isError == true, "Expected emoji header '\(emojiSample)' to be rejected")
 
-        let rejectedMessageRef = try await worker.handleTool(.init(
-            name: "subscriptions_create_retention_message",
-            arguments: [
-                "app_id": .string("app-1"),
-                "reference_name": .string("キャンペーン🔥")
-            ]
-        ))
-        #expect(rejectedMessageRef.isError == true)
+            let rejectedBody = try await worker.handleTool(.init(
+                name: "subscriptions_update_retention_message_localization",
+                arguments: [
+                    "localization_id": .string("loc-ja-1"),
+                    "body": .string("引き続きご利用いただけます。\(emojiSample)")
+                ]
+            ))
+            #expect(rejectedBody.isError == true, "Expected emoji body '\(emojiSample)' to be rejected")
+
+            let rejectedRef = try await worker.handleTool(.init(
+                name: "subscriptions_create_retention_message",
+                arguments: [
+                    "app_id": .string("app-1"),
+                    "reference_name": .string(emojiSample)
+                ]
+            ))
+            #expect(rejectedRef.isError == true, "Expected emoji reference_name '\(emojiSample)' to be rejected")
+        }
 
         let rejectedOfferRef = try await worker.handleTool(.init(
             name: "subscriptions_create_retention_offer",
             arguments: [
                 "subscription_id": .string("sub-1"),
-                "reference_name": .string("キャンペーン🔥"),
+                "reference_name": .string("キャンペーン1️⃣"),
                 "offer_id": .string("YOSHINO1"),
                 "offer_mode": .string("PAY_AS_YOU_GO"),
                 "duration": .string("ONE_MONTH"),
@@ -978,7 +1026,7 @@ struct RetentionMessagingContractTests {
         #expect(rejectedOfferRef.isError == true)
         #expect(await transport.requestCount() == 0)
 
-        // Plane 2 CJK Unified Ideographs Extension B (𠮷 U+20BB7, 𠮟 U+20B9F) accepted
+        // Plane 2 CJK Unified Ideographs Extension B (𠮷 U+20BB7, 𠮟 U+20B9F) and plain ASCII/BMP text symbols accepted
         let createdLoc = try await worker.handleTool(.init(
             name: "subscriptions_create_retention_message_localization",
             arguments: [
@@ -997,7 +1045,7 @@ struct RetentionMessagingContractTests {
             name: "subscriptions_update_retention_message_localization",
             arguments: [
                 "localization_id": .string("loc-ja-1"),
-                "header": .string("𠮷野の便利な機能を継続"),
+                "header": .string("𠮷野の便利な機能を継続 1 © ® ™"),
                 "body": .string("𠮟咤激励の機能も引き続きご利用いただけます。")
             ]
         ))

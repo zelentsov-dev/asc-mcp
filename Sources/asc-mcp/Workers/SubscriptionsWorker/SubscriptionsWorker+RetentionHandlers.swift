@@ -940,9 +940,13 @@ extension SubscriptionsWorker {
 
             let response: ASCRetentionOfferPricesResponse
             if let nextURL = pagination.nextURL {
-                response = try await httpClient.getPage(
-                    nextURL,
-                    scope: pagination.scope,
+                let page = try httpClient.validatedScopedLink(nextURL, scope: pagination.scope)
+                let effectiveParameters = page.parameters.merging(Self.retentionOfferPricesQueryParameters) { _, canonical in
+                    canonical
+                }
+                response = try await httpClient.get(
+                    page.path,
+                    parameters: effectiveParameters,
                     as: ASCRetentionOfferPricesResponse.self
                 )
             } else {
