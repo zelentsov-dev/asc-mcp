@@ -404,7 +404,21 @@ struct RetentionMessagingContractTests {
             arguments: ["offer_id": .string("ro-1"), "territory": .string("USA,GBR")]
         ))
         #expect(prices.isError != true)
-        #expect(try object(prices.structuredContent)["count"] == .int(1))
+        let pricesPayload = try object(prices.structuredContent)
+        #expect(pricesPayload["count"] == .int(1))
+        let firstPrice = try object(try #require(pricesPayload["prices"]?.arrayValue?.first))
+        #expect(firstPrice["id"] == .string("rop-1"))
+        #expect(firstPrice["territoryId"] == .string("USA"))
+        #expect(firstPrice["territory_id"] == .string("USA"))
+        #expect(firstPrice["subscriptionPricePointId"] == .string("pp-usa-1"))
+        #expect(firstPrice["subscription_price_point_id"] == .string("pp-usa-1"))
+        #expect(firstPrice["price_point_id"] == .string("pp-usa-1"))
+        #expect(firstPrice["currency"] == .string("USD"))
+        #expect(firstPrice["customerPrice"] == .string("4.99"))
+        #expect(firstPrice["customer_price"] == .string("4.99"))
+        #expect(firstPrice["proceeds"] == .string("3.49"))
+        #expect(firstPrice["proceedsYear2"] == .string("4.24"))
+        #expect(firstPrice["proceeds_year2"] == .string("4.24"))
 
         let deleted = try await worker.handleTool(.init(
             name: "subscriptions_delete_retention_offer",
@@ -423,6 +437,14 @@ struct RetentionMessagingContractTests {
         #expect(patchAttributes["eligibilitySubscriberDurationInMonths"] == nil)
         #expect(patchAttributes["waitBetweenOffersInMonths"] == nil)
         #expect(requests[5].url?.path == "/v1/retentionOffers/ro-1/prices")
+        let pricesRequestURL = try #require(requests[5].url)
+        let pricesQueryItems = try #require(URLComponents(url: pricesRequestURL, resolvingAgainstBaseURL: false)?.queryItems)
+        let pricesQuery = Dictionary(uniqueKeysWithValues: pricesQueryItems.map { ($0.name, $0.value ?? "") })
+        #expect(pricesQuery["filter[territory]"] == "USA,GBR")
+        #expect(pricesQuery["include"] == "territory,subscriptionPricePoint")
+        #expect(pricesQuery["fields[retentionOfferPrices]"] == "territory,subscriptionPricePoint")
+        #expect(pricesQuery["fields[subscriptionPricePoints]"] == "customerPrice,proceeds,proceedsYear2,territory")
+        #expect(pricesQuery["fields[territories]"] == "currency")
     }
 
     // MARK: - 4. Subscription Retention Relationships
@@ -654,6 +676,358 @@ struct RetentionMessagingContractTests {
         #expect(item["resource_type"] == .string("retentionMessageVersion"))
         #expect(item["resource_jsonapi_type"] == .string("retentionMessageVersions"))
         #expect(item["resource_id"] == .string("ver-1"))
+    }
+
+    // MARK: - 7. Retention List Pagination (All 14 Combinations + Scope Rejections)
+
+    @Test("retention list handlers support absolute and root-relative next_url across all 7 endpoints and reject out-of-scope pagination links")
+    func retentionListPaginationAllCombinationsAndRejections() async throws {
+        let messagesDoc = #"{"data":[{"type":"retentionMessages","id":"msg-2","attributes":{"referenceName":"Page 2"}}],"links":{"self":"https://api.example.test/v1/apps/app-1/retentionMessages?cursor=page-2"}}"#
+        let versionsDoc = #"{"data":[{"type":"retentionMessageVersions","id":"ver-2","attributes":{"version":2,"state":"READY_FOR_REVIEW"}}],"links":{"self":"https://api.example.test/v1/retentionMessages/msg-1/versions?cursor=page-2"}}"#
+        let localizationsDoc = #"{"data":[{"type":"retentionMessageLocalizations","id":"loc-2","attributes":{"locale":"ja","header":"継続特典","body":"すべての機能を引き続きご利用いただけます。"}}],"links":{"self":"https://api.example.test/v1/retentionMessageVersions/ver-1/localizations?cursor=page-2"}}"#
+        let subscriptionsDoc = #"{"data":[{"type":"subscriptions","id":"sub-2","attributes":{"name":"Pro Annual","productId":"com.example.annual","state":"APPROVED","subscriptionPeriod":"ONE_YEAR"}}],"links":{"self":"https://api.example.test/v1/retentionMessages/msg-1/subscriptions?cursor=page-2"}}"#
+        let offersDoc = #"{"data":[{"type":"retentionOffers","id":"ro-2","attributes":{"referenceName":"Page 2 Offer","offerId":"OFFER2","duration":"ONE_MONTH","offerMode":"PAY_AS_YOU_GO","periodCount":1,"customerEligibilityPaidSubscriptionDurationInMonths":6}}],"links":{"self":"https://api.example.test/v1/subscriptions/sub-1/retentionOffers?cursor=page-2"}}"#
+        let messageOffersDoc = #"{"data":[{"type":"retentionOffers","id":"ro-3","attributes":{"referenceName":"Page 2 Message Offer","offerId":"MSGOFFER2","duration":"ONE_MONTH","offerMode":"PAY_AS_YOU_GO","periodCount":1,"customerEligibilityPaidSubscriptionDurationInMonths":6}}],"links":{"self":"https://api.example.test/v1/subscriptions/sub-1/retentionMessageOffers?cursor=page-2"}}"#
+        let pricesDoc = #"{"data":[{"type":"retentionOfferPrices","id":"rop-2","relationships":{"territory":{"data":{"type":"territories","id":"USA"}},"subscriptionPricePoint":{"data":{"type":"subscriptionPricePoints","id":"pp-usa-2"}}}}],"included":[{"type":"subscriptionPricePoints","id":"pp-usa-2","attributes":{"customerPrice":"2.99","proceeds":"2.10","proceedsYear2":"2.54"}},{"type":"territories","id":"USA","attributes":{"currency":"USD"}}],"links":{"self":"https://api.example.test/v1/retentionOffers/ro-1/prices?cursor=page-2"}}"#
+
+        // 1. Negative checks before any HTTP I/O
+        let negativeTransport = TestHTTPTransport(responses: [])
+        let negativeWorker = try await makeSubscriptionsWorker(transport: negativeTransport)
+
+        let negativeCases: [(String, [String: Value])] = [
+            // Wrong parent ID
+            (
+                "subscriptions_list_retention_messages",
+                ["app_id": .string("app-1"), "next_url": .string("https://api.example.test/v1/apps/app-other/retentionMessages?cursor=page-2")]
+            ),
+            // Wrong endpoint (retentionOffers when message_offers_only is true)
+            (
+                "subscriptions_list_retention_offers",
+                [
+                    "subscription_id": .string("sub-1"),
+                    "message_offers_only": .bool(true),
+                    "next_url": .string("https://api.example.test/v1/subscriptions/sub-1/retentionOffers?cursor=page-2")
+                ]
+            ),
+            // Wrong endpoint (retentionMessageOffers when message_offers_only is false)
+            (
+                "subscriptions_list_retention_offers",
+                [
+                    "subscription_id": .string("sub-1"),
+                    "message_offers_only": .bool(false),
+                    "next_url": .string("/v1/subscriptions/sub-1/retentionMessageOffers?cursor=page-2")
+                ]
+            ),
+            // Missing cursor
+            (
+                "subscriptions_list_retention_message_versions",
+                ["retention_message_id": .string("msg-1"), "next_url": .string("https://api.example.test/v1/retentionMessages/msg-1/versions?limit=10")]
+            ),
+            // Empty cursor
+            (
+                "subscriptions_list_retention_message_localizations",
+                ["version_id": .string("ver-1"), "next_url": .string("/v1/retentionMessageVersions/ver-1/localizations?cursor=")]
+            ),
+            // Unrequested filter[territory] when territory argument was omitted
+            (
+                "subscriptions_list_retention_offer_prices",
+                ["offer_id": .string("ro-1"), "next_url": .string("https://api.example.test/v1/retentionOffers/ro-1/prices?cursor=page-2&filter%5Bterritory%5D=USA")]
+            ),
+            // Changed filter[territory] when territory argument was provided
+            (
+                "subscriptions_list_retention_offer_prices",
+                [
+                    "offer_id": .string("ro-1"),
+                    "territory": .string("USA"),
+                    "next_url": .string("https://api.example.test/v1/retentionOffers/ro-1/prices?cursor=page-2&filter%5Bterritory%5D=GBR")
+                ]
+            ),
+            // Missing filter[territory] in next_url when territory argument was provided
+            (
+                "subscriptions_list_retention_offer_prices",
+                [
+                    "offer_id": .string("ro-1"),
+                    "territory": .string("USA"),
+                    "next_url": .string("/v1/retentionOffers/ro-1/prices?cursor=page-2")
+                ]
+            ),
+            // Tampered include in next_url
+            (
+                "subscriptions_list_retention_offer_prices",
+                [
+                    "offer_id": .string("ro-1"),
+                    "next_url": .string("https://api.example.test/v1/retentionOffers/ro-1/prices?cursor=page-2&include=subscription")
+                ]
+            )
+        ]
+
+        for (toolName, arguments) in negativeCases {
+            let result = try await negativeWorker.handleTool(.init(name: toolName, arguments: arguments))
+            #expect(result.isError == true, "Expected \(toolName) with \(arguments) to be rejected before HTTP I/O")
+        }
+        #expect(await negativeTransport.requestCount() == 0)
+
+        // 2. Positive checks across all 14 combinations (7 endpoints x absolute + root-relative) plus filtered prices
+        let transport = TestHTTPTransport(responses: [
+            .init(statusCode: 200, body: messagesDoc),
+            .init(statusCode: 200, body: messagesDoc),
+            .init(statusCode: 200, body: versionsDoc),
+            .init(statusCode: 200, body: versionsDoc),
+            .init(statusCode: 200, body: localizationsDoc),
+            .init(statusCode: 200, body: localizationsDoc),
+            .init(statusCode: 200, body: subscriptionsDoc),
+            .init(statusCode: 200, body: subscriptionsDoc),
+            .init(statusCode: 200, body: offersDoc),
+            .init(statusCode: 200, body: offersDoc),
+            .init(statusCode: 200, body: messageOffersDoc),
+            .init(statusCode: 200, body: messageOffersDoc),
+            .init(statusCode: 200, body: pricesDoc),
+            .init(statusCode: 200, body: pricesDoc),
+            .init(statusCode: 200, body: pricesDoc)
+        ])
+        let worker = try await makeSubscriptionsWorker(transport: transport)
+
+        let positiveCases: [(String, [String: Value], String)] = [
+            // 1-2: subscriptions_list_retention_messages
+            (
+                "subscriptions_list_retention_messages",
+                ["app_id": .string("app-1"), "next_url": .string("https://api.example.test/v1/apps/app-1/retentionMessages?cursor=page-2")],
+                "/v1/apps/app-1/retentionMessages"
+            ),
+            (
+                "subscriptions_list_retention_messages",
+                ["app_id": .string("app-1"), "next_url": .string("/v1/apps/app-1/retentionMessages?cursor=page-2")],
+                "/v1/apps/app-1/retentionMessages"
+            ),
+            // 3-4: subscriptions_list_retention_message_versions
+            (
+                "subscriptions_list_retention_message_versions",
+                ["retention_message_id": .string("msg-1"), "next_url": .string("https://api.example.test/v1/retentionMessages/msg-1/versions?cursor=page-2")],
+                "/v1/retentionMessages/msg-1/versions"
+            ),
+            (
+                "subscriptions_list_retention_message_versions",
+                ["retention_message_id": .string("msg-1"), "next_url": .string("/v1/retentionMessages/msg-1/versions?cursor=page-2")],
+                "/v1/retentionMessages/msg-1/versions"
+            ),
+            // 5-6: subscriptions_list_retention_message_localizations
+            (
+                "subscriptions_list_retention_message_localizations",
+                ["version_id": .string("ver-1"), "next_url": .string("https://api.example.test/v1/retentionMessageVersions/ver-1/localizations?cursor=page-2")],
+                "/v1/retentionMessageVersions/ver-1/localizations"
+            ),
+            (
+                "subscriptions_list_retention_message_localizations",
+                ["version_id": .string("ver-1"), "next_url": .string("/v1/retentionMessageVersions/ver-1/localizations?cursor=page-2")],
+                "/v1/retentionMessageVersions/ver-1/localizations"
+            ),
+            // 7-8: subscriptions_list_retention_message_subscriptions
+            (
+                "subscriptions_list_retention_message_subscriptions",
+                ["retention_message_id": .string("msg-1"), "next_url": .string("https://api.example.test/v1/retentionMessages/msg-1/subscriptions?cursor=page-2")],
+                "/v1/retentionMessages/msg-1/subscriptions"
+            ),
+            (
+                "subscriptions_list_retention_message_subscriptions",
+                ["retention_message_id": .string("msg-1"), "next_url": .string("/v1/retentionMessages/msg-1/subscriptions?cursor=page-2")],
+                "/v1/retentionMessages/msg-1/subscriptions"
+            ),
+            // 9-10: subscriptions_list_retention_offers (message_offers_only: false)
+            (
+                "subscriptions_list_retention_offers",
+                [
+                    "subscription_id": .string("sub-1"),
+                    "message_offers_only": .bool(false),
+                    "next_url": .string("https://api.example.test/v1/subscriptions/sub-1/retentionOffers?cursor=page-2")
+                ],
+                "/v1/subscriptions/sub-1/retentionOffers"
+            ),
+            (
+                "subscriptions_list_retention_offers",
+                [
+                    "subscription_id": .string("sub-1"),
+                    "message_offers_only": .bool(false),
+                    "next_url": .string("/v1/subscriptions/sub-1/retentionOffers?cursor=page-2")
+                ],
+                "/v1/subscriptions/sub-1/retentionOffers"
+            ),
+            // 11-12: subscriptions_list_retention_offers (message_offers_only: true)
+            (
+                "subscriptions_list_retention_offers",
+                [
+                    "subscription_id": .string("sub-1"),
+                    "message_offers_only": .bool(true),
+                    "next_url": .string("https://api.example.test/v1/subscriptions/sub-1/retentionMessageOffers?cursor=page-2")
+                ],
+                "/v1/subscriptions/sub-1/retentionMessageOffers"
+            ),
+            (
+                "subscriptions_list_retention_offers",
+                [
+                    "subscription_id": .string("sub-1"),
+                    "message_offers_only": .bool(true),
+                    "next_url": .string("/v1/subscriptions/sub-1/retentionMessageOffers?cursor=page-2")
+                ],
+                "/v1/subscriptions/sub-1/retentionMessageOffers"
+            ),
+            // 13-14: subscriptions_list_retention_offer_prices (absolute with full query + root-relative minimal query)
+            (
+                "subscriptions_list_retention_offer_prices",
+                [
+                    "offer_id": .string("ro-1"),
+                    "next_url": .string("https://api.example.test/v1/retentionOffers/ro-1/prices?cursor=page-2&include=territory,subscriptionPricePoint&fields%5BretentionOfferPrices%5D=territory,subscriptionPricePoint&fields%5BsubscriptionPricePoints%5D=customerPrice,proceeds,proceedsYear2,territory&fields%5Bterritories%5D=currency")
+                ],
+                "/v1/retentionOffers/ro-1/prices"
+            ),
+            (
+                "subscriptions_list_retention_offer_prices",
+                [
+                    "offer_id": .string("ro-1"),
+                    "next_url": .string("/v1/retentionOffers/ro-1/prices?cursor=page-2")
+                ],
+                "/v1/retentionOffers/ro-1/prices"
+            ),
+            // 15: subscriptions_list_retention_offer_prices with territory filter preserved in next_url
+            (
+                "subscriptions_list_retention_offer_prices",
+                [
+                    "offer_id": .string("ro-1"),
+                    "territory": .string("USA,GBR"),
+                    "next_url": .string("https://api.example.test/v1/retentionOffers/ro-1/prices?cursor=page-2&filter%5Bterritory%5D=GBR,USA")
+                ],
+                "/v1/retentionOffers/ro-1/prices"
+            )
+        ]
+
+        for (index, (toolName, arguments, _)) in positiveCases.enumerated() {
+            let result = try await worker.handleTool(.init(name: toolName, arguments: arguments))
+            #expect(result.isError != true, "Case \(index) (\(toolName)) failed: \(result.content)")
+            let payload = try object(result.structuredContent)
+            #expect(payload["count"] == .int(1))
+        }
+
+        let requests = await transport.recordedRequests()
+        #expect(requests.count == 15)
+        for (index, (_, _, expectedPath)) in positiveCases.enumerated() {
+            #expect(requests[index].url?.path == expectedPath)
+            #expect(requests[index].url?.query?.contains("cursor=page-2") == true)
+        }
+    }
+
+    // MARK: - 8. Plane 2 CJK Ideographs vs Emoji Validation
+
+    @Test("retention copy and reference_name validation accepts Plane 2 CJK ideographs and rejects emojis")
+    func plane2CJKAcceptedAndEmojisRejected() async throws {
+        let transport = TestHTTPTransport(responses: [
+            .init(
+                statusCode: 201,
+                body: #"{"data":{"type":"retentionMessageLocalizations","id":"loc-ja-1","attributes":{"locale":"ja","header":"𠮷野の便利な機能を継続","body":"𠮟咤激励の機能も引き続きご利用いただけます。"},"relationships":{"retentionMessageVersion":{"data":{"type":"retentionMessageVersions","id":"ver-1"}}}}}"#
+            ),
+            .init(
+                statusCode: 200,
+                body: #"{"data":{"type":"retentionMessageLocalizations","id":"loc-ja-1","attributes":{"locale":"ja","header":"𠮷野の便利な機能を継続","body":"𠮟咤激励の機能も引き続きご利用いただけます。"}}}"#
+            ),
+            .init(
+                statusCode: 201,
+                body: #"{"data":{"type":"retentionMessages","id":"msg-ja-1","attributes":{"referenceName":"𠮷野キャンペーン"},"relationships":{"app":{"data":{"type":"apps","id":"app-1"}}}}}"#
+            ),
+            .init(
+                statusCode: 201,
+                body: #"{"data":{"type":"retentionOffers","id":"ro-ja-1","attributes":{"referenceName":"𠮷野キャンペーン","offerId":"YOSHINO1","duration":"ONE_MONTH","offerMode":"PAY_AS_YOU_GO","periodCount":1,"customerEligibilityPaidSubscriptionDurationInMonths":6}}}"#
+            )
+        ])
+        let worker = try await makeSubscriptionsWorker(transport: transport)
+
+        // Real emojis rejected before network access
+        for emojiHeader in ["キャンペーン🎉", "特典🔥", "継続✨", "限定❤️", "夏休み☀️"] {
+            let rejected = try await worker.handleTool(.init(
+                name: "subscriptions_create_retention_message_localization",
+                arguments: [
+                    "version_id": .string("ver-1"),
+                    "locale": .string("ja"),
+                    "header": .string(emojiHeader),
+                    "body": .string("引き続きご利用いただけます。")
+                ]
+            ))
+            #expect(rejected.isError == true, "Expected emoji header '\(emojiHeader)' to be rejected")
+        }
+
+        let rejectedMessageRef = try await worker.handleTool(.init(
+            name: "subscriptions_create_retention_message",
+            arguments: [
+                "app_id": .string("app-1"),
+                "reference_name": .string("キャンペーン🔥")
+            ]
+        ))
+        #expect(rejectedMessageRef.isError == true)
+
+        let rejectedOfferRef = try await worker.handleTool(.init(
+            name: "subscriptions_create_retention_offer",
+            arguments: [
+                "subscription_id": .string("sub-1"),
+                "reference_name": .string("キャンペーン🔥"),
+                "offer_id": .string("YOSHINO1"),
+                "offer_mode": .string("PAY_AS_YOU_GO"),
+                "duration": .string("ONE_MONTH"),
+                "period_count": .int(1),
+                "eligibility_duration_months": .int(6),
+                "price_point_ids": .array([.string("pp-usa-1")]),
+                "territory_ids": .array([.string("USA")])
+            ]
+        ))
+        #expect(rejectedOfferRef.isError == true)
+        #expect(await transport.requestCount() == 0)
+
+        // Plane 2 CJK Unified Ideographs Extension B (𠮷 U+20BB7, 𠮟 U+20B9F) accepted
+        let createdLoc = try await worker.handleTool(.init(
+            name: "subscriptions_create_retention_message_localization",
+            arguments: [
+                "version_id": .string("ver-1"),
+                "locale": .string("ja"),
+                "header": .string("𠮷野の便利な機能を継続"),
+                "body": .string("𠮟咤激励の機能も引き続きご利用いただけます。")
+            ]
+        ))
+        #expect(createdLoc.isError != true)
+        let locPayload = try object(try object(createdLoc.structuredContent)["localization"])
+        #expect(locPayload["header"] == .string("𠮷野の便利な機能を継続"))
+        #expect(locPayload["body"] == .string("𠮟咤激励の機能も引き続きご利用いただけます。"))
+
+        let updatedLoc = try await worker.handleTool(.init(
+            name: "subscriptions_update_retention_message_localization",
+            arguments: [
+                "localization_id": .string("loc-ja-1"),
+                "header": .string("𠮷野の便利な機能を継続"),
+                "body": .string("𠮟咤激励の機能も引き続きご利用いただけます。")
+            ]
+        ))
+        #expect(updatedLoc.isError != true)
+
+        let createdMessage = try await worker.handleTool(.init(
+            name: "subscriptions_create_retention_message",
+            arguments: [
+                "app_id": .string("app-1"),
+                "reference_name": .string("𠮷野キャンペーン")
+            ]
+        ))
+        #expect(createdMessage.isError != true)
+
+        let createdOffer = try await worker.handleTool(.init(
+            name: "subscriptions_create_retention_offer",
+            arguments: [
+                "subscription_id": .string("sub-1"),
+                "reference_name": .string("𠮷野キャンペーン"),
+                "offer_id": .string("YOSHINO1"),
+                "offer_mode": .string("PAY_AS_YOU_GO"),
+                "duration": .string("ONE_MONTH"),
+                "period_count": .int(1),
+                "eligibility_duration_months": .int(6),
+                "price_point_ids": .array([.string("pp-usa-1")]),
+                "territory_ids": .array([.string("USA")])
+            ]
+        ))
+        #expect(createdOffer.isError != true)
+        #expect(await transport.requestCount() == 4)
     }
 }
 
