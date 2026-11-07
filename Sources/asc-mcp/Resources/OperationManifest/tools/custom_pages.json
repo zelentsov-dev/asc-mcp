@@ -14,47 +14,161 @@
           "path": "/v1/appCustomProductPages",
           "role": "primary",
           "inputs": [
-            { "sourceKind": "fixed", "jsonPointer": "/data/type", "fixedValue": "appCustomProductPages" },
-            { "sourceKind": "fixed", "jsonPointer": "/data/relationships/app/data/type", "fixedValue": "apps" },
-            { "sourceKind": "fixed", "jsonPointer": "/data/relationships/appStoreVersionTemplate/data/type", "fixedValue": "appStoreVersions" },
-            { "sourceKind": "fixed", "jsonPointer": "/data/relationships/customProductPageTemplate/data/type", "fixedValue": "appCustomProductPages" }
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/type",
+              "fixedValue": "appCustomProductPages"
+            },
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/relationships/app/data/type",
+              "fixedValue": "apps"
+            },
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/relationships/appStoreVersionTemplate/data/type",
+              "fixedValue": "appStoreVersions"
+            },
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/relationships/customProductPageTemplate/data/type",
+              "fixedValue": "appCustomProductPages"
+            }
           ],
           "optionalParameterClassifications": [
-            { "location": "body", "appleName": "/data/relationships/appCustomProductPageVersions", "disposition": "internalControl", "reason": "The create workflow always generates local JSON:API IDs for the first page version and localization, then binds this relationship to that internally constructed inline version graph required by the public locale input.", "reviewAtSpec": "4.5.1" }
+            {
+              "location": "body",
+              "appleName": "/data/relationships/appCustomProductPageVersions",
+              "disposition": "internalControl",
+              "reason": "The create workflow always generates local JSON:API IDs for the first page version and localization, then binds this relationship to that internally constructed inline version graph required by the public locale input.",
+              "reviewAtSpec": "4.6"
+            }
           ]
         }
       ],
       "fields": [
-        { "toolField": "app_id", "sourceKind": "requestBody", "operationId": "appCustomProductPages_createInstance", "jsonPointer": "/data/relationships/app/data/id" },
-        { "toolField": "name", "sourceKind": "requestBody", "operationId": "appCustomProductPages_createInstance", "jsonPointer": "/data/attributes/name" },
-        { "toolField": "locale", "sourceKind": "requestBody", "operationId": "appCustomProductPages_createInstance", "jsonPointer": "/included/*/attributes/locale" },
-        { "toolField": "promotional_text", "sourceKind": "requestBody", "operationId": "appCustomProductPages_createInstance", "jsonPointer": "/included/*/attributes/promotionalText" },
-        { "toolField": "template_version_id", "sourceKind": "requestBody", "operationId": "appCustomProductPages_createInstance", "jsonPointer": "/data/relationships/appStoreVersionTemplate/data/id" },
-        { "toolField": "template_page_id", "sourceKind": "requestBody", "operationId": "appCustomProductPages_createInstance", "jsonPointer": "/data/relationships/customProductPageTemplate/data/id" }
+        {
+          "toolField": "app_id",
+          "sourceKind": "requestBody",
+          "operationId": "appCustomProductPages_createInstance",
+          "jsonPointer": "/data/relationships/app/data/id"
+        },
+        {
+          "toolField": "name",
+          "sourceKind": "requestBody",
+          "operationId": "appCustomProductPages_createInstance",
+          "jsonPointer": "/data/attributes/name"
+        },
+        {
+          "toolField": "locale",
+          "sourceKind": "requestBody",
+          "operationId": "appCustomProductPages_createInstance",
+          "jsonPointer": "/included/*/attributes/locale"
+        },
+        {
+          "toolField": "promotional_text",
+          "sourceKind": "requestBody",
+          "operationId": "appCustomProductPages_createInstance",
+          "jsonPointer": "/included/*/attributes/promotionalText"
+        },
+        {
+          "toolField": "template_version_id",
+          "sourceKind": "requestBody",
+          "operationId": "appCustomProductPages_createInstance",
+          "jsonPointer": "/data/relationships/appStoreVersionTemplate/data/id"
+        },
+        {
+          "toolField": "template_page_id",
+          "sourceKind": "requestBody",
+          "operationId": "appCustomProductPages_createInstance",
+          "jsonPointer": "/data/relationships/customProductPageTemplate/data/id"
+        }
       ],
       "response": {
         "mode": "projection",
         "sources": [
-          { "operationId": "appCustomProductPages_createInstance", "statusCode": "201", "mediaType": "application/json" }
+          {
+            "operationId": "appCustomProductPages_createInstance",
+            "statusCode": "201",
+            "mediaType": "application/json"
+          }
         ],
         "fields": [
-          { "outputField": "success", "localRole": "Exact HTTP 201, canonical resource identity, required document self-link, requested name, and returned lineage when present were verified." },
-          { "outputField": "operation", "localRole": "create_page" },
-          { "outputField": "operationCommitted", "localRole": "True only after exact accepted-response verification." },
-          { "outputField": "operationCommitState", "localRole": "committed only after exact verification; failures distinguish rejected, unknown, and committed_unverified." },
-          { "outputField": "changed", "localRole": "True because Apple's exact 201 response proves creation of a new resource." },
-          { "outputField": "retrySafe", "localRole": "False after a committed non-idempotent create." },
-          { "outputField": "statusCode", "localRole": "Exact accepted HTTP status." },
-          { "outputField": "custom_product_page.id", "operationId": "appCustomProductPages_createInstance", "jsonPointer": "/data/id" },
-          { "outputField": "custom_product_page.type", "operationId": "appCustomProductPages_createInstance", "jsonPointer": "/data/type" },
-          { "outputField": "custom_product_page.name", "operationId": "appCustomProductPages_createInstance", "jsonPointer": "/data/attributes/name" },
-          { "outputField": "custom_product_page.nameState", "localRole": "Distinguish value, explicit null, and omitted name." },
-          { "outputField": "custom_product_page.url", "operationId": "appCustomProductPages_createInstance", "jsonPointer": "/data/attributes/url" },
-          { "outputField": "custom_product_page.urlState", "localRole": "Distinguish value, explicit null, and omitted URL." },
-          { "outputField": "custom_product_page.visible", "operationId": "appCustomProductPages_createInstance", "jsonPointer": "/data/attributes/visible" },
-          { "outputField": "custom_product_page.visibleState", "localRole": "Distinguish value, explicit null, and omitted visibility." },
-          { "outputField": "custom_product_page.appId", "operationId": "appCustomProductPages_createInstance", "jsonPointer": "/data/relationships/app/data/id", "localRole": "Returned only when Apple supplied and the handler validated this parent relationship." },
-          { "outputField": "custom_product_page.state", "localRole": "Legacy compatibility placeholder set to null because Apple exposes state on page versions, not pages." }
+          {
+            "outputField": "success",
+            "localRole": "Exact HTTP 201, canonical resource identity, required document self-link, requested name, and returned lineage when present were verified."
+          },
+          {
+            "outputField": "operation",
+            "localRole": "create_page"
+          },
+          {
+            "outputField": "operationCommitted",
+            "localRole": "True only after exact accepted-response verification."
+          },
+          {
+            "outputField": "operationCommitState",
+            "localRole": "committed only after exact verification; failures distinguish rejected, unknown, and committed_unverified."
+          },
+          {
+            "outputField": "changed",
+            "localRole": "True because Apple's exact 201 response proves creation of a new resource."
+          },
+          {
+            "outputField": "retrySafe",
+            "localRole": "False after a committed non-idempotent create."
+          },
+          {
+            "outputField": "statusCode",
+            "localRole": "Exact accepted HTTP status."
+          },
+          {
+            "outputField": "custom_product_page.id",
+            "operationId": "appCustomProductPages_createInstance",
+            "jsonPointer": "/data/id"
+          },
+          {
+            "outputField": "custom_product_page.type",
+            "operationId": "appCustomProductPages_createInstance",
+            "jsonPointer": "/data/type"
+          },
+          {
+            "outputField": "custom_product_page.name",
+            "operationId": "appCustomProductPages_createInstance",
+            "jsonPointer": "/data/attributes/name"
+          },
+          {
+            "outputField": "custom_product_page.nameState",
+            "localRole": "Distinguish value, explicit null, and omitted name."
+          },
+          {
+            "outputField": "custom_product_page.url",
+            "operationId": "appCustomProductPages_createInstance",
+            "jsonPointer": "/data/attributes/url"
+          },
+          {
+            "outputField": "custom_product_page.urlState",
+            "localRole": "Distinguish value, explicit null, and omitted URL."
+          },
+          {
+            "outputField": "custom_product_page.visible",
+            "operationId": "appCustomProductPages_createInstance",
+            "jsonPointer": "/data/attributes/visible"
+          },
+          {
+            "outputField": "custom_product_page.visibleState",
+            "localRole": "Distinguish value, explicit null, and omitted visibility."
+          },
+          {
+            "outputField": "custom_product_page.appId",
+            "operationId": "appCustomProductPages_createInstance",
+            "jsonPointer": "/data/relationships/app/data/id",
+            "localRole": "Returned only when Apple supplied and the handler validated this parent relationship."
+          },
+          {
+            "outputField": "custom_product_page.state",
+            "localRole": "Legacy compatibility placeholder set to null because Apple exposes state on page versions, not pages."
+          }
         ]
       },
       "note": "Apple supports inline creation of the first version and localization in this POST. Its App Store version and custom-product-page template relationships are independent, so callers may supply either one or both."
@@ -72,38 +186,116 @@
           "path": "/v1/appCustomProductPageLocalizations",
           "role": "primary",
           "inputs": [
-            { "sourceKind": "fixed", "jsonPointer": "/data/type", "fixedValue": "appCustomProductPageLocalizations" },
-            { "sourceKind": "fixed", "jsonPointer": "/data/relationships/appCustomProductPageVersion/data/type", "fixedValue": "appCustomProductPageVersions" }
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/type",
+              "fixedValue": "appCustomProductPageLocalizations"
+            },
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/relationships/appCustomProductPageVersion/data/type",
+              "fixedValue": "appCustomProductPageVersions"
+            }
           ],
           "optionalParameterClassifications": [
-            {"location": "body", "appleName": "/data/relationships/placements", "disposition": "intentionallyOmitted", "reason": "Localization creation and Asset Library placement are separate operations. This legacy create tool does not attach existing placement IDs; prepare and apply placement creation through AssetsWorker after creating the localization so ownership, specification, draft state, and preview checks remain mandatory.", "reviewAtSpec": "4.5.1"}
+            {
+              "location": "body",
+              "appleName": "/data/relationships/placements",
+              "disposition": "intentionallyOmitted",
+              "reason": "Localization creation and Asset Library placement are separate operations. This legacy create tool does not attach existing placement IDs; prepare and apply placement creation through AssetsWorker after creating the localization so ownership, specification, draft state, and preview checks remain mandatory.",
+              "reviewAtSpec": "4.6"
+            }
           ]
         }
       ],
       "fields": [
-        { "toolField": "version_id", "sourceKind": "requestBody", "operationId": "appCustomProductPageLocalizations_createInstance", "jsonPointer": "/data/relationships/appCustomProductPageVersion/data/id" },
-        { "toolField": "locale", "sourceKind": "requestBody", "operationId": "appCustomProductPageLocalizations_createInstance", "jsonPointer": "/data/attributes/locale" },
-        { "toolField": "promotional_text", "sourceKind": "requestBody", "operationId": "appCustomProductPageLocalizations_createInstance", "jsonPointer": "/data/attributes/promotionalText" }
+        {
+          "toolField": "version_id",
+          "sourceKind": "requestBody",
+          "operationId": "appCustomProductPageLocalizations_createInstance",
+          "jsonPointer": "/data/relationships/appCustomProductPageVersion/data/id"
+        },
+        {
+          "toolField": "locale",
+          "sourceKind": "requestBody",
+          "operationId": "appCustomProductPageLocalizations_createInstance",
+          "jsonPointer": "/data/attributes/locale"
+        },
+        {
+          "toolField": "promotional_text",
+          "sourceKind": "requestBody",
+          "operationId": "appCustomProductPageLocalizations_createInstance",
+          "jsonPointer": "/data/attributes/promotionalText"
+        }
       ],
       "response": {
         "mode": "projection",
         "sources": [
-          { "operationId": "appCustomProductPageLocalizations_createInstance", "statusCode": "201", "mediaType": "application/json" }
+          {
+            "operationId": "appCustomProductPageLocalizations_createInstance",
+            "statusCode": "201",
+            "mediaType": "application/json"
+          }
         ],
         "fields": [
-          { "outputField": "success", "localRole": "Exact HTTP 201, canonical resource identity, required document self-link, requested attributes, and returned parent lineage when present were verified." },
-          { "outputField": "operation", "localRole": "create_localization" },
-          { "outputField": "operationCommitted", "localRole": "True only after exact accepted-response verification." },
-          { "outputField": "operationCommitState", "localRole": "Structured non-idempotent write outcome." },
-          { "outputField": "changed", "localRole": "True because Apple's exact 201 response proves creation." },
-          { "outputField": "retrySafe", "localRole": "False after committed creation." },
-          { "outputField": "statusCode", "localRole": "Exact accepted HTTP status." },
-          { "outputField": "localization.id", "operationId": "appCustomProductPageLocalizations_createInstance", "jsonPointer": "/data/id" },
-          { "outputField": "localization.type", "operationId": "appCustomProductPageLocalizations_createInstance", "jsonPointer": "/data/type" },
-          { "outputField": "localization.locale", "operationId": "appCustomProductPageLocalizations_createInstance", "jsonPointer": "/data/attributes/locale" },
-          { "outputField": "localization.promotionalText", "operationId": "appCustomProductPageLocalizations_createInstance", "jsonPointer": "/data/attributes/promotionalText" },
-          { "outputField": "localization.promotionalTextState", "localRole": "Distinguish value, explicit null, and omitted promotional text." },
-          { "outputField": "localization.versionId", "operationId": "appCustomProductPageLocalizations_createInstance", "jsonPointer": "/data/relationships/appCustomProductPageVersion/data/id", "localRole": "Returned only when Apple supplied and the handler validated this parent relationship." }
+          {
+            "outputField": "success",
+            "localRole": "Exact HTTP 201, canonical resource identity, required document self-link, requested attributes, and returned parent lineage when present were verified."
+          },
+          {
+            "outputField": "operation",
+            "localRole": "create_localization"
+          },
+          {
+            "outputField": "operationCommitted",
+            "localRole": "True only after exact accepted-response verification."
+          },
+          {
+            "outputField": "operationCommitState",
+            "localRole": "Structured non-idempotent write outcome."
+          },
+          {
+            "outputField": "changed",
+            "localRole": "True because Apple's exact 201 response proves creation."
+          },
+          {
+            "outputField": "retrySafe",
+            "localRole": "False after committed creation."
+          },
+          {
+            "outputField": "statusCode",
+            "localRole": "Exact accepted HTTP status."
+          },
+          {
+            "outputField": "localization.id",
+            "operationId": "appCustomProductPageLocalizations_createInstance",
+            "jsonPointer": "/data/id"
+          },
+          {
+            "outputField": "localization.type",
+            "operationId": "appCustomProductPageLocalizations_createInstance",
+            "jsonPointer": "/data/type"
+          },
+          {
+            "outputField": "localization.locale",
+            "operationId": "appCustomProductPageLocalizations_createInstance",
+            "jsonPointer": "/data/attributes/locale"
+          },
+          {
+            "outputField": "localization.promotionalText",
+            "operationId": "appCustomProductPageLocalizations_createInstance",
+            "jsonPointer": "/data/attributes/promotionalText"
+          },
+          {
+            "outputField": "localization.promotionalTextState",
+            "localRole": "Distinguish value, explicit null, and omitted promotional text."
+          },
+          {
+            "outputField": "localization.versionId",
+            "operationId": "appCustomProductPageLocalizations_createInstance",
+            "jsonPointer": "/data/relationships/appCustomProductPageVersion/data/id",
+            "localRole": "Returned only when Apple supplied and the handler validated this parent relationship."
+          }
         ]
       }
     },
@@ -120,38 +312,115 @@
           "path": "/v1/appCustomProductPageVersions",
           "role": "primary",
           "inputs": [
-            { "sourceKind": "fixed", "jsonPointer": "/data/type", "fixedValue": "appCustomProductPageVersions" },
-            { "sourceKind": "fixed", "jsonPointer": "/data/relationships/appCustomProductPage/data/type", "fixedValue": "appCustomProductPages" }
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/type",
+              "fixedValue": "appCustomProductPageVersions"
+            },
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/relationships/appCustomProductPage/data/type",
+              "fixedValue": "appCustomProductPages"
+            }
           ],
           "optionalParameterClassifications": [
-            { "location": "body", "appleName": "/data/relationships/appCustomProductPageLocalizations", "disposition": "intentionallyOmitted", "reason": "Apple 4.5.1's standalone AppCustomProductPageVersionCreateRequest has no top-level included member for inline localization resources; this tool creates the version first and callers create its owned localizations through appCustomProductPageLocalizations_createInstance instead of attempting to reparent existing localization IDs.", "reviewAtSpec": "4.5.1" }
+            {
+              "location": "body",
+              "appleName": "/data/relationships/appCustomProductPageLocalizations",
+              "disposition": "intentionallyOmitted",
+              "reason": "Apple 4.5.1's standalone AppCustomProductPageVersionCreateRequest has no top-level included member for inline localization resources; this tool creates the version first and callers create its owned localizations through appCustomProductPageLocalizations_createInstance instead of attempting to reparent existing localization IDs.",
+              "reviewAtSpec": "4.6"
+            }
           ]
         }
       ],
       "fields": [
-        { "toolField": "page_id", "sourceKind": "requestBody", "operationId": "appCustomProductPageVersions_createInstance", "jsonPointer": "/data/relationships/appCustomProductPage/data/id" },
-        { "toolField": "deep_link", "sourceKind": "requestBody", "operationId": "appCustomProductPageVersions_createInstance", "jsonPointer": "/data/attributes/deepLink" }
+        {
+          "toolField": "page_id",
+          "sourceKind": "requestBody",
+          "operationId": "appCustomProductPageVersions_createInstance",
+          "jsonPointer": "/data/relationships/appCustomProductPage/data/id"
+        },
+        {
+          "toolField": "deep_link",
+          "sourceKind": "requestBody",
+          "operationId": "appCustomProductPageVersions_createInstance",
+          "jsonPointer": "/data/attributes/deepLink"
+        }
       ],
       "response": {
         "mode": "projection",
         "sources": [
-          { "operationId": "appCustomProductPageVersions_createInstance", "statusCode": "201", "mediaType": "application/json" }
+          {
+            "operationId": "appCustomProductPageVersions_createInstance",
+            "statusCode": "201",
+            "mediaType": "application/json"
+          }
         ],
         "fields": [
-          { "outputField": "success", "localRole": "Exact HTTP 201, canonical resource identity, required document self-link, requested deep-link state, and returned parent lineage when present were verified." },
-          { "outputField": "operation", "localRole": "create_version" },
-          { "outputField": "operationCommitted", "localRole": "True only after exact accepted-response verification." },
-          { "outputField": "operationCommitState", "localRole": "Structured non-idempotent write outcome." },
-          { "outputField": "changed", "localRole": "True because Apple's exact 201 response proves creation." },
-          { "outputField": "retrySafe", "localRole": "False after committed creation." },
-          { "outputField": "statusCode", "localRole": "Exact accepted HTTP status." },
-          { "outputField": "version.id", "operationId": "appCustomProductPageVersions_createInstance", "jsonPointer": "/data/id" },
-          { "outputField": "version.type", "operationId": "appCustomProductPageVersions_createInstance", "jsonPointer": "/data/type" },
-          { "outputField": "version.version", "operationId": "appCustomProductPageVersions_createInstance", "jsonPointer": "/data/attributes/version" },
-          { "outputField": "version.state", "operationId": "appCustomProductPageVersions_createInstance", "jsonPointer": "/data/attributes/state" },
-          { "outputField": "version.deepLink", "operationId": "appCustomProductPageVersions_createInstance", "jsonPointer": "/data/attributes/deepLink" },
-          { "outputField": "version.deepLinkState", "localRole": "Distinguish value, explicit null, and omitted deep link." },
-          { "outputField": "version.pageId", "operationId": "appCustomProductPageVersions_createInstance", "jsonPointer": "/data/relationships/appCustomProductPage/data/id", "localRole": "Returned only when Apple supplied and the handler validated this parent relationship." }
+          {
+            "outputField": "success",
+            "localRole": "Exact HTTP 201, canonical resource identity, required document self-link, requested deep-link state, and returned parent lineage when present were verified."
+          },
+          {
+            "outputField": "operation",
+            "localRole": "create_version"
+          },
+          {
+            "outputField": "operationCommitted",
+            "localRole": "True only after exact accepted-response verification."
+          },
+          {
+            "outputField": "operationCommitState",
+            "localRole": "Structured non-idempotent write outcome."
+          },
+          {
+            "outputField": "changed",
+            "localRole": "True because Apple's exact 201 response proves creation."
+          },
+          {
+            "outputField": "retrySafe",
+            "localRole": "False after committed creation."
+          },
+          {
+            "outputField": "statusCode",
+            "localRole": "Exact accepted HTTP status."
+          },
+          {
+            "outputField": "version.id",
+            "operationId": "appCustomProductPageVersions_createInstance",
+            "jsonPointer": "/data/id"
+          },
+          {
+            "outputField": "version.type",
+            "operationId": "appCustomProductPageVersions_createInstance",
+            "jsonPointer": "/data/type"
+          },
+          {
+            "outputField": "version.version",
+            "operationId": "appCustomProductPageVersions_createInstance",
+            "jsonPointer": "/data/attributes/version"
+          },
+          {
+            "outputField": "version.state",
+            "operationId": "appCustomProductPageVersions_createInstance",
+            "jsonPointer": "/data/attributes/state"
+          },
+          {
+            "outputField": "version.deepLink",
+            "operationId": "appCustomProductPageVersions_createInstance",
+            "jsonPointer": "/data/attributes/deepLink"
+          },
+          {
+            "outputField": "version.deepLinkState",
+            "localRole": "Distinguish value, explicit null, and omitted deep link."
+          },
+          {
+            "outputField": "version.pageId",
+            "operationId": "appCustomProductPageVersions_createInstance",
+            "jsonPointer": "/data/relationships/appCustomProductPage/data/id",
+            "localRole": "Returned only when Apple supplied and the handler validated this parent relationship."
+          }
         ]
       },
       "note": "The tool exposes Apple's nullable deepLink attribute. Localizations are created after the version through the dedicated localization create operation because this standalone request has no inline included resource array."
@@ -163,25 +432,72 @@
       "effect": "destructive",
       "implementationState": "asBuilt",
       "operations": [
-        { "operationId": "appCustomProductPages_deleteInstance", "method": "delete", "path": "/v1/appCustomProductPages/{id}", "role": "primary" }
+        {
+          "operationId": "appCustomProductPages_deleteInstance",
+          "method": "delete",
+          "path": "/v1/appCustomProductPages/{id}",
+          "role": "primary"
+        }
       ],
       "fields": [
-        { "toolField": "page_id", "sourceKind": "parameter", "operationId": "appCustomProductPages_deleteInstance", "location": "path", "appleName": "id" },
-        { "toolField": "confirm_page_id", "sourceKind": "local", "localRole": "Require an exact canonical match with page_id before any Apple request is sent." }
+        {
+          "toolField": "page_id",
+          "sourceKind": "parameter",
+          "operationId": "appCustomProductPages_deleteInstance",
+          "location": "path",
+          "appleName": "id"
+        },
+        {
+          "toolField": "confirm_page_id",
+          "sourceKind": "local",
+          "localRole": "Require an exact canonical match with page_id before any Apple request is sent."
+        }
       ],
       "response": {
         "mode": "local",
-        "sources": [{ "operationId": "appCustomProductPages_deleteInstance", "statusCode": "204" }],
+        "sources": [
+          {
+            "operationId": "appCustomProductPages_deleteInstance",
+            "statusCode": "204"
+          }
+        ],
         "fields": [
-          { "outputField": "success", "localRole": "True only for Apple's exact HTTP 204 response." },
-          { "outputField": "operation", "localRole": "delete_page" },
-          { "outputField": "operationCommitted", "localRole": "True only for exact HTTP 204." },
-          { "outputField": "operationCommitState", "localRole": "Structured destructive-operation outcome." },
-          { "outputField": "changed", "localRole": "True because exact HTTP 204 follows an existing-resource delete contract." },
-          { "outputField": "retrySafe", "localRole": "False after committed deletion." },
-          { "outputField": "pageId", "localRole": "Canonical target page ID." },
-          { "outputField": "statusCode", "localRole": "Exact accepted HTTP status." },
-          { "outputField": "message", "localRole": "Local deletion confirmation." }
+          {
+            "outputField": "success",
+            "localRole": "True only for Apple's exact HTTP 204 response."
+          },
+          {
+            "outputField": "operation",
+            "localRole": "delete_page"
+          },
+          {
+            "outputField": "operationCommitted",
+            "localRole": "True only for exact HTTP 204."
+          },
+          {
+            "outputField": "operationCommitState",
+            "localRole": "Structured destructive-operation outcome."
+          },
+          {
+            "outputField": "changed",
+            "localRole": "True because exact HTTP 204 follows an existing-resource delete contract."
+          },
+          {
+            "outputField": "retrySafe",
+            "localRole": "False after committed deletion."
+          },
+          {
+            "outputField": "pageId",
+            "localRole": "Canonical target page ID."
+          },
+          {
+            "outputField": "statusCode",
+            "localRole": "Exact accepted HTTP status."
+          },
+          {
+            "outputField": "message",
+            "localRole": "Local deletion confirmation."
+          }
         ]
       },
       "note": "Apple returns 204; the MCP deletion confirmation is local."
@@ -199,31 +515,93 @@
           "path": "/v1/appCustomProductPages/{id}",
           "role": "primary",
           "optionalParameterClassifications": [
-            { "location": "query", "appleName": "include", "disposition": "intentionallyOmitted", "reason": "The get tool projects only the primary appCustomProductPages resource and does not decode Apple's top-level included relationship resources, so exposing include would silently discard the requested expansion.", "reviewAtSpec": "4.5.1" },
-            { "location": "query", "appleName": "limit[appCustomProductPageVersions]", "disposition": "intentionallyOmitted", "reason": "Apple applies this nested limit only when appCustomProductPageVersions is requested through include; the get tool intentionally returns the base page without relationship expansion.", "reviewAtSpec": "4.5.1" }
+            {
+              "location": "query",
+              "appleName": "include",
+              "disposition": "intentionallyOmitted",
+              "reason": "The get tool projects only the primary appCustomProductPages resource and does not decode Apple's top-level included relationship resources, so exposing include would silently discard the requested expansion.",
+              "reviewAtSpec": "4.6"
+            },
+            {
+              "location": "query",
+              "appleName": "limit[appCustomProductPageVersions]",
+              "disposition": "intentionallyOmitted",
+              "reason": "Apple applies this nested limit only when appCustomProductPageVersions is requested through include; the get tool intentionally returns the base page without relationship expansion.",
+              "reviewAtSpec": "4.6"
+            }
           ]
         }
       ],
       "fields": [
-        { "toolField": "page_id", "sourceKind": "parameter", "operationId": "appCustomProductPages_getInstance", "location": "path", "appleName": "id" }
+        {
+          "toolField": "page_id",
+          "sourceKind": "parameter",
+          "operationId": "appCustomProductPages_getInstance",
+          "location": "path",
+          "appleName": "id"
+        }
       ],
       "response": {
         "mode": "projection",
         "sources": [
-          { "operationId": "appCustomProductPages_getInstance", "statusCode": "200", "mediaType": "application/json" }
+          {
+            "operationId": "appCustomProductPages_getInstance",
+            "statusCode": "200",
+            "mediaType": "application/json"
+          }
         ],
         "fields": [
-          { "outputField": "success", "localRole": "Exact HTTP 200, canonical identity, required document self-link, and returned relationships were validated." },
-          { "outputField": "custom_product_page.id", "operationId": "appCustomProductPages_getInstance", "jsonPointer": "/data/id" },
-          { "outputField": "custom_product_page.type", "operationId": "appCustomProductPages_getInstance", "jsonPointer": "/data/type" },
-          { "outputField": "custom_product_page.name", "operationId": "appCustomProductPages_getInstance", "jsonPointer": "/data/attributes/name" },
-          { "outputField": "custom_product_page.nameState", "localRole": "Distinguish value, explicit null, and omitted name." },
-          { "outputField": "custom_product_page.url", "operationId": "appCustomProductPages_getInstance", "jsonPointer": "/data/attributes/url" },
-          { "outputField": "custom_product_page.urlState", "localRole": "Distinguish value, explicit null, and omitted URL." },
-          { "outputField": "custom_product_page.visible", "operationId": "appCustomProductPages_getInstance", "jsonPointer": "/data/attributes/visible" },
-          { "outputField": "custom_product_page.visibleState", "localRole": "Distinguish value, explicit null, and omitted visibility." },
-          { "outputField": "custom_product_page.appId", "operationId": "appCustomProductPages_getInstance", "jsonPointer": "/data/relationships/app/data/id", "localRole": "Returned only after parent relationship validation." },
-          { "outputField": "custom_product_page.state", "localRole": "Legacy compatibility placeholder set to null." }
+          {
+            "outputField": "success",
+            "localRole": "Exact HTTP 200, canonical identity, required document self-link, and returned relationships were validated."
+          },
+          {
+            "outputField": "custom_product_page.id",
+            "operationId": "appCustomProductPages_getInstance",
+            "jsonPointer": "/data/id"
+          },
+          {
+            "outputField": "custom_product_page.type",
+            "operationId": "appCustomProductPages_getInstance",
+            "jsonPointer": "/data/type"
+          },
+          {
+            "outputField": "custom_product_page.name",
+            "operationId": "appCustomProductPages_getInstance",
+            "jsonPointer": "/data/attributes/name"
+          },
+          {
+            "outputField": "custom_product_page.nameState",
+            "localRole": "Distinguish value, explicit null, and omitted name."
+          },
+          {
+            "outputField": "custom_product_page.url",
+            "operationId": "appCustomProductPages_getInstance",
+            "jsonPointer": "/data/attributes/url"
+          },
+          {
+            "outputField": "custom_product_page.urlState",
+            "localRole": "Distinguish value, explicit null, and omitted URL."
+          },
+          {
+            "outputField": "custom_product_page.visible",
+            "operationId": "appCustomProductPages_getInstance",
+            "jsonPointer": "/data/attributes/visible"
+          },
+          {
+            "outputField": "custom_product_page.visibleState",
+            "localRole": "Distinguish value, explicit null, and omitted visibility."
+          },
+          {
+            "outputField": "custom_product_page.appId",
+            "operationId": "appCustomProductPages_getInstance",
+            "jsonPointer": "/data/relationships/app/data/id",
+            "localRole": "Returned only after parent relationship validation."
+          },
+          {
+            "outputField": "custom_product_page.state",
+            "localRole": "Legacy compatibility placeholder set to null."
+          }
         ]
       }
     },
@@ -240,38 +618,129 @@
           "path": "/v1/apps/{id}/appCustomProductPages",
           "role": "primary",
           "optionalParameterClassifications": [
-            { "location": "query", "appleName": "include", "disposition": "intentionallyOmitted", "reason": "The list tool returns only its primary appCustomProductPages array and does not decode Apple's top-level included resources, so relationship expansion is deliberately unavailable.", "reviewAtSpec": "4.5.1" },
-            { "location": "query", "appleName": "limit[appCustomProductPageVersions]", "disposition": "intentionallyOmitted", "reason": "Apple uses this nested limit only for included appCustomProductPageVersions; the list tool does not request or project that relationship.", "reviewAtSpec": "4.5.1" }
+            {
+              "location": "query",
+              "appleName": "include",
+              "disposition": "intentionallyOmitted",
+              "reason": "The list tool returns only its primary appCustomProductPages array and does not decode Apple's top-level included resources, so relationship expansion is deliberately unavailable.",
+              "reviewAtSpec": "4.6"
+            },
+            {
+              "location": "query",
+              "appleName": "limit[appCustomProductPageVersions]",
+              "disposition": "intentionallyOmitted",
+              "reason": "Apple uses this nested limit only for included appCustomProductPageVersions; the list tool does not request or project that relationship.",
+              "reviewAtSpec": "4.6"
+            }
           ]
         }
       ],
       "fields": [
-        { "toolField": "app_id", "sourceKind": "parameter", "operationId": "apps_appCustomProductPages_getToManyRelated", "location": "path", "appleName": "id" },
-        { "toolField": "visible", "sourceKind": "parameter", "operationId": "apps_appCustomProductPages_getToManyRelated", "location": "query", "appleName": "filter[visible]" },
-        { "toolField": "limit", "sourceKind": "parameter", "operationId": "apps_appCustomProductPages_getToManyRelated", "location": "query", "appleName": "limit" },
-        { "toolField": "next_url", "sourceKind": "local", "localRole": "paginationContinuation" }
+        {
+          "toolField": "app_id",
+          "sourceKind": "parameter",
+          "operationId": "apps_appCustomProductPages_getToManyRelated",
+          "location": "path",
+          "appleName": "id"
+        },
+        {
+          "toolField": "visible",
+          "sourceKind": "parameter",
+          "operationId": "apps_appCustomProductPages_getToManyRelated",
+          "location": "query",
+          "appleName": "filter[visible]"
+        },
+        {
+          "toolField": "limit",
+          "sourceKind": "parameter",
+          "operationId": "apps_appCustomProductPages_getToManyRelated",
+          "location": "query",
+          "appleName": "limit"
+        },
+        {
+          "toolField": "next_url",
+          "sourceKind": "local",
+          "localRole": "paginationContinuation"
+        }
       ],
       "response": {
         "mode": "projection",
         "sources": [
-          { "operationId": "apps_appCustomProductPages_getToManyRelated", "statusCode": "200", "mediaType": "application/json" }
+          {
+            "operationId": "apps_appCustomProductPages_getToManyRelated",
+            "statusCode": "200",
+            "mediaType": "application/json"
+          }
         ],
         "fields": [
-          { "outputField": "success", "localRole": "Validated collection response." },
-          { "outputField": "appId", "localRole": "Canonical app scope established by the requested relationship path." },
-          { "outputField": "custom_product_pages.*.id", "operationId": "apps_appCustomProductPages_getToManyRelated", "jsonPointer": "/data/*/id" },
-          { "outputField": "custom_product_pages.*.type", "operationId": "apps_appCustomProductPages_getToManyRelated", "jsonPointer": "/data/*/type" },
-          { "outputField": "custom_product_pages.*.name", "operationId": "apps_appCustomProductPages_getToManyRelated", "jsonPointer": "/data/*/attributes/name" },
-          { "outputField": "custom_product_pages.*.nameState", "localRole": "Distinguish value, explicit null, and omitted name per resource." },
-          { "outputField": "custom_product_pages.*.url", "operationId": "apps_appCustomProductPages_getToManyRelated", "jsonPointer": "/data/*/attributes/url" },
-          { "outputField": "custom_product_pages.*.urlState", "localRole": "Distinguish value, explicit null, and omitted URL per resource." },
-          { "outputField": "custom_product_pages.*.visible", "operationId": "apps_appCustomProductPages_getToManyRelated", "jsonPointer": "/data/*/attributes/visible" },
-          { "outputField": "custom_product_pages.*.visibleState", "localRole": "Distinguish value, explicit null, and omitted visibility per resource." },
-          { "outputField": "custom_product_pages.*.appId", "operationId": "apps_appCustomProductPages_getToManyRelated", "jsonPointer": "/data/*/relationships/app/data/id", "localRole": "Returned only when Apple supplied and the handler validated the parent relationship." },
-          { "outputField": "custom_product_pages.*.state", "localRole": "Legacy compatibility placeholder set to null." },
-          { "outputField": "count", "localRole": "Number of validated page resources in this page." },
-          { "outputField": "limit", "localRole": "Effective validated page limit." },
-          { "outputField": "next_url", "operationId": "apps_appCustomProductPages_getToManyRelated", "jsonPointer": "/links/next" }
+          {
+            "outputField": "success",
+            "localRole": "Validated collection response."
+          },
+          {
+            "outputField": "appId",
+            "localRole": "Canonical app scope established by the requested relationship path."
+          },
+          {
+            "outputField": "custom_product_pages.*.id",
+            "operationId": "apps_appCustomProductPages_getToManyRelated",
+            "jsonPointer": "/data/*/id"
+          },
+          {
+            "outputField": "custom_product_pages.*.type",
+            "operationId": "apps_appCustomProductPages_getToManyRelated",
+            "jsonPointer": "/data/*/type"
+          },
+          {
+            "outputField": "custom_product_pages.*.name",
+            "operationId": "apps_appCustomProductPages_getToManyRelated",
+            "jsonPointer": "/data/*/attributes/name"
+          },
+          {
+            "outputField": "custom_product_pages.*.nameState",
+            "localRole": "Distinguish value, explicit null, and omitted name per resource."
+          },
+          {
+            "outputField": "custom_product_pages.*.url",
+            "operationId": "apps_appCustomProductPages_getToManyRelated",
+            "jsonPointer": "/data/*/attributes/url"
+          },
+          {
+            "outputField": "custom_product_pages.*.urlState",
+            "localRole": "Distinguish value, explicit null, and omitted URL per resource."
+          },
+          {
+            "outputField": "custom_product_pages.*.visible",
+            "operationId": "apps_appCustomProductPages_getToManyRelated",
+            "jsonPointer": "/data/*/attributes/visible"
+          },
+          {
+            "outputField": "custom_product_pages.*.visibleState",
+            "localRole": "Distinguish value, explicit null, and omitted visibility per resource."
+          },
+          {
+            "outputField": "custom_product_pages.*.appId",
+            "operationId": "apps_appCustomProductPages_getToManyRelated",
+            "jsonPointer": "/data/*/relationships/app/data/id",
+            "localRole": "Returned only when Apple supplied and the handler validated the parent relationship."
+          },
+          {
+            "outputField": "custom_product_pages.*.state",
+            "localRole": "Legacy compatibility placeholder set to null."
+          },
+          {
+            "outputField": "count",
+            "localRole": "Number of validated page resources in this page."
+          },
+          {
+            "outputField": "limit",
+            "localRole": "Effective validated page limit."
+          },
+          {
+            "outputField": "next_url",
+            "operationId": "apps_appCustomProductPages_getToManyRelated",
+            "jsonPointer": "/links/next"
+          }
         ]
       }
     },
@@ -288,37 +757,133 @@
           "path": "/v1/appCustomProductPageVersions/{id}/appCustomProductPageLocalizations",
           "role": "primary",
           "optionalParameterClassifications": [
-            { "location": "query", "appleName": "include", "disposition": "intentionallyOmitted", "reason": "The localization list projects only primary appCustomProductPageLocalizations resources and does not decode Apple's included screenshot, preview, keyword, placement, or parent-version resources.", "reviewAtSpec": "4.5.1" },
-            { "location": "query", "appleName": "limit[appPreviewSets]", "disposition": "intentionallyOmitted", "reason": "Apple applies this nested limit only when appPreviewSets is included; this tool neither requests nor projects preview-set relationship resources.", "reviewAtSpec": "4.5.1" },
-            { "location": "query", "appleName": "limit[appScreenshotSets]", "disposition": "intentionallyOmitted", "reason": "Apple applies this nested limit only when appScreenshotSets is included; this tool neither requests nor projects screenshot-set relationship resources.", "reviewAtSpec": "4.5.1" },
-            { "location": "query", "appleName": "limit[searchKeywords]", "disposition": "intentionallyOmitted", "reason": "Apple applies this nested limit only when searchKeywords is included; this tool neither requests nor projects keyword relationship resources.", "reviewAtSpec": "4.5.1" },
-            {"location": "query", "appleName": "limit[placements]", "disposition": "intentionallyOmitted", "reason": "Apple 4.5.1 applies this optional limit only to included placements. This existing localization workflow does not request or project placement resources; use assets_list_placements for independently paginated Asset Library placements.", "reviewAtSpec": "4.5.1"}
+            {
+              "location": "query",
+              "appleName": "include",
+              "disposition": "intentionallyOmitted",
+              "reason": "The localization list projects only primary appCustomProductPageLocalizations resources and does not decode Apple's included screenshot, preview, keyword, placement, or parent-version resources.",
+              "reviewAtSpec": "4.6"
+            },
+            {
+              "location": "query",
+              "appleName": "limit[appPreviewSets]",
+              "disposition": "intentionallyOmitted",
+              "reason": "Apple applies this nested limit only when appPreviewSets is included; this tool neither requests nor projects preview-set relationship resources.",
+              "reviewAtSpec": "4.6"
+            },
+            {
+              "location": "query",
+              "appleName": "limit[appScreenshotSets]",
+              "disposition": "intentionallyOmitted",
+              "reason": "Apple applies this nested limit only when appScreenshotSets is included; this tool neither requests nor projects screenshot-set relationship resources.",
+              "reviewAtSpec": "4.6"
+            },
+            {
+              "location": "query",
+              "appleName": "limit[searchKeywords]",
+              "disposition": "intentionallyOmitted",
+              "reason": "Apple applies this nested limit only when searchKeywords is included; this tool neither requests nor projects keyword relationship resources.",
+              "reviewAtSpec": "4.6"
+            },
+            {
+              "location": "query",
+              "appleName": "limit[placements]",
+              "disposition": "intentionallyOmitted",
+              "reason": "Apple 4.5.1 applies this optional limit only to included placements. This existing localization workflow does not request or project placement resources; use assets_list_placements for independently paginated Asset Library placements.",
+              "reviewAtSpec": "4.6"
+            }
           ]
         }
       ],
       "fields": [
-        { "toolField": "version_id", "sourceKind": "parameter", "operationId": "appCustomProductPageVersions_appCustomProductPageLocalizations_getToManyRelated", "location": "path", "appleName": "id" },
-        { "toolField": "locale", "sourceKind": "parameter", "operationId": "appCustomProductPageVersions_appCustomProductPageLocalizations_getToManyRelated", "location": "query", "appleName": "filter[locale]" },
-        { "toolField": "limit", "sourceKind": "parameter", "operationId": "appCustomProductPageVersions_appCustomProductPageLocalizations_getToManyRelated", "location": "query", "appleName": "limit" },
-        { "toolField": "next_url", "sourceKind": "local", "localRole": "paginationContinuation" }
+        {
+          "toolField": "version_id",
+          "sourceKind": "parameter",
+          "operationId": "appCustomProductPageVersions_appCustomProductPageLocalizations_getToManyRelated",
+          "location": "path",
+          "appleName": "id"
+        },
+        {
+          "toolField": "locale",
+          "sourceKind": "parameter",
+          "operationId": "appCustomProductPageVersions_appCustomProductPageLocalizations_getToManyRelated",
+          "location": "query",
+          "appleName": "filter[locale]"
+        },
+        {
+          "toolField": "limit",
+          "sourceKind": "parameter",
+          "operationId": "appCustomProductPageVersions_appCustomProductPageLocalizations_getToManyRelated",
+          "location": "query",
+          "appleName": "limit"
+        },
+        {
+          "toolField": "next_url",
+          "sourceKind": "local",
+          "localRole": "paginationContinuation"
+        }
       ],
       "response": {
         "mode": "projection",
         "sources": [
-          { "operationId": "appCustomProductPageVersions_appCustomProductPageLocalizations_getToManyRelated", "statusCode": "200", "mediaType": "application/json" }
+          {
+            "operationId": "appCustomProductPageVersions_appCustomProductPageLocalizations_getToManyRelated",
+            "statusCode": "200",
+            "mediaType": "application/json"
+          }
         ],
         "fields": [
-          { "outputField": "success", "localRole": "Validated collection response." },
-          { "outputField": "versionId", "localRole": "Canonical version scope established by the requested relationship path." },
-          { "outputField": "localizations.*.id", "operationId": "appCustomProductPageVersions_appCustomProductPageLocalizations_getToManyRelated", "jsonPointer": "/data/*/id" },
-          { "outputField": "localizations.*.type", "operationId": "appCustomProductPageVersions_appCustomProductPageLocalizations_getToManyRelated", "jsonPointer": "/data/*/type" },
-          { "outputField": "localizations.*.locale", "operationId": "appCustomProductPageVersions_appCustomProductPageLocalizations_getToManyRelated", "jsonPointer": "/data/*/attributes/locale" },
-          { "outputField": "localizations.*.promotionalText", "operationId": "appCustomProductPageVersions_appCustomProductPageLocalizations_getToManyRelated", "jsonPointer": "/data/*/attributes/promotionalText" },
-          { "outputField": "localizations.*.promotionalTextState", "localRole": "Distinguish value, explicit null, and omitted promotional text per resource." },
-          { "outputField": "localizations.*.versionId", "operationId": "appCustomProductPageVersions_appCustomProductPageLocalizations_getToManyRelated", "jsonPointer": "/data/*/relationships/appCustomProductPageVersion/data/id", "localRole": "Returned only when Apple supplied and the handler validated the parent relationship." },
-          { "outputField": "count", "localRole": "Number of validated localization resources in this page." },
-          { "outputField": "limit", "localRole": "Effective validated page limit." },
-          { "outputField": "next_url", "operationId": "appCustomProductPageVersions_appCustomProductPageLocalizations_getToManyRelated", "jsonPointer": "/links/next" }
+          {
+            "outputField": "success",
+            "localRole": "Validated collection response."
+          },
+          {
+            "outputField": "versionId",
+            "localRole": "Canonical version scope established by the requested relationship path."
+          },
+          {
+            "outputField": "localizations.*.id",
+            "operationId": "appCustomProductPageVersions_appCustomProductPageLocalizations_getToManyRelated",
+            "jsonPointer": "/data/*/id"
+          },
+          {
+            "outputField": "localizations.*.type",
+            "operationId": "appCustomProductPageVersions_appCustomProductPageLocalizations_getToManyRelated",
+            "jsonPointer": "/data/*/type"
+          },
+          {
+            "outputField": "localizations.*.locale",
+            "operationId": "appCustomProductPageVersions_appCustomProductPageLocalizations_getToManyRelated",
+            "jsonPointer": "/data/*/attributes/locale"
+          },
+          {
+            "outputField": "localizations.*.promotionalText",
+            "operationId": "appCustomProductPageVersions_appCustomProductPageLocalizations_getToManyRelated",
+            "jsonPointer": "/data/*/attributes/promotionalText"
+          },
+          {
+            "outputField": "localizations.*.promotionalTextState",
+            "localRole": "Distinguish value, explicit null, and omitted promotional text per resource."
+          },
+          {
+            "outputField": "localizations.*.versionId",
+            "operationId": "appCustomProductPageVersions_appCustomProductPageLocalizations_getToManyRelated",
+            "jsonPointer": "/data/*/relationships/appCustomProductPageVersion/data/id",
+            "localRole": "Returned only when Apple supplied and the handler validated the parent relationship."
+          },
+          {
+            "outputField": "count",
+            "localRole": "Number of validated localization resources in this page."
+          },
+          {
+            "outputField": "limit",
+            "localRole": "Effective validated page limit."
+          },
+          {
+            "outputField": "next_url",
+            "operationId": "appCustomProductPageVersions_appCustomProductPageLocalizations_getToManyRelated",
+            "jsonPointer": "/links/next"
+          }
         ]
       }
     },
@@ -335,35 +900,117 @@
           "path": "/v1/appCustomProductPages/{id}/appCustomProductPageVersions",
           "role": "primary",
           "optionalParameterClassifications": [
-            { "location": "query", "appleName": "include", "disposition": "intentionallyOmitted", "reason": "The version list projects only primary appCustomProductPageVersions resources and does not decode Apple's included page or localization resources.", "reviewAtSpec": "4.5.1" },
-            { "location": "query", "appleName": "limit[appCustomProductPageLocalizations]", "disposition": "intentionallyOmitted", "reason": "Apple applies this nested limit only when appCustomProductPageLocalizations is included; this tool leaves relationship expansion to custom_pages_list_localizations.", "reviewAtSpec": "4.5.1" }
+            {
+              "location": "query",
+              "appleName": "include",
+              "disposition": "intentionallyOmitted",
+              "reason": "The version list projects only primary appCustomProductPageVersions resources and does not decode Apple's included page or localization resources.",
+              "reviewAtSpec": "4.6"
+            },
+            {
+              "location": "query",
+              "appleName": "limit[appCustomProductPageLocalizations]",
+              "disposition": "intentionallyOmitted",
+              "reason": "Apple applies this nested limit only when appCustomProductPageLocalizations is included; this tool leaves relationship expansion to custom_pages_list_localizations.",
+              "reviewAtSpec": "4.6"
+            }
           ]
         }
       ],
       "fields": [
-        { "toolField": "page_id", "sourceKind": "parameter", "operationId": "appCustomProductPages_appCustomProductPageVersions_getToManyRelated", "location": "path", "appleName": "id" },
-        { "toolField": "state", "sourceKind": "parameter", "operationId": "appCustomProductPages_appCustomProductPageVersions_getToManyRelated", "location": "query", "appleName": "filter[state]" },
-        { "toolField": "limit", "sourceKind": "parameter", "operationId": "appCustomProductPages_appCustomProductPageVersions_getToManyRelated", "location": "query", "appleName": "limit" },
-        { "toolField": "next_url", "sourceKind": "local", "localRole": "paginationContinuation" }
+        {
+          "toolField": "page_id",
+          "sourceKind": "parameter",
+          "operationId": "appCustomProductPages_appCustomProductPageVersions_getToManyRelated",
+          "location": "path",
+          "appleName": "id"
+        },
+        {
+          "toolField": "state",
+          "sourceKind": "parameter",
+          "operationId": "appCustomProductPages_appCustomProductPageVersions_getToManyRelated",
+          "location": "query",
+          "appleName": "filter[state]"
+        },
+        {
+          "toolField": "limit",
+          "sourceKind": "parameter",
+          "operationId": "appCustomProductPages_appCustomProductPageVersions_getToManyRelated",
+          "location": "query",
+          "appleName": "limit"
+        },
+        {
+          "toolField": "next_url",
+          "sourceKind": "local",
+          "localRole": "paginationContinuation"
+        }
       ],
       "response": {
         "mode": "projection",
         "sources": [
-          { "operationId": "appCustomProductPages_appCustomProductPageVersions_getToManyRelated", "statusCode": "200", "mediaType": "application/json" }
+          {
+            "operationId": "appCustomProductPages_appCustomProductPageVersions_getToManyRelated",
+            "statusCode": "200",
+            "mediaType": "application/json"
+          }
         ],
         "fields": [
-          { "outputField": "success", "localRole": "Validated collection response." },
-          { "outputField": "pageId", "localRole": "Canonical page scope established by the requested relationship path." },
-          { "outputField": "versions.*.id", "operationId": "appCustomProductPages_appCustomProductPageVersions_getToManyRelated", "jsonPointer": "/data/*/id" },
-          { "outputField": "versions.*.type", "operationId": "appCustomProductPages_appCustomProductPageVersions_getToManyRelated", "jsonPointer": "/data/*/type" },
-          { "outputField": "versions.*.version", "operationId": "appCustomProductPages_appCustomProductPageVersions_getToManyRelated", "jsonPointer": "/data/*/attributes/version" },
-          { "outputField": "versions.*.state", "operationId": "appCustomProductPages_appCustomProductPageVersions_getToManyRelated", "jsonPointer": "/data/*/attributes/state" },
-          { "outputField": "versions.*.deepLink", "operationId": "appCustomProductPages_appCustomProductPageVersions_getToManyRelated", "jsonPointer": "/data/*/attributes/deepLink" },
-          { "outputField": "versions.*.deepLinkState", "localRole": "Distinguish value, explicit null, and omitted deep link per resource." },
-          { "outputField": "versions.*.pageId", "operationId": "appCustomProductPages_appCustomProductPageVersions_getToManyRelated", "jsonPointer": "/data/*/relationships/appCustomProductPage/data/id", "localRole": "Returned only when Apple supplied and the handler validated the parent relationship." },
-          { "outputField": "count", "localRole": "Number of validated version resources in this page." },
-          { "outputField": "limit", "localRole": "Effective validated page limit." },
-          { "outputField": "next_url", "operationId": "appCustomProductPages_appCustomProductPageVersions_getToManyRelated", "jsonPointer": "/links/next" }
+          {
+            "outputField": "success",
+            "localRole": "Validated collection response."
+          },
+          {
+            "outputField": "pageId",
+            "localRole": "Canonical page scope established by the requested relationship path."
+          },
+          {
+            "outputField": "versions.*.id",
+            "operationId": "appCustomProductPages_appCustomProductPageVersions_getToManyRelated",
+            "jsonPointer": "/data/*/id"
+          },
+          {
+            "outputField": "versions.*.type",
+            "operationId": "appCustomProductPages_appCustomProductPageVersions_getToManyRelated",
+            "jsonPointer": "/data/*/type"
+          },
+          {
+            "outputField": "versions.*.version",
+            "operationId": "appCustomProductPages_appCustomProductPageVersions_getToManyRelated",
+            "jsonPointer": "/data/*/attributes/version"
+          },
+          {
+            "outputField": "versions.*.state",
+            "operationId": "appCustomProductPages_appCustomProductPageVersions_getToManyRelated",
+            "jsonPointer": "/data/*/attributes/state"
+          },
+          {
+            "outputField": "versions.*.deepLink",
+            "operationId": "appCustomProductPages_appCustomProductPageVersions_getToManyRelated",
+            "jsonPointer": "/data/*/attributes/deepLink"
+          },
+          {
+            "outputField": "versions.*.deepLinkState",
+            "localRole": "Distinguish value, explicit null, and omitted deep link per resource."
+          },
+          {
+            "outputField": "versions.*.pageId",
+            "operationId": "appCustomProductPages_appCustomProductPageVersions_getToManyRelated",
+            "jsonPointer": "/data/*/relationships/appCustomProductPage/data/id",
+            "localRole": "Returned only when Apple supplied and the handler validated the parent relationship."
+          },
+          {
+            "outputField": "count",
+            "localRole": "Number of validated version resources in this page."
+          },
+          {
+            "outputField": "limit",
+            "localRole": "Effective validated page limit."
+          },
+          {
+            "outputField": "next_url",
+            "operationId": "appCustomProductPages_appCustomProductPageVersions_getToManyRelated",
+            "jsonPointer": "/links/next"
+          }
         ]
       }
     },
@@ -380,44 +1027,128 @@
           "path": "/v1/appCustomProductPages/{id}",
           "role": "primary",
           "inputs": [
-            { "sourceKind": "fixed", "jsonPointer": "/data/type", "fixedValue": "appCustomProductPages" },
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/type",
+              "fixedValue": "appCustomProductPages"
+            },
             {
               "sourceKind": "derived",
               "jsonPointer": "/data/id",
-              "derivedFrom": ["page_id"],
+              "derivedFrom": [
+                "page_id"
+              ],
               "localRole": "copyPathIdentifierToRequestBody"
             }
           ]
         }
       ],
       "fields": [
-        { "toolField": "page_id", "sourceKind": "parameter", "operationId": "appCustomProductPages_updateInstance", "location": "path", "appleName": "id" },
-        { "toolField": "name", "sourceKind": "requestBody", "operationId": "appCustomProductPages_updateInstance", "jsonPointer": "/data/attributes/name" },
-        { "toolField": "visible", "sourceKind": "requestBody", "operationId": "appCustomProductPages_updateInstance", "jsonPointer": "/data/attributes/visible" }
+        {
+          "toolField": "page_id",
+          "sourceKind": "parameter",
+          "operationId": "appCustomProductPages_updateInstance",
+          "location": "path",
+          "appleName": "id"
+        },
+        {
+          "toolField": "name",
+          "sourceKind": "requestBody",
+          "operationId": "appCustomProductPages_updateInstance",
+          "jsonPointer": "/data/attributes/name"
+        },
+        {
+          "toolField": "visible",
+          "sourceKind": "requestBody",
+          "operationId": "appCustomProductPages_updateInstance",
+          "jsonPointer": "/data/attributes/visible"
+        }
       ],
       "response": {
         "mode": "projection",
         "sources": [
-          { "operationId": "appCustomProductPages_updateInstance", "statusCode": "200", "mediaType": "application/json" }
+          {
+            "operationId": "appCustomProductPages_updateInstance",
+            "statusCode": "200",
+            "mediaType": "application/json"
+          }
         ],
         "fields": [
-          { "outputField": "success", "localRole": "Exact HTTP 200, canonical identity, required document self-link, and requested nullable attribute states were verified." },
-          { "outputField": "operation", "localRole": "update_page" },
-          { "outputField": "operationCommitted", "localRole": "True only after exact accepted-response verification." },
-          { "outputField": "operationCommitState", "localRole": "Structured non-idempotent write outcome." },
-          { "outputField": "changed", "localRole": "Null because response equality does not prove the prior value differed." },
-          { "outputField": "retrySafe", "localRole": "False after an accepted PATCH." },
-          { "outputField": "statusCode", "localRole": "Exact accepted HTTP status." },
-          { "outputField": "custom_product_page.id", "operationId": "appCustomProductPages_updateInstance", "jsonPointer": "/data/id" },
-          { "outputField": "custom_product_page.type", "operationId": "appCustomProductPages_updateInstance", "jsonPointer": "/data/type" },
-          { "outputField": "custom_product_page.name", "operationId": "appCustomProductPages_updateInstance", "jsonPointer": "/data/attributes/name" },
-          { "outputField": "custom_product_page.nameState", "localRole": "Distinguish value, explicit null, and omitted name." },
-          { "outputField": "custom_product_page.url", "operationId": "appCustomProductPages_updateInstance", "jsonPointer": "/data/attributes/url" },
-          { "outputField": "custom_product_page.urlState", "localRole": "Distinguish value, explicit null, and omitted URL." },
-          { "outputField": "custom_product_page.visible", "operationId": "appCustomProductPages_updateInstance", "jsonPointer": "/data/attributes/visible" },
-          { "outputField": "custom_product_page.visibleState", "localRole": "Distinguish value, explicit null, and omitted visibility." },
-          { "outputField": "custom_product_page.appId", "operationId": "appCustomProductPages_updateInstance", "jsonPointer": "/data/relationships/app/data/id", "localRole": "Returned only after parent relationship validation." },
-          { "outputField": "custom_product_page.state", "localRole": "Legacy compatibility placeholder set to null." }
+          {
+            "outputField": "success",
+            "localRole": "Exact HTTP 200, canonical identity, required document self-link, and requested nullable attribute states were verified."
+          },
+          {
+            "outputField": "operation",
+            "localRole": "update_page"
+          },
+          {
+            "outputField": "operationCommitted",
+            "localRole": "True only after exact accepted-response verification."
+          },
+          {
+            "outputField": "operationCommitState",
+            "localRole": "Structured non-idempotent write outcome."
+          },
+          {
+            "outputField": "changed",
+            "localRole": "Null because response equality does not prove the prior value differed."
+          },
+          {
+            "outputField": "retrySafe",
+            "localRole": "False after an accepted PATCH."
+          },
+          {
+            "outputField": "statusCode",
+            "localRole": "Exact accepted HTTP status."
+          },
+          {
+            "outputField": "custom_product_page.id",
+            "operationId": "appCustomProductPages_updateInstance",
+            "jsonPointer": "/data/id"
+          },
+          {
+            "outputField": "custom_product_page.type",
+            "operationId": "appCustomProductPages_updateInstance",
+            "jsonPointer": "/data/type"
+          },
+          {
+            "outputField": "custom_product_page.name",
+            "operationId": "appCustomProductPages_updateInstance",
+            "jsonPointer": "/data/attributes/name"
+          },
+          {
+            "outputField": "custom_product_page.nameState",
+            "localRole": "Distinguish value, explicit null, and omitted name."
+          },
+          {
+            "outputField": "custom_product_page.url",
+            "operationId": "appCustomProductPages_updateInstance",
+            "jsonPointer": "/data/attributes/url"
+          },
+          {
+            "outputField": "custom_product_page.urlState",
+            "localRole": "Distinguish value, explicit null, and omitted URL."
+          },
+          {
+            "outputField": "custom_product_page.visible",
+            "operationId": "appCustomProductPages_updateInstance",
+            "jsonPointer": "/data/attributes/visible"
+          },
+          {
+            "outputField": "custom_product_page.visibleState",
+            "localRole": "Distinguish value, explicit null, and omitted visibility."
+          },
+          {
+            "outputField": "custom_product_page.appId",
+            "operationId": "appCustomProductPages_updateInstance",
+            "jsonPointer": "/data/relationships/app/data/id",
+            "localRole": "Returned only after parent relationship validation."
+          },
+          {
+            "outputField": "custom_product_page.state",
+            "localRole": "Legacy compatibility placeholder set to null."
+          }
         ]
       },
       "note": "The closed input schema and runtime both require at least one mutable field, name or visible, in addition to page_id."
@@ -435,39 +1166,105 @@
           "path": "/v1/appCustomProductPageLocalizations/{id}",
           "role": "primary",
           "inputs": [
-            { "sourceKind": "fixed", "jsonPointer": "/data/type", "fixedValue": "appCustomProductPageLocalizations" },
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/type",
+              "fixedValue": "appCustomProductPageLocalizations"
+            },
             {
               "sourceKind": "derived",
               "jsonPointer": "/data/id",
-              "derivedFrom": ["localization_id"],
+              "derivedFrom": [
+                "localization_id"
+              ],
               "localRole": "copyPathIdentifierToRequestBody"
             }
           ]
         }
       ],
       "fields": [
-        { "toolField": "localization_id", "sourceKind": "parameter", "operationId": "appCustomProductPageLocalizations_updateInstance", "location": "path", "appleName": "id" },
-        { "toolField": "promotional_text", "sourceKind": "requestBody", "operationId": "appCustomProductPageLocalizations_updateInstance", "jsonPointer": "/data/attributes/promotionalText" }
+        {
+          "toolField": "localization_id",
+          "sourceKind": "parameter",
+          "operationId": "appCustomProductPageLocalizations_updateInstance",
+          "location": "path",
+          "appleName": "id"
+        },
+        {
+          "toolField": "promotional_text",
+          "sourceKind": "requestBody",
+          "operationId": "appCustomProductPageLocalizations_updateInstance",
+          "jsonPointer": "/data/attributes/promotionalText"
+        }
       ],
       "response": {
         "mode": "projection",
         "sources": [
-          { "operationId": "appCustomProductPageLocalizations_updateInstance", "statusCode": "200", "mediaType": "application/json" }
+          {
+            "operationId": "appCustomProductPageLocalizations_updateInstance",
+            "statusCode": "200",
+            "mediaType": "application/json"
+          }
         ],
         "fields": [
-          { "outputField": "success", "localRole": "Exact HTTP 200, canonical identity, required document self-link, and requested promotional-text state were verified." },
-          { "outputField": "operation", "localRole": "update_localization" },
-          { "outputField": "operationCommitted", "localRole": "True only after exact accepted-response verification." },
-          { "outputField": "operationCommitState", "localRole": "Structured non-idempotent write outcome." },
-          { "outputField": "changed", "localRole": "Null because response equality does not prove the prior value differed." },
-          { "outputField": "retrySafe", "localRole": "False after an accepted PATCH." },
-          { "outputField": "statusCode", "localRole": "Exact accepted HTTP status." },
-          { "outputField": "localization.id", "operationId": "appCustomProductPageLocalizations_updateInstance", "jsonPointer": "/data/id" },
-          { "outputField": "localization.type", "operationId": "appCustomProductPageLocalizations_updateInstance", "jsonPointer": "/data/type" },
-          { "outputField": "localization.locale", "operationId": "appCustomProductPageLocalizations_updateInstance", "jsonPointer": "/data/attributes/locale" },
-          { "outputField": "localization.promotionalText", "operationId": "appCustomProductPageLocalizations_updateInstance", "jsonPointer": "/data/attributes/promotionalText" },
-          { "outputField": "localization.promotionalTextState", "localRole": "Distinguish value, explicit null, and omitted promotional text." },
-          { "outputField": "localization.versionId", "operationId": "appCustomProductPageLocalizations_updateInstance", "jsonPointer": "/data/relationships/appCustomProductPageVersion/data/id", "localRole": "Returned only after parent relationship validation." }
+          {
+            "outputField": "success",
+            "localRole": "Exact HTTP 200, canonical identity, required document self-link, and requested promotional-text state were verified."
+          },
+          {
+            "outputField": "operation",
+            "localRole": "update_localization"
+          },
+          {
+            "outputField": "operationCommitted",
+            "localRole": "True only after exact accepted-response verification."
+          },
+          {
+            "outputField": "operationCommitState",
+            "localRole": "Structured non-idempotent write outcome."
+          },
+          {
+            "outputField": "changed",
+            "localRole": "Null because response equality does not prove the prior value differed."
+          },
+          {
+            "outputField": "retrySafe",
+            "localRole": "False after an accepted PATCH."
+          },
+          {
+            "outputField": "statusCode",
+            "localRole": "Exact accepted HTTP status."
+          },
+          {
+            "outputField": "localization.id",
+            "operationId": "appCustomProductPageLocalizations_updateInstance",
+            "jsonPointer": "/data/id"
+          },
+          {
+            "outputField": "localization.type",
+            "operationId": "appCustomProductPageLocalizations_updateInstance",
+            "jsonPointer": "/data/type"
+          },
+          {
+            "outputField": "localization.locale",
+            "operationId": "appCustomProductPageLocalizations_updateInstance",
+            "jsonPointer": "/data/attributes/locale"
+          },
+          {
+            "outputField": "localization.promotionalText",
+            "operationId": "appCustomProductPageLocalizations_updateInstance",
+            "jsonPointer": "/data/attributes/promotionalText"
+          },
+          {
+            "outputField": "localization.promotionalTextState",
+            "localRole": "Distinguish value, explicit null, and omitted promotional text."
+          },
+          {
+            "outputField": "localization.versionId",
+            "operationId": "appCustomProductPageLocalizations_updateInstance",
+            "jsonPointer": "/data/relationships/appCustomProductPageVersion/data/id",
+            "localRole": "Returned only after parent relationship validation."
+          }
         ]
       }
     },
@@ -484,28 +1281,81 @@
           "path": "/v1/appCustomProductPageVersions/{id}",
           "role": "primary",
           "optionalParameterClassifications": [
-            { "location": "query", "appleName": "include", "disposition": "intentionallyOmitted", "reason": "The tool projects the primary page-version resource only; relationship expansion would be silently discarded and is available through the dedicated page and localization tools.", "reviewAtSpec": "4.5.1" },
-            { "location": "query", "appleName": "limit[appCustomProductPageLocalizations]", "disposition": "intentionallyOmitted", "reason": "Apple applies this nested limit only when appCustomProductPageLocalizations is included; the tool does not request that expansion.", "reviewAtSpec": "4.5.1" }
+            {
+              "location": "query",
+              "appleName": "include",
+              "disposition": "intentionallyOmitted",
+              "reason": "The tool projects the primary page-version resource only; relationship expansion would be silently discarded and is available through the dedicated page and localization tools.",
+              "reviewAtSpec": "4.6"
+            },
+            {
+              "location": "query",
+              "appleName": "limit[appCustomProductPageLocalizations]",
+              "disposition": "intentionallyOmitted",
+              "reason": "Apple applies this nested limit only when appCustomProductPageLocalizations is included; the tool does not request that expansion.",
+              "reviewAtSpec": "4.6"
+            }
           ]
         }
       ],
       "fields": [
-        { "toolField": "version_id", "sourceKind": "parameter", "operationId": "appCustomProductPageVersions_getInstance", "location": "path", "appleName": "id" }
+        {
+          "toolField": "version_id",
+          "sourceKind": "parameter",
+          "operationId": "appCustomProductPageVersions_getInstance",
+          "location": "path",
+          "appleName": "id"
+        }
       ],
       "response": {
         "mode": "projection",
         "sources": [
-          { "operationId": "appCustomProductPageVersions_getInstance", "statusCode": "200", "mediaType": "application/json" }
+          {
+            "operationId": "appCustomProductPageVersions_getInstance",
+            "statusCode": "200",
+            "mediaType": "application/json"
+          }
         ],
         "fields": [
-          { "outputField": "success", "localRole": "successfulRead" },
-          { "outputField": "version.id", "operationId": "appCustomProductPageVersions_getInstance", "jsonPointer": "/data/id" },
-          { "outputField": "version.type", "operationId": "appCustomProductPageVersions_getInstance", "jsonPointer": "/data/type" },
-          { "outputField": "version.version", "operationId": "appCustomProductPageVersions_getInstance", "jsonPointer": "/data/attributes/version" },
-          { "outputField": "version.state", "operationId": "appCustomProductPageVersions_getInstance", "jsonPointer": "/data/attributes/state" },
-          { "outputField": "version.deepLink", "operationId": "appCustomProductPageVersions_getInstance", "jsonPointer": "/data/attributes/deepLink" },
-          { "outputField": "version.deepLinkState", "localRole": "Distinguish a returned deepLink value, explicit null, and omitted attribute." },
-          { "outputField": "version.pageId", "operationId": "appCustomProductPageVersions_getInstance", "jsonPointer": "/data/relationships/appCustomProductPage/data/id", "localRole": "Returned only after parent relationship validation." }
+          {
+            "outputField": "success",
+            "localRole": "successfulRead"
+          },
+          {
+            "outputField": "version.id",
+            "operationId": "appCustomProductPageVersions_getInstance",
+            "jsonPointer": "/data/id"
+          },
+          {
+            "outputField": "version.type",
+            "operationId": "appCustomProductPageVersions_getInstance",
+            "jsonPointer": "/data/type"
+          },
+          {
+            "outputField": "version.version",
+            "operationId": "appCustomProductPageVersions_getInstance",
+            "jsonPointer": "/data/attributes/version"
+          },
+          {
+            "outputField": "version.state",
+            "operationId": "appCustomProductPageVersions_getInstance",
+            "jsonPointer": "/data/attributes/state"
+          },
+          {
+            "outputField": "version.deepLink",
+            "operationId": "appCustomProductPageVersions_getInstance",
+            "jsonPointer": "/data/attributes/deepLink"
+          },
+          {
+            "outputField": "version.deepLinkState",
+            "localRole": "Distinguish a returned deepLink value, explicit null, and omitted attribute."
+          },
+          {
+            "outputField": "version.pageId",
+            "operationId": "appCustomProductPageVersions_getInstance",
+            "jsonPointer": "/data/relationships/appCustomProductPage/data/id",
+            "localRole": "Returned only after parent relationship validation."
+          }
         ]
       }
     },
@@ -522,35 +1372,110 @@
           "path": "/v1/appCustomProductPageVersions/{id}",
           "role": "primary",
           "inputs": [
-            { "sourceKind": "fixed", "jsonPointer": "/data/type", "fixedValue": "appCustomProductPageVersions" },
-            { "sourceKind": "derived", "jsonPointer": "/data/id", "derivedFrom": ["version_id"], "localRole": "copyPathIdentifierToRequestBody" }
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/type",
+              "fixedValue": "appCustomProductPageVersions"
+            },
+            {
+              "sourceKind": "derived",
+              "jsonPointer": "/data/id",
+              "derivedFrom": [
+                "version_id"
+              ],
+              "localRole": "copyPathIdentifierToRequestBody"
+            }
           ]
         }
       ],
       "fields": [
-        { "toolField": "version_id", "sourceKind": "parameter", "operationId": "appCustomProductPageVersions_updateInstance", "location": "path", "appleName": "id" },
-        { "toolField": "deep_link", "sourceKind": "requestBody", "operationId": "appCustomProductPageVersions_updateInstance", "jsonPointer": "/data/attributes/deepLink" }
+        {
+          "toolField": "version_id",
+          "sourceKind": "parameter",
+          "operationId": "appCustomProductPageVersions_updateInstance",
+          "location": "path",
+          "appleName": "id"
+        },
+        {
+          "toolField": "deep_link",
+          "sourceKind": "requestBody",
+          "operationId": "appCustomProductPageVersions_updateInstance",
+          "jsonPointer": "/data/attributes/deepLink"
+        }
       ],
       "response": {
         "mode": "projection",
         "sources": [
-          { "operationId": "appCustomProductPageVersions_updateInstance", "statusCode": "200", "mediaType": "application/json" }
+          {
+            "operationId": "appCustomProductPageVersions_updateInstance",
+            "statusCode": "200",
+            "mediaType": "application/json"
+          }
         ],
         "fields": [
-          { "outputField": "success", "localRole": "Exact HTTP 200, canonical identity, required document self-link, and requested nullable deep-link state were verified." },
-          { "outputField": "operation", "localRole": "update_version" },
-          { "outputField": "operationCommitted", "localRole": "True only after exact accepted-response verification." },
-          { "outputField": "operationCommitState", "localRole": "Structured non-idempotent write outcome." },
-          { "outputField": "changed", "localRole": "Null because response equality does not prove the prior value differed." },
-          { "outputField": "retrySafe", "localRole": "False after an accepted PATCH." },
-          { "outputField": "statusCode", "localRole": "Exact accepted HTTP status." },
-          { "outputField": "version.id", "operationId": "appCustomProductPageVersions_updateInstance", "jsonPointer": "/data/id" },
-          { "outputField": "version.type", "operationId": "appCustomProductPageVersions_updateInstance", "jsonPointer": "/data/type" },
-          { "outputField": "version.version", "operationId": "appCustomProductPageVersions_updateInstance", "jsonPointer": "/data/attributes/version" },
-          { "outputField": "version.state", "operationId": "appCustomProductPageVersions_updateInstance", "jsonPointer": "/data/attributes/state" },
-          { "outputField": "version.deepLink", "operationId": "appCustomProductPageVersions_updateInstance", "jsonPointer": "/data/attributes/deepLink" },
-          { "outputField": "version.deepLinkState", "localRole": "Distinguish a returned deepLink value, explicit null, and omitted attribute." },
-          { "outputField": "version.pageId", "operationId": "appCustomProductPageVersions_updateInstance", "jsonPointer": "/data/relationships/appCustomProductPage/data/id", "localRole": "Returned only after parent relationship validation." }
+          {
+            "outputField": "success",
+            "localRole": "Exact HTTP 200, canonical identity, required document self-link, and requested nullable deep-link state were verified."
+          },
+          {
+            "outputField": "operation",
+            "localRole": "update_version"
+          },
+          {
+            "outputField": "operationCommitted",
+            "localRole": "True only after exact accepted-response verification."
+          },
+          {
+            "outputField": "operationCommitState",
+            "localRole": "Structured non-idempotent write outcome."
+          },
+          {
+            "outputField": "changed",
+            "localRole": "Null because response equality does not prove the prior value differed."
+          },
+          {
+            "outputField": "retrySafe",
+            "localRole": "False after an accepted PATCH."
+          },
+          {
+            "outputField": "statusCode",
+            "localRole": "Exact accepted HTTP status."
+          },
+          {
+            "outputField": "version.id",
+            "operationId": "appCustomProductPageVersions_updateInstance",
+            "jsonPointer": "/data/id"
+          },
+          {
+            "outputField": "version.type",
+            "operationId": "appCustomProductPageVersions_updateInstance",
+            "jsonPointer": "/data/type"
+          },
+          {
+            "outputField": "version.version",
+            "operationId": "appCustomProductPageVersions_updateInstance",
+            "jsonPointer": "/data/attributes/version"
+          },
+          {
+            "outputField": "version.state",
+            "operationId": "appCustomProductPageVersions_updateInstance",
+            "jsonPointer": "/data/attributes/state"
+          },
+          {
+            "outputField": "version.deepLink",
+            "operationId": "appCustomProductPageVersions_updateInstance",
+            "jsonPointer": "/data/attributes/deepLink"
+          },
+          {
+            "outputField": "version.deepLinkState",
+            "localRole": "Distinguish a returned deepLink value, explicit null, and omitted attribute."
+          },
+          {
+            "outputField": "version.pageId",
+            "operationId": "appCustomProductPageVersions_updateInstance",
+            "jsonPointer": "/data/relationships/appCustomProductPage/data/id",
+            "localRole": "Returned only after parent relationship validation."
+          }
         ]
       }
     },
@@ -567,30 +1492,97 @@
           "path": "/v1/appCustomProductPageLocalizations/{id}",
           "role": "primary",
           "optionalParameterClassifications": [
-            { "location": "query", "appleName": "include", "disposition": "intentionallyOmitted", "reason": "The tool projects the primary localization only and does not decode included parent, screenshot, preview, keyword, or placement resources.", "reviewAtSpec": "4.5.1" },
-            { "location": "query", "appleName": "limit[appPreviewSets]", "disposition": "intentionallyOmitted", "reason": "Apple applies this nested limit only to an appPreviewSets expansion that this tool does not request.", "reviewAtSpec": "4.5.1" },
-            { "location": "query", "appleName": "limit[appScreenshotSets]", "disposition": "intentionallyOmitted", "reason": "Apple applies this nested limit only to an appScreenshotSets expansion that this tool does not request.", "reviewAtSpec": "4.5.1" },
-            { "location": "query", "appleName": "limit[searchKeywords]", "disposition": "intentionallyOmitted", "reason": "Apple applies this nested limit only to an included searchKeywords expansion; custom_pages_list_search_keywords exposes the related collection directly.", "reviewAtSpec": "4.5.1" },
-            {"location": "query", "appleName": "limit[placements]", "disposition": "intentionallyOmitted", "reason": "Apple 4.5.1 applies this optional limit only to included placements. This existing localization workflow does not request or project placement resources; use assets_list_placements for independently paginated Asset Library placements.", "reviewAtSpec": "4.5.1"}
+            {
+              "location": "query",
+              "appleName": "include",
+              "disposition": "intentionallyOmitted",
+              "reason": "The tool projects the primary localization only and does not decode included parent, screenshot, preview, keyword, or placement resources.",
+              "reviewAtSpec": "4.6"
+            },
+            {
+              "location": "query",
+              "appleName": "limit[appPreviewSets]",
+              "disposition": "intentionallyOmitted",
+              "reason": "Apple applies this nested limit only to an appPreviewSets expansion that this tool does not request.",
+              "reviewAtSpec": "4.6"
+            },
+            {
+              "location": "query",
+              "appleName": "limit[appScreenshotSets]",
+              "disposition": "intentionallyOmitted",
+              "reason": "Apple applies this nested limit only to an appScreenshotSets expansion that this tool does not request.",
+              "reviewAtSpec": "4.6"
+            },
+            {
+              "location": "query",
+              "appleName": "limit[searchKeywords]",
+              "disposition": "intentionallyOmitted",
+              "reason": "Apple applies this nested limit only to an included searchKeywords expansion; custom_pages_list_search_keywords exposes the related collection directly.",
+              "reviewAtSpec": "4.6"
+            },
+            {
+              "location": "query",
+              "appleName": "limit[placements]",
+              "disposition": "intentionallyOmitted",
+              "reason": "Apple 4.5.1 applies this optional limit only to included placements. This existing localization workflow does not request or project placement resources; use assets_list_placements for independently paginated Asset Library placements.",
+              "reviewAtSpec": "4.6"
+            }
           ]
         }
       ],
       "fields": [
-        { "toolField": "localization_id", "sourceKind": "parameter", "operationId": "appCustomProductPageLocalizations_getInstance", "location": "path", "appleName": "id" }
+        {
+          "toolField": "localization_id",
+          "sourceKind": "parameter",
+          "operationId": "appCustomProductPageLocalizations_getInstance",
+          "location": "path",
+          "appleName": "id"
+        }
       ],
       "response": {
         "mode": "projection",
         "sources": [
-          { "operationId": "appCustomProductPageLocalizations_getInstance", "statusCode": "200", "mediaType": "application/json" }
+          {
+            "operationId": "appCustomProductPageLocalizations_getInstance",
+            "statusCode": "200",
+            "mediaType": "application/json"
+          }
         ],
         "fields": [
-          { "outputField": "success", "localRole": "successfulRead" },
-          { "outputField": "localization.id", "operationId": "appCustomProductPageLocalizations_getInstance", "jsonPointer": "/data/id" },
-          { "outputField": "localization.type", "operationId": "appCustomProductPageLocalizations_getInstance", "jsonPointer": "/data/type" },
-          { "outputField": "localization.locale", "operationId": "appCustomProductPageLocalizations_getInstance", "jsonPointer": "/data/attributes/locale" },
-          { "outputField": "localization.promotionalText", "operationId": "appCustomProductPageLocalizations_getInstance", "jsonPointer": "/data/attributes/promotionalText" },
-          { "outputField": "localization.promotionalTextState", "localRole": "Distinguish a returned promotionalText value, explicit null, and omitted attribute." },
-          { "outputField": "localization.versionId", "operationId": "appCustomProductPageLocalizations_getInstance", "jsonPointer": "/data/relationships/appCustomProductPageVersion/data/id", "localRole": "Returned only after parent relationship validation." }
+          {
+            "outputField": "success",
+            "localRole": "successfulRead"
+          },
+          {
+            "outputField": "localization.id",
+            "operationId": "appCustomProductPageLocalizations_getInstance",
+            "jsonPointer": "/data/id"
+          },
+          {
+            "outputField": "localization.type",
+            "operationId": "appCustomProductPageLocalizations_getInstance",
+            "jsonPointer": "/data/type"
+          },
+          {
+            "outputField": "localization.locale",
+            "operationId": "appCustomProductPageLocalizations_getInstance",
+            "jsonPointer": "/data/attributes/locale"
+          },
+          {
+            "outputField": "localization.promotionalText",
+            "operationId": "appCustomProductPageLocalizations_getInstance",
+            "jsonPointer": "/data/attributes/promotionalText"
+          },
+          {
+            "outputField": "localization.promotionalTextState",
+            "localRole": "Distinguish a returned promotionalText value, explicit null, and omitted attribute."
+          },
+          {
+            "outputField": "localization.versionId",
+            "operationId": "appCustomProductPageLocalizations_getInstance",
+            "jsonPointer": "/data/relationships/appCustomProductPageVersion/data/id",
+            "localRole": "Returned only after parent relationship validation."
+          }
         ]
       }
     },
@@ -601,27 +1593,72 @@
       "effect": "destructive",
       "implementationState": "asBuilt",
       "operations": [
-        { "operationId": "appCustomProductPageLocalizations_deleteInstance", "method": "delete", "path": "/v1/appCustomProductPageLocalizations/{id}", "role": "primary" }
+        {
+          "operationId": "appCustomProductPageLocalizations_deleteInstance",
+          "method": "delete",
+          "path": "/v1/appCustomProductPageLocalizations/{id}",
+          "role": "primary"
+        }
       ],
       "fields": [
-        { "toolField": "localization_id", "sourceKind": "parameter", "operationId": "appCustomProductPageLocalizations_deleteInstance", "location": "path", "appleName": "id" },
-        { "toolField": "confirm_localization_id", "sourceKind": "local", "localRole": "Require an exact canonical match with localization_id before any Apple request is sent." }
+        {
+          "toolField": "localization_id",
+          "sourceKind": "parameter",
+          "operationId": "appCustomProductPageLocalizations_deleteInstance",
+          "location": "path",
+          "appleName": "id"
+        },
+        {
+          "toolField": "confirm_localization_id",
+          "sourceKind": "local",
+          "localRole": "Require an exact canonical match with localization_id before any Apple request is sent."
+        }
       ],
       "response": {
         "mode": "local",
         "sources": [
-          { "operationId": "appCustomProductPageLocalizations_deleteInstance", "statusCode": "204" }
+          {
+            "operationId": "appCustomProductPageLocalizations_deleteInstance",
+            "statusCode": "204"
+          }
         ],
         "fields": [
-          { "outputField": "success", "localRole": "True only for Apple's exact HTTP 204 response." },
-          { "outputField": "operation", "localRole": "delete_localization" },
-          { "outputField": "operationCommitted", "localRole": "True only for exact HTTP 204." },
-          { "outputField": "operationCommitState", "localRole": "Structured destructive-operation outcome." },
-          { "outputField": "changed", "localRole": "True because exact HTTP 204 follows an existing-resource delete contract." },
-          { "outputField": "retrySafe", "localRole": "False after committed deletion." },
-          { "outputField": "localizationId", "localRole": "Echo the canonical deleted localization ID." },
-          { "outputField": "statusCode", "localRole": "Exact accepted HTTP status." },
-          { "outputField": "message", "localRole": "Local deletion confirmation." }
+          {
+            "outputField": "success",
+            "localRole": "True only for Apple's exact HTTP 204 response."
+          },
+          {
+            "outputField": "operation",
+            "localRole": "delete_localization"
+          },
+          {
+            "outputField": "operationCommitted",
+            "localRole": "True only for exact HTTP 204."
+          },
+          {
+            "outputField": "operationCommitState",
+            "localRole": "Structured destructive-operation outcome."
+          },
+          {
+            "outputField": "changed",
+            "localRole": "True because exact HTTP 204 follows an existing-resource delete contract."
+          },
+          {
+            "outputField": "retrySafe",
+            "localRole": "False after committed deletion."
+          },
+          {
+            "outputField": "localizationId",
+            "localRole": "Echo the canonical deleted localization ID."
+          },
+          {
+            "outputField": "statusCode",
+            "localRole": "Exact accepted HTTP status."
+          },
+          {
+            "outputField": "message",
+            "localRole": "Local deletion confirmation."
+          }
         ]
       }
     },
@@ -640,25 +1677,81 @@
         }
       ],
       "fields": [
-        { "toolField": "localization_id", "sourceKind": "parameter", "operationId": "appCustomProductPageLocalizations_searchKeywords_getToManyRelated", "location": "path", "appleName": "id" },
-        { "toolField": "platform", "sourceKind": "parameter", "operationId": "appCustomProductPageLocalizations_searchKeywords_getToManyRelated", "location": "query", "appleName": "filter[platform]" },
-        { "toolField": "locale", "sourceKind": "parameter", "operationId": "appCustomProductPageLocalizations_searchKeywords_getToManyRelated", "location": "query", "appleName": "filter[locale]" },
-        { "toolField": "limit", "sourceKind": "parameter", "operationId": "appCustomProductPageLocalizations_searchKeywords_getToManyRelated", "location": "query", "appleName": "limit" },
-        { "toolField": "next_url", "sourceKind": "local", "localRole": "paginationContinuation" }
+        {
+          "toolField": "localization_id",
+          "sourceKind": "parameter",
+          "operationId": "appCustomProductPageLocalizations_searchKeywords_getToManyRelated",
+          "location": "path",
+          "appleName": "id"
+        },
+        {
+          "toolField": "platform",
+          "sourceKind": "parameter",
+          "operationId": "appCustomProductPageLocalizations_searchKeywords_getToManyRelated",
+          "location": "query",
+          "appleName": "filter[platform]"
+        },
+        {
+          "toolField": "locale",
+          "sourceKind": "parameter",
+          "operationId": "appCustomProductPageLocalizations_searchKeywords_getToManyRelated",
+          "location": "query",
+          "appleName": "filter[locale]"
+        },
+        {
+          "toolField": "limit",
+          "sourceKind": "parameter",
+          "operationId": "appCustomProductPageLocalizations_searchKeywords_getToManyRelated",
+          "location": "query",
+          "appleName": "limit"
+        },
+        {
+          "toolField": "next_url",
+          "sourceKind": "local",
+          "localRole": "paginationContinuation"
+        }
       ],
       "response": {
         "mode": "projection",
         "sources": [
-          { "operationId": "appCustomProductPageLocalizations_searchKeywords_getToManyRelated", "statusCode": "200", "mediaType": "application/json" }
+          {
+            "operationId": "appCustomProductPageLocalizations_searchKeywords_getToManyRelated",
+            "statusCode": "200",
+            "mediaType": "application/json"
+          }
         ],
         "fields": [
-          { "outputField": "success", "localRole": "successfulRead" },
-          { "outputField": "localizationId", "localRole": "Echo the canonical parent localization ID." },
-          { "outputField": "search_keywords.*.id", "operationId": "appCustomProductPageLocalizations_searchKeywords_getToManyRelated", "jsonPointer": "/data/*/id" },
-          { "outputField": "search_keywords.*.type", "operationId": "appCustomProductPageLocalizations_searchKeywords_getToManyRelated", "jsonPointer": "/data/*/type" },
-          { "outputField": "next_url", "operationId": "appCustomProductPageLocalizations_searchKeywords_getToManyRelated", "jsonPointer": "/links/next" },
-          { "outputField": "count", "localRole": "Number of validated keyword resources in this page." },
-          { "outputField": "limit", "localRole": "Echo the effective validated page limit." }
+          {
+            "outputField": "success",
+            "localRole": "successfulRead"
+          },
+          {
+            "outputField": "localizationId",
+            "localRole": "Echo the canonical parent localization ID."
+          },
+          {
+            "outputField": "search_keywords.*.id",
+            "operationId": "appCustomProductPageLocalizations_searchKeywords_getToManyRelated",
+            "jsonPointer": "/data/*/id"
+          },
+          {
+            "outputField": "search_keywords.*.type",
+            "operationId": "appCustomProductPageLocalizations_searchKeywords_getToManyRelated",
+            "jsonPointer": "/data/*/type"
+          },
+          {
+            "outputField": "next_url",
+            "operationId": "appCustomProductPageLocalizations_searchKeywords_getToManyRelated",
+            "jsonPointer": "/links/next"
+          },
+          {
+            "outputField": "count",
+            "localRole": "Number of validated keyword resources in this page."
+          },
+          {
+            "outputField": "limit",
+            "localRole": "Echo the effective validated page limit."
+          }
         ]
       }
     },
@@ -675,29 +1768,74 @@
           "path": "/v1/appCustomProductPageLocalizations/{id}/relationships/searchKeywords",
           "role": "primary",
           "inputs": [
-            { "sourceKind": "fixed", "jsonPointer": "/data/*/type", "fixedValue": "appKeywords" }
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/*/type",
+              "fixedValue": "appKeywords"
+            }
           ]
         }
       ],
       "fields": [
-        { "toolField": "localization_id", "sourceKind": "parameter", "operationId": "appCustomProductPageLocalizations_searchKeywords_createToManyRelationship", "location": "path", "appleName": "id" },
-        { "toolField": "keyword_ids", "sourceKind": "requestBody", "operationId": "appCustomProductPageLocalizations_searchKeywords_createToManyRelationship", "jsonPointer": "/data/*/id" }
+        {
+          "toolField": "localization_id",
+          "sourceKind": "parameter",
+          "operationId": "appCustomProductPageLocalizations_searchKeywords_createToManyRelationship",
+          "location": "path",
+          "appleName": "id"
+        },
+        {
+          "toolField": "keyword_ids",
+          "sourceKind": "requestBody",
+          "operationId": "appCustomProductPageLocalizations_searchKeywords_createToManyRelationship",
+          "jsonPointer": "/data/*/id"
+        }
       ],
       "response": {
         "mode": "local",
         "sources": [
-          { "operationId": "appCustomProductPageLocalizations_searchKeywords_createToManyRelationship", "statusCode": "204" }
+          {
+            "operationId": "appCustomProductPageLocalizations_searchKeywords_createToManyRelationship",
+            "statusCode": "204"
+          }
         ],
         "fields": [
-          { "outputField": "success", "localRole": "True only for Apple's exact HTTP 204 response." },
-          { "outputField": "operation", "localRole": "add_search_keywords" },
-          { "outputField": "operationCommitted", "localRole": "True only for exact HTTP 204." },
-          { "outputField": "operationCommitState", "localRole": "Structured relationship-write outcome." },
-          { "outputField": "changed", "localRole": "Null because exact HTTP 204 does not prove whether every requested relationship was previously absent." },
-          { "outputField": "retrySafe", "localRole": "False after an accepted relationship write." },
-          { "outputField": "localizationId", "localRole": "Echo the canonical parent localization ID." },
-          { "outputField": "keywordIds", "localRole": "Echo the exact canonical relationship IDs sent to Apple." },
-          { "outputField": "statusCode", "localRole": "Exact accepted HTTP status." }
+          {
+            "outputField": "success",
+            "localRole": "True only for Apple's exact HTTP 204 response."
+          },
+          {
+            "outputField": "operation",
+            "localRole": "add_search_keywords"
+          },
+          {
+            "outputField": "operationCommitted",
+            "localRole": "True only for exact HTTP 204."
+          },
+          {
+            "outputField": "operationCommitState",
+            "localRole": "Structured relationship-write outcome."
+          },
+          {
+            "outputField": "changed",
+            "localRole": "Null because exact HTTP 204 does not prove whether every requested relationship was previously absent."
+          },
+          {
+            "outputField": "retrySafe",
+            "localRole": "False after an accepted relationship write."
+          },
+          {
+            "outputField": "localizationId",
+            "localRole": "Echo the canonical parent localization ID."
+          },
+          {
+            "outputField": "keywordIds",
+            "localRole": "Echo the exact canonical relationship IDs sent to Apple."
+          },
+          {
+            "outputField": "statusCode",
+            "localRole": "Exact accepted HTTP status."
+          }
         ]
       }
     },
@@ -714,31 +1852,83 @@
           "path": "/v1/appCustomProductPageLocalizations/{id}/relationships/searchKeywords",
           "role": "primary",
           "inputs": [
-            { "sourceKind": "fixed", "jsonPointer": "/data/*/type", "fixedValue": "appKeywords" }
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/*/type",
+              "fixedValue": "appKeywords"
+            }
           ]
         }
       ],
       "fields": [
-        { "toolField": "localization_id", "sourceKind": "parameter", "operationId": "appCustomProductPageLocalizations_searchKeywords_deleteToManyRelationship", "location": "path", "appleName": "id" },
-        { "toolField": "keyword_ids", "sourceKind": "requestBody", "operationId": "appCustomProductPageLocalizations_searchKeywords_deleteToManyRelationship", "jsonPointer": "/data/*/id" },
-        { "toolField": "confirm_localization_id", "sourceKind": "local", "localRole": "Require an exact canonical match with localization_id before any Apple request is sent." }
+        {
+          "toolField": "localization_id",
+          "sourceKind": "parameter",
+          "operationId": "appCustomProductPageLocalizations_searchKeywords_deleteToManyRelationship",
+          "location": "path",
+          "appleName": "id"
+        },
+        {
+          "toolField": "keyword_ids",
+          "sourceKind": "requestBody",
+          "operationId": "appCustomProductPageLocalizations_searchKeywords_deleteToManyRelationship",
+          "jsonPointer": "/data/*/id"
+        },
+        {
+          "toolField": "confirm_localization_id",
+          "sourceKind": "local",
+          "localRole": "Require an exact canonical match with localization_id before any Apple request is sent."
+        }
       ],
       "response": {
         "mode": "local",
         "sources": [
-          { "operationId": "appCustomProductPageLocalizations_searchKeywords_deleteToManyRelationship", "statusCode": "204" }
+          {
+            "operationId": "appCustomProductPageLocalizations_searchKeywords_deleteToManyRelationship",
+            "statusCode": "204"
+          }
         ],
         "fields": [
-          { "outputField": "success", "localRole": "True only for Apple's exact HTTP 204 response." },
-          { "outputField": "operation", "localRole": "remove_search_keywords" },
-          { "outputField": "operationCommitted", "localRole": "True only for exact HTTP 204." },
-          { "outputField": "operationCommitState", "localRole": "Structured destructive relationship-write outcome." },
-          { "outputField": "changed", "localRole": "Null because exact HTTP 204 does not prove whether every requested relationship was previously present." },
-          { "outputField": "retrySafe", "localRole": "False after an accepted destructive relationship write." },
-          { "outputField": "confirmationMatched", "localRole": "True only after confirm_localization_id exactly matches localization_id before the request." },
-          { "outputField": "localizationId", "localRole": "Echo the canonical parent localization ID." },
-          { "outputField": "keywordIds", "localRole": "Echo the exact canonical relationship IDs sent to Apple." },
-          { "outputField": "statusCode", "localRole": "Exact accepted HTTP status." }
+          {
+            "outputField": "success",
+            "localRole": "True only for Apple's exact HTTP 204 response."
+          },
+          {
+            "outputField": "operation",
+            "localRole": "remove_search_keywords"
+          },
+          {
+            "outputField": "operationCommitted",
+            "localRole": "True only for exact HTTP 204."
+          },
+          {
+            "outputField": "operationCommitState",
+            "localRole": "Structured destructive relationship-write outcome."
+          },
+          {
+            "outputField": "changed",
+            "localRole": "Null because exact HTTP 204 does not prove whether every requested relationship was previously present."
+          },
+          {
+            "outputField": "retrySafe",
+            "localRole": "False after an accepted destructive relationship write."
+          },
+          {
+            "outputField": "confirmationMatched",
+            "localRole": "True only after confirm_localization_id exactly matches localization_id before the request."
+          },
+          {
+            "outputField": "localizationId",
+            "localRole": "Echo the canonical parent localization ID."
+          },
+          {
+            "outputField": "keywordIds",
+            "localRole": "Echo the exact canonical relationship IDs sent to Apple."
+          },
+          {
+            "outputField": "statusCode",
+            "localRole": "Exact accepted HTTP status."
+          }
         ]
       }
     }

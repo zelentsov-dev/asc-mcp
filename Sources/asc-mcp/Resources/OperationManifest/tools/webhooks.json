@@ -14,26 +14,76 @@
           "path": "/v1/webhooks",
           "role": "primary",
           "inputs": [
-            { "sourceKind": "fixed", "jsonPointer": "/data/type", "fixedValue": "webhooks" },
-            { "sourceKind": "fixed", "jsonPointer": "/data/relationships/app/data/type", "fixedValue": "apps" }
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/type",
+              "fixedValue": "webhooks"
+            },
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/relationships/app/data/type",
+              "fixedValue": "apps"
+            }
           ]
         }
       ],
       "fields": [
-        { "toolField": "app_id", "sourceKind": "requestBody", "operationId": "webhooks_createInstance", "jsonPointer": "/data/relationships/app/data/id" },
-        { "toolField": "name", "sourceKind": "requestBody", "operationId": "webhooks_createInstance", "jsonPointer": "/data/attributes/name" },
-        { "toolField": "url", "sourceKind": "requestBody", "operationId": "webhooks_createInstance", "jsonPointer": "/data/attributes/url", "localRole": "requires an absolute HTTPS URL with a non-empty host and rejects URL user/password or fragments; ports, paths, and queries are preserved" },
-        { "toolField": "secret", "sourceKind": "requestBody", "operationId": "webhooks_createInstance", "jsonPointer": "/data/attributes/secret", "localRole": "local hardening requires at least 32 characters and rejects low-diversity or repeated-pattern values" },
-        { "toolField": "event_types", "sourceKind": "requestBody", "operationId": "webhooks_createInstance", "jsonPointer": "/data/attributes/eventTypes", "localRole": "validated against the Apple 4.4.1 webhook event enum" },
-        { "toolField": "enabled", "sourceKind": "requestBody", "operationId": "webhooks_createInstance", "jsonPointer": "/data/attributes/enabled", "localRole": "defaults to true when omitted" }
+        {
+          "toolField": "app_id",
+          "sourceKind": "requestBody",
+          "operationId": "webhooks_createInstance",
+          "jsonPointer": "/data/relationships/app/data/id"
+        },
+        {
+          "toolField": "name",
+          "sourceKind": "requestBody",
+          "operationId": "webhooks_createInstance",
+          "jsonPointer": "/data/attributes/name"
+        },
+        {
+          "toolField": "url",
+          "sourceKind": "requestBody",
+          "operationId": "webhooks_createInstance",
+          "jsonPointer": "/data/attributes/url",
+          "localRole": "requires an absolute HTTPS URL with a non-empty host and rejects URL user/password or fragments; ports, paths, and queries are preserved"
+        },
+        {
+          "toolField": "secret",
+          "sourceKind": "requestBody",
+          "operationId": "webhooks_createInstance",
+          "jsonPointer": "/data/attributes/secret",
+          "localRole": "local hardening requires at least 32 characters and rejects low-diversity or repeated-pattern values"
+        },
+        {
+          "toolField": "event_types",
+          "sourceKind": "requestBody",
+          "operationId": "webhooks_createInstance",
+          "jsonPointer": "/data/attributes/eventTypes",
+          "localRole": "validated against the Apple 4.4.1 webhook event enum"
+        },
+        {
+          "toolField": "enabled",
+          "sourceKind": "requestBody",
+          "operationId": "webhooks_createInstance",
+          "jsonPointer": "/data/attributes/enabled",
+          "localRole": "defaults to true when omitted"
+        }
       ],
       "response": {
         "mode": "projection",
         "sources": [
-          { "operationId": "webhooks_createInstance", "statusCode": "201", "mediaType": "application/json" }
+          {
+            "operationId": "webhooks_createInstance",
+            "statusCode": "201",
+            "mediaType": "application/json"
+          }
         ],
         "fields": [
-          { "outputField": "webhook", "operationId": "webhooks_createInstance", "jsonPointer": "/data" }
+          {
+            "outputField": "webhook",
+            "operationId": "webhooks_createInstance",
+            "jsonPointer": "/data"
+          }
         ]
       },
       "note": "Exact Apple 4.4.1 create operation. The handler returns a selected webhook projection and has no MCP output schema, so the contract remains partial."
@@ -45,18 +95,35 @@
       "effect": "destructive",
       "implementationState": "asBuilt",
       "operations": [
-        { "operationId": "webhooks_deleteInstance", "method": "delete", "path": "/v1/webhooks/{id}", "role": "primary" }
+        {
+          "operationId": "webhooks_deleteInstance",
+          "method": "delete",
+          "path": "/v1/webhooks/{id}",
+          "role": "primary"
+        }
       ],
       "fields": [
-        { "toolField": "webhook_id", "sourceKind": "parameter", "operationId": "webhooks_deleteInstance", "location": "path", "appleName": "id" }
+        {
+          "toolField": "webhook_id",
+          "sourceKind": "parameter",
+          "operationId": "webhooks_deleteInstance",
+          "location": "path",
+          "appleName": "id"
+        }
       ],
       "response": {
         "mode": "local",
         "sources": [
-          { "operationId": "webhooks_deleteInstance", "statusCode": "204" }
+          {
+            "operationId": "webhooks_deleteInstance",
+            "statusCode": "204"
+          }
         ],
         "fields": [
-          { "outputField": "message", "localRole": "confirmation synthesized after Apple's content-free 204 response" }
+          {
+            "outputField": "message",
+            "localRole": "confirmation synthesized after Apple's content-free 204 response"
+          }
         ]
       },
       "note": "Apple returns 204 with no response document; the MCP result is a local success confirmation."
@@ -68,20 +135,51 @@
       "effect": "read",
       "implementationState": "asBuilt",
       "operations": [
-        { "operationId": "webhooks_getInstance", "method": "get", "path": "/v1/webhooks/{id}", "role": "primary" }
+        {
+          "operationId": "webhooks_getInstance",
+          "method": "get",
+          "path": "/v1/webhooks/{id}",
+          "role": "primary"
+        }
       ],
       "fields": [
-        { "toolField": "webhook_id", "sourceKind": "parameter", "operationId": "webhooks_getInstance", "location": "path", "appleName": "id" },
-        { "toolField": "include_app", "sourceKind": "parameter", "operationId": "webhooks_getInstance", "location": "query", "appleName": "include", "localRole": "true emits the fixed query value app; false or omission emits no include parameter" }
+        {
+          "toolField": "webhook_id",
+          "sourceKind": "parameter",
+          "operationId": "webhooks_getInstance",
+          "location": "path",
+          "appleName": "id"
+        },
+        {
+          "toolField": "include_app",
+          "sourceKind": "parameter",
+          "operationId": "webhooks_getInstance",
+          "location": "query",
+          "appleName": "include",
+          "localRole": "true emits the fixed query value app; false or omission emits no include parameter"
+        }
       ],
       "response": {
         "mode": "projection",
         "sources": [
-          { "operationId": "webhooks_getInstance", "statusCode": "200", "mediaType": "application/json" }
+          {
+            "operationId": "webhooks_getInstance",
+            "statusCode": "200",
+            "mediaType": "application/json"
+          }
         ],
         "fields": [
-          { "outputField": "webhook", "operationId": "webhooks_getInstance", "jsonPointer": "/data" },
-          { "outputField": "included", "operationId": "webhooks_getInstance", "jsonPointer": "/included", "localRole": "lossless projection of the included app resource when include_app is true" }
+          {
+            "outputField": "webhook",
+            "operationId": "webhooks_getInstance",
+            "jsonPointer": "/data"
+          },
+          {
+            "outputField": "included",
+            "operationId": "webhooks_getInstance",
+            "jsonPointer": "/included",
+            "localRole": "lossless projection of the included app resource when include_app is true"
+          }
         ]
       },
       "note": "The include=app request and Apple's top-level included app resource are preserved. Sparse fieldsets are intentionally omitted by the manifest-wide Apple 4.4.1 policy."
@@ -93,24 +191,73 @@
       "effect": "read",
       "implementationState": "asBuilt",
       "operations": [
-        { "operationId": "apps_webhooks_getToManyRelated", "method": "get", "path": "/v1/apps/{id}/webhooks", "role": "primary" }
+        {
+          "operationId": "apps_webhooks_getToManyRelated",
+          "method": "get",
+          "path": "/v1/apps/{id}/webhooks",
+          "role": "primary"
+        }
       ],
       "fields": [
-        { "toolField": "app_id", "sourceKind": "parameter", "operationId": "apps_webhooks_getToManyRelated", "location": "path", "appleName": "id" },
-        { "toolField": "limit", "sourceKind": "parameter", "operationId": "apps_webhooks_getToManyRelated", "location": "query", "appleName": "limit" },
-        { "toolField": "include_app", "sourceKind": "parameter", "operationId": "apps_webhooks_getToManyRelated", "location": "query", "appleName": "include", "localRole": "true emits the fixed query value app; false or omission emits no include parameter" },
-        { "toolField": "next_url", "sourceKind": "local", "localRole": "Strict Apple continuation URL for this exact collection. The caller must repeat every originating list control, including the effective/default limit, filters, sort, include, fields, and nested limits when supported; the exact query and a non-empty cursor are validated before sending the continuation request." }
+        {
+          "toolField": "app_id",
+          "sourceKind": "parameter",
+          "operationId": "apps_webhooks_getToManyRelated",
+          "location": "path",
+          "appleName": "id"
+        },
+        {
+          "toolField": "limit",
+          "sourceKind": "parameter",
+          "operationId": "apps_webhooks_getToManyRelated",
+          "location": "query",
+          "appleName": "limit"
+        },
+        {
+          "toolField": "include_app",
+          "sourceKind": "parameter",
+          "operationId": "apps_webhooks_getToManyRelated",
+          "location": "query",
+          "appleName": "include",
+          "localRole": "true emits the fixed query value app; false or omission emits no include parameter"
+        },
+        {
+          "toolField": "next_url",
+          "sourceKind": "local",
+          "localRole": "Strict Apple continuation URL for this exact collection. The caller must repeat every originating list control, including the effective/default limit, filters, sort, include, fields, and nested limits when supported; the exact query and a non-empty cursor are validated before sending the continuation request."
+        }
       ],
       "response": {
         "mode": "projection",
         "sources": [
-          { "operationId": "apps_webhooks_getToManyRelated", "statusCode": "200", "mediaType": "application/json" }
+          {
+            "operationId": "apps_webhooks_getToManyRelated",
+            "statusCode": "200",
+            "mediaType": "application/json"
+          }
         ],
         "fields": [
-          { "outputField": "webhooks", "operationId": "apps_webhooks_getToManyRelated", "jsonPointer": "/data" },
-          { "outputField": "included", "operationId": "apps_webhooks_getToManyRelated", "jsonPointer": "/included", "localRole": "lossless projection of included app resources when include_app is true" },
-          { "outputField": "next_url", "operationId": "apps_webhooks_getToManyRelated", "jsonPointer": "/links/next" },
-          { "outputField": "total", "operationId": "apps_webhooks_getToManyRelated", "jsonPointer": "/meta/paging/total" }
+          {
+            "outputField": "webhooks",
+            "operationId": "apps_webhooks_getToManyRelated",
+            "jsonPointer": "/data"
+          },
+          {
+            "outputField": "included",
+            "operationId": "apps_webhooks_getToManyRelated",
+            "jsonPointer": "/included",
+            "localRole": "lossless projection of included app resources when include_app is true"
+          },
+          {
+            "outputField": "next_url",
+            "operationId": "apps_webhooks_getToManyRelated",
+            "jsonPointer": "/links/next"
+          },
+          {
+            "outputField": "total",
+            "operationId": "apps_webhooks_getToManyRelated",
+            "jsonPointer": "/meta/paging/total"
+          }
         ]
       },
       "note": "The include=app request and Apple's top-level included app resources are preserved. Sparse fieldsets are intentionally omitted by the manifest-wide Apple 4.4.1 policy."
@@ -122,27 +269,93 @@
       "effect": "read",
       "implementationState": "asBuilt",
       "operations": [
-        { "operationId": "webhooks_deliveries_getToManyRelated", "method": "get", "path": "/v1/webhooks/{id}/deliveries", "role": "primary" }
+        {
+          "operationId": "webhooks_deliveries_getToManyRelated",
+          "method": "get",
+          "path": "/v1/webhooks/{id}/deliveries",
+          "role": "primary"
+        }
       ],
       "fields": [
-        { "toolField": "webhook_id", "sourceKind": "parameter", "operationId": "webhooks_deliveries_getToManyRelated", "location": "path", "appleName": "id" },
-        { "toolField": "delivery_state", "sourceKind": "parameter", "operationId": "webhooks_deliveries_getToManyRelated", "location": "query", "appleName": "filter[deliveryState]" },
-        { "toolField": "created_after", "sourceKind": "parameter", "operationId": "webhooks_deliveries_getToManyRelated", "location": "query", "appleName": "filter[createdDateGreaterThanOrEqualTo]" },
-        { "toolField": "created_before", "sourceKind": "parameter", "operationId": "webhooks_deliveries_getToManyRelated", "location": "query", "appleName": "filter[createdDateLessThan]" },
-        { "toolField": "include_event", "sourceKind": "parameter", "operationId": "webhooks_deliveries_getToManyRelated", "location": "query", "appleName": "include", "localRole": "true or omission emits the fixed query value event; false emits no include parameter" },
-        { "toolField": "limit", "sourceKind": "parameter", "operationId": "webhooks_deliveries_getToManyRelated", "location": "query", "appleName": "limit" },
-        { "toolField": "next_url", "sourceKind": "local", "localRole": "Strict Apple continuation URL for this exact collection. The caller must repeat every originating list control, including the effective/default limit, filters, sort, include, fields, and nested limits when supported; the exact query and a non-empty cursor are validated before sending the continuation request." }
+        {
+          "toolField": "webhook_id",
+          "sourceKind": "parameter",
+          "operationId": "webhooks_deliveries_getToManyRelated",
+          "location": "path",
+          "appleName": "id"
+        },
+        {
+          "toolField": "delivery_state",
+          "sourceKind": "parameter",
+          "operationId": "webhooks_deliveries_getToManyRelated",
+          "location": "query",
+          "appleName": "filter[deliveryState]"
+        },
+        {
+          "toolField": "created_after",
+          "sourceKind": "parameter",
+          "operationId": "webhooks_deliveries_getToManyRelated",
+          "location": "query",
+          "appleName": "filter[createdDateGreaterThanOrEqualTo]"
+        },
+        {
+          "toolField": "created_before",
+          "sourceKind": "parameter",
+          "operationId": "webhooks_deliveries_getToManyRelated",
+          "location": "query",
+          "appleName": "filter[createdDateLessThan]"
+        },
+        {
+          "toolField": "include_event",
+          "sourceKind": "parameter",
+          "operationId": "webhooks_deliveries_getToManyRelated",
+          "location": "query",
+          "appleName": "include",
+          "localRole": "true or omission emits the fixed query value event; false emits no include parameter"
+        },
+        {
+          "toolField": "limit",
+          "sourceKind": "parameter",
+          "operationId": "webhooks_deliveries_getToManyRelated",
+          "location": "query",
+          "appleName": "limit"
+        },
+        {
+          "toolField": "next_url",
+          "sourceKind": "local",
+          "localRole": "Strict Apple continuation URL for this exact collection. The caller must repeat every originating list control, including the effective/default limit, filters, sort, include, fields, and nested limits when supported; the exact query and a non-empty cursor are validated before sending the continuation request."
+        }
       ],
       "response": {
         "mode": "projection",
         "sources": [
-          { "operationId": "webhooks_deliveries_getToManyRelated", "statusCode": "200", "mediaType": "application/json" }
+          {
+            "operationId": "webhooks_deliveries_getToManyRelated",
+            "statusCode": "200",
+            "mediaType": "application/json"
+          }
         ],
         "fields": [
-          { "outputField": "deliveries", "operationId": "webhooks_deliveries_getToManyRelated", "jsonPointer": "/data" },
-          { "outputField": "events", "operationId": "webhooks_deliveries_getToManyRelated", "jsonPointer": "/included" },
-          { "outputField": "next_url", "operationId": "webhooks_deliveries_getToManyRelated", "jsonPointer": "/links/next" },
-          { "outputField": "total", "operationId": "webhooks_deliveries_getToManyRelated", "jsonPointer": "/meta/paging/total" }
+          {
+            "outputField": "deliveries",
+            "operationId": "webhooks_deliveries_getToManyRelated",
+            "jsonPointer": "/data"
+          },
+          {
+            "outputField": "events",
+            "operationId": "webhooks_deliveries_getToManyRelated",
+            "jsonPointer": "/included"
+          },
+          {
+            "outputField": "next_url",
+            "operationId": "webhooks_deliveries_getToManyRelated",
+            "jsonPointer": "/links/next"
+          },
+          {
+            "outputField": "total",
+            "operationId": "webhooks_deliveries_getToManyRelated",
+            "jsonPointer": "/meta/paging/total"
+          }
         ]
       },
       "note": "Exact Apple delivery filters and include mapping are represented. Sparse fieldsets are not exposed and the MCP response is a selected projection."
@@ -155,19 +368,47 @@
       "implementationState": "asBuilt",
       "operations": [],
       "fields": [
-        { "toolField": "payload", "sourceKind": "local", "localRole": "exactly one raw-body alternative: UTF-8 webhook body" },
-        { "toolField": "payload_base64", "sourceKind": "local", "localRole": "exactly one raw-body alternative: base64 raw webhook bytes" },
-        { "toolField": "secret", "sourceKind": "local", "localRole": "optional HMAC-SHA256 verification key; must be supplied together with signature" },
-        { "toolField": "signature", "sourceKind": "local", "localRole": "optional x-apple-signature value; must be supplied together with secret" }
+        {
+          "toolField": "payload",
+          "sourceKind": "local",
+          "localRole": "exactly one raw-body alternative: UTF-8 webhook body"
+        },
+        {
+          "toolField": "payload_base64",
+          "sourceKind": "local",
+          "localRole": "exactly one raw-body alternative: base64 raw webhook bytes"
+        },
+        {
+          "toolField": "secret",
+          "sourceKind": "local",
+          "localRole": "optional HMAC-SHA256 verification key; must be supplied together with signature"
+        },
+        {
+          "toolField": "signature",
+          "sourceKind": "local",
+          "localRole": "optional x-apple-signature value; must be supplied together with secret"
+        }
       ],
       "response": {
         "mode": "local",
         "sources": [],
         "fields": [
-          { "outputField": "event", "localRole": "ASCWebhookReceiverParser normalized event envelope" },
-          { "outputField": "payload", "localRole": "decoded nested event payload" },
-          { "outputField": "recommendedToolCalls", "localRole": "ASCWebhookTriagePolicy recommendations" },
-          { "outputField": "signature", "localRole": "optional ASCWebhookSignatureVerifier result" }
+          {
+            "outputField": "event",
+            "localRole": "ASCWebhookReceiverParser normalized event envelope"
+          },
+          {
+            "outputField": "payload",
+            "localRole": "decoded nested event payload"
+          },
+          {
+            "outputField": "recommendedToolCalls",
+            "localRole": "ASCWebhookTriagePolicy recommendations"
+          },
+          {
+            "outputField": "signature",
+            "localRole": "optional ASCWebhookSignatureVerifier result"
+          }
         ]
       },
       "note": "Local receiver helper, not an Apple REST operation. Runtime validation requires exactly one raw-body representation and rejects incomplete secret/signature pairs before parsing. BUILD_UPLOAD triage recognizes buildUploads and calls build_uploads_get with build_upload_id. BUILD_BETA_DETAIL recognizes buildBetaDetails and uses delivery correlation without treating its identifier as a Build identifier. Direct background-resource relationships remain incomplete."
@@ -185,21 +426,42 @@
           "path": "/v1/webhookPings",
           "role": "primary",
           "inputs": [
-            { "sourceKind": "fixed", "jsonPointer": "/data/type", "fixedValue": "webhookPings" },
-            { "sourceKind": "fixed", "jsonPointer": "/data/relationships/webhook/data/type", "fixedValue": "webhooks" }
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/type",
+              "fixedValue": "webhookPings"
+            },
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/relationships/webhook/data/type",
+              "fixedValue": "webhooks"
+            }
           ]
         }
       ],
       "fields": [
-        { "toolField": "webhook_id", "sourceKind": "requestBody", "operationId": "webhookPings_createInstance", "jsonPointer": "/data/relationships/webhook/data/id" }
+        {
+          "toolField": "webhook_id",
+          "sourceKind": "requestBody",
+          "operationId": "webhookPings_createInstance",
+          "jsonPointer": "/data/relationships/webhook/data/id"
+        }
       ],
       "response": {
         "mode": "projection",
         "sources": [
-          { "operationId": "webhookPings_createInstance", "statusCode": "201", "mediaType": "application/json" }
+          {
+            "operationId": "webhookPings_createInstance",
+            "statusCode": "201",
+            "mediaType": "application/json"
+          }
         ],
         "fields": [
-          { "outputField": "ping", "operationId": "webhookPings_createInstance", "jsonPointer": "/data" }
+          {
+            "outputField": "ping",
+            "operationId": "webhookPings_createInstance",
+            "jsonPointer": "/data"
+          }
         ]
       },
       "note": "Exact Apple 4.4.1 ping operation; the handler projects only the returned resource id and type."
@@ -217,22 +479,47 @@
           "path": "/v1/webhookDeliveries",
           "role": "primary",
           "inputs": [
-            { "sourceKind": "fixed", "jsonPointer": "/data/type", "fixedValue": "webhookDeliveries" },
-            { "sourceKind": "fixed", "jsonPointer": "/data/relationships/template/data/type", "fixedValue": "webhookDeliveries" }
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/type",
+              "fixedValue": "webhookDeliveries"
+            },
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/relationships/template/data/type",
+              "fixedValue": "webhookDeliveries"
+            }
           ]
         }
       ],
       "fields": [
-        { "toolField": "delivery_id", "sourceKind": "requestBody", "operationId": "webhookDeliveries_createInstance", "jsonPointer": "/data/relationships/template/data/id" }
+        {
+          "toolField": "delivery_id",
+          "sourceKind": "requestBody",
+          "operationId": "webhookDeliveries_createInstance",
+          "jsonPointer": "/data/relationships/template/data/id"
+        }
       ],
       "response": {
         "mode": "projection",
         "sources": [
-          { "operationId": "webhookDeliveries_createInstance", "statusCode": "201", "mediaType": "application/json" }
+          {
+            "operationId": "webhookDeliveries_createInstance",
+            "statusCode": "201",
+            "mediaType": "application/json"
+          }
         ],
         "fields": [
-          { "outputField": "delivery", "operationId": "webhookDeliveries_createInstance", "jsonPointer": "/data" },
-          { "outputField": "events", "operationId": "webhookDeliveries_createInstance", "jsonPointer": "/included" }
+          {
+            "outputField": "delivery",
+            "operationId": "webhookDeliveries_createInstance",
+            "jsonPointer": "/data"
+          },
+          {
+            "outputField": "events",
+            "operationId": "webhookDeliveries_createInstance",
+            "jsonPointer": "/included"
+          }
         ]
       },
       "note": "Exact Apple 4.4.1 redelivery operation with a projected delivery/event response."
@@ -245,24 +532,73 @@
       "implementationState": "asBuilt",
       "operations": [],
       "fields": [
-        { "toolField": "payload", "sourceKind": "local", "localRole": "optional UTF-8 webhook body; mutually exclusive with payload_base64" },
-        { "toolField": "payload_base64", "sourceKind": "local", "localRole": "optional base64 raw webhook bytes; mutually exclusive with payload" },
-        { "toolField": "event_type", "sourceKind": "local", "localRole": "explicit Apple webhook event type, preferred over the parsed payload value" },
-        { "toolField": "resource_type", "sourceKind": "local", "localRole": "explicit related resource type used only when resource_id is also present" },
-        { "toolField": "resource_id", "sourceKind": "local", "localRole": "explicit related resource identifier" },
-        { "toolField": "delivery_id", "sourceKind": "local", "localRole": "failed-delivery recovery recommendation context" },
-        { "toolField": "webhook_id", "sourceKind": "local", "localRole": "delivery-list and ping recommendation context" },
-        { "toolField": "delivery_state", "sourceKind": "local", "localRole": "delivery severity and recovery context" },
-        { "toolField": "http_status_code", "sourceKind": "local", "localRole": "receiver failure severity context" },
-        { "toolField": "error_message", "sourceKind": "local", "localRole": "delivery diagnostic context" }
+        {
+          "toolField": "payload",
+          "sourceKind": "local",
+          "localRole": "optional UTF-8 webhook body; mutually exclusive with payload_base64"
+        },
+        {
+          "toolField": "payload_base64",
+          "sourceKind": "local",
+          "localRole": "optional base64 raw webhook bytes; mutually exclusive with payload"
+        },
+        {
+          "toolField": "event_type",
+          "sourceKind": "local",
+          "localRole": "explicit Apple webhook event type, preferred over the parsed payload value"
+        },
+        {
+          "toolField": "resource_type",
+          "sourceKind": "local",
+          "localRole": "explicit related resource type used only when resource_id is also present"
+        },
+        {
+          "toolField": "resource_id",
+          "sourceKind": "local",
+          "localRole": "explicit related resource identifier"
+        },
+        {
+          "toolField": "delivery_id",
+          "sourceKind": "local",
+          "localRole": "failed-delivery recovery recommendation context"
+        },
+        {
+          "toolField": "webhook_id",
+          "sourceKind": "local",
+          "localRole": "delivery-list and ping recommendation context"
+        },
+        {
+          "toolField": "delivery_state",
+          "sourceKind": "local",
+          "localRole": "delivery severity and recovery context"
+        },
+        {
+          "toolField": "http_status_code",
+          "sourceKind": "local",
+          "localRole": "receiver failure severity context"
+        },
+        {
+          "toolField": "error_message",
+          "sourceKind": "local",
+          "localRole": "delivery diagnostic context"
+        }
       ],
       "response": {
         "mode": "local",
         "sources": [],
         "fields": [
-          { "outputField": "severity", "localRole": "ASCWebhookTriagePolicy assessment" },
-          { "outputField": "recommendedToolCalls", "localRole": "event-specific local recommendation policy" },
-          { "outputField": "nextSteps", "localRole": "local recovery and lookup guidance" }
+          {
+            "outputField": "severity",
+            "localRole": "ASCWebhookTriagePolicy assessment"
+          },
+          {
+            "outputField": "recommendedToolCalls",
+            "localRole": "event-specific local recommendation policy"
+          },
+          {
+            "outputField": "nextSteps",
+            "localRole": "local recovery and lookup guidance"
+          }
         ]
       },
       "note": "Local policy helper, not an Apple REST operation. Runtime validation requires event_type or one unambiguous raw-body representation. BUILD_UPLOAD maps buildUploads to build_uploads_get with build_upload_id. BUILD_BETA_DETAIL treats buildBetaDetails as a distinct identity and recommends delivery correlation instead of passing its identifier to Build tools. Some background/alternative-distribution relationship shapes remain incomplete."
@@ -280,26 +616,79 @@
           "path": "/v1/webhooks/{id}",
           "role": "primary",
           "inputs": [
-            { "sourceKind": "fixed", "jsonPointer": "/data/type", "fixedValue": "webhooks" }
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/type",
+              "fixedValue": "webhooks"
+            }
           ]
         }
       ],
       "fields": [
-        { "toolField": "webhook_id", "sourceKind": "parameter", "operationId": "webhooks_updateInstance", "location": "path", "appleName": "id" },
-        { "toolField": "webhook_id", "sourceKind": "requestBody", "operationId": "webhooks_updateInstance", "jsonPointer": "/data/id" },
-        { "toolField": "name", "sourceKind": "requestBody", "operationId": "webhooks_updateInstance", "jsonPointer": "/data/attributes/name", "localRole": "omission leaves the value unchanged; explicit null clears the nullable Apple attribute" },
-        { "toolField": "url", "sourceKind": "requestBody", "operationId": "webhooks_updateInstance", "jsonPointer": "/data/attributes/url", "localRole": "omission leaves the value unchanged; explicit null clears the nullable Apple attribute; a supplied value requires an absolute HTTPS URL with a non-empty host and rejects URL user/password or fragments; ports, paths, and queries are preserved" },
-        { "toolField": "secret", "sourceKind": "requestBody", "operationId": "webhooks_updateInstance", "jsonPointer": "/data/attributes/secret", "localRole": "omission leaves the value unchanged; explicit null clears the nullable Apple attribute; a supplied value must contain at least 32 characters and cannot use low-diversity or repeated patterns" },
-        { "toolField": "event_types", "sourceKind": "requestBody", "operationId": "webhooks_updateInstance", "jsonPointer": "/data/attributes/eventTypes", "localRole": "omission leaves the value unchanged; explicit null clears the nullable Apple attribute; supplied values are validated against the Apple 4.4.1 webhook event enum" },
-        { "toolField": "enabled", "sourceKind": "requestBody", "operationId": "webhooks_updateInstance", "jsonPointer": "/data/attributes/enabled", "localRole": "omission leaves the value unchanged; explicit null clears the nullable Apple attribute" }
+        {
+          "toolField": "webhook_id",
+          "sourceKind": "parameter",
+          "operationId": "webhooks_updateInstance",
+          "location": "path",
+          "appleName": "id"
+        },
+        {
+          "toolField": "webhook_id",
+          "sourceKind": "requestBody",
+          "operationId": "webhooks_updateInstance",
+          "jsonPointer": "/data/id"
+        },
+        {
+          "toolField": "name",
+          "sourceKind": "requestBody",
+          "operationId": "webhooks_updateInstance",
+          "jsonPointer": "/data/attributes/name",
+          "localRole": "omission leaves the value unchanged; explicit null clears the nullable Apple attribute"
+        },
+        {
+          "toolField": "url",
+          "sourceKind": "requestBody",
+          "operationId": "webhooks_updateInstance",
+          "jsonPointer": "/data/attributes/url",
+          "localRole": "omission leaves the value unchanged; explicit null clears the nullable Apple attribute; a supplied value requires an absolute HTTPS URL with a non-empty host and rejects URL user/password or fragments; ports, paths, and queries are preserved"
+        },
+        {
+          "toolField": "secret",
+          "sourceKind": "requestBody",
+          "operationId": "webhooks_updateInstance",
+          "jsonPointer": "/data/attributes/secret",
+          "localRole": "omission leaves the value unchanged; explicit null clears the nullable Apple attribute; a supplied value must contain at least 32 characters and cannot use low-diversity or repeated patterns"
+        },
+        {
+          "toolField": "event_types",
+          "sourceKind": "requestBody",
+          "operationId": "webhooks_updateInstance",
+          "jsonPointer": "/data/attributes/eventTypes",
+          "localRole": "omission leaves the value unchanged; explicit null clears the nullable Apple attribute; supplied values are validated against the Apple 4.4.1 webhook event enum"
+        },
+        {
+          "toolField": "enabled",
+          "sourceKind": "requestBody",
+          "operationId": "webhooks_updateInstance",
+          "jsonPointer": "/data/attributes/enabled",
+          "localRole": "omission leaves the value unchanged; explicit null clears the nullable Apple attribute"
+        }
       ],
       "response": {
         "mode": "projection",
         "sources": [
-          { "operationId": "webhooks_updateInstance", "statusCode": "200", "mediaType": "application/json" }
+          {
+            "operationId": "webhooks_updateInstance",
+            "statusCode": "200",
+            "mediaType": "application/json"
+          }
         ],
         "fields": [
-          { "outputField": "webhook", "operationId": "webhooks_updateInstance", "jsonPointer": "/data" }
+          {
+            "outputField": "webhook",
+            "operationId": "webhooks_updateInstance",
+            "jsonPointer": "/data"
+          }
         ]
       },
       "note": "Exact Apple 4.4.1 update operation. All five Apple update attributes are nullable; the handler preserves the distinction between omission, explicit null, and a supplied value, enforces at least one changed attribute, and returns a selected projection without an MCP output schema."
@@ -312,18 +701,43 @@
       "implementationState": "asBuilt",
       "operations": [],
       "fields": [
-        { "toolField": "secret", "sourceKind": "local", "localRole": "HMAC-SHA256 key" },
-        { "toolField": "signature", "sourceKind": "local", "localRole": "x-apple-signature header normalization and constant-time comparison" },
-        { "toolField": "payload", "sourceKind": "local", "localRole": "exactly one raw-body alternative: UTF-8 body" },
-        { "toolField": "payload_base64", "sourceKind": "local", "localRole": "exactly one raw-body alternative: base64 raw bytes" }
+        {
+          "toolField": "secret",
+          "sourceKind": "local",
+          "localRole": "HMAC-SHA256 key"
+        },
+        {
+          "toolField": "signature",
+          "sourceKind": "local",
+          "localRole": "x-apple-signature header normalization and constant-time comparison"
+        },
+        {
+          "toolField": "payload",
+          "sourceKind": "local",
+          "localRole": "exactly one raw-body alternative: UTF-8 body"
+        },
+        {
+          "toolField": "payload_base64",
+          "sourceKind": "local",
+          "localRole": "exactly one raw-body alternative: base64 raw bytes"
+        }
       ],
       "response": {
         "mode": "local",
         "sources": [],
         "fields": [
-          { "outputField": "valid", "localRole": "constant-time comparison of provided and computed HMAC-SHA256 digests" },
-          { "outputField": "computedSignature", "localRole": "locally computed digest" },
-          { "outputField": "reason", "localRole": "local normalization or mismatch diagnostic" }
+          {
+            "outputField": "valid",
+            "localRole": "constant-time comparison of provided and computed HMAC-SHA256 digests"
+          },
+          {
+            "outputField": "computedSignature",
+            "localRole": "locally computed digest"
+          },
+          {
+            "outputField": "reason",
+            "localRole": "local normalization or mismatch diagnostic"
+          }
         ]
       },
       "note": "Local receiver helper, not an Apple REST operation. Verification is byte-sensitive and runtime validation requires exactly one of payload or payload_base64 because Anthropic-compatible MCP schemas cannot retain a top-level oneOf constraint."

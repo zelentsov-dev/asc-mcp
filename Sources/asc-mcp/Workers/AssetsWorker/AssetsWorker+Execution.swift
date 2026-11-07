@@ -101,7 +101,7 @@ extension AssetsWorker {
             let placement = try await createPlacement(change, operation: &operation)
             operation.resourceIDs["placement_id"] = placement.id
             try await store.checkpoint(operation)
-            if change.action == .replacePlacement, change.target != .appEventLocalization {
+            if change.action == .replacePlacement, change.target?.supportsOrdering == true {
                 let order = (change.orderedPlacementIDs ?? []).map { $0 == change.placementID ? placement.id : $0 }
                 try await reorder(change, ids: order, operation: &operation)
             }
@@ -166,7 +166,7 @@ extension AssetsWorker {
     }
 
     func reorder(_ change: AssetLibraryChange, ids: [String], operation: inout AssetLibraryOperation) async throws {
-        guard let target = change.target, target != .appEventLocalization, let targetID = change.targetID, let group = change.placementGroup else { throw AssetLibraryError("Unsupported ordering target") }
+        guard let target = change.target, target.supportsOrdering, let targetID = change.targetID, let group = change.placementGroup else { throw AssetLibraryError("Unsupported ordering target") }
         let before = try await targetPlacements(target: target, id: targetID).filter { $0.attributes?["placementGroup"]?.stringValue == group }
         guard ids.count == before.count, Set(ids) == Set(before.map(\.id)) else { throw AssetLibraryError("Ordering membership changed before mutation") }
         let ordered: [JSONValue] = ids.map { .object(["type": .string("appAssetLibraryPlacements"), "id": .string($0)]) }

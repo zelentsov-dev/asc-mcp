@@ -22,6 +22,7 @@ public final class ReviewSubmissionsWorker: Sendable {
             "in_app_purchase_version_id",
             "subscription_version_id",
             "subscription_group_version_id",
+            "retention_message_version_id",
             "app_asset_library_image_id",
             "app_asset_library_video_id",
             "preview_id"

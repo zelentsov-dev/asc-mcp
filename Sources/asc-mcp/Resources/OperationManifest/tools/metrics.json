@@ -115,7 +115,7 @@
               "appleName": "filter[platform]",
               "disposition": "intentionallyOmitted",
               "reason": "Apple 4.5.1 advertises IOS as the only legal platform filter value. This legacy performance tool preserves its unfiltered request contract; it does not claim support for additional platform filter values.",
-              "reviewAtSpec": "4.5.1"
+              "reviewAtSpec": "4.6"
             }
           ]
         }
@@ -285,7 +285,7 @@
               "appleName": "filter[platform]",
               "disposition": "intentionallyOmitted",
               "reason": "Apple 4.5.1 advertises IOS as the only legal platform filter value. This legacy performance tool preserves its unfiltered request contract; it does not claim support for additional platform filter values.",
-              "reviewAtSpec": "4.5.1"
+              "reviewAtSpec": "4.6"
             }
           ]
         }

@@ -14,7 +14,11 @@
           "path": "/v1/builds/{id}/relationships/individualTesters",
           "role": "primary",
           "inputs": [
-            { "sourceKind": "fixed", "jsonPointer": "/data/*/type", "fixedValue": "betaTesters" }
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/*/type",
+              "fixedValue": "betaTesters"
+            }
           ]
         }
       ],
@@ -36,7 +40,10 @@
       "response": {
         "mode": "local",
         "sources": [
-          { "operationId": "builds_individualTesters_createToManyRelationship", "statusCode": "204" }
+          {
+            "operationId": "builds_individualTesters_createToManyRelationship",
+            "statusCode": "204"
+          }
         ],
         "fields": [
           {
@@ -64,7 +71,11 @@
           "path": "/v1/builds/{id}/relationships/betaGroups",
           "role": "primary",
           "inputs": [
-            { "sourceKind": "fixed", "jsonPointer": "/data/*/type", "fixedValue": "betaGroups" }
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/*/type",
+              "fixedValue": "betaGroups"
+            }
           ]
         }
       ],
@@ -86,7 +97,10 @@
       "response": {
         "mode": "local",
         "sources": [
-          { "operationId": "builds_betaGroups_createToManyRelationship", "statusCode": "204" }
+          {
+            "operationId": "builds_betaGroups_createToManyRelationship",
+            "statusCode": "204"
+          }
         ],
         "fields": [
           {
@@ -119,7 +133,7 @@
               "appleName": "include",
               "disposition": "intentionallyOmitted",
               "reason": "The selected build ID is already known and the tool returns the related beta-detail resource without re-including the Build.",
-              "reviewAtSpec": "4.5.1"
+              "reviewAtSpec": "4.6"
             }
           ]
         }
@@ -136,7 +150,11 @@
       "response": {
         "mode": "aggregate",
         "sources": [
-          { "operationId": "builds_buildBetaDetail_getToOneRelated", "statusCode": "200", "mediaType": "application/json" }
+          {
+            "operationId": "builds_buildBetaDetail_getToOneRelated",
+            "statusCode": "200",
+            "mediaType": "application/json"
+          }
         ],
         "fields": [
           {
@@ -178,28 +196,28 @@
               "appleName": "filter[app]",
               "disposition": "intentionallyOmitted",
               "reason": "The required build filter already scopes this tool to groups attached to the selected build.",
-              "reviewAtSpec": "4.5.1"
+              "reviewAtSpec": "4.6"
             },
             {
               "location": "query",
               "appleName": "include",
               "disposition": "intentionallyOmitted",
               "reason": "The tool returns a stable group projection and relationship IDs; related resources use dedicated tools.",
-              "reviewAtSpec": "4.5.1"
+              "reviewAtSpec": "4.6"
             },
             {
               "location": "query",
               "appleName": "limit[betaTesters]",
               "disposition": "intentionallyOmitted",
               "reason": "Beta testers are not included by this group projection.",
-              "reviewAtSpec": "4.5.1"
+              "reviewAtSpec": "4.6"
             },
             {
               "location": "query",
               "appleName": "limit[builds]",
               "disposition": "intentionallyOmitted",
               "reason": "Builds are represented by relationship IDs rather than included resources.",
-              "reviewAtSpec": "4.5.1"
+              "reviewAtSpec": "4.6"
             }
           ]
         }
@@ -348,11 +366,11 @@
           }
         ],
         "fields": [
-        {
-          "outputField": "betaTesters",
-          "operationId": "builds_individualTesters_getToManyRelated",
-          "jsonPointer": "/data",
-          "localRole": "Stable individual-tester projections including Apple's appDevices attributes."
+          {
+            "outputField": "betaTesters",
+            "operationId": "builds_individualTesters_getToManyRelated",
+            "jsonPointer": "/data",
+            "localRole": "Stable individual-tester projections including Apple's appDevices attributes."
           },
           {
             "outputField": "next_url",
@@ -477,11 +495,11 @@
           }
         ],
         "fields": [
-        {
-          "outputField": "individualTesters",
-          "operationId": "builds_individualTesters_getToManyRelated",
-          "jsonPointer": "/data",
-          "localRole": "Stable individual-tester projections including Apple's appDevices attributes."
+          {
+            "outputField": "individualTesters",
+            "operationId": "builds_individualTesters_getToManyRelated",
+            "jsonPointer": "/data",
+            "localRole": "Stable individual-tester projections including Apple's appDevices attributes."
           },
           {
             "outputField": "next_url",
@@ -510,7 +528,11 @@
           "path": "/v1/builds/{id}/relationships/individualTesters",
           "role": "primary",
           "inputs": [
-            { "sourceKind": "fixed", "jsonPointer": "/data/*/type", "fixedValue": "betaTesters" }
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/*/type",
+              "fixedValue": "betaTesters"
+            }
           ]
         }
       ],
@@ -532,7 +554,10 @@
       "response": {
         "mode": "local",
         "sources": [
-          { "operationId": "builds_individualTesters_deleteToManyRelationship", "statusCode": "204" }
+          {
+            "operationId": "builds_individualTesters_deleteToManyRelationship",
+            "statusCode": "204"
+          }
         ],
         "fields": [
           {
@@ -560,8 +585,16 @@
           "path": "/v1/buildBetaNotifications",
           "role": "primary",
           "inputs": [
-            { "sourceKind": "fixed", "jsonPointer": "/data/type", "fixedValue": "buildBetaNotifications" },
-            { "sourceKind": "fixed", "jsonPointer": "/data/relationships/build/data/type", "fixedValue": "builds" }
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/type",
+              "fixedValue": "buildBetaNotifications"
+            },
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/relationships/build/data/type",
+              "fixedValue": "builds"
+            }
           ]
         }
       ],
@@ -621,7 +654,7 @@
               "appleName": "include",
               "disposition": "intentionallyOmitted",
               "reason": "The supporting lookup needs only the localization resource ID and does not expand its Build relationship.",
-              "reviewAtSpec": "4.5.1"
+              "reviewAtSpec": "4.6"
             }
           ]
         },
@@ -632,8 +665,16 @@
           "role": "primary",
           "condition": "No existing localization has the requested locale.",
           "inputs": [
-            { "sourceKind": "fixed", "jsonPointer": "/data/type", "fixedValue": "betaBuildLocalizations" },
-            { "sourceKind": "fixed", "jsonPointer": "/data/relationships/build/data/type", "fixedValue": "builds" }
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/type",
+              "fixedValue": "betaBuildLocalizations"
+            },
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/relationships/build/data/type",
+              "fixedValue": "builds"
+            }
           ]
         },
         {
@@ -647,14 +688,22 @@
               "sourceKind": "derived",
               "location": "path",
               "appleName": "id",
-              "derivedFrom": ["betaBuildLocalizations_getCollection:/data/*/id"],
+              "derivedFrom": [
+                "betaBuildLocalizations_getCollection:/data/*/id"
+              ],
               "localRole": "useFirstLocaleMatchedLocalizationIdentifierForPath"
             },
-            { "sourceKind": "fixed", "jsonPointer": "/data/type", "fixedValue": "betaBuildLocalizations" },
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/type",
+              "fixedValue": "betaBuildLocalizations"
+            },
             {
               "sourceKind": "derived",
               "jsonPointer": "/data/id",
-              "derivedFrom": ["betaBuildLocalizations_getCollection:/data/*/id"],
+              "derivedFrom": [
+                "betaBuildLocalizations_getCollection:/data/*/id"
+              ],
               "localRole": "copyLocaleMatchedLocalizationIdentifierToRequestBody"
             }
           ]
@@ -727,9 +776,21 @@
       "response": {
         "mode": "aggregate",
         "sources": [
-          { "operationId": "betaBuildLocalizations_createInstance", "statusCode": "201", "mediaType": "application/json" },
-          { "operationId": "betaBuildLocalizations_updateInstance", "statusCode": "200", "mediaType": "application/json" },
-          { "operationId": "betaBuildLocalizations_getCollection", "statusCode": "200", "mediaType": "application/json" }
+          {
+            "operationId": "betaBuildLocalizations_createInstance",
+            "statusCode": "201",
+            "mediaType": "application/json"
+          },
+          {
+            "operationId": "betaBuildLocalizations_updateInstance",
+            "statusCode": "200",
+            "mediaType": "application/json"
+          },
+          {
+            "operationId": "betaBuildLocalizations_getCollection",
+            "statusCode": "200",
+            "mediaType": "application/json"
+          }
         ],
         "fields": [
           {
@@ -767,11 +828,17 @@
           "path": "/v1/buildBetaDetails/{id}",
           "role": "primary",
           "inputs": [
-            { "sourceKind": "fixed", "jsonPointer": "/data/type", "fixedValue": "buildBetaDetails" },
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/type",
+              "fixedValue": "buildBetaDetails"
+            },
             {
               "sourceKind": "derived",
               "jsonPointer": "/data/id",
-              "derivedFrom": ["beta_detail_id"],
+              "derivedFrom": [
+                "beta_detail_id"
+              ],
               "localRole": "copyPathIdentifierToRequestBody"
             }
           ]

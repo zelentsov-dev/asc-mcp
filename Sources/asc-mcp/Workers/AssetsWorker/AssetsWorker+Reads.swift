@@ -47,7 +47,36 @@ extension AssetsWorker {
             } else {
                 let (target, id) = try targetArguments(arguments)
                 _ = try await targetScope(appID: appID, target: target, id: id, requireEditable: false)
-                path = "/v1/\(try ASCPathSegment.encode(target.resourceType))/\(try ASCPathSegment.encode(id))/placements"
+                if target.isToOnePlacementEndpoint {
+                    guard arguments["next_url"] == nil else {
+                        throw AssetLibraryError("next_url is not supported for to-one placement targets")
+                    }
+                    if let input = arguments["limit"] {
+                        guard let value = input.intValue, (1...200).contains(value) else {
+                            throw AssetLibraryError("limit must be an integer between 1 and 200")
+                        }
+                    }
+                    let allowedTypes = arguments["placement_types"] != nil ? Set(try stringList("placement_types", arguments)) : nil
+                    let allowedGroups = arguments["placement_groups"] != nil ? Set(try stringList("placement_groups", arguments)) : nil
+                    let placements = try await targetPlacements(target: target, id: id).filter { placement in
+                        let matchesType = allowedTypes.map {
+                            guard let type = placement.attributes?["placementType"]?.stringValue else { return false }
+                            return $0.contains(type)
+                        } ?? true
+                        let matchesGroup = allowedGroups.map {
+                            guard let group = placement.attributes?["placementGroup"]?.stringValue else { return false }
+                            return $0.contains(group)
+                        } ?? true
+                        return matchesType && matchesGroup
+                    }
+                    return MCPResult.jsonObject([
+                        "success": true,
+                        "app_id": appID,
+                        "resources": placements.map { $0.projection() },
+                        "count": placements.count
+                    ])
+                }
+                path = try target.placementsPath(id: id)
             }
             type = "appAssetLibraryPlacements"
             query = try filterQuery(arguments, mapping: ["placement_types": "placementType", "placement_groups": "placementGroup"])
@@ -97,9 +126,14 @@ extension AssetsWorker {
         case .appCustomProductPageLocalization: parentRelation = "appCustomProductPageVersion"
         case .appStoreVersionExperimentTreatmentLocalization: parentRelation = "appStoreVersionExperimentTreatment"
         case .appEventLocalization: parentRelation = "appEvent"
+        case .retentionMessageVersion: parentRelation = "retentionMessage"
         }
         let localization = try await resource(target.resourceType, id, include: parentRelation)
-        guard let parentID = localization.related(parentRelation), parentID.type == parentRelation + "s" else { throw AssetLibraryError("Localization has no verifiable parent") }
+        guard let parentID = localization.related(parentRelation),
+              parentID.type == parentRelation + "s",
+              (try? AssetLibraryJSON.identifier(parentID.id, field: parentRelation)) == parentID.id else {
+            throw AssetLibraryError("Localization has no verifiable parent")
+        }
         var checked = [localization]
         let owner: AssetLibraryResourceID?
         let state: String?
@@ -130,6 +164,15 @@ extension AssetsWorker {
             checked.append(event)
             owner = AssetLibraryResourceID(type: "apps", id: appID)
             state = event.attributes?["eventState"]?.stringValue
+        case .retentionMessageVersion:
+            let members = try await all("/v1/apps/\(try ASCPathSegment.encode(appID))/retentionMessages", type: "retentionMessages")
+            let matches = members.filter { $0.id == parentID.id }
+            guard matches.count == 1, let message = matches.first else {
+                throw AssetLibraryError("Retention message does not belong to this app")
+            }
+            checked.append(message)
+            owner = AssetLibraryResourceID(type: "apps", id: appID)
+            state = localization.state
         }
         guard owner == AssetLibraryResourceID(type: "apps", id: appID) else { throw AssetLibraryError("Localization belongs to another application") }
         if requireEditable {
@@ -139,12 +182,14 @@ extension AssetsWorker {
             guard let state, allowed.contains(state) else { throw AssetLibraryError("Parent is not in a supported editable draft state") }
         }
         var result = try Dictionary(uniqueKeysWithValues: checked.map { ($0.type + ":" + $0.id, try $0.fingerprint()) })
-        var platforms = Set(checked.compactMap { $0.attributes?["platform"]?.stringValue })
-        if platforms.isEmpty {
-            let versions = try await all("/v1/apps/\(try ASCPathSegment.encode(appID))/appStoreVersions", type: "appStoreVersions")
-            platforms = Set(versions.compactMap { $0.attributes?["platform"]?.stringValue })
+        if target != .retentionMessageVersion {
+            var platforms = Set(checked.compactMap { $0.attributes?["platform"]?.stringValue })
+            if platforms.isEmpty {
+                let versions = try await all("/v1/apps/\(try ASCPathSegment.encode(appID))/appStoreVersions", type: "appStoreVersions")
+                platforms = Set(versions.compactMap { $0.attributes?["platform"]?.stringValue })
+            }
+            result["target_platforms"] = platforms.sorted().joined(separator: ",")
         }
-        result["target_platforms"] = platforms.sorted().joined(separator: ",")
         return result
     }
 
@@ -160,7 +205,31 @@ extension AssetsWorker {
     }
 
     func targetPlacements(target: AssetLibraryTarget, id: String) async throws -> [AssetLibraryResource] {
-        try await all("/v1/\(try ASCPathSegment.encode(target.resourceType))/\(try ASCPathSegment.encode(id))/placements", query: ["include": Self.placementIncludes, "sort": "placementGroupPosition"], type: "appAssetLibraryPlacements")
+        let path = try target.placementsPath(id: id)
+        if target.isToOnePlacementEndpoint {
+            let doc = try await httpClient.get(path, parameters: ["include": Self.placementIncludes], as: AssetOptionalLibraryDocument.self)
+            if let selfLink = doc.links?["self"]?.stringValue {
+                _ = try httpClient.validatedScopedLink(selfLink, scope: PaginationScope(path: path, allowedParameters: ["include"]))
+            }
+            guard let placement = doc.data else { return [] }
+            guard placement.type == "appAssetLibraryPlacements",
+                  (try? AssetLibraryJSON.identifier(placement.id, field: "placement_id")) == placement.id else {
+                throw AssetLibraryError("Invalid appAssetLibraryPlacements resource")
+            }
+            let targets = AssetLibraryTarget.allCases.compactMap { candidate -> (AssetLibraryTarget, AssetLibraryResourceID)? in
+                guard let related = placement.related(candidate.rawValue) else { return nil }
+                return (candidate, related)
+            }
+            if !targets.isEmpty {
+                guard targets.count == 1,
+                      targets.first?.0 == target,
+                      targets.first?.1 == AssetLibraryResourceID(type: target.resourceType, id: id) else {
+                    throw AssetLibraryError("Placement target mismatch for \(target.rawValue)")
+                }
+            }
+            return [placement]
+        }
+        return try await all(path, query: ["include": Self.placementIncludes, "sort": "placementGroupPosition"], type: "appAssetLibraryPlacements")
     }
 
     func filterQuery(_ arguments: [String: Value], mapping: [String: String]) throws -> [String: String] {

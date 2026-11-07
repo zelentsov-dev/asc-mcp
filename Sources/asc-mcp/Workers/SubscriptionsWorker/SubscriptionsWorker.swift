@@ -86,7 +86,7 @@ public final class SubscriptionsWorker: Sendable {
             deleteSubscriptionReviewScreenshotTool(),
             listSubscriptionImagesTool(),
             getSubscriptionReviewScreenshotForSubscriptionTool()
-        ] + v3CommerceTools() + subscriptionPlanAvailabilityTools() + versionedMetadataTools()
+        ] + v3CommerceTools() + subscriptionPlanAvailabilityTools() + versionedMetadataTools() + retentionMessagingTools()
     }
 
     /// Handle tool calls (for WorkerManager routing)
@@ -278,6 +278,52 @@ public final class SubscriptionsWorker: Sendable {
             return try await updateSubscriptionGroupVersionLocalization(params)
         case "subscriptions_delete_group_version_localization":
             return try await deleteSubscriptionGroupVersionLocalization(params)
+        case "subscriptions_list_retention_messages":
+            return await listRetentionMessages(params)
+        case "subscriptions_get_retention_message":
+            return await getRetentionMessage(params)
+        case "subscriptions_create_retention_message":
+            return await createRetentionMessage(params)
+        case "subscriptions_delete_retention_message":
+            return await deleteRetentionMessage(params)
+        case "subscriptions_list_retention_message_versions":
+            return await listRetentionMessageVersions(params)
+        case "subscriptions_get_retention_message_version":
+            return await getRetentionMessageVersion(params)
+        case "subscriptions_create_retention_message_version":
+            return await createRetentionMessageVersion(params)
+        case "subscriptions_list_retention_message_localizations":
+            return await listRetentionMessageLocalizations(params)
+        case "subscriptions_get_retention_message_localization":
+            return await getRetentionMessageLocalization(params)
+        case "subscriptions_create_retention_message_localization":
+            return await createRetentionMessageLocalization(params)
+        case "subscriptions_update_retention_message_localization":
+            return await updateRetentionMessageLocalization(params)
+        case "subscriptions_delete_retention_message_localization":
+            return await deleteRetentionMessageLocalization(params)
+        case "subscriptions_list_retention_message_subscriptions":
+            return await listRetentionMessageSubscriptions(params)
+        case "subscriptions_list_retention_offers":
+            return await listRetentionOffers(params)
+        case "subscriptions_get_retention_offer":
+            return await getRetentionOffer(params)
+        case "subscriptions_create_retention_offer":
+            return await createRetentionOffer(params)
+        case "subscriptions_update_retention_offer":
+            return await updateRetentionOffer(params)
+        case "subscriptions_delete_retention_offer":
+            return await deleteRetentionOffer(params)
+        case "subscriptions_list_retention_offer_prices":
+            return await listRetentionOfferPrices(params)
+        case "subscriptions_get_retention_message_for_subscription":
+            return await getRetentionMessageForSubscription(params)
+        case "subscriptions_set_retention_message":
+            return await setRetentionMessage(params)
+        case "subscriptions_add_retention_message_offers":
+            return await addRetentionMessageOffers(params)
+        case "subscriptions_remove_retention_message_offers":
+            return await removeRetentionMessageOffers(params)
         case "subscriptions_list_intro_offers",
             "subscriptions_create_intro_offer",
             "subscriptions_update_intro_offer",

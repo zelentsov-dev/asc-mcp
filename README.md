@@ -18,7 +18,7 @@
 
 ## Overview
 
-**asc-mcp** is a Swift-based MCP server that connects a local macOS MCP client to the [App Store Connect API](https://developer.apple.com/documentation/appstoreconnectapi). It exposes **514 tools** across 34 App Store tool domains + 2 core domains, enabling you to automate iOS and macOS release workflows through natural language.
+**asc-mcp** is a Swift-based MCP server that connects a local macOS MCP client to the [App Store Connect API](https://developer.apple.com/documentation/appstoreconnectapi). It exposes **537 tools** across 34 App Store tool domains + 2 core domains, enabling you to automate iOS and macOS release workflows through natural language.
 
 Configuration examples are included for Codex, Claude Code, Claude Desktop, Gemini CLI, VS Code with GitHub Copilot, Continue, Cursor, and Devin Desktop (formerly Windsurf). Client configuration is documented; release CI verifies installation, MCP initialization, and tool discovery on macOS rather than launching every third-party client.
 
@@ -482,7 +482,7 @@ You can also disable individual tools in the client. Server-side worker filterin
 
 ## Worker Filtering
 
-The server exposes **514 tools** across 34 App Store tool domains + 2 core domains. Some MCP clients impose a tool limit; Cascade in Devin Desktop currently allows 100 active tools. Use the 36 `--workers` filter keys to enable only the workers you need:
+The server exposes **537 tools** across 34 App Store tool domains + 2 core domains. Some MCP clients impose a tool limit; Cascade in Devin Desktop currently allows 100 active tools. Use the 36 `--workers` filter keys to enable only the workers you need:
 
 ```bash
 # Only load apps, builds, and version lifecycle tools
@@ -533,7 +533,7 @@ swift run asc-mcp openapi-contract-check \
   --strict
 ```
 
-The manifest is pinned to Apple API 4.5.1 by version, SHA-256, path count, and operation count. It maps 503 Apple operations, explicitly defers 431, and scopes out 369, accounting for all 1,303 operations. Required CI checks the committed snapshot reproducibly. A separate latest-Apple comparison produces a semantic drift report and blocks publication until changes are reviewed. Contract CI fails when a mapped operation moves or disappears, a public tool or worker drifts from the manifest, an input field loses its binding, response lineage becomes invalid, or a deferred decision expires. Unexposed optional Apple parameters are warnings so they remain visible in the generated backlog.
+The manifest is pinned to Apple API 4.6 by version, SHA-256, path count, and operation count. It maps 528 Apple operations, explicitly defers 440, and scopes out 369, accounting for all 1,337 operations. Required CI checks the committed snapshot reproducibly. A separate latest-Apple comparison produces a semantic drift report and blocks publication until changes are reviewed. Contract CI fails when a mapped operation moves or disappears, a public tool or worker drifts from the manifest, an input field loses its binding, response lineage becomes invalid, or a deferred decision expires. Unexposed optional Apple parameters are warnings so they remain visible in the generated backlog.
 
 Manifest schema v2 also accounts for every optional Apple query and request-body input as publicly bound, internally controlled, intentionally omitted with a reviewed reason, or still unclassified. The checked-in `optionalInputCoveragePin` records the exact current totals and a SHA-256 digest of the sorted input identities and dispositions; `--strict` rejects a missing pin or any count- or identity-level drift. The pin makes phased remediation auditable and regression-safe, but it is not a claim that every optional Apple input is already public. The v4.1.3 pin is 2,905 total: 1,122 bound, 40 internally controlled, 1,743 intentionally omitted, and 0 unclassified. Its identity SHA-256 is `c975f4e4eebb62ec87864a73fbf72bb8841f644108e54e6ffb25168bcf2a2766`.
 
@@ -564,7 +564,7 @@ The older `openapi-coverage` command remains available for the high-level domain
 | `beta_feedback` | `beta_feedback_` | 8 | TestFlight feedback screenshots, crash submissions, crash logs |
 | `beta_testers` | `beta_testers_` | 12 | Tester management |
 | `iap` | `iap_` | 59 | In-app purchases, versioned metadata, pricing, availability, offer codes, review assets |
-| `subscriptions` | `subscriptions_` | 99 | Subscription and group versions, pricing, plan availability, offers, assets |
+| `subscriptions` | `subscriptions_` | 122 | Subscription and group versions, pricing, plan availability, offers, retention messaging, assets |
 | `sandbox` | `sandbox_` | 3 | Sandbox testers |
 | `beta_app` | `beta_app_` | 10 | Beta app localizations and review |
 | `pre_release` | `pre_release_` | 3 | Pre-release versions |
@@ -590,20 +590,20 @@ When an MCP client eagerly loads every tool definition, the approximate schema f
 
 | Configuration | Tools | ~Tokens |
 |---|---:|---:|
-| All workers (default) | 514 | **~60,000** |
+| All workers (default) | 537 | **~62,700** |
 | Release workflow: `apps,builds,export_compliance,versions,reviews` | ~72 | ~8,900 |
-| Monetization: `apps,iap,subscriptions,pricing` | 184 | ~21,100 |
+| Monetization: `apps,iap,subscriptions,pricing` | 207 | ~23,800 |
 | TestFlight: `apps,builds,beta_groups,beta_testers` | ~63 | ~7,100 |
 | Marketing: `apps,screenshots,custom_pages,ppo,promoted` | ~78 | ~8,800 |
 | `--workers apps` | 17 | ~2,100 |
 
-**Heaviest workers:** Subscriptions (99 tools), InAppPurchases (59 tools), Xcode Cloud (42 tools), Screenshots (19 tools), Provisioning (17 tools).
+**Heaviest workers:** Subscriptions (122 tools), InAppPurchases (59 tools), Xcode Cloud (42 tools), Screenshots (19 tools), Provisioning (17 tools).
 
 Exact cost depends on the MCP host's serialization, tokenizer, and tool-discovery strategy. Modern clients may defer schemas until they are needed. Use `--workers` when the client enforces a tool limit or when you want a smaller, more focused catalog.
 
 ## Available Tools
 
-**514 tools** organized across 34 App Store tool domains + 2 core domains (use the 36 `--workers` filter keys — see [Worker Filtering](#worker-filtering)):
+**537 tools** organized across 34 App Store tool domains + 2 core domains (use the 36 `--workers` filter keys — see [Worker Filtering](#worker-filtering)):
 
 <details>
 <summary><strong>Company Management</strong> — 3 tools</summary>
@@ -970,9 +970,9 @@ If Apple may have accepted a version or version-localization create but the resp
 </details>
 
 <details>
-<summary><strong>Subscriptions</strong> — 99 tools</summary>
+<summary><strong>Subscriptions</strong> — 122 tools</summary>
 
-Includes subscription and group metadata versions, version-owned localizations and images, plan-type-aware availability, territory-aware prices, price points and adjusted equalizations, promoted purchase reads, inventory/pricing helpers, intro offers, promotional offers, offer codes, one-time/custom codes, win-back offers, and review screenshots. All former public `offer_codes_*`, `intro_offers_*`, `promo_offers_*`, and `winback_*` functionality is exposed through `subscriptions_*`.
+Includes subscription and group metadata versions, version-owned localizations and images, plan-type-aware availability, territory-aware prices, price points and adjusted equalizations, promoted purchase reads, inventory/pricing helpers, intro offers, promotional offers, offer codes, one-time/custom codes, win-back offers, subscription retention messaging (retention messages, versions, localizations, retention offers, and subscription retention relationships), and review screenshots. All former public `offer_codes_*`, `intro_offers_*`, `promo_offers_*`, and `winback_*` functionality is exposed through `subscriptions_*`.
 
 Apple 4.4.1 also deprecates the legacy product- or group-scoped localization, image, and submission tools. They remain callable for compatibility, return explicit replacement guidance on success, and never create or select a metadata version automatically. New integrations should use `subscriptions_create_version` or `subscriptions_create_group_version`, the corresponding version-localization/image tools, and the generic `review_submissions_*` workflow.
 

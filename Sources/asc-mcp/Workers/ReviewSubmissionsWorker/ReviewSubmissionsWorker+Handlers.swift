@@ -36,7 +36,8 @@ extension ReviewSubmissionsWorker {
         "gameCenterLeaderboardVersion",
         "inAppPurchaseVersion",
         "subscriptionVersion",
-        "subscriptionGroupVersion"
+        "subscriptionGroupVersion",
+        "retentionMessageVersion"
     ].joined(separator: ",")
     private static let supportedItemIncludes = [
         "appAssetLibraryImage",
@@ -48,7 +49,8 @@ extension ReviewSubmissionsWorker {
         "backgroundAssetVersion",
         "inAppPurchaseVersion",
         "subscriptionVersion",
-        "subscriptionGroupVersion"
+        "subscriptionGroupVersion",
+        "retentionMessageVersion"
     ]
     private static let submissionIncludedTypes: Set<String> = [
         "actors",
@@ -72,7 +74,8 @@ extension ReviewSubmissionsWorker {
         "gameCenterLeaderboardVersion": "gameCenterLeaderboardVersions",
         "inAppPurchaseVersion": "inAppPurchaseVersions",
         "subscriptionVersion": "subscriptionVersions",
-        "subscriptionGroupVersion": "subscriptionGroupVersions"
+        "subscriptionGroupVersion": "subscriptionGroupVersions",
+        "retentionMessageVersion": "retentionMessageVersions"
     ]
 
     private static let itemRelationFields: [(String, ASCReviewSubmissionItemRelation)] = [
@@ -83,7 +86,8 @@ extension ReviewSubmissionsWorker {
         ("background_asset_version_id", .backgroundAssetVersion),
         ("in_app_purchase_version_id", .inAppPurchaseVersion),
         ("subscription_version_id", .subscriptionVersion),
-        ("subscription_group_version_id", .subscriptionGroupVersion)
+        ("subscription_group_version_id", .subscriptionGroupVersion),
+        ("retention_message_version_id", .retentionMessageVersion)
     ]
 
     /// Lists review submissions for one app using Apple's required ownership filter.
@@ -876,6 +880,7 @@ extension ReviewSubmissionsWorker {
             "fields[inAppPurchaseVersions]": "version,state",
             "fields[subscriptionVersions]": "version,state",
             "fields[subscriptionGroupVersions]": "version,state",
+            "fields[retentionMessageVersions]": "state",
             "include": Self.supportedItemIncludes.joined(separator: ",")
         ]
     }
@@ -1569,7 +1574,8 @@ extension ReviewSubmissionsWorker {
             ("gameCenterLeaderboardVersion", relationships.gameCenterLeaderboardVersion, true),
             ("inAppPurchaseVersion", relationships.inAppPurchaseVersion, false),
             ("subscriptionVersion", relationships.subscriptionVersion, false),
-            ("subscriptionGroupVersion", relationships.subscriptionGroupVersion, false)
+            ("subscriptionGroupVersion", relationships.subscriptionGroupVersion, false),
+            ("retentionMessageVersion", relationships.retentionMessageVersion, false)
         ]
         return candidates.compactMap { name, relationship, scoped in
             relationship?.data.map { (name, $0, scoped) }

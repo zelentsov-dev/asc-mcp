@@ -28,26 +28,92 @@
         }
       ],
       "fields": [
-        { "toolField": "app_id", "sourceKind": "requestBody", "operationId": "accessibilityDeclarations_createInstance", "jsonPointer": "/data/relationships/app/data/id" },
-        { "toolField": "device_family", "sourceKind": "requestBody", "operationId": "accessibilityDeclarations_createInstance", "jsonPointer": "/data/attributes/deviceFamily" },
-        { "toolField": "supports_audio_descriptions", "sourceKind": "requestBody", "operationId": "accessibilityDeclarations_createInstance", "jsonPointer": "/data/attributes/supportsAudioDescriptions" },
-        { "toolField": "supports_captions", "sourceKind": "requestBody", "operationId": "accessibilityDeclarations_createInstance", "jsonPointer": "/data/attributes/supportsCaptions" },
-        { "toolField": "supports_dark_interface", "sourceKind": "requestBody", "operationId": "accessibilityDeclarations_createInstance", "jsonPointer": "/data/attributes/supportsDarkInterface" },
-        { "toolField": "supports_differentiate_without_color_alone", "sourceKind": "requestBody", "operationId": "accessibilityDeclarations_createInstance", "jsonPointer": "/data/attributes/supportsDifferentiateWithoutColorAlone" },
-        { "toolField": "supports_larger_text", "sourceKind": "requestBody", "operationId": "accessibilityDeclarations_createInstance", "jsonPointer": "/data/attributes/supportsLargerText" },
-        { "toolField": "supports_reduced_motion", "sourceKind": "requestBody", "operationId": "accessibilityDeclarations_createInstance", "jsonPointer": "/data/attributes/supportsReducedMotion" },
-        { "toolField": "supports_sufficient_contrast", "sourceKind": "requestBody", "operationId": "accessibilityDeclarations_createInstance", "jsonPointer": "/data/attributes/supportsSufficientContrast" },
-        { "toolField": "supports_voice_control", "sourceKind": "requestBody", "operationId": "accessibilityDeclarations_createInstance", "jsonPointer": "/data/attributes/supportsVoiceControl" },
-        { "toolField": "supports_voiceover", "sourceKind": "requestBody", "operationId": "accessibilityDeclarations_createInstance", "jsonPointer": "/data/attributes/supportsVoiceover" }
+        {
+          "toolField": "app_id",
+          "sourceKind": "requestBody",
+          "operationId": "accessibilityDeclarations_createInstance",
+          "jsonPointer": "/data/relationships/app/data/id"
+        },
+        {
+          "toolField": "device_family",
+          "sourceKind": "requestBody",
+          "operationId": "accessibilityDeclarations_createInstance",
+          "jsonPointer": "/data/attributes/deviceFamily"
+        },
+        {
+          "toolField": "supports_audio_descriptions",
+          "sourceKind": "requestBody",
+          "operationId": "accessibilityDeclarations_createInstance",
+          "jsonPointer": "/data/attributes/supportsAudioDescriptions"
+        },
+        {
+          "toolField": "supports_captions",
+          "sourceKind": "requestBody",
+          "operationId": "accessibilityDeclarations_createInstance",
+          "jsonPointer": "/data/attributes/supportsCaptions"
+        },
+        {
+          "toolField": "supports_dark_interface",
+          "sourceKind": "requestBody",
+          "operationId": "accessibilityDeclarations_createInstance",
+          "jsonPointer": "/data/attributes/supportsDarkInterface"
+        },
+        {
+          "toolField": "supports_differentiate_without_color_alone",
+          "sourceKind": "requestBody",
+          "operationId": "accessibilityDeclarations_createInstance",
+          "jsonPointer": "/data/attributes/supportsDifferentiateWithoutColorAlone"
+        },
+        {
+          "toolField": "supports_larger_text",
+          "sourceKind": "requestBody",
+          "operationId": "accessibilityDeclarations_createInstance",
+          "jsonPointer": "/data/attributes/supportsLargerText"
+        },
+        {
+          "toolField": "supports_reduced_motion",
+          "sourceKind": "requestBody",
+          "operationId": "accessibilityDeclarations_createInstance",
+          "jsonPointer": "/data/attributes/supportsReducedMotion"
+        },
+        {
+          "toolField": "supports_sufficient_contrast",
+          "sourceKind": "requestBody",
+          "operationId": "accessibilityDeclarations_createInstance",
+          "jsonPointer": "/data/attributes/supportsSufficientContrast"
+        },
+        {
+          "toolField": "supports_voice_control",
+          "sourceKind": "requestBody",
+          "operationId": "accessibilityDeclarations_createInstance",
+          "jsonPointer": "/data/attributes/supportsVoiceControl"
+        },
+        {
+          "toolField": "supports_voiceover",
+          "sourceKind": "requestBody",
+          "operationId": "accessibilityDeclarations_createInstance",
+          "jsonPointer": "/data/attributes/supportsVoiceover"
+        }
       ],
       "response": {
         "mode": "projection",
         "sources": [
-          { "operationId": "accessibilityDeclarations_createInstance", "statusCode": "201", "mediaType": "application/json" }
+          {
+            "operationId": "accessibilityDeclarations_createInstance",
+            "statusCode": "201",
+            "mediaType": "application/json"
+          }
         ],
         "fields": [
-          { "outputField": "success", "localRole": "successfulCreate" },
-          { "outputField": "accessibility_declaration", "operationId": "accessibilityDeclarations_createInstance", "jsonPointer": "/data" }
+          {
+            "outputField": "success",
+            "localRole": "successfulCreate"
+          },
+          {
+            "outputField": "accessibility_declaration",
+            "operationId": "accessibilityDeclarations_createInstance",
+            "jsonPointer": "/data"
+          }
         ]
       },
       "note": "The request body covers every current AccessibilityDeclaration create attribute exposed by Apple; partial only because the MCP tool has no declared output schema."
@@ -67,16 +133,31 @@
         }
       ],
       "fields": [
-        { "toolField": "declaration_id", "sourceKind": "parameter", "operationId": "accessibilityDeclarations_deleteInstance", "location": "path", "appleName": "id" }
+        {
+          "toolField": "declaration_id",
+          "sourceKind": "parameter",
+          "operationId": "accessibilityDeclarations_deleteInstance",
+          "location": "path",
+          "appleName": "id"
+        }
       ],
       "response": {
         "mode": "local",
         "sources": [
-          { "operationId": "accessibilityDeclarations_deleteInstance", "statusCode": "204" }
+          {
+            "operationId": "accessibilityDeclarations_deleteInstance",
+            "statusCode": "204"
+          }
         ],
         "fields": [
-          { "outputField": "success", "localRole": "successful204" },
-          { "outputField": "message", "localRole": "deleteConfirmation" }
+          {
+            "outputField": "success",
+            "localRole": "successful204"
+          },
+          {
+            "outputField": "message",
+            "localRole": "deleteConfirmation"
+          }
         ]
       },
       "note": "Apple returns 204 without content; deletion is permitted only while the declaration remains editable and the handler creates the confirmation locally."
@@ -96,17 +177,40 @@
         }
       ],
       "fields": [
-        { "toolField": "declaration_id", "sourceKind": "parameter", "operationId": "accessibilityDeclarations_getInstance", "location": "path", "appleName": "id" },
-        { "toolField": "fields", "sourceKind": "parameter", "operationId": "accessibilityDeclarations_getInstance", "location": "query", "appleName": "fields[accessibilityDeclarations]" }
+        {
+          "toolField": "declaration_id",
+          "sourceKind": "parameter",
+          "operationId": "accessibilityDeclarations_getInstance",
+          "location": "path",
+          "appleName": "id"
+        },
+        {
+          "toolField": "fields",
+          "sourceKind": "parameter",
+          "operationId": "accessibilityDeclarations_getInstance",
+          "location": "query",
+          "appleName": "fields[accessibilityDeclarations]"
+        }
       ],
       "response": {
         "mode": "projection",
         "sources": [
-          { "operationId": "accessibilityDeclarations_getInstance", "statusCode": "200", "mediaType": "application/json" }
+          {
+            "operationId": "accessibilityDeclarations_getInstance",
+            "statusCode": "200",
+            "mediaType": "application/json"
+          }
         ],
         "fields": [
-          { "outputField": "success", "localRole": "successfulRead" },
-          { "outputField": "accessibility_declaration", "operationId": "accessibilityDeclarations_getInstance", "jsonPointer": "/data" }
+          {
+            "outputField": "success",
+            "localRole": "successfulRead"
+          },
+          {
+            "outputField": "accessibility_declaration",
+            "operationId": "accessibilityDeclarations_getInstance",
+            "jsonPointer": "/data"
+          }
         ]
       },
       "note": "Direct resource read with a local response projection; partial until a structured output schema is declared."
@@ -126,24 +230,80 @@
         }
       ],
       "fields": [
-        { "toolField": "app_id", "sourceKind": "parameter", "operationId": "apps_accessibilityDeclarations_getToManyRelated", "location": "path", "appleName": "id" },
-        { "toolField": "device_family", "sourceKind": "parameter", "operationId": "apps_accessibilityDeclarations_getToManyRelated", "location": "query", "appleName": "filter[deviceFamily]" },
-        { "toolField": "state", "sourceKind": "parameter", "operationId": "apps_accessibilityDeclarations_getToManyRelated", "location": "query", "appleName": "filter[state]" },
-        { "toolField": "fields", "sourceKind": "parameter", "operationId": "apps_accessibilityDeclarations_getToManyRelated", "location": "query", "appleName": "fields[accessibilityDeclarations]" },
-        { "toolField": "limit", "sourceKind": "parameter", "operationId": "apps_accessibilityDeclarations_getToManyRelated", "location": "query", "appleName": "limit" },
-        { "toolField": "next_url", "sourceKind": "local", "localRole": "Strict Apple continuation URL for this exact collection. The caller must repeat every originating list control, including the effective/default limit, filters, sort, include, fields, and nested limits when supported; the exact query and a non-empty cursor are validated before sending the continuation request." }
+        {
+          "toolField": "app_id",
+          "sourceKind": "parameter",
+          "operationId": "apps_accessibilityDeclarations_getToManyRelated",
+          "location": "path",
+          "appleName": "id"
+        },
+        {
+          "toolField": "device_family",
+          "sourceKind": "parameter",
+          "operationId": "apps_accessibilityDeclarations_getToManyRelated",
+          "location": "query",
+          "appleName": "filter[deviceFamily]"
+        },
+        {
+          "toolField": "state",
+          "sourceKind": "parameter",
+          "operationId": "apps_accessibilityDeclarations_getToManyRelated",
+          "location": "query",
+          "appleName": "filter[state]"
+        },
+        {
+          "toolField": "fields",
+          "sourceKind": "parameter",
+          "operationId": "apps_accessibilityDeclarations_getToManyRelated",
+          "location": "query",
+          "appleName": "fields[accessibilityDeclarations]"
+        },
+        {
+          "toolField": "limit",
+          "sourceKind": "parameter",
+          "operationId": "apps_accessibilityDeclarations_getToManyRelated",
+          "location": "query",
+          "appleName": "limit"
+        },
+        {
+          "toolField": "next_url",
+          "sourceKind": "local",
+          "localRole": "Strict Apple continuation URL for this exact collection. The caller must repeat every originating list control, including the effective/default limit, filters, sort, include, fields, and nested limits when supported; the exact query and a non-empty cursor are validated before sending the continuation request."
+        }
       ],
       "response": {
         "mode": "projection",
         "sources": [
-          { "operationId": "apps_accessibilityDeclarations_getToManyRelated", "statusCode": "200", "mediaType": "application/json" }
+          {
+            "operationId": "apps_accessibilityDeclarations_getToManyRelated",
+            "statusCode": "200",
+            "mediaType": "application/json"
+          }
         ],
         "fields": [
-          { "outputField": "success", "localRole": "successfulRead" },
-          { "outputField": "accessibility_declarations", "operationId": "apps_accessibilityDeclarations_getToManyRelated", "jsonPointer": "/data" },
-          { "outputField": "count", "localRole": "Count resources in the returned page." },
-          { "outputField": "total", "operationId": "apps_accessibilityDeclarations_getToManyRelated", "jsonPointer": "/meta/paging/total" },
-          { "outputField": "next_url", "operationId": "apps_accessibilityDeclarations_getToManyRelated", "jsonPointer": "/links/next" }
+          {
+            "outputField": "success",
+            "localRole": "successfulRead"
+          },
+          {
+            "outputField": "accessibility_declarations",
+            "operationId": "apps_accessibilityDeclarations_getToManyRelated",
+            "jsonPointer": "/data"
+          },
+          {
+            "outputField": "count",
+            "localRole": "Count resources in the returned page."
+          },
+          {
+            "outputField": "total",
+            "operationId": "apps_accessibilityDeclarations_getToManyRelated",
+            "jsonPointer": "/meta/paging/total"
+          },
+          {
+            "outputField": "next_url",
+            "operationId": "apps_accessibilityDeclarations_getToManyRelated",
+            "jsonPointer": "/links/next"
+          }
         ]
       },
       "note": "The current public schema and handler support scalar, comma-separated, or array deviceFamily and state filters, bounded pagination, sparse fields, and secure continuation URLs that preserve active filters and fieldsets; partial only because the tool has no outputSchema."
@@ -163,22 +323,64 @@
         }
       ],
       "fields": [
-        { "toolField": "app_id", "sourceKind": "parameter", "operationId": "apps_accessibilityDeclarations_getToManyRelationship", "location": "path", "appleName": "id" },
-        { "toolField": "limit", "sourceKind": "parameter", "operationId": "apps_accessibilityDeclarations_getToManyRelationship", "location": "query", "appleName": "limit" },
-        { "toolField": "next_url", "sourceKind": "local", "localRole": "Strict Apple continuation URL for this exact collection. The caller must repeat every originating list control, including the effective/default limit, filters, sort, include, fields, and nested limits when supported; the exact query and a non-empty cursor are validated before sending the continuation request." }
+        {
+          "toolField": "app_id",
+          "sourceKind": "parameter",
+          "operationId": "apps_accessibilityDeclarations_getToManyRelationship",
+          "location": "path",
+          "appleName": "id"
+        },
+        {
+          "toolField": "limit",
+          "sourceKind": "parameter",
+          "operationId": "apps_accessibilityDeclarations_getToManyRelationship",
+          "location": "query",
+          "appleName": "limit"
+        },
+        {
+          "toolField": "next_url",
+          "sourceKind": "local",
+          "localRole": "Strict Apple continuation URL for this exact collection. The caller must repeat every originating list control, including the effective/default limit, filters, sort, include, fields, and nested limits when supported; the exact query and a non-empty cursor are validated before sending the continuation request."
+        }
       ],
       "response": {
         "mode": "projection",
         "sources": [
-          { "operationId": "apps_accessibilityDeclarations_getToManyRelationship", "statusCode": "200", "mediaType": "application/json" }
+          {
+            "operationId": "apps_accessibilityDeclarations_getToManyRelationship",
+            "statusCode": "200",
+            "mediaType": "application/json"
+          }
         ],
         "fields": [
-          { "outputField": "success", "localRole": "successfulRead" },
-          { "outputField": "relationships", "operationId": "apps_accessibilityDeclarations_getToManyRelationship", "jsonPointer": "/data" },
-          { "outputField": "declaration_ids", "operationId": "apps_accessibilityDeclarations_getToManyRelationship", "jsonPointer": "/data/*/id" },
-          { "outputField": "count", "localRole": "Count relationship linkages in the returned page." },
-          { "outputField": "total", "operationId": "apps_accessibilityDeclarations_getToManyRelationship", "jsonPointer": "/meta/paging/total" },
-          { "outputField": "next_url", "operationId": "apps_accessibilityDeclarations_getToManyRelationship", "jsonPointer": "/links/next" }
+          {
+            "outputField": "success",
+            "localRole": "successfulRead"
+          },
+          {
+            "outputField": "relationships",
+            "operationId": "apps_accessibilityDeclarations_getToManyRelationship",
+            "jsonPointer": "/data"
+          },
+          {
+            "outputField": "declaration_ids",
+            "operationId": "apps_accessibilityDeclarations_getToManyRelationship",
+            "jsonPointer": "/data/*/id"
+          },
+          {
+            "outputField": "count",
+            "localRole": "Count relationship linkages in the returned page."
+          },
+          {
+            "outputField": "total",
+            "operationId": "apps_accessibilityDeclarations_getToManyRelationship",
+            "jsonPointer": "/meta/paging/total"
+          },
+          {
+            "outputField": "next_url",
+            "operationId": "apps_accessibilityDeclarations_getToManyRelationship",
+            "jsonPointer": "/links/next"
+          }
         ]
       },
       "note": "Direct relationship-linkage read with local projection and pagination continuation handling."
@@ -213,26 +415,94 @@
         }
       ],
       "fields": [
-        { "toolField": "declaration_id", "sourceKind": "parameter", "operationId": "accessibilityDeclarations_updateInstance", "location": "path", "appleName": "id" },
-        { "toolField": "publish", "sourceKind": "requestBody", "operationId": "accessibilityDeclarations_updateInstance", "jsonPointer": "/data/attributes/publish", "localRole": "Preserve Boolean values and explicit JSON null distinctly from omission." },
-        { "toolField": "supports_audio_descriptions", "sourceKind": "requestBody", "operationId": "accessibilityDeclarations_updateInstance", "jsonPointer": "/data/attributes/supportsAudioDescriptions" },
-        { "toolField": "supports_captions", "sourceKind": "requestBody", "operationId": "accessibilityDeclarations_updateInstance", "jsonPointer": "/data/attributes/supportsCaptions" },
-        { "toolField": "supports_dark_interface", "sourceKind": "requestBody", "operationId": "accessibilityDeclarations_updateInstance", "jsonPointer": "/data/attributes/supportsDarkInterface" },
-        { "toolField": "supports_differentiate_without_color_alone", "sourceKind": "requestBody", "operationId": "accessibilityDeclarations_updateInstance", "jsonPointer": "/data/attributes/supportsDifferentiateWithoutColorAlone" },
-        { "toolField": "supports_larger_text", "sourceKind": "requestBody", "operationId": "accessibilityDeclarations_updateInstance", "jsonPointer": "/data/attributes/supportsLargerText" },
-        { "toolField": "supports_reduced_motion", "sourceKind": "requestBody", "operationId": "accessibilityDeclarations_updateInstance", "jsonPointer": "/data/attributes/supportsReducedMotion" },
-        { "toolField": "supports_sufficient_contrast", "sourceKind": "requestBody", "operationId": "accessibilityDeclarations_updateInstance", "jsonPointer": "/data/attributes/supportsSufficientContrast" },
-        { "toolField": "supports_voice_control", "sourceKind": "requestBody", "operationId": "accessibilityDeclarations_updateInstance", "jsonPointer": "/data/attributes/supportsVoiceControl" },
-        { "toolField": "supports_voiceover", "sourceKind": "requestBody", "operationId": "accessibilityDeclarations_updateInstance", "jsonPointer": "/data/attributes/supportsVoiceover" }
+        {
+          "toolField": "declaration_id",
+          "sourceKind": "parameter",
+          "operationId": "accessibilityDeclarations_updateInstance",
+          "location": "path",
+          "appleName": "id"
+        },
+        {
+          "toolField": "publish",
+          "sourceKind": "requestBody",
+          "operationId": "accessibilityDeclarations_updateInstance",
+          "jsonPointer": "/data/attributes/publish",
+          "localRole": "Preserve Boolean values and explicit JSON null distinctly from omission."
+        },
+        {
+          "toolField": "supports_audio_descriptions",
+          "sourceKind": "requestBody",
+          "operationId": "accessibilityDeclarations_updateInstance",
+          "jsonPointer": "/data/attributes/supportsAudioDescriptions"
+        },
+        {
+          "toolField": "supports_captions",
+          "sourceKind": "requestBody",
+          "operationId": "accessibilityDeclarations_updateInstance",
+          "jsonPointer": "/data/attributes/supportsCaptions"
+        },
+        {
+          "toolField": "supports_dark_interface",
+          "sourceKind": "requestBody",
+          "operationId": "accessibilityDeclarations_updateInstance",
+          "jsonPointer": "/data/attributes/supportsDarkInterface"
+        },
+        {
+          "toolField": "supports_differentiate_without_color_alone",
+          "sourceKind": "requestBody",
+          "operationId": "accessibilityDeclarations_updateInstance",
+          "jsonPointer": "/data/attributes/supportsDifferentiateWithoutColorAlone"
+        },
+        {
+          "toolField": "supports_larger_text",
+          "sourceKind": "requestBody",
+          "operationId": "accessibilityDeclarations_updateInstance",
+          "jsonPointer": "/data/attributes/supportsLargerText"
+        },
+        {
+          "toolField": "supports_reduced_motion",
+          "sourceKind": "requestBody",
+          "operationId": "accessibilityDeclarations_updateInstance",
+          "jsonPointer": "/data/attributes/supportsReducedMotion"
+        },
+        {
+          "toolField": "supports_sufficient_contrast",
+          "sourceKind": "requestBody",
+          "operationId": "accessibilityDeclarations_updateInstance",
+          "jsonPointer": "/data/attributes/supportsSufficientContrast"
+        },
+        {
+          "toolField": "supports_voice_control",
+          "sourceKind": "requestBody",
+          "operationId": "accessibilityDeclarations_updateInstance",
+          "jsonPointer": "/data/attributes/supportsVoiceControl"
+        },
+        {
+          "toolField": "supports_voiceover",
+          "sourceKind": "requestBody",
+          "operationId": "accessibilityDeclarations_updateInstance",
+          "jsonPointer": "/data/attributes/supportsVoiceover"
+        }
       ],
       "response": {
         "mode": "projection",
         "sources": [
-          { "operationId": "accessibilityDeclarations_updateInstance", "statusCode": "200", "mediaType": "application/json" }
+          {
+            "operationId": "accessibilityDeclarations_updateInstance",
+            "statusCode": "200",
+            "mediaType": "application/json"
+          }
         ],
         "fields": [
-          { "outputField": "success", "localRole": "successfulUpdate" },
-          { "outputField": "accessibility_declaration", "operationId": "accessibilityDeclarations_updateInstance", "jsonPointer": "/data" }
+          {
+            "outputField": "success",
+            "localRole": "successfulUpdate"
+          },
+          {
+            "outputField": "accessibility_declaration",
+            "operationId": "accessibilityDeclarations_updateInstance",
+            "jsonPointer": "/data"
+          }
         ]
       },
       "note": "The payload covers all current Apple update attributes and preserves an explicit JSON null for publish and every nullable supports attribute distinctly from omission; a null-only request is therefore a real update rather than a no-op. Apple permits support-flag edits only while the declaration is in DRAFT, with publish transitioning it out of that editable state."

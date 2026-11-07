@@ -125,7 +125,10 @@
       "response": {
         "mode": "local",
         "sources": [
-          { "operationId": "betaAppLocalizations_deleteInstance", "statusCode": "204" }
+          {
+            "operationId": "betaAppLocalizations_deleteInstance",
+            "statusCode": "204"
+          }
         ],
         "fields": [
           {
@@ -157,7 +160,14 @@
               "sourceKind": "fixed",
               "location": "query",
               "appleName": "fields[betaAppLocalizations]",
-              "fixedValue": ["feedbackEmail", "marketingUrl", "privacyPolicyUrl", "tvOsPrivacyPolicy", "description", "locale"]
+              "fixedValue": [
+                "feedbackEmail",
+                "marketingUrl",
+                "privacyPolicyUrl",
+                "tvOsPrivacyPolicy",
+                "description",
+                "locale"
+              ]
             }
           ],
           "optionalParameterClassifications": [
@@ -166,7 +176,7 @@
               "appleName": "include",
               "disposition": "intentionallyOmitted",
               "reason": "The focused localization tool projects the base resource; callers can use apps tools for expanded App details.",
-              "reviewAtSpec": "4.5.1"
+              "reviewAtSpec": "4.6"
             }
           ]
         }
@@ -225,7 +235,16 @@
               "sourceKind": "fixed",
               "location": "query",
               "appleName": "fields[betaAppReviewDetails]",
-              "fixedValue": ["contactFirstName", "contactLastName", "contactPhone", "contactEmail", "demoAccountName", "demoAccountPassword", "demoAccountRequired", "notes"]
+              "fixedValue": [
+                "contactFirstName",
+                "contactLastName",
+                "contactPhone",
+                "contactEmail",
+                "demoAccountName",
+                "demoAccountPassword",
+                "demoAccountRequired",
+                "notes"
+              ]
             }
           ]
         }
@@ -290,19 +309,29 @@
               "sourceKind": "fixed",
               "location": "query",
               "appleName": "include",
-              "fixedValue": ["build"]
+              "fixedValue": [
+                "build"
+              ]
             },
             {
               "sourceKind": "fixed",
               "location": "query",
               "appleName": "fields[betaAppReviewSubmissions]",
-              "fixedValue": ["betaReviewState", "submittedDate", "build"]
+              "fixedValue": [
+                "betaReviewState",
+                "submittedDate",
+                "build"
+              ]
             },
             {
               "sourceKind": "fixed",
               "location": "query",
               "appleName": "fields[builds]",
-              "fixedValue": ["version", "uploadedDate", "processingState"]
+              "fixedValue": [
+                "version",
+                "uploadedDate",
+                "processingState"
+              ]
             }
           ]
         },
@@ -311,13 +340,15 @@
           "method": "get",
           "path": "/v1/betaAppReviewSubmissions/{id}/relationships/build",
           "role": "conditional",
-      "condition": "The primary response omits Build relationship data and contains no included Build.",
+          "condition": "The primary response omits Build relationship data and contains no included Build.",
           "inputs": [
             {
               "sourceKind": "derived",
               "location": "path",
               "appleName": "id",
-              "derivedFrom": ["betaAppReviewSubmissions_getInstance:/data/id"],
+              "derivedFrom": [
+                "betaAppReviewSubmissions_getInstance:/data/id"
+              ],
               "localRole": "Use the decoded submission identifier."
             }
           ]
@@ -448,7 +479,14 @@
               "sourceKind": "fixed",
               "location": "query",
               "appleName": "fields[betaAppLocalizations]",
-              "fixedValue": ["feedbackEmail", "marketingUrl", "privacyPolicyUrl", "tvOsPrivacyPolicy", "description", "locale"]
+              "fixedValue": [
+                "feedbackEmail",
+                "marketingUrl",
+                "privacyPolicyUrl",
+                "tvOsPrivacyPolicy",
+                "description",
+                "locale"
+              ]
             }
           ]
         }
@@ -533,19 +571,29 @@
               "sourceKind": "fixed",
               "location": "query",
               "appleName": "include",
-              "fixedValue": ["build"]
+              "fixedValue": [
+                "build"
+              ]
             },
             {
               "sourceKind": "fixed",
               "location": "query",
               "appleName": "fields[betaAppReviewSubmissions]",
-              "fixedValue": ["betaReviewState", "submittedDate", "build"]
+              "fixedValue": [
+                "betaReviewState",
+                "submittedDate",
+                "build"
+              ]
             },
             {
               "sourceKind": "fixed",
               "location": "query",
               "appleName": "fields[builds]",
-              "fixedValue": ["version", "uploadedDate", "processingState"]
+              "fixedValue": [
+                "version",
+                "uploadedDate",
+                "processingState"
+              ]
             }
           ]
         },
@@ -560,7 +608,9 @@
               "sourceKind": "derived",
               "location": "path",
               "appleName": "id",
-              "derivedFrom": ["betaAppReviewSubmissions_getCollection:/data/*/id"],
+              "derivedFrom": [
+                "betaAppReviewSubmissions_getCollection:/data/*/id"
+              ],
               "localRole": "Use each unresolved decoded submission identifier."
             }
           ]

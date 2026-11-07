@@ -13,6 +13,7 @@ Update 2026-05-08: local webhook receiver helpers are available for signature ve
 Update 2026-07-20: Apple 4.4.1 versioned commerce metadata, plan-type-aware subscription availability, adjusted equalizations, and generic review submissions are covered.
 Update 2026-07-21: Build Upload parents, file reservations, resumable transfers, commit recovery, and processing reconciliation are covered by `build_uploads_*` tools.
 Update 2026-07-21: 11 TestFlight recruitment and usage-metric tools cover 12 additional Apple operations, including app-device context in tester projections.
+Update 2026-11-07: Apple 4.6 subscription retention messaging (messages, versions, localizations, retention offers, subscription retention relationships, Asset Library `retentionMessageVersion` image placements, and Review Submission `retentionMessageVersion` items) is covered.
 
 This matrix tracks current `asc-mcp` coverage against the official App Store Connect API documentation. It is intentionally product-oriented: it names what users can do today, what is missing, and which additions should come first.
 

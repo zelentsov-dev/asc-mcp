@@ -528,7 +528,7 @@ struct ReviewSubmissionsWorkerContractTests {
         }
     }
 
-    @Test("all eight supported item relations encode exact Apple JSON API keys and types")
+    @Test("all supported item relations encode exact Apple JSON API keys and types")
     func addItemRelationBodies() async throws {
         let cases: [(String, String, String)] = [
             ("app_store_version_id", "appStoreVersion", "appStoreVersions"),
@@ -538,7 +538,8 @@ struct ReviewSubmissionsWorkerContractTests {
             ("background_asset_version_id", "backgroundAssetVersion", "backgroundAssetVersions"),
             ("in_app_purchase_version_id", "inAppPurchaseVersion", "inAppPurchaseVersions"),
             ("subscription_version_id", "subscriptionVersion", "subscriptionVersions"),
-            ("subscription_group_version_id", "subscriptionGroupVersion", "subscriptionGroupVersions")
+            ("subscription_group_version_id", "subscriptionGroupVersion", "subscriptionGroupVersions"),
+            ("retention_message_version_id", "retentionMessageVersion", "retentionMessageVersions")
         ]
 
         for (toolField, relationshipName, resourceType) in cases {
@@ -2212,18 +2213,19 @@ private let reviewSubmissionTypedIDFields: Set<String> = [
     "background_asset_version_id",
     "in_app_purchase_version_id",
     "subscription_version_id",
-    "subscription_group_version_id"
+    "subscription_group_version_id",
+    "retention_message_version_id"
 ]
 
 private let reviewSubmissionFields =
     "platform,submittedDate,state,app,items,appStoreVersionForReview,submittedByActor,lastUpdatedByActor"
 private let reviewSubmissionItemFields =
-    "state,appStoreVersion,appCustomProductPageVersion,appStoreVersionExperiment,appStoreVersionExperimentV2,appEvent,appAssetLibraryImage,appAssetLibraryVideo,backgroundAssetVersion,gameCenterAchievementVersion,gameCenterActivityVersion,gameCenterChallengeVersion,gameCenterLeaderboardSetVersion,gameCenterLeaderboardVersion,inAppPurchaseVersion,subscriptionVersion,subscriptionGroupVersion"
+    "state,appStoreVersion,appCustomProductPageVersion,appStoreVersionExperiment,appStoreVersionExperimentV2,appEvent,appAssetLibraryImage,appAssetLibraryVideo,backgroundAssetVersion,gameCenterAchievementVersion,gameCenterActivityVersion,gameCenterChallengeVersion,gameCenterLeaderboardSetVersion,gameCenterLeaderboardVersion,inAppPurchaseVersion,subscriptionVersion,subscriptionGroupVersion,retentionMessageVersion"
 private let reviewSubmissionAppVersionFields =
     "platform,versionString,appStoreState,appVersionState,reviewType,releaseType,createdDate"
 private let reviewSubmissionActorFields = "actorType,userFirstName,userLastName,userEmail,apiKeyId"
 private let reviewSubmissionSupportedIncludes =
-    "appAssetLibraryImage,appAssetLibraryVideo,appStoreVersion,appCustomProductPageVersion,appStoreVersionExperimentV2,appEvent,backgroundAssetVersion,inAppPurchaseVersion,subscriptionVersion,subscriptionGroupVersion"
+    "appAssetLibraryImage,appAssetLibraryVideo,appStoreVersion,appCustomProductPageVersion,appStoreVersionExperimentV2,appEvent,backgroundAssetVersion,inAppPurchaseVersion,subscriptionVersion,subscriptionGroupVersion,retentionMessageVersion"
 
 private func makeReviewSubmissionsWorker(
     transport: TestHTTPTransport
@@ -2317,6 +2319,7 @@ private func reviewSubmissionItemListQuery(limit: Int) -> [String: String] {
         "fields[inAppPurchaseVersions]": "version,state",
         "fields[subscriptionVersions]": "version,state",
         "fields[subscriptionGroupVersions]": "version,state",
+        "fields[retentionMessageVersions]": "state",
         "include": reviewSubmissionSupportedIncludes,
         "limit": String(limit)
     ]

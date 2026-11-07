@@ -14,23 +14,56 @@
           "path": "/v1/bundleIds",
           "role": "primary",
           "inputs": [
-            { "sourceKind": "fixed", "jsonPointer": "/data/type", "fixedValue": "bundleIds" }
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/type",
+              "fixedValue": "bundleIds"
+            }
           ]
         }
       ],
       "fields": [
-        { "toolField": "name", "sourceKind": "requestBody", "operationId": "bundleIds_createInstance", "jsonPointer": "/data/attributes/name" },
-        { "toolField": "identifier", "sourceKind": "requestBody", "operationId": "bundleIds_createInstance", "jsonPointer": "/data/attributes/identifier" },
-        { "toolField": "platform", "sourceKind": "requestBody", "operationId": "bundleIds_createInstance", "jsonPointer": "/data/attributes/platform" },
-        { "toolField": "seed_id", "sourceKind": "requestBody", "operationId": "bundleIds_createInstance", "jsonPointer": "/data/attributes/seedId", "localRole": "preserves omission, explicit null, and string values" }
+        {
+          "toolField": "name",
+          "sourceKind": "requestBody",
+          "operationId": "bundleIds_createInstance",
+          "jsonPointer": "/data/attributes/name"
+        },
+        {
+          "toolField": "identifier",
+          "sourceKind": "requestBody",
+          "operationId": "bundleIds_createInstance",
+          "jsonPointer": "/data/attributes/identifier"
+        },
+        {
+          "toolField": "platform",
+          "sourceKind": "requestBody",
+          "operationId": "bundleIds_createInstance",
+          "jsonPointer": "/data/attributes/platform"
+        },
+        {
+          "toolField": "seed_id",
+          "sourceKind": "requestBody",
+          "operationId": "bundleIds_createInstance",
+          "jsonPointer": "/data/attributes/seedId",
+          "localRole": "preserves omission, explicit null, and string values"
+        }
       ],
       "response": {
         "mode": "projection",
         "sources": [
-          { "operationId": "bundleIds_createInstance", "statusCode": "201", "mediaType": "application/json" }
+          {
+            "operationId": "bundleIds_createInstance",
+            "statusCode": "201",
+            "mediaType": "application/json"
+          }
         ],
         "fields": [
-          { "outputField": "bundle_id", "operationId": "bundleIds_createInstance", "jsonPointer": "/data" }
+          {
+            "outputField": "bundle_id",
+            "operationId": "bundleIds_createInstance",
+            "jsonPointer": "/data"
+          }
         ]
       },
       "note": "Exact Apple 4.4.1 create attributes, including optional seedId, with a selected bundle-ID response projection and no MCP output schema."
@@ -48,27 +81,78 @@
           "path": "/v1/profiles",
           "role": "primary",
           "inputs": [
-            { "sourceKind": "fixed", "jsonPointer": "/data/type", "fixedValue": "profiles" },
-            { "sourceKind": "fixed", "jsonPointer": "/data/relationships/bundleId/data/type", "fixedValue": "bundleIds" },
-            { "sourceKind": "fixed", "jsonPointer": "/data/relationships/certificates/data/*/type", "fixedValue": "certificates" },
-            { "sourceKind": "fixed", "jsonPointer": "/data/relationships/devices/data/*/type", "fixedValue": "devices" }
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/type",
+              "fixedValue": "profiles"
+            },
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/relationships/bundleId/data/type",
+              "fixedValue": "bundleIds"
+            },
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/relationships/certificates/data/*/type",
+              "fixedValue": "certificates"
+            },
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/relationships/devices/data/*/type",
+              "fixedValue": "devices"
+            }
           ]
         }
       ],
       "fields": [
-        { "toolField": "name", "sourceKind": "requestBody", "operationId": "profiles_createInstance", "jsonPointer": "/data/attributes/name" },
-        { "toolField": "profile_type", "sourceKind": "requestBody", "operationId": "profiles_createInstance", "jsonPointer": "/data/attributes/profileType" },
-        { "toolField": "bundle_id_resource_id", "sourceKind": "requestBody", "operationId": "profiles_createInstance", "jsonPointer": "/data/relationships/bundleId/data/id" },
-        { "toolField": "certificate_ids", "sourceKind": "requestBody", "operationId": "profiles_createInstance", "jsonPointer": "/data/relationships/certificates/data/*/id", "localRole": "validated non-empty unique string IDs" },
-        { "toolField": "device_ids", "sourceKind": "requestBody", "operationId": "profiles_createInstance", "jsonPointer": "/data/relationships/devices/data/*/id", "localRole": "optional relationship with validated non-empty unique string IDs" }
+        {
+          "toolField": "name",
+          "sourceKind": "requestBody",
+          "operationId": "profiles_createInstance",
+          "jsonPointer": "/data/attributes/name"
+        },
+        {
+          "toolField": "profile_type",
+          "sourceKind": "requestBody",
+          "operationId": "profiles_createInstance",
+          "jsonPointer": "/data/attributes/profileType"
+        },
+        {
+          "toolField": "bundle_id_resource_id",
+          "sourceKind": "requestBody",
+          "operationId": "profiles_createInstance",
+          "jsonPointer": "/data/relationships/bundleId/data/id"
+        },
+        {
+          "toolField": "certificate_ids",
+          "sourceKind": "requestBody",
+          "operationId": "profiles_createInstance",
+          "jsonPointer": "/data/relationships/certificates/data/*/id",
+          "localRole": "validated non-empty unique string IDs"
+        },
+        {
+          "toolField": "device_ids",
+          "sourceKind": "requestBody",
+          "operationId": "profiles_createInstance",
+          "jsonPointer": "/data/relationships/devices/data/*/id",
+          "localRole": "optional relationship with validated non-empty unique string IDs"
+        }
       ],
       "response": {
         "mode": "projection",
         "sources": [
-          { "operationId": "profiles_createInstance", "statusCode": "201", "mediaType": "application/json" }
+          {
+            "operationId": "profiles_createInstance",
+            "statusCode": "201",
+            "mediaType": "application/json"
+          }
         ],
         "fields": [
-          { "outputField": "profile", "operationId": "profiles_createInstance", "jsonPointer": "/data" }
+          {
+            "outputField": "profile",
+            "operationId": "profiles_createInstance",
+            "jsonPointer": "/data"
+          }
         ]
       },
       "note": "Apple 4.4.1 profile relationships are preserved after complete local ID-array validation, and the create response includes installable profileContent plus current profile timestamps."
@@ -80,18 +164,35 @@
       "effect": "destructive",
       "implementationState": "asBuilt",
       "operations": [
-        { "operationId": "bundleIds_deleteInstance", "method": "delete", "path": "/v1/bundleIds/{id}", "role": "primary" }
+        {
+          "operationId": "bundleIds_deleteInstance",
+          "method": "delete",
+          "path": "/v1/bundleIds/{id}",
+          "role": "primary"
+        }
       ],
       "fields": [
-        { "toolField": "bundle_id_resource_id", "sourceKind": "parameter", "operationId": "bundleIds_deleteInstance", "location": "path", "appleName": "id" }
+        {
+          "toolField": "bundle_id_resource_id",
+          "sourceKind": "parameter",
+          "operationId": "bundleIds_deleteInstance",
+          "location": "path",
+          "appleName": "id"
+        }
       ],
       "response": {
         "mode": "local",
         "sources": [
-          { "operationId": "bundleIds_deleteInstance", "statusCode": "204" }
+          {
+            "operationId": "bundleIds_deleteInstance",
+            "statusCode": "204"
+          }
         ],
         "fields": [
-          { "outputField": "message", "localRole": "confirmation synthesized after Apple's content-free 204 response" }
+          {
+            "outputField": "message",
+            "localRole": "confirmation synthesized after Apple's content-free 204 response"
+          }
         ]
       },
       "note": "Apple returns 204 with no response document; the MCP result is a local deletion confirmation."
@@ -103,18 +204,35 @@
       "effect": "destructive",
       "implementationState": "asBuilt",
       "operations": [
-        { "operationId": "profiles_deleteInstance", "method": "delete", "path": "/v1/profiles/{id}", "role": "primary" }
+        {
+          "operationId": "profiles_deleteInstance",
+          "method": "delete",
+          "path": "/v1/profiles/{id}",
+          "role": "primary"
+        }
       ],
       "fields": [
-        { "toolField": "profile_id", "sourceKind": "parameter", "operationId": "profiles_deleteInstance", "location": "path", "appleName": "id" }
+        {
+          "toolField": "profile_id",
+          "sourceKind": "parameter",
+          "operationId": "profiles_deleteInstance",
+          "location": "path",
+          "appleName": "id"
+        }
       ],
       "response": {
         "mode": "local",
         "sources": [
-          { "operationId": "profiles_deleteInstance", "statusCode": "204" }
+          {
+            "operationId": "profiles_deleteInstance",
+            "statusCode": "204"
+          }
         ],
         "fields": [
-          { "outputField": "message", "localRole": "confirmation synthesized after Apple's content-free 204 response" }
+          {
+            "outputField": "message",
+            "localRole": "confirmation synthesized after Apple's content-free 204 response"
+          }
         ]
       },
       "note": "Apple returns 204 with no response document; the MCP result is a local deletion confirmation."
@@ -126,18 +244,35 @@
       "effect": "destructive",
       "implementationState": "asBuilt",
       "operations": [
-        { "operationId": "bundleIdCapabilities_deleteInstance", "method": "delete", "path": "/v1/bundleIdCapabilities/{id}", "role": "primary" }
+        {
+          "operationId": "bundleIdCapabilities_deleteInstance",
+          "method": "delete",
+          "path": "/v1/bundleIdCapabilities/{id}",
+          "role": "primary"
+        }
       ],
       "fields": [
-        { "toolField": "capability_id", "sourceKind": "parameter", "operationId": "bundleIdCapabilities_deleteInstance", "location": "path", "appleName": "id" }
+        {
+          "toolField": "capability_id",
+          "sourceKind": "parameter",
+          "operationId": "bundleIdCapabilities_deleteInstance",
+          "location": "path",
+          "appleName": "id"
+        }
       ],
       "response": {
         "mode": "local",
         "sources": [
-          { "operationId": "bundleIdCapabilities_deleteInstance", "statusCode": "204" }
+          {
+            "operationId": "bundleIdCapabilities_deleteInstance",
+            "statusCode": "204"
+          }
         ],
         "fields": [
-          { "outputField": "message", "localRole": "confirmation synthesized after Apple's content-free 204 response" }
+          {
+            "outputField": "message",
+            "localRole": "confirmation synthesized after Apple's content-free 204 response"
+          }
         ]
       },
       "note": "Apple returns 204 with no response document; the MCP result is a local capability-disable confirmation."
@@ -155,23 +290,55 @@
           "path": "/v1/bundleIdCapabilities",
           "role": "primary",
           "inputs": [
-            { "sourceKind": "fixed", "jsonPointer": "/data/type", "fixedValue": "bundleIdCapabilities" },
-            { "sourceKind": "fixed", "jsonPointer": "/data/relationships/bundleId/data/type", "fixedValue": "bundleIds" }
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/type",
+              "fixedValue": "bundleIdCapabilities"
+            },
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/relationships/bundleId/data/type",
+              "fixedValue": "bundleIds"
+            }
           ]
         }
       ],
       "fields": [
-        { "toolField": "bundle_id_resource_id", "sourceKind": "requestBody", "operationId": "bundleIdCapabilities_createInstance", "jsonPointer": "/data/relationships/bundleId/data/id" },
-        { "toolField": "capability_type", "sourceKind": "requestBody", "operationId": "bundleIdCapabilities_createInstance", "jsonPointer": "/data/attributes/capabilityType" },
-        { "toolField": "settings", "sourceKind": "requestBody", "operationId": "bundleIdCapabilities_createInstance", "jsonPointer": "/data/attributes/settings", "localRole": "native array input preserving omission, explicit null, and array values; nested fields reject unknown keys and enforce Apple 4.4.1 enums and scalar types" }
+        {
+          "toolField": "bundle_id_resource_id",
+          "sourceKind": "requestBody",
+          "operationId": "bundleIdCapabilities_createInstance",
+          "jsonPointer": "/data/relationships/bundleId/data/id"
+        },
+        {
+          "toolField": "capability_type",
+          "sourceKind": "requestBody",
+          "operationId": "bundleIdCapabilities_createInstance",
+          "jsonPointer": "/data/attributes/capabilityType"
+        },
+        {
+          "toolField": "settings",
+          "sourceKind": "requestBody",
+          "operationId": "bundleIdCapabilities_createInstance",
+          "jsonPointer": "/data/attributes/settings",
+          "localRole": "native array input preserving omission, explicit null, and array values; nested fields reject unknown keys and enforce Apple 4.4.1 enums and scalar types"
+        }
       ],
       "response": {
         "mode": "projection",
         "sources": [
-          { "operationId": "bundleIdCapabilities_createInstance", "statusCode": "201", "mediaType": "application/json" }
+          {
+            "operationId": "bundleIdCapabilities_createInstance",
+            "statusCode": "201",
+            "mediaType": "application/json"
+          }
         ],
         "fields": [
-          { "outputField": "capability", "operationId": "bundleIdCapabilities_createInstance", "jsonPointer": "/data" }
+          {
+            "outputField": "capability",
+            "operationId": "bundleIdCapabilities_createInstance",
+            "jsonPointer": "/data"
+          }
         ]
       },
       "note": "Exact Apple create operation. Settings use Apple's nullable array contract, while the response preserves empty arrays and enabledByDefault, visible, enabled, and supportsWildcard flags."
@@ -194,35 +361,49 @@
               "appleName": "include",
               "disposition": "intentionallyOmitted",
               "reason": "This detail tool returns a stable bundle-ID projection and does not project related profiles, capabilities, or app resources.",
-              "reviewAtSpec": "4.5.1"
+              "reviewAtSpec": "4.6"
             },
             {
               "location": "query",
               "appleName": "limit[bundleIdCapabilities]",
               "disposition": "intentionallyOmitted",
               "reason": "The related capability collection is not included by this tool, so its nested include limit has no effect on the documented output.",
-              "reviewAtSpec": "4.5.1"
+              "reviewAtSpec": "4.6"
             },
             {
               "location": "query",
               "appleName": "limit[profiles]",
               "disposition": "intentionallyOmitted",
               "reason": "The related profile collection is not included by this tool, so its nested include limit has no effect on the documented output.",
-              "reviewAtSpec": "4.5.1"
+              "reviewAtSpec": "4.6"
             }
           ]
         }
       ],
       "fields": [
-        { "toolField": "bundle_id_resource_id", "sourceKind": "parameter", "operationId": "bundleIds_getInstance", "location": "path", "appleName": "id" }
+        {
+          "toolField": "bundle_id_resource_id",
+          "sourceKind": "parameter",
+          "operationId": "bundleIds_getInstance",
+          "location": "path",
+          "appleName": "id"
+        }
       ],
       "response": {
         "mode": "projection",
         "sources": [
-          { "operationId": "bundleIds_getInstance", "statusCode": "200", "mediaType": "application/json" }
+          {
+            "operationId": "bundleIds_getInstance",
+            "statusCode": "200",
+            "mediaType": "application/json"
+          }
         ],
         "fields": [
-          { "outputField": "bundle_id", "operationId": "bundleIds_getInstance", "jsonPointer": "/data" }
+          {
+            "outputField": "bundle_id",
+            "operationId": "bundleIds_getInstance",
+            "jsonPointer": "/data"
+          }
         ]
       },
       "note": "Apple sparse fields and includes are not exposed; the handler returns selected bundle-ID attributes only."
@@ -245,21 +426,35 @@
               "appleName": "include",
               "disposition": "intentionallyOmitted",
               "reason": "The certificate detail output is deliberately limited to certificate attributes and does not project the optional passTypeId relationship.",
-              "reviewAtSpec": "4.5.1"
+              "reviewAtSpec": "4.6"
             }
           ]
         }
       ],
       "fields": [
-        { "toolField": "certificate_id", "sourceKind": "parameter", "operationId": "certificates_getInstance", "location": "path", "appleName": "id" }
+        {
+          "toolField": "certificate_id",
+          "sourceKind": "parameter",
+          "operationId": "certificates_getInstance",
+          "location": "path",
+          "appleName": "id"
+        }
       ],
       "response": {
         "mode": "projection",
         "sources": [
-          { "operationId": "certificates_getInstance", "statusCode": "200", "mediaType": "application/json" }
+          {
+            "operationId": "certificates_getInstance",
+            "statusCode": "200",
+            "mediaType": "application/json"
+          }
         ],
         "fields": [
-          { "outputField": "certificate", "operationId": "certificates_getInstance", "jsonPointer": "/data" }
+          {
+            "outputField": "certificate",
+            "operationId": "certificates_getInstance",
+            "jsonPointer": "/data"
+          }
         ]
       },
       "note": "The detail projection returns Apple's certificateContent and activated state. Sparse fields follow the global projection policy; passTypeId include is intentionally omitted."
@@ -282,35 +477,49 @@
               "appleName": "include",
               "disposition": "intentionallyOmitted",
               "reason": "The profile detail output returns profile attributes and does not project bundleId, devices, or certificates relationship resources.",
-              "reviewAtSpec": "4.5.1"
+              "reviewAtSpec": "4.6"
             },
             {
               "location": "query",
               "appleName": "limit[certificates]",
               "disposition": "intentionallyOmitted",
               "reason": "Certificates are not included by this tool, so the nested relationship limit has no effect on its documented output.",
-              "reviewAtSpec": "4.5.1"
+              "reviewAtSpec": "4.6"
             },
             {
               "location": "query",
               "appleName": "limit[devices]",
               "disposition": "intentionallyOmitted",
               "reason": "Devices are not included by this tool, so the nested relationship limit has no effect on its documented output.",
-              "reviewAtSpec": "4.5.1"
+              "reviewAtSpec": "4.6"
             }
           ]
         }
       ],
       "fields": [
-        { "toolField": "profile_id", "sourceKind": "parameter", "operationId": "profiles_getInstance", "location": "path", "appleName": "id" }
+        {
+          "toolField": "profile_id",
+          "sourceKind": "parameter",
+          "operationId": "profiles_getInstance",
+          "location": "path",
+          "appleName": "id"
+        }
       ],
       "response": {
         "mode": "projection",
         "sources": [
-          { "operationId": "profiles_getInstance", "statusCode": "200", "mediaType": "application/json" }
+          {
+            "operationId": "profiles_getInstance",
+            "statusCode": "200",
+            "mediaType": "application/json"
+          }
         ],
         "fields": [
-          { "outputField": "profile", "operationId": "profiles_getInstance", "jsonPointer": "/data" }
+          {
+            "outputField": "profile",
+            "operationId": "profiles_getInstance",
+            "jsonPointer": "/data"
+          }
         ]
       },
       "note": "The detail projection returns installable profileContent with createdDate and expirationDate. Sparse fields follow the global projection policy; relationships are intentionally omitted."
@@ -333,44 +542,106 @@
               "appleName": "include",
               "disposition": "intentionallyOmitted",
               "reason": "The collection tool returns a stable bundle-ID projection and does not project related profiles, capabilities, or app resources.",
-              "reviewAtSpec": "4.5.1"
+              "reviewAtSpec": "4.6"
             },
             {
               "location": "query",
               "appleName": "limit[bundleIdCapabilities]",
               "disposition": "intentionallyOmitted",
               "reason": "The related capability collection is not included, so its nested limit has no effect on the documented output.",
-              "reviewAtSpec": "4.5.1"
+              "reviewAtSpec": "4.6"
             },
             {
               "location": "query",
               "appleName": "limit[profiles]",
               "disposition": "intentionallyOmitted",
               "reason": "The related profile collection is not included, so its nested limit has no effect on the documented output.",
-              "reviewAtSpec": "4.5.1"
+              "reviewAtSpec": "4.6"
             }
           ]
         }
       ],
       "fields": [
-        { "toolField": "limit", "sourceKind": "parameter", "operationId": "bundleIds_getCollection", "location": "query", "appleName": "limit" },
-        { "toolField": "filter_platform", "sourceKind": "parameter", "operationId": "bundleIds_getCollection", "location": "query", "appleName": "filter[platform]" },
-        { "toolField": "filter_identifier", "sourceKind": "parameter", "operationId": "bundleIds_getCollection", "location": "query", "appleName": "filter[identifier]" },
-        { "toolField": "filter_name", "sourceKind": "parameter", "operationId": "bundleIds_getCollection", "location": "query", "appleName": "filter[name]" },
-        { "toolField": "filter_seed_id", "sourceKind": "parameter", "operationId": "bundleIds_getCollection", "location": "query", "appleName": "filter[seedId]" },
-        { "toolField": "filter_id", "sourceKind": "parameter", "operationId": "bundleIds_getCollection", "location": "query", "appleName": "filter[id]" },
-        { "toolField": "sort", "sourceKind": "parameter", "operationId": "bundleIds_getCollection", "location": "query", "appleName": "sort" },
-        { "toolField": "next_url", "sourceKind": "local", "localRole": "Strict Apple continuation URL for this exact collection. The caller must repeat every originating list control, including the effective/default limit, filters, sort, include, fields, and nested limits when supported; the exact query and a non-empty cursor are validated before sending the continuation request." }
+        {
+          "toolField": "limit",
+          "sourceKind": "parameter",
+          "operationId": "bundleIds_getCollection",
+          "location": "query",
+          "appleName": "limit"
+        },
+        {
+          "toolField": "filter_platform",
+          "sourceKind": "parameter",
+          "operationId": "bundleIds_getCollection",
+          "location": "query",
+          "appleName": "filter[platform]"
+        },
+        {
+          "toolField": "filter_identifier",
+          "sourceKind": "parameter",
+          "operationId": "bundleIds_getCollection",
+          "location": "query",
+          "appleName": "filter[identifier]"
+        },
+        {
+          "toolField": "filter_name",
+          "sourceKind": "parameter",
+          "operationId": "bundleIds_getCollection",
+          "location": "query",
+          "appleName": "filter[name]"
+        },
+        {
+          "toolField": "filter_seed_id",
+          "sourceKind": "parameter",
+          "operationId": "bundleIds_getCollection",
+          "location": "query",
+          "appleName": "filter[seedId]"
+        },
+        {
+          "toolField": "filter_id",
+          "sourceKind": "parameter",
+          "operationId": "bundleIds_getCollection",
+          "location": "query",
+          "appleName": "filter[id]"
+        },
+        {
+          "toolField": "sort",
+          "sourceKind": "parameter",
+          "operationId": "bundleIds_getCollection",
+          "location": "query",
+          "appleName": "sort"
+        },
+        {
+          "toolField": "next_url",
+          "sourceKind": "local",
+          "localRole": "Strict Apple continuation URL for this exact collection. The caller must repeat every originating list control, including the effective/default limit, filters, sort, include, fields, and nested limits when supported; the exact query and a non-empty cursor are validated before sending the continuation request."
+        }
       ],
       "response": {
         "mode": "projection",
         "sources": [
-          { "operationId": "bundleIds_getCollection", "statusCode": "200", "mediaType": "application/json" }
+          {
+            "operationId": "bundleIds_getCollection",
+            "statusCode": "200",
+            "mediaType": "application/json"
+          }
         ],
         "fields": [
-          { "outputField": "bundle_ids", "operationId": "bundleIds_getCollection", "jsonPointer": "/data" },
-          { "outputField": "next_url", "operationId": "bundleIds_getCollection", "jsonPointer": "/links/next" },
-          { "outputField": "total", "operationId": "bundleIds_getCollection", "jsonPointer": "/meta/paging/total" }
+          {
+            "outputField": "bundle_ids",
+            "operationId": "bundleIds_getCollection",
+            "jsonPointer": "/data"
+          },
+          {
+            "outputField": "next_url",
+            "operationId": "bundleIds_getCollection",
+            "jsonPointer": "/links/next"
+          },
+          {
+            "outputField": "total",
+            "operationId": "bundleIds_getCollection",
+            "jsonPointer": "/meta/paging/total"
+          }
         ]
       },
       "note": "All Apple 4.4.1 collection filters, sort, limit, and continuation are exposed. Sparse fields follow the global projection policy; includes and their nested limits are intentionally omitted."
@@ -382,22 +653,59 @@
       "effect": "read",
       "implementationState": "asBuilt",
       "operations": [
-        { "operationId": "bundleIds_bundleIdCapabilities_getToManyRelated", "method": "get", "path": "/v1/bundleIds/{id}/bundleIdCapabilities", "role": "primary" }
+        {
+          "operationId": "bundleIds_bundleIdCapabilities_getToManyRelated",
+          "method": "get",
+          "path": "/v1/bundleIds/{id}/bundleIdCapabilities",
+          "role": "primary"
+        }
       ],
       "fields": [
-        { "toolField": "bundle_id_resource_id", "sourceKind": "parameter", "operationId": "bundleIds_bundleIdCapabilities_getToManyRelated", "location": "path", "appleName": "id" },
-        { "toolField": "limit", "sourceKind": "parameter", "operationId": "bundleIds_bundleIdCapabilities_getToManyRelated", "location": "query", "appleName": "limit" },
-        { "toolField": "next_url", "sourceKind": "local", "localRole": "Strict Apple continuation URL for this exact collection. The caller must repeat every originating list control, including the effective/default limit, filters, sort, include, fields, and nested limits when supported; the exact query and a non-empty cursor are validated before sending the continuation request." }
+        {
+          "toolField": "bundle_id_resource_id",
+          "sourceKind": "parameter",
+          "operationId": "bundleIds_bundleIdCapabilities_getToManyRelated",
+          "location": "path",
+          "appleName": "id"
+        },
+        {
+          "toolField": "limit",
+          "sourceKind": "parameter",
+          "operationId": "bundleIds_bundleIdCapabilities_getToManyRelated",
+          "location": "query",
+          "appleName": "limit"
+        },
+        {
+          "toolField": "next_url",
+          "sourceKind": "local",
+          "localRole": "Strict Apple continuation URL for this exact collection. The caller must repeat every originating list control, including the effective/default limit, filters, sort, include, fields, and nested limits when supported; the exact query and a non-empty cursor are validated before sending the continuation request."
+        }
       ],
       "response": {
         "mode": "projection",
         "sources": [
-          { "operationId": "bundleIds_bundleIdCapabilities_getToManyRelated", "statusCode": "200", "mediaType": "application/json" }
+          {
+            "operationId": "bundleIds_bundleIdCapabilities_getToManyRelated",
+            "statusCode": "200",
+            "mediaType": "application/json"
+          }
         ],
         "fields": [
-          { "outputField": "capabilities", "operationId": "bundleIds_bundleIdCapabilities_getToManyRelated", "jsonPointer": "/data" },
-          { "outputField": "next_url", "operationId": "bundleIds_bundleIdCapabilities_getToManyRelated", "jsonPointer": "/links/next" },
-          { "outputField": "total", "operationId": "bundleIds_bundleIdCapabilities_getToManyRelated", "jsonPointer": "/meta/paging/total" }
+          {
+            "outputField": "capabilities",
+            "operationId": "bundleIds_bundleIdCapabilities_getToManyRelated",
+            "jsonPointer": "/data"
+          },
+          {
+            "outputField": "next_url",
+            "operationId": "bundleIds_bundleIdCapabilities_getToManyRelated",
+            "jsonPointer": "/links/next"
+          },
+          {
+            "outputField": "total",
+            "operationId": "bundleIds_bundleIdCapabilities_getToManyRelated",
+            "jsonPointer": "/meta/paging/total"
+          }
         ]
       },
       "note": "Apple 4.4.1 limit and continuation are honored. Capability settings preserve enabledByDefault, visible, enabled, and supportsWildcard; sparse fields follow the global projection policy."
@@ -420,29 +728,85 @@
               "appleName": "include",
               "disposition": "intentionallyOmitted",
               "reason": "Certificate lists use a bounded attribute projection and do not project optional passTypeId relationship resources.",
-              "reviewAtSpec": "4.5.1"
+              "reviewAtSpec": "4.6"
             }
           ]
         }
       ],
       "fields": [
-        { "toolField": "limit", "sourceKind": "parameter", "operationId": "certificates_getCollection", "location": "query", "appleName": "limit" },
-        { "toolField": "filter_type", "sourceKind": "parameter", "operationId": "certificates_getCollection", "location": "query", "appleName": "filter[certificateType]" },
-        { "toolField": "filter_display_name", "sourceKind": "parameter", "operationId": "certificates_getCollection", "location": "query", "appleName": "filter[displayName]" },
-        { "toolField": "filter_serial_number", "sourceKind": "parameter", "operationId": "certificates_getCollection", "location": "query", "appleName": "filter[serialNumber]" },
-        { "toolField": "filter_id", "sourceKind": "parameter", "operationId": "certificates_getCollection", "location": "query", "appleName": "filter[id]" },
-        { "toolField": "sort", "sourceKind": "parameter", "operationId": "certificates_getCollection", "location": "query", "appleName": "sort" },
-        { "toolField": "next_url", "sourceKind": "local", "localRole": "Strict Apple continuation URL for this exact collection. The caller must repeat every originating list control, including the effective/default limit, filters, sort, include, fields, and nested limits when supported; the exact query and a non-empty cursor are validated before sending the continuation request." }
+        {
+          "toolField": "limit",
+          "sourceKind": "parameter",
+          "operationId": "certificates_getCollection",
+          "location": "query",
+          "appleName": "limit"
+        },
+        {
+          "toolField": "filter_type",
+          "sourceKind": "parameter",
+          "operationId": "certificates_getCollection",
+          "location": "query",
+          "appleName": "filter[certificateType]"
+        },
+        {
+          "toolField": "filter_display_name",
+          "sourceKind": "parameter",
+          "operationId": "certificates_getCollection",
+          "location": "query",
+          "appleName": "filter[displayName]"
+        },
+        {
+          "toolField": "filter_serial_number",
+          "sourceKind": "parameter",
+          "operationId": "certificates_getCollection",
+          "location": "query",
+          "appleName": "filter[serialNumber]"
+        },
+        {
+          "toolField": "filter_id",
+          "sourceKind": "parameter",
+          "operationId": "certificates_getCollection",
+          "location": "query",
+          "appleName": "filter[id]"
+        },
+        {
+          "toolField": "sort",
+          "sourceKind": "parameter",
+          "operationId": "certificates_getCollection",
+          "location": "query",
+          "appleName": "sort"
+        },
+        {
+          "toolField": "next_url",
+          "sourceKind": "local",
+          "localRole": "Strict Apple continuation URL for this exact collection. The caller must repeat every originating list control, including the effective/default limit, filters, sort, include, fields, and nested limits when supported; the exact query and a non-empty cursor are validated before sending the continuation request."
+        }
       ],
       "response": {
         "mode": "projection",
         "sources": [
-          { "operationId": "certificates_getCollection", "statusCode": "200", "mediaType": "application/json" }
+          {
+            "operationId": "certificates_getCollection",
+            "statusCode": "200",
+            "mediaType": "application/json"
+          }
         ],
         "fields": [
-          { "outputField": "certificates", "operationId": "certificates_getCollection", "jsonPointer": "/data" },
-          { "outputField": "next_url", "operationId": "certificates_getCollection", "jsonPointer": "/links/next" },
-          { "outputField": "total", "operationId": "certificates_getCollection", "jsonPointer": "/meta/paging/total" }
+          {
+            "outputField": "certificates",
+            "operationId": "certificates_getCollection",
+            "jsonPointer": "/data"
+          },
+          {
+            "outputField": "next_url",
+            "operationId": "certificates_getCollection",
+            "jsonPointer": "/links/next"
+          },
+          {
+            "outputField": "total",
+            "operationId": "certificates_getCollection",
+            "jsonPointer": "/meta/paging/total"
+          }
         ]
       },
       "note": "All Apple 4.4.1 certificate filters, sort, limit, and continuation are exposed. Lists intentionally omit certificateContent and passTypeId resources; detail lookup returns certificateContent."
@@ -454,27 +818,94 @@
       "effect": "read",
       "implementationState": "asBuilt",
       "operations": [
-        { "operationId": "devices_getCollection", "method": "get", "path": "/v1/devices", "role": "primary" }
+        {
+          "operationId": "devices_getCollection",
+          "method": "get",
+          "path": "/v1/devices",
+          "role": "primary"
+        }
       ],
       "fields": [
-        { "toolField": "limit", "sourceKind": "parameter", "operationId": "devices_getCollection", "location": "query", "appleName": "limit" },
-        { "toolField": "filter_platform", "sourceKind": "parameter", "operationId": "devices_getCollection", "location": "query", "appleName": "filter[platform]" },
-        { "toolField": "filter_status", "sourceKind": "parameter", "operationId": "devices_getCollection", "location": "query", "appleName": "filter[status]" },
-        { "toolField": "filter_name", "sourceKind": "parameter", "operationId": "devices_getCollection", "location": "query", "appleName": "filter[name]" },
-        { "toolField": "filter_udid", "sourceKind": "parameter", "operationId": "devices_getCollection", "location": "query", "appleName": "filter[udid]" },
-        { "toolField": "filter_id", "sourceKind": "parameter", "operationId": "devices_getCollection", "location": "query", "appleName": "filter[id]" },
-        { "toolField": "sort", "sourceKind": "parameter", "operationId": "devices_getCollection", "location": "query", "appleName": "sort" },
-        { "toolField": "next_url", "sourceKind": "local", "localRole": "Strict Apple continuation URL for this exact collection. The caller must repeat every originating list control, including the effective/default limit, filters, sort, include, fields, and nested limits when supported; the exact query and a non-empty cursor are validated before sending the continuation request." }
+        {
+          "toolField": "limit",
+          "sourceKind": "parameter",
+          "operationId": "devices_getCollection",
+          "location": "query",
+          "appleName": "limit"
+        },
+        {
+          "toolField": "filter_platform",
+          "sourceKind": "parameter",
+          "operationId": "devices_getCollection",
+          "location": "query",
+          "appleName": "filter[platform]"
+        },
+        {
+          "toolField": "filter_status",
+          "sourceKind": "parameter",
+          "operationId": "devices_getCollection",
+          "location": "query",
+          "appleName": "filter[status]"
+        },
+        {
+          "toolField": "filter_name",
+          "sourceKind": "parameter",
+          "operationId": "devices_getCollection",
+          "location": "query",
+          "appleName": "filter[name]"
+        },
+        {
+          "toolField": "filter_udid",
+          "sourceKind": "parameter",
+          "operationId": "devices_getCollection",
+          "location": "query",
+          "appleName": "filter[udid]"
+        },
+        {
+          "toolField": "filter_id",
+          "sourceKind": "parameter",
+          "operationId": "devices_getCollection",
+          "location": "query",
+          "appleName": "filter[id]"
+        },
+        {
+          "toolField": "sort",
+          "sourceKind": "parameter",
+          "operationId": "devices_getCollection",
+          "location": "query",
+          "appleName": "sort"
+        },
+        {
+          "toolField": "next_url",
+          "sourceKind": "local",
+          "localRole": "Strict Apple continuation URL for this exact collection. The caller must repeat every originating list control, including the effective/default limit, filters, sort, include, fields, and nested limits when supported; the exact query and a non-empty cursor are validated before sending the continuation request."
+        }
       ],
       "response": {
         "mode": "projection",
         "sources": [
-          { "operationId": "devices_getCollection", "statusCode": "200", "mediaType": "application/json" }
+          {
+            "operationId": "devices_getCollection",
+            "statusCode": "200",
+            "mediaType": "application/json"
+          }
         ],
         "fields": [
-          { "outputField": "devices", "operationId": "devices_getCollection", "jsonPointer": "/data" },
-          { "outputField": "next_url", "operationId": "devices_getCollection", "jsonPointer": "/links/next" },
-          { "outputField": "total", "operationId": "devices_getCollection", "jsonPointer": "/meta/paging/total" }
+          {
+            "outputField": "devices",
+            "operationId": "devices_getCollection",
+            "jsonPointer": "/data"
+          },
+          {
+            "outputField": "next_url",
+            "operationId": "devices_getCollection",
+            "jsonPointer": "/links/next"
+          },
+          {
+            "outputField": "total",
+            "operationId": "devices_getCollection",
+            "jsonPointer": "/meta/paging/total"
+          }
         ]
       },
       "note": "All Apple 4.4.1 device filters, sort, limit, and continuation are exposed, including UNIVERSAL platform support. Sparse fields follow the global projection policy."
@@ -497,43 +928,99 @@
               "appleName": "include",
               "disposition": "intentionallyOmitted",
               "reason": "Profile lists use a bounded attribute projection and do not project bundleId, devices, or certificates relationship resources.",
-              "reviewAtSpec": "4.5.1"
+              "reviewAtSpec": "4.6"
             },
             {
               "location": "query",
               "appleName": "limit[certificates]",
               "disposition": "intentionallyOmitted",
               "reason": "Certificates are not included by this tool, so the nested relationship limit has no effect on its documented output.",
-              "reviewAtSpec": "4.5.1"
+              "reviewAtSpec": "4.6"
             },
             {
               "location": "query",
               "appleName": "limit[devices]",
               "disposition": "intentionallyOmitted",
               "reason": "Devices are not included by this tool, so the nested relationship limit has no effect on its documented output.",
-              "reviewAtSpec": "4.5.1"
+              "reviewAtSpec": "4.6"
             }
           ]
         }
       ],
       "fields": [
-        { "toolField": "limit", "sourceKind": "parameter", "operationId": "profiles_getCollection", "location": "query", "appleName": "limit" },
-        { "toolField": "filter_profile_type", "sourceKind": "parameter", "operationId": "profiles_getCollection", "location": "query", "appleName": "filter[profileType]" },
-        { "toolField": "filter_profile_state", "sourceKind": "parameter", "operationId": "profiles_getCollection", "location": "query", "appleName": "filter[profileState]" },
-        { "toolField": "filter_name", "sourceKind": "parameter", "operationId": "profiles_getCollection", "location": "query", "appleName": "filter[name]" },
-        { "toolField": "filter_id", "sourceKind": "parameter", "operationId": "profiles_getCollection", "location": "query", "appleName": "filter[id]" },
-        { "toolField": "sort", "sourceKind": "parameter", "operationId": "profiles_getCollection", "location": "query", "appleName": "sort" },
-        { "toolField": "next_url", "sourceKind": "local", "localRole": "Strict Apple continuation URL for this exact collection. The caller must repeat every originating list control, including the effective/default limit, filters, sort, include, fields, and nested limits when supported; the exact query and a non-empty cursor are validated before sending the continuation request." }
+        {
+          "toolField": "limit",
+          "sourceKind": "parameter",
+          "operationId": "profiles_getCollection",
+          "location": "query",
+          "appleName": "limit"
+        },
+        {
+          "toolField": "filter_profile_type",
+          "sourceKind": "parameter",
+          "operationId": "profiles_getCollection",
+          "location": "query",
+          "appleName": "filter[profileType]"
+        },
+        {
+          "toolField": "filter_profile_state",
+          "sourceKind": "parameter",
+          "operationId": "profiles_getCollection",
+          "location": "query",
+          "appleName": "filter[profileState]"
+        },
+        {
+          "toolField": "filter_name",
+          "sourceKind": "parameter",
+          "operationId": "profiles_getCollection",
+          "location": "query",
+          "appleName": "filter[name]"
+        },
+        {
+          "toolField": "filter_id",
+          "sourceKind": "parameter",
+          "operationId": "profiles_getCollection",
+          "location": "query",
+          "appleName": "filter[id]"
+        },
+        {
+          "toolField": "sort",
+          "sourceKind": "parameter",
+          "operationId": "profiles_getCollection",
+          "location": "query",
+          "appleName": "sort"
+        },
+        {
+          "toolField": "next_url",
+          "sourceKind": "local",
+          "localRole": "Strict Apple continuation URL for this exact collection. The caller must repeat every originating list control, including the effective/default limit, filters, sort, include, fields, and nested limits when supported; the exact query and a non-empty cursor are validated before sending the continuation request."
+        }
       ],
       "response": {
         "mode": "projection",
         "sources": [
-          { "operationId": "profiles_getCollection", "statusCode": "200", "mediaType": "application/json" }
+          {
+            "operationId": "profiles_getCollection",
+            "statusCode": "200",
+            "mediaType": "application/json"
+          }
         ],
         "fields": [
-          { "outputField": "profiles", "operationId": "profiles_getCollection", "jsonPointer": "/data" },
-          { "outputField": "next_url", "operationId": "profiles_getCollection", "jsonPointer": "/links/next" },
-          { "outputField": "total", "operationId": "profiles_getCollection", "jsonPointer": "/meta/paging/total" }
+          {
+            "outputField": "profiles",
+            "operationId": "profiles_getCollection",
+            "jsonPointer": "/data"
+          },
+          {
+            "outputField": "next_url",
+            "operationId": "profiles_getCollection",
+            "jsonPointer": "/links/next"
+          },
+          {
+            "outputField": "total",
+            "operationId": "profiles_getCollection",
+            "jsonPointer": "/meta/paging/total"
+          }
         ]
       },
       "note": "All Apple 4.4.1 profile filters, sort, limit, and continuation are exposed. Lists intentionally omit profileContent and relationship resources; detail/create responses return profileContent."
@@ -551,22 +1038,49 @@
           "path": "/v1/devices",
           "role": "primary",
           "inputs": [
-            { "sourceKind": "fixed", "jsonPointer": "/data/type", "fixedValue": "devices" }
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/type",
+              "fixedValue": "devices"
+            }
           ]
         }
       ],
       "fields": [
-        { "toolField": "name", "sourceKind": "requestBody", "operationId": "devices_createInstance", "jsonPointer": "/data/attributes/name" },
-        { "toolField": "udid", "sourceKind": "requestBody", "operationId": "devices_createInstance", "jsonPointer": "/data/attributes/udid" },
-        { "toolField": "platform", "sourceKind": "requestBody", "operationId": "devices_createInstance", "jsonPointer": "/data/attributes/platform" }
+        {
+          "toolField": "name",
+          "sourceKind": "requestBody",
+          "operationId": "devices_createInstance",
+          "jsonPointer": "/data/attributes/name"
+        },
+        {
+          "toolField": "udid",
+          "sourceKind": "requestBody",
+          "operationId": "devices_createInstance",
+          "jsonPointer": "/data/attributes/udid"
+        },
+        {
+          "toolField": "platform",
+          "sourceKind": "requestBody",
+          "operationId": "devices_createInstance",
+          "jsonPointer": "/data/attributes/platform"
+        }
       ],
       "response": {
         "mode": "projection",
         "sources": [
-          { "operationId": "devices_createInstance", "statusCode": "201", "mediaType": "application/json" }
+          {
+            "operationId": "devices_createInstance",
+            "statusCode": "201",
+            "mediaType": "application/json"
+          }
         ],
         "fields": [
-          { "outputField": "device", "operationId": "devices_createInstance", "jsonPointer": "/data" }
+          {
+            "outputField": "device",
+            "operationId": "devices_createInstance",
+            "jsonPointer": "/data"
+          }
         ]
       },
       "note": "Exact Apple 4.4.1 create operation, including IOS, MAC_OS, and UNIVERSAL platform support."
@@ -578,18 +1092,35 @@
       "effect": "destructive",
       "implementationState": "asBuilt",
       "operations": [
-        { "operationId": "certificates_deleteInstance", "method": "delete", "path": "/v1/certificates/{id}", "role": "primary" }
+        {
+          "operationId": "certificates_deleteInstance",
+          "method": "delete",
+          "path": "/v1/certificates/{id}",
+          "role": "primary"
+        }
       ],
       "fields": [
-        { "toolField": "certificate_id", "sourceKind": "parameter", "operationId": "certificates_deleteInstance", "location": "path", "appleName": "id" }
+        {
+          "toolField": "certificate_id",
+          "sourceKind": "parameter",
+          "operationId": "certificates_deleteInstance",
+          "location": "path",
+          "appleName": "id"
+        }
       ],
       "response": {
         "mode": "local",
         "sources": [
-          { "operationId": "certificates_deleteInstance", "statusCode": "204" }
+          {
+            "operationId": "certificates_deleteInstance",
+            "statusCode": "204"
+          }
         ],
         "fields": [
-          { "outputField": "message", "localRole": "confirmation synthesized after Apple's content-free 204 response" }
+          {
+            "outputField": "message",
+            "localRole": "confirmation synthesized after Apple's content-free 204 response"
+          }
         ]
       },
       "note": "Apple models revocation as certificate deletion and returns 204 with no response document; the MCP result is a local confirmation."
@@ -607,23 +1138,58 @@
           "path": "/v1/devices/{id}",
           "role": "primary",
           "inputs": [
-            { "sourceKind": "fixed", "jsonPointer": "/data/type", "fixedValue": "devices" }
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/type",
+              "fixedValue": "devices"
+            }
           ]
         }
       ],
       "fields": [
-        { "toolField": "device_id", "sourceKind": "parameter", "operationId": "devices_updateInstance", "location": "path", "appleName": "id" },
-        { "toolField": "device_id", "sourceKind": "requestBody", "operationId": "devices_updateInstance", "jsonPointer": "/data/id" },
-        { "toolField": "name", "sourceKind": "requestBody", "operationId": "devices_updateInstance", "jsonPointer": "/data/attributes/name", "localRole": "preserves omission, explicit null, and string values" },
-        { "toolField": "status", "sourceKind": "requestBody", "operationId": "devices_updateInstance", "jsonPointer": "/data/attributes/status", "localRole": "preserves omission, explicit null, and validated ENABLED or DISABLED values" }
+        {
+          "toolField": "device_id",
+          "sourceKind": "parameter",
+          "operationId": "devices_updateInstance",
+          "location": "path",
+          "appleName": "id"
+        },
+        {
+          "toolField": "device_id",
+          "sourceKind": "requestBody",
+          "operationId": "devices_updateInstance",
+          "jsonPointer": "/data/id"
+        },
+        {
+          "toolField": "name",
+          "sourceKind": "requestBody",
+          "operationId": "devices_updateInstance",
+          "jsonPointer": "/data/attributes/name",
+          "localRole": "preserves omission, explicit null, and string values"
+        },
+        {
+          "toolField": "status",
+          "sourceKind": "requestBody",
+          "operationId": "devices_updateInstance",
+          "jsonPointer": "/data/attributes/status",
+          "localRole": "preserves omission, explicit null, and validated ENABLED or DISABLED values"
+        }
       ],
       "response": {
         "mode": "projection",
         "sources": [
-          { "operationId": "devices_updateInstance", "statusCode": "200", "mediaType": "application/json" }
+          {
+            "operationId": "devices_updateInstance",
+            "statusCode": "200",
+            "mediaType": "application/json"
+          }
         ],
         "fields": [
-          { "outputField": "device", "operationId": "devices_updateInstance", "jsonPointer": "/data" }
+          {
+            "outputField": "device",
+            "operationId": "devices_updateInstance",
+            "jsonPointer": "/data"
+          }
         ]
       },
       "note": "Exact Apple 4.4.1 path/body mapping. The handler requires at least one mutable attribute and rejects an empty PATCH before network access."
