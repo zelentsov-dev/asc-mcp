@@ -7,7 +7,15 @@ extension SubscriptionsWorker {
     private struct RetentionPaginationParams: Sendable {
         let limit: Int?
         let nextURL: String?
+        let scope: PaginationScope
     }
+
+    private static let retentionOfferPricesQueryParameters: [String: String] = [
+        "include": "territory,subscriptionPricePoint",
+        "fields[retentionOfferPrices]": "territory,subscriptionPricePoint",
+        "fields[subscriptionPricePoints]": "customerPrice,proceeds,proceedsYear2,territory",
+        "fields[territories]": "currency"
+    ]
 
     private static let allowedRetentionOfferModes: Set<String> = [
         "PAY_AS_YOU_GO",
@@ -49,16 +57,17 @@ extension SubscriptionsWorker {
                 "app_id", "limit", "next_url"
             ])
             let encodedAppId = try validateRetentionRequiredResourceID(params.arguments, key: "app_id")
+            let endpointPath = "/v1/apps/\(try ASCPathSegment.encode(encodedAppId, field: "app_id"))/retentionMessages"
             let pagination = try parseRetentionPagination(
                 params.arguments,
-                allowedPaths: ["/v1/apps/\(try ASCPathSegment.encode(encodedAppId, field: "app_id"))/retentionMessages"]
+                endpointPath: endpointPath
             )
 
             let response: ASCRetentionMessagesResponse
             if let nextURL = pagination.nextURL {
-                response = try await httpClient.get(
+                response = try await httpClient.getPage(
                     nextURL,
-                    parameters: [:],
+                    scope: pagination.scope,
                     as: ASCRetentionMessagesResponse.self
                 )
             } else {
@@ -67,7 +76,7 @@ extension SubscriptionsWorker {
                     queryParams["limit"] = String(limit)
                 }
                 response = try await httpClient.get(
-                    "/v1/apps/\(try ASCPathSegment.encode(encodedAppId, field: "app_id"))/retentionMessages",
+                    endpointPath,
                     parameters: queryParams,
                     as: ASCRetentionMessagesResponse.self
                 )
@@ -192,19 +201,17 @@ extension SubscriptionsWorker {
                 params.arguments,
                 key: "retention_message_id"
             )
+            let endpointPath = "/v1/retentionMessages/\(try ASCPathSegment.encode(encodedMessageId, field: "retention_message_id"))/versions"
             let pagination = try parseRetentionPagination(
                 params.arguments,
-                allowedPaths: [
-                    "/v1/retentionMessages/\(try ASCPathSegment.encode(encodedMessageId, field: "retention_message_id"))/versions",
-                    "/v1/retentionMessages/\(try ASCPathSegment.encode(encodedMessageId, field: "retention_message_id"))/retentionMessageVersions"
-                ]
+                endpointPath: endpointPath
             )
 
             let response: ASCRetentionMessageVersionsResponse
             if let nextURL = pagination.nextURL {
-                response = try await httpClient.get(
+                response = try await httpClient.getPage(
                     nextURL,
-                    parameters: [:],
+                    scope: pagination.scope,
                     as: ASCRetentionMessageVersionsResponse.self
                 )
             } else {
@@ -213,7 +220,7 @@ extension SubscriptionsWorker {
                     queryParams["limit"] = String(limit)
                 }
                 response = try await httpClient.get(
-                    "/v1/retentionMessages/\(try ASCPathSegment.encode(encodedMessageId, field: "retention_message_id"))/versions",
+                    endpointPath,
                     parameters: queryParams,
                     as: ASCRetentionMessageVersionsResponse.self
                 )
@@ -313,19 +320,17 @@ extension SubscriptionsWorker {
                 params.arguments,
                 key: "version_id"
             )
+            let endpointPath = "/v1/retentionMessageVersions/\(try ASCPathSegment.encode(encodedVersionId, field: "version_id"))/localizations"
             let pagination = try parseRetentionPagination(
                 params.arguments,
-                allowedPaths: [
-                    "/v1/retentionMessageVersions/\(try ASCPathSegment.encode(encodedVersionId, field: "version_id"))/localizations",
-                    "/v1/retentionMessageVersions/\(try ASCPathSegment.encode(encodedVersionId, field: "version_id"))/retentionMessageLocalizations"
-                ]
+                endpointPath: endpointPath
             )
 
             let response: ASCRetentionMessageLocalizationsResponse
             if let nextURL = pagination.nextURL {
-                response = try await httpClient.get(
+                response = try await httpClient.getPage(
                     nextURL,
-                    parameters: [:],
+                    scope: pagination.scope,
                     as: ASCRetentionMessageLocalizationsResponse.self
                 )
             } else {
@@ -334,7 +339,7 @@ extension SubscriptionsWorker {
                     queryParams["limit"] = String(limit)
                 }
                 response = try await httpClient.get(
-                    "/v1/retentionMessageVersions/\(try ASCPathSegment.encode(encodedVersionId, field: "version_id"))/localizations",
+                    endpointPath,
                     parameters: queryParams,
                     as: ASCRetentionMessageLocalizationsResponse.self
                 )
@@ -538,19 +543,17 @@ extension SubscriptionsWorker {
                 params.arguments,
                 key: "retention_message_id"
             )
+            let endpointPath = "/v1/retentionMessages/\(try ASCPathSegment.encode(encodedMessageId, field: "retention_message_id"))/subscriptions"
             let pagination = try parseRetentionPagination(
                 params.arguments,
-                allowedPaths: [
-                    "/v1/retentionMessages/\(try ASCPathSegment.encode(encodedMessageId, field: "retention_message_id"))/subscriptions",
-                    "/v1/retentionMessages/\(try ASCPathSegment.encode(encodedMessageId, field: "retention_message_id"))/relationships/subscriptions"
-                ]
+                endpointPath: endpointPath
             )
 
             let response: ASCRetentionMessageSubscriptionsResponse
             if let nextURL = pagination.nextURL {
-                response = try await httpClient.get(
+                response = try await httpClient.getPage(
                     nextURL,
-                    parameters: [:],
+                    scope: pagination.scope,
                     as: ASCRetentionMessageSubscriptionsResponse.self
                 )
             } else {
@@ -559,7 +562,7 @@ extension SubscriptionsWorker {
                     queryParams["limit"] = String(limit)
                 }
                 response = try await httpClient.get(
-                    "/v1/retentionMessages/\(try ASCPathSegment.encode(encodedMessageId, field: "retention_message_id"))/subscriptions",
+                    endpointPath,
                     parameters: queryParams,
                     as: ASCRetentionMessageSubscriptionsResponse.self
                 )
@@ -616,17 +619,14 @@ extension SubscriptionsWorker {
 
             let pagination = try parseRetentionPagination(
                 params.arguments,
-                allowedPaths: [
-                    "/v1/subscriptions/\(try ASCPathSegment.encode(encodedSubId, field: "subscription_id"))/retentionOffers",
-                    "/v1/subscriptions/\(try ASCPathSegment.encode(encodedSubId, field: "subscription_id"))/retentionMessageOffers"
-                ]
+                endpointPath: endpointPath
             )
 
             let response: ASCRetentionOffersResponse
             if let nextURL = pagination.nextURL {
-                response = try await httpClient.get(
+                response = try await httpClient.getPage(
                     nextURL,
-                    parameters: [:],
+                    scope: pagination.scope,
                     as: ASCRetentionOffersResponse.self
                 )
             } else {
@@ -924,30 +924,29 @@ extension SubscriptionsWorker {
                 key: "offer_id"
             )
             let territories = try parseOptionalTerritoryFilter(params.arguments, key: "territory")
+            let endpointPath = "/v1/retentionOffers/\(try ASCPathSegment.encode(encodedOfferId, field: "offer_id"))/prices"
+
+            var requiredPaginationParams: [String: String] = [:]
+            if let territories, !territories.isEmpty {
+                requiredPaginationParams["filter[territory]"] = territories.joined(separator: ",")
+            }
 
             let pagination = try parseRetentionPagination(
                 params.arguments,
-                allowedPaths: ["/v1/retentionOffers/\(try ASCPathSegment.encode(encodedOfferId, field: "offer_id"))/prices"],
-                allowedQueryKeys: [
-                    "limit",
-                    "cursor",
-                    "filter[territory]",
-                    "include",
-                    "fields[retentionOfferPrices]",
-                    "fields[territories]",
-                    "fields[subscriptionPricePoints]"
-                ]
+                endpointPath: endpointPath,
+                requiredParameters: requiredPaginationParams,
+                optionalFixedParameters: Self.retentionOfferPricesQueryParameters
             )
 
             let response: ASCRetentionOfferPricesResponse
             if let nextURL = pagination.nextURL {
-                response = try await httpClient.get(
+                response = try await httpClient.getPage(
                     nextURL,
-                    parameters: [:],
+                    scope: pagination.scope,
                     as: ASCRetentionOfferPricesResponse.self
                 )
             } else {
-                var queryParams: [String: String] = [:]
+                var queryParams = Self.retentionOfferPricesQueryParameters
                 if let limit = pagination.limit {
                     queryParams["limit"] = String(limit)
                 }
@@ -955,13 +954,13 @@ extension SubscriptionsWorker {
                     queryParams["filter[territory]"] = territories.joined(separator: ",")
                 }
                 response = try await httpClient.get(
-                    "/v1/retentionOffers/\(try ASCPathSegment.encode(encodedOfferId, field: "offer_id"))/prices",
+                    endpointPath,
                     parameters: queryParams,
                     as: ASCRetentionOfferPricesResponse.self
                 )
             }
 
-            let prices = response.data.map { formatRetentionOfferPrice($0) }
+            let prices = response.data.map { formatRetentionOfferPrice($0, included: response.included) }
             var result: [String: Any] = [
                 "success": true,
                 "data": prices,
@@ -1192,8 +1191,9 @@ extension SubscriptionsWorker {
 
     private func parseRetentionPagination(
         _ arguments: [String: Value]?,
-        allowedPaths: Set<String>,
-        allowedQueryKeys: Set<String> = ["limit", "cursor", "include"]
+        endpointPath: String,
+        requiredParameters: [String: String] = [:],
+        optionalFixedParameters: [String: String] = [:]
     ) throws -> RetentionPaginationParams {
         var parsedLimit: Int?
         if let rawLimit = arguments?["limit"], rawLimit != .null {
@@ -1202,6 +1202,15 @@ extension SubscriptionsWorker {
             }
             parsedLimit = intLimit
         }
+
+        var effectiveRequired = requiredParameters
+        if let parsedLimit {
+            effectiveRequired["limit"] = String(parsedLimit)
+        }
+
+        var allowedKeys: Set<String> = ["cursor", "limit"]
+        allowedKeys.formUnion(effectiveRequired.keys)
+        allowedKeys.formUnion(optionalFixedParameters.keys)
 
         var parsedNextURL: String?
         if let rawNext = arguments?["next_url"], rawNext != .null {
@@ -1219,38 +1228,24 @@ extension SubscriptionsWorker {
                 throw ASCError.parsing("Invalid 'next_url' format")
             }
 
-            if let scheme = components.scheme {
-                guard scheme.lowercased() == "https",
-                      components.host?.lowercased() == "api.appstoreconnect.apple.com",
-                      components.port == nil else {
-                    throw ASCError.parsing(
-                        "Invalid 'next_url': must target https://api.appstoreconnect.apple.com"
-                    )
-                }
-            } else if components.host != nil {
-                throw ASCError.parsing("Invalid 'next_url' host")
-            }
-
-            let path = components.percentEncodedPath
-            guard allowedPaths.contains(path) else {
-                throw ASCError.parsing(
-                    "Invalid 'next_url' path '\(path)' for this endpoint"
-                )
-            }
-
             if let queryItems = components.queryItems {
                 for item in queryItems {
-                    guard allowedQueryKeys.contains(item.name) else {
+                    guard allowedKeys.contains(item.name) else {
                         throw ASCError.parsing(
                             "Unsupported query parameter '\(item.name)' in 'next_url'"
                         )
                     }
-                    if item.name == "limit", let val = item.value {
-                        guard let intLimit = Int(val), (1...200).contains(intLimit) else {
+                    if item.name == "limit" {
+                        guard let val = item.value,
+                              let intLimit = Int(val),
+                              (1...200).contains(intLimit) else {
                             throw ASCError.parsing(
                                 "Invalid 'limit' in 'next_url': must be between 1 and 200"
                             )
                         }
+                    }
+                    if let expectedFixedValue = optionalFixedParameters[item.name] {
+                        effectiveRequired[item.name] = expectedFixedValue
                     }
                 }
             }
@@ -1258,7 +1253,14 @@ extension SubscriptionsWorker {
             parsedNextURL = nextString
         }
 
-        return RetentionPaginationParams(limit: parsedLimit, nextURL: parsedNextURL)
+        let scope = PaginationScope(
+            path: endpointPath,
+            requiredParameters: effectiveRequired,
+            allowedParameters: allowedKeys,
+            requiredNonEmptyParameters: ["cursor"]
+        )
+
+        return RetentionPaginationParams(limit: parsedLimit, nextURL: parsedNextURL, scope: scope)
     }
 
     private func validateRetentionReferenceName(
@@ -1351,13 +1353,7 @@ extension SubscriptionsWorker {
     }
 
     private func validateNoEmoji(in text: String, field: String) throws {
-        let containsEmoji = text.unicodeScalars.contains { scalar in
-            scalar.properties.isEmojiPresentation
-                || scalar.value >= 0x1F000
-                || (0x2600...0x27BF).contains(scalar.value)
-                || scalar.value == 0xFE0F
-        }
-        if containsEmoji {
+        if ASCMetadataValidator.containsEmoji(text) {
             throw ASCError.parsing("Parameter '\(field)' must not contain emoji characters")
         }
     }
@@ -1785,16 +1781,46 @@ extension SubscriptionsWorker {
         return result
     }
 
-    private func formatRetentionOfferPrice(_ price: ASCRetentionOfferPrice) -> [String: Any] {
+    private func formatRetentionOfferPrice(
+        _ price: ASCRetentionOfferPrice,
+        included: [ASCWinBackOfferPriceIncludedResource]? = nil
+    ) -> [String: Any] {
         var result: [String: Any] = [
             "id": price.id,
             "type": price.type
         ]
-        if let territoryId = price.relationships?.territory?.data?.id {
-            result["territoryId"] = territoryId
+        let pricePointId = price.relationships?.subscriptionPricePoint?.data?.id
+        let pricePoint = pricePointId.flatMap { id in
+            included?.first(where: { $0.type == "subscriptionPricePoints" && $0.id == id })
         }
-        if let pricePointId = price.relationships?.subscriptionPricePoint?.data?.id {
+        let territoryId = price.relationships?.territory?.data?.id
+            ?? pricePoint?.relationships?["territory"]?.objectValue?["data"]?.objectValue?["id"]?.stringValue
+        let territory = territoryId.flatMap { id in
+            included?.first(where: { $0.type == "territories" && $0.id == id })
+        }
+
+        if let territoryId {
+            result["territoryId"] = territoryId
+            result["territory_id"] = territoryId
+        }
+        if let pricePointId {
             result["subscriptionPricePointId"] = pricePointId
+            result["subscription_price_point_id"] = pricePointId
+            result["price_point_id"] = pricePointId
+        }
+        if let currency = territory?.attributes?["currency"]?.stringValue {
+            result["currency"] = currency
+        }
+        if let customerPrice = pricePoint?.attributes?["customerPrice"]?.stringValue {
+            result["customerPrice"] = customerPrice
+            result["customer_price"] = customerPrice
+        }
+        if let proceeds = pricePoint?.attributes?["proceeds"]?.stringValue {
+            result["proceeds"] = proceeds
+        }
+        if let proceedsYear2 = pricePoint?.attributes?["proceedsYear2"]?.stringValue {
+            result["proceedsYear2"] = proceedsYear2
+            result["proceeds_year2"] = proceedsYear2
         }
         return result
     }
