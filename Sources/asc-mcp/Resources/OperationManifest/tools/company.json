@@ -13,7 +13,10 @@
         "mode": "local",
         "sources": [],
         "fields": [
-          { "outputField": "currentCompany", "localRole": "CompaniesManager active configuration with credential identifiers masked" }
+          {
+            "outputField": "currentCompany",
+            "localRole": "CompaniesManager active configuration with credential identifiers masked"
+          }
         ]
       },
       "note": "Local configuration lookup; no App Store Connect REST operation is called. The response intentionally projects masked key and issuer identifiers rather than credentials."
@@ -30,8 +33,14 @@
         "mode": "local",
         "sources": [],
         "fields": [
-          { "outputField": "companies", "localRole": "CompaniesManager configured companies with masked key IDs" },
-          { "outputField": "currentCompanyId", "localRole": "CompaniesManager active company identifier" }
+          {
+            "outputField": "companies",
+            "localRole": "CompaniesManager configured companies with masked key IDs"
+          },
+          {
+            "outputField": "currentCompanyId",
+            "localRole": "CompaniesManager active company identifier"
+          }
         ]
       },
       "note": "Local server configuration inventory; it is not the App Store Connect Users API and does not discover provider organizations from Apple."
@@ -44,13 +53,20 @@
       "implementationState": "asBuilt",
       "operations": [],
       "fields": [
-        { "toolField": "company", "sourceKind": "local", "localRole": "exact configured company ID, exact case-insensitive name, or unique case-insensitive partial name match; empty and ambiguous queries are rejected" }
+        {
+          "toolField": "company",
+          "sourceKind": "local",
+          "localRole": "exact configured company ID, exact case-insensitive name, or unique case-insensitive partial name match; empty and ambiguous queries are rejected"
+        }
       ],
       "response": {
         "mode": "local",
         "sources": [],
         "fields": [
-          { "outputField": "company", "localRole": "new active company with masked credential identifiers" }
+          {
+            "outputField": "company",
+            "localRole": "new active company with masked credential identifiers"
+          }
         ]
       },
       "note": "Local credential-context switch followed by atomic dependent worker replacement; no Apple REST operation is called. Partial-name selection succeeds only for a unique configured match, preventing accidental account selection."

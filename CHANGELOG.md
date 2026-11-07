@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Add 23 subscription retention messaging tools in `SubscriptionsWorker` (`subscriptions_*`) covering App Store Connect API 4.6 retention messages (`list`, `get`, `create`, `delete`), versions (`list`, `get`, `create`), localizations (`list`, `get`, `create`, `update`, `delete`) with Apple header/body/emoji/price-mention preflight validation, retention offers (`list`, `get`, `create`, `update`, `delete`, `list_retention_offer_prices`), and subscription retention relationships (`list_retention_message_subscriptions`, `get_retention_message_for_subscription`, `set_retention_message`, `add_retention_message_offers`, `remove_retention_message_offers`).
+- Extend `AssetsWorker` (`assets_*`) to support `retentionMessageVersion` (`feature = "RETENTION_MESSAGING"`) image placements via Apple's to-one `/v1/retentionMessageVersions/{id}/placement` endpoint, with app-scoped ownership verification and explicit rejection of video placements and multi-placement reordering.
+- Extend `ReviewSubmissionsWorker` (`review_submissions_*`) to support `retention_message_version_id` (`retentionMessageVersion` / `retentionMessageVersions`) in review submission item assembly and reads.
+- Pin the official Apple 4.6 OpenAPI specification (`1,027` paths, `1,337` operations) and update the operation manifest (`537` public tools, `528` mapped operations, `440` waived, `369` scope-rule out of scope, `4,562` classified optional inputs with `0` unclassified).
+
 ## [4.2.0] - 2026-10-19
 
 ### Added

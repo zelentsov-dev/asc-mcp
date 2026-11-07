@@ -49,7 +49,7 @@ Each company needs: `keyID`, `issuerID`, `privateKeyPath` (path to `.p8` file).
 
 **WorkerManager** (`Workers/MainWorker/WorkerManager.swift`) — central registry, routes tool calls by prefix.
 
-**Workers** (40 Swift worker classes; 36 `--workers` filter keys; 514 tools):
+**Workers** (40 Swift worker classes; 36 `--workers` filter keys; 537 tools):
 
 | Worker | Prefix | Tools | Domain |
 |--------|--------|-------|--------|
@@ -76,7 +76,7 @@ Each company needs: `keyID`, `issuerID`, `privateKeyPath` (path to `.p8` file).
 | UsersWorker | `users_` | 10 | Team members, roles, invitations, visible apps |
 | AppEventsWorker | `app_events_` | 9 | In-app events CRUD, localizations |
 | AnalyticsWorker | `analytics_` | 11 | Sales/financial reports, app summary, analytics reports/instances/segments, snapshot status |
-| SubscriptionsWorker | `subscriptions_` | 99 | Subscription and group versions, pricing, plan availability, offers, assets; includes offer-code, intro, promotional, and win-back sub-worker behavior |
+| SubscriptionsWorker | `subscriptions_` | 122 | Subscription and group versions, pricing, plan availability, offers, retention messaging (messages, versions, localizations, retention offers, and subscription retention relationships), assets; includes offer-code, intro, promotional, and win-back sub-worker behavior |
 | SandboxTestersWorker | `sandbox_` | 3 | Sandbox testers (list, update, clear purchase history) |
 | BetaAppWorker | `beta_app_` | 10 | Beta app localizations, review submissions, review details |
 | PreReleaseVersionsWorker | `pre_release_` | 3 | Pre-release versions (list, get, builds) |

@@ -10,7 +10,7 @@ struct ASCCoverageInventoryTests {
         let names = Set(areas.map(\.name))
 
         #expect(ASCCoverageInventory.snapshotDate == "2026-10-15")
-        #expect(ASCCoverageInventory.appleAPIVersionBaseline == "4.5.1")
+        #expect(ASCCoverageInventory.appleAPIVersionBaseline == "4.6")
         #expect(areas.count == names.count)
         #expect(areas.count >= 10)
 
@@ -35,6 +35,9 @@ struct ASCCoverageInventoryTests {
         })
         #expect(commerce.coveredCapabilities.contains {
             $0.contains("paginated plural version-owned IAP review images")
+        })
+        #expect(commerce.coveredCapabilities.contains {
+            $0.contains("subscription retention messaging")
         })
         #expect(commerce.missingCapabilities.contains("authoritative fully paginated subscription inventory"))
     }

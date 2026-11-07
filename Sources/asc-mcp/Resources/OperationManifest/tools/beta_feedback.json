@@ -27,7 +27,10 @@
       "response": {
         "mode": "local",
         "sources": [
-          { "operationId": "betaFeedbackCrashSubmissions_deleteInstance", "statusCode": "204" }
+          {
+            "operationId": "betaFeedbackCrashSubmissions_deleteInstance",
+            "statusCode": "204"
+          }
         ],
         "fields": [
           {
@@ -68,7 +71,10 @@
       "response": {
         "mode": "local",
         "sources": [
-          { "operationId": "betaFeedbackScreenshotSubmissions_deleteInstance", "statusCode": "204" }
+          {
+            "operationId": "betaFeedbackScreenshotSubmissions_deleteInstance",
+            "statusCode": "204"
+          }
         ],
         "fields": [
           {

@@ -1,0 +1,11 @@
+{
+  "version": "4.6",
+  "sourceURL": "https://developer.apple.com/sample-code/app-store-connect/app-store-connect-openapi-specification.zip",
+  "retrievedAt": "2026-11-07",
+  "sha256": "74732362a91236dcb66eb1620f8be18c2b6060771269b483eab578473bb32763",
+  "pathCount": 1027,
+  "operationCount": 1337,
+  "releaseNotes": [
+    "https://developer.apple.com/documentation/appstoreconnectapi/app-store-connect-api-4-6-release-notes"
+  ]
+}

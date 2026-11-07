@@ -15,8 +15,16 @@
           "role": "primary",
           "condition": null,
           "inputs": [
-            { "sourceKind": "fixed", "jsonPointer": "/data/type", "fixedValue": "sandboxTestersClearPurchaseHistoryRequest" },
-            { "sourceKind": "fixed", "jsonPointer": "/data/relationships/sandboxTesters/data/*/type", "fixedValue": "sandboxTesters" }
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/type",
+              "fixedValue": "sandboxTestersClearPurchaseHistoryRequest"
+            },
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/relationships/sandboxTesters/data/*/type",
+              "fixedValue": "sandboxTesters"
+            }
           ]
         }
       ],
@@ -31,7 +39,11 @@
       "response": {
         "mode": "projection",
         "sources": [
-          { "operationId": "sandboxTestersClearPurchaseHistoryRequestV2_createInstance", "statusCode": "201", "mediaType": "application/json" }
+          {
+            "operationId": "sandboxTestersClearPurchaseHistoryRequestV2_createInstance",
+            "statusCode": "201",
+            "mediaType": "application/json"
+          }
         ],
         "fields": [
           {
@@ -83,7 +95,11 @@
       "response": {
         "mode": "projection",
         "sources": [
-          { "operationId": "sandboxTestersV2_getCollection", "statusCode": "200", "mediaType": "application/json" }
+          {
+            "operationId": "sandboxTestersV2_getCollection",
+            "statusCode": "200",
+            "mediaType": "application/json"
+          }
         ],
         "fields": [
           {
@@ -130,10 +146,16 @@
             {
               "sourceKind": "derived",
               "jsonPointer": "/data/id",
-              "derivedFrom": ["sandbox_tester_id"],
+              "derivedFrom": [
+                "sandbox_tester_id"
+              ],
               "localRole": "copyPathIdentifierIntoResourceBody"
             },
-            { "sourceKind": "fixed", "jsonPointer": "/data/type", "fixedValue": "sandboxTesters" }
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/type",
+              "fixedValue": "sandboxTesters"
+            }
           ]
         }
       ],
@@ -167,7 +189,11 @@
       "response": {
         "mode": "projection",
         "sources": [
-          { "operationId": "sandboxTestersV2_updateInstance", "statusCode": "200", "mediaType": "application/json" }
+          {
+            "operationId": "sandboxTestersV2_updateInstance",
+            "statusCode": "200",
+            "mediaType": "application/json"
+          }
         ],
         "fields": [
           {

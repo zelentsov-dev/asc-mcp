@@ -133,6 +133,7 @@ extension ReviewSubmissionsWorker {
                     "in_app_purchase_version_id": idSchema("In-app purchase version ID"),
                     "subscription_version_id": idSchema("Subscription version ID"),
                     "subscription_group_version_id": idSchema("Subscription group version ID"),
+                    "retention_message_version_id": idSchema("Retention message version ID"),
                     "app_asset_library_image_id": idSchema("Asset Library image ID bound to the preview"),
                     "app_asset_library_video_id": idSchema("Asset Library video ID bound to the preview"),
                     "preview_id": idSchema("One-time preview from assets_prepare_change for adding this asset to this submission")

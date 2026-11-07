@@ -82,6 +82,7 @@ enum ASCReviewSubmissionItemRelation: String, CaseIterable, Sendable {
     case inAppPurchaseVersion
     case subscriptionVersion
     case subscriptionGroupVersion
+    case retentionMessageVersion
 
     var resourceType: String {
         switch self {
@@ -101,6 +102,8 @@ enum ASCReviewSubmissionItemRelation: String, CaseIterable, Sendable {
             "subscriptionVersions"
         case .subscriptionGroupVersion:
             "subscriptionGroupVersions"
+        case .retentionMessageVersion:
+            "retentionMessageVersions"
         }
     }
 }
@@ -212,6 +215,7 @@ struct ASCReviewSubmissionItemCreateRequest: Codable, Sendable {
         let inAppPurchaseVersion: ASCReviewSubmissionRequiredRelationship?
         let subscriptionVersion: ASCReviewSubmissionRequiredRelationship?
         let subscriptionGroupVersion: ASCReviewSubmissionRequiredRelationship?
+        let retentionMessageVersion: ASCReviewSubmissionRequiredRelationship?
 
         init(
             submissionID: String,
@@ -238,6 +242,7 @@ struct ASCReviewSubmissionItemCreateRequest: Codable, Sendable {
             inAppPurchaseVersion = relation == .inAppPurchaseVersion ? resource : nil
             subscriptionVersion = relation == .subscriptionVersion ? resource : nil
             subscriptionGroupVersion = relation == .subscriptionGroupVersion ? resource : nil
+            retentionMessageVersion = relation == .retentionMessageVersion ? resource : nil
         }
     }
 }
@@ -369,6 +374,7 @@ struct ASCReviewSubmissionItem: Codable, Sendable {
         let inAppPurchaseVersion: ASCRelationship?
         let subscriptionVersion: ASCRelationship?
         let subscriptionGroupVersion: ASCRelationship?
+        let retentionMessageVersion: ASCRelationship?
     }
 }
 

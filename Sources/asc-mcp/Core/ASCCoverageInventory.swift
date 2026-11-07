@@ -39,7 +39,7 @@ struct ASCCoverageArea: Sendable {
 
 enum ASCCoverageInventory {
     static let snapshotDate = "2026-10-15"
-    static let appleAPIVersionBaseline = "4.5.1"
+    static let appleAPIVersionBaseline = "4.6"
 
     static let areas: [ASCCoverageArea] = [
         ASCCoverageArea(
@@ -182,12 +182,13 @@ enum ASCCoverageInventory {
                 "promotional offers",
                 "pricing summaries and compatibility inventory helper",
                 "review screenshot and image uploads",
-                "subscription organization market settings and multi-seat PATCH controls"
+                "subscription organization market settings and multi-seat PATCH controls",
+                "subscription retention messaging (messages, versions, localizations, retention offers, and subscription retention relationships)"
             ],
             missingCapabilities: [
                 "authoritative fully paginated subscription inventory"
             ],
-            notes: "Apple 4.4.1 versioned metadata, generic review submission handoff, plan-type-aware subscription availability, and adjusted equalizations are covered. Legacy product-scoped tools remain explicit compatibility paths; an authoritative fully paginated subscription inventory is still pending."
+            notes: "Apple 4.4.1 versioned metadata, Apple 4.6 subscription retention messaging, generic review submission handoff, plan-type-aware subscription availability, and adjusted equalizations are covered. Legacy product-scoped tools remain explicit compatibility paths; an authoritative fully paginated subscription inventory is still pending."
         ),
         ASCCoverageArea(
             name: "Provisioning and identifiers",

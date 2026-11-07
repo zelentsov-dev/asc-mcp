@@ -264,7 +264,7 @@ jobs:
           contract_directory="$RUNNER_TEMP/asc_openapi_contract"
           rm -rf "$contract_directory"
           mkdir -p "$contract_directory"
-          cp Tests/ASCMCPTests/Fixtures/OpenAPI/app-store-connect-4.5.1.oas.json \
+          cp Tests/ASCMCPTests/Fixtures/OpenAPI/app-store-connect-4.6.oas.json \
             "$contract_directory/openapi.oas.json"
           shasum -a 256 "$contract_directory/openapi.oas.json" \
             > "$contract_directory/specification.sha256"
@@ -364,7 +364,7 @@ jobs:
         run: |
           set -euo pipefail
           python3 .github/workflows/scripts/apple_spec_drift.py \
-            --pinned Tests/ASCMCPTests/Fixtures/OpenAPI/app-store-connect-4.5.1.oas.json \
+            --pinned Tests/ASCMCPTests/Fixtures/OpenAPI/app-store-connect-4.6.oas.json \
             --latest-zip "$RUNNER_TEMP/asc_latest_openapi/spec.zip" \
             --output-directory "$RUNNER_TEMP/asc_latest_openapi"
 
