@@ -343,6 +343,10 @@ struct RetentionMessagingContractTests {
         #expect(createAttributes["customerEligibilityPaidSubscriptionDurationInMonths"] as? Int == 6)
         #expect(createAttributes["customerEligibilityWaitBetweenOffersInMonths"] as? Int == 6)
         #expect(createAttributes["targetSubscriptionPlanType"] as? String == "MONTHLY")
+        #expect(createAttributes["periods"] == nil)
+        #expect(createAttributes["eligibilitySubscriberDurationType"] == nil)
+        #expect(createAttributes["eligibilitySubscriberDurationInMonths"] == nil)
+        #expect(createAttributes["waitBetweenOffersInMonths"] == nil)
 
         let included = try #require(createBody["included"] as? [[String: Any]])
         #expect(included.count == 1)
@@ -373,6 +377,15 @@ struct RetentionMessagingContractTests {
             arguments: ["offer_id": .string("ro-1")]
         ))
         #expect(fetched.isError != true)
+        let fetchedOffer = try object(try object(fetched.structuredContent)["offer"])
+        #expect(fetchedOffer["referenceName"] == .string("Loyal 6M Offer"))
+        #expect(fetchedOffer["offerId"] == .string("LOYAL6M"))
+        #expect(fetchedOffer["duration"] == .string("THREE_MONTHS"))
+        #expect(fetchedOffer["offerMode"] == .string("PAY_AS_YOU_GO"))
+        #expect(fetchedOffer["periodCount"] == .int(3))
+        #expect(fetchedOffer["customerEligibilityPaidSubscriptionDurationInMonths"] == .int(6))
+        #expect(fetchedOffer["customerEligibilityWaitBetweenOffersInMonths"] == .int(6))
+        #expect(fetchedOffer["targetSubscriptionPlanType"] == .string("MONTHLY"))
 
         let updated = try await worker.handleTool(.init(
             name: "subscriptions_update_retention_offer",
@@ -383,6 +396,8 @@ struct RetentionMessagingContractTests {
             ]
         ))
         #expect(updated.isError != true)
+        let updatedOffer = try object(try object(updated.structuredContent)["offer"])
+        #expect(updatedOffer["customerEligibilityPaidSubscriptionDurationInMonths"] == .int(12))
 
         let prices = try await worker.handleTool(.init(
             name: "subscriptions_list_retention_offer_prices",
@@ -404,6 +419,9 @@ struct RetentionMessagingContractTests {
         let patchAttributes = try #require((patchBody["data"] as? [String: Any])?["attributes"] as? [String: Any])
         #expect(patchAttributes["customerEligibilityPaidSubscriptionDurationInMonths"] as? Int == 12)
         #expect(patchAttributes["customerEligibilityWaitBetweenOffersInMonths"] is NSNull)
+        #expect(patchAttributes["eligibilitySubscriberDurationType"] == nil)
+        #expect(patchAttributes["eligibilitySubscriberDurationInMonths"] == nil)
+        #expect(patchAttributes["waitBetweenOffersInMonths"] == nil)
         #expect(requests[5].url?.path == "/v1/retentionOffers/ro-1/prices")
     }
 
@@ -486,19 +504,30 @@ struct RetentionMessagingContractTests {
 
     // MARK: - 5. AssetsWorker Retention Message Version Placement Support
 
-    @Test("AssetsWorker reads to-one retentionMessageVersion placement and rejects video and reordering")
+    @Test("AssetsWorker reads to-one retentionMessageVersion placement across multiple pages and rejects foreign app, video, and reordering")
     func assetsWorkerRetentionMessageVersionSupport() async throws {
         let versionDoc = #"{"data":{"type":"retentionMessageVersions","id":"ver-1","attributes":{"version":1,"state":"PREPARE_FOR_SUBMISSION"},"relationships":{"retentionMessage":{"data":{"type":"retentionMessages","id":"msg-1"}}}}}"#
-        let appMessagesDoc = #"{"data":[{"type":"retentionMessages","id":"msg-other","attributes":{"referenceName":"Other Message"},"relationships":{"app":{"data":{"type":"apps","id":"app-1"}}}},{"type":"retentionMessages","id":"msg-1","attributes":{"referenceName":"Stay With Us"},"relationships":{"app":{"data":{"type":"apps","id":"app-1"}}}}]}"#
+        let appMessagesPage1Doc = #"{"data":[{"type":"retentionMessages","id":"msg-other-1","attributes":{"referenceName":"Other 1"},"relationships":{"app":{"data":{"type":"apps","id":"app-1"}}}},{"type":"retentionMessages","id":"msg-other-2","attributes":{"referenceName":"Other 2"},"relationships":{"app":{"data":{"type":"apps","id":"app-1"}}}}],"links":{"self":"https://api.appstoreconnect.apple.com/v1/apps/app-1/retentionMessages?limit=200","next":"https://api.appstoreconnect.apple.com/v1/apps/app-1/retentionMessages?cursor=page-2&limit=200"},"meta":{"paging":{"total":3,"limit":200}}}"#
+        let appMessagesPage2Doc = #"{"data":[{"type":"retentionMessages","id":"msg-1","attributes":{"referenceName":"Stay With Us"},"relationships":{"app":{"data":{"type":"apps","id":"app-1"}}}}],"links":{"self":"https://api.appstoreconnect.apple.com/v1/apps/app-1/retentionMessages?cursor=page-2&limit=200"},"meta":{"paging":{"total":3,"limit":200}}}"#
+        let foreignMessagesPage1Doc = #"{"data":[{"type":"retentionMessages","id":"msg-foreign-1","attributes":{"referenceName":"Foreign 1"},"relationships":{"app":{"data":{"type":"apps","id":"app-foreign"}}}}],"links":{"self":"https://api.appstoreconnect.apple.com/v1/apps/app-foreign/retentionMessages?limit=200","next":"https://api.appstoreconnect.apple.com/v1/apps/app-foreign/retentionMessages?cursor=page-2&limit=200"},"meta":{"paging":{"total":2,"limit":200}}}"#
+        let foreignMessagesPage2Doc = #"{"data":[{"type":"retentionMessages","id":"msg-foreign-2","attributes":{"referenceName":"Foreign 2"},"relationships":{"app":{"data":{"type":"apps","id":"app-foreign"}}}}],"links":{"self":"https://api.appstoreconnect.apple.com/v1/apps/app-foreign/retentionMessages?cursor=page-2&limit=200"},"meta":{"paging":{"total":2,"limit":200}}}"#
         let placementDoc = #"{"data":{"type":"appAssetLibraryPlacements","id":"pl-1","attributes":{"placementType":"retentionImage","placementGroup":"retentionGroup"},"relationships":{"image":{"data":{"type":"appAssetLibraryImages","id":"img-1"}},"retentionMessageVersion":{"data":{"type":"retentionMessageVersions","id":"ver-1"}}}}}"#
 
         let transport = TestHTTPTransport(responses: [
+            // 1. Own app (app-1) with target message on page 2 -> empty to-one placement
             .init(statusCode: 200, body: versionDoc),
-            .init(statusCode: 200, body: appMessagesDoc),
+            .init(statusCode: 200, body: appMessagesPage1Doc),
+            .init(statusCode: 200, body: appMessagesPage2Doc),
             .init(statusCode: 200, body: #"{"data":null}"#),
+            // 2. Own app (app-1) with target message on page 2 -> populated to-one placement
             .init(statusCode: 200, body: versionDoc),
-            .init(statusCode: 200, body: appMessagesDoc),
-            .init(statusCode: 200, body: placementDoc)
+            .init(statusCode: 200, body: appMessagesPage1Doc),
+            .init(statusCode: 200, body: appMessagesPage2Doc),
+            .init(statusCode: 200, body: placementDoc),
+            // 3. Foreign app (app-foreign) -> rejected after scanning pages without msg-1
+            .init(statusCode: 200, body: versionDoc),
+            .init(statusCode: 200, body: foreignMessagesPage1Doc),
+            .init(statusCode: 200, body: foreignMessagesPage2Doc)
         ])
         let root = URL(fileURLWithPath: "\(FileManager.default.currentDirectoryPath)/.build/asset-retention-test-\(UUID().uuidString)")
         defer { try? FileManager.default.removeItem(at: root) }
@@ -515,7 +544,7 @@ struct RetentionMessagingContractTests {
             store: AssetOperationStore(root: root)
         )
 
-        // Empty to-one placement returns 0 items
+        // Empty to-one placement returns 0 items when target retention message is on page 2
         let emptyList = try await worker.handleTool(.init(
             name: "assets_list_placements",
             arguments: [
@@ -527,7 +556,7 @@ struct RetentionMessagingContractTests {
         #expect(emptyList.isError != true)
         #expect(try object(emptyList.structuredContent)["count"] == .int(0))
 
-        // Populated to-one placement returns 1 item
+        // Populated to-one placement returns 1 item when target retention message is on page 2
         let populatedList = try await worker.handleTool(.init(
             name: "assets_list_placements",
             arguments: [
@@ -538,6 +567,17 @@ struct RetentionMessagingContractTests {
         ))
         #expect(populatedList.isError != true)
         #expect(try object(populatedList.structuredContent)["count"] == .int(1))
+
+        // Foreign app is rejected when target retention message is not among its retention messages
+        let foreignRejected = try await worker.handleTool(.init(
+            name: "assets_list_placements",
+            arguments: [
+                "app_id": .string("app-foreign"),
+                "target_type": .string("retentionMessageVersion"),
+                "target_id": .string("ver-1")
+            ]
+        ))
+        #expect(foreignRejected.isError == true)
 
         // Rejects video placement on retentionMessageVersion before network access
         let beforeCount = await transport.requestCount()
@@ -572,8 +612,15 @@ struct RetentionMessagingContractTests {
         #expect(await transport.requestCount() == beforeCount)
 
         let recorded = await transport.recordedRequests()
+        #expect(recorded.count == 11)
         #expect(recorded[1].url?.path == "/v1/apps/app-1/retentionMessages")
         #expect(recorded[1].url?.query?.contains("filter") != true)
+        #expect(recorded[2].url?.path == "/v1/apps/app-1/retentionMessages")
+        #expect(recorded[2].url?.query?.contains("cursor=page-2") == true)
+        #expect(recorded[2].url?.query?.contains("filter") != true)
+        #expect(recorded[9].url?.path == "/v1/apps/app-foreign/retentionMessages")
+        #expect(recorded[10].url?.path == "/v1/apps/app-foreign/retentionMessages")
+        #expect(recorded[10].url?.query?.contains("cursor=page-2") == true)
     }
 
     // MARK: - 6. ReviewSubmissionsWorker Retention Message Version Support
