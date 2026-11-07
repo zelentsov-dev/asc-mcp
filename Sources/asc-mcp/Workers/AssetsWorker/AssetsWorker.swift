@@ -131,5 +131,5 @@ public final class AssetsWorker: Sendable {
         try await all("/v1/\(try ASCPathSegment.encode(kind.resourceType))/\(try ASCPathSegment.encode(try AssetLibraryJSON.identifier(id, field: "asset_id")))/placements", query: ["include": Self.placementIncludes], type: "appAssetLibraryPlacements")
     }
 
-    static let placementIncludes = "image,video,appEventLocalization,appStoreVersionLocalization,appCustomProductPageLocalization,appStoreVersionExperimentTreatmentLocalization"
+    static let placementIncludes = "image,video,appEventLocalization,appStoreVersionLocalization,appCustomProductPageLocalization,appStoreVersionExperimentTreatmentLocalization,retentionMessageVersion"
 }

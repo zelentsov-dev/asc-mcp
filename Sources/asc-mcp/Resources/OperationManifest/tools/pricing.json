@@ -14,23 +14,47 @@
           "path": "/v2/appAvailabilities",
           "role": "primary",
           "inputs": [
-            { "sourceKind": "fixed", "jsonPointer": "/data/type", "fixedValue": "appAvailabilities" },
-            { "sourceKind": "fixed", "jsonPointer": "/data/relationships/app/data/type", "fixedValue": "apps" },
-            { "sourceKind": "fixed", "jsonPointer": "/data/relationships/territoryAvailabilities/data/*/type", "fixedValue": "territoryAvailabilities" },
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/type",
+              "fixedValue": "appAvailabilities"
+            },
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/relationships/app/data/type",
+              "fixedValue": "apps"
+            },
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/relationships/territoryAvailabilities/data/*/type",
+              "fixedValue": "territoryAvailabilities"
+            },
             {
               "sourceKind": "derived",
               "jsonPointer": "/data/relationships/territoryAvailabilities/data/*/id",
-              "derivedFrom": ["local:inlineTerritoryAvailabilityId"],
+              "derivedFrom": [
+                "local:inlineTerritoryAvailabilityId"
+              ],
               "localRole": "appendGeneratedInlineTerritoryAvailabilityIdentifiers"
             },
-            { "sourceKind": "fixed", "jsonPointer": "/included/*/type", "fixedValue": "territoryAvailabilities" },
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/included/*/type",
+              "fixedValue": "territoryAvailabilities"
+            },
             {
               "sourceKind": "derived",
               "jsonPointer": "/included/*/id",
-              "derivedFrom": ["local:inlineTerritoryAvailabilityId"],
+              "derivedFrom": [
+                "local:inlineTerritoryAvailabilityId"
+              ],
               "localRole": "reuseGeneratedInlineTerritoryAvailabilityIdentifier"
             },
-            { "sourceKind": "fixed", "jsonPointer": "/included/*/relationships/territory/data/type", "fixedValue": "territories" }
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/included/*/relationships/territory/data/type",
+              "fixedValue": "territories"
+            }
           ]
         }
       ],
@@ -406,7 +430,11 @@
               "sourceKind": "fixed",
               "location": "query",
               "appleName": "include",
-              "fixedValue": ["manualPrices", "automaticPrices", "baseTerritory"]
+              "fixedValue": [
+                "manualPrices",
+                "automaticPrices",
+                "baseTerritory"
+              ]
             }
           ]
         }
@@ -582,7 +610,9 @@
               "sourceKind": "fixed",
               "location": "query",
               "appleName": "include",
-              "fixedValue": ["territory"]
+              "fixedValue": [
+                "territory"
+              ]
             }
           ]
         }
@@ -618,8 +648,16 @@
       "response": {
         "mode": "projection",
         "sources": [
-          { "operationId": "apps_appPricePoints_getToManyRelated", "statusCode": "200", "mediaType": "application/json" },
-          { "operationId": "apps_appPricePoints_getToManyRelated", "statusCode": "200", "mediaType": "text/csv" }
+          {
+            "operationId": "apps_appPricePoints_getToManyRelated",
+            "statusCode": "200",
+            "mediaType": "application/json"
+          },
+          {
+            "operationId": "apps_appPricePoints_getToManyRelated",
+            "statusCode": "200",
+            "mediaType": "text/csv"
+          }
         ],
         "fields": [
           {
@@ -721,7 +759,9 @@
               "sourceKind": "fixed",
               "location": "query",
               "appleName": "include",
-              "fixedValue": ["territory"]
+              "fixedValue": [
+                "territory"
+              ]
             }
           ]
         }
@@ -809,14 +849,14 @@
               "appleName": "include",
               "disposition": "internalControl",
               "reason": "The resolver needs only the authoritative availability ID; the primary operation fetches the complete paginated territory collection with included territories.",
-              "reviewAtSpec": "4.5.1"
+              "reviewAtSpec": "4.6"
             },
             {
               "location": "query",
               "appleName": "limit[territoryAvailabilities]",
               "disposition": "internalControl",
               "reason": "The resolver does not include territoryAvailabilities because the primary related-collection operation provides independent pagination up to 200 resources.",
-              "reviewAtSpec": "4.5.1"
+              "reviewAtSpec": "4.6"
             }
           ]
         },
@@ -831,14 +871,18 @@
               "sourceKind": "derived",
               "location": "path",
               "appleName": "id",
-              "derivedFrom": ["apps_appAvailabilityV2_getToOneRelated:/data/id"],
+              "derivedFrom": [
+                "apps_appAvailabilityV2_getToOneRelated:/data/id"
+              ],
               "localRole": "useResolvedAppAvailabilityIdentifier"
             },
             {
               "sourceKind": "fixed",
               "location": "query",
               "appleName": "include",
-              "fixedValue": ["territory"]
+              "fixedValue": [
+                "territory"
+              ]
             }
           ]
         }
@@ -867,8 +911,16 @@
       "response": {
         "mode": "projection",
         "sources": [
-          { "operationId": "appAvailabilitiesV2_territoryAvailabilities_getToManyRelated", "statusCode": "200", "mediaType": "application/json" },
-          { "operationId": "apps_appAvailabilityV2_getToOneRelated", "statusCode": "200", "mediaType": "application/json" }
+          {
+            "operationId": "appAvailabilitiesV2_territoryAvailabilities_getToManyRelated",
+            "statusCode": "200",
+            "mediaType": "application/json"
+          },
+          {
+            "operationId": "apps_appAvailabilityV2_getToOneRelated",
+            "statusCode": "200",
+            "mediaType": "application/json"
+          }
         ],
         "fields": [
           {
@@ -917,28 +969,59 @@
           "path": "/v1/appPriceSchedules",
           "role": "primary",
           "inputs": [
-            { "sourceKind": "fixed", "jsonPointer": "/data/type", "fixedValue": "appPriceSchedules" },
-            { "sourceKind": "fixed", "jsonPointer": "/data/relationships/app/data/type", "fixedValue": "apps" },
-            { "sourceKind": "fixed", "jsonPointer": "/data/relationships/baseTerritory/data/type", "fixedValue": "territories" },
-            { "sourceKind": "fixed", "jsonPointer": "/data/relationships/manualPrices/data/*/type", "fixedValue": "appPrices" },
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/type",
+              "fixedValue": "appPriceSchedules"
+            },
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/relationships/app/data/type",
+              "fixedValue": "apps"
+            },
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/relationships/baseTerritory/data/type",
+              "fixedValue": "territories"
+            },
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/relationships/manualPrices/data/*/type",
+              "fixedValue": "appPrices"
+            },
             {
               "sourceKind": "derived",
               "jsonPointer": "/data/relationships/manualPrices/data/*/id",
-              "derivedFrom": ["local:inlinePriceIds"],
+              "derivedFrom": [
+                "local:inlinePriceIds"
+              ],
               "localRole": "reuseGeneratedInlinePriceIdentifiers"
             },
-            { "sourceKind": "fixed", "jsonPointer": "/included/*/type", "fixedValue": "appPrices" },
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/included/*/type",
+              "fixedValue": "appPrices"
+            },
             {
               "sourceKind": "derived",
               "jsonPointer": "/included/*/id",
-              "derivedFrom": ["local:inlinePriceIds"],
+              "derivedFrom": [
+                "local:inlinePriceIds"
+              ],
               "localRole": "reuseGeneratedInlinePriceIdentifiers"
             },
-            { "sourceKind": "fixed", "jsonPointer": "/included/*/relationships/appPricePoint/data/type", "fixedValue": "appPricePoints" },
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/included/*/relationships/appPricePoint/data/type",
+              "fixedValue": "appPricePoints"
+            },
             {
               "sourceKind": "derived",
               "jsonPointer": "/included/*/relationships/appPricePoint/data/id",
-              "derivedFrom": ["price_point_id", "manual_prices/*/price_point_id"],
+              "derivedFrom": [
+                "price_point_id",
+                "manual_prices/*/price_point_id"
+              ],
               "localRole": "embedSelectedAppPricePointIdentifiers"
             }
           ]

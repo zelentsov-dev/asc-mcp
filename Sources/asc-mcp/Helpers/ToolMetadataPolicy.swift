@@ -86,7 +86,8 @@ enum ToolMetadataPolicy {
         "build_uploads_reserve_file",
         "build_uploads_commit_file",
         "custom_pages_add_search_keywords",
-        "custom_pages_remove_search_keywords"
+        "custom_pages_remove_search_keywords",
+        "subscriptions_add_retention_message_offers"
     ]
 
     private static let assetToolReadEffects: [String: Bool] = [

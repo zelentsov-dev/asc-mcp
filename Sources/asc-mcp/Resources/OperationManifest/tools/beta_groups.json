@@ -33,7 +33,10 @@
       "response": {
         "mode": "local",
         "sources": [
-          { "operationId": "betaGroups_builds_createToManyRelationship", "statusCode": "204" }
+          {
+            "operationId": "betaGroups_builds_createToManyRelationship",
+            "statusCode": "204"
+          }
         ],
         "fields": [
           {
@@ -80,7 +83,10 @@
       "response": {
         "mode": "local",
         "sources": [
-          { "operationId": "betaGroups_betaTesters_createToManyRelationship", "statusCode": "204" }
+          {
+            "operationId": "betaGroups_betaTesters_createToManyRelationship",
+            "statusCode": "204"
+          }
         ],
         "fields": [
           {
@@ -238,7 +244,10 @@
       "response": {
         "mode": "local",
         "sources": [
-          { "operationId": "betaGroups_deleteInstance", "statusCode": "204" }
+          {
+            "operationId": "betaGroups_deleteInstance",
+            "statusCode": "204"
+          }
         ],
         "fields": [
           {
@@ -271,21 +280,21 @@
               "appleName": "include",
               "disposition": "intentionallyOmitted",
               "reason": "The group collection returns stable group and relationship-ID projections; related resources have dedicated tools.",
-              "reviewAtSpec": "4.5.1"
+              "reviewAtSpec": "4.6"
             },
             {
               "location": "query",
               "appleName": "limit[betaTesters]",
               "disposition": "intentionallyOmitted",
               "reason": "Beta testers are not included in the group collection response.",
-              "reviewAtSpec": "4.5.1"
+              "reviewAtSpec": "4.6"
             },
             {
               "location": "query",
               "appleName": "limit[builds]",
               "disposition": "intentionallyOmitted",
               "reason": "Builds are not included in the group collection response.",
-              "reviewAtSpec": "4.5.1"
+              "reviewAtSpec": "4.6"
             }
           ]
         }
@@ -441,11 +450,11 @@
           }
         ],
         "fields": [
-        {
-          "outputField": "beta_testers",
-          "operationId": "betaGroups_betaTesters_getToManyRelated",
-          "jsonPointer": "/data",
-          "localRole": "Stable tester projections including Apple's appDevices attributes."
+          {
+            "outputField": "beta_testers",
+            "operationId": "betaGroups_betaTesters_getToManyRelated",
+            "jsonPointer": "/data",
+            "localRole": "Stable tester projections including Apple's appDevices attributes."
           },
           {
             "outputField": "next_url",
@@ -493,7 +502,10 @@
       "response": {
         "mode": "local",
         "sources": [
-          { "operationId": "betaGroups_builds_deleteToManyRelationship", "statusCode": "204" }
+          {
+            "operationId": "betaGroups_builds_deleteToManyRelationship",
+            "statusCode": "204"
+          }
         ],
         "fields": [
           {
@@ -540,7 +552,10 @@
       "response": {
         "mode": "local",
         "sources": [
-          { "operationId": "betaGroups_betaTesters_deleteToManyRelationship", "statusCode": "204" }
+          {
+            "operationId": "betaGroups_betaTesters_deleteToManyRelationship",
+            "statusCode": "204"
+          }
         ],
         "fields": [
           {
@@ -683,21 +698,21 @@
               "appleName": "include",
               "disposition": "intentionallyOmitted",
               "reason": "The supporting request only confirms the parent identity and does not project relationships.",
-              "reviewAtSpec": "4.5.1"
+              "reviewAtSpec": "4.6"
             },
             {
               "location": "query",
               "appleName": "limit[betaTesters]",
               "disposition": "intentionallyOmitted",
               "reason": "No beta testers are included by the supporting parent lookup.",
-              "reviewAtSpec": "4.5.1"
+              "reviewAtSpec": "4.6"
             },
             {
               "location": "query",
               "appleName": "limit[builds]",
               "disposition": "intentionallyOmitted",
               "reason": "No builds are included by the supporting parent lookup.",
-              "reviewAtSpec": "4.5.1"
+              "reviewAtSpec": "4.6"
             }
           ]
         },
@@ -801,21 +816,21 @@
               "appleName": "include",
               "disposition": "intentionallyOmitted",
               "reason": "The supporting request only confirms the parent identity.",
-              "reviewAtSpec": "4.5.1"
+              "reviewAtSpec": "4.6"
             },
             {
               "location": "query",
               "appleName": "limit[betaTesters]",
               "disposition": "intentionallyOmitted",
               "reason": "No beta testers are included by the supporting parent lookup.",
-              "reviewAtSpec": "4.5.1"
+              "reviewAtSpec": "4.6"
             },
             {
               "location": "query",
               "appleName": "limit[builds]",
               "disposition": "intentionallyOmitted",
               "reason": "No builds are included by the supporting parent lookup.",
-              "reviewAtSpec": "4.5.1"
+              "reviewAtSpec": "4.6"
             }
           ]
         },
@@ -940,20 +955,20 @@
             "outputField": "groupId",
             "localRole": "requestEcho"
           },
-        {
-          "outputField": "statusCode",
-          "localRole": "Exact verified 201 status."
+          {
+            "outputField": "statusCode",
+            "localRole": "Exact verified 201 status."
           },
-        {
-          "outputField": "recruitmentCriteria",
-          "operationId": "betaGroups_betaRecruitmentCriteria_getToOneRelated",
-          "jsonPointer": "/data",
-          "localRole": "Fresh group-scoped postflight projection."
-        },
-        {
-          "outputField": "criterionId",
-          "localRole": "Validated response identity retained on an accepted create whose postflight could not be verified."
-        },
+          {
+            "outputField": "recruitmentCriteria",
+            "operationId": "betaGroups_betaRecruitmentCriteria_getToOneRelated",
+            "jsonPointer": "/data",
+            "localRole": "Fresh group-scoped postflight projection."
+          },
+          {
+            "outputField": "criterionId",
+            "localRole": "Validated response identity retained on an accepted create whose postflight could not be verified."
+          },
           {
             "outputField": "responseCriterionId",
             "operationId": "betaRecruitmentCriteria_createInstance",
@@ -992,14 +1007,14 @@
             "outputField": "inspectionRequired",
             "localRole": "True when a caller inspection is required before retrying."
           },
-        {
-          "outputField": "outcomeUnknown",
-          "localRole": "True only for an ambiguous request outcome."
-        },
-        {
-          "outputField": "inspectionError",
-          "localRole": "Redacted diagnostic-read failure when exact group inspection could not complete."
-        }
+          {
+            "outputField": "outcomeUnknown",
+            "localRole": "True only for an ambiguous request outcome."
+          },
+          {
+            "outputField": "inspectionError",
+            "localRole": "Redacted diagnostic-read failure when exact group inspection could not complete."
+          }
         ]
       },
       "note": "Requires confirmed parent and preflight absence, exact HTTP 201, and a fresh group-scoped ID/filter match. Ambiguous candidates remain unattributed and fail closed."
@@ -1033,21 +1048,21 @@
               "appleName": "include",
               "disposition": "intentionallyOmitted",
               "reason": "The supporting request only confirms the parent identity.",
-              "reviewAtSpec": "4.5.1"
+              "reviewAtSpec": "4.6"
             },
             {
               "location": "query",
               "appleName": "limit[betaTesters]",
               "disposition": "intentionallyOmitted",
               "reason": "No beta testers are included by the supporting parent lookup.",
-              "reviewAtSpec": "4.5.1"
+              "reviewAtSpec": "4.6"
             },
             {
               "location": "query",
               "appleName": "limit[builds]",
               "disposition": "intentionallyOmitted",
               "reason": "No builds are included by the supporting parent lookup.",
-              "reviewAtSpec": "4.5.1"
+              "reviewAtSpec": "4.6"
             }
           ]
         },
@@ -1168,36 +1183,36 @@
             "outputField": "groupId",
             "localRole": "requestEcho"
           },
-        {
-          "outputField": "statusCode",
-          "localRole": "Exact verified 200 status."
+          {
+            "outputField": "statusCode",
+            "localRole": "Exact verified 200 status."
           },
-        {
-          "outputField": "recruitmentCriteria",
-          "operationId": "betaGroups_betaRecruitmentCriteria_getToOneRelated",
-          "jsonPointer": "/data",
-          "localRole": "Fresh group-scoped postflight projection preserving omitted/null/value state."
-        },
-        {
-          "outputField": "criterionId",
-          "localRole": "Validated request criterion identity on mutation failures."
-        },
-        {
-          "outputField": "observedCandidate",
-          "operationId": "betaGroups_betaRecruitmentCriteria_getToOneRelated",
-          "jsonPointer": "/data",
-          "localRole": "Diagnostic only; never proves this PATCH committed."
-        },
-        {
-          "outputField": "candidateId",
-          "operationId": "betaGroups_betaRecruitmentCriteria_getToOneRelated",
-          "jsonPointer": "/data/id",
-          "localRole": "Diagnostic candidate identity."
-        },
-        {
-          "outputField": "candidateAttributionConfirmed",
-          "localRole": "Always false for a diagnostic candidate after an unverified PATCH."
-        },
+          {
+            "outputField": "recruitmentCriteria",
+            "operationId": "betaGroups_betaRecruitmentCriteria_getToOneRelated",
+            "jsonPointer": "/data",
+            "localRole": "Fresh group-scoped postflight projection preserving omitted/null/value state."
+          },
+          {
+            "outputField": "criterionId",
+            "localRole": "Validated request criterion identity on mutation failures."
+          },
+          {
+            "outputField": "observedCandidate",
+            "operationId": "betaGroups_betaRecruitmentCriteria_getToOneRelated",
+            "jsonPointer": "/data",
+            "localRole": "Diagnostic only; never proves this PATCH committed."
+          },
+          {
+            "outputField": "candidateId",
+            "operationId": "betaGroups_betaRecruitmentCriteria_getToOneRelated",
+            "jsonPointer": "/data/id",
+            "localRole": "Diagnostic candidate identity."
+          },
+          {
+            "outputField": "candidateAttributionConfirmed",
+            "localRole": "Always false for a diagnostic candidate after an unverified PATCH."
+          },
           {
             "outputField": "write_outcome",
             "localRole": "Stable mutation outcome discriminator on failure."
@@ -1218,14 +1233,14 @@
             "outputField": "inspectionRequired",
             "localRole": "True when a caller inspection is required before retrying."
           },
-        {
-          "outputField": "outcomeUnknown",
-          "localRole": "True only for an ambiguous request outcome."
-        },
-        {
-          "outputField": "inspectionError",
-          "localRole": "Redacted diagnostic-read failure when exact group inspection could not complete."
-        }
+          {
+            "outputField": "outcomeUnknown",
+            "localRole": "True only for an ambiguous request outcome."
+          },
+          {
+            "outputField": "inspectionError",
+            "localRole": "Redacted diagnostic-read failure when exact group inspection could not complete."
+          }
         ]
       },
       "note": "Verifies parent ownership before PATCH, distinguishes omitted/null/value, requires exact HTTP 200 and a fresh group-scoped postflight, and never treats diagnostic state as commit proof."
@@ -1259,21 +1274,21 @@
               "appleName": "include",
               "disposition": "intentionallyOmitted",
               "reason": "The supporting request only confirms the parent identity.",
-              "reviewAtSpec": "4.5.1"
+              "reviewAtSpec": "4.6"
             },
             {
               "location": "query",
               "appleName": "limit[betaTesters]",
               "disposition": "intentionallyOmitted",
               "reason": "No beta testers are included by the supporting parent lookup.",
-              "reviewAtSpec": "4.5.1"
+              "reviewAtSpec": "4.6"
             },
             {
               "location": "query",
               "appleName": "limit[builds]",
               "disposition": "intentionallyOmitted",
               "reason": "No builds are included by the supporting parent lookup.",
-              "reviewAtSpec": "4.5.1"
+              "reviewAtSpec": "4.6"
             }
           ]
         },
@@ -1381,30 +1396,30 @@
             "outputField": "criterionId",
             "localRole": "requestEcho"
           },
-        {
-          "outputField": "statusCode",
-          "localRole": "Exact verified 204 status."
+          {
+            "outputField": "statusCode",
+            "localRole": "Exact verified 204 status."
           },
           {
             "outputField": "message",
             "localRole": "Local exact-204 confirmation."
           },
-        {
-          "outputField": "observedCandidate",
-          "operationId": "betaGroups_betaRecruitmentCriteria_getToOneRelated",
-          "jsonPointer": "/data",
-          "localRole": "Diagnostic only; absence or replacement never proves this DELETE committed."
-        },
-        {
-          "outputField": "candidateId",
-          "operationId": "betaGroups_betaRecruitmentCriteria_getToOneRelated",
-          "jsonPointer": "/data/id",
-          "localRole": "Diagnostic candidate identity."
-        },
-        {
-          "outputField": "candidateAttributionConfirmed",
-          "localRole": "Always false for a diagnostic candidate after an unverified DELETE."
-        },
+          {
+            "outputField": "observedCandidate",
+            "operationId": "betaGroups_betaRecruitmentCriteria_getToOneRelated",
+            "jsonPointer": "/data",
+            "localRole": "Diagnostic only; absence or replacement never proves this DELETE committed."
+          },
+          {
+            "outputField": "candidateId",
+            "operationId": "betaGroups_betaRecruitmentCriteria_getToOneRelated",
+            "jsonPointer": "/data/id",
+            "localRole": "Diagnostic candidate identity."
+          },
+          {
+            "outputField": "candidateAttributionConfirmed",
+            "localRole": "Always false for a diagnostic candidate after an unverified DELETE."
+          },
           {
             "outputField": "write_outcome",
             "localRole": "Stable mutation outcome discriminator on failure."
@@ -1425,14 +1440,14 @@
             "outputField": "inspectionRequired",
             "localRole": "True when a caller inspection is required before retrying."
           },
-        {
-          "outputField": "outcomeUnknown",
-          "localRole": "True only for an ambiguous request outcome."
-        },
-        {
-          "outputField": "inspectionError",
-          "localRole": "Redacted diagnostic-read failure when exact group inspection could not complete."
-        }
+          {
+            "outputField": "outcomeUnknown",
+            "localRole": "True only for an ambiguous request outcome."
+          },
+          {
+            "outputField": "inspectionError",
+            "localRole": "Redacted diagnostic-read failure when exact group inspection could not complete."
+          }
         ]
       },
       "note": "Requires exact confirm_criterion_id and parent ownership. Only HTTP 204 confirms deletion; follow-up state is diagnostic and cannot convert rejected or ambiguous DELETE outcomes into success."
@@ -1548,21 +1563,21 @@
               "appleName": "include",
               "disposition": "intentionallyOmitted",
               "reason": "The supporting request only confirms the parent identity.",
-              "reviewAtSpec": "4.5.1"
+              "reviewAtSpec": "4.6"
             },
             {
               "location": "query",
               "appleName": "limit[betaTesters]",
               "disposition": "intentionallyOmitted",
               "reason": "No beta testers are included by the supporting parent lookup.",
-              "reviewAtSpec": "4.5.1"
+              "reviewAtSpec": "4.6"
             },
             {
               "location": "query",
               "appleName": "limit[builds]",
               "disposition": "intentionallyOmitted",
               "reason": "No builds are included by the supporting parent lookup.",
-              "reviewAtSpec": "4.5.1"
+              "reviewAtSpec": "4.6"
             }
           ]
         },

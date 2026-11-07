@@ -16,7 +16,7 @@ struct AssetsRegistrationTests {
         let snapshots = try await TestFactory.collectWorkerToolSnapshots()
         #expect(snapshots.count == 36)
         #expect(WorkerManager.validWorkerFilterKeys.count == 36)
-        #expect(snapshots.reduce(0) { $0 + $1.count } == 514)
+        #expect(snapshots.reduce(0) { $0 + $1.count } == 537)
         let assets = try #require(snapshots.first { $0.key == "assets" })
         #expect(assets.readmeName == "App Asset Library")
         #expect(Set(assets.tools.map(\.name)) == Self.names)

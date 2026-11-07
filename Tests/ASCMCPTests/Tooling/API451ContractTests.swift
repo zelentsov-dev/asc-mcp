@@ -7,7 +7,7 @@ import Testing
 struct API451ContractTests {
     @Test("pinned Apple snapshot is exact and agrees with the manifest")
     func pinnedSnapshotIsExact() throws {
-        let raw = try Data(contentsOf: fixtureURL("OpenAPI/app-store-connect-4.5.1.oas.json"))
+        let raw = try Data(contentsOf: fixtureURL("OpenAPI/app-store-connect-4.6.oas.json"))
         let sha256 = SHA256.hash(data: raw).map { String(format: "%02x", $0) }.joined()
         let object = try #require(JSONSerialization.jsonObject(with: raw) as? [String: Any])
         let info = try #require(object["info"] as? [String: Any])
@@ -17,12 +17,12 @@ struct API451ContractTests {
         }
         let manifest = try ASCOperationManifestBundle.loadBundled()
 
-        #expect(sha256 == "7518d3a94a8bd701ac25c1c601b95b8f53aad92091affb15a2a9d331713dac1a")
-        #expect(info["version"] as? String == "4.5.1")
-        #expect(paths.count == 1001)
-        #expect(operationCount == 1303)
+        #expect(sha256 == "74732362a91236dcb66eb1620f8be18c2b6060771269b483eab578473bb32763")
+        #expect(info["version"] as? String == "4.6")
+        #expect(paths.count == 1027)
+        #expect(operationCount == 1337)
         #expect(manifest.index.specPin == ASCSpecPin(
-            version: "4.5.1", sha256: sha256, pathCount: paths.count, operationCount: operationCount
+            version: "4.6", sha256: sha256, pathCount: paths.count, operationCount: operationCount
         ))
     }
 
@@ -65,13 +65,42 @@ struct API451ContractTests {
             case "unsupported":
                 #expect(decision.path.contains("/relationships/"))
                 #expect(manifest.index.waivers.contains {
-                    $0.operationID == decision.operationId && $0.disposition == .unsupported && $0.reviewAtSpec == "4.5.1"
+                    $0.operationID == decision.operationId && $0.disposition == .unsupported && $0.reviewAtSpec == "4.6"
                 })
                 #expect(!implemented.contains(decision.operationId))
             case "outOfScope":
                 #expect(manifest.index.scopeRules.contains {
-                    decision.path.hasPrefix($0.pathPrefix) && $0.disposition == .outOfScope && $0.reviewAtSpec == "4.5.1"
+                    decision.path.hasPrefix($0.pathPrefix) && $0.disposition == .outOfScope && $0.reviewAtSpec == "4.6"
                 })
+            default:
+                Issue.record("Unrecognized operation decision: \(decision.decision)")
+            }
+        }
+    }
+
+    @Test("every new 4.6 operation has its approved implementation or scope decision")
+    func new46OperationsAreExplicitlyAccountedFor() throws {
+        let data = try Data(contentsOf: fixtureURL("OpenAPI/api-4.6-operation-decisions.json"))
+        let decisions = try JSONDecoder().decode(OperationDecisions.self, from: data).operations
+        let manifest = try ASCOperationManifestBundle.loadBundled()
+        let implemented = Set(manifest.tools.filter {
+            $0.implementationState == .asBuilt && $0.status != .unresolved
+        }.flatMap(\.operations).map(\.operationID))
+
+        #expect(decisions.count == 34)
+        #expect(decisions.filter { $0.decision == "requiredMapping" }.count == 25)
+        #expect(decisions.filter { $0.decision == "unsupported" }.count == 9)
+        for decision in decisions {
+            switch decision.decision {
+            case "requiredMapping":
+                #expect(implemented.contains(decision.operationId), "Missing implementation mapping: \(decision.operationId)")
+                #expect(!manifest.index.waivers.contains { $0.operationID == decision.operationId })
+            case "unsupported":
+                #expect(decision.path.contains("/relationships/"))
+                #expect(manifest.index.waivers.contains {
+                    $0.operationID == decision.operationId && $0.disposition == .unsupported && $0.reviewAtSpec == "4.6"
+                })
+                #expect(!implemented.contains(decision.operationId))
             default:
                 Issue.record("Unrecognized operation decision: \(decision.decision)")
             }

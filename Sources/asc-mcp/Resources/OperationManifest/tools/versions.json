@@ -40,7 +40,10 @@
       "response": {
         "mode": "local",
         "sources": [
-          { "operationId": "appStoreVersions_build_updateToOneRelationship", "statusCode": "204" }
+          {
+            "operationId": "appStoreVersions_build_updateToOneRelationship",
+            "statusCode": "204"
+          }
         ],
         "fields": []
       },
@@ -59,8 +62,20 @@
           "path": "/v1/reviewSubmissions/{id}",
           "role": "primary",
           "optionalParameterClassifications": [
-            { "location": "body", "appleName": "/data/attributes/platform", "disposition": "intentionallyOmitted", "reason": "Cancellation targets an existing submission and does not change its platform.", "reviewAtSpec": "4.5.1" },
-            { "location": "body", "appleName": "/data/attributes/submitted", "disposition": "intentionallyOmitted", "reason": "Cancellation fixes canceled=true and never combines cancellation with the distinct submit transition.", "reviewAtSpec": "4.5.1" }
+            {
+              "location": "body",
+              "appleName": "/data/attributes/platform",
+              "disposition": "intentionallyOmitted",
+              "reason": "Cancellation targets an existing submission and does not change its platform.",
+              "reviewAtSpec": "4.6"
+            },
+            {
+              "location": "body",
+              "appleName": "/data/attributes/submitted",
+              "disposition": "intentionallyOmitted",
+              "reason": "Cancellation fixes canceled=true and never combines cancellation with the distinct submit transition.",
+              "reviewAtSpec": "4.6"
+            }
           ],
           "inputs": [
             {
@@ -119,8 +134,20 @@
           "path": "/v1/appStoreVersions",
           "role": "primary",
           "optionalParameterClassifications": [
-            { "location": "body", "appleName": "/data/relationships/appStoreVersionLocalizations", "disposition": "intentionallyOmitted", "reason": "Version creation and localization creation are separate MCP operations with independent validation and recovery.", "reviewAtSpec": "4.5.1" },
-            { "location": "body", "appleName": "/data/relationships/build", "disposition": "intentionallyOmitted", "reason": "Build attachment is intentionally handled by app_versions_attach_build after version creation.", "reviewAtSpec": "4.5.1" }
+            {
+              "location": "body",
+              "appleName": "/data/relationships/appStoreVersionLocalizations",
+              "disposition": "intentionallyOmitted",
+              "reason": "Version creation and localization creation are separate MCP operations with independent validation and recovery.",
+              "reviewAtSpec": "4.6"
+            },
+            {
+              "location": "body",
+              "appleName": "/data/relationships/build",
+              "disposition": "intentionallyOmitted",
+              "reason": "Build attachment is intentionally handled by app_versions_attach_build after version creation.",
+              "reviewAtSpec": "4.6"
+            }
           ],
           "inputs": [
             {
@@ -287,13 +314,28 @@
       "response": {
         "mode": "local",
         "sources": [
-          { "operationId": "appStoreVersions_deleteInstance", "statusCode": "204" }
+          {
+            "operationId": "appStoreVersions_deleteInstance",
+            "statusCode": "204"
+          }
         ],
         "fields": [
-          { "outputField": "deletionState", "localRole": "Confirmed on 204; committed_unverified for an unexpected successful status; commit_unknown for network, 408, or 5xx outcomes; rejected for definite non-success responses." },
-          { "outputField": "outcomeUnknown", "localRole": "True only when Apple may have committed DELETE despite an ambiguous transport or server outcome." },
-          { "outputField": "retrySafe", "localRole": "False for confirmed, committed-unverified, or commit-unknown outcomes; true only for a definite rejection." },
-          { "outputField": "inspection", "localRole": "Exact app_versions_get guidance included when DELETE completion is unknown or unverified." }
+          {
+            "outputField": "deletionState",
+            "localRole": "Confirmed on 204; committed_unverified for an unexpected successful status; commit_unknown for network, 408, or 5xx outcomes; rejected for definite non-success responses."
+          },
+          {
+            "outputField": "outcomeUnknown",
+            "localRole": "True only when Apple may have committed DELETE despite an ambiguous transport or server outcome."
+          },
+          {
+            "outputField": "retrySafe",
+            "localRole": "False for confirmed, committed-unverified, or commit-unknown outcomes; true only for a definite rejection."
+          },
+          {
+            "outputField": "inspection",
+            "localRole": "Exact app_versions_get guidance included when DELETE completion is unknown or unverified."
+          }
         ]
       },
       "note": "Apple documents 204 with no response document. The handler requires exact version-ID confirmation and never repeats DELETE after an ambiguous outcome; explicit 401 and 429 rejections may be retried safely. Network, 408, and 5xx outcomes are commit_unknown, while an unexpected successful status is committed_unverified; both require exact-version inspection with retrySafe=false."
@@ -329,13 +371,28 @@
       "response": {
         "mode": "local",
         "sources": [
-          { "operationId": "appStoreVersionPhasedReleases_deleteInstance", "statusCode": "204" }
+          {
+            "operationId": "appStoreVersionPhasedReleases_deleteInstance",
+            "statusCode": "204"
+          }
         ],
         "fields": [
-          { "outputField": "deletionState", "localRole": "Confirmed on 204; committed_unverified for an unexpected successful status; commit_unknown for network, 408, or 5xx outcomes; rejected for definite non-success responses." },
-          { "outputField": "outcomeUnknown", "localRole": "True only when Apple may have committed DELETE despite an ambiguous transport or server outcome." },
-          { "outputField": "retrySafe", "localRole": "False for confirmed, committed-unverified, or commit-unknown outcomes; true only for a definite rejection." },
-          { "outputField": "inspection", "localRole": "Owning-version relationship or App Store Connect UI guidance included when DELETE completion is unknown or unverified because Apple has no direct GET by phased-release ID." }
+          {
+            "outputField": "deletionState",
+            "localRole": "Confirmed on 204; committed_unverified for an unexpected successful status; commit_unknown for network, 408, or 5xx outcomes; rejected for definite non-success responses."
+          },
+          {
+            "outputField": "outcomeUnknown",
+            "localRole": "True only when Apple may have committed DELETE despite an ambiguous transport or server outcome."
+          },
+          {
+            "outputField": "retrySafe",
+            "localRole": "False for confirmed, committed-unverified, or commit-unknown outcomes; true only for a definite rejection."
+          },
+          {
+            "outputField": "inspection",
+            "localRole": "Owning-version relationship or App Store Connect UI guidance included when DELETE completion is unknown or unverified because Apple has no direct GET by phased-release ID."
+          }
         ]
       },
       "note": "Apple permits deletion only for an eligible planned rollout that has not started and documents 204 without a response document. The handler requires exact-ID confirmation and never repeats DELETE after an ambiguous outcome; explicit 401 and 429 rejections may be retried safely. Network, 408, and 5xx outcomes are commit_unknown, while an unexpected successful status is committed_unverified; both use retrySafe=false. Apple 4.4.1 exposes no direct GET by phased-release ID, so recovery guidance uses the owning version relationship or App Store Connect UI."
@@ -353,16 +410,37 @@
           "path": "/v1/appStoreVersions/{id}",
           "role": "primary",
           "optionalParameterClassifications": [
-            { "location": "query", "appleName": "limit[appStoreVersionExperiments]", "disposition": "intentionallyOmitted", "reason": "Legacy experiments are not included by the fixed version detail projection.", "reviewAtSpec": "4.5.1" },
-            { "location": "query", "appleName": "limit[appStoreVersionExperimentsV2]", "disposition": "intentionallyOmitted", "reason": "V2 experiments are not included by the fixed version detail projection.", "reviewAtSpec": "4.5.1" },
-            { "location": "query", "appleName": "limit[appStoreVersionLocalizations]", "disposition": "intentionallyOmitted", "reason": "Localizations are not included by the fixed version detail projection.", "reviewAtSpec": "4.5.1" }
+            {
+              "location": "query",
+              "appleName": "limit[appStoreVersionExperiments]",
+              "disposition": "intentionallyOmitted",
+              "reason": "Legacy experiments are not included by the fixed version detail projection.",
+              "reviewAtSpec": "4.6"
+            },
+            {
+              "location": "query",
+              "appleName": "limit[appStoreVersionExperimentsV2]",
+              "disposition": "intentionallyOmitted",
+              "reason": "V2 experiments are not included by the fixed version detail projection.",
+              "reviewAtSpec": "4.6"
+            },
+            {
+              "location": "query",
+              "appleName": "limit[appStoreVersionLocalizations]",
+              "disposition": "intentionallyOmitted",
+              "reason": "Localizations are not included by the fixed version detail projection.",
+              "reviewAtSpec": "4.6"
+            }
           ],
           "inputs": [
             {
               "sourceKind": "fixed",
               "location": "query",
               "appleName": "include",
-              "fixedValue": ["build", "appStoreVersionPhasedRelease"]
+              "fixedValue": [
+                "build",
+                "appStoreVersionPhasedRelease"
+              ]
             }
           ]
         }
@@ -422,9 +500,19 @@
           }
         ],
         "fields": [
-          { "outputField": "success", "localRole": "successfulRead" },
-          { "outputField": "app_info_id", "localRole": "Echo the selected App Info ID." },
-          { "outputField": "age_rating_declaration", "operationId": "appInfos_ageRatingDeclaration_getToOneRelated", "jsonPointer": "/data" }
+          {
+            "outputField": "success",
+            "localRole": "successfulRead"
+          },
+          {
+            "outputField": "app_info_id",
+            "localRole": "Echo the selected App Info ID."
+          },
+          {
+            "outputField": "age_rating_declaration",
+            "operationId": "appInfos_ageRatingDeclaration_getToOneRelated",
+            "jsonPointer": "/data"
+          }
         ]
       },
       "note": "Age rating declarations are owned by App Info, not App Store version resources. The complete questionnaire is returned for review-readiness inspection."
@@ -477,16 +565,37 @@
           "path": "/v1/apps/{id}/appStoreVersions",
           "role": "primary",
           "optionalParameterClassifications": [
-            { "location": "query", "appleName": "limit[appStoreVersionExperiments]", "disposition": "intentionallyOmitted", "reason": "Legacy experiments are not among the fixed included relationships for the version list.", "reviewAtSpec": "4.5.1" },
-            { "location": "query", "appleName": "limit[appStoreVersionExperimentsV2]", "disposition": "intentionallyOmitted", "reason": "V2 experiments are not among the fixed included relationships for the version list.", "reviewAtSpec": "4.5.1" },
-            { "location": "query", "appleName": "limit[appStoreVersionLocalizations]", "disposition": "intentionallyOmitted", "reason": "Localizations are not among the fixed included relationships for the version list.", "reviewAtSpec": "4.5.1" }
+            {
+              "location": "query",
+              "appleName": "limit[appStoreVersionExperiments]",
+              "disposition": "intentionallyOmitted",
+              "reason": "Legacy experiments are not among the fixed included relationships for the version list.",
+              "reviewAtSpec": "4.6"
+            },
+            {
+              "location": "query",
+              "appleName": "limit[appStoreVersionExperimentsV2]",
+              "disposition": "intentionallyOmitted",
+              "reason": "V2 experiments are not among the fixed included relationships for the version list.",
+              "reviewAtSpec": "4.6"
+            },
+            {
+              "location": "query",
+              "appleName": "limit[appStoreVersionLocalizations]",
+              "disposition": "intentionallyOmitted",
+              "reason": "Localizations are not among the fixed included relationships for the version list.",
+              "reviewAtSpec": "4.6"
+            }
           ],
           "inputs": [
             {
               "sourceKind": "fixed",
               "location": "query",
               "appleName": "include",
-              "fixedValue": ["build", "appStoreVersionPhasedRelease"]
+              "fixedValue": [
+                "build",
+                "appStoreVersionPhasedRelease"
+              ]
             }
           ]
         }
@@ -564,14 +673,43 @@
           }
         ],
         "fields": [
-          { "outputField": "success", "localRole": "successfulRead" },
-          { "outputField": "app_id", "localRole": "Echo the selected App ID." },
-          { "outputField": "versions", "operationId": "apps_appStoreVersions_getToManyRelated", "jsonPointer": "/data" },
-          { "outputField": "included", "operationId": "apps_appStoreVersions_getToManyRelated", "jsonPointer": "/included" },
-          { "outputField": "next_url", "operationId": "apps_appStoreVersions_getToManyRelated", "jsonPointer": "/links/next" },
-          { "outputField": "meta", "operationId": "apps_appStoreVersions_getToManyRelated", "jsonPointer": "/meta" },
-          { "outputField": "count", "localRole": "Count the returned App Store version resources." },
-          { "outputField": "total", "operationId": "apps_appStoreVersions_getToManyRelated", "jsonPointer": "/meta/paging/total" }
+          {
+            "outputField": "success",
+            "localRole": "successfulRead"
+          },
+          {
+            "outputField": "app_id",
+            "localRole": "Echo the selected App ID."
+          },
+          {
+            "outputField": "versions",
+            "operationId": "apps_appStoreVersions_getToManyRelated",
+            "jsonPointer": "/data"
+          },
+          {
+            "outputField": "included",
+            "operationId": "apps_appStoreVersions_getToManyRelated",
+            "jsonPointer": "/included"
+          },
+          {
+            "outputField": "next_url",
+            "operationId": "apps_appStoreVersions_getToManyRelated",
+            "jsonPointer": "/links/next"
+          },
+          {
+            "outputField": "meta",
+            "operationId": "apps_appStoreVersions_getToManyRelated",
+            "jsonPointer": "/meta"
+          },
+          {
+            "outputField": "count",
+            "localRole": "Count the returned App Store version resources."
+          },
+          {
+            "outputField": "total",
+            "operationId": "apps_appStoreVersions_getToManyRelated",
+            "jsonPointer": "/meta/paging/total"
+          }
         ]
       },
       "note": "states preserves deprecated filter[appStoreState] compatibility; app_version_states exposes current filter[appVersionState]. platforms follows Apple's array contract while platform remains a deprecated scalar alias. Pagination preserves all supplied filters, page size, and fixed non-deprecated included relationships; output preserves count and Apple paging metadata."
@@ -593,19 +731,26 @@
               "sourceKind": "fixed",
               "location": "query",
               "appleName": "fields[territoryAgeRatings]",
-              "fixedValue": ["appStoreAgeRating", "territory"]
+              "fixedValue": [
+                "appStoreAgeRating",
+                "territory"
+              ]
             },
             {
               "sourceKind": "fixed",
               "location": "query",
               "appleName": "fields[territories]",
-              "fixedValue": ["currency"]
+              "fixedValue": [
+                "currency"
+              ]
             },
             {
               "sourceKind": "fixed",
               "location": "query",
               "appleName": "include",
-              "fixedValue": ["territory"]
+              "fixedValue": [
+                "territory"
+              ]
             }
           ]
         }
@@ -641,14 +786,43 @@
           }
         ],
         "fields": [
-          { "outputField": "success", "localRole": "successfulRead" },
-          { "outputField": "app_info_id", "localRole": "Echo the selected App Info ID." },
-          { "outputField": "territory_age_ratings", "operationId": "appInfos_territoryAgeRatings_getToManyRelated", "jsonPointer": "/data" },
-          { "outputField": "included_territories", "operationId": "appInfos_territoryAgeRatings_getToManyRelated", "jsonPointer": "/included" },
-          { "outputField": "next_url", "operationId": "appInfos_territoryAgeRatings_getToManyRelated", "jsonPointer": "/links/next" },
-          { "outputField": "meta", "operationId": "appInfos_territoryAgeRatings_getToManyRelated", "jsonPointer": "/meta" },
-          { "outputField": "count", "localRole": "Count the returned territory age rating resources." },
-          { "outputField": "total", "operationId": "appInfos_territoryAgeRatings_getToManyRelated", "jsonPointer": "/meta/paging/total" }
+          {
+            "outputField": "success",
+            "localRole": "successfulRead"
+          },
+          {
+            "outputField": "app_info_id",
+            "localRole": "Echo the selected App Info ID."
+          },
+          {
+            "outputField": "territory_age_ratings",
+            "operationId": "appInfos_territoryAgeRatings_getToManyRelated",
+            "jsonPointer": "/data"
+          },
+          {
+            "outputField": "included_territories",
+            "operationId": "appInfos_territoryAgeRatings_getToManyRelated",
+            "jsonPointer": "/included"
+          },
+          {
+            "outputField": "next_url",
+            "operationId": "appInfos_territoryAgeRatings_getToManyRelated",
+            "jsonPointer": "/links/next"
+          },
+          {
+            "outputField": "meta",
+            "operationId": "appInfos_territoryAgeRatings_getToManyRelated",
+            "jsonPointer": "/meta"
+          },
+          {
+            "outputField": "count",
+            "localRole": "Count the returned territory age rating resources."
+          },
+          {
+            "outputField": "total",
+            "operationId": "appInfos_territoryAgeRatings_getToManyRelated",
+            "jsonPointer": "/meta/paging/total"
+          }
         ]
       },
       "note": "Returns Apple's calculated rating per territory with included territory currency data. Rating values remain future-compatible strings, including ZERO_ZERO introduced for Vietnam."
@@ -667,17 +841,45 @@
           "role": "supporting",
           "condition": "Always used to validate versionString and releasable state before the irreversible request.",
           "optionalParameterClassifications": [
-            { "location": "query", "appleName": "include", "disposition": "intentionallyOmitted", "reason": "The irreversible-action preflight reads only fixed version attributes and does not expand relationships.", "reviewAtSpec": "4.5.1" },
-            { "location": "query", "appleName": "limit[appStoreVersionExperiments]", "disposition": "intentionallyOmitted", "reason": "Legacy experiments are not included by the release preflight.", "reviewAtSpec": "4.5.1" },
-            { "location": "query", "appleName": "limit[appStoreVersionExperimentsV2]", "disposition": "intentionallyOmitted", "reason": "V2 experiments are not included by the release preflight.", "reviewAtSpec": "4.5.1" },
-            { "location": "query", "appleName": "limit[appStoreVersionLocalizations]", "disposition": "intentionallyOmitted", "reason": "Localizations are not included by the release preflight.", "reviewAtSpec": "4.5.1" }
+            {
+              "location": "query",
+              "appleName": "include",
+              "disposition": "intentionallyOmitted",
+              "reason": "The irreversible-action preflight reads only fixed version attributes and does not expand relationships.",
+              "reviewAtSpec": "4.6"
+            },
+            {
+              "location": "query",
+              "appleName": "limit[appStoreVersionExperiments]",
+              "disposition": "intentionallyOmitted",
+              "reason": "Legacy experiments are not included by the release preflight.",
+              "reviewAtSpec": "4.6"
+            },
+            {
+              "location": "query",
+              "appleName": "limit[appStoreVersionExperimentsV2]",
+              "disposition": "intentionallyOmitted",
+              "reason": "V2 experiments are not included by the release preflight.",
+              "reviewAtSpec": "4.6"
+            },
+            {
+              "location": "query",
+              "appleName": "limit[appStoreVersionLocalizations]",
+              "disposition": "intentionallyOmitted",
+              "reason": "Localizations are not included by the release preflight.",
+              "reviewAtSpec": "4.6"
+            }
           ],
           "inputs": [
             {
               "sourceKind": "fixed",
               "location": "query",
               "appleName": "fields[appStoreVersions]",
-              "fixedValue": ["platform", "versionString", "appVersionState"]
+              "fixedValue": [
+                "platform",
+                "versionString",
+                "appVersionState"
+              ]
             }
           ]
         },
@@ -723,8 +925,16 @@
       "response": {
         "mode": "aggregate",
         "sources": [
-          { "operationId": "appStoreVersionReleaseRequests_createInstance", "statusCode": "201", "mediaType": "application/json" },
-          { "operationId": "appStoreVersions_getInstance", "statusCode": "200", "mediaType": "application/json" }
+          {
+            "operationId": "appStoreVersionReleaseRequests_createInstance",
+            "statusCode": "201",
+            "mediaType": "application/json"
+          },
+          {
+            "operationId": "appStoreVersions_getInstance",
+            "statusCode": "200",
+            "mediaType": "application/json"
+          }
         ],
         "fields": []
       }
@@ -743,20 +953,30 @@
           "role": "supporting",
           "condition": "Determines whether to create review details or update the existing resource.",
           "optionalParameterClassifications": [
-            { "location": "query", "appleName": "limit[appStoreReviewAttachments]", "disposition": "intentionallyOmitted", "reason": "Review attachments are managed by ReviewAttachmentsWorker and are not included in this existence lookup.", "reviewAtSpec": "4.5.1" }
+            {
+              "location": "query",
+              "appleName": "limit[appStoreReviewAttachments]",
+              "disposition": "intentionallyOmitted",
+              "reason": "Review attachments are managed by ReviewAttachmentsWorker and are not included in this existence lookup.",
+              "reviewAtSpec": "4.6"
+            }
           ],
           "inputs": [
             {
               "sourceKind": "fixed",
               "location": "query",
               "appleName": "fields[appStoreReviewDetails]",
-              "fixedValue": ["appStoreVersion"]
+              "fixedValue": [
+                "appStoreVersion"
+              ]
             },
             {
               "sourceKind": "fixed",
               "location": "query",
               "appleName": "include",
-              "fixedValue": ["appStoreVersion"]
+              "fixedValue": [
+                "appStoreVersion"
+              ]
             }
           ]
         },
@@ -767,17 +987,43 @@
           "role": "conditional",
           "condition": "Used only after a 404 from the related review-detail lookup to prove the parent version exists before creating a child resource.",
           "optionalParameterClassifications": [
-            { "location": "query", "appleName": "include", "disposition": "intentionallyOmitted", "reason": "The parent-existence check needs only a fixed version field and does not expand relationships.", "reviewAtSpec": "4.5.1" },
-            { "location": "query", "appleName": "limit[appStoreVersionExperiments]", "disposition": "intentionallyOmitted", "reason": "Experiments are not included by the parent-existence check.", "reviewAtSpec": "4.5.1" },
-            { "location": "query", "appleName": "limit[appStoreVersionExperimentsV2]", "disposition": "intentionallyOmitted", "reason": "V2 experiments are not included by the parent-existence check.", "reviewAtSpec": "4.5.1" },
-            { "location": "query", "appleName": "limit[appStoreVersionLocalizations]", "disposition": "intentionallyOmitted", "reason": "Localizations are not included by the parent-existence check.", "reviewAtSpec": "4.5.1" }
+            {
+              "location": "query",
+              "appleName": "include",
+              "disposition": "intentionallyOmitted",
+              "reason": "The parent-existence check needs only a fixed version field and does not expand relationships.",
+              "reviewAtSpec": "4.6"
+            },
+            {
+              "location": "query",
+              "appleName": "limit[appStoreVersionExperiments]",
+              "disposition": "intentionallyOmitted",
+              "reason": "Experiments are not included by the parent-existence check.",
+              "reviewAtSpec": "4.6"
+            },
+            {
+              "location": "query",
+              "appleName": "limit[appStoreVersionExperimentsV2]",
+              "disposition": "intentionallyOmitted",
+              "reason": "V2 experiments are not included by the parent-existence check.",
+              "reviewAtSpec": "4.6"
+            },
+            {
+              "location": "query",
+              "appleName": "limit[appStoreVersionLocalizations]",
+              "disposition": "intentionallyOmitted",
+              "reason": "Localizations are not included by the parent-existence check.",
+              "reviewAtSpec": "4.6"
+            }
           ],
           "inputs": [
             {
               "sourceKind": "fixed",
               "location": "query",
               "appleName": "fields[appStoreVersions]",
-              "fixedValue": ["versionString"]
+              "fixedValue": [
+                "versionString"
+              ]
             }
           ]
         },
@@ -959,10 +1205,26 @@
       "response": {
         "mode": "aggregate",
         "sources": [
-          { "operationId": "appStoreReviewDetails_createInstance", "statusCode": "201", "mediaType": "application/json" },
-          { "operationId": "appStoreReviewDetails_updateInstance", "statusCode": "200", "mediaType": "application/json" },
-          { "operationId": "appStoreVersions_appStoreReviewDetail_getToOneRelated", "statusCode": "200", "mediaType": "application/json" },
-          { "operationId": "appStoreVersions_getInstance", "statusCode": "200", "mediaType": "application/json" }
+          {
+            "operationId": "appStoreReviewDetails_createInstance",
+            "statusCode": "201",
+            "mediaType": "application/json"
+          },
+          {
+            "operationId": "appStoreReviewDetails_updateInstance",
+            "statusCode": "200",
+            "mediaType": "application/json"
+          },
+          {
+            "operationId": "appStoreVersions_appStoreReviewDetail_getToOneRelated",
+            "statusCode": "200",
+            "mediaType": "application/json"
+          },
+          {
+            "operationId": "appStoreVersions_getInstance",
+            "statusCode": "200",
+            "mediaType": "application/json"
+          }
         ],
         "fields": []
       },
@@ -982,22 +1244,47 @@
           "role": "supporting",
           "condition": "Always validates the version's owning app before creating a review submission.",
           "optionalParameterClassifications": [
-            { "location": "query", "appleName": "limit[appStoreVersionExperiments]", "disposition": "intentionallyOmitted", "reason": "Legacy experiments are not included by the submission preflight.", "reviewAtSpec": "4.5.1" },
-            { "location": "query", "appleName": "limit[appStoreVersionExperimentsV2]", "disposition": "intentionallyOmitted", "reason": "V2 experiments are not included by the submission preflight.", "reviewAtSpec": "4.5.1" },
-            { "location": "query", "appleName": "limit[appStoreVersionLocalizations]", "disposition": "intentionallyOmitted", "reason": "Localizations are not included by the submission preflight.", "reviewAtSpec": "4.5.1" }
+            {
+              "location": "query",
+              "appleName": "limit[appStoreVersionExperiments]",
+              "disposition": "intentionallyOmitted",
+              "reason": "Legacy experiments are not included by the submission preflight.",
+              "reviewAtSpec": "4.6"
+            },
+            {
+              "location": "query",
+              "appleName": "limit[appStoreVersionExperimentsV2]",
+              "disposition": "intentionallyOmitted",
+              "reason": "V2 experiments are not included by the submission preflight.",
+              "reviewAtSpec": "4.6"
+            },
+            {
+              "location": "query",
+              "appleName": "limit[appStoreVersionLocalizations]",
+              "disposition": "intentionallyOmitted",
+              "reason": "Localizations are not included by the submission preflight.",
+              "reviewAtSpec": "4.6"
+            }
           ],
           "inputs": [
             {
               "sourceKind": "fixed",
               "location": "query",
               "appleName": "fields[appStoreVersions]",
-              "fixedValue": ["app", "platform", "versionString", "appVersionState"]
+              "fixedValue": [
+                "app",
+                "platform",
+                "versionString",
+                "appVersionState"
+              ]
             },
             {
               "sourceKind": "fixed",
               "location": "query",
               "appleName": "include",
-              "fixedValue": ["app"]
+              "fixedValue": [
+                "app"
+              ]
             }
           ]
         },
@@ -1025,21 +1312,118 @@
           "path": "/v1/reviewSubmissionItems",
           "role": "supporting",
           "optionalParameterClassifications": [
-            { "location": "body", "appleName": "/data/relationships/appCustomProductPageVersion", "disposition": "intentionallyOmitted", "reason": "This tool submits exactly one App Store version; custom product page versions require a separate review-item workflow.", "reviewAtSpec": "4.5.1" },
-            { "location": "body", "appleName": "/data/relationships/appEvent", "disposition": "intentionallyOmitted", "reason": "This tool submits exactly one App Store version; in-app events require a separate review-item workflow.", "reviewAtSpec": "4.5.1" },
-            { "location": "body", "appleName": "/data/relationships/appStoreVersionExperiment", "disposition": "intentionallyOmitted", "reason": "This tool submits exactly one App Store version; product-page experiments require a separate review-item workflow.", "reviewAtSpec": "4.5.1" },
-            { "location": "body", "appleName": "/data/relationships/appStoreVersionExperimentV2", "disposition": "intentionallyOmitted", "reason": "This tool submits exactly one App Store version; V2 experiments require a separate review-item workflow.", "reviewAtSpec": "4.5.1" },
-            { "location": "body", "appleName": "/data/relationships/backgroundAssetVersion", "disposition": "intentionallyOmitted", "reason": "This tool submits exactly one App Store version; background asset versions require a separate review-item workflow.", "reviewAtSpec": "4.5.1" },
-            { "location": "body", "appleName": "/data/relationships/gameCenterAchievementVersion", "disposition": "intentionallyOmitted", "reason": "This tool submits exactly one App Store version; Game Center content requires a separate review-item workflow.", "reviewAtSpec": "4.5.1" },
-            { "location": "body", "appleName": "/data/relationships/gameCenterActivityVersion", "disposition": "intentionallyOmitted", "reason": "This tool submits exactly one App Store version; Game Center content requires a separate review-item workflow.", "reviewAtSpec": "4.5.1" },
-            { "location": "body", "appleName": "/data/relationships/gameCenterChallengeVersion", "disposition": "intentionallyOmitted", "reason": "This tool submits exactly one App Store version; Game Center content requires a separate review-item workflow.", "reviewAtSpec": "4.5.1" },
-            { "location": "body", "appleName": "/data/relationships/gameCenterLeaderboardSetVersion", "disposition": "intentionallyOmitted", "reason": "This tool submits exactly one App Store version; Game Center content requires a separate review-item workflow.", "reviewAtSpec": "4.5.1" },
-            { "location": "body", "appleName": "/data/relationships/gameCenterLeaderboardVersion", "disposition": "intentionallyOmitted", "reason": "This tool submits exactly one App Store version; Game Center content requires a separate review-item workflow.", "reviewAtSpec": "4.5.1" },
-            { "location": "body", "appleName": "/data/relationships/inAppPurchaseVersion", "disposition": "intentionallyOmitted", "reason": "This tool submits exactly one App Store version; in-app purchase versions require a separate review-item workflow.", "reviewAtSpec": "4.5.1" },
-            { "location": "body", "appleName": "/data/relationships/subscriptionGroupVersion", "disposition": "intentionallyOmitted", "reason": "This tool submits exactly one App Store version; subscription group versions require a separate review-item workflow.", "reviewAtSpec": "4.5.1" },
-            { "location": "body", "appleName": "/data/relationships/subscriptionVersion", "disposition": "intentionallyOmitted", "reason": "This tool submits exactly one App Store version; subscription versions require a separate review-item workflow.", "reviewAtSpec": "4.5.1" },
-            {"location": "body", "appleName": "/data/relationships/appAssetLibraryImage", "disposition": "intentionallyOmitted", "reason": "This tool submits exactly one App Store version and does not add Asset Library items. Add an isolated image or video through the preview-protected assets_prepare_change/assets_apply_change or new review_submissions_add_item form; accepting an asset relationship here would bypass that preparation contract.", "reviewAtSpec": "4.5.1"},
-            {"location": "body", "appleName": "/data/relationships/appAssetLibraryVideo", "disposition": "intentionallyOmitted", "reason": "This tool submits exactly one App Store version and does not add Asset Library items. Add an isolated image or video through the preview-protected assets_prepare_change/assets_apply_change or new review_submissions_add_item form; accepting an asset relationship here would bypass that preparation contract.", "reviewAtSpec": "4.5.1"}
+            {
+              "location": "body",
+              "appleName": "/data/relationships/appCustomProductPageVersion",
+              "disposition": "intentionallyOmitted",
+              "reason": "This tool submits exactly one App Store version; custom product page versions require a separate review-item workflow.",
+              "reviewAtSpec": "4.6"
+            },
+            {
+              "location": "body",
+              "appleName": "/data/relationships/appEvent",
+              "disposition": "intentionallyOmitted",
+              "reason": "This tool submits exactly one App Store version; in-app events require a separate review-item workflow.",
+              "reviewAtSpec": "4.6"
+            },
+            {
+              "location": "body",
+              "appleName": "/data/relationships/appStoreVersionExperiment",
+              "disposition": "intentionallyOmitted",
+              "reason": "This tool submits exactly one App Store version; product-page experiments require a separate review-item workflow.",
+              "reviewAtSpec": "4.6"
+            },
+            {
+              "location": "body",
+              "appleName": "/data/relationships/appStoreVersionExperimentV2",
+              "disposition": "intentionallyOmitted",
+              "reason": "This tool submits exactly one App Store version; V2 experiments require a separate review-item workflow.",
+              "reviewAtSpec": "4.6"
+            },
+            {
+              "location": "body",
+              "appleName": "/data/relationships/backgroundAssetVersion",
+              "disposition": "intentionallyOmitted",
+              "reason": "This tool submits exactly one App Store version; background asset versions require a separate review-item workflow.",
+              "reviewAtSpec": "4.6"
+            },
+            {
+              "location": "body",
+              "appleName": "/data/relationships/gameCenterAchievementVersion",
+              "disposition": "intentionallyOmitted",
+              "reason": "This tool submits exactly one App Store version; Game Center content requires a separate review-item workflow.",
+              "reviewAtSpec": "4.6"
+            },
+            {
+              "location": "body",
+              "appleName": "/data/relationships/gameCenterActivityVersion",
+              "disposition": "intentionallyOmitted",
+              "reason": "This tool submits exactly one App Store version; Game Center content requires a separate review-item workflow.",
+              "reviewAtSpec": "4.6"
+            },
+            {
+              "location": "body",
+              "appleName": "/data/relationships/gameCenterChallengeVersion",
+              "disposition": "intentionallyOmitted",
+              "reason": "This tool submits exactly one App Store version; Game Center content requires a separate review-item workflow.",
+              "reviewAtSpec": "4.6"
+            },
+            {
+              "location": "body",
+              "appleName": "/data/relationships/gameCenterLeaderboardSetVersion",
+              "disposition": "intentionallyOmitted",
+              "reason": "This tool submits exactly one App Store version; Game Center content requires a separate review-item workflow.",
+              "reviewAtSpec": "4.6"
+            },
+            {
+              "location": "body",
+              "appleName": "/data/relationships/gameCenterLeaderboardVersion",
+              "disposition": "intentionallyOmitted",
+              "reason": "This tool submits exactly one App Store version; Game Center content requires a separate review-item workflow.",
+              "reviewAtSpec": "4.6"
+            },
+            {
+              "location": "body",
+              "appleName": "/data/relationships/inAppPurchaseVersion",
+              "disposition": "intentionallyOmitted",
+              "reason": "This tool submits exactly one App Store version; in-app purchase versions require a separate review-item workflow.",
+              "reviewAtSpec": "4.6"
+            },
+            {
+              "location": "body",
+              "appleName": "/data/relationships/subscriptionGroupVersion",
+              "disposition": "intentionallyOmitted",
+              "reason": "This tool submits exactly one App Store version; subscription group versions require a separate review-item workflow.",
+              "reviewAtSpec": "4.6"
+            },
+            {
+              "location": "body",
+              "appleName": "/data/relationships/subscriptionVersion",
+              "disposition": "intentionallyOmitted",
+              "reason": "This tool submits exactly one App Store version; subscription versions require a separate review-item workflow.",
+              "reviewAtSpec": "4.6"
+            },
+            {
+              "location": "body",
+              "appleName": "/data/relationships/appAssetLibraryImage",
+              "disposition": "intentionallyOmitted",
+              "reason": "This tool submits exactly one App Store version and does not add Asset Library items. Add an isolated image or video through the preview-protected assets_prepare_change/assets_apply_change or new review_submissions_add_item form; accepting an asset relationship here would bypass that preparation contract.",
+              "reviewAtSpec": "4.6"
+            },
+            {
+              "location": "body",
+              "appleName": "/data/relationships/appAssetLibraryVideo",
+              "disposition": "intentionallyOmitted",
+              "reason": "This tool submits exactly one App Store version and does not add Asset Library items. Add an isolated image or video through the preview-protected assets_prepare_change/assets_apply_change or new review_submissions_add_item form; accepting an asset relationship here would bypass that preparation contract.",
+              "reviewAtSpec": "4.6"
+            },
+            {
+              "location": "body",
+              "appleName": "/data/relationships/retentionMessageVersion",
+              "disposition": "intentionallyOmitted",
+              "reason": "This tool submits exactly one App Store version; retention message versions require a separate review-item workflow.",
+              "reviewAtSpec": "4.6"
+            }
           ],
           "inputs": [
             {
@@ -1074,8 +1458,20 @@
           "role": "primary",
           "condition": "Marks the assembled review submission as submitted.",
           "optionalParameterClassifications": [
-            { "location": "body", "appleName": "/data/attributes/canceled", "disposition": "intentionallyOmitted", "reason": "Submission fixes submitted=true and never combines submission with the distinct cancellation transition.", "reviewAtSpec": "4.5.1" },
-            { "location": "body", "appleName": "/data/attributes/platform", "disposition": "intentionallyOmitted", "reason": "The platform is set when the review submission is created and is not changed during confirmation.", "reviewAtSpec": "4.5.1" }
+            {
+              "location": "body",
+              "appleName": "/data/attributes/canceled",
+              "disposition": "intentionallyOmitted",
+              "reason": "Submission fixes submitted=true and never combines submission with the distinct cancellation transition.",
+              "reviewAtSpec": "4.6"
+            },
+            {
+              "location": "body",
+              "appleName": "/data/attributes/platform",
+              "disposition": "intentionallyOmitted",
+              "reason": "The platform is set when the review submission is created and is not changed during confirmation.",
+              "reviewAtSpec": "4.6"
+            }
           ],
           "inputs": [
             {
@@ -1141,10 +1537,26 @@
       "response": {
         "mode": "aggregate",
         "sources": [
-          { "operationId": "appStoreVersions_getInstance", "statusCode": "200", "mediaType": "application/json" },
-          { "operationId": "reviewSubmissionItems_createInstance", "statusCode": "201", "mediaType": "application/json" },
-          { "operationId": "reviewSubmissions_createInstance", "statusCode": "201", "mediaType": "application/json" },
-          { "operationId": "reviewSubmissions_updateInstance", "statusCode": "200", "mediaType": "application/json" }
+          {
+            "operationId": "appStoreVersions_getInstance",
+            "statusCode": "200",
+            "mediaType": "application/json"
+          },
+          {
+            "operationId": "reviewSubmissionItems_createInstance",
+            "statusCode": "201",
+            "mediaType": "application/json"
+          },
+          {
+            "operationId": "reviewSubmissions_createInstance",
+            "statusCode": "201",
+            "mediaType": "application/json"
+          },
+          {
+            "operationId": "reviewSubmissions_updateInstance",
+            "statusCode": "200",
+            "mediaType": "application/json"
+          }
         ],
         "fields": []
       },
@@ -1163,8 +1575,20 @@
           "path": "/v1/appStoreVersions/{id}",
           "role": "primary",
           "optionalParameterClassifications": [
-            { "location": "body", "appleName": "/data/relationships/appClipDefaultExperience", "disposition": "intentionallyOmitted", "reason": "App Clip default-experience relationship management is outside the version-attribute update contract.", "reviewAtSpec": "4.5.1" },
-            { "location": "body", "appleName": "/data/relationships/build", "disposition": "intentionallyOmitted", "reason": "Build relationship updates are handled by app_versions_attach_build.", "reviewAtSpec": "4.5.1" }
+            {
+              "location": "body",
+              "appleName": "/data/relationships/appClipDefaultExperience",
+              "disposition": "intentionallyOmitted",
+              "reason": "App Clip default-experience relationship management is outside the version-attribute update contract.",
+              "reviewAtSpec": "4.6"
+            },
+            {
+              "location": "body",
+              "appleName": "/data/relationships/build",
+              "disposition": "intentionallyOmitted",
+              "reason": "Build relationship updates are handled by app_versions_attach_build.",
+              "reviewAtSpec": "4.6"
+            }
           ],
           "inputs": [
             {
@@ -1261,22 +1685,45 @@
           "role": "supporting",
           "condition": "Used only when app_info_id is omitted; resolves the owning app and current appVersionState from legacy version_id.",
           "optionalParameterClassifications": [
-            { "location": "query", "appleName": "limit[appStoreVersionExperiments]", "disposition": "intentionallyOmitted", "reason": "Legacy experiments are not included during App Info resolution.", "reviewAtSpec": "4.5.1" },
-            { "location": "query", "appleName": "limit[appStoreVersionExperimentsV2]", "disposition": "intentionallyOmitted", "reason": "V2 experiments are not included during App Info resolution.", "reviewAtSpec": "4.5.1" },
-            { "location": "query", "appleName": "limit[appStoreVersionLocalizations]", "disposition": "intentionallyOmitted", "reason": "Localizations are not included during App Info resolution.", "reviewAtSpec": "4.5.1" }
+            {
+              "location": "query",
+              "appleName": "limit[appStoreVersionExperiments]",
+              "disposition": "intentionallyOmitted",
+              "reason": "Legacy experiments are not included during App Info resolution.",
+              "reviewAtSpec": "4.6"
+            },
+            {
+              "location": "query",
+              "appleName": "limit[appStoreVersionExperimentsV2]",
+              "disposition": "intentionallyOmitted",
+              "reason": "V2 experiments are not included during App Info resolution.",
+              "reviewAtSpec": "4.6"
+            },
+            {
+              "location": "query",
+              "appleName": "limit[appStoreVersionLocalizations]",
+              "disposition": "intentionallyOmitted",
+              "reason": "Localizations are not included during App Info resolution.",
+              "reviewAtSpec": "4.6"
+            }
           ],
           "inputs": [
             {
               "sourceKind": "fixed",
               "location": "query",
               "appleName": "fields[appStoreVersions]",
-              "fixedValue": ["app", "appVersionState"]
+              "fixedValue": [
+                "app",
+                "appVersionState"
+              ]
             },
             {
               "sourceKind": "fixed",
               "location": "query",
               "appleName": "include",
-              "fixedValue": ["app"]
+              "fixedValue": [
+                "app"
+              ]
             }
           ]
         },
@@ -1287,7 +1734,13 @@
           "role": "supporting",
           "condition": "Used only for legacy version_id resolution; requires Apple's page links, strictly paginates the complete App Info collection, and selects exactly one AppInfo whose state equals the version state or an explicit documented state mapping.",
           "optionalParameterClassifications": [
-            { "location": "query", "appleName": "limit[appInfoLocalizations]", "disposition": "intentionallyOmitted", "reason": "App Info localizations are not included during age-rating declaration resolution.", "reviewAtSpec": "4.5.1" }
+            {
+              "location": "query",
+              "appleName": "limit[appInfoLocalizations]",
+              "disposition": "intentionallyOmitted",
+              "reason": "App Info localizations are not included during age-rating declaration resolution.",
+              "reviewAtSpec": "4.6"
+            }
           ],
           "inputs": [
             {
@@ -1303,13 +1756,18 @@
               "sourceKind": "fixed",
               "location": "query",
               "appleName": "fields[appInfos]",
-              "fixedValue": ["state", "app"]
+              "fixedValue": [
+                "state",
+                "app"
+              ]
             },
             {
               "sourceKind": "fixed",
               "location": "query",
               "appleName": "include",
-              "fixedValue": ["app"]
+              "fixedValue": [
+                "app"
+              ]
             },
             {
               "sourceKind": "fixed",
@@ -1344,8 +1802,20 @@
           "path": "/v1/ageRatingDeclarations/{id}",
           "role": "primary",
           "optionalParameterClassifications": [
-            { "location": "body", "appleName": "/data/attributes/ageRatingOverride", "disposition": "intentionallyOmitted", "reason": "Apple 4.5.1 exposes the current ageRatingOverrideV2 field separately; the MCP age_rating_override input targets that current field.", "reviewAtSpec": "4.5.1" },
-            {"location": "body", "appleName": "/data/attributes/gracRatingClassificationNumber", "disposition": "intentionallyOmitted", "reason": "The official GRAC classification number is a distinct field outside the approved Korea age-override enum scope. It is not implemented: exposing it requires documented identifier validation and authorized draft acceptance. This explicit omission remains a follow-up item; korea_age_rating_override does not set or clear it.", "reviewAtSpec": "4.5.1"}
+            {
+              "location": "body",
+              "appleName": "/data/attributes/ageRatingOverride",
+              "disposition": "intentionallyOmitted",
+              "reason": "Apple 4.5.1 exposes the current ageRatingOverrideV2 field separately; the MCP age_rating_override input targets that current field.",
+              "reviewAtSpec": "4.6"
+            },
+            {
+              "location": "body",
+              "appleName": "/data/attributes/gracRatingClassificationNumber",
+              "disposition": "intentionallyOmitted",
+              "reason": "The official GRAC classification number is a distinct field outside the approved Korea age-override enum scope. It is not implemented: exposing it requires documented identifier validation and authorized draft acceptance. This explicit omission remains a follow-up item; korea_age_rating_override does not set or clear it.",
+              "reviewAtSpec": "4.6"
+            }
           ],
           "inputs": [
             {
@@ -1560,10 +2030,26 @@
       "response": {
         "mode": "aggregate",
         "sources": [
-          { "operationId": "ageRatingDeclarations_updateInstance", "statusCode": "200", "mediaType": "application/json" },
-          { "operationId": "appInfos_ageRatingDeclaration_getToOneRelated", "statusCode": "200", "mediaType": "application/json" },
-          { "operationId": "appStoreVersions_getInstance", "statusCode": "200", "mediaType": "application/json" },
-          { "operationId": "apps_appInfos_getToManyRelated", "statusCode": "200", "mediaType": "application/json" }
+          {
+            "operationId": "ageRatingDeclarations_updateInstance",
+            "statusCode": "200",
+            "mediaType": "application/json"
+          },
+          {
+            "operationId": "appInfos_ageRatingDeclaration_getToOneRelated",
+            "statusCode": "200",
+            "mediaType": "application/json"
+          },
+          {
+            "operationId": "appStoreVersions_getInstance",
+            "statusCode": "200",
+            "mediaType": "application/json"
+          },
+          {
+            "operationId": "apps_appInfos_getToManyRelated",
+            "statusCode": "200",
+            "mediaType": "application/json"
+          }
         ],
         "fields": []
       },
@@ -1612,10 +2098,10 @@
           "operationId": "appStoreVersionPhasedReleases_updateInstance",
           "jsonPointer": "/data/attributes/phasedReleaseState"
         },
-    {
-      "toolField": "confirm_phased_release_id",
-      "sourceKind": "local",
-      "localRole": "Exact phased release ID confirmation required when ACTIVE starts or resumes distribution, or COMPLETE immediately releases the version to all users."
+        {
+          "toolField": "confirm_phased_release_id",
+          "sourceKind": "local",
+          "localRole": "Exact phased release ID confirmation required when ACTIVE starts or resumes distribution, or COMPLETE immediately releases the version to all users."
         }
       ],
       "response": {
@@ -1629,7 +2115,7 @@
         ],
         "fields": []
       },
-  "note": "Runtime validation restricts updates to ACTIVE, PAUSED, or COMPLETE. ACTIVE and COMPLETE require exact phased-release-ID confirmation."
+      "note": "Runtime validation restricts updates to ACTIVE, PAUSED, or COMPLETE. ACTIVE and COMPLETE require exact phased-release-ID confirmation."
     }
   ],
   "implementationAliases": []

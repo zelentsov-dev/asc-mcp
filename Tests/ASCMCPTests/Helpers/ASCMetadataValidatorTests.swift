@@ -7,6 +7,13 @@ struct ASCMetadataValidatorTests {
     func rejectsEmoji() {
         let errors = ASCMetadataValidator.validateTextFields(["description": "Hello 👋"])
         #expect(errors.contains { $0.field == "description" })
+
+        for emoji in ["1️⃣", "#️⃣", "*️⃣", "1⃣", "©️", "®️", "™️", "ℹ️", "🎉", "🔥", "❤️", "☀️", "🇺🇸"] {
+            #expect(ASCMetadataValidator.containsEmoji(emoji), "Expected '\(emoji)' to be detected as emoji")
+        }
+        for plain in ["1", "#", "*", "©", "®", "™", "𠮷", "𠮟", "𠮷野の便利な機能を継続"] {
+            #expect(!ASCMetadataValidator.containsEmoji(plain), "Expected '\(plain)' not to be detected as emoji")
+        }
     }
 
     @Test("rejects over-limit text")

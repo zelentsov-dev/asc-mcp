@@ -16,10 +16,38 @@
           "role": "primary",
           "condition": "Always: SALES + SUMMARY + DAILY.",
           "inputs": [
-            { "sourceKind": "fixed", "location": "query", "appleName": "filter[reportType]", "fixedValue": ["SALES"] },
-            { "sourceKind": "fixed", "location": "query", "appleName": "filter[reportSubType]", "fixedValue": ["SUMMARY"] },
-            { "sourceKind": "fixed", "location": "query", "appleName": "filter[frequency]", "fixedValue": ["DAILY"] },
-            { "sourceKind": "fixed", "location": "query", "appleName": "filter[version]", "fixedValue": ["1_0"] }
+            {
+              "sourceKind": "fixed",
+              "location": "query",
+              "appleName": "filter[reportType]",
+              "fixedValue": [
+                "SALES"
+              ]
+            },
+            {
+              "sourceKind": "fixed",
+              "location": "query",
+              "appleName": "filter[reportSubType]",
+              "fixedValue": [
+                "SUMMARY"
+              ]
+            },
+            {
+              "sourceKind": "fixed",
+              "location": "query",
+              "appleName": "filter[frequency]",
+              "fixedValue": [
+                "DAILY"
+              ]
+            },
+            {
+              "sourceKind": "fixed",
+              "location": "query",
+              "appleName": "filter[version]",
+              "fixedValue": [
+                "1_0"
+              ]
+            }
           ]
         },
         {
@@ -30,10 +58,38 @@
           "role": "supporting",
           "condition": "Always: SUBSCRIPTION + SUMMARY + DAILY.",
           "inputs": [
-            { "sourceKind": "fixed", "location": "query", "appleName": "filter[reportType]", "fixedValue": ["SUBSCRIPTION"] },
-            { "sourceKind": "fixed", "location": "query", "appleName": "filter[reportSubType]", "fixedValue": ["SUMMARY"] },
-            { "sourceKind": "fixed", "location": "query", "appleName": "filter[frequency]", "fixedValue": ["DAILY"] },
-            { "sourceKind": "fixed", "location": "query", "appleName": "filter[version]", "fixedValue": ["1_3"] }
+            {
+              "sourceKind": "fixed",
+              "location": "query",
+              "appleName": "filter[reportType]",
+              "fixedValue": [
+                "SUBSCRIPTION"
+              ]
+            },
+            {
+              "sourceKind": "fixed",
+              "location": "query",
+              "appleName": "filter[reportSubType]",
+              "fixedValue": [
+                "SUMMARY"
+              ]
+            },
+            {
+              "sourceKind": "fixed",
+              "location": "query",
+              "appleName": "filter[frequency]",
+              "fixedValue": [
+                "DAILY"
+              ]
+            },
+            {
+              "sourceKind": "fixed",
+              "location": "query",
+              "appleName": "filter[version]",
+              "fixedValue": [
+                "1_3"
+              ]
+            }
           ]
         },
         {
@@ -44,10 +100,38 @@
           "role": "supporting",
           "condition": "Always: SUBSCRIPTION_EVENT + SUMMARY + DAILY.",
           "inputs": [
-            { "sourceKind": "fixed", "location": "query", "appleName": "filter[reportType]", "fixedValue": ["SUBSCRIPTION_EVENT"] },
-            { "sourceKind": "fixed", "location": "query", "appleName": "filter[reportSubType]", "fixedValue": ["SUMMARY"] },
-            { "sourceKind": "fixed", "location": "query", "appleName": "filter[frequency]", "fixedValue": ["DAILY"] },
-            { "sourceKind": "fixed", "location": "query", "appleName": "filter[version]", "fixedValue": ["1_3"] }
+            {
+              "sourceKind": "fixed",
+              "location": "query",
+              "appleName": "filter[reportType]",
+              "fixedValue": [
+                "SUBSCRIPTION_EVENT"
+              ]
+            },
+            {
+              "sourceKind": "fixed",
+              "location": "query",
+              "appleName": "filter[reportSubType]",
+              "fixedValue": [
+                "SUMMARY"
+              ]
+            },
+            {
+              "sourceKind": "fixed",
+              "location": "query",
+              "appleName": "filter[frequency]",
+              "fixedValue": [
+                "DAILY"
+              ]
+            },
+            {
+              "sourceKind": "fixed",
+              "location": "query",
+              "appleName": "filter[version]",
+              "fixedValue": [
+                "1_3"
+              ]
+            }
           ]
         },
         {
@@ -58,10 +142,38 @@
           "role": "supporting",
           "condition": "Always: SUBSCRIBER + DETAILED + DAILY.",
           "inputs": [
-            { "sourceKind": "fixed", "location": "query", "appleName": "filter[reportType]", "fixedValue": ["SUBSCRIBER"] },
-            { "sourceKind": "fixed", "location": "query", "appleName": "filter[reportSubType]", "fixedValue": ["DETAILED"] },
-            { "sourceKind": "fixed", "location": "query", "appleName": "filter[frequency]", "fixedValue": ["DAILY"] },
-            { "sourceKind": "fixed", "location": "query", "appleName": "filter[version]", "fixedValue": ["1_3"] }
+            {
+              "sourceKind": "fixed",
+              "location": "query",
+              "appleName": "filter[reportType]",
+              "fixedValue": [
+                "SUBSCRIBER"
+              ]
+            },
+            {
+              "sourceKind": "fixed",
+              "location": "query",
+              "appleName": "filter[reportSubType]",
+              "fixedValue": [
+                "DETAILED"
+              ]
+            },
+            {
+              "sourceKind": "fixed",
+              "location": "query",
+              "appleName": "filter[frequency]",
+              "fixedValue": [
+                "DAILY"
+              ]
+            },
+            {
+              "sourceKind": "fixed",
+              "location": "query",
+              "appleName": "filter[version]",
+              "fixedValue": [
+                "1_3"
+              ]
+            }
           ]
         }
       ],
@@ -98,10 +210,10 @@
           "location": "query",
           "appleName": "filter[reportDate]"
         },
-      {
-        "toolField": "app_id",
-        "sourceKind": "local",
-        "localRole": "trimmedNonEmptyValidationThenPostDownloadAppIdentifierColumnFilter"
+        {
+          "toolField": "app_id",
+          "sourceKind": "local",
+          "localRole": "trimmedNonEmptyValidationThenPostDownloadAppIdentifierColumnFilter"
         },
         {
           "toolField": "vendor_number",
@@ -147,7 +259,12 @@
             "operationId": "salesReports_getCollection",
             "statusCode": "200",
             "mediaType": "application/a-gzip",
-            "invocationIds": ["downloads", "subscriptions", "subscription-events", "revenue"]
+            "invocationIds": [
+              "downloads",
+              "subscriptions",
+              "subscription-events",
+              "revenue"
+            ]
           }
         ],
         "fields": [
@@ -167,7 +284,12 @@
             "outputField": "sections",
             "operationId": "salesReports_getCollection",
             "jsonPointer": "/",
-            "invocationIds": ["downloads", "subscriptions", "subscription-events", "revenue"],
+            "invocationIds": [
+              "downloads",
+              "subscriptions",
+              "subscription-events",
+              "revenue"
+            ],
             "localRole": "fourGzipTSVParsesAndAggregations"
           },
           {
@@ -220,14 +342,14 @@
               "appleName": "filter[granularity]",
               "disposition": "intentionallyOmitted",
               "reason": "The readiness heuristic only needs to know whether any report instance exists, regardless of granularity.",
-              "reviewAtSpec": "4.5.1"
+              "reviewAtSpec": "4.6"
             },
             {
               "location": "query",
               "appleName": "filter[processingDate]",
               "disposition": "intentionallyOmitted",
               "reason": "The readiness heuristic only needs to know whether any report instance exists, regardless of processing date.",
-              "reviewAtSpec": "4.5.1"
+              "reviewAtSpec": "4.6"
             }
           ],
           "inputs": [
@@ -235,7 +357,9 @@
               "sourceKind": "derived",
               "location": "path",
               "appleName": "id",
-              "derivedFrom": ["analyticsReportRequests_reports_getToManyRelated:/data/*/id"],
+              "derivedFrom": [
+                "analyticsReportRequests_reports_getToManyRelated:/data/*/id"
+              ],
               "localRole": "iterateFilteredReportIdentifiers"
             },
             {
@@ -338,8 +462,16 @@
           "path": "/v1/analyticsReportRequests",
           "role": "primary",
           "inputs": [
-            { "sourceKind": "fixed", "jsonPointer": "/data/type", "fixedValue": "analyticsReportRequests" },
-            { "sourceKind": "fixed", "jsonPointer": "/data/relationships/app/data/type", "fixedValue": "apps" }
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/type",
+              "fixedValue": "analyticsReportRequests"
+            },
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/relationships/app/data/type",
+              "fixedValue": "apps"
+            }
           ]
         }
       ],
@@ -477,9 +609,9 @@
             "jsonPointer": "/",
             "localRole": "parsedTSVRowCount"
           },
-      {
-        "outputField": "summary",
-        "localRole": "localDecimalFinancialTSVAggregationPreferringExtendedPartnerShare"
+          {
+            "outputField": "summary",
+            "localRole": "localDecimalFinancialTSVAggregationPreferringExtendedPartnerShare"
           },
           {
             "outputField": "rows",
@@ -1003,10 +1135,10 @@
           "appleName": "filter[vendorNumber]",
           "localRole": "optionalCompanyConfigFallback"
         },
-      {
-        "toolField": "app_id",
-        "sourceKind": "local",
-        "localRole": "trimmedNonEmptyValidationThenPostDownloadAppIdentifierColumnFilter"
+        {
+          "toolField": "app_id",
+          "sourceKind": "local",
+          "localRole": "trimmedNonEmptyValidationThenPostDownloadAppIdentifierColumnFilter"
         },
         {
           "toolField": "report_type",
@@ -1104,9 +1236,9 @@
             "outputField": "filtered_rows",
             "localRole": "postDownloadAppFilterCount"
           },
-      {
-        "outputField": "summary",
-        "localRole": "reportTypeSpecificDecimalTSVAggregationWithExactMonetaryStringsAndSubscriberSuppressionSemantics"
+          {
+            "outputField": "summary",
+            "localRole": "reportTypeSpecificDecimalTSVAggregationWithExactMonetaryStringsAndSubscriberSuppressionSemantics"
           },
           {
             "outputField": "rows",

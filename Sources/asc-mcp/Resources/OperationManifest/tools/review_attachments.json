@@ -32,7 +32,10 @@
       "response": {
         "mode": "local",
         "sources": [
-          { "operationId": "appStoreReviewAttachments_deleteInstance", "statusCode": "204" }
+          {
+            "operationId": "appStoreReviewAttachments_deleteInstance",
+            "statusCode": "204"
+          }
         ],
         "fields": [
           {
@@ -76,13 +79,17 @@
               "sourceKind": "fixed",
               "location": "query",
               "appleName": "include",
-              "fixedValue": ["appStoreReviewDetail"]
+              "fixedValue": [
+                "appStoreReviewDetail"
+              ]
             },
             {
               "sourceKind": "fixed",
               "location": "query",
               "appleName": "fields[appStoreReviewDetails]",
-              "fixedValue": ["appStoreVersion"]
+              "fixedValue": [
+                "appStoreVersion"
+              ]
             }
           ]
         }
@@ -153,13 +160,17 @@
               "sourceKind": "fixed",
               "location": "query",
               "appleName": "include",
-              "fixedValue": ["appStoreReviewDetail"]
+              "fixedValue": [
+                "appStoreReviewDetail"
+              ]
             },
             {
               "sourceKind": "fixed",
               "location": "query",
               "appleName": "fields[appStoreReviewDetails]",
-              "fixedValue": ["appStoreVersion"]
+              "fixedValue": [
+                "appStoreVersion"
+              ]
             }
           ]
         }
@@ -301,7 +312,7 @@
               "appleName": "include",
               "disposition": "intentionallyOmitted",
               "reason": "Upload reconciliation needs attachment delivery state and relationship identity only; expanding reviewer contact or demo-account data is unrelated to delivery verification.",
-              "reviewAtSpec": "4.5.1"
+              "reviewAtSpec": "4.6"
             }
           ],
           "inputs": [
@@ -381,10 +392,25 @@
       "response": {
         "mode": "aggregate",
         "sources": [
-          { "operationId": "appStoreReviewAttachments_createInstance", "statusCode": "201", "mediaType": "application/json" },
-          { "operationId": "appStoreReviewAttachments_deleteInstance", "statusCode": "204" },
-          { "operationId": "appStoreReviewAttachments_getInstance", "statusCode": "200", "mediaType": "application/json" },
-          { "operationId": "appStoreReviewAttachments_updateInstance", "statusCode": "200", "mediaType": "application/json" }
+          {
+            "operationId": "appStoreReviewAttachments_createInstance",
+            "statusCode": "201",
+            "mediaType": "application/json"
+          },
+          {
+            "operationId": "appStoreReviewAttachments_deleteInstance",
+            "statusCode": "204"
+          },
+          {
+            "operationId": "appStoreReviewAttachments_getInstance",
+            "statusCode": "200",
+            "mediaType": "application/json"
+          },
+          {
+            "operationId": "appStoreReviewAttachments_updateInstance",
+            "statusCode": "200",
+            "mediaType": "application/json"
+          }
         ],
         "fields": [
           {

@@ -1,0 +1,244 @@
+{
+  "baselineVersion": "4.5.1",
+  "version": "4.6",
+  "operations": [
+    {
+      "operationId": "apps_retentionMessages_getToManyRelated",
+      "method": "GET",
+      "path": "/v1/apps/{id}/retentionMessages",
+      "decision": "requiredMapping",
+      "reason": "Must be bound to implemented Retention Messaging or Asset Library tools."
+    },
+    {
+      "operationId": "apps_retentionMessages_getToManyRelationship",
+      "method": "GET",
+      "path": "/v1/apps/{id}/relationships/retentionMessages",
+      "decision": "unsupported",
+      "reason": "The relationship-only endpoint duplicates IDs exposed by the corresponding related-resource read; no separate relationship-ID tool or invocation is implemented."
+    },
+    {
+      "operationId": "retentionMessageLocalizations_createInstance",
+      "method": "POST",
+      "path": "/v1/retentionMessageLocalizations",
+      "decision": "requiredMapping",
+      "reason": "Must be bound to implemented Retention Messaging or Asset Library tools."
+    },
+    {
+      "operationId": "retentionMessageLocalizations_deleteInstance",
+      "method": "DELETE",
+      "path": "/v1/retentionMessageLocalizations/{id}",
+      "decision": "requiredMapping",
+      "reason": "Must be bound to implemented Retention Messaging or Asset Library tools."
+    },
+    {
+      "operationId": "retentionMessageLocalizations_getInstance",
+      "method": "GET",
+      "path": "/v1/retentionMessageLocalizations/{id}",
+      "decision": "requiredMapping",
+      "reason": "Must be bound to implemented Retention Messaging or Asset Library tools."
+    },
+    {
+      "operationId": "retentionMessageLocalizations_updateInstance",
+      "method": "PATCH",
+      "path": "/v1/retentionMessageLocalizations/{id}",
+      "decision": "requiredMapping",
+      "reason": "Must be bound to implemented Retention Messaging or Asset Library tools."
+    },
+    {
+      "operationId": "retentionMessageVersions_createInstance",
+      "method": "POST",
+      "path": "/v1/retentionMessageVersions",
+      "decision": "requiredMapping",
+      "reason": "Must be bound to implemented Retention Messaging or Asset Library tools."
+    },
+    {
+      "operationId": "retentionMessageVersions_getInstance",
+      "method": "GET",
+      "path": "/v1/retentionMessageVersions/{id}",
+      "decision": "requiredMapping",
+      "reason": "Must be bound to implemented Retention Messaging or Asset Library tools."
+    },
+    {
+      "operationId": "retentionMessageVersions_localizations_getToManyRelated",
+      "method": "GET",
+      "path": "/v1/retentionMessageVersions/{id}/localizations",
+      "decision": "requiredMapping",
+      "reason": "Must be bound to implemented Retention Messaging or Asset Library tools."
+    },
+    {
+      "operationId": "retentionMessageVersions_localizations_getToManyRelationship",
+      "method": "GET",
+      "path": "/v1/retentionMessageVersions/{id}/relationships/localizations",
+      "decision": "unsupported",
+      "reason": "The relationship-only endpoint duplicates IDs exposed by the corresponding related-resource read; no separate relationship-ID tool or invocation is implemented."
+    },
+    {
+      "operationId": "retentionMessageVersions_placement_getToOneRelated",
+      "method": "GET",
+      "path": "/v1/retentionMessageVersions/{id}/placement",
+      "decision": "requiredMapping",
+      "reason": "Must be bound to implemented Retention Messaging or Asset Library tools."
+    },
+    {
+      "operationId": "retentionMessageVersions_placement_getToOneRelationship",
+      "method": "GET",
+      "path": "/v1/retentionMessageVersions/{id}/relationships/placement",
+      "decision": "unsupported",
+      "reason": "The relationship-only endpoint duplicates IDs exposed by the corresponding related-resource read; no separate relationship-ID tool or invocation is implemented."
+    },
+    {
+      "operationId": "retentionMessages_createInstance",
+      "method": "POST",
+      "path": "/v1/retentionMessages",
+      "decision": "requiredMapping",
+      "reason": "Must be bound to implemented Retention Messaging or Asset Library tools."
+    },
+    {
+      "operationId": "retentionMessages_deleteInstance",
+      "method": "DELETE",
+      "path": "/v1/retentionMessages/{id}",
+      "decision": "requiredMapping",
+      "reason": "Must be bound to implemented Retention Messaging or Asset Library tools."
+    },
+    {
+      "operationId": "retentionMessages_getInstance",
+      "method": "GET",
+      "path": "/v1/retentionMessages/{id}",
+      "decision": "requiredMapping",
+      "reason": "Must be bound to implemented Retention Messaging or Asset Library tools."
+    },
+    {
+      "operationId": "retentionMessages_subscriptions_getToManyRelated",
+      "method": "GET",
+      "path": "/v1/retentionMessages/{id}/subscriptions",
+      "decision": "requiredMapping",
+      "reason": "Must be bound to implemented Retention Messaging or Asset Library tools."
+    },
+    {
+      "operationId": "retentionMessages_subscriptions_getToManyRelationship",
+      "method": "GET",
+      "path": "/v1/retentionMessages/{id}/relationships/subscriptions",
+      "decision": "unsupported",
+      "reason": "The relationship-only endpoint duplicates IDs exposed by the corresponding related-resource read; no separate relationship-ID tool or invocation is implemented."
+    },
+    {
+      "operationId": "retentionMessages_versions_getToManyRelated",
+      "method": "GET",
+      "path": "/v1/retentionMessages/{id}/versions",
+      "decision": "requiredMapping",
+      "reason": "Must be bound to implemented Retention Messaging or Asset Library tools."
+    },
+    {
+      "operationId": "retentionMessages_versions_getToManyRelationship",
+      "method": "GET",
+      "path": "/v1/retentionMessages/{id}/relationships/versions",
+      "decision": "unsupported",
+      "reason": "The relationship-only endpoint duplicates IDs exposed by the corresponding related-resource read; no separate relationship-ID tool or invocation is implemented."
+    },
+    {
+      "operationId": "retentionOffers_createInstance",
+      "method": "POST",
+      "path": "/v1/retentionOffers",
+      "decision": "requiredMapping",
+      "reason": "Must be bound to implemented Retention Messaging or Asset Library tools."
+    },
+    {
+      "operationId": "retentionOffers_deleteInstance",
+      "method": "DELETE",
+      "path": "/v1/retentionOffers/{id}",
+      "decision": "requiredMapping",
+      "reason": "Must be bound to implemented Retention Messaging or Asset Library tools."
+    },
+    {
+      "operationId": "retentionOffers_getInstance",
+      "method": "GET",
+      "path": "/v1/retentionOffers/{id}",
+      "decision": "requiredMapping",
+      "reason": "Must be bound to implemented Retention Messaging or Asset Library tools."
+    },
+    {
+      "operationId": "retentionOffers_prices_getToManyRelated",
+      "method": "GET",
+      "path": "/v1/retentionOffers/{id}/prices",
+      "decision": "requiredMapping",
+      "reason": "Must be bound to implemented Retention Messaging or Asset Library tools."
+    },
+    {
+      "operationId": "retentionOffers_prices_getToManyRelationship",
+      "method": "GET",
+      "path": "/v1/retentionOffers/{id}/relationships/prices",
+      "decision": "unsupported",
+      "reason": "The relationship-only endpoint duplicates IDs exposed by the corresponding related-resource read; no separate relationship-ID tool or invocation is implemented."
+    },
+    {
+      "operationId": "retentionOffers_updateInstance",
+      "method": "PATCH",
+      "path": "/v1/retentionOffers/{id}",
+      "decision": "requiredMapping",
+      "reason": "Must be bound to implemented Retention Messaging or Asset Library tools."
+    },
+    {
+      "operationId": "subscriptions_retentionMessageOffers_createToManyRelationship",
+      "method": "POST",
+      "path": "/v1/subscriptions/{id}/relationships/retentionMessageOffers",
+      "decision": "requiredMapping",
+      "reason": "Must be bound to implemented Retention Messaging or Asset Library tools."
+    },
+    {
+      "operationId": "subscriptions_retentionMessageOffers_deleteToManyRelationship",
+      "method": "DELETE",
+      "path": "/v1/subscriptions/{id}/relationships/retentionMessageOffers",
+      "decision": "requiredMapping",
+      "reason": "Must be bound to implemented Retention Messaging or Asset Library tools."
+    },
+    {
+      "operationId": "subscriptions_retentionMessageOffers_getToManyRelated",
+      "method": "GET",
+      "path": "/v1/subscriptions/{id}/retentionMessageOffers",
+      "decision": "requiredMapping",
+      "reason": "Must be bound to implemented Retention Messaging or Asset Library tools."
+    },
+    {
+      "operationId": "subscriptions_retentionMessageOffers_getToManyRelationship",
+      "method": "GET",
+      "path": "/v1/subscriptions/{id}/relationships/retentionMessageOffers",
+      "decision": "unsupported",
+      "reason": "The relationship-only endpoint duplicates IDs exposed by the corresponding related-resource read; no separate relationship-ID tool or invocation is implemented."
+    },
+    {
+      "operationId": "subscriptions_retentionMessage_getToOneRelated",
+      "method": "GET",
+      "path": "/v1/subscriptions/{id}/retentionMessage",
+      "decision": "requiredMapping",
+      "reason": "Must be bound to implemented Retention Messaging or Asset Library tools."
+    },
+    {
+      "operationId": "subscriptions_retentionMessage_getToOneRelationship",
+      "method": "GET",
+      "path": "/v1/subscriptions/{id}/relationships/retentionMessage",
+      "decision": "unsupported",
+      "reason": "The relationship-only endpoint duplicates IDs exposed by the corresponding related-resource read; no separate relationship-ID tool or invocation is implemented."
+    },
+    {
+      "operationId": "subscriptions_retentionMessage_updateToOneRelationship",
+      "method": "PATCH",
+      "path": "/v1/subscriptions/{id}/relationships/retentionMessage",
+      "decision": "requiredMapping",
+      "reason": "Must be bound to implemented Retention Messaging or Asset Library tools."
+    },
+    {
+      "operationId": "subscriptions_retentionOffers_getToManyRelated",
+      "method": "GET",
+      "path": "/v1/subscriptions/{id}/retentionOffers",
+      "decision": "requiredMapping",
+      "reason": "Must be bound to implemented Retention Messaging or Asset Library tools."
+    },
+    {
+      "operationId": "subscriptions_retentionOffers_getToManyRelationship",
+      "method": "GET",
+      "path": "/v1/subscriptions/{id}/relationships/retentionOffers",
+      "decision": "unsupported",
+      "reason": "The relationship-only endpoint duplicates IDs exposed by the corresponding related-resource read; no separate relationship-ID tool or invocation is implemented."
+    }
+  ]
+}

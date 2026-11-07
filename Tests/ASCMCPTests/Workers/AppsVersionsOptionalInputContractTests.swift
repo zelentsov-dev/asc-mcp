@@ -296,10 +296,10 @@ struct AppsVersionsOptionalInputContractTests {
             mapping.operations.flatMap { $0.optionalParameterClassifications ?? [] }
         }
 
-        #expect(classifications.count == 125)
+        #expect(classifications.count == 128)
         #expect(classifications.filter { $0.disposition == .internalControl }.count == 1)
-        #expect(classifications.filter { $0.disposition == .intentionallyOmitted }.count == 124)
-        #expect(classifications.allSatisfy { $0.reviewAtSpec == "4.5.1" && !$0.reason.isEmpty })
+        #expect(classifications.filter { $0.disposition == .intentionallyOmitted }.count == 127)
+        #expect(classifications.allSatisfy { $0.reviewAtSpec == "4.6" && !$0.reason.isEmpty })
 
         let expectedBindings: [(String, String, String?, String?)] = [
             ("apps_list", "app_ids", "filter[id]", nil),

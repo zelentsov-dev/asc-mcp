@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.3.0] - 2026-11-07
+
+### Added
+
+- Add 23 subscription retention messaging tools in `SubscriptionsWorker` (`subscriptions_*`) covering App Store Connect API 4.6 retention messages (`list`, `get`, `create`, `delete`), versions (`list`, `get`, `create`), localizations (`list`, `get`, `create`, `update`, `delete`) with Apple header/body/emoji/price-mention preflight validation, retention offers (`list`, `get`, `create`, `update`, `delete`, `list_retention_offer_prices`), and subscription retention relationships (`list_retention_message_subscriptions`, `get_retention_message_for_subscription`, `set_retention_message`, `add_retention_message_offers`, `remove_retention_message_offers`).
+- Extend `AssetsWorker` (`assets_*`) to support `retentionMessageVersion` (`feature = "RETENTION_MESSAGING"`) image placements via Apple's to-one `/v1/retentionMessageVersions/{id}/placement` endpoint, with multi-page app-scoped ownership verification and explicit rejection of video placements and multi-placement reordering.
+- Extend `ReviewSubmissionsWorker` (`review_submissions_*`) to support `retention_message_version_id` (`retentionMessageVersion` / `retentionMessageVersions`) in review submission item assembly and reads.
+- Pin the official Apple 4.6 OpenAPI specification (`1,027` paths, `1,337` operations) and update the operation manifest (`537` public tools, `528` mapped operations, `440` waived, `369` scope-rule out of scope, `4,562` classified optional inputs with `0` unclassified).
+
+### Fixed
+
+- Preserve `include=territory,subscriptionPricePoint` and related `fields[...]` projections across initial and continuation requests in `subscriptions_list_retention_offer_prices`, and bind all 6 retention list handlers to `HTTPClient.getPage` with `PaginationScope` validation.
+- Allow Plane 2 CJK Unified Ideographs Extension B+ characters (such as `𠮷` `U+20BB7`) in metadata and retention copy validation while rejecting single and compound emoji sequences (`U+FE0F`, `U+20E3`).
+- Route `JWTService` debug token diagnostics to `stderr` so debug builds preserve a clean JSON-RPC `stdout` stream.
+
+### Compatibility
+
+- Preserve all 514 existing tool names and 36 `--workers` filter keys; the complete catalog now has 537 tools.
+
 ## [4.2.0] - 2026-10-19
 
 ### Added

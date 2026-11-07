@@ -109,7 +109,7 @@ extension AssetsWorker {
                 guard placements.contains(where: { $0.id == id && placementMatches($0, change: change) }) else { throw AssetLibraryError("New placement is not confirmed in the intended localization") }
                 if change.action == .replacePlacement {
                     guard !placements.contains(where: { $0.id == change.placementID }) else { throw AssetLibraryError("Old placement is still present; replacement is incomplete") }
-                    if target != .appEventLocalization {
+                    if target.supportsOrdering {
                         let expected = (change.orderedPlacementIDs ?? []).map { $0 == change.placementID ? id : $0 }
                         guard group == expected else { throw AssetLibraryError("Replacement exists but its requested order is incomplete. Prepare a separate reorder preview.") }
                     }

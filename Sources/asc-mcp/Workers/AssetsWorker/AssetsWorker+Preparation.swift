@@ -98,8 +98,13 @@ extension AssetsWorker {
         }
         if [.replacePlacement, .deletePlacement].contains(action) { change.placementID = try identifier("placement_id", arguments) }
         if action == .reorderPlacements {
-            guard change.target != .appEventLocalization else { throw AssetLibraryError("Apple does not support ordering event placements") }
+            guard change.target?.supportsOrdering == true else {
+                throw AssetLibraryError("Apple does not support ordering \(change.target == .retentionMessageVersion ? "retention message version" : "event") placements")
+            }
             change.orderedPlacementIDs = try stringList("ordered_placement_ids", arguments).map { try AssetLibraryJSON.identifier($0, field: "ordered_placement_ids") }
+        }
+        if change.target == .retentionMessageVersion, change.kind == .video {
+            throw AssetLibraryError("Retention message versions only support image placements; video placements are not supported")
         }
         if action == .addReviewItem { change.submissionID = try identifier("submission_id", arguments) }
         if action.isUpload, change.referenceName == nil, change.resumeOperationID == nil { change.referenceName = "asc-mcp-" + UUID().uuidString }
@@ -142,11 +147,17 @@ extension AssetsWorker {
         }
         var existing: [AssetLibraryResource] = []
         if let target = change.target, let targetID = change.targetID {
+            if target == .retentionMessageVersion, change.kind == .video {
+                throw AssetLibraryError("Retention message versions only support image placements; video placements are not supported")
+            }
             change.baseline.merge(try await targetScope(appID: change.appID, target: target, id: targetID, requireEditable: true)) { _, new in new }
             if let group = change.placementGroup {
-                try validatePlatform(catalog, group: group, platforms: change.baseline["target_platforms"] ?? "")
+                try validatePlatform(catalog, group: group, platforms: change.baseline["target_platforms"])
             }
             existing = try await targetPlacements(target: target, id: targetID)
+            if target.isToOnePlacementEndpoint, change.action == .createPlacement, !existing.isEmpty {
+                throw AssetLibraryError("Retention message version already has a placement; use replace_placement or delete_placement")
+            }
             change.baseline["target_placement_ids"] = existing.map(\.id).sorted().joined(separator: ",")
             change.baseline["target_placements"] = try AssetLibraryJSON.fingerprint(try existing.map { try $0.fingerprint() })
             if let id = change.placementID {
@@ -227,13 +238,13 @@ extension AssetsWorker {
     static let knownAssetStates: Set<String> = ["AWAITING_UPLOAD", "UPLOAD_COMPLETE", "FAILED", "COMPLETE", "PREPARE_FOR_SUBMISSION", "READY_FOR_REVIEW", "WAITING_FOR_REVIEW", "IN_REVIEW", "ACCEPTED", "APPROVED", "REJECTED", "ARCHIVED"]
     static let placeableStates: Set<String> = ["COMPLETE", "PREPARE_FOR_SUBMISSION", "READY_FOR_REVIEW", "APPROVED", "REJECTED"]
 
-    func validatePlatform(_ catalog: AssetLibraryResource, group: String, platforms: String) throws {
+    func validatePlatform(_ catalog: AssetLibraryResource, group: String, platforms: String?) throws {
         guard let profile = catalog.attributes?["placementProfileGroups"]?.arrayValue?.first(where: {
             $0.objectValue?["placementProfileGroupId"]?.stringValue == group
         })?.objectValue, let platform = profile["platform"]?.stringValue else {
             throw AssetLibraryError("Placement group has no known platform")
         }
-        if platform == "ANY" { return }
+        guard let platforms, platform != "ANY" else { return }
         let mapping = ["IPHONE_APP_STORE": "IOS", "IPAD_APP_STORE": "IOS", "WATCH_APP_STORE": "IOS",
                        "IMESSAGE_APP_STORE": "IOS", "VISION_PRO_APP_STORE": "VISION_OS", "MAC_APP_STORE": "MAC_OS", "TV_APP_STORE": "TV_OS"]
         guard let expected = mapping[platform], platforms.split(separator: ",").contains(Substring(expected)) else {

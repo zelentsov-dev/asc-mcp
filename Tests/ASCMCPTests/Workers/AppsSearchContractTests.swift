@@ -159,8 +159,8 @@ struct AppsSearchContractTests {
             "limit[appStoreVersionExperimentsV2]", "limit[appStoreVersions]",
             "limit[betaAppLocalizations]", "limit[betaGroups]", "limit[builds]",
             "limit[gameCenterEnabledVersions]", "limit[inAppPurchases]", "limit[inAppPurchasesV2]",
-            "limit[preReleaseVersions]", "limit[promotedPurchases]", "limit[reviewSubmissions]",
-            "limit[subscriptionGroups]"
+            "limit[preReleaseVersions]", "limit[promotedPurchases]", "limit[retentionMessages]",
+            "limit[reviewSubmissions]", "limit[subscriptionGroups]"
         ]
 
         for (invocationID, boundFilter) in [
@@ -182,7 +182,7 @@ struct AppsSearchContractTests {
             #expect(Set(classifications.map(\.appleName)) == nonSparseOptionalInputs.subtracting(Set([boundFilter, "sort", "limit"])))
             #expect(classifications.allSatisfy { classification in
                 classification.disposition == .intentionallyOmitted &&
-                    classification.reviewAtSpec == "4.5.1" &&
+                    classification.reviewAtSpec == "4.6" &&
                     !classification.reason.isEmpty
             })
         }

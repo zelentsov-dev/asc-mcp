@@ -53,7 +53,9 @@ enum ASCMetadataValidator {
     static func containsEmoji(_ value: String) -> Bool {
         value.unicodeScalars.contains { scalar in
             scalar.properties.isEmojiPresentation ||
-                (scalar.properties.isEmoji && scalar.value > 0x238C)
+                (scalar.properties.isEmoji && scalar.value > 0x238C) ||
+                scalar.value == 0xFE0F ||
+                scalar.value == 0x20E3
         }
     }
 

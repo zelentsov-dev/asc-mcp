@@ -177,6 +177,8 @@ enum ASCOpenAPICoverageRules {
         "Webhook notification receiver resources": [],
         "In-app purchases, subscriptions, and offers": [
             "/v1/inAppPurchase",
+            "/v1/retentionMessage",
+            "/v1/retentionOffers",
             "/v1/subscription",
             "/v1/subscriptions",
             "/v1/winBackOffers",

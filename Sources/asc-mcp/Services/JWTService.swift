@@ -105,7 +105,7 @@ public actor JWTService {
             return Date(timeIntervalSince1970: TimeInterval(payload.exp))
         } catch {
             #if DEBUG
-            print("🔐 JWT: Failed to decode token payload: \(error)")
+            print("🔐 JWT: Failed to decode token payload: \(error)", to: &standardError)
             #endif
             return nil
         }
@@ -123,12 +123,12 @@ public actor JWTService {
             if timeUntilExpiry > tokenRefreshLeeway {
                 // Token is still valid
                 #if DEBUG
-                print("🔐 JWT: Using cached token (expires in \(Int(timeUntilExpiry))s)")
+                print("🔐 JWT: Using cached token (expires in \(Int(timeUntilExpiry))s)", to: &standardError)
                 #endif
                 return token
             } else {
                 #if DEBUG
-                print("🔐 JWT: Token expires in \(Int(timeUntilExpiry))s, refreshing...")
+                print("🔐 JWT: Token expires in \(Int(timeUntilExpiry))s, refreshing...", to: &standardError)
                 #endif
             }
         }
@@ -140,7 +140,7 @@ public actor JWTService {
         #if DEBUG
         if let exp = decodeTokenExpiration(token) {
             let duration = exp.timeIntervalSince(now)
-            print("🔐 JWT: Generated new token (valid for \(Int(duration))s)")
+            print("🔐 JWT: Generated new token (valid for \(Int(duration))s)", to: &standardError)
         }
         #endif
 

@@ -61,6 +61,11 @@ struct AssetLibraryDocument: Codable, Sendable {
     let data: AssetLibraryResource
 }
 
+struct AssetOptionalLibraryDocument: Codable, Sendable {
+    let data: AssetLibraryResource?
+    let links: [String: JSONValue]?
+}
+
 struct AssetLibraryCollection: Codable, Sendable {
     let data: [AssetLibraryResource]
     let links: [String: JSONValue]?
@@ -80,15 +85,27 @@ enum AssetLibraryTarget: String, Codable, Sendable, CaseIterable {
     case appCustomProductPageLocalization
     case appStoreVersionExperimentTreatmentLocalization
     case appEventLocalization
+    case retentionMessageVersion
 
     var resourceType: String { rawValue + "s" }
+    var isToOnePlacementEndpoint: Bool { self == .retentionMessageVersion }
+    var supportsOrdering: Bool { self != .appEventLocalization && self != .retentionMessageVersion }
     var feature: String {
         switch self {
         case .appStoreVersionLocalization: "APP_STORE_VERSIONS"
         case .appCustomProductPageLocalization: "CUSTOM_PRODUCT_PAGES"
         case .appStoreVersionExperimentTreatmentLocalization: "PRODUCT_PAGE_OPTIMIZATIONS"
         case .appEventLocalization: "IN_APP_EVENTS"
+        case .retentionMessageVersion: "RETENTION_MESSAGING"
         }
+    }
+
+    func placementsPath(id: String) throws -> String {
+        let encodedID = try ASCPathSegment.encode(id)
+        if isToOnePlacementEndpoint {
+            return "/v1/\(try ASCPathSegment.encode(resourceType))/\(encodedID)/placement"
+        }
+        return "/v1/\(try ASCPathSegment.encode(resourceType))/\(encodedID)/placements"
     }
 }
 

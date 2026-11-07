@@ -502,6 +502,8 @@ struct SubscriptionWriteOptionalInputContractTests {
                     "/data/relationships/introductoryOffers",
                     "/data/relationships/prices",
                     "/data/relationships/promotionalOffers",
+                    "/data/relationships/retentionMessage",
+                    "/data/relationships/retentionMessageOffers",
                     "/included"
                 ]
             ),
@@ -534,7 +536,7 @@ struct SubscriptionWriteOptionalInputContractTests {
                     }
                     omittedNames.insert(classification.appleName)
                     omittedReviewsAreCurrent = omittedReviewsAreCurrent
-                        && classification.reviewAtSpec == "4.5.1"
+                        && classification.reviewAtSpec == "4.6"
                         && !classification.reason.isEmpty
                 }
             }

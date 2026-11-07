@@ -15,10 +15,26 @@
           "role": "primary",
           "condition": null,
           "inputs": [
-            { "sourceKind": "fixed", "jsonPointer": "/data/type", "fixedValue": "promotedPurchases" },
-            { "sourceKind": "fixed", "jsonPointer": "/data/relationships/app/data/type", "fixedValue": "apps" },
-            { "sourceKind": "fixed", "jsonPointer": "/data/relationships/inAppPurchaseV2/data/type", "fixedValue": "inAppPurchases" },
-            { "sourceKind": "fixed", "jsonPointer": "/data/relationships/subscription/data/type", "fixedValue": "subscriptions" }
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/type",
+              "fixedValue": "promotedPurchases"
+            },
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/relationships/app/data/type",
+              "fixedValue": "apps"
+            },
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/relationships/inAppPurchaseV2/data/type",
+              "fixedValue": "inAppPurchases"
+            },
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/relationships/subscription/data/type",
+              "fixedValue": "subscriptions"
+            }
           ]
         }
       ],
@@ -57,22 +73,73 @@
       "response": {
         "mode": "projection",
         "sources": [
-          { "operationId": "promotedPurchases_createInstance", "statusCode": "201", "mediaType": "application/json" }
+          {
+            "operationId": "promotedPurchases_createInstance",
+            "statusCode": "201",
+            "mediaType": "application/json"
+          }
         ],
         "fields": [
-          { "outputField": "success", "localRole": "successfulCreate" },
-          { "outputField": "operation", "localRole": "create discriminator" },
-          { "outputField": "operationCommitted", "localRole": "True only after Apple's exact 201 response has a canonical promoted-purchase identity." },
-          { "outputField": "operationCommitState", "localRole": "committed for a validated 201, committed_unverified for an invalid accepted response, unknown for an ambiguous request, or rejected for a definitive rejection." },
-          { "outputField": "retrySafe", "localRole": "False for all mutation outcomes; ambiguous outcomes require inspection before another create." },
-          { "outputField": "statusCode", "localRole": "Exact verified 201 status." },
-          { "outputField": "promoted_purchase.id", "operationId": "promotedPurchases_createInstance", "jsonPointer": "/data/id" },
-          { "outputField": "promoted_purchase.visibleForAllUsers", "operationId": "promotedPurchases_createInstance", "jsonPointer": "/data/attributes/visibleForAllUsers" },
-          { "outputField": "promoted_purchase.enabled", "operationId": "promotedPurchases_createInstance", "jsonPointer": "/data/attributes/enabled" },
-          { "outputField": "promoted_purchase.state", "operationId": "promotedPurchases_createInstance", "jsonPointer": "/data/attributes/state" },
-          { "outputField": "promoted_purchase.inAppPurchaseId", "operationId": "promotedPurchases_createInstance", "jsonPointer": "/data/relationships/inAppPurchaseV2/data/id", "localRole": "Exact canonical response linkage required when iap_id was requested." },
-          { "outputField": "promoted_purchase.subscriptionId", "operationId": "promotedPurchases_createInstance", "jsonPointer": "/data/relationships/subscription/data/id", "localRole": "Exact canonical response linkage required when subscription_id was requested." },
-          { "outputField": "details.recovery", "localRole": "Executable app-scoped promoted_list and promoted_get candidate inspection with explicit request-to-output field mappings for unknown or committed-unverified create outcomes." }
+          {
+            "outputField": "success",
+            "localRole": "successfulCreate"
+          },
+          {
+            "outputField": "operation",
+            "localRole": "create discriminator"
+          },
+          {
+            "outputField": "operationCommitted",
+            "localRole": "True only after Apple's exact 201 response has a canonical promoted-purchase identity."
+          },
+          {
+            "outputField": "operationCommitState",
+            "localRole": "committed for a validated 201, committed_unverified for an invalid accepted response, unknown for an ambiguous request, or rejected for a definitive rejection."
+          },
+          {
+            "outputField": "retrySafe",
+            "localRole": "False for all mutation outcomes; ambiguous outcomes require inspection before another create."
+          },
+          {
+            "outputField": "statusCode",
+            "localRole": "Exact verified 201 status."
+          },
+          {
+            "outputField": "promoted_purchase.id",
+            "operationId": "promotedPurchases_createInstance",
+            "jsonPointer": "/data/id"
+          },
+          {
+            "outputField": "promoted_purchase.visibleForAllUsers",
+            "operationId": "promotedPurchases_createInstance",
+            "jsonPointer": "/data/attributes/visibleForAllUsers"
+          },
+          {
+            "outputField": "promoted_purchase.enabled",
+            "operationId": "promotedPurchases_createInstance",
+            "jsonPointer": "/data/attributes/enabled"
+          },
+          {
+            "outputField": "promoted_purchase.state",
+            "operationId": "promotedPurchases_createInstance",
+            "jsonPointer": "/data/attributes/state"
+          },
+          {
+            "outputField": "promoted_purchase.inAppPurchaseId",
+            "operationId": "promotedPurchases_createInstance",
+            "jsonPointer": "/data/relationships/inAppPurchaseV2/data/id",
+            "localRole": "Exact canonical response linkage required when iap_id was requested."
+          },
+          {
+            "outputField": "promoted_purchase.subscriptionId",
+            "operationId": "promotedPurchases_createInstance",
+            "jsonPointer": "/data/relationships/subscription/data/id",
+            "localRole": "Exact canonical response linkage required when subscription_id was requested."
+          },
+          {
+            "outputField": "details.recovery",
+            "localRole": "Executable app-scoped promoted_list and promoted_get candidate inspection with explicit request-to-output field mappings for unknown or committed-unverified create outcomes."
+          }
         ]
       },
       "note": "Create binds canonical app and exactly one canonical product identity plus required visibility. enabled is optional; omission stays omitted and explicit null is preserved in the request. Success requires exact HTTP 201, canonical promotedPurchases type and ID, a configured-origin or root-relative canonical required document links.self, the exact requested primary product linkage, non-null response Booleans when present, and exact included-resource lineage; unknown and malformed accepted outcomes fail closed with structured app-scoped candidate-inspection recovery."
@@ -109,15 +176,36 @@
       "response": {
         "mode": "opaque",
         "sources": [
-          { "operationId": "promotedPurchases_deleteInstance", "statusCode": "204" }
+          {
+            "operationId": "promotedPurchases_deleteInstance",
+            "statusCode": "204"
+          }
         ],
         "fields": [
-          { "outputField": "success", "localRole": "True only for exact HTTP 204." },
-          { "outputField": "deleted", "localRole": "True only for exact HTTP 204." },
-          { "outputField": "deletionState", "localRole": "confirmed for 204, committed_unverified for another accepted status, commit_unknown for an ambiguous outcome, or rejected for a definitive rejection." },
-          { "outputField": "operationCommitState", "localRole": "Stable delete commit-state discriminator." },
-          { "outputField": "retrySafe", "localRole": "Always false; ambiguous outcomes require exact-target inspection before another delete attempt." },
-          { "outputField": "recovery", "localRole": "Executable promoted_get exact-target inspection for ambiguous delete outcomes." }
+          {
+            "outputField": "success",
+            "localRole": "True only for exact HTTP 204."
+          },
+          {
+            "outputField": "deleted",
+            "localRole": "True only for exact HTTP 204."
+          },
+          {
+            "outputField": "deletionState",
+            "localRole": "confirmed for 204, committed_unverified for another accepted status, commit_unknown for an ambiguous outcome, or rejected for a definitive rejection."
+          },
+          {
+            "outputField": "operationCommitState",
+            "localRole": "Stable delete commit-state discriminator."
+          },
+          {
+            "outputField": "retrySafe",
+            "localRole": "Always false; ambiguous outcomes require exact-target inspection before another delete attempt."
+          },
+          {
+            "outputField": "recovery",
+            "localRole": "Executable promoted_get exact-target inspection for ambiguous delete outcomes."
+          }
         ]
       },
       "note": "Irreversible deletion requires two matching canonical IDs before network access. Success requires exact HTTP 204; unknown and unexpectedly accepted outcomes fail closed with promoted_get inspection guidance and are never replayed automatically."
@@ -163,7 +251,7 @@
               "appleName": "include",
               "disposition": "internalControl",
               "reason": "The handler always sends Apple 4.5.1 include=inAppPurchaseV2,subscription so the detail result can project the linked product without requiring caller-controlled expansion.",
-              "reviewAtSpec": "4.5.1"
+              "reviewAtSpec": "4.6"
             }
           ]
         }
@@ -180,14 +268,37 @@
       "response": {
         "mode": "projection",
         "sources": [
-          { "operationId": "promotedPurchases_getInstance", "statusCode": "200", "mediaType": "application/json" }
+          {
+            "operationId": "promotedPurchases_getInstance",
+            "statusCode": "200",
+            "mediaType": "application/json"
+          }
         ],
         "fields": [
-          { "outputField": "success", "localRole": "successfulRead" },
-          { "outputField": "promoted_purchase", "operationId": "promotedPurchases_getInstance", "jsonPointer": "/data" },
-          { "outputField": "promoted_purchase.inAppPurchaseId", "operationId": "promotedPurchases_getInstance", "jsonPointer": "/data/relationships/inAppPurchaseV2/data/id" },
-          { "outputField": "promoted_purchase.subscriptionId", "operationId": "promotedPurchases_getInstance", "jsonPointer": "/data/relationships/subscription/data/id" },
-          { "outputField": "promoted_purchase.linkedProduct", "operationId": "promotedPurchases_getInstance", "jsonPointer": "/included/*" }
+          {
+            "outputField": "success",
+            "localRole": "successfulRead"
+          },
+          {
+            "outputField": "promoted_purchase",
+            "operationId": "promotedPurchases_getInstance",
+            "jsonPointer": "/data"
+          },
+          {
+            "outputField": "promoted_purchase.inAppPurchaseId",
+            "operationId": "promotedPurchases_getInstance",
+            "jsonPointer": "/data/relationships/inAppPurchaseV2/data/id"
+          },
+          {
+            "outputField": "promoted_purchase.subscriptionId",
+            "operationId": "promotedPurchases_getInstance",
+            "jsonPointer": "/data/relationships/subscription/data/id"
+          },
+          {
+            "outputField": "promoted_purchase.linkedProduct",
+            "operationId": "promotedPurchases_getInstance",
+            "jsonPointer": "/included/*"
+          }
         ]
       },
       "note": "The response requires a configured-origin or root-relative canonical document links.self matching the exact resource and fixed include query, projects only primary product relationship IDs, rejects present-null response Booleans, and accepts an included linked product only when its type and ID exactly match that primary linkage."
@@ -255,7 +366,7 @@
               "appleName": "include",
               "disposition": "intentionallyOmitted",
               "reason": "Apple 4.5.1 can include inAppPurchaseV2 and subscription resources, but this collection contract returns base promoted-purchase attributes and relationship IDs; promoted_get provides expanded linked-product details.",
-              "reviewAtSpec": "4.5.1"
+              "reviewAtSpec": "4.6"
             }
           ]
         }
@@ -284,14 +395,37 @@
       "response": {
         "mode": "projection",
         "sources": [
-          { "operationId": "apps_promotedPurchases_getToManyRelated", "statusCode": "200", "mediaType": "application/json" }
+          {
+            "operationId": "apps_promotedPurchases_getToManyRelated",
+            "statusCode": "200",
+            "mediaType": "application/json"
+          }
         ],
         "fields": [
-          { "outputField": "success", "localRole": "successfulRead" },
-          { "outputField": "promoted_purchases", "operationId": "apps_promotedPurchases_getToManyRelated", "jsonPointer": "/data" },
-          { "outputField": "promoted_purchases.inAppPurchaseId", "operationId": "apps_promotedPurchases_getToManyRelated", "jsonPointer": "/data/*/relationships/inAppPurchaseV2/data/id" },
-          { "outputField": "promoted_purchases.subscriptionId", "operationId": "apps_promotedPurchases_getToManyRelated", "jsonPointer": "/data/*/relationships/subscription/data/id" },
-          { "outputField": "next_url", "operationId": "apps_promotedPurchases_getToManyRelated", "jsonPointer": "/links/next" }
+          {
+            "outputField": "success",
+            "localRole": "successfulRead"
+          },
+          {
+            "outputField": "promoted_purchases",
+            "operationId": "apps_promotedPurchases_getToManyRelated",
+            "jsonPointer": "/data"
+          },
+          {
+            "outputField": "promoted_purchases.inAppPurchaseId",
+            "operationId": "apps_promotedPurchases_getToManyRelated",
+            "jsonPointer": "/data/*/relationships/inAppPurchaseV2/data/id"
+          },
+          {
+            "outputField": "promoted_purchases.subscriptionId",
+            "operationId": "apps_promotedPurchases_getToManyRelated",
+            "jsonPointer": "/data/*/relationships/subscription/data/id"
+          },
+          {
+            "outputField": "next_url",
+            "operationId": "apps_promotedPurchases_getToManyRelated",
+            "jsonPointer": "/links/next"
+          }
         ]
       },
       "note": "The list requires a canonical app ID, enforces limit 1...200 with an effective default of 25, rejects whitespace-bearing continuation references, and binds required links.self plus optional links.next to the configured origin or a root-relative exact collection scope. Every next cursor must be non-empty and advance beyond the current cursor; data cannot exceed the effective limit. When meta is present, paging.limit must equal the effective limit, total cannot fall below the page count, and nextCursor must exactly agree with links.next. The response rejects present-null Booleans and projects only Apple primary product relationship IDs; any included resource must exactly match a primary relationship in the same document."
@@ -369,19 +503,62 @@
           }
         ],
         "fields": [
-          { "outputField": "success", "localRole": "True for a fully verified no-op or after exact 204 plus exact fully paginated postflight order." },
-          { "outputField": "operation", "localRole": "reorder discriminator" },
-          { "outputField": "operationCommitted", "localRole": "False for a verified no-op and true only after exact 204 plus exact postflight order; accepted but unverified outcomes remain errors." },
-          { "outputField": "operationCommitState", "localRole": "not_attempted for a verified no-op, committed after exact mutation verification, committed_unverified after an invalid accepted response or failed postflight, unknown after request ambiguity, or rejected after definitive rejection." },
-          { "outputField": "mutationAttempted", "localRole": "False for a verified no-op and true after a PATCH receives an exact 204 and passes postflight verification." },
-          { "outputField": "changed", "localRole": "False for a verified no-op; otherwise whether the verified postflight order differs from the fully paginated preflight order." },
-          { "outputField": "retrySafe", "localRole": "True for a verified no-op and false for every attempted reorder; inspect current order before another PATCH after ambiguity." },
-          { "outputField": "statusCode", "localRole": "Exact verified 204 status after mutation; omitted for a verified no-op." },
-          { "outputField": "appId", "localRole": "Validated canonical request echo." },
-          { "outputField": "order", "operationId": "apps_promotedPurchases_getToManyRelationship", "jsonPointer": "/data/*/id", "localRole": "Exact fully paginated postflight order." },
-          { "outputField": "details.preflightOrder", "operationId": "apps_promotedPurchases_getToManyRelationship", "jsonPointer": "/data/*/id", "localRole": "Exact fully paginated order observed before an attempted reorder, retained only for recovery." },
-          { "outputField": "details.requestedOrder", "localRole": "Validated ordered request echo retained for recovery." },
-          { "outputField": "details.recovery", "localRole": "Executable promoted_list inspection guidance after an unknown or committed-unverified outcome." }
+          {
+            "outputField": "success",
+            "localRole": "True for a fully verified no-op or after exact 204 plus exact fully paginated postflight order."
+          },
+          {
+            "outputField": "operation",
+            "localRole": "reorder discriminator"
+          },
+          {
+            "outputField": "operationCommitted",
+            "localRole": "False for a verified no-op and true only after exact 204 plus exact postflight order; accepted but unverified outcomes remain errors."
+          },
+          {
+            "outputField": "operationCommitState",
+            "localRole": "not_attempted for a verified no-op, committed after exact mutation verification, committed_unverified after an invalid accepted response or failed postflight, unknown after request ambiguity, or rejected after definitive rejection."
+          },
+          {
+            "outputField": "mutationAttempted",
+            "localRole": "False for a verified no-op and true after a PATCH receives an exact 204 and passes postflight verification."
+          },
+          {
+            "outputField": "changed",
+            "localRole": "False for a verified no-op; otherwise whether the verified postflight order differs from the fully paginated preflight order."
+          },
+          {
+            "outputField": "retrySafe",
+            "localRole": "True for a verified no-op and false for every attempted reorder; inspect current order before another PATCH after ambiguity."
+          },
+          {
+            "outputField": "statusCode",
+            "localRole": "Exact verified 204 status after mutation; omitted for a verified no-op."
+          },
+          {
+            "outputField": "appId",
+            "localRole": "Validated canonical request echo."
+          },
+          {
+            "outputField": "order",
+            "operationId": "apps_promotedPurchases_getToManyRelationship",
+            "jsonPointer": "/data/*/id",
+            "localRole": "Exact fully paginated postflight order."
+          },
+          {
+            "outputField": "details.preflightOrder",
+            "operationId": "apps_promotedPurchases_getToManyRelationship",
+            "jsonPointer": "/data/*/id",
+            "localRole": "Exact fully paginated order observed before an attempted reorder, retained only for recovery."
+          },
+          {
+            "outputField": "details.requestedOrder",
+            "localRole": "Validated ordered request echo retained for recovery."
+          },
+          {
+            "outputField": "details.recovery",
+            "localRole": "Executable promoted_list inspection guidance after an unknown or committed-unverified outcome."
+          }
         ]
       },
       "note": "The MCP field is a non-empty JSON string array of canonical unique IDs with no artificial item-count maximum; Apple's relationship request schema defines no maxItems. Every relationship page remains capped at 200 resources; links.self and links.next must stay in the exact configured-origin or root-relative scope, and each next cursor must be non-empty and advancing. Optional paging metadata must report limit 200, a total no smaller than the page count, and a nextCursor exactly consistent with links.next. The handler exhausts pagination with stable-total and terminal cumulative-count validation and requires exact set-and-count equality with current membership. An identical requested order returns a verified no-op without PATCH. A changed order sends ordered JSON:API linkage objects, accepts only HTTP 204, and returns mutation success only after a second exhaustive relationship read exactly matches the requested order."
@@ -403,10 +580,16 @@
             {
               "sourceKind": "derived",
               "jsonPointer": "/data/id",
-              "derivedFrom": ["promoted_purchase_id"],
+              "derivedFrom": [
+                "promoted_purchase_id"
+              ],
               "localRole": "copyPathIdentifierIntoResourceBody"
             },
-            { "sourceKind": "fixed", "jsonPointer": "/data/type", "fixedValue": "promotedPurchases" }
+            {
+              "sourceKind": "fixed",
+              "jsonPointer": "/data/type",
+              "fixedValue": "promotedPurchases"
+            }
           ]
         }
       ],
@@ -434,19 +617,56 @@
       "response": {
         "mode": "projection",
         "sources": [
-          { "operationId": "promotedPurchases_updateInstance", "statusCode": "200", "mediaType": "application/json" }
+          {
+            "operationId": "promotedPurchases_updateInstance",
+            "statusCode": "200",
+            "mediaType": "application/json"
+          }
         ],
         "fields": [
-          { "outputField": "success", "localRole": "successfulUpdate" },
-          { "outputField": "operation", "localRole": "update discriminator" },
-          { "outputField": "operationCommitted", "localRole": "True only after exact 200 plus canonical promoted purchase identity." },
-          { "outputField": "operationCommitState", "localRole": "committed for a validated 200, committed_unverified for an invalid accepted response, unknown for request ambiguity, or rejected for a definitive rejection." },
-          { "outputField": "retrySafe", "localRole": "False for every attempted update; inspect the exact target before retrying an ambiguous outcome." },
-          { "outputField": "statusCode", "localRole": "Exact verified 200 status." },
-          { "outputField": "promoted_purchase", "operationId": "promotedPurchases_updateInstance", "jsonPointer": "/data" },
-          { "outputField": "promoted_purchase.inAppPurchaseId", "operationId": "promotedPurchases_updateInstance", "jsonPointer": "/data/relationships/inAppPurchaseV2/data/id" },
-          { "outputField": "promoted_purchase.subscriptionId", "operationId": "promotedPurchases_updateInstance", "jsonPointer": "/data/relationships/subscription/data/id" },
-          { "outputField": "details.recovery", "localRole": "Executable promoted_get exact-target inspection after an unknown or committed-unverified update." }
+          {
+            "outputField": "success",
+            "localRole": "successfulUpdate"
+          },
+          {
+            "outputField": "operation",
+            "localRole": "update discriminator"
+          },
+          {
+            "outputField": "operationCommitted",
+            "localRole": "True only after exact 200 plus canonical promoted purchase identity."
+          },
+          {
+            "outputField": "operationCommitState",
+            "localRole": "committed for a validated 200, committed_unverified for an invalid accepted response, unknown for request ambiguity, or rejected for a definitive rejection."
+          },
+          {
+            "outputField": "retrySafe",
+            "localRole": "False for every attempted update; inspect the exact target before retrying an ambiguous outcome."
+          },
+          {
+            "outputField": "statusCode",
+            "localRole": "Exact verified 200 status."
+          },
+          {
+            "outputField": "promoted_purchase",
+            "operationId": "promotedPurchases_updateInstance",
+            "jsonPointer": "/data"
+          },
+          {
+            "outputField": "promoted_purchase.inAppPurchaseId",
+            "operationId": "promotedPurchases_updateInstance",
+            "jsonPointer": "/data/relationships/inAppPurchaseV2/data/id"
+          },
+          {
+            "outputField": "promoted_purchase.subscriptionId",
+            "operationId": "promotedPurchases_updateInstance",
+            "jsonPointer": "/data/relationships/subscription/data/id"
+          },
+          {
+            "outputField": "details.recovery",
+            "localRole": "Executable promoted_get exact-target inspection after an unknown or committed-unverified update."
+          }
         ]
       },
       "note": "Update request fields preserve Apple value, explicit-null, and omission semantics; unknown keys, non-canonical IDs, and empty or malformed PATCH requests fail pre-network. Success requires exact HTTP 200, exact canonical response identity, a configured-origin or root-relative canonical document links.self, non-null response Booleans when present, and exact included-resource lineage. Unknown and malformed accepted outcomes fail closed with promoted_get recovery guidance."

@@ -5,8 +5,8 @@ extension AssetsWorker {
         let app = field("App Store Connect app ID; all resource ownership is checked against this app")
         let asset = field("Exact Asset Library asset ID; legacy screenshot IDs are not interchangeable")
         let kind = enumeration(["image", "video"], "Asset media kind")
-        let target = enumeration(AssetLibraryTarget.allCases.map(\.rawValue), "Exactly one localization resource type")
-        let targetID = field("Exact localization resource ID")
+        let target = enumeration(AssetLibraryTarget.allCases.map(\.rawValue), "Exactly one target localization or retention message version resource type")
+        let targetID = field("Exact target localization or retention message version resource ID")
         let pagination: [String: Value] = [
             "limit": .object(["type": .string("integer"), "minimum": .int(1), "maximum": .int(200)]),
             "next_url": field("Continuation returned by this exact collection and query")
