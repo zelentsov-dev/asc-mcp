@@ -488,7 +488,10 @@ struct SubscriptionWriteOptionalInputContractTests {
                     "/data/attributes/planType",
                     "/data/attributes/preserveCurrentPrice"
                 ],
-                []
+                [
+                    "/data/relationships/additionalPriceTiers",
+                    "/included"
+                ]
             ),
             "subscriptions_update": (
                 [
@@ -536,7 +539,7 @@ struct SubscriptionWriteOptionalInputContractTests {
                     }
                     omittedNames.insert(classification.appleName)
                     omittedReviewsAreCurrent = omittedReviewsAreCurrent
-                        && classification.reviewAtSpec == "4.6"
+                        && classification.reviewAtSpec == "4.6.1"
                         && !classification.reason.isEmpty
                 }
             }

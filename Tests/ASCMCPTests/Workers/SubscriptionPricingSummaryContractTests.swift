@@ -29,7 +29,7 @@ struct SubscriptionPricingSummaryContractTests {
         })
         #expect(classification.appleName == "filter[subscriptionPricePoint]")
         #expect(classification.disposition == .intentionallyOmitted)
-        #expect(classification.reviewAtSpec == "4.6")
+        #expect(classification.reviewAtSpec == "4.6.1")
     }
 
     @Test("schema exposes plan-aware bounded traversal controls")

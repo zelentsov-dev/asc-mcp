@@ -7,10 +7,10 @@ Sources:
 - Apple App Store Connect API documentation: https://developer.apple.com/documentation/appstoreconnectapi
 - Apple OpenAPI specification download: https://developer.apple.com/sample-code/app-store-connect/app-store-connect-openapi-specification.zip
 
-Spec: App Store Connect API 4.6 (OpenAPI 3.0.1)
-Apple paths: 1027
-Apple operations: 1337
-Classified paths: 1027
+Spec: App Store Connect API 4.6.1 (OpenAPI 3.0.1)
+Apple paths: 1032
+Apple operations: 1342
+Classified paths: 1032
 Unclassified paths: 0
 
 ## Priority Gaps
@@ -34,7 +34,7 @@ Unclassified paths: 0
 | Xcode Cloud workflows and builds | Partial | P1 | 56 | 59 | `xcode_cloud` | Covers read-heavy CI dashboards plus start/rebuild build runs; destructive workflow/product management remains intentionally deferred. |
 | Alternative distribution | Missing | P2 | 21 | 28 | none | Region- and entitlement-sensitive APIs should be opt-in and strongly documented. |
 | Game Center | Missing | P2 | 244 | 343 | none | Large domain; should be added only after OpenAPI-driven scaffolding is in place. |
-| In-app purchases, subscriptions, and offers | Partial | P2 | 196 | 250 | `iap`, `subscriptions` | Apple 4.4.1 versioned metadata, Apple 4.6 subscription retention messaging, generic review submission handoff, plan-type-aware subscription availability, and adjusted equalizations are covered. Legacy product-scoped tools remain explicit compatibility paths; an authoritative fully paginated subscription inventory is still pending. |
+| In-app purchases, subscriptions, and offers | Partial | P2 | 201 | 255 | `iap`, `subscriptions` | Apple 4.4.1 versioned metadata, Apple 4.6 subscription retention messaging, generic review submission handoff, plan-type-aware subscription availability, and adjusted equalizations are covered. Legacy product-scoped tools remain explicit compatibility paths; an authoritative fully paginated subscription inventory is still pending. |
 | Users, access, and sandbox testers | Partial | P2 | 13 | 20 | `users`, `sandbox` | User management is serviceable; API key operations should remain carefully annotated as high-risk. |
 | Webhook notifications | Covered | P2 | 6 | 8 | `webhooks` | Covers app webhooks, individual webhook reads, create/update/delete, delivery listing, redelivery, ping testing, and local receiver diagnostics. |
 

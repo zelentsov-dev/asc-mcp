@@ -182,7 +182,7 @@ struct AppsSearchContractTests {
             #expect(Set(classifications.map(\.appleName)) == nonSparseOptionalInputs.subtracting(Set([boundFilter, "sort", "limit"])))
             #expect(classifications.allSatisfy { classification in
                 classification.disposition == .intentionallyOmitted &&
-                    classification.reviewAtSpec == "4.6" &&
+                    classification.reviewAtSpec == "4.6.1" &&
                     !classification.reason.isEmpty
             })
         }
