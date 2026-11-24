@@ -39,7 +39,7 @@ struct AssetsManifestContractTests {
     @Test("asset input and response mappings match the pinned Apple contract")
     func pinnedContract() throws {
         let fixture = try #require(Bundle.module.url(forResource: "Fixtures", withExtension: nil))
-            .appendingPathComponent("OpenAPI/app-store-connect-4.6.oas.json")
+            .appendingPathComponent("OpenAPI/app-store-connect-4.6.1.oas.json")
         let spec = try ASCOpenAPISpec.parse(Data(contentsOf: fixture))
         let manifest = try ASCOperationManifestBundle.loadBundled()
         let diagnostics = ASCOperationToolAnalyzer().analyze(spec: spec, manifest: manifest)
@@ -52,7 +52,7 @@ struct AssetsManifestContractTests {
         let worker = try #require(manifest.workers.first { $0.workerKey == "assets" })
         #expect(worker.tools.flatMap(\.operations).flatMap {
             $0.optionalParameterClassifications ?? []
-        }.allSatisfy { $0.reviewAtSpec == "4.6" && !$0.reason.isEmpty })
+        }.allSatisfy { $0.reviewAtSpec == "4.6.1" && !$0.reason.isEmpty })
     }
 
     @Test("only preview application may call mutating Apple operations")

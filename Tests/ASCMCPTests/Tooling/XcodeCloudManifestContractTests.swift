@@ -113,8 +113,8 @@ struct XcodeCloudManifestContractTests {
         }
 
         #expect(Set(manifest.tools.flatMap(\.operations).map(\.operationID)).count == 528)
-        #expect(manifest.index.waivers.count == 440)
-        #expect(528 + 440 + 369 == manifest.index.specPin.operationCount)
+        #expect(manifest.index.waivers.count == 445)
+        #expect(528 + 445 + 369 == manifest.index.specPin.operationCount)
     }
 
     @Test("19 linkage-only waivers name their typed functional supersets")
@@ -315,12 +315,12 @@ struct XcodeCloudManifestContractTests {
         }
 
         let pin = try #require(manifest.index.optionalInputCoveragePin)
-        #expect(pin.total == 4_562)
+        #expect(pin.total == 4_572)
         #expect(pin.bound == 1_378)
         #expect(pin.internalControl == 40)
-        #expect(pin.intentionallyOmitted == 3_144)
+        #expect(pin.intentionallyOmitted == 3_154)
         #expect(pin.unclassified == 0)
-        #expect(pin.identitySHA256 == "680a0bd2f5ef10a5ce67de42ede8efaf3364433171fed2bb972ab0927f821d80")
+        #expect(pin.identitySHA256 == "dd8022417e16071bda04360c9a2fdb398385f8f8d92c2da9853455db980a25e2")
     }
 
     @Test("selected projections distinguish relationship self from related URLs")

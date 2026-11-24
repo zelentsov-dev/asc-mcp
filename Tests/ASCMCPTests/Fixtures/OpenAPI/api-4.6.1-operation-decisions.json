@@ -1,0 +1,41 @@
+{
+  "baselineVersion": "4.6",
+  "version": "4.6.1",
+  "operations": [
+    {
+      "operationId": "subscriptionPriceChangePreviews_createInstance",
+      "method": "POST",
+      "path": "/v1/subscriptionPriceChangePreviews",
+      "decision": "deferred",
+      "reason": "Subscription price change previews are new in Apple API 4.6.1 and deferred pending dedicated contract and handler design."
+    },
+    {
+      "operationId": "subscriptionPriceTierEqualizations_createInstance",
+      "method": "POST",
+      "path": "/v1/subscriptionPriceTierEqualizations",
+      "decision": "deferred",
+      "reason": "Subscription price tier equalizations are new in Apple API 4.6.1 and deferred pending dedicated contract and handler design."
+    },
+    {
+      "operationId": "subscriptionPriceTiers_getCollection",
+      "method": "GET",
+      "path": "/v1/subscriptionPriceTiers",
+      "decision": "deferred",
+      "reason": "Subscription price tiers lookup is new in Apple API 4.6.1 and deferred pending dedicated contract and handler design."
+    },
+    {
+      "operationId": "subscriptionPrices_additionalPriceTiers_getToManyRelated",
+      "method": "GET",
+      "path": "/v1/subscriptionPrices/{id}/additionalPriceTiers",
+      "decision": "deferred",
+      "reason": "Additional subscription price tiers read is new in Apple API 4.6.1 and deferred pending dedicated contract and handler design."
+    },
+    {
+      "operationId": "subscriptionPrices_additionalPriceTiers_getToManyRelationship",
+      "method": "GET",
+      "path": "/v1/subscriptionPrices/{id}/relationships/additionalPriceTiers",
+      "decision": "unsupported",
+      "reason": "The relationship-only endpoint duplicates IDs exposed by the corresponding related-resource read; no separate relationship-ID tool or invocation is implemented."
+    }
+  ]
+}

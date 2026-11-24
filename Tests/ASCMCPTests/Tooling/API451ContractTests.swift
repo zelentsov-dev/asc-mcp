@@ -7,7 +7,7 @@ import Testing
 struct API451ContractTests {
     @Test("pinned Apple snapshot is exact and agrees with the manifest")
     func pinnedSnapshotIsExact() throws {
-        let raw = try Data(contentsOf: fixtureURL("OpenAPI/app-store-connect-4.6.oas.json"))
+        let raw = try Data(contentsOf: fixtureURL("OpenAPI/app-store-connect-4.6.1.oas.json"))
         let sha256 = SHA256.hash(data: raw).map { String(format: "%02x", $0) }.joined()
         let object = try #require(JSONSerialization.jsonObject(with: raw) as? [String: Any])
         let info = try #require(object["info"] as? [String: Any])
@@ -17,12 +17,12 @@ struct API451ContractTests {
         }
         let manifest = try ASCOperationManifestBundle.loadBundled()
 
-        #expect(sha256 == "74732362a91236dcb66eb1620f8be18c2b6060771269b483eab578473bb32763")
-        #expect(info["version"] as? String == "4.6")
-        #expect(paths.count == 1027)
-        #expect(operationCount == 1337)
+        #expect(sha256 == "ba2ab338aa3ecb68948aefa5514d56d22df933422b9d8b5b25f17569e0d3e259")
+        #expect(info["version"] as? String == "4.6.1")
+        #expect(paths.count == 1032)
+        #expect(operationCount == 1342)
         #expect(manifest.index.specPin == ASCSpecPin(
-            version: "4.6", sha256: sha256, pathCount: paths.count, operationCount: operationCount
+            version: "4.6.1", sha256: sha256, pathCount: paths.count, operationCount: operationCount
         ))
     }
 
@@ -65,12 +65,12 @@ struct API451ContractTests {
             case "unsupported":
                 #expect(decision.path.contains("/relationships/"))
                 #expect(manifest.index.waivers.contains {
-                    $0.operationID == decision.operationId && $0.disposition == .unsupported && $0.reviewAtSpec == "4.6"
+                    $0.operationID == decision.operationId && $0.disposition == .unsupported && $0.reviewAtSpec == "4.6.1"
                 })
                 #expect(!implemented.contains(decision.operationId))
             case "outOfScope":
                 #expect(manifest.index.scopeRules.contains {
-                    decision.path.hasPrefix($0.pathPrefix) && $0.disposition == .outOfScope && $0.reviewAtSpec == "4.6"
+                    decision.path.hasPrefix($0.pathPrefix) && $0.disposition == .outOfScope && $0.reviewAtSpec == "4.6.1"
                 })
             default:
                 Issue.record("Unrecognized operation decision: \(decision.decision)")
@@ -98,7 +98,38 @@ struct API451ContractTests {
             case "unsupported":
                 #expect(decision.path.contains("/relationships/"))
                 #expect(manifest.index.waivers.contains {
-                    $0.operationID == decision.operationId && $0.disposition == .unsupported && $0.reviewAtSpec == "4.6"
+                    $0.operationID == decision.operationId && $0.disposition == .unsupported && $0.reviewAtSpec == "4.6.1"
+                })
+                #expect(!implemented.contains(decision.operationId))
+            default:
+                Issue.record("Unrecognized operation decision: \(decision.decision)")
+            }
+        }
+    }
+
+    @Test("every new 4.6.1 operation has its approved implementation or scope decision")
+    func new461OperationsAreExplicitlyAccountedFor() throws {
+        let data = try Data(contentsOf: fixtureURL("OpenAPI/api-4.6.1-operation-decisions.json"))
+        let decisions = try JSONDecoder().decode(OperationDecisions.self, from: data).operations
+        let manifest = try ASCOperationManifestBundle.loadBundled()
+        let implemented = Set(manifest.tools.filter {
+            $0.implementationState == .asBuilt && $0.status != .unresolved
+        }.flatMap(\.operations).map(\.operationID))
+
+        #expect(decisions.count == 5)
+        #expect(decisions.filter { $0.decision == "deferred" }.count == 4)
+        #expect(decisions.filter { $0.decision == "unsupported" }.count == 1)
+        for decision in decisions {
+            switch decision.decision {
+            case "deferred":
+                #expect(manifest.index.waivers.contains {
+                    $0.operationID == decision.operationId && $0.disposition == .deferred && $0.reviewAtSpec == "4.6.1"
+                })
+                #expect(!implemented.contains(decision.operationId))
+            case "unsupported":
+                #expect(decision.path.contains("/relationships/"))
+                #expect(manifest.index.waivers.contains {
+                    $0.operationID == decision.operationId && $0.disposition == .unsupported && $0.reviewAtSpec == "4.6.1"
                 })
                 #expect(!implemented.contains(decision.operationId))
             default:

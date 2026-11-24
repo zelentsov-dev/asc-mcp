@@ -256,7 +256,7 @@ struct MarketingOptionalInputContractTests {
             })
             #expect(classifications == identities)
             #expect(allClassifications.allSatisfy {
-                $0.reviewAtSpec == "4.6"
+                $0.reviewAtSpec == "4.6.1"
                     && !$0.reason.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
             })
         }

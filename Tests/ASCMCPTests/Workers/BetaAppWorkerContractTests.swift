@@ -1513,7 +1513,7 @@ struct BetaAppWorkerContractTests {
             $0.location == "query" && $0.appleName == "include"
         })
         #expect(localizationInclude.disposition == .intentionallyOmitted)
-        #expect(localizationInclude.reviewAtSpec == "4.6")
+        #expect(localizationInclude.reviewAtSpec == "4.6.1")
 
         for mapping in [getSubmission, listSubmissions] {
             #expect(mapping.kind == .compound)
@@ -1553,8 +1553,8 @@ struct BetaAppWorkerContractTests {
             "inspection.tool",
             "inspection.arguments.build_id"
         ]))
-        #expect(manifest.index.specPin.version == "4.6")
-        #expect(manifest.index.specPin.sha256 == "74732362a91236dcb66eb1620f8be18c2b6060771269b483eab578473bb32763")
+        #expect(manifest.index.specPin.version == "4.6.1")
+        #expect(manifest.index.specPin.sha256 == "ba2ab338aa3ecb68948aefa5514d56d22df933422b9d8b5b25f17569e0d3e259")
     }
 }
 

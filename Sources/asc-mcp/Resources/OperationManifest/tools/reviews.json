@@ -146,7 +146,7 @@
               "appleName": "include",
               "disposition": "intentionallyOmitted",
               "reason": "The detail tool returns the review attributes and response relationship presence; the full response has a dedicated reviews_get_response tool and territory is already projected from review attributes.",
-              "reviewAtSpec": "4.6"
+              "reviewAtSpec": "4.6.1"
             }
           ]
         }
@@ -237,7 +237,7 @@
               "appleName": "include",
               "disposition": "intentionallyOmitted",
               "reason": "The caller already supplies the review ID and can use reviews_get when the full related review resource is needed.",
-              "reviewAtSpec": "4.6"
+              "reviewAtSpec": "4.6.1"
             }
           ]
         },
@@ -253,7 +253,7 @@
               "appleName": "include",
               "disposition": "intentionallyOmitted",
               "reason": "The conditional lookup only confirms that the parent review exists and does not project related resources.",
-              "reviewAtSpec": "4.6"
+              "reviewAtSpec": "4.6.1"
             }
           ]
         }
@@ -346,7 +346,7 @@
               "appleName": "filter[reviewTerritory]",
               "disposition": "intentionallyOmitted",
               "reason": "The public territory and territories inputs use Apple's documented three-letter filter[territory] values; the related-resource-ID filter would duplicate that capability with opaque IDs.",
-              "reviewAtSpec": "4.6"
+              "reviewAtSpec": "4.6.1"
             }
           ]
         }
@@ -490,7 +490,7 @@
               "appleName": "filter[reviewTerritory]",
               "disposition": "intentionallyOmitted",
               "reason": "The public territory and territories inputs use Apple's documented three-letter filter[territory] values; the related-resource-ID filter would duplicate that capability with opaque IDs.",
-              "reviewAtSpec": "4.6"
+              "reviewAtSpec": "4.6.1"
             }
           ]
         }
@@ -651,21 +651,21 @@
               "appleName": "filter[rating]",
               "disposition": "intentionallyOmitted",
               "reason": "The aggregate must retrieve every rating to calculate a complete 1-through-5 distribution.",
-              "reviewAtSpec": "4.6"
+              "reviewAtSpec": "4.6.1"
             },
             {
               "location": "query",
               "appleName": "filter[reviewTerritory]",
               "disposition": "intentionallyOmitted",
               "reason": "The statistics tool uses public alpha-3 filter[territory] values instead of opaque related territory resource IDs.",
-              "reviewAtSpec": "4.6"
+              "reviewAtSpec": "4.6.1"
             },
             {
               "location": "query",
               "appleName": "include",
               "disposition": "intentionallyOmitted",
               "reason": "Statistics require only review attributes and do not download related response or territory resources.",
-              "reviewAtSpec": "4.6"
+              "reviewAtSpec": "4.6.1"
             }
           ]
         }
@@ -801,7 +801,7 @@
               "appleName": "include",
               "disposition": "intentionallyOmitted",
               "reason": "The tool returns Apple's summarization resources unchanged and preserves the related territory ID already present on each resource; callers do not need duplicated included territory resources.",
-              "reviewAtSpec": "4.6"
+              "reviewAtSpec": "4.6.1"
             }
           ]
         }
