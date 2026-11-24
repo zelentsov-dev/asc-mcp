@@ -19,42 +19,42 @@
               "appleName": "/data/relationships/appStoreVersionExperiment",
               "disposition": "intentionallyOmitted",
               "reason": "The legacy PPO relationship is intentionally rejected; this worker accepts only appStoreVersionExperimentV2.",
-              "reviewAtSpec": "4.6"
+              "reviewAtSpec": "4.6.1"
             },
             {
               "location": "body",
               "appleName": "/data/relationships/gameCenterAchievementVersion",
               "disposition": "intentionallyOmitted",
               "reason": "Game Center review items remain in the separately scoped Game Center product.",
-              "reviewAtSpec": "4.6"
+              "reviewAtSpec": "4.6.1"
             },
             {
               "location": "body",
               "appleName": "/data/relationships/gameCenterActivityVersion",
               "disposition": "intentionallyOmitted",
               "reason": "Game Center review items remain in the separately scoped Game Center product.",
-              "reviewAtSpec": "4.6"
+              "reviewAtSpec": "4.6.1"
             },
             {
               "location": "body",
               "appleName": "/data/relationships/gameCenterChallengeVersion",
               "disposition": "intentionallyOmitted",
               "reason": "Game Center review items remain in the separately scoped Game Center product.",
-              "reviewAtSpec": "4.6"
+              "reviewAtSpec": "4.6.1"
             },
             {
               "location": "body",
               "appleName": "/data/relationships/gameCenterLeaderboardSetVersion",
               "disposition": "intentionallyOmitted",
               "reason": "Game Center review items remain in the separately scoped Game Center product.",
-              "reviewAtSpec": "4.6"
+              "reviewAtSpec": "4.6.1"
             },
             {
               "location": "body",
               "appleName": "/data/relationships/gameCenterLeaderboardVersion",
               "disposition": "intentionallyOmitted",
               "reason": "Game Center review items remain in the separately scoped Game Center product.",
-              "reviewAtSpec": "4.6"
+              "reviewAtSpec": "4.6.1"
             }
           ],
           "inputs": [
@@ -254,14 +254,14 @@
               "appleName": "/data/attributes/platform",
               "disposition": "intentionallyOmitted",
               "reason": "Cancellation preserves the platform selected when the submission was created.",
-              "reviewAtSpec": "4.6"
+              "reviewAtSpec": "4.6.1"
             },
             {
               "location": "body",
               "appleName": "/data/attributes/submitted",
               "disposition": "intentionallyOmitted",
               "reason": "Cancellation never combines canceled=true with the distinct submit transition.",
-              "reviewAtSpec": "4.6"
+              "reviewAtSpec": "4.6.1"
             }
           ],
           "inputs": [
@@ -1277,14 +1277,14 @@
               "appleName": "/data/attributes/platform",
               "disposition": "intentionallyOmitted",
               "reason": "Submission preserves the platform selected when the submission was created.",
-              "reviewAtSpec": "4.6"
+              "reviewAtSpec": "4.6.1"
             },
             {
               "location": "body",
               "appleName": "/data/attributes/canceled",
               "disposition": "intentionallyOmitted",
               "reason": "Submission never combines submitted=true with the distinct cancellation transition.",
-              "reviewAtSpec": "4.6"
+              "reviewAtSpec": "4.6.1"
             }
           ],
           "inputs": [

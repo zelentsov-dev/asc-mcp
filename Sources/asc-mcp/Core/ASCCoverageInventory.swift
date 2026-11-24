@@ -39,7 +39,7 @@ struct ASCCoverageArea: Sendable {
 
 enum ASCCoverageInventory {
     static let snapshotDate = "2026-10-15"
-    static let appleAPIVersionBaseline = "4.6"
+    static let appleAPIVersionBaseline = "4.6.1"
 
     static let areas: [ASCCoverageArea] = [
         ASCCoverageArea(
